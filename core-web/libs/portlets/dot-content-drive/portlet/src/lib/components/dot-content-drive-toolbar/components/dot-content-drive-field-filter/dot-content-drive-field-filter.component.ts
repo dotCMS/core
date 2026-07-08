@@ -5,12 +5,10 @@ import {
     Component,
     computed,
     DestroyRef,
-    effect,
     inject,
     input,
     linkedSignal,
-    signal,
-    untracked
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +20,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { debounceTime, filter, take } from 'rxjs/operators';
+import { debounceTime, filter, map, take } from 'rxjs/operators';
 
 import { DotCategoriesService, DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -61,6 +59,11 @@ import {
     parseMultiValue,
     serializeUserSearchableValue
 } from '../../../../utils/functions';
+import {
+    DotContentDriveLazyMultiselectComponent,
+    DotLazyMultiselectLoader,
+    DotLazyMultiselectOption
+} from '../dot-content-drive-lazy-multiselect/dot-content-drive-lazy-multiselect.component';
 
 /** Which control a field renders and how its value is stored. */
 type FieldFilterControl =
@@ -70,6 +73,7 @@ type FieldFilterControl =
     | 'checkbox'
     | 'binary-checkbox'
     | 'radio'
+    | 'lazy-multiselect'
     | 'relationship'
     | 'date';
 
@@ -96,6 +100,7 @@ interface FieldFilterOption {
         PopoverModule,
         DotChipFilterComponent,
         DotFilterListItemComponent,
+        DotContentDriveLazyMultiselectComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-content-drive-field-filter.component.html',
@@ -127,6 +132,14 @@ export class DotContentDriveFieldFilterComponent {
     /** The content-type field this chip filters on. */
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
+    /**
+     * Whether the popover is open. The lazy multi-select's virtual scroller must be created only
+     * once the popover is visible, or it measures a zero-height viewport and renders an empty list;
+     * gating the popover content on this recreates it on each open (same trick the content-type
+     * filter uses).
+     */
+    protected readonly $popoverOpen = signal(false);
+
     /** Debounced free-text input so we don't fire a search per keystroke. */
     readonly #textInput$ = new Subject<string>();
 
@@ -149,12 +162,13 @@ export class DotContentDriveFieldFilterComponent {
             case FIELD_FILTER_CHECKBOX_TYPE:
                 // A single-option checkbox is a boolean value; multiple options is a selection.
                 return this.$options().length <= 1 ? 'binary-checkbox' : 'checkbox';
-            // Tag and Category are also multi-value browse-and-pick lists; their options are
-            // fetched (see $activeOptions) rather than parsed from the field.
             case FIELD_FILTER_MULTISELECT_TYPE:
+                return 'multi-select';
+            // Tag and Category are unbounded, server-side lists — browsed with search + infinite
+            // scroll (their options aren't defined on the field) via the shared lazy multi-select.
             case FIELD_FILTER_TAG_TYPE:
             case FIELD_FILTER_CATEGORY_TYPE:
-                return 'multi-select';
+                return 'lazy-multiselect';
             case FIELD_FILTER_RADIO_TYPE:
                 return 'radio';
             case FIELD_FILTER_SELECT_TYPE:
@@ -214,28 +228,65 @@ export class DotContentDriveFieldFilterComponent {
         )
     );
 
-    /**
-     * Options fetched from a service (Tag, Category) rather than parsed from `field.values`.
-     * Loaded once on init so the user can browse them instead of guessing what exists.
-     */
-    protected readonly $fetchedOptions = signal<FieldFilterOption[]>([]);
-    protected readonly $loadingOptions = signal(false);
-
-    /** The option list to render — fetched for Tag/Category, field-derived otherwise. */
-    protected readonly $activeOptions = computed<FieldFilterOption[]>(() => {
-        const fieldType = this.$field().fieldType;
-
-        return fieldType === FIELD_FILTER_TAG_TYPE || fieldType === FIELD_FILTER_CATEGORY_TYPE
-            ? this.$fetchedOptions()
-            : this.$options();
-    });
-
     /** value → label lookup for rendering chip summaries of option-based choices. */
     readonly #labelByValue = computed(() => {
         const map = new Map<string, string>();
-        for (const option of this.$activeOptions()) map.set(option.value, option.label);
+        for (const option of this.$options()) map.set(option.value, option.label);
 
         return map;
+    });
+
+    /**
+     * Labels for the values chosen in the lazy multi-select (Tag/Category). Those options are
+     * paged in on demand, so the value→label pairs aren't known up front; we cache each selected
+     * option's label here to render the chip summary without re-fetching. Survives URL restore only
+     * as far as the value itself (a cold-restored value falls back to showing the raw value).
+     */
+    readonly #lazyLabelByValue = signal<Record<string, string>>({});
+
+    /**
+     * Page loader handed to the shared lazy multi-select for Tag/Category. Tag options are keyed by
+     * label (the search contract matches tags by name); Category options by inode. `hasMore` comes
+     * from the response pagination when present, else falls back to a full page being returned.
+     */
+    protected readonly $lazyLoader = computed<DotLazyMultiselectLoader>(() => {
+        const field = this.$field();
+
+        if (field.fieldType === FIELD_FILTER_TAG_TYPE) {
+            return ({ page, perPage, filter }) =>
+                this.#tagsService
+                    .getTagsPaginated({ page, per_page: perPage, filter, global: true })
+                    .pipe(
+                        map((response) => ({
+                            options: (response.entity ?? []).map((tag) => ({
+                                label: tag.label,
+                                value: tag.label
+                            })),
+                            hasMore: this.#hasMore(response, page, perPage)
+                        }))
+                    );
+        }
+
+        // Category: the field's `values` holds the root category inode, so we list within that tree.
+        const rootInode = field.values;
+
+        return ({ page, perPage, filter }) => {
+            const params = { page, per_page: perPage, filter };
+            const request$ = rootInode
+                ? this.#categoriesService.getChildrenPaginated(rootInode, params)
+                : this.#categoriesService.getCategoriesPaginated(params);
+
+            return request$.pipe(
+                map((response) => ({
+                    options: (response.entity ?? []).map((category) => ({
+                        label: category.categoryName,
+                        // Backend filters categories by inode (per the search contract).
+                        value: category.inode
+                    })),
+                    hasMore: this.#hasMore(response, page, perPage)
+                }))
+            );
+        };
     });
 
     // --- Control models (derived from the raw stored value) ---
@@ -317,6 +368,13 @@ export class DotContentDriveFieldFilterComponent {
             return parseMultiValue(raw).map((value) => labels.get(value) || value);
         }
 
+        if (control === 'lazy-multiselect') {
+            // Labels are cached as options are picked; a cold-restored value shows the raw value.
+            const labels = this.#lazyLabelByValue();
+
+            return parseMultiValue(raw).map((value) => labels[value] || value);
+        }
+
         if (control === 'single-select' || control === 'radio') {
             return [this.#labelByValue().get(raw) || raw];
         }
@@ -346,13 +404,6 @@ export class DotContentDriveFieldFilterComponent {
         this.#textInput$
             .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed())
             .subscribe((value) => this.#patch(value));
-
-        // Tag/Category options are fetched (not defined on the field), loaded once on init so the
-        // user can browse the full set in the multi-select instead of typing blind.
-        effect(() => {
-            const field = this.$field();
-            untracked(() => this.#loadFetchedOptions(field));
-        });
     }
 
     protected onTextInput(value: string): void {
@@ -376,43 +427,41 @@ export class DotContentDriveFieldFilterComponent {
         );
     }
 
-    /** Loads the browsable option list for Tag/Category fields. */
-    #loadFetchedOptions(field: DotCMSContentTypeField): void {
-        if (field.fieldType === FIELD_FILTER_TAG_TYPE) {
-            this.$loadingOptions.set(true);
-            this.#tagsService
-                .getSuggestions()
-                .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
-                .subscribe((tags) => {
-                    this.$fetchedOptions.set(
-                        tags.map((tag) => ({ label: tag.label, value: tag.label }))
-                    );
-                    this.$loadingOptions.set(false);
-                });
-
-            return;
+    /**
+     * Whether more pages remain after the one just returned. Prefers the response pagination
+     * (`totalEntries`), falling back to "a full page came back" when pagination is absent.
+     */
+    #hasMore(
+        response: { entity?: unknown[]; pagination?: { totalEntries?: number } },
+        page: number,
+        perPage: number
+    ): boolean {
+        const total = response.pagination?.totalEntries;
+        if (typeof total === 'number') {
+            return page * perPage < total;
         }
 
-        if (field.fieldType === FIELD_FILTER_CATEGORY_TYPE) {
-            // The field's `values` holds the root category inode, so we list within that tree.
-            const rootInode = field.values;
-            const params = { per_page: 1000 };
-            const request$ = rootInode
-                ? this.#categoriesService.getChildrenPaginated(rootInode, params)
-                : this.#categoriesService.getCategoriesPaginated(params);
+        return (response.entity?.length ?? 0) >= perPage;
+    }
 
-            this.$loadingOptions.set(true);
-            request$.pipe(take(1), takeUntilDestroyed(this.#destroyRef)).subscribe((response) => {
-                this.$fetchedOptions.set(
-                    (response.entity ?? []).map((category) => ({
-                        label: category.categoryName,
-                        // Backend filters categories by inode (per the search contract).
-                        value: category.inode
-                    }))
-                );
-                this.$loadingOptions.set(false);
-            });
-        }
+    /**
+     * The lazy multi-select emitted a new selection (Tag/Category). Cache each option's label for
+     * the chip summary, then store the values (comma-joined via the shared serializer).
+     */
+    protected onLazySelectionChange(options: DotLazyMultiselectOption[]): void {
+        this.#lazyLabelByValue.update((cache) => {
+            const next = { ...cache };
+            for (const option of options) next[option.value] = option.label;
+
+            return next;
+        });
+
+        this.#patch(
+            serializeUserSearchableValue(
+                options.map((option) => option.value),
+                this.$field().fieldType
+            )
+        );
     }
 
     /**

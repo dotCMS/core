@@ -1,0 +1,162 @@
+import { Observable, Subject } from 'rxjs';
+
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    inject,
+    input,
+    linkedSignal,
+    OnInit,
+    output,
+    signal
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
+import { ListboxModule } from 'primeng/listbox';
+import { ScrollerLazyLoadEvent } from 'primeng/scroller';
+
+import { debounceTime, take, takeUntil } from 'rxjs/operators';
+
+import { CHIP_FILTER_LISTBOX_PT, DotFilterListItemComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
+
+export interface DotLazyMultiselectOption {
+    label: string;
+    value: string;
+}
+
+/** One page of options plus whether more remain, returned by the loader. */
+export interface DotLazyMultiselectPage {
+    options: DotLazyMultiselectOption[];
+    hasMore: boolean;
+}
+
+/** Loads a page (1-based) of options filtered by `filter`. Owned by the consumer (Tag/Category). */
+export type DotLazyMultiselectLoader = (params: {
+    page: number;
+    perPage: number;
+    filter: string;
+}) => Observable<DotLazyMultiselectPage>;
+
+/**
+ * Row height (px) for the virtual scroller — matches the content-type filter's listbox, measured
+ * against PrimeNG v21 option styling (`--p-listbox-option-padding: 0 1rem` from
+ * CHIP_FILTER_LISTBOX_PT plus the `dot-filter-list-item` `py-3` host class).
+ */
+const ITEM_HEIGHT = 40.6;
+/** Page size requested from the loader. */
+const PER_PAGE = 20;
+
+/**
+ * Presentational multi-select with server-side search + infinite scroll. It owns only the option
+ * list, pagination and search debounce; the caller supplies a `loadPage` and the currently selected
+ * values, and receives the chosen options via `(selectionChange)`. Reused by the Tag and Category
+ * field filters so neither is capped at a fixed page size.
+ *
+ * Mirrors the content-type filter's virtual-scroll lazy load. It must be created only once its
+ * host overlay is visible (the caller gates it behind the popover's open state) — otherwise the
+ * virtual scroller measures a zero-height viewport and renders an empty list.
+ */
+@Component({
+    selector: 'dot-content-drive-lazy-multiselect',
+    imports: [
+        FormsModule,
+        IconFieldModule,
+        InputIconModule,
+        InputTextModule,
+        ListboxModule,
+        DotFilterListItemComponent,
+        DotMessagePipe
+    ],
+    templateUrl: './dot-content-drive-lazy-multiselect.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotContentDriveLazyMultiselectComponent implements OnInit {
+    readonly #destroyRef = inject(DestroyRef);
+
+    /** Loads a page of options; provided by the consumer (bound to the Tag/Category service). */
+    readonly $loadPage = input.required<DotLazyMultiselectLoader>({ alias: 'loadPage' });
+    /** Currently-selected values, used to highlight rows. */
+    readonly $selectedValues = input<string[]>([], { alias: 'selectedValues' });
+    /** Emits the selected options (value + label) whenever the selection changes. */
+    readonly selectionChange = output<DotLazyMultiselectOption[]>();
+
+    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
+    protected readonly SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
+    protected readonly ITEM_HEIGHT = ITEM_HEIGHT;
+
+    protected readonly $options = signal<DotLazyMultiselectOption[]>([]);
+    protected readonly $loading = signal(false);
+    protected readonly $filter = signal('');
+
+    /** Selected values bound to the listbox; re-seeds when the input changes. */
+    protected readonly $model = linkedSignal<string[]>(() => [...this.$selectedValues()]);
+
+    #page = 1;
+    #canLoadMore = true;
+    /** Cancels an in-flight load when a newer search supersedes it. */
+    readonly #cancel$ = new Subject<void>();
+    readonly #search$ = new Subject<string>();
+
+    constructor() {
+        this.#search$
+            .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((filter) => {
+                this.#cancel$.next();
+                this.$filter.set(filter);
+                this.#page = 1;
+                this.#canLoadMore = true;
+                this.$options.set([]);
+                this.#load();
+            });
+    }
+
+    ngOnInit(): void {
+        this.#load();
+    }
+
+    protected onSearch(value: string): void {
+        this.#search$.next(value ?? '');
+    }
+
+    protected onLazyLoad(event: ScrollerLazyLoadEvent): void {
+        const last = typeof event.last === 'number' ? event.last : NaN;
+        if (!Number.isFinite(last)) {
+            return;
+        }
+
+        // Prefetch the next page as soon as the user reaches any row on the current one.
+        const nextPage = Math.ceil(last / PER_PAGE) + 1;
+        if (!this.#canLoadMore || nextPage <= this.#page || this.$loading()) {
+            return;
+        }
+
+        this.#page = nextPage;
+        this.#load(true);
+    }
+
+    protected onChange(values: string[]): void {
+        const byValue = new Map(this.$options().map((option) => [option.value, option]));
+        this.selectionChange.emit(
+            (values ?? []).map((value) => byValue.get(value) ?? { label: value, value })
+        );
+    }
+
+    #load(append = false): void {
+        this.$loading.set(true);
+        this.$loadPage()({ page: this.#page, perPage: PER_PAGE, filter: this.$filter() })
+            .pipe(take(1), takeUntil(this.#cancel$), takeUntilDestroyed(this.#destroyRef))
+            .subscribe(({ options, hasMore }) => {
+                this.$options.update((prev) => (append ? [...prev, ...options] : options));
+                this.#canLoadMore = hasMore;
+                this.$loading.set(false);
+            });
+    }
+}

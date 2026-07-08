@@ -41,7 +41,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 patchFilters: jest.fn()
             }),
             mockProvider(DotTagsService, {
-                getSuggestions: jest.fn().mockReturnValue(of([{ label: 'angular' }]))
+                getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [{ label: 'angular' }] }))
             }),
             mockProvider(DotCategoriesService, {
                 getChildrenPaginated: jest
@@ -80,6 +80,8 @@ describe('DotContentDriveFieldFilterComponent', () => {
             { fieldType: 'Multi-Select', values: 'A|a', testId: 'field-filter-multi-select' },
             { fieldType: 'Checkbox', values: 'A|a\r\nB|b', testId: 'field-filter-checkbox' },
             { fieldType: 'Checkbox', values: '|true', testId: 'field-filter-binary' },
+            { fieldType: 'Tag', testId: 'field-filter-lazy-multiselect' },
+            { fieldType: 'Category', testId: 'field-filter-lazy-multiselect' },
             { fieldType: 'Date', testId: 'field-filter-date' }
         ];
 
