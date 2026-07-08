@@ -111,7 +111,7 @@ public class ContentDriveFieldFilterResolver {
                     fieldVariable, field.getClass().getSimpleName(), kind));
         }
 
-        return build(fieldVariable, field, bucket, kind, rawValue);
+        return build(fieldVariable, field, contentType, bucket, kind, rawValue);
     }
 
     /**
@@ -136,15 +136,17 @@ public class ContentDriveFieldFilterResolver {
     }
 
     private FieldSearchCriteria build(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final FilterKind kind, final Object rawValue) {
+            final ContentType contentType, final RoutingBucket bucket, final FilterKind kind,
+            final Object rawValue) {
 
         switch (kind) {
             case BOOLEAN:
-                return FieldSearchCriteria.bool(fieldVariable, field, bucket, (Boolean) rawValue);
+                return FieldSearchCriteria.bool(fieldVariable, field, contentType, bucket,
+                        (Boolean) rawValue);
             case RANGE:
-                return buildRange(fieldVariable, field, bucket, rawValue);
+                return buildRange(fieldVariable, field, contentType, bucket, rawValue);
             case MULTI:
-                return buildMulti(fieldVariable, field, bucket, rawValue);
+                return buildMulti(fieldVariable, field, contentType, bucket, rawValue);
             case SCALAR:
             default:
                 final String scalar = rawValue.toString().trim();
@@ -152,12 +154,12 @@ public class ContentDriveFieldFilterResolver {
                     throw new BadRequestException(String.format(
                             "Field '%s' has an empty filter value.", fieldVariable));
                 }
-                return FieldSearchCriteria.scalar(fieldVariable, field, bucket, scalar);
+                return FieldSearchCriteria.scalar(fieldVariable, field, contentType, bucket, scalar);
         }
     }
 
     private FieldSearchCriteria buildRange(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final Object rawValue) {
+            final ContentType contentType, final RoutingBucket bucket, final Object rawValue) {
 
         final Map<?, ?> map = (Map<?, ?>) rawValue;
         final Object from = map.get(FROM_KEY);
@@ -166,13 +168,13 @@ public class ContentDriveFieldFilterResolver {
             throw new BadRequestException(String.format(
                     "Field '%s' range filter must set at least one of 'from'/'to'.", fieldVariable));
         }
-        return FieldSearchCriteria.range(fieldVariable, field, bucket,
+        return FieldSearchCriteria.range(fieldVariable, field, contentType, bucket,
                 null == from ? null : from.toString().trim(),
                 null == to ? null : to.toString().trim());
     }
 
     private FieldSearchCriteria buildMulti(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final Object rawValue) {
+            final ContentType contentType, final RoutingBucket bucket, final Object rawValue) {
 
         final List<String> values = new ArrayList<>();
         for (final Object element : (Iterable<?>) rawValue) {
@@ -188,7 +190,7 @@ public class ContentDriveFieldFilterResolver {
             throw new BadRequestException(String.format(
                     "Field '%s' array filter has no usable values.", fieldVariable));
         }
-        return FieldSearchCriteria.multi(fieldVariable, field, bucket, values);
+        return FieldSearchCriteria.multi(fieldVariable, field, contentType, bucket, values);
     }
 
     /**

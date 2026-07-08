@@ -1,6 +1,7 @@
 package com.dotcms.browser;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,6 +47,7 @@ public final class FieldSearchCriteria {
 
     private final String fieldVariable;
     private final Field field;
+    private final ContentType contentType;
     private final FilterKind kind;
     private final RoutingBucket bucket;
     private final List<String> values;
@@ -53,11 +55,13 @@ public final class FieldSearchCriteria {
     private final String rangeTo;
     private final Boolean booleanValue;
 
-    private FieldSearchCriteria(final String fieldVariable, final Field field, final FilterKind kind,
-            final RoutingBucket bucket, final List<String> values, final String rangeFrom,
-            final String rangeTo, final Boolean booleanValue) {
+    private FieldSearchCriteria(final String fieldVariable, final Field field,
+            final ContentType contentType, final FilterKind kind, final RoutingBucket bucket,
+            final List<String> values, final String rangeFrom, final String rangeTo,
+            final Boolean booleanValue) {
         this.fieldVariable = fieldVariable;
         this.field = field;
+        this.contentType = contentType;
         this.kind = kind;
         this.bucket = bucket;
         this.values = values == null ? List.of() : List.copyOf(values);
@@ -70,8 +74,8 @@ public final class FieldSearchCriteria {
      * Creates a {@link FilterKind#SCALAR} criterion (single value: contains or equals).
      */
     public static FieldSearchCriteria scalar(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final String value) {
-        return new FieldSearchCriteria(fieldVariable, field, FilterKind.SCALAR, bucket,
+            final ContentType contentType, final RoutingBucket bucket, final String value) {
+        return new FieldSearchCriteria(fieldVariable, field, contentType, FilterKind.SCALAR, bucket,
                 List.of(value), null, null, null);
     }
 
@@ -79,8 +83,8 @@ public final class FieldSearchCriteria {
      * Creates a {@link FilterKind#MULTI} criterion (array of values: terms/names/inodes).
      */
     public static FieldSearchCriteria multi(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final List<String> values) {
-        return new FieldSearchCriteria(fieldVariable, field, FilterKind.MULTI, bucket,
+            final ContentType contentType, final RoutingBucket bucket, final List<String> values) {
+        return new FieldSearchCriteria(fieldVariable, field, contentType, FilterKind.MULTI, bucket,
                 values, null, null, null);
     }
 
@@ -88,8 +92,9 @@ public final class FieldSearchCriteria {
      * Creates a {@link FilterKind#RANGE} criterion ({@code {from,to}}). At least one bound is set.
      */
     public static FieldSearchCriteria range(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final String from, final String to) {
-        return new FieldSearchCriteria(fieldVariable, field, FilterKind.RANGE, bucket,
+            final ContentType contentType, final RoutingBucket bucket, final String from,
+            final String to) {
+        return new FieldSearchCriteria(fieldVariable, field, contentType, FilterKind.RANGE, bucket,
                 null, from, to, null);
     }
 
@@ -97,8 +102,8 @@ public final class FieldSearchCriteria {
      * Creates a {@link FilterKind#BOOLEAN} criterion (equals true/false).
      */
     public static FieldSearchCriteria bool(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final boolean value) {
-        return new FieldSearchCriteria(fieldVariable, field, FilterKind.BOOLEAN, bucket,
+            final ContentType contentType, final RoutingBucket bucket, final boolean value) {
+        return new FieldSearchCriteria(fieldVariable, field, contentType, FilterKind.BOOLEAN, bucket,
                 null, null, null, value);
     }
 
@@ -114,6 +119,14 @@ public final class FieldSearchCriteria {
      */
     public Field getField() {
         return field;
+    }
+
+    /**
+     * @return the {@link ContentType} the field belongs to (used to build the Lucene field name
+     * and provide field-strategy context).
+     */
+    public ContentType getContentType() {
+        return contentType;
     }
 
     /**

@@ -5,8 +5,12 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -64,6 +68,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
@@ -1127,7 +1132,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The base Elasticsearch query string without inode filtering
      */
     String buildBaseESQuery(final BrowserQuery browserQuery) {
-        final StringBuilder baseQuery = new StringBuilder();
+        final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String titleFilters = String.format(
@@ -1136,7 +1141,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                     browserQuery.filter,
                     browserQuery.filter,
                     browserQuery.filter);
-            baseQuery.append(titleFilters);
+            textGroup.append(titleFilters);
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1146,10 +1151,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                         browserQuery.fileName,
                         browserQuery.fileName,
                         browserQuery.fileName);
-                if (baseQuery.length() > 0) {
-                    baseQuery.append(" AND ");
+                if (textGroup.length() > 0) {
+                    textGroup.append(" AND ");
                 }
-                baseQuery.append(metadataFilters);
+                textGroup.append(metadataFilters);
             } else {
                 Logger.warn(BrowserAPIImpl.class,
                         String.format(
@@ -1163,13 +1168,97 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
         }
 
+        final StringBuilder baseQuery = new StringBuilder();
+        if (textGroup.length() > 0) {
+            // Wrap the free-text/fileName portion in a mandatory group for ES query_string syntax
+            baseQuery.append(" +(").append(textGroup).append(')');
+        }
+
+        // Append index-routed per-field clauses (Content Drive). Each clause is already a mandatory
+        // (+) Lucene term produced by the shared field strategies, so it ANDs with the text group
+        // and, downstream, with the DB candidate inode set.
+        final String fieldClauses = buildFieldCriteriaESClauses(browserQuery);
+        if (UtilMethods.isSet(fieldClauses)) {
+            baseQuery.append(' ').append(fieldClauses);
+        }
+
         // Early return if no query was built
         if (baseQuery.length() == 0) {
             return BLANK;
         }
 
-        // Wrap in mandatory group for ES query_string syntax
-        return " +(" + baseQuery + ')';
+        return baseQuery.toString();
+    }
+
+    /**
+     * Builds the Elasticsearch clauses for the index-routed per-field criteria carried by the
+     * {@link BrowserQuery} (Content Drive field filters). The field-value → Lucene-clause
+     * translation is delegated to the shared field strategies in
+     * {@code com.dotcms.rest.api.v1.content.search} so the syntax matches the modern content
+     * search. DB-routed criteria (Tag) are skipped here — they are resolved in the SQL path.
+     *
+     * @param browserQuery The {@link BrowserQuery} containing the parsed field criteria.
+     * @return The concatenated, space-separated Lucene clauses, or {@link #BLANK} when there are no
+     *         index-routed criteria.
+     */
+    private String buildFieldCriteriaESClauses(final BrowserQuery browserQuery) {
+        if (browserQuery.getFieldCriteria().isEmpty()) {
+            return BLANK;
+        }
+        final StringBuilder clauses = new StringBuilder();
+        for (final FieldSearchCriteria criteria : browserQuery.getFieldCriteria()) {
+            if (criteria.getBucket() != FieldSearchCriteria.RoutingBucket.INDEX) {
+                continue;
+            }
+            final Field field = criteria.getField();
+            final ContentType contentType = criteria.getContentType();
+            final String luceneFieldName = contentType.variable() + "." + field.variable();
+            final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
+            final FieldContext fieldContext = new FieldContext.Builder()
+                    .withContentType(contentType)
+                    .withUser(browserQuery.user)
+                    .withFieldName(luceneFieldName)
+                    .withFieldValue(fieldCriteriaLuceneValue(criteria))
+                    .build();
+            final String clause = handler.apply(fieldContext);
+            if (UtilMethods.isSet(clause)) {
+                clauses.append(' ').append(clause.trim());
+            }
+        }
+        return clauses.length() == 0 ? BLANK : clauses.toString().trim();
+    }
+
+    /**
+     * Formats a {@link FieldSearchCriteria} value into the single value string that the shared
+     * field strategies expect for that field type.
+     * <ul>
+     *   <li>SCALAR → the single value.</li>
+     *   <li>MULTI → values joined by comma (categories are inodes; other multi-value fields are
+     *       tokenized by the strategy).</li>
+     *   <li>BOOLEAN → {@code "true"}/{@code "false"}.</li>
+     *   <li>RANGE → {@code "from TO to"} with {@code *} for open-ended bounds, as expected by
+     *       {@code DateTimeFieldStrategy}.</li>
+     * </ul>
+     *
+     * @param criteria The {@link FieldSearchCriteria} to format.
+     * @return The value string to hand to the field strategy.
+     */
+    private String fieldCriteriaLuceneValue(final FieldSearchCriteria criteria) {
+        switch (criteria.getKind()) {
+            case BOOLEAN:
+                return String.valueOf(criteria.getBooleanValue());
+            case RANGE:
+                final String from = UtilMethods.isSet(criteria.getRangeFrom())
+                        ? criteria.getRangeFrom() : "*";
+                final String to = UtilMethods.isSet(criteria.getRangeTo())
+                        ? criteria.getRangeTo() : "*";
+                return from + " TO " + to;
+            case MULTI:
+                return String.join(",", criteria.getValues());
+            case SCALAR:
+            default:
+                return criteria.getValues().isEmpty() ? BLANK : criteria.getValues().get(0);
+        }
     }
 
     /**
@@ -1590,6 +1679,12 @@ public class BrowserAPIImpl implements BrowserAPI {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
             }
         }
+        // DB-routed per-field predicates (Content Drive). These are resolved in the DB regardless of
+        // ES filtering to preserve read-your-writes (ADR-0018). Only Tag is supported in v1;
+        // index-routed criteria are handled by the ES path and never leak into the SQL.
+        if (!browserQuery.getFieldCriteria().isEmpty()) {
+            appendFieldCriteriaDBPredicates(selectQuery, browserQuery, workingLiveInode, parameters);
+        }
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(selectQuery);
         }
@@ -1775,6 +1870,65 @@ public class BrowserAPIImpl implements BrowserAPI {
         parameters.add("%" + filterText + "%");
 
 
+    }
+
+    /**
+     * Appends the DB-routed per-field predicates (Content Drive field filters) to the select query.
+     * Per the ADR-0018 routing contract these criteria are resolved in the database to preserve
+     * read-your-writes. Only Tag fields are supported in v1 (Relationship is deferred to v1.1 and is
+     * rejected at request parsing time). Index-routed criteria are intentionally ignored here.
+     * <p>
+     * Multiple criteria combine with AND (each adds an {@code and ... in (...)} sub-select), matching
+     * the additive filtering model.
+     *
+     * @param sqlQuery         The StringBuilder representing the SQL query being built.
+     * @param browserQuery     The {@link BrowserQuery} carrying the parsed field criteria.
+     * @param workingLiveInode The inode column selected by the outer query ({@code working_inode} or
+     *                         {@code live_inode}).
+     * @param parameters       The list of SQL parameters to append bind values to.
+     */
+    private void appendFieldCriteriaDBPredicates(final StringBuilder sqlQuery,
+            final BrowserQuery browserQuery, final String workingLiveInode,
+            final List<Object> parameters) {
+
+        for (final FieldSearchCriteria criteria : browserQuery.getFieldCriteria()) {
+            if (criteria.getBucket() != FieldSearchCriteria.RoutingBucket.DB) {
+                continue;
+            }
+            if (criteria.getField() instanceof TagField) {
+                appendTagQuery(sqlQuery, workingLiveInode, criteria.getValues(), parameters);
+            }
+        }
+    }
+
+    /**
+     * Appends a Tag-field predicate: content whose selected inode is associated (via the
+     * {@code tag}/{@code tag_inode} tables) with any of the given tag names. Tag names within a
+     * single field combine with OR; the enclosing sub-select ANDs with the rest of the query.
+     * Matching is case-insensitive and exact (no wildcards).
+     *
+     * @param sqlQuery         The StringBuilder representing the SQL query being built.
+     * @param workingLiveInode The inode column selected by the outer query.
+     * @param tagNames         The tag names to match.
+     * @param parameters       The list of SQL parameters to append bind values to.
+     */
+    private void appendTagQuery(final StringBuilder sqlQuery, final String workingLiveInode,
+            final List<String> tagNames, final List<Object> parameters) {
+
+        if (tagNames.isEmpty()) {
+            return;
+        }
+        sqlQuery.append(" and cvi.").append(workingLiveInode)
+                .append(" in ( select ti.inode from tag t, tag_inode ti ")
+                .append(" where t.tag_id = ti.tag_id and (");
+        for (int i = 0; i < tagNames.size(); i++) {
+            if (i > 0) {
+                sqlQuery.append(" or ");
+            }
+            sqlQuery.append(" t.tagname ILIKE ? ");
+            parameters.add(tagNames.get(i).trim());
+        }
+        sqlQuery.append(") ) ");
     }
 
     /**
