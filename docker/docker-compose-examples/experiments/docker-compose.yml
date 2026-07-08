@@ -101,7 +101,7 @@ services:
   dotcms:
     profiles: ["full"]
     container_name: dotcms
-    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    image: dotcms/dotcms:latest
     environment:
       # dotCMS Core Configuration
       CMS_JAVA_OPTS: '-Xmx1g'
@@ -117,6 +117,7 @@ services:
       GLOWROOT_ENABLED: 'true'
       GLOWROOT_WEB_UI_ENABLED: 'true'
       DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
+      CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260629/starter-20260629.zip'
 
       # Experiments Configuration (Environment Variables Override)
       # Internal URLs (container-to-container communication)
