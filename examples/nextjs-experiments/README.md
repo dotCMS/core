@@ -308,16 +308,18 @@ This project is written in **TypeScript** (strict mode, with the `@/*` path alia
 
 3. **Views (src/views/)**: Contains client-side page templates (`Page.tsx`, `DetailPage.tsx`, `BlogListingPage.tsx`) that can use React hooks. Since Next.js App Router components can't directly use hooks, these components handle client-side logic.
 
-4. **Config (src/config/)**: The `dotcms.config.ts` module provides typed, centralized access to the dotCMS environment variables, so every other module reads configuration from one place instead of touching `process.env` directly. This module also exposes a dedicated, centralized **`experimentsConfig`** object that groups everything the Experiments feature needs — the dotCMS host (`server`), the analytics `experimentsKey` (from `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY`), and a `debug` flag — so experiments settings live in one typed place alongside the rest of the configuration:
+4. **Config (src/config/)**: The `dotcms.config.ts` module provides typed, centralized access to the dotCMS environment variables, so every other module reads configuration from one place instead of touching `process.env` directly. This module also exposes a dedicated, centralized **`experimentsConfig`** object that groups everything the Experiments feature needs — the dotCMS host (`server`), the analytics `apiKey` (from `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY`), and a `debug` flag — so experiments settings live in one typed place alongside the rest of the configuration. Each value falls back to an empty string / `false`, so both `server` and `apiKey` are always typed as `string` (required by the Experiments SDK) and a missing `apiKey` reads as falsy:
 
     ```ts
     // src/config/dotcms.config.ts
     export const experimentsConfig = {
-        server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-        experimentsKey: process.env.NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY,
+        server: process.env.NEXT_PUBLIC_DOTCMS_HOST ?? "",
+        apiKey: process.env.NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY ?? "",
         debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG === "true",
     };
     ```
+
+    Because `apiKey` defaults to `""` when the env var is unset, code can guard on it (`experimentsConfig.apiKey ? withExperiments(...) : ...`) to enable experiments only when a key is configured.
 
 5. **Lib (src/lib/)**: Contains the `dotCMSClient.ts`, which initializes the connection to your dotCMS instance.
 

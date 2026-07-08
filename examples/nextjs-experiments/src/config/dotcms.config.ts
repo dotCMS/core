@@ -36,7 +36,7 @@ export const aiSearchIndexName = "example-travel-lux";
  * - NEXT_PUBLIC_EXPERIMENTS_DEBUG
  */
 export const experimentsConfig = {
-    server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    experimentsKey: process.env.NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY,
+    server: process.env.NEXT_PUBLIC_DOTCMS_HOST ?? "",
+    apiKey: process.env.NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY ?? "",
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG === "true",
 };

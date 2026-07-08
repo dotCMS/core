@@ -117,7 +117,7 @@ services:
       GLOWROOT_ENABLED: 'true'
       GLOWROOT_WEB_UI_ENABLED: 'true'
       DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
-      CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260629/starter-20260629.zip'
+      CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260630/starter-20260630.zip'
 
       # Experiments Configuration (Environment Variables Override)
       # Internal URLs (container-to-container communication)
