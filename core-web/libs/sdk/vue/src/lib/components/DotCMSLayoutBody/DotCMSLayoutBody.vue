@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, withDefaults } from 'vue';
+import { computed } from 'vue';
 
 import ErrorMessage from './components/ErrorMessage.vue';
 import type { DotCMSLayoutBodyProps } from './types';
 
+import { useIsAnalyticsActive } from '../../composables/useIsAnalyticsActive';
+import { useIsDevMode } from '../../composables/useIsDevMode';
 import { provideDotCMSPageContext } from '../../contexts/dotcms-page.context';
 import Row from '../Row/Row.vue';
 
@@ -20,13 +22,21 @@ const props = withDefaults(defineProps<DotCMSLayoutBodyProps>(), {
     mode: 'production'
 });
 
+// Resolve dev-mode and analytics ONCE at the layout root and share them via the
+// context, so the whole tree reads one value instead of each contentlet/container
+// re-resolving `getUVEState()` and registering its own analytics listener.
+const isDevMode = useIsDevMode(() => props.mode);
+const isAnalyticsActive = useIsAnalyticsActive();
+
 // Provide the context as a computed so live UVE page updates (a new page asset
 // arriving via `uve-set-page-data`) propagate to the whole layout tree.
 provideDotCMSPageContext(
     computed(() => ({
         pageAsset: props.page,
         mode: props.mode,
-        userComponents: props.components
+        userComponents: props.components,
+        isDevMode: isDevMode.value,
+        isAnalyticsActive: isAnalyticsActive.value
     }))
 );
 

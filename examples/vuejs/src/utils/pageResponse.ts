@@ -3,6 +3,13 @@ import { getDotCMSPage } from '@/utils/getDotCMSPage';
 /** Either a composed page response or the `{ error }` shape on failure. */
 export type PageResponse = Awaited<ReturnType<typeof getDotCMSPage>>;
 
+/**
+ * The success branch of {@link PageResponse} — a resolved page (no `error`).
+ * Renderer components receive this after the view has narrowed away the error
+ * case, so they can pass it to `useEditableDotCMSPage` without casting.
+ */
+export type DotCMSPageContent = Exclude<PageResponse, { error: unknown }>;
+
 /** Narrows a response to the error branch. */
 export function isPageError(pageContent: PageResponse): pageContent is { error: unknown } {
     return Boolean(pageContent && 'error' in pageContent && pageContent.error);

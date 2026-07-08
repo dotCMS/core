@@ -4,12 +4,12 @@ import { useRoute } from 'vue-router';
 
 import DetailRenderer from '@/components/DetailRenderer.vue';
 import { getDotCMSPage } from '@/utils/getDotCMSPage';
-import { isPageError, type PageResponse } from '@/utils/pageResponse';
+import { isPageError, type DotCMSPageContent } from '@/utils/pageResponse';
 
 const route = useRoute();
 
 // shallowRef: keep the page response plain so the UVE bridge can clone it.
-const pageResponse = shallowRef<PageResponse | null>(null);
+const pageResponse = shallowRef<DotCMSPageContent | null>(null);
 const notFound = ref(false);
 const loading = ref(true);
 

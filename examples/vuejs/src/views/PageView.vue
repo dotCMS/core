@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import PageRenderer from '@/components/PageRenderer.vue';
 import { getDotCMSPage } from '@/utils/getDotCMSPage';
-import { isPageError, type PageResponse } from '@/utils/pageResponse';
+import { isPageError, type DotCMSPageContent } from '@/utils/pageResponse';
 
 const route = useRoute();
 const router = useRouter();
@@ -12,7 +12,7 @@ const router = useRouter();
 // shallowRef: keep the page response a plain object. A deep `ref` would wrap it
 // (and everything nested) in reactive Proxies, which the UVE bridge cannot
 // structured-clone when it posts the page to the editor.
-const pageResponse = shallowRef<PageResponse | null>(null);
+const pageResponse = shallowRef<DotCMSPageContent | null>(null);
 const notFound = ref(false);
 const loading = ref(true);
 

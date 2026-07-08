@@ -31,7 +31,9 @@ const Host = defineComponent({
             computed(() => ({
                 pageAsset: {} as never,
                 mode: 'production' as const,
-                userComponents: { Banner }
+                userComponents: { Banner },
+                isDevMode: true,
+                isAnalyticsActive: false
             }))
         );
 

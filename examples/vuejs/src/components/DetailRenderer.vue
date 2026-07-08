@@ -3,6 +3,7 @@ import { enableBlockEditorInline } from '@dotcms/uve';
 import {
     DotCMSBlockEditorRenderer,
     DotCMSEditableText,
+    toPlain,
     useEditableDotCMSPage,
     type CustomRenderer
 } from '@dotcms/vue';
@@ -14,14 +15,13 @@ import ProductBlock from '@/components/block-renderers/ProductBlock.vue';
 import Footer from '@/components/footer/Footer.vue';
 import Header from '@/components/header/Header.vue';
 import { useIsEditMode } from '@/composables/useIsEditMode';
-import { toPlain } from '@/lib/utils';
 import type { PageExtraContent } from '@/types/content';
 import { imageLoader } from '@/utils/imageLoader';
-import type { PageResponse } from '@/utils/pageResponse';
+import type { DotCMSPageContent } from '@/utils/pageResponse';
 
-const props = defineProps<{ pageResponse: PageResponse }>();
+const props = defineProps<{ pageResponse: DotCMSPageContent }>();
 
-const page = useEditableDotCMSPage(props.pageResponse as never);
+const page = useEditableDotCMSPage(props.pageResponse);
 const isEditMode = useIsEditMode();
 
 const pageAsset = computed(() => page.value?.pageAsset);

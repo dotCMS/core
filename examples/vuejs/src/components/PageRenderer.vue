@@ -7,17 +7,17 @@ import Footer from '@/components/footer/Footer.vue';
 import Header from '@/components/header/Header.vue';
 import { dotCMSMode } from '@/config/dotcms.config';
 import type { PageExtraContent } from '@/types/content';
-import type { PageResponse } from '@/utils/pageResponse';
+import type { DotCMSPageContent } from '@/utils/pageResponse';
 
 /**
  * Renders a resolved dotCMS page. Kept separate from the fetching view so
  * `useEditableDotCMSPage` receives a concrete page response synchronously in
  * setup (and re-inits the UVE bridge when the parent remounts it per route).
  */
-const props = defineProps<{ pageResponse: PageResponse }>();
+const props = defineProps<{ pageResponse: DotCMSPageContent }>();
 
 // The parent only mounts this component once the response is a valid page.
-const page = useEditableDotCMSPage(props.pageResponse as never);
+const page = useEditableDotCMSPage(props.pageResponse);
 
 const pageAsset = computed(() => page.value?.pageAsset);
 const content = computed(() => (page.value?.content ?? {}) as PageExtraContent);

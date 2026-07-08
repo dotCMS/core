@@ -3,7 +3,7 @@ import { computed, type Component } from 'vue';
 
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 
-import { useIsDevMode } from '../../composables/useIsDevMode';
+import { useDotCMSPageContext } from '../../contexts/dotcms-page.context';
 
 /**
  * @internal
@@ -15,7 +15,8 @@ const props = defineProps<{
     userNoComponent?: Component;
 }>();
 
-const isDevMode = useIsDevMode();
+const ctx = useDotCMSPageContext();
+const isDevMode = computed(() => ctx.value.isDevMode);
 const useUserComponent = computed(() => !!props.userNoComponent);
 </script>
 

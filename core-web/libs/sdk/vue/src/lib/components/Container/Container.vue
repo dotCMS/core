@@ -11,7 +11,6 @@ import {
 import ContainerNotFound from './ContainerNotFound.vue';
 import EmptyContainer from './EmptyContainer.vue';
 
-import { useIsDevMode } from '../../composables/useIsDevMode';
 import { useDotCMSPageContext } from '../../contexts/dotcms-page.context';
 import Contentlet from '../Contentlet/Contentlet.vue';
 
@@ -23,9 +22,8 @@ import Contentlet from '../Contentlet/Contentlet.vue';
 const props = defineProps<{ container: DotCMSColumnContainer }>();
 
 // ctx is a ComputedRef; reading `ctx.value.pageAsset` inside computeds keeps the
-// layout reactive to live UVE page updates.
+// layout reactive to live UVE page updates. Dev-mode is resolved once at the root.
 const ctx = useDotCMSPageContext();
-const isDevMode = useIsDevMode();
 
 const containerData = computed(() => getContainersData(ctx.value.pageAsset, props.container));
 const contentlets = computed(() =>
@@ -34,10 +32,16 @@ const contentlets = computed(() =>
 const isEmpty = computed(() => contentlets.value.length === 0);
 
 const dotAttributes = computed(() =>
-    isDevMode.value && containerData.value ? getDotContainerAttributes(containerData.value) : {}
+    ctx.value.isDevMode && containerData.value
+        ? getDotContainerAttributes(containerData.value)
+        : {}
 );
 
-const serializedContainer = computed(() => JSON.stringify(containerData.value));
+// Only serialized for the `data-dot-container` editor attribute, which is
+// emitted in dev mode only — skip the stringify entirely in live output.
+const serializedContainer = computed(() =>
+    ctx.value.isDevMode ? JSON.stringify(containerData.value) : ''
+);
 </script>
 
 <template>

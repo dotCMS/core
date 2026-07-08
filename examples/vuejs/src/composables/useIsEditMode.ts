@@ -1,19 +1,11 @@
-import { onMounted, ref, type Ref } from 'vue';
-
 import { UVE_MODE } from '@dotcms/types';
-import { getUVEState } from '@dotcms/uve';
+import { useDotCMSShowWhen } from '@dotcms/vue';
+import type { Ref } from 'vue';
 
 /**
  * Reports whether the app is currently rendered inside the UVE in edit mode.
- * Resolves after mount, so it is `false` during the initial (server-safe) render
- * and updates once the UVE state is available.
+ * A thin, readable alias over the SDK's {@link useDotCMSShowWhen}.
  */
-export function useIsEditMode(): Ref<boolean> {
-    const isEditMode = ref(false);
-
-    onMounted(() => {
-        isEditMode.value = getUVEState()?.mode === UVE_MODE.EDIT;
-    });
-
-    return isEditMode;
+export function useIsEditMode(): Readonly<Ref<boolean>> {
+    return useDotCMSShowWhen(UVE_MODE.EDIT);
 }

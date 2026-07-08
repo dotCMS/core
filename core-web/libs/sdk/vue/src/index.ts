@@ -4,6 +4,9 @@
 export { useEditableDotCMSPage } from './lib/composables/useEditableDotCMSPage';
 export { useDotCMSShowWhen } from './lib/composables/useDotCMSShowWhen';
 
+// Utilities
+export { toPlain } from './lib/utils/toPlain';
+
 // Components
 export { default as DotCMSShow } from './lib/components/DotCMSShow/DotCMSShow.vue';
 export { default as DotCMSLayoutBody } from './lib/components/DotCMSLayoutBody/DotCMSLayoutBody.vue';

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 import { editContentlet } from '@dotcms/uve';
+import { toPlain } from '@dotcms/vue';
 
 import { useIsEditMode } from '@/composables/useIsEditMode';
-import { toPlain } from '@/lib/utils';
 
 /** Opens the contentlet editor in the UVE. Only visible in edit mode. */
 const props = defineProps<{ contentlet: Partial<DotCMSBasicContentlet> }>();

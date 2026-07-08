@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends DotCMSBasicContentlet">
 import Editor from '@tinymce/tinymce-vue';
-import { computed, onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';

@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
 import { EMPTY_CONTAINER_STYLE_REACT } from '@dotcms/uve/internal';
 
-import { useIsDevMode } from '../../composables/useIsDevMode';
+import { useDotCMSPageContext } from '../../contexts/dotcms-page.context';
 
 /**
  * @internal
@@ -10,7 +12,8 @@ import { useIsDevMode } from '../../composables/useIsDevMode';
  */
 defineOptions({ inheritAttrs: false });
 
-const isDevMode = useIsDevMode();
+const ctx = useDotCMSPageContext();
+const isDevMode = computed(() => ctx.value.isDevMode);
 </script>
 
 <template>

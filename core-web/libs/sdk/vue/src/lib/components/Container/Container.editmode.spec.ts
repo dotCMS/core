@@ -22,7 +22,9 @@ const Host = defineComponent({
             computed(() => ({
                 pageAsset: MOCK_PAGE_ASSET,
                 mode: 'production' as const,
-                userComponents: { Banner }
+                userComponents: { Banner },
+                isDevMode: true,
+                isAnalyticsActive: false
             }))
         );
 

@@ -9,8 +9,6 @@ import {
 } from '@dotcms/uve/internal';
 
 import { useCheckVisibleContent } from '../../composables/useCheckVisibleContent';
-import { useIsAnalyticsActive } from '../../composables/useIsAnalyticsActive';
-import { useIsDevMode } from '../../composables/useIsDevMode';
 import { useDotCMSPageContext } from '../../contexts/dotcms-page.context';
 import { CONTENTLET_CLASS } from './constants';
 
@@ -28,11 +26,10 @@ const props = defineProps<{
     container: string;
 }>();
 
-// ctx is a ComputedRef; reading `ctx.value.userComponents` inside computeds keeps
-// the component mapping reactive to live UVE updates.
+// ctx is a ComputedRef; dev-mode and analytics are resolved once at the layout
+// root and shared here, so this contentlet does no per-instance re-resolution.
 const ctx = useDotCMSPageContext();
-const isDevMode = useIsDevMode();
-const isAnalyticsActive = useIsAnalyticsActive();
+const isDevMode = computed(() => ctx.value.isDevMode);
 
 // Measure via the component's own root element instead of a template ref.
 // The wrapper spreads `dotAttributes`, and attaching any ref there triggers
@@ -46,14 +43,14 @@ const haveContent = useCheckVisibleContent(
 // In edit mode we emit the full editor metadata. In live mode we strip it,
 // keeping only the minimal set Analytics needs (and only while it is active).
 const dotAttributes = computed<Record<string, unknown>>(() => {
-    if (isDevMode.value) {
+    if (ctx.value.isDevMode) {
         return {
             ...getDotContentletAttributes(props.contentlet, props.container),
             'data-dot-object': 'contentlet'
         };
     }
 
-    if (isAnalyticsActive.value) {
+    if (ctx.value.isAnalyticsActive) {
         return getAnalyticsContentletAttributes(props.contentlet);
     }
 

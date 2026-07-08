@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 import { editContentlet } from '@dotcms/uve';
+import { toPlain } from '@dotcms/vue';
 
 import { useIsEditMode } from '@/composables/useIsEditMode';
-import { toPlain } from '@/lib/utils';
 import type { Blog } from '@/types/content';
 import { formatDate } from '@/utils/formatDate';
 import { imageLoader } from '@/utils/imageLoader';

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 
 import { EMPTY_CONTAINER_STYLE_REACT } from '@dotcms/uve/internal';
 
-import { useIsDevMode } from '../../composables/useIsDevMode';
+import { useDotCMSPageContext } from '../../contexts/dotcms-page.context';
 
 /** @internal Dev-only message shown when a container cannot be found on the page. */
 const props = defineProps<{ identifier: string }>();
 
-const isDevMode = useIsDevMode();
+const ctx = useDotCMSPageContext();
+const isDevMode = computed(() => ctx.value.isDevMode);
 
 onMounted(() => {
     if (isDevMode.value) {

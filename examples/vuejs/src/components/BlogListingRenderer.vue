@@ -6,11 +6,11 @@ import BlogCard from '@/components/BlogCard.vue';
 import Header from '@/components/header/Header.vue';
 import { dotCMSClient } from '@/lib/dotCMSClient';
 import type { Blog, PageExtraContent } from '@/types/content';
-import type { PageResponse } from '@/utils/pageResponse';
+import type { DotCMSPageContent } from '@/utils/pageResponse';
 
-const props = defineProps<{ pageResponse: PageResponse }>();
+const props = defineProps<{ pageResponse: DotCMSPageContent }>();
 
-const page = useEditableDotCMSPage(props.pageResponse as never);
+const page = useEditableDotCMSPage(props.pageResponse);
 const content = computed(() => (page.value?.content ?? {}) as PageExtraContent);
 const navigation = computed(() => content.value.navigation);
 const allBlogs = computed(() => content.value.blogs ?? []);

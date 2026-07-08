@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 
-import { useIsDevMode } from '../../../composables/useIsDevMode';
+import { useDotCMSPageContext } from '../../../contexts/dotcms-page.context';
 
 /** Dev-only message shown when the page is missing its `layout.body`. */
-const isDevMode = useIsDevMode();
+const ctx = useDotCMSPageContext();
+const isDevMode = computed(() => ctx.value.isDevMode);
 
 onMounted(() => {
     console.warn('Missing required layout.body property in page');

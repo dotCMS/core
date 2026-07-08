@@ -2,7 +2,6 @@ import type { BlockEditorNode } from '@dotcms/types';
 
 import type { Component, CSSProperties } from 'vue';
 
-
 /**
  * Props that every custom block renderer receives.
  *
@@ -22,10 +21,11 @@ export interface CustomRendererProps<TData = unknown> {
 }
 
 /**
- * A custom renderer component — a Vue component accepting a `node` prop and a
- * default slot with the rendered children.
+ * A custom renderer component — a Vue component whose props include the `node`
+ * (typed via {@link CustomRendererProps}) plus a default slot with the rendered
+ * children.
  */
-export type CustomRendererComponent = Component;
+export type CustomRendererComponent = Component<CustomRendererProps>;
 
 /**
  * Map of block type name to the custom renderer component that should render it.

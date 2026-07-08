@@ -22,6 +22,17 @@ export interface DotCMSPageContextValue {
      * content types.
      */
     userComponents: Record<string, Component>;
+    /**
+     * Whether editor metadata (`data-dot-*`, placeholders, fallbacks) should be
+     * emitted. Resolved once at the layout root and shared with the whole tree
+     * so it isn't recomputed per contentlet.
+     */
+    isDevMode: boolean;
+    /**
+     * Whether dotCMS Analytics is active. Resolved once at the layout root (a
+     * single `dotcms:analytics:ready` listener) and shared with the tree.
+     */
+    isAnalyticsActive: boolean;
 }
 
 /**
@@ -49,7 +60,9 @@ export function provideDotCMSPageContext(value: ComputedRef<DotCMSPageContextVal
 const EMPTY_CONTEXT: DotCMSPageContextValue = {
     pageAsset: {} as DotCMSPageAsset,
     mode: 'production',
-    userComponents: {}
+    userComponents: {},
+    isDevMode: false,
+    isAnalyticsActive: false
 };
 
 /**
