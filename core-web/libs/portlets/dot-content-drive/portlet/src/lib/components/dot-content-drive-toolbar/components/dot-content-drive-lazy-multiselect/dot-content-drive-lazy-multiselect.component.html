@@ -1,5 +1,5 @@
 <div class="flex w-72 flex-col" data-testid="lazy-multiselect">
-    <div class="px-3 pb-2 pt-3">
+    <div class="px-3 pt-3 pb-2">
         <p-iconfield class="w-full">
             <p-inputicon class="pi pi-search" />
             <input
@@ -16,7 +16,7 @@
     <p-listbox
         [(ngModel)]="$model"
         [ngModelOptions]="{ standalone: true }"
-        [options]="$options()"
+        [options]="$state.options()"
         [multiple]="true"
         [checkbox]="true"
         [showToggleAll]="false"
@@ -38,7 +38,7 @@
                 class="flex items-center justify-center gap-2 py-4 text-slate-500"
                 [style.height]="SCROLL_HEIGHT"
                 data-testid="lazy-multiselect-empty">
-                @if ($loading()) {
+                @if ($state.loading()) {
                     <i class="pi pi-spin pi-spinner text-2xl"></i>
                 } @else {
                     <span class="text-sm">{{ 'content-drive.field-filter.more.empty' | dm }}</span>

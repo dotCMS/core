@@ -1,3 +1,4 @@
+import { patchState, signalState } from '@ngrx/signals';
 import { Observable, Subject } from 'rxjs';
 
 import {
@@ -8,8 +9,7 @@ import {
     input,
     linkedSignal,
     OnInit,
-    output,
-    signal
+    output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +22,10 @@ import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { CHIP_FILTER_LISTBOX_PT, DotFilterListItemComponent } from '@dotcms/portlets/content-drive/ui';
+import {
+    CHIP_FILTER_LISTBOX_PT,
+    DotFilterListItemComponent
+} from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
@@ -53,6 +56,14 @@ export type DotLazyMultiselectLoader = (params: {
 const ITEM_HEIGHT = 40.6;
 /** Page size requested from the loader. */
 const PER_PAGE = 20;
+
+interface State {
+    options: DotLazyMultiselectOption[];
+    loading: boolean;
+    filter: string;
+    canLoadMore: boolean;
+    currentPage: number;
+}
 
 /**
  * Presentational multi-select with server-side search + infinite scroll. It owns only the option
@@ -92,15 +103,17 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
     protected readonly SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
     protected readonly ITEM_HEIGHT = ITEM_HEIGHT;
 
-    protected readonly $options = signal<DotLazyMultiselectOption[]>([]);
-    protected readonly $loading = signal(false);
-    protected readonly $filter = signal('');
+    readonly $state = signalState<State>({
+        options: [],
+        loading: false,
+        filter: '',
+        canLoadMore: true,
+        currentPage: 1
+    });
 
     /** Selected values bound to the listbox; re-seeds when the input changes. */
     protected readonly $model = linkedSignal<string[]>(() => [...this.$selectedValues()]);
 
-    #page = 1;
-    #canLoadMore = true;
     /** Cancels an in-flight load when a newer search supersedes it. */
     readonly #cancel$ = new Subject<void>();
     readonly #search$ = new Subject<string>();
@@ -110,10 +123,12 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
             .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed(this.#destroyRef))
             .subscribe((filter) => {
                 this.#cancel$.next();
-                this.$filter.set(filter);
-                this.#page = 1;
-                this.#canLoadMore = true;
-                this.$options.set([]);
+                patchState(this.$state, {
+                    filter,
+                    currentPage: 1,
+                    canLoadMore: true,
+                    options: []
+                });
                 this.#load();
             });
     }
@@ -134,29 +149,39 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
 
         // Prefetch the next page as soon as the user reaches any row on the current one.
         const nextPage = Math.ceil(last / PER_PAGE) + 1;
-        if (!this.#canLoadMore || nextPage <= this.#page || this.$loading()) {
+        if (
+            !this.$state.canLoadMore() ||
+            nextPage <= this.$state.currentPage() ||
+            this.$state.loading()
+        ) {
             return;
         }
 
-        this.#page = nextPage;
+        patchState(this.$state, { currentPage: nextPage });
         this.#load(true);
     }
 
     protected onChange(values: string[]): void {
-        const byValue = new Map(this.$options().map((option) => [option.value, option]));
+        const byValue = new Map(this.$state.options().map((option) => [option.value, option]));
         this.selectionChange.emit(
             (values ?? []).map((value) => byValue.get(value) ?? { label: value, value })
         );
     }
 
     #load(append = false): void {
-        this.$loading.set(true);
-        this.$loadPage()({ page: this.#page, perPage: PER_PAGE, filter: this.$filter() })
+        patchState(this.$state, { loading: true });
+        this.$loadPage()({
+            page: this.$state.currentPage(),
+            perPage: PER_PAGE,
+            filter: this.$state.filter()
+        })
             .pipe(take(1), takeUntil(this.#cancel$), takeUntilDestroyed(this.#destroyRef))
             .subscribe(({ options, hasMore }) => {
-                this.$options.update((prev) => (append ? [...prev, ...options] : options));
-                this.#canLoadMore = hasMore;
-                this.$loading.set(false);
+                patchState(this.$state, {
+                    options: append ? [...this.$state.options(), ...options] : options,
+                    canLoadMore: hasMore,
+                    loading: false
+                });
             });
     }
 }
