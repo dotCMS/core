@@ -9,28 +9,39 @@ import { useDotCMSPageContext } from '../contexts/dotcms-page.context';
 /**
  * @internal
  *
- * Composable that determines whether the current render is in "development"
- * mode — i.e. whether editor metadata (`data-dot-*` attributes, empty-state
- * placeholders, fallback components) should be emitted.
+ * Resolve whether we are rendering in "development" mode — i.e. whether editor
+ * metadata (`data-dot-*` attributes, empty-state placeholders, fallback
+ * components) should be emitted. Inside the UVE it follows the UVE state (dev
+ * when mode is EDIT); otherwise it follows the renderer `mode` from context.
+ */
+function resolveDevMode(mode: string | undefined): boolean {
+    const uveMode = getUVEState()?.mode;
+
+    if (uveMode) {
+        return uveMode === UVE_MODE.EDIT;
+    }
+
+    return mode === DEVELOPMENT_MODE;
+}
+
+/**
+ * @internal
  *
- * Inside the UVE it follows the UVE state (dev when mode is EDIT); outside the
- * UVE it follows the renderer `mode` from the page context.
+ * Composable exposing the development-mode flag as a ref.
+ *
+ * It resolves **synchronously during setup** (so the editor `data-dot-*`
+ * attributes are present on the first render, which the UVE relies on to attach
+ * its tooling), and re-checks on mount to cover any environment where `window`
+ * / the UVE state only becomes available after the component mounts.
  *
  * @returns a ref that is `true` when in development/edit mode
  */
 export function useIsDevMode(): Ref<boolean> {
     const { mode } = useDotCMSPageContext();
-    const isDevMode = ref(mode === DEVELOPMENT_MODE);
+    const isDevMode = ref(resolveDevMode(mode));
 
     onMounted(() => {
-        // Inside UVE we rely on the UVE state to determine development mode.
-        if (getUVEState()?.mode) {
-            isDevMode.value = getUVEState()?.mode === UVE_MODE.EDIT;
-
-            return;
-        }
-
-        isDevMode.value = mode === DEVELOPMENT_MODE;
+        isDevMode.value = resolveDevMode(mode);
     });
 
     return isDevMode;
