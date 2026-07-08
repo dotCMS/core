@@ -28,8 +28,8 @@ const props = defineProps<{
     container: string;
 }>();
 
-// Do not destructure: reading `ctx.userComponents` inside computeds keeps the
-// component mapping reactive to live UVE updates.
+// ctx is a ComputedRef; reading `ctx.value.userComponents` inside computeds keeps
+// the component mapping reactive to live UVE updates.
 const ctx = useDotCMSPageContext();
 const isDevMode = useIsDevMode();
 const isAnalyticsActive = useIsAnalyticsActive();
@@ -65,9 +65,11 @@ const style = computed(() =>
 );
 
 const userComponent = computed<Component | undefined>(
-    () => ctx.userComponents[props.contentlet?.contentType]
+    () => ctx.value.userComponents[props.contentlet?.contentType]
 );
-const noComponent = computed<Component | undefined>(() => ctx.userComponents[CUSTOM_NO_COMPONENT]);
+const noComponent = computed<Component | undefined>(
+    () => ctx.value.userComponents[CUSTOM_NO_COMPONENT]
+);
 </script>
 
 <template>

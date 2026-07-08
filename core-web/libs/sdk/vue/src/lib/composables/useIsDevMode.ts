@@ -37,11 +37,11 @@ function resolveDevMode(mode: string | undefined): boolean {
  * @returns a ref that is `true` when in development/edit mode
  */
 export function useIsDevMode(): Ref<boolean> {
-    const { mode } = useDotCMSPageContext();
-    const isDevMode = ref(resolveDevMode(mode));
+    const ctx = useDotCMSPageContext();
+    const isDevMode = ref(resolveDevMode(ctx.value.mode));
 
     onMounted(() => {
-        isDevMode.value = resolveDevMode(mode);
+        isDevMode.value = resolveDevMode(ctx.value.mode);
     });
 
     return isDevMode;

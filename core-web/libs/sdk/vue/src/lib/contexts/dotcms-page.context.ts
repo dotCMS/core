@@ -1,4 +1,4 @@
-import { inject, provide, type InjectionKey, type Component } from 'vue';
+import { computed, inject, provide, type Component, type ComputedRef, type InjectionKey } from 'vue';
 
 import type { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
@@ -27,34 +27,43 @@ export interface DotCMSPageContextValue {
 /**
  * Injection key for the dotCMS page context.
  *
+ * The value is a `ComputedRef` so that live UVE updates to the page (a new page
+ * asset arriving via `uve-set-page-data`) propagate to every consumer that reads
+ * `ctx.value` — the whole layout tree re-renders reactively.
+ *
  * @internal
  */
-export const DOTCMS_PAGE_CONTEXT: InjectionKey<DotCMSPageContextValue> =
+export const DOTCMS_PAGE_CONTEXT: InjectionKey<ComputedRef<DotCMSPageContextValue>> =
     Symbol('DotCMSPageContext');
 
 /**
  * Provides the dotCMS page context to descendant components.
  *
  * @internal
- * @param value the context value to expose to children
+ * @param value a computed producing the current context value
  */
-export function provideDotCMSPageContext(value: DotCMSPageContextValue): void {
+export function provideDotCMSPageContext(value: ComputedRef<DotCMSPageContextValue>): void {
     provide(DOTCMS_PAGE_CONTEXT, value);
 }
 
+const EMPTY_CONTEXT: DotCMSPageContextValue = {
+    pageAsset: {} as DotCMSPageAsset,
+    mode: 'production',
+    userComponents: {}
+};
+
 /**
- * Injects the dotCMS page context.
+ * Injects the dotCMS page context as a reactive `ComputedRef`.
  *
  * Falls back to an empty context when used outside of a {@link DotCMSLayoutBody},
  * mirroring the default value the React context is created with.
  *
  * @internal
- * @returns the current page context value
+ * @returns the current page context value as a computed ref
  */
-export function useDotCMSPageContext(): DotCMSPageContextValue {
-    return inject(DOTCMS_PAGE_CONTEXT, {
-        pageAsset: {} as DotCMSPageAsset,
-        mode: 'production',
-        userComponents: {}
-    });
+export function useDotCMSPageContext(): ComputedRef<DotCMSPageContextValue> {
+    return inject(
+        DOTCMS_PAGE_CONTEXT,
+        computed(() => EMPTY_CONTEXT)
+    );
 }

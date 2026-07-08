@@ -20,19 +20,15 @@ const props = withDefaults(defineProps<DotCMSLayoutBodyProps>(), {
     mode: 'production'
 });
 
-provideDotCMSPageContext({
-    // `page` is reactive on the parent; the context reads it lazily via the
-    // getter so live UVE updates flow through to the layout tree.
-    get pageAsset() {
-        return props.page;
-    },
-    get mode() {
-        return props.mode;
-    },
-    get userComponents() {
-        return props.components;
-    }
-});
+// Provide the context as a computed so live UVE page updates (a new page asset
+// arriving via `uve-set-page-data`) propagate to the whole layout tree.
+provideDotCMSPageContext(
+    computed(() => ({
+        pageAsset: props.page,
+        mode: props.mode,
+        userComponents: props.components
+    }))
+);
 
 const rows = computed(() => props.page?.layout?.body?.rows);
 </script>

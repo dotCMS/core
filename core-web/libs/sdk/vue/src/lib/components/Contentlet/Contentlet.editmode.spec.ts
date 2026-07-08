@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, nextTick } from 'vue';
+import { computed, defineComponent, h, nextTick } from 'vue';
 
 import Contentlet from './Contentlet.vue';
 
@@ -27,11 +27,13 @@ const CONTENTLET = {
 
 const Host = defineComponent({
     setup() {
-        provideDotCMSPageContext({
-            pageAsset: {} as never,
-            mode: 'production',
-            userComponents: { Banner }
-        });
+        provideDotCMSPageContext(
+            computed(() => ({
+                pageAsset: {} as never,
+                mode: 'production' as const,
+                userComponents: { Banner }
+            }))
+        );
 
         return () =>
             h(Contentlet, { contentlet: CONTENTLET, container: '{"identifier":"cont-1"}' });

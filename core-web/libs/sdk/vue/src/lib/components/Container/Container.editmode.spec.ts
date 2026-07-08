@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, nextTick } from 'vue';
+import { computed, defineComponent, h, nextTick } from 'vue';
 
 import Container from './Container.vue';
 
@@ -18,11 +18,13 @@ const Banner = defineComponent({
 
 const Host = defineComponent({
     setup() {
-        provideDotCMSPageContext({
-            pageAsset: MOCK_PAGE_ASSET,
-            mode: 'production',
-            userComponents: { Banner }
-        });
+        provideDotCMSPageContext(
+            computed(() => ({
+                pageAsset: MOCK_PAGE_ASSET,
+                mode: 'production' as const,
+                userComponents: { Banner }
+            }))
+        );
 
         return () => h(Container, { container: MOCK_CONTAINER });
     }

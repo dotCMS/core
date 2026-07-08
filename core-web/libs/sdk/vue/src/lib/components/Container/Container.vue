@@ -22,13 +22,15 @@ import Contentlet from '../Contentlet/Contentlet.vue';
  */
 const props = defineProps<{ container: DotCMSColumnContainer }>();
 
-// Do not destructure: reading `ctx.pageAsset` inside computeds keeps the layout
-// reactive to live UVE page updates.
+// ctx is a ComputedRef; reading `ctx.value.pageAsset` inside computeds keeps the
+// layout reactive to live UVE page updates.
 const ctx = useDotCMSPageContext();
 const isDevMode = useIsDevMode();
 
-const containerData = computed(() => getContainersData(ctx.pageAsset, props.container));
-const contentlets = computed(() => getContentletsInContainer(ctx.pageAsset, props.container));
+const containerData = computed(() => getContainersData(ctx.value.pageAsset, props.container));
+const contentlets = computed(() =>
+    getContentletsInContainer(ctx.value.pageAsset, props.container)
+);
 const isEmpty = computed(() => contentlets.value.length === 0);
 
 const dotAttributes = computed(() =>

@@ -105,8 +105,11 @@ export function useEditableDotCMSPage<T extends DotCMSExtendedPageResponse>(
     let destroyUVESubscriptions: (() => void) | undefined;
     let unsubscribeContentChanges: (() => void) | undefined;
 
+    // Mirror the React SDK's structure: one effect initializes the UVE (guarded
+    // by getUVEState), and a SEPARATE, UNCONDITIONAL subscription listens for
+    // content changes. Keeping them separate ensures the content-change listener
+    // is always registered even if init returns early.
     onMounted(() => {
-        // Only wire up the UVE when we are actually inside the editor iframe.
         if (!getUVEState()) {
             return;
         }
@@ -134,7 +137,12 @@ export function useEditableDotCMSPage<T extends DotCMSExtendedPageResponse>(
         if (plainResponse.styleEditorSchemas?.length) {
             registerStyleEditorSchemas(plainResponse.styleEditorSchemas);
         }
+    });
 
+    // Subscribe to content changes unconditionally (matches React's `[]` effect).
+    // The editor posts `uve-set-page-data`; swap in the new response so the
+    // reactive `response` ref re-renders the page.
+    onMounted(() => {
         ({ unsubscribe: unsubscribeContentChanges } = createUVESubscription(
             UVEEventType.CONTENT_CHANGES,
             (payload: DotCMSComposedPageResponse<T>) => {
