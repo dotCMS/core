@@ -1,0 +1,45 @@
+name: 'Skill Lint — PR validate'
+
+# Validates first-party dotCMS skills on PRs that touch them: dot-<domain>
+# naming, required frontmatter (owner/status), supersedes<->superseded-by
+# consistency, and CATALOG.md freshness. Sub-second job, zero npm deps.
+# Grandfathered legacy skills are exempt until the rename PR (see
+# .claude/skills/skills.config.json). Standalone for now; can fold into
+# cicd_1-pr.yml later.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.claude/skills/**'
+      - '.claude/tools/**'
+      - '.github/workflows/cicd_pr_skill-lint.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint skills
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .claude/skills
+            .claude/tools
+            .nvmrc
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Run skill-lint
+        run: node .claude/tools/skill-lint.mjs

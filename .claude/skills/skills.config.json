@@ -1,0 +1,18 @@
+{
+  "vendorPrefix": "dot-",
+  "approvedDomains": ["issue", "pr", "release", "cicd", "content", "ui"],
+  "validStatuses": ["experimental", "active", "superseded"],
+  "requiredFields": ["name", "description", "owner", "status"],
+  "grandfathered": [
+    "check-release-rollback",
+    "cicd-diagnostics",
+    "create-issue",
+    "dotcms-github-issues",
+    "lts-backport",
+    "sdk-analytics",
+    "skill-doctor",
+    "triage",
+    "vtl-migration"
+  ],
+  "_note": "Single source of truth for skill governance. 'grandfathered' skills predate the dot- convention and are exempt from naming + owner/status checks until the rename PR removes them from this list. See CONTRIBUTING.md."
+}
