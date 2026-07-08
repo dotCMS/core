@@ -1,4 +1,5 @@
 @let historicalVersionInode = $historicalVersionInode();
+@let loadingVersionInode = $loadingVersionInode();
 
 <section
     class="flex h-full min-h-0 flex-col overflow-y-auto px-4"
@@ -39,6 +40,7 @@
                             ? historicalVersionInode === item.inode
                             : item.working
                     "
+                    [isLoadingVersion]="loadingVersionInode === item.inode"
                     (click)="
                         timelineItemAction.emit({
                             type: 'view',

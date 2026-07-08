@@ -90,6 +90,13 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
     $isActive = input<boolean>(false, { alias: 'isActive' });
 
     /**
+     * Whether this item's version is currently being fetched (after a
+     * view/compare click), shown as an inline spinner
+     * @readonly
+     */
+    $isLoadingVersion = input<boolean>(false, { alias: 'isLoadingVersion' });
+
+    /**
      * Event emitted when an action is triggered on the timeline item
      */
     actionTriggered = output<DotHistoryTimelineItemAction>();

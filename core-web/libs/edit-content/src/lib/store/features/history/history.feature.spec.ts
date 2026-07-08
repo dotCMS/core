@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -1380,6 +1380,52 @@ describe('HistoryFeature', () => {
             expect(store.compareContentlet()).toBeNull();
             expect(store.uiState().view).toBe('form');
         });
+    });
+
+    describe('loadingVersionInode', () => {
+        it('should expose the inode while a version is being fetched and clear it on success', fakeAsync(() => {
+            const response$ = new Subject<DotCMSContentlet>();
+            dotContentletService.getContentletByInode.mockReturnValue(response$);
+
+            store.loadVersionContent('loading-inode');
+
+            expect(store.loadingVersionInode()).toBe('loading-inode');
+
+            response$.next({ ...mockContentlet, inode: 'loading-inode' });
+            response$.complete();
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+        }));
+
+        it('should track the inode while updating the comparison and clear it on success', fakeAsync(() => {
+            const response$ = new Subject<DotCMSContentlet>();
+            dotContentletService.getContentletByInode.mockReturnValue(response$);
+
+            store.handleHistoryAction({
+                type: DotHistoryTimelineItemActionType.COMPARE,
+                item: { ...mockContentletVersion, inode: 'compare-loading-inode' }
+            });
+
+            expect(store.loadingVersionInode()).toBe('compare-loading-inode');
+
+            response$.next({ ...mockContentlet, inode: 'compare-loading-inode' });
+            response$.complete();
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+        }));
+
+        it('should clear the loading inode when the fetch fails', fakeAsync(() => {
+            dotContentletService.getContentletByInode.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.loadVersionContent('loading-inode');
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+        }));
     });
 
     describe('compareData', () => {

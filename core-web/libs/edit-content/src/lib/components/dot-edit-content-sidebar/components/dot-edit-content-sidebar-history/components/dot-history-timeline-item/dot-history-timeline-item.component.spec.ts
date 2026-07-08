@@ -144,6 +144,17 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
 
+        it('should show a spinner while the version is being fetched', () => {
+            spectator.setInput('isLoadingVersion', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('version-loading-spinner'))).toBeTruthy();
+        });
+
+        it('should not show a spinner when the version is not being fetched', () => {
+            expect(spectator.query(byTestId('version-loading-spinner'))).toBeFalsy();
+        });
+
         it('should show "Current" text for working items', () => {
             spectator.setInput('item', { ...mockVersionItem, working: true, live: false });
             spectator.detectChanges();

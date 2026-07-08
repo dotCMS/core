@@ -223,6 +223,7 @@ export function withHistory() {
                  */
                 const loadVersionContent = rxMethod<string>(
                     pipe(
+                        tap((inode) => patchState(store, { loadingVersionInode: inode })),
                         switchMap((inode) =>
                             dotContentletService.getContentletByInode(inode).pipe(
                                 tapResponse({
@@ -241,11 +242,13 @@ export function withHistory() {
                                             contentlet: versionContent,
                                             compareContentlet: null,
                                             isViewingHistoricalVersion: true,
-                                            historicalVersionInode: inode
+                                            historicalVersionInode: inode,
+                                            loadingVersionInode: null
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         // Handle load errors - show error toast and maintain current version
+                                        patchState(store, { loadingVersionInode: null });
                                         errorManager.handle(error);
                                         messageService.add({
                                             severity: 'error',
@@ -295,6 +298,7 @@ export function withHistory() {
 
                 const loadCompareVersionContent = rxMethod<string>(
                     pipe(
+                        tap((inode) => patchState(store, { loadingVersionInode: inode })),
                         switchMap((inode) =>
                             dotContentletService.getContentletByInode(inode).pipe(
                                 tapResponse({
@@ -311,11 +315,13 @@ export function withHistory() {
                                                 ? store.originalContentlet()
                                                 : currentContentlet,
                                             isViewingHistoricalVersion: false,
-                                            historicalVersionInode: inode
+                                            historicalVersionInode: inode,
+                                            loadingVersionInode: null
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         // Handle load errors - show error toast and maintain current version
+                                        patchState(store, { loadingVersionInode: null });
                                         errorManager.handle(error);
                                         messageService.add({
                                             severity: 'error',

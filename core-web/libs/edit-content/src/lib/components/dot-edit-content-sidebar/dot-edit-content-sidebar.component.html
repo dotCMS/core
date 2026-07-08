@@ -195,6 +195,7 @@
                     [contentIdentifier]="$store.contentlet()?.identifier || ''"
                     [historyPagination]="$versionsPagination()"
                     [historicalVersionInode]="$store.historicalVersionInode()"
+                    [loadingVersionInode]="$store.loadingVersionInode()"
                     [pushPublishHistoryItems]="$pushPublishHistoryItems()"
                     [pushPublishHistoryPagination]="$pushPublishHistoryPagination()"
                     (historyPageChange)="onVersionsPageChange($event)"

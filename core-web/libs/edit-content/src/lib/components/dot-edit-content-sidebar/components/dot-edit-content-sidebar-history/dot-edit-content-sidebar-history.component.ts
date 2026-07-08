@@ -86,6 +86,13 @@ export class DotEditContentSidebarHistoryComponent {
     $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
 
     /**
+     * Inode of the version currently being fetched after a view/compare click,
+     * used to show inline loading feedback on the corresponding timeline item
+     * @readonly
+     */
+    $loadingVersionInode = input<string | null>(null, { alias: 'loadingVersionInode' });
+
+    /**
      * List of push publish history items to display (accumulated items from store)
      * @readonly
      */
