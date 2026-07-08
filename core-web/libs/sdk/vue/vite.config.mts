@@ -41,8 +41,11 @@ export default defineConfig(() => ({
             // Don't forget to update your package.json as well.
             formats: ['es' as const]
         },
-        rolldownOptions: {
-            // External packages that should not be bundled into the library.
+        // `vue` MUST be external (a peer dependency). If it is bundled, the SDK
+        // ships its own copy of Vue's reactivity, which is a *different* instance
+        // from the host app's — so refs created inside the SDK never trigger the
+        // app's watchers/computeds (live UVE updates silently do nothing).
+        rollupOptions: {
             external: [
                 'vue',
                 '@tinymce/tinymce-vue',
@@ -51,7 +54,10 @@ export default defineConfig(() => ({
                 '@dotcms/uve/internal',
                 '@dotcms/types',
                 '@dotcms/types/internal'
-            ]
+            ],
+            output: {
+                globals: { vue: 'Vue' }
+            }
         }
     },
     test: {

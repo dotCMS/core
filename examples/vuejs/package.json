@@ -15,6 +15,7 @@
         "@dotcms/types": "latest",
         "@dotcms/uve": "latest",
         "@dotcms/vue": "latest",
+        "@tinymce/tinymce-vue": "^6.1.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "tailwind-merge": "^3.0.0",
