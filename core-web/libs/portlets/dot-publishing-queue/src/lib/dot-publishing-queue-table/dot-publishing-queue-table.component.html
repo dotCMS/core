@@ -165,10 +165,30 @@
                         </div>
                     </td>
                     <td class="text-right whitespace-nowrap" data-testid="pq-bundles-items">
-                        <p-tag
-                            severity="secondary"
-                            [rounded]="false"
-                            [value]="(row.assetCount ?? 0).toString()" />
+                        @if ((row.assetCount ?? 0) > 0) {
+                            <button
+                                type="button"
+                                class="cursor-pointer border-none bg-transparent p-0"
+                                [pTooltip]="'publishing-queue.history.kebab.view-contents' | dm"
+                                tooltipPosition="top"
+                                [attr.aria-label]="
+                                    'publishing-queue.history.kebab.view-contents' | dm
+                                "
+                                (click)="
+                                    $event.stopPropagation(); store.openAssetList(row.bundleId)
+                                "
+                                data-testid="pq-bundles-items-btn">
+                                <p-tag
+                                    severity="secondary"
+                                    [rounded]="false"
+                                    [value]="(row.assetCount ?? 0).toString()" />
+                            </button>
+                        } @else {
+                            <p-tag
+                                severity="secondary"
+                                [rounded]="false"
+                                [value]="(row.assetCount ?? 0).toString()" />
+                        }
                     </td>
                     <td
                         class="text-color-secondary whitespace-nowrap"
