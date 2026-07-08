@@ -5,10 +5,12 @@ import {
     Component,
     computed,
     DestroyRef,
+    effect,
     inject,
     input,
     linkedSignal,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +24,12 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { debounceTime, filter, map, take } from 'rxjs/operators';
 
-import { DotCategoriesService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import {
+    DotCategoriesService,
+    DotContentletService,
+    DotMessageService,
+    DotTagsService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotSelectExistingContentComponent,
@@ -115,6 +122,7 @@ export class DotContentDriveFieldFilterComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #tagsService = inject(DotTagsService);
     readonly #categoriesService = inject(DotCategoriesService);
+    readonly #contentletService = inject(DotContentletService);
     readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -404,6 +412,37 @@ export class DotContentDriveFieldFilterComponent {
         this.#textInput$
             .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed())
             .subscribe((value) => this.#patch(value));
+
+        // Resolve the related contentlet for a stored identifier we don't hold yet (cold URL
+        // restore). Caching it fills the chip title and lets the picker preselect it by inode.
+        // Read every signal this effect depends on up front — a guard placed before a signal read
+        // would drop that signal as a dependency, so the effect wouldn't re-run when it changes.
+        effect(() => {
+            const control = this.$control();
+            const identifier = this.$rawValue();
+            const resolved = this.#relationshipItemById();
+
+            if (control !== 'relationship' || !identifier || resolved[identifier]) {
+                return;
+            }
+
+            untracked(() => this.#resolveRelationshipItem(identifier));
+        });
+    }
+
+    /** Fetches and caches the related contentlet by identifier (the `/content/{id}` endpoint accepts one). */
+    #resolveRelationshipItem(identifier: string): void {
+        this.#contentletService
+            .getContentletByInode(identifier)
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((contentlet) => {
+                if (contentlet) {
+                    this.#relationshipItemById.update((cache) => ({
+                        ...cache,
+                        [identifier]: contentlet
+                    }));
+                }
+            });
     }
 
     protected onTextInput(value: string): void {
@@ -478,9 +517,14 @@ export class DotContentDriveFieldFilterComponent {
             return;
         }
 
-        // Single selection (the backend supports one related value). The stored value is the
-        // identifier; the picker preselects by inode, so derive it from the cached contentlet.
-        const currentInode = this.#relationshipItemById()[this.$rawValue()]?.inode;
+        // The stored value is the identifier, but the picker preselects a single row by inode. The
+        // contentlet is held in the cache (resolved by the effect below on cold restore, or from a
+        // previous pick), so read the inode from there — passing the identifier would match every
+        // version of the same content.
+        const identifier = this.$rawValue();
+        const currentInode = identifier
+            ? this.#relationshipItemById()[identifier]?.inode
+            : undefined;
         const currentItemsIds = currentInode ? [currentInode] : [];
 
         const ref = this.#dialogService.open(DotSelectExistingContentComponent, {

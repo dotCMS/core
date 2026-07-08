@@ -9,7 +9,12 @@ import { of, Subject } from 'rxjs';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotCategoriesService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import {
+    DotCategoriesService,
+    DotContentletService,
+    DotMessageService,
+    DotTagsService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -32,6 +37,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
     let spectator: Spectator<DotContentDriveFieldFilterComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let dialogService: SpyObject<DialogService>;
+    let contentletService: SpyObject<DotContentletService>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveFieldFilterComponent,
@@ -49,6 +55,11 @@ describe('DotContentDriveFieldFilterComponent', () => {
                     .mockReturnValue(of({ entity: [{ categoryName: 'News', inode: 'i1' }] })),
                 getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] }))
             }),
+            mockProvider(DotContentletService, {
+                getContentletByInode: jest
+                    .fn()
+                    .mockReturnValue(of({ identifier: 'id-1', inode: 'inode-1', title: 'First' }))
+            }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({ true: 'True', false: 'False' })
@@ -62,6 +73,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
         spectator = createComponent({ props: { field: field() } as never });
         store = spectator.inject(DotContentDriveStore, true);
         dialogService = spectator.inject(DialogService, true);
+        contentletService = spectator.inject(DotContentletService, true);
     });
 
     afterEach(() => jest.clearAllMocks());
@@ -167,6 +179,31 @@ describe('DotContentDriveFieldFilterComponent', () => {
             spectator.click(spectator.query(byTestId('field-filter-chip-author')) as Element);
 
             expect(dialogService.open).toHaveBeenCalled();
+        });
+
+        it('should resolve the stored identifier to its inode and preselect it after a reload', () => {
+            store.getFilterValue.mockReturnValue('id-1');
+            dialogService.open.mockReturnValue({ onClose: of(undefined) } as never);
+            spectator.setInput('field', relationshipField());
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('field-filter-chip-author')) as Element);
+
+            expect(contentletService.getContentletByInode).toHaveBeenCalledWith('id-1');
+            expect(dialogService.open).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    data: expect.objectContaining({ currentItemsIds: ['inode-1'] })
+                })
+            );
+        });
+
+        it('should show the resolved contentlet title in the chip after a reload', () => {
+            store.getFilterValue.mockReturnValue('id-1');
+            spectator.setInput('field', relationshipField());
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-values'))?.textContent).toContain('First');
         });
 
         it('should store the selected contentlet identifiers on close', () => {
