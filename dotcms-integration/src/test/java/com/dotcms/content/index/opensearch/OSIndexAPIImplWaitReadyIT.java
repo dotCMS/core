@@ -3,10 +3,13 @@ package com.dotcms.content.index.opensearch;
 import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -35,9 +38,12 @@ import org.opensearch.client.opensearch.OpenSearchClient;
  *   <li><strong>Phase 1 / 2 (shadow)</strong> — covered: the gate must NOT kill the JVM; it halts
  *       the migration (phase reset to 0) and returns {@code false}. These two cases use the failing
  *       client provider, so they do not need the live OpenSearch container.</li>
- *   <li><strong>Phase 3 (OS primary)</strong> — intentionally NOT tested here: the gate aborts via
- *       {@code SystemExitManager.immediateExit}, which calls {@code Runtime.halt()} and would kill
- *       the test JVM. The Phase 3 abort is verified by manual QA instead.</li>
+ *   <li><strong>Phase 3 (OS primary)</strong> — covered via a test exit seam
+ *       ({@link OSIndexAPIImpl#setExitHandler}): the gate must request an abort (exit code 1) and
+ *       must NOT fall back (phase stays {@code PHASE_3}). The seam replaces
+ *       {@code SystemExitManager.immediateExit} — which calls {@code Runtime.halt()} and would
+ *       otherwise kill the test JVM — so the abort contract is observable without terminating the
+ *       process.</li>
  *   <li><strong>Success path</strong> — covered by the other OpenSearch integration tests that run
  *       against the live cluster (a reachable {@code client.info()}).</li>
  * </ul>
@@ -111,5 +117,61 @@ public class OSIndexAPIImplWaitReadyIT {
         assertFalse("Phase 2 must NOT abort: the gate returns false (ES-only fallback)", ready);
         assertEquals("Migration phase must be reset to PHASE_0 after the ES fallback",
                 MigrationPhase.PHASE_0_MIGRATION_NOT_STARTED, MigrationPhase.current());
+    }
+
+    /**
+     * Given : Phase 3 (OpenSearch only) and an unreachable OpenSearch cluster.
+     * When  : waitUtilIndexReady() exhausts its retries.
+     * Then  : the gate ABORTS (requests exit code 1 via the seam) and does NOT fall back — OS is the
+     *         primary store in Phase 3, so the migration phase must remain PHASE_3 (haltMigration is
+     *         never called). The exit is captured by the seam instead of killing the test JVM.
+     */
+    @Test
+    public void test_phase3_osUnreachable_aborts_noFallback() {
+        setPhase(3);
+        final OSIndexAPIImpl api = new OSIndexAPIImpl(new FailingClientProvider());
+
+        final AtomicInteger exitCode = new AtomicInteger(Integer.MIN_VALUE);
+        final AtomicReference<String> exitReason = new AtomicReference<>();
+        api.setExitHandler((code, reason) -> {
+            exitCode.set(code);
+            exitReason.set(reason);
+        });
+
+        final boolean ready = api.waitUtilIndexReady();
+
+        assertFalse("Phase 3 gate must not report OS as ready when unreachable", ready);
+        assertEquals("Phase 3 must request a JVM abort with exit code 1", 1, exitCode.get());
+        assertTrue("Abort reason must identify the Phase 3 store",
+                exitReason.get() != null && exitReason.get().contains("PHASE_3"));
+        assertEquals("Phase 3 must NOT fall back: the migration phase must remain PHASE_3",
+                MigrationPhase.PHASE_3_OPENSEARCH_ONLY, MigrationPhase.current());
+    }
+
+    /**
+     * Given : Phase 3 and an unreachable cluster whose failure looks like a TLS/scheme mismatch.
+     * When  : waitUtilIndexReady() exhausts its retries.
+     * Then  : the abort reason names the classified cause (TLS_SCHEME_MISMATCH), proving the
+     *         error-classification hardening reaches the actionable Phase 3 message.
+     */
+    @Test
+    public void test_phase3_tlsMismatch_abortReasonNamesCause() {
+        setPhase(3);
+        final OSIndexAPIImpl api = new OSIndexAPIImpl(new OSClientProvider() {
+            @Override
+            public OpenSearchClient getClient() {
+                throw new RuntimeException(
+                        new javax.net.ssl.SSLException("Unrecognized SSL message, plaintext connection?"));
+            }
+        });
+
+        final AtomicReference<String> exitReason = new AtomicReference<>();
+        api.setExitHandler((code, reason) -> exitReason.set(reason));
+
+        api.waitUtilIndexReady();
+
+        assertTrue("Abort reason must name the classified TLS/scheme cause",
+                exitReason.get() != null && exitReason.get().contains(
+                        OSIndexAPIImpl.ConnectionFailureKind.TLS_SCHEME_MISMATCH.name()));
     }
 }

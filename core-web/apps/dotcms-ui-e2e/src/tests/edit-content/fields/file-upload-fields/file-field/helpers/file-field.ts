@@ -77,7 +77,8 @@ export class FileField {
     }
 
     /**
-     * The "Edit image" action is only available for Binary fields with an image file.
+     * The "Edit image" action is available for Binary, Image and File fields when the
+     * previewed file is an image (#36363).
      */
     async expectEditButtonVisible() {
         await expect(this.editButton.or(this.editButtonResponsive).first()).toBeVisible({

@@ -1,5 +1,4 @@
 import { signalMethod } from '@ngrx/signals';
-import { Observable } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -23,7 +22,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -31,6 +34,7 @@ import {
     DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
+import { isImageFile } from '@dotcms/image-editor';
 import {
     DotAIImagePromptComponent,
     DotBrowserSelectorComponent,
@@ -48,7 +52,11 @@ import {
 } from './../../services/image-editor';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
-import { parseFocalPoint } from './../../utils/focal-point.util';
+import {
+    focalPointFromContentlet,
+    focalPointFromMetadata,
+    parseFocalPoint
+} from './../../utils/focal-point.util';
 import { getUiMessage } from './../../utils/messages';
 import { DotFileFieldPreviewComponent } from './../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/dot-file-field-ui-message.component';
@@ -80,6 +88,7 @@ import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
         DialogService,
         LegacyDialogImageEditorLauncher,
         LegacyDojoImageEditorLauncher,
+        DotWorkflowActionsFireService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -201,20 +210,27 @@ export class DotFileFieldComponent
     /**
      * Whether the "Edit image" action is available for the current file.
      *
-     * Only Binary fields expose the image editor when enabled, and only when
-     * the previewed file is actually an image. File/Image fields never show it.
+     * Shown when image editing is enabled and the previewed file is an image
+     * (see {@link isImageFile}). Binary fields keep the binary inline and have a
+     * legacy fallback, so they work in any host. Image/File fields reference a
+     * separate dotAsset and are only supported in the new Angular Edit Content —
+     * where the image-editor launcher is provided — never in the legacy Dojo host.
      */
     $canEditImage = computed<boolean>(() => {
         if (!this.$enableImageEditor()) {
             return false;
         }
 
-        // Image editing is only supported for Binary fields, not File or Image fields.
-        if (this.store.inputType() !== INPUT_TYPES.Binary) {
-            return false;
+        // Binary keeps its original, strict gate: the authoritative isImage flag
+        // only. It works in any host via the legacy fallback.
+        if (this.store.inputType() === INPUT_TYPES.Binary) {
+            return !!this.#currentMetadata()?.isImage;
         }
 
-        return !!this.#currentMetadata()?.isImage;
+        // Image/File resolve a separate dotAsset/FileAsset and are only supported
+        // in the new Angular Edit Content, where the image-editor launcher is
+        // provided — never in the legacy Dojo host.
+        return isImageFile(this.#currentMetadata()) && !!this.#imageEditorLauncher;
     });
 
     /**
@@ -415,12 +431,16 @@ export class DotFileFieldComponent
 
         if (newLauncher?.isAvailable()) {
             const metadata = this.#currentMetadata();
-            // Seed the editor with the asset's stored focal point (exposed on the binary
-            // metadata as an "x,y" string by DefaultTransformStrategy) so reopening restores
-            // the marker instead of resetting it to centre.
-            const focalPoint = parseFocalPoint(metadata?.focalPoint);
+            // Seed the editor with the asset's stored focal point so reopening restores
+            // the marker instead of resetting it to centre. A referenced dotAsset/FileAsset
+            // exposes it on assetMetaData/fileAssetMetaData; an inline binary temp on metaData.
+            const focalPoint = parseFocalPoint(
+                uploaded?.source === 'contentlet'
+                    ? focalPointFromContentlet(uploaded.file)
+                    : focalPointFromMetadata(metadata)
+            );
 
-            this.#applyEditedImage(
+            this.store.applyEditedImage(
                 newLauncher.open({
                     inode,
                     tempId,
@@ -440,7 +460,7 @@ export class DotFileFieldComponent
             ? this.#legacyDojoImageEditorLauncher
             : this.#legacyDialogImageEditorLauncher;
 
-        this.#applyEditedImage(
+        this.store.applyEditedImage(
             legacyLauncher.open({
                 inode,
                 tempId,
@@ -448,29 +468,6 @@ export class DotFileFieldComponent
                 fieldName: editorVariable
             })
         );
-    }
-
-    /**
-     * Applies the edited image emitted by an image-editor launcher to the preview,
-     * shared by the new Angular editor and the legacy launchers. Ignores a closed
-     * editor (no temp file) and surfaces a server error if the stream fails.
-     *
-     * @param result$ the launcher's close stream, emitting the edited temp file or null
-     */
-    #applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
-        result$
-            .pipe(
-                filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe({
-                next: (tempFile) => {
-                    this.store.applyTempFile(tempFile);
-                },
-                error: () => {
-                    this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
-                }
-            });
     }
 
     /**

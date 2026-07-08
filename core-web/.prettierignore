@@ -17,7 +17,6 @@ dist-doc
 node_modules
 .angulardoc.json
 .vscode/*
-.storybook
 karma_html
 docs
 .angular
