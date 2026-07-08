@@ -107,14 +107,15 @@ test('import from URL completes without 400 and shows preview @critical', async 
     await field.importFromUrl(E2E_IMPORT_URL);
 });
 
-test('import image URL does not show Edit image button', async ({ page }) => {
+test('import image URL shows Edit image button', async ({ page }) => {
     const formPage = new NewEditContentFormPage(page);
     await formPage.goToNew(contentTypeVariable);
 
     const field = new FileField(page, FILE_FIELD_VARIABLE);
     await field.expectVisible();
     await field.importFromUrl(E2E_IMPORT_URL);
-    await field.expectEditButtonHidden();
+    // File fields expose the image editor when the file is an image (#36363).
+    await field.expectEditButtonVisible();
 });
 
 test.describe('required file field', () => {

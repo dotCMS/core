@@ -17,51 +17,6 @@
                     "coverage": true
                 }
             }
-        },
-        "storybook": {
-            "executor": "@storybook/angular:start-storybook",
-            "options": {
-                "port": 4400,
-                "configDir": "libs/template-builder/.storybook",
-                "browserTarget": "template-builder:build-storybook",
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular"]
-                },
-                "styles": [
-                    "libs/dotcms-scss/angular/styles.scss",
-                    "apps/dotcms-ui/src/assets/material-symbols-outlined.css",
-                    "node_modules/primeicons/primeicons.css",
-                    "node_modules/gridstack/dist/gridstack.min.css"
-                ]
-            },
-            "configurations": {
-                "ci": {
-                    "quiet": true
-                }
-            }
-        },
-        "build-storybook": {
-            "executor": "@storybook/angular:build-storybook",
-            "outputs": ["{options.outputDir}"],
-            "options": {
-                "outputDir": "dist/storybook/template-builder",
-                "configDir": "libs/template-builder/.storybook",
-                "browserTarget": "template-builder:build-storybook",
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular"]
-                },
-                "styles": [
-                    "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeicons/primeicons.css",
-                    "apps/dotcms-ui/src/assets/material-symbols-outlined.css",
-                    "node_modules/gridstack/dist/gridstack.min.css"
-                ]
-            },
-            "configurations": {
-                "ci": {
-                    "quiet": true
-                }
-            }
         }
     }
 }

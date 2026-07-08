@@ -87,7 +87,15 @@ public class IndexStartupValidator {
         final OSClientConfig config = resolveConfig();
         logConfigSummary(config);
         validateOSVersion();
-        validateEndpointSeparation(config);
+        if (IndexConfigHelper.isMigrationComplete()) {
+            // Phase 3: ES is decommissioned and ES_ENDPOINTS is no longer required, so the
+            // resolved ES side would just be the localhost:9200 default — comparing it against
+            // OS would false-positive on a legitimate config. Skip the separation check.
+            Logger.info(this, "Endpoint separation check skipped: PHASE_3_OPENSEARCH_ONLY"
+                    + " — ES is decommissioned and ES_ENDPOINTS is not required.");
+            return;
+        }
+        assertEndpointsSeparate(config);
     }
 
     // -------------------------------------------------------------------------
@@ -204,19 +212,17 @@ public class IndexStartupValidator {
     // -------------------------------------------------------------------------
 
     /**
-     * Resolves the effective ES and OS endpoint sets and asserts they do not share
-     * any {@code host:port} pair.
-     *
-     * <p>The OS side comes from the already-resolved {@link OSClientConfig#endpoints()} (the very
-     * endpoints the client is built with), and the ES side is read from config; both are passed
-     * through the same {@link #normalizeEndpoint} path so the comparison is consistent.</p>
+     * Asserts that the ES and OS clients do not share any {@code host:port}. Shared by the
+     * startup validator ({@link #validate()}) and the config-only OS index-creation gate
+     * ({@link #endpointsAreSeparate()}) so both enforce separation with identical logic.
+     * On success it logs the compared sets so the "passed" line is proof of what was compared.
      *
      * <p><strong>Best-effort:</strong> two configs that refer to the same host via different forms
      * (e.g. {@code "127.0.0.1"} vs {@code "localhost"}) will not be detected as overlapping.</p>
      *
      * @throws DotRuntimeException if at least one endpoint is common to both clients
      */
-    private void validateEndpointSeparation(final OSClientConfig config) {
+    static void assertEndpointsSeparate(final OSClientConfig config) {
         final Set<String> esEndpoints = resolveESEndpoints();
         final Set<String> osEndpoints = config.endpoints().stream()
                 .map(IndexStartupValidator::normalizeEndpoint)
@@ -232,8 +238,52 @@ public class IndexStartupValidator {
                     + " — OS endpoints: " + osEndpoints
                     + ". Set OS_ENDPOINTS to a separate OpenSearch instance.");
         }
-        Logger.info(this, "Endpoint separation check passed."
+        Logger.info(IndexStartupValidator.class, "Endpoint separation check passed."
                 + " ES: " + esEndpoints + " — OS: " + osEndpoints);
+    }
+
+    /**
+     * Config-only endpoint-separation gate for the OS index-creation chokepoint
+     * ({@code ContentletIndexAPIImpl.bootstrapAndPointOS}, issue #36419). Unlike
+     * {@link #validate()} this performs no network I/O — it only compares the resolved ES and OS
+     * endpoints — so it is cheap enough to run before every OS bootstrap on any startup path
+     * (empty-DB starter-load or populated-DB InitServlet), closing the window where the
+     * starter-load path created {@code .os} indices before the late startup validation ran.
+     *
+     * <p><strong>Phase-aware:</strong> in {@code PHASE_3_OPENSEARCH_ONLY} the check is skipped
+     * (returns {@code true}) — ES is decommissioned and {@code ES_ENDPOINTS} is no longer
+     * required, so the resolved ES side would just be the {@code localhost:9200} default and
+     * comparing it against OS would false-positive on a legitimate configuration.</p>
+     *
+     * @return {@code true} when ES and OS point to distinct clusters (safe to create OS indices);
+     *         {@code false} when they overlap (caller must skip the OS bootstrap and halt the migration)
+     */
+    public static boolean endpointsAreSeparate() {
+        if (IndexConfigHelper.isMigrationComplete()) {
+            Logger.info(IndexStartupValidator.class,
+                    "Endpoint separation check skipped: PHASE_3_OPENSEARCH_ONLY"
+                    + " — ES is decommissioned and ES_ENDPOINTS is not required.");
+            return true;
+        }
+        final OSClientConfig config;
+        try {
+            config = ConfigurableOpenSearchProvider.configFromProperties();
+        } catch (Exception e) {
+            // Config could not be resolved — this is NOT an ES/OS overlap. Log it distinctly so the
+            // operator is not sent chasing a same-endpoint misconfiguration that does not exist.
+            Logger.error(IndexStartupValidator.class,
+                    "Cannot resolve OpenSearch configuration for the endpoint-separation check: "
+                    + e.getMessage());
+            return false;
+        }
+        try {
+            assertEndpointsSeparate(config);
+            return true;
+        } catch (DotRuntimeException e) {
+            // The overlap message (with the actionable "Set OS_ENDPOINTS to a separate instance").
+            Logger.error(IndexStartupValidator.class, e.getMessage());
+            return false;
+        }
     }
 
     /**

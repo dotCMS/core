@@ -7,13 +7,17 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
 
-import { BINARY_FIELD_MOCK, IMAGE_FIELD_MOCK } from '../../../../utils/mocks';
+import { BINARY_FIELD_MOCK, FILE_FIELD_MOCK, IMAGE_FIELD_MOCK } from '../../../../utils/mocks';
 import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 import {
     LegacyDialogImageEditorLauncher,
@@ -45,6 +49,7 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DialogService),
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
+            mockProvider(DotWorkflowActionsFireService),
             { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockImageEditorLauncher },
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Test Message')
@@ -180,7 +185,9 @@ describe('DotFileFieldComponent', () => {
             mockImageEditorLauncher.open.mockReturnValue(of(EDITED_TEMP_FILE));
             setupBinaryWithImage();
 
-            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+            const applySpy = jest
+                .spyOn(spectator.component.store, 'applyEditedImage')
+                .mockImplementation();
 
             spectator.component.onEditImage();
 
@@ -192,7 +199,7 @@ describe('DotFileFieldComponent', () => {
                     mimeType: 'image/png'
                 })
             );
-            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
+            expect(applySpy).toHaveBeenCalled();
         });
 
         it('should fall back to the legacy editor when the new launcher is unavailable', () => {
@@ -205,13 +212,94 @@ describe('DotFileFieldComponent', () => {
             const legacyOpenSpy = jest
                 .spyOn(legacy, 'open')
                 .mockReturnValue(of(EDITED_TEMP_FILE) as never);
-            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+            const applySpy = jest
+                .spyOn(spectator.component.store, 'applyEditedImage')
+                .mockImplementation();
 
             spectator.component.onEditImage();
 
             expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
             expect(legacyOpenSpy).toHaveBeenCalled();
-            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
+            expect(applySpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('edit image availability', () => {
+        const IMAGE_ASSET_META = { isImage: true, contentType: 'image/png', name: 'beach.png' };
+        const NON_IMAGE_ASSET_META = {
+            isImage: false,
+            contentType: 'application/pdf',
+            name: 'doc.pdf'
+        };
+
+        // Hydrates the preview from a referenced dotAsset contentlet (Image/File
+        // fields), whose metadata lives in `assetMetaData`.
+        const setReferencedAsset = (
+            field: typeof IMAGE_FIELD_MOCK,
+            assetMetaData: Record<string, unknown>
+        ) => {
+            spectator = createComponent({
+                props: {
+                    field,
+                    contentlet: createFakeContentlet({ [field.variable]: 'ref-identifier' }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+
+            spectator.component.store.setPreviewFile({
+                source: 'contentlet',
+                file: { identifier: 'ref-identifier', inode: 'ref-inode', assetMetaData } as never
+            });
+            spectator.detectChanges();
+        };
+
+        it('shows the editor for an Image field pointing at an image asset', () => {
+            setReferencedAsset(IMAGE_FIELD_MOCK, IMAGE_ASSET_META);
+            expect(spectator.component.$canEditImage()).toBe(true);
+        });
+
+        it('shows the editor for a File field when the referenced asset is an image', () => {
+            setReferencedAsset(FILE_FIELD_MOCK, IMAGE_ASSET_META);
+            expect(spectator.component.$canEditImage()).toBe(true);
+        });
+
+        it('hides the editor for a File field when the referenced asset is not an image', () => {
+            setReferencedAsset(FILE_FIELD_MOCK, NON_IMAGE_ASSET_META);
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('hides the editor for an empty Image field', () => {
+            spectator = createComponent({
+                props: {
+                    field: IMAGE_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [IMAGE_FIELD_MOCK.variable]: null }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('keeps Binary hidden for a non-image file', () => {
+            spectator = createComponent({
+                props: {
+                    field: BINARY_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [BINARY_FIELD_MOCK.variable]: null }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+            spectator.component.store.setPreviewFile({
+                source: 'temp',
+                file: {
+                    id: 'temp-1',
+                    fileName: 'doc.pdf',
+                    metadata: { isImage: false, contentType: 'application/pdf', name: 'doc.pdf' }
+                }
+            } as never);
+            spectator.detectChanges();
+            expect(spectator.component.$canEditImage()).toBe(false);
         });
     });
 
