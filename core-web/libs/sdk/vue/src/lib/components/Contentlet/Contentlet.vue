@@ -34,7 +34,14 @@ const ctx = useDotCMSPageContext();
 const isDevMode = useIsDevMode();
 const isAnalyticsActive = useIsAnalyticsActive();
 
+// Function ref (not a string/`ref=` template ref): the contentlet wrapper also
+// spreads `dotAttributes`, and a static template ref there triggers Vue's
+// "ref cannot be used on hoisted vnodes" warning. A function ref is never
+// hoisted and always runs inside the render context.
 const el = ref<HTMLElement | null>(null);
+const setEl = (value: Element | null) => {
+    el.value = (value as HTMLElement) ?? null;
+};
 const haveContent = useCheckVisibleContent(el);
 
 // In edit mode we emit the full editor metadata. In live mode we strip it,
@@ -66,7 +73,7 @@ const noComponent = computed<Component | undefined>(() => ctx.userComponents[CUS
 
 <template>
   <div
-    ref="el"
+    :ref="setEl"
     v-bind="dotAttributes"
     :class="CONTENTLET_CLASS"
     :style="style"
