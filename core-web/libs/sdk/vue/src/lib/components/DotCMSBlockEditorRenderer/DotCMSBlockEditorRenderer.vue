@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, markRaw, toRaw, type Component } from 'vue';
 
 import { isValidBlocks } from '@dotcms/uve/internal';
 
 import BlockEditorBlock from './components/BlockEditorBlock.vue';
-import type { BlockEditorRendererProps } from './types';
+import type { BlockEditorRendererProps, CustomRenderer } from './types';
 
 /**
  * Renders a dotCMS Block Editor field.
@@ -16,6 +16,22 @@ import type { BlockEditorRendererProps } from './types';
  */
 const props = withDefaults(defineProps<BlockEditorRendererProps>(), {
     isDevMode: false
+});
+
+// Unwrap + mark the custom renderers raw once at the entry point so the recursive
+// dispatcher never renders a reactive-proxied component via `<component :is>`
+// (which triggers Vue's "Component that was made reactive" warning).
+const rawCustomRenderers = computed<CustomRenderer | undefined>(() => {
+    if (!props.customRenderers) {
+        return undefined;
+    }
+
+    const out: CustomRenderer = {};
+    for (const key of Object.keys(props.customRenderers)) {
+        out[key] = toRaw(props.customRenderers[key]) as Component;
+    }
+
+    return markRaw(out);
 });
 
 const validation = computed(() => isValidBlocks(props.blocks));
@@ -41,7 +57,7 @@ const errorMessage = computed(() => {
         data-testid="dot-block-editor-container">
         <BlockEditorBlock
             :content="blocks?.content"
-            :custom-renderers="customRenderers"
+            :custom-renderers="rawCustomRenderers"
             :is-dev-mode="isDevMode" />
     </div>
 </template>

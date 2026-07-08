@@ -20,9 +20,13 @@ const searchResults = ref<Blog[] | null>(null);
 const currentYear = new Date().getFullYear();
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+// Monotonic token: only the most recent search may write results, so an earlier
+// query resolving after a later one can't overwrite the current results.
+let searchToken = 0;
 
 watch(searchQuery, (value) => {
     clearTimeout(debounceTimer);
+    const token = ++searchToken;
 
     if (!value.length) {
         searchResults.value = null;
@@ -37,7 +41,9 @@ watch(searchQuery, (value) => {
             .query((qb) => qb.field('title').equals(`${value}*`))
             .sortBy([{ field: 'Blog.postingDate', order: 'desc' }])
             .then(({ contentlets }) => {
-                searchResults.value = contentlets;
+                if (token === searchToken) {
+                    searchResults.value = contentlets;
+                }
             });
     }, 500);
 });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, markRaw, toRaw, type Component } from 'vue';
 
 import ErrorMessage from './components/ErrorMessage.vue';
 import type { DotCMSLayoutBodyProps } from './types';
@@ -28,13 +28,27 @@ const props = withDefaults(defineProps<DotCMSLayoutBodyProps>(), {
 const isDevMode = useIsDevMode(() => props.mode);
 const isAnalyticsActive = useIsAnalyticsActive();
 
+// Unwrap each component from the reactive props and mark the map raw so Vue
+// never wraps the component definitions in a reactive proxy. Rendering a proxied
+// component via `<component :is>` triggers Vue's "Component that was made
+// reactive" warning and adds proxy overhead per contentlet. Components are static
+// app config, so a raw copy is safe.
+const rawComponents = computed(() => {
+    const out: Record<string, Component> = {};
+    for (const key of Object.keys(props.components)) {
+        out[key] = toRaw(props.components[key]);
+    }
+
+    return markRaw(out);
+});
+
 // Provide the context as a computed so live UVE page updates (a new page asset
 // arriving via `uve-set-page-data`) propagate to the whole layout tree.
 provideDotCMSPageContext(
     computed(() => ({
         pageAsset: props.page,
         mode: props.mode,
-        userComponents: props.components,
+        userComponents: rawComponents.value,
         isDevMode: isDevMode.value,
         isAnalyticsActive: isAnalyticsActive.value
     }))

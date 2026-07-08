@@ -23,12 +23,22 @@ const buildPath = () => {
     return segments.length ? `/${segments.join('/')}` : '/';
 };
 
-const loadPage = async () => {
+// `onCleanup` runs when the route changes again before the fetch resolves, so a
+// slower earlier request can't overwrite state for the newer route.
+const loadPage = async (_path: string, _prev: string | undefined, onCleanup: (fn: () => void) => void) => {
+    let cancelled = false;
+    onCleanup(() => {
+        cancelled = true;
+    });
+
     loading.value = true;
     notFound.value = false;
     pageResponse.value = null;
 
     const response = await getDotCMSPage(buildPath());
+    if (cancelled) {
+        return;
+    }
 
     if (isPageError(response)) {
         notFound.value = true;
