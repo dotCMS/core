@@ -5,38 +5,59 @@
     <div
         class="flex shrink-0 items-center justify-between border-b border-surface-200 px-6 py-4"
         data-testid="pq-select-bundle-header">
-        @if ($step() === 'select') {
-            <h2 class="m-0 text-xl font-bold text-color" data-testid="pq-select-bundle-title">
-                {{ 'publishing-queue.select-bundle.title' | dm }}
-            </h2>
-        } @else {
-            <div class="flex min-w-0 items-center gap-3">
-                <p-button
-                    icon="pi pi-arrow-left"
-                    [text]="true"
-                    [rounded]="true"
-                    severity="secondary"
-                    [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
-                    (onClick)="onBackToList()"
-                    data-testid="pq-select-bundle-back-btn" />
-                <h2
-                    class="m-0 text-xl font-bold text-color"
-                    data-testid="pq-select-bundle-configure-title">
-                    {{ 'publishing-queue.select-bundle.configure-and-send' | dm }}
+        @switch ($step()) {
+            @case ('select') {
+                <h2 class="m-0 text-xl font-bold text-color" data-testid="pq-select-bundle-title">
+                    {{ 'publishing-queue.select-bundle.title' | dm }}
                 </h2>
-                <p-tag
-                    severity="secondary"
-                    [rounded]="true"
-                    [value]="
-                        $checkedBundleIds().length === 1
-                            ? ('publishing-queue.select-bundle.bundle-count.singular'
-                              | dm: $checkedBundleIds().length.toString())
-                            : ('publishing-queue.select-bundle.bundle-count.plural'
-                              | dm: $checkedBundleIds().length.toString())
-                    "
-                    styleClass="text-xs font-medium px-2 py-0.5"
-                    data-testid="pq-select-bundle-configure-count" />
-            </div>
+            }
+            @case ('configure') {
+                <div class="flex min-w-0 items-center gap-3">
+                    <p-button
+                        icon="pi pi-arrow-left"
+                        [text]="true"
+                        [rounded]="true"
+                        severity="secondary"
+                        [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
+                        (onClick)="onBackToList()"
+                        data-testid="pq-select-bundle-back-btn" />
+                    <h2
+                        class="m-0 text-xl font-bold text-color"
+                        data-testid="pq-select-bundle-configure-title">
+                        {{ 'publishing-queue.select-bundle.configure-and-send' | dm }}
+                    </h2>
+                    <p-tag
+                        severity="secondary"
+                        [rounded]="true"
+                        [value]="
+                            $checkedBundleIds().length === 1
+                                ? ('publishing-queue.select-bundle.bundle-count.singular'
+                                  | dm: $checkedBundleIds().length.toString())
+                                : ('publishing-queue.select-bundle.bundle-count.plural'
+                                  | dm: $checkedBundleIds().length.toString())
+                        "
+                        styleClass="text-xs font-medium px-2 py-0.5"
+                        data-testid="pq-select-bundle-configure-count" />
+                </div>
+            }
+            @case ('download') {
+                <div class="flex min-w-0 items-center gap-3">
+                    <p-button
+                        icon="pi pi-arrow-left"
+                        [text]="true"
+                        [rounded]="true"
+                        severity="secondary"
+                        [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
+                        (onClick)="onBackToList()"
+                        [disabled]="$isDownloading()"
+                        data-testid="pq-select-bundle-download-back-btn" />
+                    <h2
+                        class="m-0 text-xl font-bold text-color"
+                        data-testid="pq-select-bundle-download-title">
+                        {{ 'publishing-queue.select-bundle.download' | dm }}
+                    </h2>
+                </div>
+            }
         }
         <p-button
             icon="pi pi-times"
@@ -368,25 +389,10 @@
                         (onClick)="onRemoveBundles()"
                         data-testid="pq-select-bundle-remove-btn" />
                     <p-button
-                        [label]="
-                            $isDownloading()
-                                ? ('publishing-queue.select-bundle.download.in-progress' | dm)
-                                : ('publishing-queue.select-bundle.download' | dm)
-                        "
-                        icon="pi pi-chevron-down"
-                        iconPos="right"
+                        [label]="'publishing-queue.select-bundle.download' | dm"
                         [outlined]="true"
-                        [loading]="$isDownloading()"
-                        [disabled]="$isDownloading()"
-                        (onClick)="onDownloadButtonClick($event)"
+                        (onClick)="onOpenDownloadStep()"
                         data-testid="pq-select-bundle-download-btn" />
-                    <p-tieredMenu
-                        #downloadMenu
-                        [model]="$downloadMenuItems()"
-                        [popup]="true"
-                        appendTo="body"
-                        (onShow)="onDownloadMenuShow()"
-                        data-testid="pq-select-bundle-download-menu" />
                     <p-button
                         [label]="
                             $hasChecked()
@@ -445,6 +451,37 @@
                         (onClick)="onSend()"
                         [pt]="{ root: { 'data-testid': 'pq-select-bundle-send-btn' } }" />
                 </div>
+            </div>
+        }
+        @case ('download') {
+            <div
+                class="min-h-0 flex-1 overflow-y-auto p-4"
+                data-testid="pq-select-bundle-download-body">
+                <dot-download-bundle-form
+                    [bundleId]="$downloadBundleId()"
+                    (value)="onDownloadFormValue($event)"
+                    (valid)="onDownloadFormValid($event)" />
+            </div>
+
+            <div
+                class="flex shrink-0 items-center justify-end gap-3 border-t border-surface-200 px-4 py-3"
+                data-testid="pq-select-bundle-download-footer">
+                <p-button
+                    [label]="'publishing-queue.select-bundle.back-to-list' | dm"
+                    [text]="true"
+                    [disabled]="$isDownloading()"
+                    (onClick)="onBackToList()"
+                    data-testid="pq-select-bundle-download-back-to-list-btn" />
+                <p-button
+                    [label]="
+                        $isDownloading()
+                            ? ('publishing-queue.select-bundle.download.in-progress' | dm)
+                            : ('publishing-queue.select-bundle.download' | dm)
+                    "
+                    [loading]="$isDownloading()"
+                    [disabled]="!$canDownload()"
+                    (onClick)="onDownload()"
+                    [pt]="{ root: { 'data-testid': 'pq-select-bundle-download-submit-btn' } }" />
             </div>
         }
     }

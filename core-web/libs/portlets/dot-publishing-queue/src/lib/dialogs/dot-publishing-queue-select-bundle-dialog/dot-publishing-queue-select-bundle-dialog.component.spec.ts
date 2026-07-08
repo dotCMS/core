@@ -420,48 +420,72 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
     });
 
-    describe('inline download menu', () => {
-        beforeEach(() => {
+    describe('download step', () => {
+        const validForm = {
+            bundleId: 'bundle-2',
+            operation: '0' as const,
+            filterKey: 'ForcePush.yml'
+        };
+
+        function primeDownloadableState(id = 'bundle-2') {
+            spectator.detectChanges();
+            spectator.component.onCheckedChange([{ id, name: `Bundle ${id}` }]);
+            spectator.component.onOpenDownloadStep();
+            spectator.component.onDownloadFormValue(validForm);
+            spectator.component.onDownloadFormValid(true);
+        }
+
+        it('Download → transitions step to "download" when exactly one bundle is checked', () => {
             spectator.detectChanges();
             spectator.component.onCheckedChange([{ id: 'bundle-2', name: 'Blog content sync' }]);
+            spectator.component.onOpenDownloadStep();
+            expect(spectator.component.$step()).toBe('download');
+            expect(spectator.component.$downloadBundleId()).toBe('bundle-2');
         });
 
-        it('builds a 2-level menu: To Publish (with filters) + To Unpublish (leaf)', () => {
-            const items = spectator.component.$downloadMenuItems();
-            expect(items.length).toBe(2);
-            // To Publish parent has the 3 fixture filters as children.
-            expect(items[0].items?.length).toBe(3);
-            expect(items[0].items?.map((i) => i.label)).toEqual([
-                'Force Push Everything',
-                'Only Selected Items',
-                'Content, Assets and Pages'
+        it('Download → sets "select one" warning and stays on select step when nothing is checked', () => {
+            spectator.detectChanges();
+            checkBundles([]);
+            spectator.component.onOpenDownloadStep();
+            expect(spectator.component.$step()).toBe('select');
+            expect(spectator.component.$validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.select-one'
+            );
+        });
+
+        it('Download → sets "single only" warning and stays on select step when multiple are checked', () => {
+            spectator.detectChanges();
+            spectator.component.onCheckedChange([
+                { id: 'bundle-1', name: 'a' },
+                { id: 'bundle-2', name: 'b' }
             ]);
-            // To Unpublish is a leaf (no children, direct command).
-            expect(items[1].items).toBeUndefined();
-            expect(items[1].command).toBeDefined();
+            spectator.component.onOpenDownloadStep();
+            expect(spectator.component.$step()).toBe('select');
+            expect(spectator.component.$validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.download.single-only'
+            );
         });
 
-        it('picking a filter leaf calls generateBundle(bundleId, "0", filterKey)', () => {
-            const items = spectator.component.$downloadMenuItems();
-            const forcePush = items[0].items?.find((i) => i.label === 'Force Push Everything');
-            forcePush?.command?.({} as never);
+        it('onDownload calls generateBundle with the tracked form value', () => {
+            primeDownloadableState('bundle-2');
+            spectator.component.onDownload();
             expect(service.generateBundle).toHaveBeenCalledWith('bundle-2', '0', 'ForcePush.yml');
             expect(mockAnchorClick).toHaveBeenCalled();
         });
 
-        it('picking To Unpublish calls generateBundle(bundleId, "1", "")', () => {
-            const items = spectator.component.$downloadMenuItems();
-            items[1].command?.({} as never);
-            expect(service.generateBundle).toHaveBeenCalledWith('bundle-2', '1', '');
-            expect(mockAnchorClick).toHaveBeenCalled();
+        it('onDownload returns to the select step on success', () => {
+            primeDownloadableState('bundle-2');
+            spectator.component.onDownload();
+            expect(spectator.component.$step()).toBe('select');
         });
 
         it('toggles isDownloading around the network call', () => {
             const subject = new Subject<{ blob: Blob; filename: string }>();
             (service.generateBundle as jest.Mock).mockReturnValueOnce(subject.asObservable());
+            primeDownloadableState('bundle-2');
 
             expect(spectator.component.$isDownloading()).toBe(false);
-            spectator.component.onDownloadOption('1', '');
+            spectator.component.onDownload();
             expect(spectator.component.$isDownloading()).toBe(true);
             subject.next({ blob: new Blob(['x']), filename: 'bundle-2.tar.gz' });
             subject.complete();
@@ -471,49 +495,33 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         it('hands errors off to DotHttpErrorManagerService and releases isDownloading', () => {
             const error = new Error('boom');
             (service.generateBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
-            spectator.component.onDownloadOption('0', 'ForcePush.yml');
+            primeDownloadableState('bundle-2');
+            spectator.component.onDownload();
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(spectator.component.$isDownloading()).toBe(false);
             expect(mockAnchorClick).not.toHaveBeenCalled();
         });
 
-        it('is a no-op when no bundles are checked', () => {
-            checkBundles([]);
-            spectator.component.onDownloadOption('1', '');
-            expect(service.generateBundle).not.toHaveBeenCalled();
-        });
-
-        it('is a no-op when more than one bundle is checked', () => {
-            spectator.component.onCheckedChange([
-                { id: 'bundle-1', name: 'a' },
-                { id: 'bundle-2', name: 'b' }
-            ]);
-            spectator.component.onDownloadOption('1', '');
+        it('is a no-op when the form is invalid', () => {
+            spectator.detectChanges();
+            spectator.component.onCheckedChange([{ id: 'bundle-2', name: 'Blog content sync' }]);
+            spectator.component.onOpenDownloadStep();
+            // No form emission → $downloadFormValue is null / $downloadFormValid is false.
+            spectator.component.onDownload();
             expect(service.generateBundle).not.toHaveBeenCalled();
         });
 
         it('does not re-fire while a download is already in flight', () => {
-            // Drive `$isDownloading` to true via the public path: kick off a
-            // download whose observable never resolves so the flag stays set.
             const pending = new Subject<{ blob: Blob; filename: string }>();
             (service.generateBundle as jest.Mock).mockReturnValueOnce(pending.asObservable());
-            spectator.component.onDownloadOption('1', '');
+            primeDownloadableState('bundle-2');
+
+            spectator.component.onDownload();
             expect(spectator.component.$isDownloading()).toBe(true);
             (service.generateBundle as jest.Mock).mockClear();
 
-            spectator.component.onDownloadOption('1', '');
+            spectator.component.onDownload();
             expect(service.generateBundle).not.toHaveBeenCalled();
-        });
-
-        it('disables the To Publish item when no filters loaded yet', () => {
-            // Fresh component instance with the filters service returning nothing
-            // would yield an empty filter list. Here we simulate that state
-            // directly on the signal to keep the rest of the suite stable.
-            spectator.component.$downloadFilters.set([]);
-            const items = spectator.component.$downloadMenuItems();
-            expect(items[0].disabled).toBe(true);
-            // To Unpublish stays usable.
-            expect(items[1].command).toBeDefined();
         });
     });
 
@@ -534,48 +542,6 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(spectator.component.$step()).toBe('select');
             expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.select-one'
-            );
-        });
-
-        it('clicking Download with nothing checked sets the "select one" warning and does not open the menu', () => {
-            checkBundles([]);
-            const toggleSpy = jest.fn();
-            // Stub the menu's toggle so we can assert it was NOT called.
-            (
-                spectator.component as unknown as {
-                    downloadMenuRef: () => { toggle: jest.Mock };
-                }
-            ).downloadMenuRef = () => ({ toggle: toggleSpy });
-
-            spectator.component.onDownloadButtonClick({
-                currentTarget: document.createElement('button')
-            } as unknown as MouseEvent);
-
-            expect(toggleSpy).not.toHaveBeenCalled();
-            expect(spectator.component.$validationWarningKey()).toBe(
-                'publishing-queue.select-bundle.warning.select-one'
-            );
-        });
-
-        it('clicking Download with multiple checked sets the "single only" warning and does not open the menu', () => {
-            spectator.component.onCheckedChange([
-                { id: 'bundle-1', name: 'a' },
-                { id: 'bundle-2', name: 'b' }
-            ]);
-            const toggleSpy = jest.fn();
-            (
-                spectator.component as unknown as {
-                    downloadMenuRef: () => { toggle: jest.Mock };
-                }
-            ).downloadMenuRef = () => ({ toggle: toggleSpy });
-
-            spectator.component.onDownloadButtonClick({
-                currentTarget: document.createElement('button')
-            } as unknown as MouseEvent);
-
-            expect(toggleSpy).not.toHaveBeenCalled();
-            expect(spectator.component.$validationWarningKey()).toBe(
-                'publishing-queue.select-bundle.download.single-only'
             );
         });
 
