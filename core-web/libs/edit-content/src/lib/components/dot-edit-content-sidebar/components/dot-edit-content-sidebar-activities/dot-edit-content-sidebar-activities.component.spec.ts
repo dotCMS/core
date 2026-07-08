@@ -380,9 +380,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.typeInElement('Now it has content', commentInput);
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('comment').hasError('required')).toBe(
-                false
-            );
+            expect(spectator.component.form.get('comment').hasError('required')).toBe(false);
             expect(getValidationErrorMsg()).toBeFalsy();
         });
 
@@ -396,10 +394,31 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.component.clearComment();
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('comment').hasError('required')).toBe(
-                false
-            );
+            expect(spectator.component.form.get('comment').hasError('required')).toBe(false);
             expect(getValidationErrorMsg()).toBeFalsy();
+        });
+
+        it('should keep the error slot present with a fixed height regardless of error state, to avoid shifting the sticky footer', () => {
+            const form = spectator.query(byTestId('activities-form'));
+            const getSlot = () => spectator.query(byTestId('activities-error-slot'));
+
+            // No error yet: slot must still be present and reserve its height.
+            expect(getSlot()).toExist();
+            expect(getSlot()).toHaveClass('h-3.5');
+
+            // Error shown: slot's height class must not change.
+            spectator.dispatchFakeEvent(form, 'submit');
+            spectator.detectChanges();
+            expect(getValidationErrorMsg()).toBeTruthy();
+            expect(getSlot()).toExist();
+            expect(getSlot()).toHaveClass('h-3.5');
+
+            // Error cleared: slot's height class must still not change.
+            spectator.component.clearComment();
+            spectator.detectChanges();
+            expect(getValidationErrorMsg()).toBeFalsy();
+            expect(getSlot()).toExist();
+            expect(getSlot()).toHaveClass('h-3.5');
         });
 
         it('should reset form state when clearComment is called', () => {

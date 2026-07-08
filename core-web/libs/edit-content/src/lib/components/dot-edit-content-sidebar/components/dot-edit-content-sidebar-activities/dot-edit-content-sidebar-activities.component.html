@@ -108,10 +108,19 @@
                         </div>
                     </div>
 
-                    <dot-field-validation-message
-                        [field]="form.get('comment')"
-                        [requiredErrorMessage]="'edit.content.sidebar.activities.required'"
-                        class="block [&_small]:animate-[fadeIn_0.2s_ease-out]" />
+                    <!--
+                        Fixed-height slot: activities-footer is `sticky bottom-0`, so if this
+                        row's height changed when the error message mounts/unmounts, the whole
+                        footer would grow from its bottom anchor and shift the textarea upward.
+                        Reserving the space up front keeps the footer height constant regardless
+                        of whether dot-field-validation-message renders its <small> internally.
+                    -->
+                    <div class="h-3.5" data-testid="activities-error-slot">
+                        <dot-field-validation-message
+                            [field]="form.get('comment')"
+                            [requiredErrorMessage]="'edit.content.sidebar.activities.required'"
+                            class="block [&_small]:animate-[fadeIn_0.2s_ease-out]" />
+                    </div>
 
                     <div class="flex justify-end gap-2">
                         <p-button
