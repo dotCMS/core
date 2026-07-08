@@ -755,11 +755,10 @@ export function withHistory() {
                     untracked(() => {
                         // Only load data if we have a contentlet with an identifier
                         if (contentlet?.identifier) {
-                            // Clear existing data to avoid showing stale data during content switches
-                            store.clearVersions();
-                            store.clearPushPublishHistory();
-
-                            // Load fresh data for the current contentlet
+                            // Reload both datasets without clearing them first: the previous
+                            // items stay visible while loading (page 1 replaces them on
+                            // response), so the sidebar doesn't collapse into skeletons on
+                            // every version/locale switch.
                             store.loadVersions({
                                 identifier: contentlet.identifier,
                                 page: 1

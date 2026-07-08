@@ -982,7 +982,7 @@ describe('HistoryFeature', () => {
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
         }));
 
-        it('should clear versions and push publish history before loading new ones', fakeAsync(() => {
+        it('should replace versions and push publish history when the contentlet changes', fakeAsync(() => {
             // Setup initial data
             store.updateVersions([mockContentletVersion]);
             store.updatePushPublishHistory([mockPushPublishHistoryItem]);

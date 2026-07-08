@@ -139,24 +139,39 @@ describe('DotEditContentSidebarHistoryComponent', () => {
     });
 
     describe('Loading State', () => {
-        beforeEach(() => {
-            spectator.setInput('status', ComponentStatus.LOADING);
-            spectator.detectChanges();
+        describe('initial load (no items yet)', () => {
+            beforeEach(() => {
+                spectator.setInput('historyItems', []);
+                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.detectChanges();
+            });
+
+            it('should show loading state when isLoading is true', () => {
+                const loadingElement = spectator.query(byTestId('loading-state'));
+                expect(loadingElement).toBeTruthy();
+            });
+
+            it('should show skeleton placeholders', () => {
+                const skeletonElements = spectator.queryAll('p-skeleton');
+                expect(skeletonElements.length).toBeGreaterThan(0);
+            });
+
+            it('should not show history content when loading', () => {
+                const historyTimeline = spectator.query(byTestId('history-timeline'));
+                expect(historyTimeline).toBeFalsy();
+            });
         });
 
-        it('should show loading state when isLoading is true', () => {
-            const loadingElement = spectator.query(byTestId('loading-state'));
-            expect(loadingElement).toBeTruthy();
-        });
+        describe('reload (items already loaded)', () => {
+            beforeEach(() => {
+                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.detectChanges();
+            });
 
-        it('should show skeleton placeholders', () => {
-            const skeletonElements = spectator.queryAll('p-skeleton');
-            expect(skeletonElements.length).toBeGreaterThan(0);
-        });
-
-        it('should not show history content when loading', () => {
-            const historyTimeline = spectator.query(byTestId('history-timeline'));
-            expect(historyTimeline).toBeFalsy();
+            it('should keep showing the timeline instead of collapsing into skeletons', () => {
+                expect(spectator.query(byTestId('loading-state'))).toBeFalsy();
+                expect(spectator.query(byTestId('history-timeline'))).toBeTruthy();
+            });
         });
     });
 
