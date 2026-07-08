@@ -301,6 +301,19 @@ export function isMultiValueFieldFilterType(fieldType: string): boolean {
 }
 
 /**
+ * The field variables that have a `us.*` field-filter entry in the bag, in insertion order.
+ * Parsed at the same layer as {@link decodeFilters} so the store just stores the result.
+ *
+ * @param {DotContentDriveFilters} filters
+ * @return {*}  {string[]}
+ */
+export function getUserSearchableActive(filters: DotContentDriveFilters): string[] {
+    return Object.keys(filters ?? {})
+        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
+        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length));
+}
+
+/**
  * True for a binary (boolean) checkbox — a Checkbox field with a single option (e.g. `|true`).
  * Unlike a multi-option checkbox, this is a single boolean *value* (true/false), not a selection.
  */

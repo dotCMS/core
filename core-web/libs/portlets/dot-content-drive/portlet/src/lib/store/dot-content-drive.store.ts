@@ -44,7 +44,12 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { buildUserSearchablePayload, decodeFilters, parseWorkflowFilter } from '../utils/functions';
+import {
+    buildUserSearchablePayload,
+    decodeFilters,
+    getUserSearchableActive,
+    parseWorkflowFilter
+} from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -130,10 +135,9 @@ export const DotContentDriveStore = signalStore(
                         offset: 0
                     },
                     pages: [DEFAULT_PAGE],
-                    // Restore active field-filter chips from any `us.*` keys in the URL filters.
-                    userSearchableActive: Object.keys(filters)
-                        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
-                        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length))
+                    // Which field-filter chips to show — parsed from the `us.*` value keys at the
+                    // decode layer (getUserSearchableActive), keeping this method free of that logic.
+                    userSearchableActive: getUserSearchableActive(filters)
                 });
             },
             setItems(items: DotContentDriveItem[]) {

@@ -25,7 +25,8 @@ import {
     isBinaryCheckboxField,
     parseUserSearchableValue,
     serializeUserSearchableValue,
-    buildUserSearchablePayload
+    buildUserSearchablePayload,
+    getUserSearchableActive
 } from './functions';
 
 import { DotContentDriveFilters } from '../shared/models';
@@ -795,6 +796,18 @@ describe('User-searchable field helpers', () => {
             const result = decodeFilters('us.summary:hello, world');
 
             expect(result['us.summary']).toBe('hello, world');
+        });
+    });
+
+    describe('getUserSearchableActive', () => {
+        it('should return the field variables of us.* keys, in order, ignoring other filters', () => {
+            expect(
+                getUserSearchableActive({ 'us.title': 'x', baseType: ['1'], 'us.tags': 'a,b' })
+            ).toEqual(['title', 'tags']);
+        });
+
+        it('should return an empty array when there are no us.* keys', () => {
+            expect(getUserSearchableActive({ contentType: ['Blog'] })).toEqual([]);
         });
     });
 
