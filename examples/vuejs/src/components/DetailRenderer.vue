@@ -14,6 +14,7 @@ import ProductBlock from '@/components/block-renderers/ProductBlock.vue';
 import Footer from '@/components/footer/Footer.vue';
 import Header from '@/components/header/Header.vue';
 import { useIsEditMode } from '@/composables/useIsEditMode';
+import { toPlain } from '@/lib/utils';
 import type { PageExtraContent } from '@/types/content';
 import { imageLoader } from '@/utils/imageLoader';
 import type { PageResponse } from '@/utils/pageResponse';
@@ -58,7 +59,7 @@ const customRenderers: CustomRenderer = {
 
 const onBlockClick = () => {
     if (isEditMode.value && urlContentMap.value) {
-        enableBlockEditorInline(urlContentMap.value as never, 'blogContent');
+        enableBlockEditorInline(toPlain(urlContentMap.value) as never, 'blogContent');
     }
 };
 </script>

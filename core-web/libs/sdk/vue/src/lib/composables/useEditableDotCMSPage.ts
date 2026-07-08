@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, shallowRef, type Ref } from 'vue';
+import { isReactive, isRef, onBeforeUnmount, onMounted, shallowRef, toRaw, type Ref } from 'vue';
 
 import {
     UVEEventType,
@@ -7,6 +7,62 @@ import {
 } from '@dotcms/types';
 import { createUVESubscription, getUVEState, initUVE, updateNavigation } from '@dotcms/uve';
 import { registerStyleEditorSchemas } from '@dotcms/uve/internal';
+
+/**
+ * Recursively unwrap Vue reactivity (refs / reactive proxies) into a plain,
+ * structured-clone-safe object.
+ *
+ * The UVE bridge sends the page response to the editor via `postMessage`, which
+ * uses the structured clone algorithm — and that throws a `DataCloneError` on
+ * Vue reactive Proxies. Callers commonly pass a value that came through reactive
+ * props or `reactive()`, so we defensively deep-unwrap before handing anything
+ * to the UVE. Plain values pass through untouched.
+ *
+ * @internal
+ */
+function toPlain<T>(value: T): T {
+    const seen = new WeakMap<object, unknown>();
+
+    const unwrap = (input: unknown): unknown => {
+        const raw = isRef(input)
+            ? (input as { value: unknown }).value
+            : isReactive(input)
+              ? toRaw(input)
+              : input;
+
+        if (raw === null || typeof raw !== 'object') {
+            return raw;
+        }
+
+        if (seen.has(raw as object)) {
+            return seen.get(raw as object);
+        }
+
+        if (Array.isArray(raw)) {
+            const arr: unknown[] = [];
+            seen.set(raw as object, arr);
+            raw.forEach((item) => arr.push(unwrap(item)));
+
+            return arr;
+        }
+
+        // Preserve non-plain objects (Date, etc.) as-is — they clone fine.
+        const proto = Object.getPrototypeOf(raw);
+        if (proto !== Object.prototype && proto !== null) {
+            return raw;
+        }
+
+        const out: Record<string, unknown> = {};
+        seen.set(raw as object, out);
+        for (const key of Object.keys(raw as Record<string, unknown>)) {
+            out[key] = unwrap((raw as Record<string, unknown>)[key]);
+        }
+
+        return out;
+    };
+
+    return unwrap(value) as T;
+}
 
 /**
  * Composable to manage the editable state of a dotCMS page inside the Universal
@@ -61,9 +117,13 @@ export function useEditableDotCMSPage<T extends DotCMSExtendedPageResponse>(
             return;
         }
 
-        const pageURI = pageResponse?.pageAsset?.page?.pageURI;
+        // Callers often pass a value that came through reactive props / reactive().
+        // The UVE posts this to the editor via structured clone, which cannot clone
+        // Vue Proxies — so unwrap to a plain object before any UVE call.
+        const plainResponse = toPlain(pageResponse);
+        const pageURI = plainResponse?.pageAsset?.page?.pageURI;
 
-        ({ destroyUVESubscriptions } = initUVE(pageResponse));
+        ({ destroyUVESubscriptions } = initUVE(plainResponse));
 
         // Sometimes the page is null due to permissions, so we only update the
         // navigation when we actually have a pageURI and let the UVE resolve it.
@@ -71,8 +131,8 @@ export function useEditableDotCMSPage<T extends DotCMSExtendedPageResponse>(
             updateNavigation(pageURI);
         }
 
-        if (pageResponse.styleEditorSchemas?.length) {
-            registerStyleEditorSchemas(pageResponse.styleEditorSchemas);
+        if (plainResponse.styleEditorSchemas?.length) {
+            registerStyleEditorSchemas(plainResponse.styleEditorSchemas);
         }
 
         ({ unsubscribe: unsubscribeContentChanges } = createUVESubscription(

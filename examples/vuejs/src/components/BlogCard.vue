@@ -3,6 +3,7 @@ import type { DotCMSBasicContentlet } from '@dotcms/types';
 import { editContentlet } from '@dotcms/uve';
 
 import { useIsEditMode } from '@/composables/useIsEditMode';
+import { toPlain } from '@/lib/utils';
 import type { Blog } from '@/types/content';
 import { formatDate } from '@/utils/formatDate';
 import { imageLoader } from '@/utils/imageLoader';
@@ -11,7 +12,7 @@ const props = defineProps<{ blog: Blog }>();
 
 const isEditMode = useIsEditMode();
 
-const onEdit = () => editContentlet(props.blog as unknown as DotCMSBasicContentlet);
+const onEdit = () => editContentlet(toPlain(props.blog) as unknown as DotCMSBasicContentlet);
 </script>
 
 <template>

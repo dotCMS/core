@@ -3,6 +3,7 @@ import type { DotCMSBasicContentlet } from '@dotcms/types';
 import { editContentlet } from '@dotcms/uve';
 
 import { useIsEditMode } from '@/composables/useIsEditMode';
+import { toPlain } from '@/lib/utils';
 
 /** Opens the contentlet editor in the UVE. Only visible in edit mode. */
 const props = defineProps<{ contentlet: Partial<DotCMSBasicContentlet> }>();
@@ -11,7 +12,8 @@ const isEditMode = useIsEditMode();
 
 const onEdit = (event: MouseEvent) => {
     event.stopPropagation();
-    editContentlet(props.contentlet as DotCMSBasicContentlet);
+    // Unwrap Vue reactivity: UVE posts this to the editor and cannot clone a Proxy.
+    editContentlet(toPlain(props.contentlet) as DotCMSBasicContentlet);
 };
 </script>
 

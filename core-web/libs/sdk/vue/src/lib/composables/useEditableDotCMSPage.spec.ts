@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, isReactive, reactive } from 'vue';
 
 import { UVEEventType } from '@dotcms/types';
 import { createUVESubscription, getUVEState, initUVE, updateNavigation } from '@dotcms/uve';
@@ -69,6 +69,32 @@ describe('useEditableDotCMSPage', () => {
         mountWith();
         expect(initUVE).toHaveBeenCalledWith(PAGE);
         expect(updateNavigation).toHaveBeenCalledWith('/test');
+    });
+
+    it('passes a plain (non-reactive, structured-clone-safe) object to initUVE', () => {
+        (getUVEState as ReturnType<typeof vi.fn>).mockReturnValue({ mode: 'EDIT' });
+
+        // Simulate a caller that passed a value through reactive props / reactive().
+        const reactivePage = reactive({
+            pageAsset: { page: { pageURI: '/test' } },
+            content: {}
+        }) as never;
+
+        const Comp = defineComponent({
+            setup() {
+                useEditableDotCMSPage(reactivePage);
+
+                return () => h('div');
+            }
+        });
+        mount(Comp);
+
+        const arg = (initUVE as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        // Must not be a Vue reactive proxy (postMessage cannot structured-clone one).
+        expect(isReactive(arg)).toBe(false);
+        // structuredClone would throw on a proxy — it must succeed here.
+        expect(() => structuredClone(arg)).not.toThrow();
+        expect(arg).toEqual({ pageAsset: { page: { pageURI: '/test' } }, content: {} });
     });
 
     it('updates the response on a CONTENT_CHANGES event', async () => {
