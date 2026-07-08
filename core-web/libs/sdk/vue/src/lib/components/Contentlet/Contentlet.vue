@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue';
+import { computed, getCurrentInstance, type Component } from 'vue';
 
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 import {
@@ -34,15 +34,14 @@ const ctx = useDotCMSPageContext();
 const isDevMode = useIsDevMode();
 const isAnalyticsActive = useIsAnalyticsActive();
 
-// Function ref (not a string/`ref=` template ref): the contentlet wrapper also
-// spreads `dotAttributes`, and a static template ref there triggers Vue's
-// "ref cannot be used on hoisted vnodes" warning. A function ref is never
-// hoisted and always runs inside the render context.
-const el = ref<HTMLElement | null>(null);
-const setEl = (value: Element | null) => {
-    el.value = (value as HTMLElement) ?? null;
-};
-const haveContent = useCheckVisibleContent(el);
+// Measure via the component's own root element instead of a template ref.
+// The wrapper spreads `dotAttributes`, and attaching any ref there triggers
+// Vue's "ref cannot be used on hoisted vnodes" warning when the compiler hoists
+// the vnode; reading `$el` on mount avoids the ref entirely.
+const instance = getCurrentInstance();
+const haveContent = useCheckVisibleContent(
+    () => instance?.proxy?.$el as Element | null | undefined
+);
 
 // In edit mode we emit the full editor metadata. In live mode we strip it,
 // keeping only the minimal set Analytics needs (and only while it is active).
@@ -73,7 +72,6 @@ const noComponent = computed<Component | undefined>(() => ctx.userComponents[CUS
 
 <template>
   <div
-    :ref="setEl"
     v-bind="dotAttributes"
     :class="CONTENTLET_CLASS"
     :style="style"

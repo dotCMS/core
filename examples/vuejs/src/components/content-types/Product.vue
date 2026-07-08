@@ -4,16 +4,19 @@ import { computed } from 'vue';
 import type { DotCMSImage } from '@/types/content';
 import { imageLoader } from '@/utils/imageLoader';
 
+// dotCMS returns numeric fields as strings (e.g. "510.00"), so accept both.
 const props = defineProps<{
     image?: DotCMSImage;
     title?: string;
-    salePrice?: number;
-    retailPrice?: number;
+    salePrice?: number | string;
+    retailPrice?: number | string;
     urlTitle?: string;
 }>();
 
-const formatPrice = (price?: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price ?? 0);
+const formatPrice = (price?: number | string) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+        Number(price ?? 0)
+    );
 
 const onSale = computed(() => Boolean(props.retailPrice && props.salePrice));
 const displayPrice = computed(() =>
