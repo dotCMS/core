@@ -192,6 +192,7 @@
                 <dot-edit-content-sidebar-history
                     [historyItems]="$versionsItems()"
                     [status]="$historyStatus()"
+                    [pushPublishStatus]="$pushPublishHistoryStatus()"
                     [contentIdentifier]="$store.contentlet()?.identifier || ''"
                     [historyPagination]="$versionsPagination()"
                     [historicalVersionInode]="$store.historicalVersionInode()"

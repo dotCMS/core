@@ -76,7 +76,7 @@
                 <p-menu #ppMenu appendTo="body" [model]="$menuItems()" [popup]="true" />
             }
         </ng-template>
-        @if ($isLoading() && !$hasPushPublishHistoryItems()) {
+        @if ($isPushPublishLoading() && !$hasPushPublishHistoryItems()) {
             <!-- Loading state for push publish (initial load only) -->
             <div data-testid="push-publish-loading-state">
                 @for (item of [1, 2, 3]; track $index) {

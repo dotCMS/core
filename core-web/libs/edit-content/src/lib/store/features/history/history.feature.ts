@@ -752,24 +752,39 @@ export function withHistory() {
         withHooks({
             onInit(store) {
                 /**
-                 * Effect that automatically loads versions and push publish history when contentlet changes
-                 * This ensures both datasets are refreshed when switching between different content
+                 * Effect that reloads the history datasets when the contentlet changes,
+                 * scoped to what each dataset actually depends on:
+                 * - Versions are per identifier + language, so viewing another version
+                 *   (same content, same locale) does not refetch them.
+                 * - Push publish history is per identifier only, so it never reloads on
+                 *   version or locale switches.
+                 * Reloads never clear the current items first: the previous list stays
+                 * visible while loading (page 1 replaces it on response), so the sidebar
+                 * doesn't collapse into skeletons.
                  */
+                let loadedVersionsKey: string | null = null;
+                let loadedPushPublishIdentifier: string | null = null;
+
                 effect(() => {
                     const contentlet = store.contentlet();
 
                     untracked(() => {
                         // Only load data if we have a contentlet with an identifier
-                        if (contentlet?.identifier) {
-                            // Reload both datasets without clearing them first: the previous
-                            // items stay visible while loading (page 1 replaces them on
-                            // response), so the sidebar doesn't collapse into skeletons on
-                            // every version/locale switch.
+                        if (!contentlet?.identifier) {
+                            return;
+                        }
+
+                        const versionsKey = `${contentlet.identifier}:${contentlet.languageId}`;
+                        if (versionsKey !== loadedVersionsKey) {
+                            loadedVersionsKey = versionsKey;
                             store.loadVersions({
                                 identifier: contentlet.identifier,
                                 page: 1
                             });
+                        }
 
+                        if (contentlet.identifier !== loadedPushPublishIdentifier) {
+                            loadedPushPublishIdentifier = contentlet.identifier;
                             store.loadPushPublishHistory({
                                 identifier: contentlet.identifier,
                                 page: 1

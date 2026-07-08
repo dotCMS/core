@@ -1008,6 +1008,38 @@ describe('HistoryFeature', () => {
             expect(store.pushPublishHistory()).toEqual(expectedSortedAfterClear);
         }));
 
+        it('should not reload anything when only the version inode changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            store.updateContentlet({ ...mockContentlet, inode: 'another-version-inode' });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+        }));
+
+        it('should reload versions but not push publish history when only the language changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            store.updateContentlet({ ...mockContentlet, languageId: 2 });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                mockContentlet.identifier,
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                2
+            );
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+        }));
+
         it('should not load data if contentlet has no identifier', fakeAsync(() => {
             const contentletWithoutIdentifier = {
                 ...mockContentlet,

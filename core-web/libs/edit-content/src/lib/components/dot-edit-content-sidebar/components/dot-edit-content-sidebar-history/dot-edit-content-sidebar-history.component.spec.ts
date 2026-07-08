@@ -127,6 +127,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
         spectator.setInput('historyItems', mockHistoryItems);
         spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('pushPublishStatus', ComponentStatus.LOADED);
 
         spectator.detectChanges();
     });
@@ -466,7 +467,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             });
 
             it('should not emit pushPublishPageChange when already loading', () => {
-                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.setInput('pushPublishStatus', ComponentStatus.LOADING);
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
                 spectator.component.onPushPublishTimelineReachedEnd();
@@ -557,12 +558,20 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         describe('Push Publish Display States', () => {
-            it('should show loading state when status is LOADING', () => {
-                spectator.setInput('status', ComponentStatus.LOADING);
+            it('should show loading state when the push publish status is LOADING', () => {
+                spectator.setInput('pushPublishStatus', ComponentStatus.LOADING);
                 spectator.detectChanges();
 
                 const loadingState = spectator.query('[data-testid="push-publish-loading-state"]');
                 expect(loadingState).toExist();
+            });
+
+            it('should not show loading state when only the versions status is LOADING', () => {
+                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.detectChanges();
+
+                const loadingState = spectator.query('[data-testid="push-publish-loading-state"]');
+                expect(loadingState).toBeFalsy();
             });
 
             it('should show empty state when no push publish history items', () => {
