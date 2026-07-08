@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { shallowRef, ref, onMounted } from 'vue';
 
 import BlogListingRenderer from '@/components/BlogListingRenderer.vue';
 import { getDotCMSPage } from '@/utils/getDotCMSPage';
 import { isPageError, type PageResponse } from '@/utils/pageResponse';
 
-const pageResponse = ref<PageResponse | null>(null);
+// shallowRef: keep the page response plain so the UVE bridge can clone it.
+const pageResponse = shallowRef<PageResponse | null>(null);
 const loading = ref(true);
 
 onMounted(async () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { shallowRef, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import DetailRenderer from '@/components/DetailRenderer.vue';
@@ -8,7 +8,8 @@ import { isPageError, type PageResponse } from '@/utils/pageResponse';
 
 const route = useRoute();
 
-const pageResponse = ref<PageResponse | null>(null);
+// shallowRef: keep the page response plain so the UVE bridge can clone it.
+const pageResponse = shallowRef<PageResponse | null>(null);
 const notFound = ref(false);
 const loading = ref(true);
 

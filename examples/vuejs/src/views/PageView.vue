@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { shallowRef, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import PageRenderer from '@/components/PageRenderer.vue';
@@ -9,7 +9,10 @@ import { isPageError, type PageResponse } from '@/utils/pageResponse';
 const route = useRoute();
 const router = useRouter();
 
-const pageResponse = ref<PageResponse | null>(null);
+// shallowRef: keep the page response a plain object. A deep `ref` would wrap it
+// (and everything nested) in reactive Proxies, which the UVE bridge cannot
+// structured-clone when it posts the page to the editor.
+const pageResponse = shallowRef<PageResponse | null>(null);
 const notFound = ref(false);
 const loading = ref(true);
 
