@@ -53,6 +53,13 @@ import java.util.List;
  * (e.g. {@code us.deepseek.r1-v1:0}); use the bare ID for on-demand models
  * (e.g. {@code openai.gpt-oss-120b-1:0}, {@code amazon.titan-embed-text-v2:0}).
  *
+ * <p>Anthropic (chat only — Anthropic has no embeddings or image APIs):
+ * <ul>
+ *   <li>{@code apiKey} – Anthropic API key</li>
+ *   <li>{@code model} – e.g. {@code claude-sonnet-4-6}, {@code claude-haiku-4-5}</li>
+ *   <li>{@code endpoint} – optional base URL override (proxies/gateways)</li>
+ * </ul>
+ *
  * <p>OpenRouter (chat only — OpenRouter has no embeddings or image endpoints):
  * <ul>
  *   <li>{@code apiKey} – OpenRouter API key</li>

@@ -1,4 +1,46 @@
+import { DotCMSContentlet, DotFileMetadata } from '@dotcms/dotcms-models';
 import { NormalizedPoint } from '@dotcms/image-editor';
+
+/**
+ * Reads the focal point string from a resolved binary metadata object.
+ *
+ * The backend surfaces it under the single clean `focalPoint` key on the binary
+ * field's metadata — the same mechanism Binary fields have always used.
+ *
+ * @param metadata - The resolved file metadata.
+ * @returns The focal point `"x,y"` string, or undefined when none is present.
+ */
+export function focalPointFromMetadata(
+    metadata: DotFileMetadata | null | undefined
+): string | undefined {
+    return metadata?.focalPoint;
+}
+
+/**
+ * Resolves the focal point from a referenced asset contentlet.
+ *
+ * The focal lives on the binary field's metadata, exposed by the backend as
+ * `{fieldVar}MetaData`, where `fieldVar` is the asset's binary field (`asset` for a
+ * dotAsset, `fileAsset` for a legacy FileAsset) — carried by the contentlet's
+ * `titleImage`. This is the same `{fieldVar}MetaData.focalPoint` mechanism a Binary
+ * field uses, applied uniformly.
+ *
+ * @param file - The referenced asset contentlet (dotAsset or FileAsset).
+ * @returns The focal point `"x,y"` string, or undefined when none is present.
+ */
+export function focalPointFromContentlet(
+    file: DotCMSContentlet | null | undefined
+): string | undefined {
+    if (!file) {
+        return undefined;
+    }
+
+    const raw = file as unknown as Record<string, DotFileMetadata | undefined>;
+    const fieldVar =
+        ((file as unknown as Record<string, string>)['titleImage'] ?? 'asset') || 'asset';
+
+    return focalPointFromMetadata(raw[`${fieldVar}MetaData`]);
+}
 
 /**
  * Parses a focal point stored as an `"x,y"` string (the backend exposes it on the

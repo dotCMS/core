@@ -278,12 +278,12 @@ test.describe('Custom Columns (showFields)', () => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blog.inode);
 
-        // Default columns: Title, Language, Status
+        // Default columns: Title, Locales, Status
         const relationshipField = new RelationshipField(adminPage);
         const headerTexts = await relationshipField.getHeaderTexts();
 
         expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
-        expect(headerTexts.some((h) => h.includes('language'))).toBe(true);
+        expect(headerTexts.some((h) => h.includes('locales'))).toBe(true);
         expect(headerTexts.some((h) => h.includes('status'))).toBe(true);
     });
 });
