@@ -190,7 +190,7 @@ public class PublishingRetryHelper {
         for (final Environment environment : environments) {
             if (!permissionAPI.doesUserHavePermission(environment, PermissionAPI.PERMISSION_USE, user)) {
                 throw new DotPublisherException(String.format(
-                        "User '%s' does not have permission to push bundle '%s' to environment '%s'",
+                        "User '%s' cannot push bundle '%s' because it does not have permission to use environment '%s'",
                         user.getUserId(), bundleId, environment.getName()));
             }
         }
