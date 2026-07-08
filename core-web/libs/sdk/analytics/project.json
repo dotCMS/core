@@ -17,13 +17,11 @@
             }
         },
         "build:standalone": {
-            "executor": "@nx/vite:build",
-            "outputs": ["{options.outputPath}"],
+            "dependsOn": ["^build"],
+            "outputs": ["{workspaceRoot}/dist/libs/sdk/analytics-standalone"],
             "options": {
-                "main": "libs/sdk/analytics/src/lib/standalone.ts",
-                "outputPath": "dist/libs/sdk/analytics-standalone",
-                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
-                "configFile": "libs/sdk/analytics/vite.standalone.config.mts"
+                "config": "./vite.standalone.config.mts",
+                "outDir": "../../../dist/libs/sdk/analytics-standalone"
             }
         }
     }
