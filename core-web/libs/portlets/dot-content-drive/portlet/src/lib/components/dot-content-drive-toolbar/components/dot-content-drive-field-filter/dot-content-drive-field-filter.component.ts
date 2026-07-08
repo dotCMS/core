@@ -177,6 +177,36 @@ export class DotContentDriveFieldFilterComponent {
         () => this.$field().fieldType === FIELD_FILTER_TIME_ONLY_TYPE
     );
 
+    /**
+     * A text field can hold plain text, a whole number, or a decimal (via its `dataType`). Surface
+     * that with a matching input mode + placeholder so it's clear what to type (and mobile shows the
+     * right keyboard). The value is still stored as a string.
+     */
+    protected readonly $textType = computed<'text' | 'integer' | 'decimal'>(() => {
+        switch ((this.$field().dataType ?? '').toUpperCase()) {
+            case 'INTEGER':
+                return 'integer';
+            case 'FLOAT':
+                return 'decimal';
+            default:
+                return 'text';
+        }
+    });
+    protected readonly $textInputMode = computed(() => {
+        const type = this.$textType();
+
+        return type === 'integer' ? 'numeric' : type === 'decimal' ? 'decimal' : 'text';
+    });
+    protected readonly $textPlaceholderKey = computed(() => {
+        const type = this.$textType();
+
+        return type === 'integer'
+            ? 'content-drive.field-filter.number.placeholder'
+            : type === 'decimal'
+              ? 'content-drive.field-filter.decimal.placeholder'
+              : 'content-drive.field-filter.text.placeholder';
+    });
+
     /** Options for select/multi-select, parsed from `field.values`; values normalized to strings. */
     protected readonly $options = computed<FieldFilterOption[]>(() =>
         getSingleSelectableFieldOptions(this.$field().values ?? '', this.$field().dataType).map(

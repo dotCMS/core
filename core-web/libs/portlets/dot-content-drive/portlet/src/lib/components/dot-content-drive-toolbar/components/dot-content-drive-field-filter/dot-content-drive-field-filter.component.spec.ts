@@ -95,19 +95,39 @@ describe('DotContentDriveFieldFilterComponent', () => {
     });
 
     describe('text value', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
-
-        it('should patch the filter with the typed value (debounced)', () => {
-            spectator.setInput('field', field({ variable: 'body', fieldType: 'Text' }));
+        it('should signal a numeric input mode for a whole-number text field', () => {
+            spectator.setInput('field', field({ fieldType: 'Text', dataType: 'INTEGER' }));
             spectator.detectChanges();
             openPopover();
 
             const input = spectator.query(byTestId('field-filter-text'), { root: true });
-            spectator.typeInElement('hello', input as HTMLInputElement);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            expect(input?.getAttribute('inputmode')).toBe('numeric');
+        });
 
-            expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'hello' });
+        it('should signal a decimal input mode for a decimal text field', () => {
+            spectator.setInput('field', field({ fieldType: 'Text', dataType: 'FLOAT' }));
+            spectator.detectChanges();
+            openPopover();
+
+            const input = spectator.query(byTestId('field-filter-text'), { root: true });
+            expect(input?.getAttribute('inputmode')).toBe('decimal');
+        });
+
+        describe('debounce', () => {
+            beforeEach(() => jest.useFakeTimers());
+            afterEach(() => jest.useRealTimers());
+
+            it('should patch the filter with the typed value (debounced)', () => {
+                spectator.setInput('field', field({ variable: 'body', fieldType: 'Text' }));
+                spectator.detectChanges();
+                openPopover();
+
+                const input = spectator.query(byTestId('field-filter-text'), { root: true });
+                spectator.typeInElement('hello', input as HTMLInputElement);
+                jest.advanceTimersByTime(DEBOUNCE_TIME);
+
+                expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'hello' });
+            });
         });
     });
 

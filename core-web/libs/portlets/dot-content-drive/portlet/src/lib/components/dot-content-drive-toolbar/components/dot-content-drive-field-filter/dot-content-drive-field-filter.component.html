@@ -15,7 +15,8 @@
                     class="w-full"
                     [ngModel]="$textValue()"
                     (ngModelChange)="onTextInput($event)"
-                    [placeholder]="'content-drive.field-filter.text.placeholder' | dm"
+                    [attr.inputmode]="$textInputMode()"
+                    [placeholder]="$textPlaceholderKey() | dm"
                     [attr.aria-label]="$title()"
                     data-testid="field-filter-text" />
             </div>
