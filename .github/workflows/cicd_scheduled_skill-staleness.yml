@@ -1,0 +1,95 @@
+name: 'Skill Staleness Report'
+
+# Weekly nag (Flag layer): surfaces first-party skills stuck in `experimental`
+# or with dead references, and upserts a single tracking issue so owners can
+# act. Uses git history + files only — no Project board, no extra token
+# scopes. Never fails; only reports.
+
+on:
+  schedule:
+    # Mondays at 13:00 UTC (~9am ET EDT / 8am ET EST).
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print the report to the job summary instead of upserting the tracking issue'
+        type: boolean
+        required: false
+        default: true
+      stale_days:
+        description: 'Days-since-last-commit threshold for experimental skills (default 60)'
+        type: number
+        required: false
+        default: 60
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: skill-staleness
+  cancel-in-progress: false
+
+env:
+  STALE_DAYS: ${{ inputs.stale_days != '' && inputs.stale_days || '60' }}
+  TRACKING_TITLE: '🧹 Skill staleness report'
+
+jobs:
+  report:
+    name: Report stale skills
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so `git log` can date each skill directory.
+          fetch-depth: 0
+          sparse-checkout: |
+            .claude/skills
+            .claude/tools
+            .nvmrc
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Run staleness report
+        id: report
+        env:
+          STALE_DAYS: ${{ env.STALE_DAYS }}
+          REPORT_FILE: ${{ runner.temp }}/report.md
+        run: |
+          node .claude/tools/skill-staleness.mjs
+          echo "report_file=${{ runner.temp }}/report.md" >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        if: always()
+        run: cat "${{ steps.report.outputs.report_file }}" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upsert tracking issue
+        if: steps.report.outputs.has_results == 'true' && inputs.dry_run != true
+        uses: actions/github-script@v7
+        env:
+          REPORT_FILE: ${{ steps.report.outputs.report_file }}
+          TRACKING_TITLE: ${{ env.TRACKING_TITLE }}
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync(process.env.REPORT_FILE, 'utf8');
+            const title = process.env.TRACKING_TITLE;
+            const { owner, repo } = context.repo;
+            // Find an existing open tracking issue by marker in the body.
+            const found = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:body "skill-staleness-report"`,
+              per_page: 1,
+            });
+            const existing = found.data.items[0];
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+              core.info(`Updated tracking issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({ owner, repo, title, body });
+              core.info(`Created tracking issue #${created.data.number}`);
+            }

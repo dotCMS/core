@@ -375,3 +375,7 @@ skills-catalog:
 # Validate first-party skills (naming, frontmatter, catalog freshness) — same check CI runs
 skills-lint:
     @node .claude/tools/skill-lint.mjs
+
+# Report skills that look stale (stuck in experimental / dead references) — same as the weekly nag
+skills-staleness:
+    @node .claude/tools/skill-staleness.mjs
