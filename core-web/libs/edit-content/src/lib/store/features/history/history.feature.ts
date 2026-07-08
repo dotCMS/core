@@ -656,9 +656,18 @@ export function withHistory() {
                      */
                     handleHistoryAction: (action: DotHistoryTimelineItemAction) => {
                         switch (action.type) {
-                            case DotHistoryTimelineItemActionType.VIEW:
-                                // Determine action based on item type and current store state
-                                if (action.item.working) {
+                            case DotHistoryTimelineItemActionType.VIEW: {
+                                const isCompareView = store.uiState().view === 'compare';
+
+                                if (isCompareView) {
+                                    if (action.item.working) {
+                                        // Clicking the current version while comparing exits compare
+                                        exitCompareView();
+                                    } else {
+                                        // Keep the compare layout and diff against the clicked version
+                                        loadCompareVersionContent(action.item.inode);
+                                    }
+                                } else if (action.item.working) {
                                     // If clicking on working version, exit historical view
                                     exitHistoricalView();
                                 } else {
@@ -666,6 +675,7 @@ export function withHistory() {
                                     loadVersionContent(action.item.inode);
                                 }
                                 break;
+                            }
                             case DotHistoryTimelineItemActionType.PREVIEW:
                                 // TODO: Implement preview functionality
 

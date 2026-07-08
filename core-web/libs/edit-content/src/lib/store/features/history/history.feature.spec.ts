@@ -654,6 +654,88 @@ describe('HistoryFeature', () => {
                 mockContentletVersion.inode
             );
         }));
+
+        describe('VIEW action while in compare view', () => {
+            const previousCompareContent = {
+                ...mockContentlet,
+                inode: 'previous-compare-inode',
+                title: 'Previous Compare'
+            };
+
+            beforeEach(() => {
+                patchState(store, {
+                    compareContentlet: previousCompareContent,
+                    historicalVersionInode: 'previous-compare-inode',
+                    uiState: { ...store.uiState(), view: 'compare' }
+                });
+            });
+
+            it('should update the compared version and stay in compare view when clicking another version', fakeAsync(() => {
+                const clickedContent = {
+                    ...mockContentlet,
+                    inode: 'clicked-inode',
+                    title: 'Clicked Version'
+                };
+                dotContentletService.getContentletByInode.mockReturnValue(of(clickedContent));
+
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, inode: 'clicked-inode', working: false }
+                });
+                tick();
+
+                expect(dotContentletService.getContentletByInode).toHaveBeenCalledWith(
+                    'clicked-inode'
+                );
+                expect(store.uiState().view).toBe('compare');
+                expect(store.compareContentlet()).toEqual(clickedContent);
+                // The current-version side stays fixed (no full-viewport navigation)
+                expect(store.contentlet()).toEqual(mockContentlet);
+            }));
+
+            it('should mark the newly compared version as active in the version list', fakeAsync(() => {
+                const clickedContent = { ...mockContentlet, inode: 'clicked-inode' };
+                dotContentletService.getContentletByInode.mockReturnValue(of(clickedContent));
+
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, inode: 'clicked-inode', working: false }
+                });
+                tick();
+
+                expect(store.historicalVersionInode()).toBe('clicked-inode');
+            }));
+
+            it('should exit compare view when clicking the working version', () => {
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, working: true }
+                });
+
+                expect(store.uiState().view).toBe('form');
+                expect(store.compareContentlet()).toBeNull();
+                expect(store.historicalVersionInode()).toBeNull();
+            });
+
+            it('should keep loading versions full-viewport when not in compare view', fakeAsync(() => {
+                patchState(store, {
+                    compareContentlet: null,
+                    uiState: { ...store.uiState(), view: 'form' }
+                });
+                const clickedContent = { ...mockContentlet, inode: 'clicked-inode' };
+                dotContentletService.getContentletByInode.mockReturnValue(of(clickedContent));
+
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, inode: 'clicked-inode', working: false }
+                });
+                tick();
+
+                expect(store.uiState().view).toBe('form');
+                expect(store.contentlet()).toEqual(clickedContent);
+                expect(store.isViewingHistoricalVersion()).toBe(true);
+            }));
+        });
     });
 
     describe('resetVersions', () => {
