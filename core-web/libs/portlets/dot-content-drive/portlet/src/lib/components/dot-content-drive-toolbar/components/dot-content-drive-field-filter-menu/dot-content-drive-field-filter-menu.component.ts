@@ -74,16 +74,10 @@ export class DotContentDriveFieldFilterMenuComponent {
     /** Emits the content-type variable to load; switchMap cancels any superseded fetch. */
     readonly #loadFields$ = new Subject<string>();
 
-    /** Content-type selection as a stable array (never a freshly minted `[]`). */
-    readonly #contentTypes = computed(() => {
-        const raw = this.#store.getFilterValue('contentType');
-
-        return Array.isArray(raw) ? raw : undefined;
-    });
-
     /** The single selected content-type variable, or null when 0 or >1 are selected. */
     protected readonly $activeContentType = computed(() => {
-        const contentTypes = this.#contentTypes();
+        const raw = this.#store.getFilterValue('contentType');
+        const contentTypes = Array.isArray(raw) ? raw : undefined;
 
         return contentTypes?.length === 1 ? contentTypes[0] : null;
     });

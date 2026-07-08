@@ -282,13 +282,12 @@ export class DotContentDriveFieldFilterComponent {
 
     /** Relationship is picked in a full dialog, so the chip opens it instead of a popover. */
     protected readonly $isRelationship = computed(() => this.$control() === 'relationship');
-    /** identifier → contentlet title, cached from the picker so chips can show titles. */
-    readonly #relationshipTitleById = signal<Record<string, string>>({});
     /**
-     * identifier → inode, cached from the picker. The stored filter value is the identifier (per
-     * the search contract), but the picker preselects by inode, so we map back when reopening.
+     * The picked related contentlet, keyed by identifier. The stored filter value is the identifier
+     * (per the search contract); we keep the whole contentlet so we can derive its title (chip
+     * label) and inode (the picker preselects by inode) without extra lookups.
      */
-    readonly #relationshipInodeById = signal<Record<string, string>>({});
+    readonly #relationshipItemById = signal<Record<string, DotCMSContentlet>>({});
 
     /** Chip label parts: a concise summary of the current value (empty when unset). */
     protected readonly $chipSelections = computed<string[]>(() => {
@@ -304,7 +303,7 @@ export class DotContentDriveFieldFilterComponent {
         if (control === 'relationship') {
             // Single related item: show its title when resolved, otherwise a neutral count
             // (identifiers aren't user-readable, e.g. after a cold URL restore).
-            const title = this.#relationshipTitleById()[raw];
+            const title = this.#relationshipItemById()[raw]?.title;
 
             return [
                 title ??
@@ -431,9 +430,9 @@ export class DotContentDriveFieldFilterComponent {
         }
 
         // Single selection (the backend supports one related value). The stored value is the
-        // identifier; the picker preselects by inode, so map back via the cache.
-        const inodeById = this.#relationshipInodeById();
-        const currentItemsIds = [inodeById[this.$rawValue()]].filter(Boolean);
+        // identifier; the picker preselects by inode, so derive it from the cached contentlet.
+        const currentInode = this.#relationshipItemById()[this.$rawValue()]?.inode;
+        const currentItemsIds = currentInode ? [currentInode] : [];
 
         const ref = this.#dialogService.open(DotSelectExistingContentComponent, {
             header: field.name,
@@ -459,16 +458,12 @@ export class DotContentDriveFieldFilterComponent {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((items) => {
-                // Single selection → store the first (only) identifier, or clear when none.
+                // Single selection → cache the whole contentlet and store its identifier (or clear).
                 const [selected] = items;
                 if (selected) {
-                    this.#relationshipTitleById.update((cache) => ({
+                    this.#relationshipItemById.update((cache) => ({
                         ...cache,
-                        [selected.identifier]: selected.title ?? selected.identifier
-                    }));
-                    this.#relationshipInodeById.update((cache) => ({
-                        ...cache,
-                        [selected.identifier]: selected.inode
+                        [selected.identifier]: selected
                     }));
                 }
                 this.#patch(selected?.identifier ?? '');
