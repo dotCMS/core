@@ -3,7 +3,6 @@ import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/j
 import { By } from '@angular/platform-browser';
 
 import { AvatarModule } from 'primeng/avatar';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyButtonComponent, DotMessagePipe, DotGravatarDirective } from '@dotcms/ui';
@@ -25,13 +24,7 @@ describe('DotPushpublishTimelineItemComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotPushpublishTimelineItemComponent,
-        imports: [
-            AvatarModule,
-            TooltipModule,
-            DotCopyButtonComponent,
-            DotMessagePipe,
-            DotGravatarDirective
-        ],
+        imports: [AvatarModule, DotCopyButtonComponent, DotMessagePipe, DotGravatarDirective],
         providers: [
             {
                 provide: DotMessageService,
@@ -54,6 +47,12 @@ describe('DotPushpublishTimelineItemComponent', () => {
     });
 
     describe('Data Display', () => {
+        it('should not render a tooltip on the content wrapper', () => {
+            const wrapper = spectator.query(byTestId('content-wrapper'));
+            expect(wrapper).toBeTruthy();
+            expect(wrapper.getAttribute('tooltipPosition')).toBeNull();
+        });
+
         it('should show the exact date/time — never a relative string — for the push date', () => {
             spectator.setInput('item', {
                 ...mockPushPublishHistoryItem,

@@ -16,7 +16,6 @@ import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
@@ -45,7 +44,6 @@ import {
         ButtonModule,
         TagModule,
         MenuModule,
-        TooltipModule,
         DotCopyButtonComponent,
         DotGravatarDirective,
         DotMessagePipe,

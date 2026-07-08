@@ -2,30 +2,7 @@
 <div data-testid="pushpublish-item" class="block w-full pb-3">
     <div
         data-testid="content-wrapper"
-        class="flex min-w-0 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white py-2.5 pr-2.5 pl-3"
-        [pTooltip]="tooltipContent"
-        tooltipPosition="bottom"
-        [tooltipOptions]="{
-            showDelay: 100,
-            hideDelay: 100,
-            escape: false,
-            positionStyle: 'absolute',
-            appendTo: 'body'
-        }">
-        <ng-template #tooltipContent>
-            <div class="max-w-[280px] min-w-0 py-1">
-                <ul class="m-0 list-none space-y-1 pl-0 text-xs">
-                    <li>
-                        {{ 'edit.content.sidebar.pushpublish.environment' | dm }}:
-                        {{ item.environment }}
-                    </li>
-                    <li>
-                        {{ 'edit.content.sidebar.pushpublish.bundle' | dm }}: {{ item.bundleId }}
-                    </li>
-                </ul>
-            </div>
-        </ng-template>
-
+        class="flex min-w-0 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white py-2.5 pr-2.5 pl-3">
         <div class="flex w-full min-w-0 flex-1 flex-col gap-2">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <span

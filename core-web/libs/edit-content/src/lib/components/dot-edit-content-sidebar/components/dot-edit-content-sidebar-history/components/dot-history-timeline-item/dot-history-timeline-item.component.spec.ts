@@ -4,7 +4,6 @@ import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
@@ -44,7 +43,6 @@ describe('DotHistoryTimelineItemComponent', () => {
             ButtonModule,
             TagModule,
             MenuModule,
-            TooltipModule,
             DotGravatarDirective,
             DotMessagePipe
         ],
@@ -79,10 +77,11 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.query(byTestId('history-item'))).toBeTruthy();
         });
 
-        it('should render content wrapper with tooltip config', () => {
+        it('should not render a tooltip on the content wrapper', () => {
             const wrapper = spectator.query(byTestId('content-wrapper'));
             expect(wrapper).toBeTruthy();
-            expect(wrapper.getAttribute('tooltipPosition')).toBe('bottom');
+            expect(wrapper.getAttribute('tooltipPosition')).toBeNull();
+            expect(spectator.query(byTestId('overlay-title'))).toBeFalsy();
         });
 
         it('should render time display', () => {
