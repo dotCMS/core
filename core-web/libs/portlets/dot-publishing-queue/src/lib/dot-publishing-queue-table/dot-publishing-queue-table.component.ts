@@ -207,14 +207,6 @@ export class DotPublishingQueueTableComponent {
         this.contextMenu()?.show(event);
     }
 
-    /** Rows in any failure bucket render their bundle id in danger-red — same
-     * `text-red-700` the status chip uses for the danger bucket. Gives an
-     * at-a-glance signal even when the Status column is off-screen on narrow
-     * viewports. */
-    isFailedRow(row: PublishingJobView): boolean {
-        return row.status ? FAILURE_STATUSES.has(row.status) : false;
-    }
-
     onLazyLoad(event: TableLazyLoadEvent): void {
         const rows = (event.rows as number) ?? this.store.rowsPerPage();
         const first = (event.first as number) ?? 0;

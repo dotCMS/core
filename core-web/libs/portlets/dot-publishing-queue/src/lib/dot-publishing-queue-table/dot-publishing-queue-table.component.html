@@ -144,10 +144,7 @@
                              copy button right next to the text instead of
                              floating at the far edge of the column. -->
                         <div class="inline-flex items-center gap-1">
-                            <span
-                                [class.text-red-700]="isFailedRow(row)"
-                                [class.font-medium]="isFailedRow(row)"
-                                [title]="row.bundleId">
+                            <span [title]="row.bundleId">
                                 {{ truncateBundleId(row.bundleId) }}
                             </span>
                             <p-button

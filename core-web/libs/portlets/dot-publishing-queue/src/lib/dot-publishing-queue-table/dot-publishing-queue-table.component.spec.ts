@@ -169,33 +169,6 @@ describe('DotPublishingQueueTableComponent', () => {
         expect(chips.length).toBe(2);
     });
 
-    describe('failed-row bundle id styling', () => {
-        it('isFailedRow returns true for any FAILURE_STATUSES entry', () => {
-            expect(
-                spectator.component.isFailedRow(row('x', PublishAuditStatus.FAILED_TO_PUBLISH))
-            ).toBe(true);
-            expect(
-                spectator.component.isFailedRow(row('x', PublishAuditStatus.LICENSE_REQUIRED))
-            ).toBe(true);
-        });
-
-        it('isFailedRow returns false for success/in-progress', () => {
-            expect(spectator.component.isFailedRow(row('x', PublishAuditStatus.SUCCESS))).toBe(
-                false
-            );
-            expect(
-                spectator.component.isFailedRow(row('x', PublishAuditStatus.SENDING_TO_ENDPOINTS))
-            ).toBe(false);
-        });
-
-        it('paints the bundle id in text-red-700 for failed rows', () => {
-            // Row at index 1 in the fixture set is FAILED_TO_PUBLISH; index 0 is SUCCESS.
-            const ids = spectator.queryAll(byTestId('pq-bundles-bundle-id'));
-            expect(ids[0].querySelector('span')?.classList.contains('text-red-700')).toBe(false);
-            expect(ids[1].querySelector('span')?.classList.contains('text-red-700')).toBe(true);
-        });
-    });
-
     describe('copyToClipboard', () => {
         it('delegates to DotClipboardUtil.copy', async () => {
             (clipboard.copy as jest.Mock).mockResolvedValue(true);
