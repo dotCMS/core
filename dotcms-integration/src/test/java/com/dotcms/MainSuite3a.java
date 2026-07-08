@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
+import com.dotcms.ai.util.ContentToStringUtilTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.cost.RequestCostReportTest;
@@ -89,6 +90,7 @@ import org.junit.runners.Suite;
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
         PublisherQueueJobTest.class,
+        ContentToStringUtilTest.class,
 })
 
 public class MainSuite3a {
