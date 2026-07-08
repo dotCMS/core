@@ -9,14 +9,14 @@ _8 first-party · 6 external (symlinked)._
 
 | Name | Status | Owner | Description | Links |
 | --- | --- | --- | --- | --- |
-| `check-release-rollback` | _legacy_ | — |  | — |
-| `cicd-diagnostics` | _legacy_ | — | Use when a GitHub Actions workflow fails, PR build breaks, merge queue rejects, nightly reports failures, or user mentions CI/CD test failures in dotCMS/core. … | — |
-| `dotcms-github-issues` | _legacy_ | — | Create GitHub issues using repository templates. Use when the user asks to create an issue, bug report, feature request, task, spike, epic, or UX requirement. … | — |
-| `lts-backport` | _legacy_ | — | Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Use when applying… | — |
-| `SDK Analytics Installer` | _legacy_ | — | Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions install… | — |
+| `dot-cicd-diagnose` | active | @dotcms/platform | Use when a GitHub Actions workflow fails, PR build breaks, merge queue rejects, nightly reports failures, or user mentions CI/CD test failures in dotCMS/core. … | — |
+| `dot-issue-manage` | active | @dotcms/scout | Create GitHub issues using repository templates. Use when the user asks to create an issue, bug report, feature request, task, spike, epic, or UX requirement. … | — |
+| `dot-issue-triage` | active | @dotcms/scout | Triage GitHub issues using the AI triage pipeline. Fetches the next issue from the "Needs Triage" project column (or a specific issue), creates an agent team t… | — |
+| `dot-release-backport-lts` | active | @dotcms/platform | Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Use when applying… | — |
+| `dot-release-rollback-check` | active | @dotcms/platform | Check whether a dotCMS release can be safely rolled back to a previous version by inspecting all PRs merged between the two versions for rollback-safety labels… | — |
+| `dot-sdk-analytics` | active | @dotcms/scout | Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions install… | — |
+| `dot-ui-vtl-migration` | active | @dotcms/scout | Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. Use this skill whenever… | — |
 | `skill-doctor` | _legacy_ | — | Use when a repo skill fails, produces errors, gives wrong instructions, or references stale information. Also use when a command from a skill returns "not foun… | — |
-| `triage` | _legacy_ | — | Triage GitHub issues using the AI triage pipeline. Fetches the next issue from the "Needs Triage" project column (or a specific issue), creates an agent team t… | — |
-| `vtl-migration` | _legacy_ | — | Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. Use this skill whenever… | — |
 
 ## External skills (symlinked, not governed here)
 

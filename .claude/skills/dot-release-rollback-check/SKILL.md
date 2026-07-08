@@ -1,3 +1,10 @@
+---
+name: dot-release-rollback-check
+owner: "@dotcms/platform"
+status: active
+description: Check whether a dotCMS release can be safely rolled back to a previous version by inspecting all PRs merged between the two versions for rollback-safety labels. Use when the user asks whether a release or version can be safely rolled back, mentions rollback safety, or runs /check-release-rollback.
+---
+
 Check whether a dotCMS release can be safely rolled back to a previous version by
 inspecting all PRs merged between the two versions for rollback safety labels.
 

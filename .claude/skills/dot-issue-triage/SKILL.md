@@ -1,5 +1,7 @@
 ---
-name: triage
+name: dot-issue-triage
+owner: "@dotcms/scout"
+status: active
 description: Triage GitHub issues using the AI triage pipeline. Fetches the next issue from the "Needs Triage" project column (or a specific issue), creates an agent team to validate completeness, detect duplicates, and research the codebase in parallel, then presents a triage proposal for human approval before posting anything to GitHub.
 ---
 

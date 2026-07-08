@@ -134,6 +134,6 @@ Deliberately lightweight: four stages, minimal gates.
 | `just skills-catalog` | Regenerate `CATALOG.md` from frontmatter. |
 | `just skills-lint` | Validate naming, frontmatter, supersedes links, and catalog freshness — the exact check CI runs. |
 
-**Grandfathered skills:** skills predating the `dot-` convention are listed in `skills.config.json` and exempt from naming/`owner`/`status` checks — their issues show as **warnings** (a punch-list), not failures. A follow-up rename PR will bring them into convention and remove them from the list.
+**Grandfathered skills:** skills listed in `skills.config.json` are exempt from naming/`owner`/`status` checks — their lint issues show as **warnings**, not failures. This is reserved for **vendored/generic skills we did not author** (currently `skill-doctor`), which intentionally keep their upstream name and get no `dot-` prefix. First-party skills should never be grandfathered — bring them into convention instead.
 
 **External skills** (symlinked from `.agents/skills/` — `nx-*`, `angular-developer`, etc.) are not governed here; they appear in the catalog's "External" section for visibility only.

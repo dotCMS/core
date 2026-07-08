@@ -1,18 +1,10 @@
 {
   "vendorPrefix": "dot-",
-  "approvedDomains": ["issue", "pr", "release", "cicd", "content", "ui"],
+  "approvedDomains": ["issue", "pr", "release", "cicd", "content", "ui", "sdk"],
   "validStatuses": ["experimental", "active", "superseded"],
   "requiredFields": ["name", "description", "owner", "status"],
   "grandfathered": [
-    "check-release-rollback",
-    "cicd-diagnostics",
-    "create-issue",
-    "dotcms-github-issues",
-    "lts-backport",
-    "sdk-analytics",
-    "skill-doctor",
-    "triage",
-    "vtl-migration"
+    "skill-doctor"
   ],
-  "_note": "Single source of truth for skill governance. 'grandfathered' skills predate the dot- convention and are exempt from naming + owner/status checks until the rename PR removes them from this list. See CONTRIBUTING.md."
+  "_note": "Single source of truth for skill governance. 'grandfathered' skills are exempt from naming + owner/status checks (their lint issues are warnings). skill-doctor is a vendored/generic skill, intentionally not dot- prefixed. See CONTRIBUTING.md."
 }
