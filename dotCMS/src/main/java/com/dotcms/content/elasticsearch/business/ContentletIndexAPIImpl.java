@@ -1562,8 +1562,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
             osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
             osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+            osExisting.flatMap(VersionedIndices::siteSearch).ifPresent(osBuilder::siteSearch);
             // reindexWorking / reindexLive intentionally omitted → cleared
-            versionedIndicesAPI.saveIndices(osBuilder.build());
+            final VersionedIndices rebuilt = osBuilder.build();
+            if (rebuilt.hasAnyIndex()) {
+                versionedIndicesAPI.saveIndices(rebuilt);
+            } else {
+                // The reindex slots were the only OS pointers (e.g. the active OS pair was
+                // deleted via the index-management flow mid-reindex). saveIndices contractually
+                // rejects an empty record — remove the version row instead, same as
+                // clearOsStorePointer (#35640), so the physical deletes below still run.
+                versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
+            }
 
             for (final Optional<String> name : List.of(reindexWorking, reindexLive)) {
                 name.ifPresent(idx -> Try.run(() -> operationsOS.indexAPI().delete(idx))

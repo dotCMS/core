@@ -219,6 +219,53 @@ public class ContentletIndexAPIImplMidReindexRollbackIT extends IntegrationTestB
     }
 
     // =========================================================================
+    // Phase-0 switchover when the reindex slots are the ONLY OS pointers
+    // =========================================================================
+
+    /**
+     * Given: the OS store record holds reindex slots but no active working/live (reachable when
+     *        the active OS pair is deleted via the index-management flow mid-reindex — that flow
+     *        preserves the reindex slots). The partial pair exists physically. Phase rolled back
+     *        to 0.
+     * When:  the ES switchover completes in Phase 0.
+     * Then:  the OS version record is removed entirely (an empty record cannot be saved —
+     *        {@code saveIndices} rejects it, and a thrown save must not skip the physical
+     *        deletes), and the partial pair is deleted from the cluster.
+     */
+    @Test
+    public void test_phase0Switchover_reindexSlotsOnly_removesRecordAndDeletesPartialPair()
+            throws Exception {
+        setPhase(1);
+        esImpl().createIndex(ES_REINDEX_WK, 1);
+        esImpl().createIndex(ES_REINDEX_LV, 1);
+        osIndexAPI.createIndex(OS_REINDEX_WK, 1);
+        osIndexAPI.createIndex(OS_REINDEX_LV, 1);
+
+        pointEsStore(ES_WORKING, ES_LIVE, ES_REINDEX_WK, ES_REINDEX_LV);
+
+        // OS store: reindex slots only — no working/live to preserve.
+        APILocator.getVersionedIndicesAPI().saveIndices(VersionedIndicesImpl.builder()
+                .reindexWorking(osPhysical(OS_REINDEX_WK))
+                .reindexLive(osPhysical(OS_REINDEX_LV))
+                .build());
+
+        setPhase(0);
+
+        final boolean switched =
+                APILocator.getContentletIndexAPI().fullReindexSwitchover(true);
+        assertTrue("Phase-0 switchover must complete", switched);
+
+        assertTrue("OS version record must be removed when no active pointers remain",
+                APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices().isEmpty());
+        assertFalse("partial OS reindex-working index must be deleted from the cluster",
+                osIndexAPI.indexExists(OS_REINDEX_WK));
+        assertFalse("partial OS reindex-live index must be deleted from the cluster",
+                osIndexAPI.indexExists(OS_REINDEX_LV));
+
+        Logger.info(this, "✅ Phase-0 switchover removed the slots-only OS record and the partial pair");
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
