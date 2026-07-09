@@ -26,6 +26,9 @@ import type { BlockItem } from './slash-menu.types';
 export type { BlockItem } from './slash-menu.types';
 export { createBaseBlockItems } from './slash-menu-catalog';
 
+/** Debounce window for async sub-menu server searches (content types / contentlets), in ms. */
+const SUBMENU_SEARCH_DEBOUNCE_MS = 250;
+
 /**
  * Coordinates the TipTap slash-command floating menu: item catalog, filtering,
  * sub-menu loading for content types, keyboard navigation, and editor focus
@@ -79,6 +82,13 @@ export class SlashMenuService {
      */
     filterItems(query: string): BlockItem[] {
         if (this.isInSubmenu) {
+            if (this.submenuSearch) {
+                // Server-side search: re-query (debounced) as the user types. Return the current
+                // rows synchronously so TipTap's onUpdate keeps them on screen until the async
+                // results land via runSubmenuSearch().
+                this.scheduleSubmenuSearch(query);
+                return this.items();
+            }
             const q = query.toLowerCase().trim();
             if (!q) return this.subMenuAllItems;
             return this.subMenuAllItems.filter(
@@ -134,6 +144,20 @@ export class SlashMenuService {
      * Kept separately from {@link items} so {@link filterItems} can re-filter as the user types.
      */
     private subMenuAllItems: BlockItem[] = [];
+
+    /**
+     * When set, the current sub-menu searches the SERVER on each keystroke (debounced) instead of
+     * client-filtering {@link subMenuAllItems}. Required for the content-type / contentlet pickers:
+     * the server may hold thousands of records, so a fixed top-N fetch + client filter silently
+     * hides anything past the cap (see the "list ends after Image Asset" report). Mirrors the
+     * legacy editor's re-query-on-type behaviour.
+     */
+    private submenuSearch: ((query: string) => Promise<BlockItem[]>) | null = null;
+    private submenuSearchTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Bumped on every kicked-off search so a late/stale response can't overwrite newer results. */
+    private submenuSearchToken = 0;
+    /** Last query a search was started for — dedupes repeated identical queries (e.g. the empty query on open). */
+    private submenuPendingQuery: string | null = null;
 
     /**
      * Called by the slash-command extension so UI interactions can refocus the editor before running commands.
@@ -210,6 +234,14 @@ export class SlashMenuService {
     close(): void {
         this.isInSubmenu = false;
         this.subMenuAllItems = [];
+        this.submenuSearch = null;
+        this.submenuPendingQuery = null;
+        if (this.submenuSearchTimer) {
+            clearTimeout(this.submenuSearchTimer);
+            this.submenuSearchTimer = null;
+        }
+        // Invalidate any in-flight search so it can't repopulate a closed menu.
+        this.submenuSearchToken++;
         this.zone.run(() => {
             this.isOpen.set(false);
             this.clientRectFn.set(null);
@@ -219,38 +251,70 @@ export class SlashMenuService {
     }
 
     /**
-     * Switches the visible menu into a loading/sub-menu state in-place.
-     * Because keepRange items don't call deleteRange, the Tiptap suggestion session
-     * stays alive and keyboard routing continues to work without any extra plumbing.
-     * subMenuAllItems is cleared so filterItems() returns [] during loading,
-     * preventing stale items from leaking through if onUpdate fires before setItems.
+     * Opens a sub-menu whose rows come from a debounced SERVER search that re-runs on every
+     * keystroke — used by the content-type and contentlet pickers so results aren't capped by a
+     * one-shot top-N fetch. The initial (empty-query) search runs immediately; subsequent queries
+     * are debounced. `search` must always resolve (map its own errors to empty/error-state rows);
+     * a rejection just clears the loading state.
+     *
+     * @param search Resolves the rows for a given query.
+     * @param commandFn Handler for picks in this sub-menu (preserved across re-queries).
      */
-    openSubmenu(): void {
+    openAsyncSubmenu(
+        search: (query: string) => Promise<BlockItem[]>,
+        commandFn: (item: BlockItem) => void
+    ): void {
         this.isInSubmenu = true;
+        this.submenuSearch = search;
         this.subMenuAllItems = [];
+        this.submenuPendingQuery = '';
+        if (this.submenuSearchTimer) {
+            clearTimeout(this.submenuSearchTimer);
+            this.submenuSearchTimer = null;
+        }
         this.zone.run(() => {
             this.items.set([]);
             this.activeIndex.set(0);
             this.isLoading.set(true);
-            this.commandFn = null;
+            this.commandFn = commandFn;
             // isOpen and clientRectFn unchanged — menu is already visible and positioned
         });
+        this.runSubmenuSearch('', ++this.submenuSearchToken);
     }
 
-    /**
-     * Populates the sub-menu with resolved items and clears the loading state.
-     *
-     * @param items Full sub-menu list; also stored for re-filtering while the user types.
-     * @param commandFn Handler for picks in this sub-menu.
-     */
-    setItems(items: BlockItem[], commandFn: (item: BlockItem) => void): void {
-        this.subMenuAllItems = items; // keep master list for re-filtering as user types
-        this.zone.run(() => {
-            this.items.set(items);
-            this.commandFn = commandFn;
-            this.activeIndex.set(0);
-            this.isLoading.set(false);
-        });
+    /** Debounced re-query for the active async sub-menu; dedupes consecutive identical queries. */
+    private scheduleSubmenuSearch(query: string): void {
+        if (query === this.submenuPendingQuery) return;
+        this.submenuPendingQuery = query;
+        if (this.submenuSearchTimer) clearTimeout(this.submenuSearchTimer);
+        this.zone.run(() => this.isLoading.set(true));
+        const token = ++this.submenuSearchToken;
+        this.submenuSearchTimer = setTimeout(
+            () => this.runSubmenuSearch(query, token),
+            SUBMENU_SEARCH_DEBOUNCE_MS
+        );
+    }
+
+    /** Runs the active async sub-menu search and applies the result unless it's stale. */
+    private runSubmenuSearch(query: string, token: number): void {
+        const search = this.submenuSearch;
+        if (!search) return;
+        search(query)
+            .then((items) => {
+                // Drop results that arrive after a newer query, or after the sub-menu closed /
+                // switched level, so a slow response can't overwrite the current rows.
+                if (token !== this.submenuSearchToken || !this.isInSubmenu) return;
+                this.subMenuAllItems = items;
+                this.zone.run(() => {
+                    this.items.set(items);
+                    this.activeIndex.set(0);
+                    this.isLoading.set(false);
+                });
+            })
+            .catch(() => {
+                if (token !== this.submenuSearchToken || !this.isInSubmenu) return;
+                this.zone.run(() => this.isLoading.set(false));
+            });
     }
 
     /**
