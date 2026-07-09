@@ -13,5 +13,6 @@ public record FolderSearchView(
         String inode,
         String name,
         String path,
-        boolean addChildrenAllowed
+        boolean addChildrenAllowed,
+        boolean hasChildren
 ) {}
