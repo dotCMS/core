@@ -4,13 +4,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntSupplier;
 
 /**
@@ -19,23 +18,26 @@ import java.util.function.IntSupplier;
  * an S3 FUSE mount) cannot wedge the single reindex thread forever. See issue #36498: one
  * unanswered {@code stat(2)} silently froze all content indexing for an instance.
  *
- * <p>A task that exceeds the timeout is abandoned, not interrupted-and-reused: a thread stuck in
- * an uninterruptible native stat does not respond to interrupt, so the worker thread is left
- * behind and the pool creates a fresh one for the next task. The pool is bounded — if every
- * worker is wedged, new work is rejected and loudly logged, since that means the storage itself
- * is down.</p>
+ * <p>Each task runs on its own virtual thread. A task that exceeds the timeout is abandoned, not
+ * interrupted-and-reused: a thread stuck in an uninterruptible native stat does not respond to
+ * interrupt. A wedged virtual thread pins a carrier thread (file I/O does not unmount), so
+ * in-flight tasks are capped by a semaphore whose permit is only released when the task actually
+ * finishes — wedged tasks hold their permit, and when every permit is held new work is rejected
+ * and loudly logged, since that means the storage itself is down.</p>
  */
 class ReindexMappingRunner {
 
-    private final ThreadPoolExecutor executor;
+    private final ExecutorService executor = Executors.newThreadPerTaskExecutor(
+            Thread.ofVirtual().name("dot-reindex-mapping-", 0).factory());
     private final IntSupplier timeoutSeconds;
     private final Runnable perTaskCleanup;
-    private final AtomicInteger threadCounter = new AtomicInteger();
+    private final Semaphore inFlight;
+    private final int maxThreads;
 
     /**
      * @param timeoutSeconds resolved per task; {@code <= 0} disables the guard entirely and runs
      *                       tasks inline on the calling thread (legacy behavior)
-     * @param maxThreads     hard cap on concurrent (including wedged) worker threads
+     * @param maxThreads     hard cap on concurrent (including wedged) in-flight tasks
      * @param perTaskCleanup runs on the worker thread after each task completes, wedged or not —
      *                       used to release thread-local resources such as DB connections
      */
@@ -43,16 +45,8 @@ class ReindexMappingRunner {
             final Runnable perTaskCleanup) {
         this.timeoutSeconds = timeoutSeconds;
         this.perTaskCleanup = perTaskCleanup;
-        // Core size 0 + SynchronousQueue: every task gets a live thread immediately, idle threads
-        // die after a minute, and a wedged thread permanently occupies one of the maxThreads
-        // slots until its native call returns (if ever).
-        this.executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), runnable -> {
-                    final Thread thread = new Thread(runnable,
-                            "dot-reindex-mapping-" + threadCounter.incrementAndGet());
-                    thread.setDaemon(true);
-                    return thread;
-                });
+        this.maxThreads = maxThreads;
+        this.inFlight = new Semaphore(maxThreads);
     }
 
     /**
@@ -68,23 +62,23 @@ class ReindexMappingRunner {
         if (timeout <= 0) {
             return task.call();
         }
-        final Future<T> future;
-        try {
-            future = executor.submit(() -> {
-                try {
-                    return task.call();
-                } finally {
-                    perTaskCleanup.run();
-                }
-            });
-        } catch (final RejectedExecutionException rejected) {
-            final String message = "Reindex mapping pool exhausted: all "
-                    + executor.getMaximumPoolSize() + " worker threads are busy or wedged in "
-                    + "storage I/O — cannot map " + description
-                    + ". The underlying storage may be down.";
+        if (!inFlight.tryAcquire()) {
+            final String message = "Reindex mapping pool exhausted: all " + maxThreads
+                    + " in-flight tasks are busy or wedged in storage I/O — cannot map "
+                    + description + ". The underlying storage may be down.";
             Logger.error(this, message);
-            throw new DotRuntimeException(message, rejected);
+            throw new DotRuntimeException(message);
         }
+        final Future<T> future = executor.submit(() -> {
+            try {
+                return task.call();
+            } finally {
+                perTaskCleanup.run();
+                // A wedged task holds its permit until the native call returns (if ever), so
+                // wedged threads count against the cap instead of piling up unbounded.
+                inFlight.release();
+            }
+        });
         try {
             return future.get(timeout, TimeUnit.SECONDS);
         } catch (final TimeoutException timedOut) {
