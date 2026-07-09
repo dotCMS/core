@@ -12,6 +12,7 @@ import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.util.ReturnableDelegate;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.osgi.HostActivator;
@@ -93,6 +94,7 @@ public class OSGIUtil {
     private static final String FELIX_UPLOAD_DIR = "felix.upload.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
+    private static final String FELIX_LOG_LEVEL = "felix.log.level";
     private static final String FELIX_FRAMEWORK_STORAGE = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
     private static final String AUTO_DEPLOY_DIR_PROPERTY =  AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
@@ -136,6 +138,9 @@ public class OSGIUtil {
     private Framework felixFramework;
     private String felixExtraPackagesFile;
     private WorkflowAPIOsgiService workflowOsgiService;
+
+    // Snapshot of the packages the running framework was actually started with (system.packages.extra).
+    private volatile Set<String> liveExportedPackages = new LinkedHashSet<>();
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
@@ -192,7 +197,8 @@ public class OSGIUtil {
         felixProps.put("felix.fileinstall.log.level", "3");
         felixProps.put("org.osgi.framework.startlevel.beginning", "2");
         felixProps.put("org.osgi.framework.storage.clean", "onFirstInit");
-        felixProps.put("felix.log.level", "3");
+        // felix.log.level: 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG.
+        felixProps.put(FELIX_LOG_LEVEL, Config.getStringProperty(FELIX_LOG_LEVEL, "3"));
         felixProps.put("felix.fileinstall.disableNio2", "true");
         felixProps.put("gosh.args", "--noi");
 
@@ -221,6 +227,20 @@ public class OSGIUtil {
             return;
         }
 
+        this.persistOsgiExtras(extraPackages, testDryRun);
+
+        //restart OSGI after delay (manual extra-packages edit path keeps the debounce)
+        debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Validates (optional dry-run) and atomically writes the given packages to the
+     * <strong>osgi-extra.conf</strong> file. Does NOT trigger a restart — callers decide how the
+     * change is applied (the upload pipeline restarts asynchronously right after; the manual REST
+     * edit path debounces).
+     */
+    private void persistOsgiExtras(final String extraPackages, final boolean testDryRun) {
+
         if (Config.getBooleanProperty("OSGI_TEST_DRY_RUN", true) && testDryRun) {
             this.testDryRun(extraPackages);
         }
@@ -238,9 +258,6 @@ public class OSGIUtil {
             throw new DotRuntimeException( e.getMessage(), e );
         }
         new File(osgiExtraFileTmp).renameTo(new File(osgiExtraFile));
-
-        //restart OSGI after delay
-        debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
     }
 
     public String getOsgiExtraConfigPath () {
@@ -354,13 +371,6 @@ public class OSGIUtil {
         // Verify the bundles are in the right place
         verifyBundles(felixProps);
 
-        // Set all OSGI Packages
-        final String extraPackages = getExtraOSGIPackages();
-
-
-        // Setting the OSGI extra packages property
-        felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages);
-
         /*
         // The following is commented out since it is not affecting any OSGI functionality
         // Nevertheless the following code allows the system to include additional Felix and OSGI properties by using a
@@ -376,9 +386,19 @@ public class OSGIUtil {
         try {
 
             final String fileUploadDirectory = felixProps.getProperty(FELIX_UPLOAD_DIR);
-            // before init we have to check if any new bundle has been upload
+            // before init we check for newly uploaded bundles; this may update osgi-extra.conf,
+            // so we read the extra packages AFTER the reload to start with the complete set
+            // (avoids a boot-time package being written to the file but not exported).
             final boolean testDryRun = false; // we do not want to do test dry run when starting the osgi
             this.fireReload(new File(fileUploadDirectory), testDryRun);
+
+            // Set all OSGI Packages (read after the reload) and set the extra packages property
+            final String extraPackages = getExtraOSGIPackages();
+            felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages);
+            // Snapshot what this node's framework is actually starting with, so the restart
+            // decision is based on live state rather than the shared osgi-extra.conf file.
+            this.liveExportedPackages = parseExportedPackages(extraPackages);
+
             // Create an instance and initialize the framework.
             FrameworkFactory factory = getFrameworkFactory();
             felixFramework = factory.newFramework(felixProps);
@@ -466,8 +486,29 @@ public class OSGIUtil {
 
                     Logger.debug(this, () -> "Trying to lock to start the reload");
                     final boolean testDryRun = true;
-                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile, testDryRun));
+                    // Under the cluster lock: read plugin(s), (re)write exports, move jars to load,
+                    // and decide whether THIS node must restart. The lock is held only for that
+                    // decision + move; the restart is submitted off-thread after the lock is released.
+                    final Boolean needsRestart = lockManager.tryClusterLock(
+                            (ReturnableDelegate<Boolean>) () -> this.fireReload(uploadFolderFile, testDryRun));
                     Logger.debug(this, () -> "File Reload Done");
+
+                    if (Boolean.TRUE.equals(needsRestart)) {
+                        Logger.info(this, () -> "Exported packages changed; scheduling cluster-wide OSGI restart");
+                        // Restart off-thread so the caller (e.g. the upload POST) returns immediately.
+                        DotConcurrentFactory.getInstance().getSingleSubmitter("OSGIRestart").submit(() -> {
+                            Try.run(() -> APILocator.getSystemEventsAPI()
+                                    .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload()))
+                                    .onFailure(ev -> Logger.error(OSGIUtil.this, ev.getMessage()));
+                            try {
+                                this.restartOsgiClusterWide();
+                            } catch (final Exception re) {
+                                // log the full context here (the POST has already returned 200).
+                                Logger.error(this, "Cluster-wide OSGI restart failed after bundle upload: "
+                                        + getExceptionMessage(re), re);
+                            }
+                        });
+                    }
                 } catch (Throwable e) {
 
                     Logger.error(this, "Error try to acquire the lock, uploadFolder: " + uploadFolderFile +
@@ -489,7 +530,7 @@ public class OSGIUtil {
         return UtilMethods.isSet(pathnames) && pathnames.length > 0;
     }
 
-    private void fireReload(final File uploadFolderFile, final boolean testDryRun) {
+    private boolean fireReload(final File uploadFolderFile, final boolean testDryRun) {
 
         Logger.info(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
 
@@ -514,58 +555,73 @@ public class OSGIUtil {
                 osgiUserPackages.addAll(packages);
             }
 
-            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages, testDryRun);
+            return processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages, testDryRun);
         }
+
+        return false;
     }
-    
-    private void processOsgiPackages(final File uploadFolderFile,
+
+    private boolean processOsgiPackages(final File uploadFolderFile,
                                      final String[] pathnames,
                                      final Set<String> osgiUserPackages,
                                      final boolean testDryRun) {
         try {
 
-            final LinkedHashSet<String> exportedPackagesSet = this.getExportedPackagesAsSet();
-            
-            if (exportedPackagesSet.containsAll(osgiUserPackages)) {
+            // Compare against what THIS node's framework actually exposes right now (captured at
+            // startup), NOT the shared osgi-extra.conf file. On a cluster a peer may have already
+            // written the package to the file; that must not stop this node from restarting.
+            if (this.liveExportedPackages.containsAll(osgiUserPackages)) {
                 this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
-                return; 
+                return false;
             }
-                
+
             Logger.info(this, "There are a new changes into the exported packages");
+            // Persist the union of the current file and the plugin packages so we never clobber a
+            // concurrent peer's additions.
+            final LinkedHashSet<String> exportedPackagesSet = this.getExportedPackagesAsSet();
             exportedPackagesSet.addAll(osgiUserPackages);
             this.writeExtraPackagesFiles(exportedPackagesSet, testDryRun);
+            // Move the jars to the load folder while still holding the cluster lock, so the restart
+            // decision returned to the caller cannot be raced away by another node emptying upload.
+            this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
+            return true;
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             pushBundleUploadError("Failed to process OSGI bundle packages for ["
                     + String.join(", ", pathnames) + "]: " + getExceptionMessage(e));
+            return false;
         }
     }
 
     LinkedHashSet<String> getExportedPackagesAsSet() {
+        return parseExportedPackages(getExtraOSGIPackages());
+    }
 
+    private static LinkedHashSet<String> parseExportedPackages(final String extraPackages) {
         return new LinkedHashSet<>(
-                StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()).stream()
+                StringUtils.splitOnCommasWithQuotes(extraPackages).stream()
                         .map(org.apache.commons.lang3.StringUtils::normalizeSpace)
                         .collect(Collectors.toSet()));
     }
 
-    // move all on upload folder to load, and restarts osgi.
+    // Debounced restart entry used by the manual extra-packages edit / RESET path. Moves any pending
+    // upload jars to load (there may be none for a manual edit) and then restarts unconditionally
     private void restartOsgi() {
         Logger.info(this, ()-> "Restarting OSGI");
         final File uploadPath    = new File(this.getFelixUploadPath());
         final String[] pathnames = uploadPath.list(new SuffixFileFilter(".jar"));
 
         if (UtilMethods.isSet(pathnames)) {
-
             this.moveNewBundlesToFelixLoadFolder(uploadPath, pathnames);
-
-            this.restartOsgiClusterWide();
-
-            Try.run(()->APILocator.getSystemEventsAPI()
-                    .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
-                    .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
         }
+
+        this.restartOsgiClusterWide();
+
+        Try.run(()->APILocator.getSystemEventsAPI()
+                .push(SystemEventType.OSGI_FRAMEWORK_RESTART,
+                        new Payload(UtilMethods.isSet(pathnames) ? pathnames : new String[0])))
+                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
     }
 
     /**
@@ -610,7 +666,8 @@ public class OSGIUtil {
             this.stopFramework();
             this.initializeFramework();
         } catch (final RuntimeException e) {
-            final String errorMsg = "Failed to restart OSGI framework: " + getExceptionMessage(e);
+            final String errorMsg = "Failed to restart OSGI framework: " + getExceptionMessage(e)
+                    + ". Check the dotCMS server logs for the full stack trace and context.";
             Logger.error(this, errorMsg, e);
             Try.run(() -> SystemMessageEventUtil.getInstance().pushSimpleErrorEvent(
                     new ErrorEntity("osgi-framework-restart-failed", errorMsg)))
@@ -972,8 +1029,8 @@ public class OSGIUtil {
     }
 
     private void writeExtraPackagesFiles(final Set<String> packages, final boolean testDryRun) {
-
-        this.writeOsgiExtras(packagesToOrderedString(packages), testDryRun);
+        // Persist only; the upload pipeline (checkUploadFolder) submits the restart asynchronously.
+        this.persistOsgiExtras(packagesToOrderedString(packages), testDryRun);
     }
 
     /**
