@@ -151,7 +151,7 @@ jobs:
             echo '```'
           } > body.md
 
-          id=$(gh api "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
+          id=$(gh api -X GET "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
                 --jq "map(select(.body | contains(\"${MARKER}\"))) | .[0].id // empty")
           # gh api has no @file syntax for fields — build the JSON body with jq.
           payload=$(jq -nc --rawfile b body.md '{body: $b}')
