@@ -1,6 +1,4 @@
-import { test as base, expect, type Page } from '@playwright/test';
-import { admin1 } from '@utils/credentials';
-import { generateBase64Credentials } from '@utils/generateBase64Credential';
+import { test as base, type Page } from '@playwright/test';
 
 import {
     type ContentType,
@@ -9,7 +7,7 @@ import {
     deleteContentType
 } from '../requests/contentType';
 import { createFolders } from '../requests/folders';
-import { getSites, type Site } from '../requests/sites';
+import { getCurrentSite, getSites, type Site } from '../requests/sites';
 import {
     createFakePayloadHostFolderField,
     createFakePayloadTextField
@@ -82,16 +80,7 @@ export const test = base.extend<{
                 }
                 return site;
             },
-            getCurrentSite: async () => {
-                const response = await request.get('/api/v1/site/currentSite', {
-                    headers: {
-                        Authorization: generateBase64Credentials(admin1.username, admin1.password)
-                    }
-                });
-                expect(response.status()).toBe(200);
-                const responseData = await response.json();
-                return responseData.entity as Site;
-            },
+            getCurrentSite: () => getCurrentSite(request),
             hostFolderPayload: (suffix: string) => hostFolderContentTypePayload(suffix)
         });
     }
