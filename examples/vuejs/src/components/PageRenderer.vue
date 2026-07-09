@@ -16,8 +16,9 @@ import type { DotCMSPageContent } from '@/utils/pageResponse';
  */
 const props = defineProps<{ pageResponse: DotCMSPageContent }>();
 
-// The parent only mounts this component once the response is a valid page.
-const page = useEditableDotCMSPage(props.pageResponse);
+// Pass a getter so the composable re-initializes the UVE when the page changes
+// (e.g. on route navigation) — no per-route component remount needed.
+const page = useEditableDotCMSPage(() => props.pageResponse);
 
 const pageAsset = computed(() => page.value?.pageAsset);
 const content = computed(() => (page.value?.content ?? {}) as PageExtraContent);

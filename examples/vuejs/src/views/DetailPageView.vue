@@ -52,7 +52,7 @@ watch(() => route.fullPath, loadPage, { immediate: true });
 </script>
 
 <template>
-    <DetailRenderer v-if="pageResponse" :key="route.fullPath" :page-response="pageResponse" />
+    <DetailRenderer v-if="pageResponse" :page-response="pageResponse" />
 
     <div
         v-else-if="notFound"

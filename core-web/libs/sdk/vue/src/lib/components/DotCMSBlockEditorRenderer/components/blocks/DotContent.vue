@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 
 import type { BlockEditorNode } from '@dotcms/types';
 
@@ -26,8 +26,6 @@ const component = computed(() => props.customRenderers?.[contentType.value]);
 
 const state = computed<'no-data' | 'dev-warning' | 'no-component' | 'render'>(() => {
     if (!data.value) {
-        console.error(NO_DATA_MESSAGE);
-
         return 'no-data';
     }
 
@@ -36,16 +34,35 @@ const state = computed<'no-data' | 'dev-warning' | 'no-component' | 'render'>(()
     }
 
     if (!component.value) {
-        console.warn(noMatchingComponentMessage(contentType.value));
-
         return 'no-component';
     }
 
     return 'render';
 });
+
+// Diagnostics as a side effect, kept out of the computed so it stays pure and
+// doesn't log twice under SSR.
+watch(
+    state,
+    (value) => {
+        if (value === 'no-data') {
+            console.error(NO_DATA_MESSAGE);
+        } else if (value === 'no-component') {
+            console.warn(noMatchingComponentMessage(contentType.value));
+        }
+    },
+    { immediate: true }
+);
 </script>
 
 <template>
-    <NoComponentProvided v-if="state === 'dev-warning'" :content-type="contentType" />
-    <component :is="component" v-else-if="state === 'render'" :node="node" />
+  <NoComponentProvided
+    v-if="state === 'dev-warning'"
+    :content-type="contentType"
+  />
+  <component
+    :is="component"
+    v-else-if="state === 'render'"
+    :node="node"
+  />
 </template>

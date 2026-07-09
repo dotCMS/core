@@ -1,4 +1,12 @@
-import { onBeforeUnmount, onMounted, shallowRef, type Ref } from 'vue';
+import {
+    onBeforeUnmount,
+    onMounted,
+    shallowRef,
+    toValue,
+    watch,
+    type MaybeRefOrGetter,
+    type Ref
+} from 'vue';
 
 import {
     UVEEventType,
@@ -38,29 +46,36 @@ import { toPlain } from '../utils/toPlain';
  * // page.value.pageAsset — reactive; re-renders on UVE content changes.
  * ```
  *
- * @param pageResponse the initial page response from `client.page.get()`
+ * @param pageResponse the page response from `client.page.get()`. May be a plain
+ * value, a `ref`, or a getter — when it's reactive, the composable re-initializes
+ * the UVE for the new page (e.g. on client-side route changes) so no manual
+ * component remount is needed.
  * @returns a reactive ref holding the (possibly live-updating) page response
  */
 export function useEditableDotCMSPage<T extends DotCMSExtendedPageResponse>(
-    pageResponse: DotCMSComposedPageResponse<T>
+    pageResponse: MaybeRefOrGetter<DotCMSComposedPageResponse<T>>
 ): Ref<DotCMSComposedPageResponse<T>> {
     // shallowRef: the page response is a large object and we always replace it
     // wholesale on a content change, so deep reactivity would be wasted work.
-    const response = shallowRef<DotCMSComposedPageResponse<T>>(pageResponse);
+    const response = shallowRef<DotCMSComposedPageResponse<T>>(toValue(pageResponse));
 
     let destroyUVESubscriptions: (() => void) | undefined;
     let unsubscribeContentChanges: (() => void) | undefined;
 
-    // Mirror the React SDK's structure: one effect initializes the UVE (guarded
-    // by getUVEState), and a SEPARATE, UNCONDITIONAL subscription listens for
-    // content changes. Keeping them separate ensures the content-change listener
-    // is always registered even if init returns early.
-    onMounted(() => {
+    /**
+     * (Re)initialize the UVE for the given page: tear down any previous
+     * subscriptions, then wire up the new page and sync navigation. Guarded so it
+     * is a no-op outside the editor.
+     */
+    const initForPage = (page: DotCMSComposedPageResponse<T>) => {
+        destroyUVESubscriptions?.();
+        destroyUVESubscriptions = undefined;
+
         if (!getUVEState()) {
             return;
         }
 
-        if (!pageResponse) {
+        if (!page) {
             console.warn('[useEditableDotCMSPage]: No page response provided');
 
             return;
@@ -69,7 +84,7 @@ export function useEditableDotCMSPage<T extends DotCMSExtendedPageResponse>(
         // Callers often pass a value that came through reactive props / reactive().
         // The UVE posts this to the editor via structured clone, which cannot clone
         // Vue Proxies — so unwrap to a plain object before any UVE call.
-        const plainResponse = toPlain(pageResponse);
+        const plainResponse = toPlain(page);
         const pageURI = plainResponse?.pageAsset?.page?.pageURI;
 
         ({ destroyUVESubscriptions } = initUVE(plainResponse));
@@ -83,11 +98,22 @@ export function useEditableDotCMSPage<T extends DotCMSExtendedPageResponse>(
         if (plainResponse.styleEditorSchemas?.length) {
             registerStyleEditorSchemas(plainResponse.styleEditorSchemas);
         }
-    });
+    };
 
-    // Subscribe to content changes unconditionally (matches React's `[]` effect).
-    // The editor posts `uve-set-page-data`; swap in the new response so the
-    // reactive `response` ref re-renders the page.
+    // Re-init whenever the source page changes (e.g. route navigation that swaps
+    // the response into the same component). `immediate` covers the initial mount.
+    watch(
+        () => toValue(pageResponse),
+        (page) => {
+            response.value = page;
+            initForPage(page);
+        },
+        { immediate: true }
+    );
+
+    // Subscribe to content changes once (matches React's `[]` effect). The editor
+    // posts `uve-set-page-data`; swap in the new response so the reactive
+    // `response` ref re-renders the page.
     onMounted(() => {
         ({ unsubscribe: unsubscribeContentChanges } = createUVESubscription(
             UVEEventType.CONTENT_CHANGES,

@@ -21,7 +21,8 @@ import type { DotCMSPageContent } from '@/utils/pageResponse';
 
 const props = defineProps<{ pageResponse: DotCMSPageContent }>();
 
-const page = useEditableDotCMSPage(props.pageResponse);
+// Getter so the composable re-inits the UVE on page change (no remount needed).
+const page = useEditableDotCMSPage(() => props.pageResponse);
 const isEditMode = useIsEditMode();
 
 const pageAsset = computed(() => page.value?.pageAsset);

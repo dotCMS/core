@@ -5,6 +5,17 @@
     "projectType": "library",
     "tags": [],
     "targets": {
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "vitest run",
+                "cwd": "libs/sdk/vue",
+                "forwardAllArgs": false
+            },
+            "cache": true,
+            "inputs": ["default", "^production"],
+            "outputs": ["{workspaceRoot}/coverage/libs/sdk/vue"]
+        },
         "nx-release-publish": {
             "options": {
                 "packageRoot": "dist/{projectRoot}"

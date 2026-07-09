@@ -69,8 +69,7 @@ watch(() => route.fullPath, loadPage, { immediate: true });
 </script>
 
 <template>
-    <!-- Remount PageRenderer per path so the editable-page composable re-inits. -->
-    <PageRenderer v-if="pageResponse" :key="route.fullPath" :page-response="pageResponse" />
+    <PageRenderer v-if="pageResponse" :page-response="pageResponse" />
 
     <div
         v-else-if="notFound"

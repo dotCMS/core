@@ -24,9 +24,10 @@ const props = withDefaults(
     }
 );
 
-const show = useDotCMSShowWhen(props.when);
+// Pass a getter so a runtime change to the `when` prop is picked up reactively.
+const show = useDotCMSShowWhen(() => props.when);
 </script>
 
 <template>
-    <slot v-if="show" />
+  <slot v-if="show" />
 </template>

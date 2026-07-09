@@ -70,8 +70,20 @@ const noComponent = computed<Component | undefined>(
 </script>
 
 <template>
-    <div v-bind="dotAttributes" :class="CONTENTLET_CLASS" :style="style">
-        <component :is="userComponent" v-if="userComponent" v-bind="contentlet" />
-        <FallbackComponent v-else :user-no-component="noComponent" :contentlet="contentlet" />
-    </div>
+  <div
+    v-bind="dotAttributes"
+    :class="CONTENTLET_CLASS"
+    :style="style"
+  >
+    <component
+      :is="userComponent"
+      v-if="userComponent"
+      v-bind="contentlet"
+    />
+    <FallbackComponent
+      v-else
+      :user-no-component="noComponent"
+      :contentlet="contentlet"
+    />
+  </div>
 </template>

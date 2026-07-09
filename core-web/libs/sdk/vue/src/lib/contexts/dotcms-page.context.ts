@@ -13,10 +13,10 @@ import type { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
  * The value carried by the dotCMS page context.
  *
  * This is the Vue analog of the React SDK's `DotCMSPageContext`. It is provided
- * once by {@link DotCMSLayoutBody} and consumed by the internal layout tree
- * (Container, Contentlet) as well as the dev-mode composable.
- *
- * @internal
+ * once by {@link DotCMSLayoutBody} and consumed by the layout tree (Container,
+ * Contentlet). It is also part of the public API: a custom content-type
+ * component rendered deep in the tree can read it via {@link useDotCMSPageContext}
+ * to access the page asset without prop drilling. This shape is stable.
  */
 export interface DotCMSPageContextValue {
     /** The dotCMS page asset containing the layout and containers. */
@@ -49,7 +49,8 @@ export interface DotCMSPageContextValue {
  * asset arriving via `uve-set-page-data`) propagate to every consumer that reads
  * `ctx.value` — the whole layout tree re-renders reactively.
  *
- * @internal
+ * Advanced: exported so consumers can `inject` directly, but prefer
+ * {@link useDotCMSPageContext}.
  */
 export const DOTCMS_PAGE_CONTEXT: InjectionKey<ComputedRef<DotCMSPageContextValue>> =
     Symbol('DotCMSPageContext');
@@ -57,7 +58,10 @@ export const DOTCMS_PAGE_CONTEXT: InjectionKey<ComputedRef<DotCMSPageContextValu
 /**
  * Provides the dotCMS page context to descendant components.
  *
- * @internal
+ * Advanced: {@link DotCMSLayoutBody} already provides this for the rendered tree,
+ * so most applications never call it. Exposed for consumers that render the
+ * layout tree themselves.
+ *
  * @param value a computed producing the current context value
  */
 export function provideDotCMSPageContext(value: ComputedRef<DotCMSPageContextValue>): void {
@@ -75,10 +79,10 @@ const EMPTY_CONTEXT: DotCMSPageContextValue = {
 /**
  * Injects the dotCMS page context as a reactive `ComputedRef`.
  *
- * Falls back to an empty context when used outside of a {@link DotCMSLayoutBody},
- * mirroring the default value the React context is created with.
+ * Public: use this from a custom content-type component to read the current
+ * `pageAsset`, renderer `mode`, or editor state without prop drilling. Falls back
+ * to an empty context when used outside of a {@link DotCMSLayoutBody}.
  *
- * @internal
  * @returns the current page context value as a computed ref
  */
 export function useDotCMSPageContext(): ComputedRef<DotCMSPageContextValue> {

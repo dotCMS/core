@@ -17,9 +17,16 @@ const isDevMode = computed(() => ctx.value.isDevMode);
 </script>
 
 <template>
-    <div v-if="isDevMode" v-bind="$attrs" :style="EMPTY_CONTAINER_STYLE_REACT">
-        <span data-testid="empty-container-message" data-dot-object="empty-content">
-            This container is empty.
-        </span>
-    </div>
+  <div
+    v-if="isDevMode"
+    v-bind="$attrs"
+    :style="EMPTY_CONTAINER_STYLE_REACT"
+  >
+    <span
+      data-testid="empty-container-message"
+      data-dot-object="empty-content"
+    >
+      This container is empty.
+    </span>
+  </div>
 </template>
