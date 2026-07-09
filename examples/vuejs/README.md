@@ -47,8 +47,9 @@ npm run type-check   # vue-tsc --noEmit
 
 ## How it works
 
-- **Client** — `src/lib/dotCMSClient.ts` creates the dotCMS client from the env config.
+- **Client** — `src/lib/dotCMSClient.ts` builds the dotCMS Vue plugin (`createDotCMSVue`) from the env config; `main.ts` installs it with `app.use()`, so components read the client with `useDotCMSClient()`. It also re-exports `.client` for code outside a component `setup` (e.g. the page loader).
 - **Fetching** — `src/utils/getDotCMSPage.ts` fetches a page plus extra GraphQL content (blogs, destinations, navigation) in one request.
+- **Images** — `src/utils/imageLoader.ts` wraps the SDK's `createDotCMSImageLoader` to build optimized `/dA/` image URLs.
 - **Routing** — `vue-router` with a catch-all route for dotCMS pages, plus `/blog` and `/blog/post/:slug`.
 - **Rendering** — `useEditableDotCMSPage()` prepares the page for editing and `DotCMSLayoutBody` renders the layout, dispatching each contentlet to a component from the map in `src/components/content-types/index.ts`.
 - **Content types** — one Vue component per dotCMS Content Type in `src/components/content-types/`. **Keys in the map must match the Content Type variable name exactly.**
