@@ -13,6 +13,19 @@ This project demonstrates how to run **A/B Experiments** on a [Next.js](https://
 > [!IMPORTANT]
 > Unlike the plain content/UVE example, the Experiments feature requires a running dotCMS **with the full starter** plus the **experiments (analytics) infrastructure** up and running, and the **Experiments app configured** in dotCMS. The easiest way to get all of this running is the ready-made Docker Compose stack — see [dotCMS Requirements](#dotcms-requirements) below.
 
+## TL;DR
+
+If you just want to see experiments working end to end, follow these steps (details for each are further down):
+
+1. **Start dotCMS + experiments** via the [Docker Compose stack](../../docker/docker-compose-examples/experiments/README.md) — `./start-experiments.sh` from that directory. This brings up dotCMS with the full starter, the analytics infrastructure, and **configures the Experiments app by default**.
+2. **Set up `.env.local`** — `cp .env.local.example .env.local` and fill in the host, auth token, site ID, and the experiments key (see [Step 3: Configure the Next.js Application](#step-3-configure-the-nextjs-application)).
+3. **Set up the UVE app** in dotCMS — point the Universal Visual Editor at `http://localhost:3000` (see [Configure the Universal Visual Editor](#c-configure-the-universal-visual-editor)).
+4. **Install dependencies** — `npm install`.
+5. **Run the dev server** — `npm run dev`.
+6. **Open the Home page in the UVE** in dotCMS.
+7. **Create a new experiment** on that page with one or more variants and start it.
+8. **Open `http://localhost:3000` in a different browser** (or an incognito/private window) — you should see the experiment serving the variants you created.
+
 ### How It Works
 
 ```
@@ -451,6 +464,49 @@ export function MyPage({ page }: MyPageProps) {
 > - Custom components defined in `pageComponents` will be used to render Content Types
 
 Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/v/next).
+
+#### Enabling A/B Experiments with `withExperiments`
+
+This is where this example differs from the plain content/UVE integration: the page's `DotCMSLayoutBody` is wrapped with the `withExperiments` higher-order component from `@dotcms/experiments`, so the page can serve experiment variants and report results.
+
+In `src/views/Page.tsx`, the wrapping is done conditionally based on the centralized `experimentsConfig`. When an `apiKey` is configured, `DotCMSLayoutBody` is wrapped with experiments support; otherwise the plain component is used, so the app still works without experiments configured:
+
+```tsx
+"use client";
+
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
+import { withExperiments } from "@dotcms/experiments";
+import { experimentsConfig } from "@/config/dotcms.config";
+import { useRouter } from "next/navigation";
+
+export function Page({ pageContent }: PageProps) {
+    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
+    const { replace } = useRouter();
+
+    // Conditionally wrap with experiments if an apiKey is configured
+    const DotCMSLayoutBodyComponent = experimentsConfig.apiKey
+        ? withExperiments(DotCMSLayoutBody, {
+              ...experimentsConfig,
+              redirectFn: replace,
+          })
+        : DotCMSLayoutBody;
+
+    return (
+        <DotCMSLayoutBodyComponent
+            page={pageAsset}
+            components={pageComponents}
+            mode={dotCMSMode}
+        />
+    );
+}
+```
+
+> [!NOTE]
+>
+> - `withExperiments` takes the base `DotCMSLayoutBody` and the spread `experimentsConfig` (`server`, `apiKey`, `debug`), returning a component that transparently handles variant assignment and tracking.
+> - `redirectFn: replace` (from Next.js's `useRouter`) lets experiments perform client-side redirects when a variant requires navigating to a different URL.
+> - The `experimentsConfig.apiKey` guard means the wrapping only happens when `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY` is set — with no key, the page renders normally without experiments.
+> - Render the resulting `DotCMSLayoutBodyComponent` (not the raw `DotCMSLayoutBody`) so the experiments wrapping actually takes effect.
 
 #### Content Type to React Component Mapping
 
