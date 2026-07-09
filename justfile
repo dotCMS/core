@@ -172,9 +172,42 @@ test-integration-open-search:
    ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true
 
 # Runs integration tests under an ES->OS migration phase (two separate clusters: ES + OS 3.x).
+# With no TEST, runs the FULL MainSuite/Junit5 battery in a single JVM (one docker bring-up).
 # Usage: just test-integration-phase [PHASE] [TEST]   e.g. `just test-integration-phase 3 ContentletIndexAPIImplTest`
 test-integration-phase phase='3' test='':
    ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.phase={{phase}} {{ if test == '' { '' } else { '-Dit.test=' + test } }}
+
+# Runs the full integration battery under an ES->OS migration phase ONE SUITE AT A TIME
+# (forkCount=1), so each suite yields an attributable pass/fail — mirrors the CI per-suite split
+# and is the recommended way to triage what fails under a given phase. Each suite is a separate
+# Maven run, so docker containers are restarted per suite; the loop continues past failures and
+# prints a summary at the end (non-zero exit if any suite failed).
+# Usage: just test-integration-phase-all [PHASE]   e.g. `just test-integration-phase-all 1`
+test-integration-phase-all phase='3':
+   #!/usr/bin/env bash
+   set -uo pipefail
+   suites="MainSuite1a MainSuite1b MainSuite2a MainSuite2b MainSuite3a Junit5Suite1"
+   declare -a failed=()
+   for suite in $suites; do
+       echo "==================================================================="
+       echo ">>> Integration suite ${suite} under OpenSearch phase {{phase}}"
+       echo "==================================================================="
+       if ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
+               -Dopensearch.phase={{phase}} -Dit.test="${suite}" -Dit.test.forkcount=1; then
+           echo ">>> ${suite}: PASS"
+       else
+           echo ">>> ${suite}: FAIL"
+           failed+=("${suite}")
+       fi
+   done
+   echo "==================================================================="
+   echo ">>> Phase {{phase}} summary"
+   if [ ${#failed[@]} -eq 0 ]; then
+       echo ">>> ALL SUITES PASSED under phase {{phase}}"
+   else
+       echo ">>> FAILED SUITES under phase {{phase}}: ${failed[*]}"
+       exit 1
+   fi
 
 # Suspends execution for debugging integration tests
 test-integration-debug-suspend:

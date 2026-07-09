@@ -62,6 +62,16 @@ on:
         description: 'Use current HEAD of main instead of the midnight UTC commit. Set to true when you want to pick up commits made after midnight rather than reproduce the scheduled run.'
         type: boolean
         default: false
+      opensearch_phase:
+        description: 'Run the integration suites under an ES->OS migration phase (0=off/default). When set to 1/2/3, deployment is skipped (test-only run).'
+        type: choice
+        required: false
+        default: '0'
+        options:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
 
 jobs:
   # Setup job - determines the commit to build from.
@@ -144,6 +154,8 @@ jobs:
       run-all-tests: ${{ inputs.run-all-tests || true }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       e2e: false
+      # On-demand ES->OS phased run: '0'/empty (or scheduled) -> off; 1/2/3 -> phased integration suites.
+      opensearch_phase: ${{ inputs.opensearch_phase }}
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
@@ -165,10 +177,12 @@ jobs:
       branch: ${{ github.ref }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
 
-  # Deployment job - deploys to the nightly environment
+  # Deployment job - deploys to the nightly environment.
+  # Skipped for on-demand ES->OS phased runs (opensearch_phase 1/2/3): those are test-only,
+  # so we never deploy a build that ran under a non-default migration phase.
   deployment:
     needs: [ setup, initialize,build-cli,test ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && (inputs.opensearch_phase == '' || inputs.opensearch_phase == '0')
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

@@ -46,6 +46,16 @@ on:
         required: false
         type: boolean
         default: false
+      opensearch_phase:
+        description: >-
+          ES->OS migration phase to run the integration suites under. Empty or '0' (default)
+          keeps the existing single-store/phase-0 behavior. When set to 1/2/3, every integration
+          MainSuite/Junit5 matrix entry gets -Dopensearch.phase=<N> appended (activating the
+          opensearch-phase-suite Maven profile: two clusters + DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE).
+          The OpenSearch Upgrade Suite is left untouched.
+        required: false
+        type: string
+        default: ''
       e2e:
         required: false
         type: boolean
@@ -95,6 +105,9 @@ jobs:
       - name: Generate test matrix
         id: generate-matrix
         uses: actions/github-script@v7
+        env:
+          # Passed via env (not interpolated into the script) to avoid script injection.
+          OPENSEARCH_PHASE: ${{ inputs.opensearch_phase }}
         with:
           script: |
             const fs = require('fs');
@@ -155,7 +168,21 @@ jobs:
                   // Use base_maven_args if no specific maven_args
                   testEntry.maven_args = testEntry.base_maven_args;
                 }
-                
+
+                // ES->OS migration phase: run the integration battery under a chosen phase.
+                // Only for integration suites, only for an active phase (1/2/3 — '0'/'' means off),
+                // and never for the OpenSearch Upgrade Suite (it already drives OS via
+                // -Dopensearch.upgrade.test). The mere presence of -Dopensearch.phase activates the
+                // opensearch-phase-suite Maven profile (see dotcms-integration/pom.xml).
+                const opensearchPhase = process.env.OPENSEARCH_PHASE || '';
+                if (opensearchPhase
+                    && /^[1-3]$/.test(opensearchPhase)
+                    && testType === 'integration'
+                    && !testEntry.maven_args.includes('opensearch.upgrade.test')) {
+                  testEntry.maven_args = `${testEntry.maven_args} -Dopensearch.phase=${opensearchPhase}`;
+                  console.log(`Applied OpenSearch phase ${opensearchPhase} to ${testEntry.name}`);
+                }
+
                 // Clean up temporary fields
                 delete testEntry.base_maven_args;
                 delete testEntry.test_class;
