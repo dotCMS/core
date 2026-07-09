@@ -21,6 +21,7 @@ The `@dotcms/vue` SDK is the dotCMS official Vue 3 library. It empowers Vue deve
     -   [DotCMSShow](#dotcmsshow)
     -   [useEditableDotCMSPage](#useeditabledotcmspage)
     -   [useDotCMSShowWhen](#usedotcmsshowwhen)
+    -   [createDotCMSImageLoader](#createdotcmsimageloader)
     -   [toPlain](#toplain)
 -   [Troubleshooting](#troubleshooting)
     -   [Common Issues & Solutions](#common-issues--solutions)
@@ -352,6 +353,28 @@ const components = {
 > [!TIP]
 > Always use the exact content type variable name from dotCMS as the key. You can find it in the Content Types section of your dotCMS admin panel.
 
+#### Per-contentlet slots
+
+Beyond mapping by content type, you can override a **specific** contentlet by
+its `identifier` using a named slot: `#contentlet-<identifier>`. When present,
+the slot renders instead of the mapped component — the Vue analog of the React
+SDK's `slots` prop, useful for one-off custom markup or a pre-rendered node.
+
+The contentlet is exposed as the slot's scope prop.
+
+```vue
+<template>
+    <DotCMSLayoutBody :page="page" :components="components">
+        <!-- Renders instead of the Blog component for this one contentlet -->
+        <template #contentlet-a1b2c3d4="{ contentlet }">
+            <FeaturedBlog :blog="contentlet" />
+        </template>
+    </DotCMSLayoutBody>
+</template>
+```
+
+Contentlets without a matching slot fall back to the `components` mapping as usual.
+
 ### DotCMSEditableText
 
 `DotCMSEditableText` enables inline editing of a single text field in dotCMS. Inside the UVE in edit mode it mounts a TinyMCE editor; everywhere else it renders the field's current value.
@@ -547,6 +570,46 @@ const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT); // Readonly<Ref<boolean>>
 
 <template>
     <button v-if="isEditMode">Edit</button>
+</template>
+```
+
+### createDotCMSImageLoader
+
+`createDotCMSImageLoader(dotcmsUrl?)` returns a function that turns a dotCMS asset identifier (or path) into an optimized image URL via the dotCMS image API (the `/dA/` route, which handles resizing and optimization). It's the Vue analog of Angular's `provideDotCMSImageLoader` — Vue has no `IMAGE_LOADER` token, so you call the returned function directly.
+
+Absolute `http(s)://…` URLs are returned unchanged, so mixing dotCMS assets with external/stock imagery just works.
+
+| Argument    | Type     | Required | Default | Description                                                                              |
+| ----------- | -------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
+| `dotcmsUrl` | `string` | ❌       | `''`    | Base URL of your dotCMS instance. Omit (empty) for site-relative `/dA/…` behind a proxy. |
+
+The returned loader is `(src: string, options?) => string`, where `options` is `{ width?, quality?, languageId? }` (`quality` defaults to `50`, `languageId` to `'1'`).
+
+```ts
+import { createDotCMSImageLoader } from '@dotcms/vue';
+
+// Absolute (production)
+const image = createDotCMSImageLoader(import.meta.env.VITE_DOTCMS_HOST);
+image(contentlet.inode, { width: 800 });
+// → https://demo.dotcms.com/dA/<inode>/800w/50q?language_id=1
+
+// Site-relative (dev proxy) — omit the host so the Vite /dA proxy handles it
+const proxied = createDotCMSImageLoader();
+proxied(contentlet.inode, { width: 800 }); // → /dA/<inode>/800w/50q?language_id=1
+```
+
+```vue
+<script setup lang="ts">
+import { createDotCMSImageLoader } from '@dotcms/vue';
+import type { DotCMSBasicContentlet } from '@dotcms/types';
+
+const props = defineProps<{ contentlet: DotCMSBasicContentlet }>();
+
+const image = createDotCMSImageLoader(import.meta.env.VITE_DOTCMS_HOST);
+</script>
+
+<template>
+    <img :src="image(contentlet.inode, { width: 800 })" :alt="contentlet.title" />
 </template>
 ```
 

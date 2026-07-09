@@ -3,6 +3,15 @@ import type { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 import type { Component } from 'vue';
 
 /**
+ * Prefix for the per-contentlet named slots of {@link DotCMSLayoutBody}. A slot
+ * named `contentlet-<identifier>` overrides the mapped component for the
+ * contentlet with that identifier.
+ *
+ * @example `<template #contentlet-abc123>…</template>` targets identifier `abc123`.
+ */
+export const CONTENTLET_SLOT_PREFIX = 'contentlet-';
+
+/**
  * Props for {@link DotCMSLayoutBody}.
  */
 export interface DotCMSLayoutBodyProps {

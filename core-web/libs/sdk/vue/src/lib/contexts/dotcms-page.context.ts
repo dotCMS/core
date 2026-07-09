@@ -4,7 +4,8 @@ import {
     provide,
     type Component,
     type ComputedRef,
-    type InjectionKey
+    type InjectionKey,
+    type Slot
 } from 'vue';
 
 import type { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
@@ -40,6 +41,15 @@ export interface DotCMSPageContextValue {
      * single `dotcms:analytics:ready` listener) and shared with the tree.
      */
     isAnalyticsActive: boolean;
+    /**
+     * Named slots passed to {@link DotCMSLayoutBody}, keyed by contentlet
+     * identifier (the `contentlet-<identifier>` slot name, with the prefix
+     * stripped). When a contentlet has a matching slot, that slot content is
+     * rendered instead of the mapped component — the Vue analog of the React
+     * SDK's `slots` prop. Empty (or omitted) when no per-contentlet slots were
+     * provided; {@link DotCMSLayoutBody} always sets it.
+     */
+    slots?: Record<string, Slot>;
 }
 
 /**
@@ -73,7 +83,8 @@ const EMPTY_CONTEXT: DotCMSPageContextValue = {
     mode: 'production',
     userComponents: {},
     isDevMode: false,
-    isAnalyticsActive: false
+    isAnalyticsActive: false,
+    slots: {}
 };
 
 /**

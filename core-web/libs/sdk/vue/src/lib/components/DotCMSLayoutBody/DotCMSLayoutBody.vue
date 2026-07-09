@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, markRaw, toRaw, type Component } from 'vue';
+import { computed, markRaw, toRaw, useSlots, type Component, type Slot } from 'vue';
 
 import ErrorMessage from './components/ErrorMessage.vue';
-import type { DotCMSLayoutBodyProps } from './types';
+import { CONTENTLET_SLOT_PREFIX, type DotCMSLayoutBodyProps } from './types';
 
 import { useIsAnalyticsActive } from '../../composables/useIsAnalyticsActive';
 import { useIsDevMode } from '../../composables/useIsDevMode';
@@ -42,6 +42,22 @@ const rawComponents = computed(() => {
     return markRaw(out);
 });
 
+// Per-contentlet named slots: `<template #contentlet-<identifier>>` on the layout
+// lets a consumer render specific contentlets themselves (e.g. a server-rendered
+// node) instead of the mapped component — the Vue analog of the React SDK's
+// `slots` prop. Strip the `contentlet-` prefix so the map is keyed by identifier.
+const slots = useSlots();
+const contentletSlots = computed(() => {
+    const out: Record<string, Slot> = {};
+    for (const [name, slot] of Object.entries(slots)) {
+        if (slot && name.startsWith(CONTENTLET_SLOT_PREFIX)) {
+            out[name.slice(CONTENTLET_SLOT_PREFIX.length)] = slot;
+        }
+    }
+
+    return out;
+});
+
 // Provide the context as a computed so live UVE page updates (a new page asset
 // arriving via `uve-set-page-data`) propagate to the whole layout tree.
 provideDotCMSPageContext(
@@ -50,7 +66,8 @@ provideDotCMSPageContext(
         mode: props.mode,
         userComponents: rawComponents.value,
         isDevMode: isDevMode.value,
-        isAnalyticsActive: isAnalyticsActive.value
+        isAnalyticsActive: isAnalyticsActive.value,
+        slots: contentletSlots.value
     }))
 );
 

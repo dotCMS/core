@@ -10,6 +10,8 @@ export { useDotCMSShowWhen } from './lib/composables/useDotCMSShowWhen';
 
 // Utilities
 export { toPlain } from './lib/utils/toPlain';
+export { createDotCMSImageLoader } from './lib/utils/imageLoader';
+export type { DotCMSImageLoader, DotCMSImageLoaderOptions } from './lib/utils/imageLoader';
 
 // Components
 export { default as DotCMSShow } from './lib/components/DotCMSShow/DotCMSShow.vue';

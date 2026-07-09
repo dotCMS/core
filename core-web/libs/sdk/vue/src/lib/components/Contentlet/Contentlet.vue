@@ -61,6 +61,24 @@ const style = computed(() =>
     isDevMode.value ? { minHeight: haveContent.value ? undefined : '4rem' } : {}
 );
 
+// A per-contentlet named slot on DotCMSLayoutBody (`#contentlet-<identifier>`)
+// wins over the mapped component — the Vue analog of the React SDK's `slots`.
+// Wrap the slot in a functional component so it can be rendered via
+// `<component :is>` alongside the user-component branch; the contentlet is passed
+// as the slot's scope prop (`v-slot="{ contentlet }"`).
+const contentletSlot = computed<Component | undefined>(() => {
+    const identifier = props.contentlet?.identifier;
+    // `slots` is optional-guarded: a consumer may provide the context directly
+    // with an older shape that predates per-contentlet slots.
+    const slot = identifier ? ctx.value.slots?.[identifier] : undefined;
+
+    if (!slot) {
+        return undefined;
+    }
+
+    return () => slot({ contentlet: props.contentlet });
+});
+
 const userComponent = computed<Component | undefined>(
     () => ctx.value.userComponents[props.contentlet?.contentType]
 );
@@ -76,8 +94,12 @@ const noComponent = computed<Component | undefined>(
     :style="style"
   >
     <component
+      :is="contentletSlot"
+      v-if="contentletSlot"
+    />
+    <component
       :is="userComponent"
-      v-if="userComponent"
+      v-else-if="userComponent"
       v-bind="contentlet"
     />
     <FallbackComponent
