@@ -486,7 +486,6 @@ public class PublishingResource {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("publishing-queue")
                 .init();
 
         final User user = initData.getUser();
@@ -598,12 +597,10 @@ public class PublishingResource {
             )
             final RetryBundlesForm form) {
 
-        // Initialize request context and authenticate user. Portlet-gated so
-        // only users who can see the publishing queue can trigger a retry.
+        // Initialize request context and authenticate user
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requiredPortlet("publishing-queue")
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
@@ -758,12 +755,10 @@ public class PublishingResource {
             )
             final PushBundleForm form) throws DotDataException, DotPublisherException {
 
-        // 1. Authenticate backend user. Portlet-gated so only users who can see
-        // the publishing queue can dispatch a push.
+        // 1. Authenticate backend user
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requiredPortlet("publishing-queue")
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
@@ -955,7 +950,6 @@ public class PublishingResource {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("publishing-queue")
                 .init();
 
         final User user = initData.getUser();
