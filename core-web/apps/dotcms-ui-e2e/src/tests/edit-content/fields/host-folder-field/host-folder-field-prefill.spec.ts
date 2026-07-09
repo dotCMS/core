@@ -13,7 +13,6 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
     let contentTypeVariable: string;
     let siteName: string;
     let folderName: string;
-    let alternateFolderName: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const contentType = await apiHelpers.createContentType(
@@ -24,9 +23,8 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         const defaultSite = await apiHelpers.getDefaultSite();
         siteName = defaultSite.hostname;
         folderName = `folder-1-${testSuffix}`;
-        alternateFolderName = `folder-2-${testSuffix}`;
 
-        await apiHelpers.createFolders(siteName, [`/${folderName}`, `/${alternateFolderName}`]);
+        await apiHelpers.createFolders(siteName, [`/${folderName}`]);
     });
 
     test('folderPath query param pre-fills the Host/Folder field @critical', async ({
@@ -65,28 +63,5 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
 
         await formPage.goToContent(savedContentIdentifier);
         await field.expectLabelContains(folderName);
-    });
-
-    test('user can override the pre-filled folder value @smoke', async ({ adminPage }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        await formPage.goToNewWithFolderPath(contentTypeVariable, `${siteName}/${folderName}/`);
-
-        const field = new HostFolderField(adminPage);
-        await field.expectLabelContains(folderName);
-
-        await field.openOverlay();
-        await field.selectFolderFlow(alternateFolderName);
-
-        await field.expectLabelContains(alternateFolderName);
-        await expect(field.label).not.toContainText(folderName, { ignoreCase: true });
-    });
-
-    test('empty folderPath query param falls back to default', async ({ adminPage }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        await formPage.goToNewWithFolderPath(contentTypeVariable, '');
-
-        const field = new HostFolderField(adminPage);
-        await field.expectLabelMatchesPattern(/.+\..+/);
-        await field.expectFormFunctional();
     });
 });

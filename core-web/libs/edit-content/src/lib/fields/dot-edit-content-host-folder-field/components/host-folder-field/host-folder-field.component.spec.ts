@@ -235,6 +235,20 @@ describe('DotHostFolderFieldComponent', () => {
             expect(queryInOverlay('host-folder-sites-search-input')).toBeTruthy();
             expect(spectator.query('[data-testid="host-folder-sites"]')).not.toHaveText('SITES');
         }));
+
+        it('should show the empty state when the sites search has no matches', fakeAsync(() => {
+            const sites = Array.from({ length: SITE_SEARCH_THRESHOLD + 1 }, (_, i) =>
+                createSite(`site-${i + 1}`)
+            );
+            service.getSitesTreePath.mockReturnValue(of(sites));
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.setSiteSearchTerm('no-match-zzzz');
+            spectator.detectChanges();
+            showSitesPanel();
+
+            expect(queryInOverlay('host-folder-sites-empty')).toBeTruthy();
+        }));
     });
 
     describe('onLoadMoreNode', () => {

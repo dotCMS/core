@@ -8,10 +8,11 @@ import {
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet, mockMatchMedia } from '@dotcms/utils-testing';
 
@@ -162,6 +163,41 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(store.selectedSite()?.key).toBe(site.key);
             expect(store.confirmedNode()?.key).toBe(nestedNode.key);
         });
+
+        it('should keep the field functional when the persisted path references an unknown site', fakeAsync(() => {
+            service.buildTreeByPaths.mockReturnValue(
+                of({
+                    node: {
+                        key: 'unknown-node',
+                        label: 'unknown-site.dotcms.com/nonexistent-folder/',
+                        data: {
+                            id: 'unknown-node',
+                            hostname: 'unknown-site.dotcms.com',
+                            path: '/nonexistent-folder/',
+                            type: 'folder'
+                        }
+                    },
+                    tree: {
+                        path: '/',
+                        folders: [],
+                        parent: {
+                            hostName: 'unknown-site.dotcms.com',
+                            id: 'unknown-site-id',
+                            path: '/',
+                            addChildrenAllowed: true
+                        }
+                    }
+                })
+            );
+
+            hostFormControl.setValue('unknown-site.dotcms.com/nonexistent-folder/');
+            tick();
+            spectator.detectChanges();
+
+            expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
+            expect(spectator.query(byTestId('host-folder-trigger'))).toBeTruthy();
+            expect(field.$isDisabled()).toBe(false);
+        }));
     });
 
     describe('Staged commit through the UI', () => {
