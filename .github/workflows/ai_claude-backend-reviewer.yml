@@ -95,7 +95,7 @@ jobs:
       enable_mention_detection: false
       claude_args: >-
         --allowedTools
-        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"
+        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh pr review*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"
       prompt: |
         You are the orchestrator of a dotCMS backend code review pipeline.
         Your job is to coordinate specialized sub-agents, collect their findings,
@@ -264,8 +264,11 @@ jobs:
 
         ## STEP 6 — Submit a formal GitHub review
 
-        After posting the comment, submit a formal PR review so that merging is
-        blocked until Critical or High findings are resolved.
+        After upserting the comment, submit a formal PR review so that merging is
+        blocked while Critical or High findings remain, and unblocked once they
+        are resolved. Always submit a review on every run: this reviewer's latest
+        review supersedes its previous one, so a later --approve automatically
+        clears an earlier --request-changes once the findings are fixed.
 
         Check whether the review body contains any Critical or High findings:
 
