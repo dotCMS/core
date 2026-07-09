@@ -168,6 +168,14 @@ public class CategoryAPIImpl implements CategoryAPI {
 			}
 		}
 
+		// Re-parenting an existing category (issue #33989): validate the move BEFORE the write so an
+		// unauthorized or cyclic request is rejected without paying for a DB update and a cluster-wide
+		// category cache flush. A null parent (an omitted "parent" field) leaves the current
+		// relationship untouched, so an update never accidentally detaches a category.
+		final List<Category> reParentFrom = (!isANewCategory && parent != null)
+				? validateReParent(category, parent, user, respectFrontendRoles)
+				: null;
+
 		category.setModDate(new Date());
 		categoryFactory.save(category, parent);
 
@@ -177,28 +185,37 @@ public class CategoryAPIImpl implements CategoryAPI {
 				categoryFactory.addChild(parent, category, null);
 				permissionAPI.copyPermissions(parent, category);
 			}
-		} else if (parent != null) {
-			//Re-parenting an existing category: move it under the requested parent when it differs
-			//from its current parent (issue #33989). A null parent (an omitted "parent" field) leaves
-			//the current relationship untouched, so an update never accidentally detaches a category.
-			reParent(category, parent, user, respectFrontendRoles);
+		} else if (reParentFrom != null) {
+			//Move the (already validated) category under the requested parent.
+			applyReParent(category, parent, reParentFrom);
 		}
 
 	}
 
 	/**
-	 * Moves an existing category under a new parent when the requested parent differs from the
-	 * category's current parent. Detaches the category from its previous parent(s) and links it to
-	 * the new one, mirroring the parent/child tree wiring done for brand-new categories. Added to
-	 * support re-parenting through the Category REST API (issue #33989).
+	 * Validates a re-parenting request for an existing category (issue #33989) <b>before</b> any
+	 * write is performed. The move is rejected — without touching the database or the category
+	 * cache — when:
+	 * <ul>
+	 *   <li>it would create a cycle (moving the category under itself or one of its descendants),</li>
+	 *   <li>the user lacks {@code EDIT} on the new parent, or</li>
+	 *   <li>the user lacks {@code EDIT} on any current parent the category would be detached from.</li>
+	 * </ul>
+	 * Detaching restructures each current parent's set of children, so — mirroring the
+	 * parent-oriented check in {@link #removeChild} — {@code EDIT} on the moved category alone is not
+	 * sufficient.
 	 *
 	 * @param category              the existing category being moved
 	 * @param newParent             the parent the category should be moved under
 	 * @param user                  the user performing the operation
 	 * @param respectFrontendRoles  whether front-end roles should be respected
+	 * @return the category's current parents (reused by {@link #applyReParent} to avoid re-querying),
+	 *         or {@code null} when the category already sits under the requested parent only and there
+	 *         is nothing to move
 	 */
-	private void reParent(final Category category, final Category newParent, final User user,
-			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	private List<Category> validateReParent(final Category category, final Category newParent,
+			final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
 
 		final List<Category> currentParents = categoryFactory.getParents(category);
 
@@ -207,7 +224,18 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		// Nothing to do when the category already sits under the requested parent only.
 		if (alreadyUnderNewParent && currentParents.size() == 1) {
-			return;
+			return null;
+		}
+
+		// Reject moves that would introduce a cycle in the category tree. Several traversals
+		// (CategoryFactoryImpl.getAllChildren, isParent, getCategoryTree) assume an acyclic tree and
+		// would otherwise loop indefinitely / overflow the stack.
+		if (wouldCreateCycle(category, newParent)) {
+			final String errorMsg = String.format("Cannot move Category '%s' under Category '%s': the " +
+							"move would create a cycle in the category tree.", category.getInode(),
+					newParent.getInode());
+			Logger.error(this, errorMsg);
+			throw new IllegalArgumentException(errorMsg);
 		}
 
 		// The user must be allowed to add children under the new parent.
@@ -220,9 +248,44 @@ public class CategoryAPIImpl implements CategoryAPI {
 			throw new DotSecurityException(errorMsg);
 		}
 
+		// The user must also be allowed to modify every current parent the category will be detached
+		// from — detaching restructures those parents' children sets, so EDIT on the moved category
+		// alone is not sufficient.
+		for (final Category currentParent : currentParents) {
+			if (!newParent.getInode().equals(currentParent.getInode())
+					&& !permissionAPI.doesUserHavePermission(currentParent, PermissionAPI.PERMISSION_EDIT,
+							user, respectFrontendRoles)) {
+				final String errorMsg = String.format("User '%s' doesn't have EDIT permissions to detach " +
+								"Category '%s' from its current parent Category '%s'.",
+						null != user ? user.getUserId() : null, category.getInode(), currentParent.getInode());
+				Logger.error(this, errorMsg);
+				throw new DotSecurityException(errorMsg);
+			}
+		}
+
+		return currentParents;
+	}
+
+	/**
+	 * Applies a re-parenting move validated by {@link #validateReParent} (issue #33989): detaches the
+	 * category from every current parent other than the requested one and links it under the new
+	 * parent. Performs no permission or cycle checks — callers must invoke {@link #validateReParent}
+	 * first.
+	 *
+	 * @param category        the existing category being moved
+	 * @param newParent       the parent the category should be moved under
+	 * @param currentParents  the category's current parents, as returned by {@link #validateReParent}
+	 */
+	private void applyReParent(final Category category, final Category newParent,
+			final List<Category> currentParents) throws DotDataException {
+
+		boolean alreadyUnderNewParent = false;
+
 		// Detach the category from every current parent that is not the requested one.
 		for (final Category currentParent : currentParents) {
-			if (!newParent.getInode().equals(currentParent.getInode())) {
+			if (newParent.getInode().equals(currentParent.getInode())) {
+				alreadyUnderNewParent = true;
+			} else {
 				categoryFactory.removeParent(category, currentParent);
 			}
 		}
@@ -231,6 +294,38 @@ public class CategoryAPIImpl implements CategoryAPI {
 		if (!alreadyUnderNewParent) {
 			categoryFactory.addChild(newParent, category, null);
 		}
+	}
+
+	/**
+	 * Determines whether moving {@code category} under {@code newParent} would create a cycle, i.e.
+	 * whether {@code newParent} is {@code category} itself or one of its descendants. Walks up the
+	 * ancestor chain of {@code newParent} tracking visited inodes, so it terminates even if the tree
+	 * already contains an anomaly.
+	 *
+	 * @param category   the category that would be moved
+	 * @param newParent  the prospective new parent
+	 * @return {@code true} if the move would introduce a cycle
+	 */
+	private boolean wouldCreateCycle(final Category category, final Category newParent)
+			throws DotDataException {
+
+		final String targetInode = category.getInode();
+		final Set<String> visited = new HashSet<>();
+		final Deque<Category> pending = new ArrayDeque<>();
+		pending.push(newParent);
+
+		while (!pending.isEmpty()) {
+			final Category current = pending.pop();
+			if (!visited.add(current.getInode())) {
+				continue;
+			}
+			if (targetInode.equals(current.getInode())) {
+				return true;
+			}
+			pending.addAll(categoryFactory.getParents(current));
+		}
+
+		return false;
 	}
 
 	@WrapInTransaction

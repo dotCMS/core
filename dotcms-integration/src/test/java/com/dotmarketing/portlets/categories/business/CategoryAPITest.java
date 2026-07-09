@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -429,6 +430,59 @@ public class CategoryAPITest extends IntegrationTestBase {
             }
             if (UtilMethods.isSet(newParent)) {
                 categoryAPI.delete(newParent, user, false);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: An existing category is re-parented under itself and under one of its own
+     *                 descendants — moves that would make the category tree cyclic.
+     * Expected Result: Both moves are rejected with an {@link IllegalArgumentException} and the tree
+     *                  is left untouched, so tree traversals cannot loop forever. See issue #33989.
+     */
+    @Test
+    public void reParentRejectsCycles() throws Exception {
+
+        final long time = new Date().getTime();
+
+        Category grandParent = null;
+        Category child = null;
+
+        try {
+            grandParent = new Category();
+            grandParent.setCategoryName("Cycle GrandParent " + time);
+            grandParent.setKey("cycle-grandparent-" + time);
+            grandParent.setCategoryVelocityVarName("cycleGrandParent" + time);
+            categoryAPI.save(null, grandParent, user, false);
+
+            child = new Category();
+            child.setCategoryName("Cycle Child " + time);
+            child.setKey("cycle-child-" + time);
+            child.setCategoryVelocityVarName("cycleChild" + time);
+            categoryAPI.save(grandParent, child, user, false);
+
+            // Moving the grandparent under its own descendant (child) would create a cycle.
+            final Category grandParentRef = grandParent;
+            final Category childRef = child;
+            assertThrows(IllegalArgumentException.class,
+                    () -> categoryAPI.save(childRef, grandParentRef, user, false));
+
+            // Moving a category under itself would create a cycle.
+            assertThrows(IllegalArgumentException.class,
+                    () -> categoryAPI.save(grandParentRef, grandParentRef, user, false));
+
+            // The original hierarchy is intact: grandParent has no parent, child still under it.
+            assertTrue(categoryAPI.getParents(grandParentRef, user, false).isEmpty());
+            final List<Category> childParents = categoryAPI.getParents(childRef, user, false);
+            assertEquals(1, childParents.size());
+            assertEquals(grandParentRef.getInode(), childParents.get(0).getInode());
+        } finally {
+            if (UtilMethods.isSet(child)) {
+                categoryAPI.delete(child, user, false);
+            }
+            if (UtilMethods.isSet(grandParent)) {
+                categoryAPI.delete(grandParent, user, false);
             }
         }
     }
