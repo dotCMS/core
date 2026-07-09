@@ -3,6 +3,7 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -28,7 +29,12 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotMessagePipe,
         ReactiveFormsModule
     ],
-    providers: [DotFileFieldUploadService, FileFieldStore, DialogService],
+    providers: [
+        DotFileFieldUploadService,
+        FileFieldStore,
+        DialogService,
+        DotWorkflowActionsFireService
+    ],
     templateUrl: './dot-edit-content-file-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [

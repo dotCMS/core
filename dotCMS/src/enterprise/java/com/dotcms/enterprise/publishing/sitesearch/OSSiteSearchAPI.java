@@ -504,6 +504,20 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      * {@link VersionedIndicesAPI} and deletes through the OpenSearch {@link IndexAPI} provider.
      */
     @Override
+    public void deleteIndex(final String indexName) throws DotDataException, IOException {
+        if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+            return;
+        }
+        if (!IndexType.SITE_SEARCH.is(indexName)) {
+            throw new DotDataException("Index '" + indexName + "' is not a site-search index");
+        }
+        // Deletes only from THIS engine (indexApi is the direct OSIndexAPIImpl, not the router).
+        // Site-search OS indices are plain-named (no .os tag). Active-index protection is enforced
+        // by the SiteSearchAPIImpl router before dispatch.
+        indexApi.deleteMultiple(new String[]{indexName});
+    }
+
+    @Override
     public void deleteOldSiteSearchIndices() {
         final List<String> indicesToRemove = new ArrayList<>(listIndices());
 
