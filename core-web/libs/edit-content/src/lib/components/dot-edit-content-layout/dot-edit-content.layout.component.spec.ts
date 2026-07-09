@@ -169,7 +169,7 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotRelatedContentNavigationStore, {
                 trail: relatedTrailSignal,
                 registerTitle: jest.fn(),
-                buildTrailForSavedInode: jest.fn().mockReturnValue(null),
+                buildTrailForSavedInode: jest.fn().mockReturnValue(null)
             })
         ]
     });
@@ -715,7 +715,9 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
                     .fn()
                     .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
             }),
-            mockProvider(DotSystemConfigService, { getSystemConfig: jest.fn().mockReturnValue(of({})) }),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(of({}))
+            }),
             GlobalStore,
             {
                 provide: DotCurrentUserService,
@@ -895,7 +897,7 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             mockProvider(DotRelatedContentNavigationStore, {
                 trail: relatedTrailSignal,
                 registerTitle: jest.fn(),
-                buildTrailForSavedInode: jest.fn().mockReturnValue(null),
+                buildTrailForSavedInode: jest.fn().mockReturnValue(null)
             })
         ]
     });

@@ -1,7 +1,14 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { EMPTY } from 'rxjs';
 
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 
@@ -23,11 +30,41 @@ export const RELATED_TRAIL_PARAM = 'rc';
 interface RelatedContentNavigationState {
     /**
      * Best-effort cache of `inode -> title`, populated as contents are visited.
-     * Survives in-session navigation (back/forward) since this store is a root
-     * singleton; lost on a hard refresh (crumbs then fall back to a placeholder
-     * until revisited). Kept as a Record for JSON-serializability.
+     * Persisted to `sessionStorage` so it survives a hard refresh (the trail lives
+     * in the URL, but only the current content reloads, so without this the earlier
+     * crumbs would fall back to a placeholder). Scoped to the tab/session: a fresh
+     * tab or a shared link still starts empty until each content is visited. Kept as
+     * a Record for JSON-serializability.
      */
     titleCache: Record<string, string>;
+}
+
+/** sessionStorage key for the persisted {@link RelatedContentNavigationState.titleCache}. */
+const TITLE_CACHE_STORAGE_KEY = 'dot-related-content-title-cache';
+
+/**
+ * Reads the persisted title cache from sessionStorage. Returns an empty cache when
+ * storage is unavailable (SSR/tests) or the payload is missing/corrupt — the cache
+ * is best-effort, so a read failure must never break store construction.
+ */
+function readTitleCache(): Record<string, string> {
+    try {
+        const raw = sessionStorage.getItem(TITLE_CACHE_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+
+        return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
+    } catch {
+        return {};
+    }
+}
+
+/** Persists the title cache to sessionStorage; silently ignores storage failures. */
+function writeTitleCache(cache: Record<string, string>): void {
+    try {
+        sessionStorage.setItem(TITLE_CACHE_STORAGE_KEY, JSON.stringify(cache));
+    } catch {
+        // best-effort: quota errors / disabled storage must not break navigation.
+    }
 }
 
 const initialState: RelatedContentNavigationState = {
@@ -35,8 +72,8 @@ const initialState: RelatedContentNavigationState = {
 };
 
 /**
- * Placeholder label for a crumb whose title is not (yet) cached — only happens
- * after a hard refresh, until that content is revisited.
+ * Placeholder label for a crumb whose title is not (yet) cached — happens for a
+ * content that has never been visited in this tab/session (e.g. a shared link).
  */
 const MISSING_TITLE = '…';
 
@@ -161,5 +198,19 @@ export const DotRelatedContentNavigationStore = signalStore(
                 return [...trail.slice(0, -1), newInode].join(',');
             }
         };
+    }),
+    withHooks({
+        onInit(store) {
+            // Hydrate the cache from the previous page load so a hard refresh keeps
+            // labeling the earlier crumbs (their inodes come back from the URL, but
+            // only the current content reloads and re-registers its own title).
+            patchState(store, { titleCache: readTitleCache() });
+
+            // Persist on every change so the next refresh starts warm.
+            effect(() => {
+                const cache = store.titleCache();
+                untracked(() => writeTitleCache(cache));
+            });
+        }
     })
 );

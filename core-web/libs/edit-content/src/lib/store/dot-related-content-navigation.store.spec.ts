@@ -1,5 +1,5 @@
 import { provideLocationMocks } from '@angular/common/testing';
-import { Component } from '@angular/core';
+import { ApplicationRef, Component } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
@@ -19,7 +19,13 @@ describe('DotRelatedContentNavigationStore', () => {
     let store: InstanceType<typeof DotRelatedContentNavigationStore>;
     let router: Router;
 
+    const TITLE_CACHE_KEY = 'dot-related-content-title-cache';
+
     beforeEach(() => {
+        // The store is providedIn root and persists its title cache to
+        // sessionStorage (shared across tests in jsdom); clear it for isolation.
+        sessionStorage.clear();
+
         TestBed.configureTestingModule({
             providers: [
                 provideRouter([{ path: 'content/:id', component: StubCmp }]),
@@ -99,6 +105,61 @@ describe('DotRelatedContentNavigationStore', () => {
             tick();
 
             expect(store.buildTrailForSavedInode('inode-a2')).toBeNull();
+        }));
+    });
+
+    describe('title cache persistence (sessionStorage)', () => {
+        it('persists registered titles to sessionStorage', () => {
+            store.registerTitle('inode-a', 'Content A');
+            TestBed.inject(ApplicationRef).tick(); // flush the persist effect
+
+            expect(JSON.parse(sessionStorage.getItem(TITLE_CACHE_KEY) as string)).toEqual({
+                'inode-a': 'Content A'
+            });
+        });
+
+        it('hydrates the cache on init so a refresh keeps labeling earlier crumbs', fakeAsync(() => {
+            // Simulate a prior session that cached A's title, then a hard refresh:
+            // a fresh store must hydrate from storage.
+            sessionStorage.setItem(TITLE_CACHE_KEY, JSON.stringify({ 'inode-a': 'Cached A' }));
+
+            TestBed.resetTestingModule();
+            TestBed.configureTestingModule({
+                providers: [
+                    provideRouter([{ path: 'content/:id', component: StubCmp }]),
+                    provideLocationMocks()
+                ]
+            });
+            const freshRouter = TestBed.inject(Router);
+            const freshStore = TestBed.inject(DotRelatedContentNavigationStore);
+
+            // Land on B with a trail A › B — only B is "loaded", A comes from cache.
+            freshRouter.navigateByUrl('/content/inode-b?rc=inode-a,inode-b');
+            tick();
+
+            expect(freshStore.trail()).toEqual([
+                { inode: 'inode-a', title: 'Cached A' },
+                { inode: 'inode-b', title: '…' }
+            ]);
+        }));
+
+        it('starts empty and does not throw when storage holds a corrupt payload', fakeAsync(() => {
+            sessionStorage.setItem(TITLE_CACHE_KEY, 'not-json{');
+
+            TestBed.resetTestingModule();
+            TestBed.configureTestingModule({
+                providers: [
+                    provideRouter([{ path: 'content/:id', component: StubCmp }]),
+                    provideLocationMocks()
+                ]
+            });
+            const freshRouter = TestBed.inject(Router);
+            const freshStore = TestBed.inject(DotRelatedContentNavigationStore);
+
+            freshRouter.navigateByUrl('/content/inode-a?rc=inode-a,inode-b');
+            tick();
+
+            expect(freshStore.trail().every((c) => c.title === '…')).toBe(true);
         }));
     });
 });
