@@ -1,6 +1,10 @@
 import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
 
-import { DotContentSearchService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentSearchService,
+    DotContentTypeService,
+    DotMessageService
+} from '@dotcms/data-access';
 
 import { SlashMenuService } from './slash-menu.service';
 import { BlockItem } from './slash-menu.types';
