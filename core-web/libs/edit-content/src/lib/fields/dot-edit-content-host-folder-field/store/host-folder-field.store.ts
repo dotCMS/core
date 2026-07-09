@@ -592,7 +592,7 @@ export const HostFolderFiledStore = signalStore(
                 pipe(
                     debounceTime(150),
                     distinctUntilChanged(),
-                    tap((term) => patchState(store, { siteSearchTerm: term }))
+                    tap((term: string) => patchState(store, { siteSearchTerm: term }))
                 )
             )
         };
