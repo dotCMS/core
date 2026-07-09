@@ -203,11 +203,12 @@ export class SlashMenuService {
 
     /**
      * Refreshes the visible rows and/or anchor while a suggestion session is active.
-     * In a sub-menu, only updates {@link items} and the active index — preserves {@link commandFn}
-     * because TipTap's callback would otherwise call `deleteRange` on the slash trigger.
+     * In a sub-menu we still re-anchor to the caret ({@link clientRectFn}) so the overlay follows
+     * the text as the user searches — but we preserve {@link commandFn}, because TipTap's callback
+     * would otherwise call `deleteRange` on the slash trigger.
      *
      * @param items Latest filtered list (from {@link filterItems}).
-     * @param clientRectFn Updated caret rect, ignored while in a sub-menu.
+     * @param clientRectFn Current caret rect from TipTap; refreshed in both root and sub-menu modes.
      * @param commandFn Latest TipTap command callback, ignored while in a sub-menu.
      */
     update(
@@ -218,6 +219,10 @@ export class SlashMenuService {
         if (this.isInSubmenu) {
             this.zone.run(() => {
                 this.items.set(items);
+                // Re-anchor to the live caret rect. Without this the overlay stays pinned to the
+                // root menu's original decoration node, which detaches once the query text changes
+                // while searching — leaving the menu stranded at the top-left of the editor.
+                this.clientRectFn.set(clientRectFn);
                 this.activeIndex.set(0);
             });
             return;
