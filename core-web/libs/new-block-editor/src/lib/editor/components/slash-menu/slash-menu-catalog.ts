@@ -56,7 +56,11 @@ const escapeLucene = (value: string): string => value.replace(LUCENE_SPECIAL_CHA
  * a hyphenated token would never match) plus a title-phrase boost — so results aren't limited to the
  * first page. Mirrors the legacy block-editor's `getContentlets` behaviour, including Lucene escaping.
  */
-function buildContentletByTypeQuery(variable: string, languageId: number, filter = ''): string {
+export function buildContentletByTypeQuery(
+    variable: string,
+    languageId: number,
+    filter = ''
+): string {
     const trimmed = filter.trim();
     let searchClauses = `+catchall:** title:''^15`;
     if (UUID_LIKE.test(trimmed)) {
@@ -110,7 +114,9 @@ export function createContentTypeItem(
             : [
                   {
                       label: msg('dot.block.editor.slash-menu.content-type.empty.label'),
-                      description: msg('dot.block.editor.slash-menu.content-type.empty.description'),
+                      description: msg(
+                          'dot.block.editor.slash-menu.content-type.empty.description'
+                      ),
                       icon: 'folder_off',
                       keywords: ['no', 'empty', 'content', 'types'],
                       isEmptyState: true
@@ -118,10 +124,7 @@ export function createContentTypeItem(
               ];
 
     /** Maps contentlets to rows whose `onSelect` inserts the embedded contentlet node. */
-    const toContentletItems = (
-        contentlets: DotCMSContentlet[],
-        typeLabel: string
-    ): BlockItem[] =>
+    const toContentletItems = (contentlets: DotCMSContentlet[], typeLabel: string): BlockItem[] =>
         contentlets.length > 0
             ? contentlets.map((cl) => ({
                   label: cl.title || cl.identifier,
