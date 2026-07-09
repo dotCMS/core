@@ -2336,17 +2336,37 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // Bounded timeout: loading and mapping touch binary files, and a hung stat on
             // network-backed storage must fail this entry instead of wedging the reindex
             // thread forever (issue #36498).
-            mappingRunner.get().run(() -> {
-                for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
-                    Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
-                            contentlet.getInode(), idx.getPriority()));
-                    contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                    addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
-                }
+            mappingRunner().run(() -> {
+                mapEntryForProcessor(proc, idx);
                 return null;
             }, "reindex entry with identifier '" + idx.getIdentToIndex() + "'");
         } catch (final Exception e) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
+        }
+    }
+
+    /**
+     * The shared timeout guard for per-entry mapping work. Seam for tests, which override it
+     * to supply a runner with a test-controlled timeout and no DB cleanup.
+     */
+    @VisibleForTesting
+    ReindexMappingRunner mappingRunner() {
+        return mappingRunner.get();
+    }
+
+    /**
+     * Loads all versions of the entry's contentlet and appends their index operations to the
+     * processor. Runs on a {@link ReindexMappingRunner} worker thread when the mapping timeout
+     * guard is enabled, so it must not rely on caller-thread state.
+     */
+    @VisibleForTesting
+    void mapEntryForProcessor(final IndexBulkProcessor proc, final ReindexEntry idx)
+            throws Exception {
+        for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
+            Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
+                    contentlet.getInode(), idx.getPriority()));
+            contentlet.setIndexPolicy(IndexPolicy.DEFER);
+            addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
         }
     }
 

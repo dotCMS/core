@@ -73,10 +73,14 @@ class ReindexMappingRunner {
             try {
                 return task.call();
             } finally {
-                perTaskCleanup.run();
-                // A wedged task holds its permit until the native call returns (if ever), so
-                // wedged threads count against the cap instead of piling up unbounded.
-                inFlight.release();
+                try {
+                    perTaskCleanup.run();
+                } finally {
+                    // A wedged task holds its permit until the native call returns (if ever),
+                    // so wedged threads count against the cap instead of piling up unbounded —
+                    // and a throwing cleanup must never leak the permit.
+                    inFlight.release();
+                }
             }
         });
         try {
