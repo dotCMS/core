@@ -1,5 +1,5 @@
 import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -563,6 +563,92 @@ describe('HostFolderFiledStore', () => {
 
             expect(service.searchFolders).not.toHaveBeenCalled();
         });
+
+        it('should load sibling nodes concurrently without leaving the first stuck in loading', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockClear();
+
+            const nodeA: TreeNodeItem = {
+                key: 'folder-a',
+                label: 'demo.dotcms.com/folderA/',
+                data: {
+                    id: 'folder-a',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folderA/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+            const nodeB: TreeNodeItem = {
+                key: 'folder-b',
+                label: 'demo.dotcms.com/folderB/',
+                data: {
+                    id: 'folder-b',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folderB/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+            const childrenA: TreeNodeItem[] = [
+                {
+                    key: 'child-a',
+                    label: 'demo.dotcms.com/folderA/child/',
+                    data: {
+                        id: 'child-a',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folderA/child/',
+                        type: 'folder'
+                    }
+                }
+            ];
+            const childrenB: TreeNodeItem[] = [
+                {
+                    key: 'child-b',
+                    label: 'demo.dotcms.com/folderB/child/',
+                    data: {
+                        id: 'child-b',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folderB/child/',
+                        type: 'folder'
+                    }
+                }
+            ];
+            const pendingA$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+
+            service.searchFolders.mockImplementation((params) => {
+                if (params.path === nodeA.data.path) {
+                    return pendingA$.asObservable();
+                }
+
+                return of({
+                    folders: childrenB,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                });
+            });
+
+            store.expandNode(buildEvent(nodeA));
+            expect(store.nodePagination()['folder-a'].loading).toBe(true);
+
+            store.expandNode(buildEvent(nodeB));
+
+            expect(nodeB.children).toEqual(childrenB);
+            expect(store.nodePagination()['folder-b'].loading).toBe(false);
+            expect(store.nodePagination()['folder-a'].loading).toBe(true);
+
+            pendingA$.next({
+                folders: childrenA,
+                pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+            });
+            pendingA$.complete();
+
+            expect(nodeA.children).toEqual(childrenA);
+            expect(store.nodePagination()['folder-a'].loading).toBe(false);
+        });
     });
 
     describe('Method: loadMore', () => {
@@ -858,6 +944,36 @@ describe('HostFolderFiledStore', () => {
 
             expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
             expect(store.foldersLoadFailed()).toBe(true);
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+        });
+
+        it('should keep the folder tree visible when a nested expand fails', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockClear();
+
+            const node: TreeNodeItem = {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/folder1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder1/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+
+            service.searchFolders.mockReturnValue(throwError(() => httpError));
+
+            store.expandNode({
+                originalEvent: new Event('click'),
+                node
+            });
+
+            expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+            expect(store.foldersLoadFailed()).toBe(false);
+            expect(store.nodePagination()['folder-1'].loading).toBe(false);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
         });
     });

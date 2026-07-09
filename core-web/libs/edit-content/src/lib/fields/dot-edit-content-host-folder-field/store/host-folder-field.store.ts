@@ -6,7 +6,16 @@ import { EMPTY, of, pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { debounceTime, distinctUntilChanged, filter, map, switchMap, tap } from 'rxjs/operators';
+import {
+    debounceTime,
+    distinctUntilChanged,
+    filter,
+    groupBy,
+    map,
+    mergeMap,
+    switchMap,
+    tap
+} from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
@@ -349,98 +358,138 @@ export const HostFolderFiledStore = signalStore(
                             hasMore: false,
                             loading: false
                         };
-                        patchState(store, {
-                            foldersStatus: ComponentStatus.LOADING,
+                        const changes: Partial<HostFolderFiledState> = {
                             nodePagination: {
                                 ...store.nodePagination(),
                                 [params.key]: { ...current, loading: true }
                             }
-                        });
+                        };
+
+                        if (params.key === ROOT_NODE_KEY) {
+                            changes.foldersStatus = ComponentStatus.LOADING;
+                        }
+
+                        patchState(store, changes);
                     }),
-                    switchMap((params) => {
-                        const hostname = store.selectedSite()?.data?.hostname ?? '';
+                    groupBy((params) => params.key),
+                    mergeMap((group$) =>
+                        group$.pipe(
+                            switchMap((params) => {
+                                const hostname = store.selectedSite()?.data?.hostname ?? '';
 
-                        return dotBrowsingService
-                            .searchFolders(
-                                {
-                                    siteId: params.siteId,
-                                    path: params.path,
-                                    recursive: false,
-                                    page: params.page,
-                                    per_page: FOLDER_PAGE_LIMIT
-                                },
-                                hostname
-                            )
-                            .pipe(
-                                tapResponse({
-                                    next: ({ folders, pagination }) => {
-                                        const hasMore =
-                                            pagination.currentPage * pagination.perPage <
-                                            pagination.totalEntries;
-                                        const nodePagination = {
-                                            ...store.nodePagination(),
-                                            [params.key]: {
-                                                page: params.page,
-                                                hasMore,
-                                                loading: false
-                                            }
-                                        };
+                                return dotBrowsingService
+                                    .searchFolders(
+                                        {
+                                            siteId: params.siteId,
+                                            path: params.path,
+                                            recursive: false,
+                                            page: params.page,
+                                            per_page: FOLDER_PAGE_LIMIT
+                                        },
+                                        hostname
+                                    )
+                                    .pipe(
+                                        tapResponse({
+                                            next: ({ folders, pagination }) => {
+                                                if (
+                                                    store.selectedSite()?.data?.id !== params.siteId
+                                                ) {
+                                                    return;
+                                                }
 
-                                        if (params.targetNode) {
-                                            const target = params.targetNode;
-                                            target.leaf = folders.length === 0 && params.page === 1;
-                                            target.icon = 'pi pi-folder-open';
+                                                const hasMore =
+                                                    pagination.currentPage * pagination.perPage <
+                                                    pagination.totalEntries;
+                                                const nodePagination = {
+                                                    ...store.nodePagination(),
+                                                    [params.key]: {
+                                                        page: params.page,
+                                                        hasMore,
+                                                        loading: false
+                                                    }
+                                                };
 
-                                            const prevChildren = params.append
-                                                ? stripLoadMore(target.children as TreeNodeItem[])
-                                                : [];
-                                            const nextChildren = [...prevChildren, ...folders];
-                                            target.children = hasMore
-                                                ? [...nextChildren, createLoadMoreNode(params.key)]
-                                                : nextChildren;
+                                                if (params.targetNode) {
+                                                    const target = params.targetNode;
+                                                    target.leaf =
+                                                        folders.length === 0 && params.page === 1;
+                                                    target.icon = 'pi pi-folder-open';
 
-                                            patchState(store, {
-                                                folders: structuredClone(store.folders()),
-                                                foldersStatus: ComponentStatus.LOADED,
-                                                nodePagination
-                                            });
-                                        } else {
-                                            const prevFolders = params.append
-                                                ? stripLoadMore(store.folders())
-                                                : [];
-                                            const nextFolders = [...prevFolders, ...folders];
+                                                    const prevChildren = params.append
+                                                        ? stripLoadMore(
+                                                              target.children as TreeNodeItem[]
+                                                          )
+                                                        : [];
+                                                    const nextChildren = [
+                                                        ...prevChildren,
+                                                        ...folders
+                                                    ];
+                                                    target.children = hasMore
+                                                        ? [
+                                                              ...nextChildren,
+                                                              createLoadMoreNode(params.key)
+                                                          ]
+                                                        : nextChildren;
 
-                                            patchState(store, {
-                                                folders: hasMore
-                                                    ? [
-                                                          ...nextFolders,
-                                                          createLoadMoreNode(params.key)
-                                                      ]
-                                                    : nextFolders,
-                                                foldersStatus: ComponentStatus.LOADED,
-                                                nodePagination
-                                            });
-                                        }
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        dotHttpErrorManagerService.handle(error);
-                                        patchState(store, {
-                                            foldersStatus: ComponentStatus.ERROR,
-                                            nodePagination: {
-                                                ...store.nodePagination(),
-                                                [params.key]: {
-                                                    ...(store.nodePagination()[params.key] ?? {
-                                                        page: 1,
-                                                        hasMore: false
-                                                    }),
-                                                    loading: false
+                                                    patchState(store, {
+                                                        folders: structuredClone(store.folders()),
+                                                        nodePagination
+                                                    });
+                                                } else {
+                                                    const prevFolders = params.append
+                                                        ? stripLoadMore(store.folders())
+                                                        : [];
+                                                    const nextFolders = [
+                                                        ...prevFolders,
+                                                        ...folders
+                                                    ];
+
+                                                    patchState(store, {
+                                                        folders: hasMore
+                                                            ? [
+                                                                  ...nextFolders,
+                                                                  createLoadMoreNode(params.key)
+                                                              ]
+                                                            : nextFolders,
+                                                        foldersStatus: ComponentStatus.LOADED,
+                                                        nodePagination
+                                                    });
+                                                }
+                                            },
+                                            error: (error: HttpErrorResponse) => {
+                                                if (
+                                                    store.selectedSite()?.data?.id !== params.siteId
+                                                ) {
+                                                    return;
+                                                }
+
+                                                dotHttpErrorManagerService.handle(error);
+
+                                                const nodePagination = {
+                                                    ...store.nodePagination(),
+                                                    [params.key]: {
+                                                        ...(store.nodePagination()[params.key] ?? {
+                                                            page: 1,
+                                                            hasMore: false
+                                                        }),
+                                                        loading: false
+                                                    }
+                                                };
+
+                                                if (params.key === ROOT_NODE_KEY) {
+                                                    patchState(store, {
+                                                        foldersStatus: ComponentStatus.ERROR,
+                                                        nodePagination
+                                                    });
+                                                } else {
+                                                    patchState(store, { nodePagination });
                                                 }
                                             }
-                                        });
-                                    }
-                                })
-                            );
-                    })
+                                        })
+                                    );
+                            })
+                        )
+                    )
                 )
             ),
             /**
