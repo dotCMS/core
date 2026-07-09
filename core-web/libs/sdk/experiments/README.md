@@ -229,7 +229,7 @@ Once you wrap your component with `withExperiments`, the SDK automatically handl
 -   **GitHub Issues**: [open an issue](https://github.com/dotCMS/core/issues/new/choose)
 -   **Community Forum**: [community.dotcms.com](https://community.dotcms.com/)
 -   **Stack Overflow**: tag `dotcms-experiments`
--   **Enterprise Support**: [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
+-   **Enterprise Support**: [dotCMS Support](https://www.dotcms.com/support)
 
 When reporting issues, include SDK version, framework version, minimal reproduction steps, and expected vs. actual behavior.
 

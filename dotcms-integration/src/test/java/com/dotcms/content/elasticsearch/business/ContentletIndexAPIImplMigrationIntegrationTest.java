@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
@@ -13,9 +14,16 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.VersionedIndicesImpl;
+import com.dotmarketing.business.DotStateException;
+import com.dotcms.content.elasticsearch.util.MappingHelper;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
+import com.dotcms.content.index.opensearch.MappingOperationsOS;
+import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
+import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch.indices.GetIndexResponse;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -113,6 +121,13 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     // ── Used to resolve the OS physical name for indices created through the phase router ──
     @Inject
     private ContentletIndexOperationsOS opsOS;
+
+    // ── Used by the orphan-repair regression test to read back mapping + analysis settings ──
+    @Inject
+    private MappingOperationsOS mappingOps;
+
+    @Inject
+    private OSClientProvider clientProvider;
 
     /**
      * Physical (cluster-prefixed, tag-suffixed) form of {@link #DUAL_WORKING}; resolved once
@@ -432,9 +447,250 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         Logger.info(this, "✅ delete Phase 1 — both removed: " + DUAL_WORKING);
     }
 
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
+     * When : {@code delete()} is called with the {@code .os}-tagged name (as the QA/preview UI
+     *        shows the OS index), with cascade on (default).
+     * Then : BOTH twins are removed — the cascade is bidirectional, so deleting by the OS name
+     *        also removes the ES twin (the tag is stripped to the logical name and broadcast to
+     *        every provider). Regression for the one-directional-cascade bug (issue #35640).
+     */
+    @Test
+    public void test_delete_phase1_byOsName_removesFromBothClusters()
+            throws IOException, DotIndexException {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        contentletIndexAPI().delete(IndexTag.OS.tag(DUAL_WORKING)); // delete by the .os name
+
+        assertFalse("ES twin must be gone when deleting by the .os name (bidirectional cascade)",
+                esImpl().indexExists(DUAL_WORKING));
+        assertFalse("OS .os index must be gone", osIndexAPI.indexExists(physicalDualWorking));
+
+        Logger.info(this, "✅ delete Phase 1 by .os name — both removed: " + DUAL_WORKING);
+    }
+
+    /**
+     * Given Scenario: Phase 2 (OS serves reads). The ES store and OS store have <strong>diverged</strong>:
+     *                 the ES store points at {@code working_es/live_es} while the OS store — the read
+     *                 source in Phase 2 — points at the differently-named {@code working_div/live_div}.
+     *                 This is swicken's swallowed-switchover divergence (issue #35640).
+     * When : {@code delete()} is attempted on the OS-store active index by its {@code .os} name, and on
+     *        the ES-store active index by its bare name.
+     * Then : BOTH are rejected. The guard now unions the protected set from <strong>both</strong> stores
+     *        in the dual-write phases, so the live OS index is protected even though its name is absent
+     *        from the ES store. Before the fix the protected set was ES-store-only and the {@code .os}
+     *        delete went through, wiping the index serving every read.
+     */
+    @Test
+    public void test_delete_phase2_divergentOsName_isProtectedByGuard() throws Exception {
+        setPhase(2);
+        final String esWorking = "working_es_"  + RUN_ID;
+        final String esLive    = "live_es_"     + RUN_ID;
+        final String osWorking = "working_div_" + RUN_ID;
+        final String osLive    = "live_div_"    + RUN_ID;
+
+        // ES store points at the T0 names...
+        APILocator.getIndiciesAPI().point(new IndiciesInfo.Builder()
+                .setWorking(esImpl().getNameWithClusterIDPrefix(esWorking))
+                .setLive(esImpl().getNameWithClusterIDPrefix(esLive))
+                .build());
+        // ...while the OS store (read source in Phase 2) points at DIFFERENT names.
+        APILocator.getVersionedIndicesAPI().saveIndices(VersionedIndicesImpl.builder()
+                .working(opsOS.toPhysicalName(osWorking))
+                .live(opsOS.toPhysicalName(osLive))
+                .build());
+
+        // The OS-store active index must be protected even though the ES store does not know it.
+        assertThrows("Active OS index (divergent name) must be protected from delete",
+                DotStateException.class,
+                () -> contentletIndexAPI().delete(IndexTag.OS.tag(osWorking)));
+        // The ES-store active index must remain protected too.
+        assertThrows("Active ES index must remain protected",
+                DotStateException.class,
+                () -> contentletIndexAPI().delete(esWorking));
+
+        Logger.info(this, "✅ delete Phase 2 — divergent OS name protected by the union guard");
+    }
+
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both engines and is the
+     *                 active working index.
+     * When : {@code clearIndex()} is called on it without the bypass flag.
+     * Then : it is rejected ({@link DotStateException}) and BOTH twins survive — clear is
+     *        delete + recreate-empty, so it is guarded exactly like delete (issue #35640, TC-018).
+     *        With the bypass flag the clear goes through and both twins still exist (recreated).
+     */
+    @Test
+    public void test_clear_phase1_activeIndex_isRejectedUnlessBypass() throws Exception {
+        setPhase(1);
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        // Make DUAL_WORKING the active working index in the ES store (read source in Phase 1).
+        APILocator.getIndiciesAPI().point(new IndiciesInfo.Builder()
+                .setWorking(esImpl().getNameWithClusterIDPrefix(DUAL_WORKING))
+                .build());
+
+        assertThrows("clear must be rejected on the active index",
+                DotStateException.class,
+                () -> APILocator.getESIndexAPI().clearIndex(DUAL_WORKING));
+        assertTrue("ES twin must survive a rejected clear", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("OS twin must survive a rejected clear",  osIndexAPI.indexExists(physicalDualWorking));
+
+        // Bypass: the same clear now goes through; both twins still exist (recreated empty).
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
+        try {
+            APILocator.getESIndexAPI().clearIndex(DUAL_WORKING);
+            assertTrue("ES twin exists after bypassed clear (recreated)", esImpl().indexExists(DUAL_WORKING));
+            assertTrue("OS twin exists after bypassed clear (recreated)", osIndexAPI.indexExists(physicalDualWorking));
+        } finally {
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
+        }
+
+        Logger.info(this, "✅ clear Phase 1 — active index guarded, bypass works: " + DUAL_WORKING);
+    }
+
+    /**
+     * Given Scenario: Phase 1. The OS store has exactly ONE populated slot
+     *                 ({@code working = logicalA.os}) — the state left after cleaning up a stale
+     *                 pair one index at a time.
+     * When : that last index is deleted (bypass on, since any single populated slot is "active").
+     * Then : the OS store ROW is removed, not left dangling. {@code saveIndices} contractually
+     *        rejects an empty record, so {@code clearOsStorePointer} must fall back to
+     *        {@code removeVersion} (issue #35640, swicken review). A surviving row would let
+     *        {@code initOSCatchup} resurrect the deleted index empty on the next restart.
+     */
+    @Test
+    public void test_delete_lastOsSlot_removesStoreRowInsteadOfDanglingPointer() throws Exception {
+        setPhase(1);
+        final String logicalA = "working_last_" + RUN_ID;
+        APILocator.getVersionedIndicesAPI().saveIndices(VersionedIndicesImpl.builder()
+                .working(opsOS.toPhysicalName(logicalA))
+                .build());
+        assertTrue("Pre: OS store row must exist with one slot",
+                APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices().isPresent());
+
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
+        try {
+            contentletIndexAPI().delete(IndexTag.OS.tag(logicalA));
+        } finally {
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
+        }
+
+        assertTrue("OS store row must be removed once its last slot was deleted (no dangling pointer)",
+                APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices().isEmpty());
+
+        Logger.info(this, "✅ delete last OS slot — store row removed, no dangling pointer");
+    }
+
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters, so a
+     *                 real flush must reach the ES index (bare name) and the OS index ({@code .os}).
+     * When : flushCaches() is called with the mixed list (ES bare + OS {@code .os}), exactly as the
+     *        {@code /api/v1/esindex/cache} endpoint does via {@code listDotCMSIndices()}.
+     * Then : the call succeeds with NO failed shards — each engine is flushed only with the names
+     *        it owns, instead of every engine receiving the other's names and hitting
+     *        {@code index_not_found_exception} (issue #35640).
+     */
+    @Test
+    public void test_flushCaches_phase1_flushesBothEnginesWithoutCrossContamination()
+            throws IOException, DotIndexException {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        final List<String> mixed = List.of(DUAL_WORKING, IndexTag.OS.tag(DUAL_WORKING));
+        final Map<String, Integer> result = APILocator.getESIndexAPI().flushCaches(mixed);
+
+        assertNotNull(result);
+        assertEquals("No failed shards — no engine received the other's index names",
+                Integer.valueOf(0), result.get("failedShards"));
+        assertTrue("Both twins must still exist after a cache flush (flush is not a delete)",
+                esImpl().indexExists(DUAL_WORKING) && osIndexAPI.indexExists(physicalDualWorking));
+
+        Logger.info(this, "✅ flushCaches Phase 1 — both engines flushed cleanly: " + result);
+    }
+
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
+     * When : {@code closeIndex()} / {@code openIndex()} are called with the bare (ES) name.
+     * Then : the lifecycle op is mirrored to BOTH engines — the OS twin is closed/opened too, not
+     *        just ES. Under the transparent-mirror principle a user lifecycle op applies to the
+     *        whole mirror; the OS leg receives the {@code .os} name so it targets the real OS index
+     *        instead of a bare name it does not hold (issue #35640). Exercises the {@code providerName}
+     *        routing shared by clear/open/close/updateReplicas.
+     */
+    @Test
+    public void test_closeAndOpen_phase1_mirrorToBothEngines() throws Exception {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        APILocator.getESIndexAPI().closeIndex(DUAL_WORKING); // close by the bare name
+        assertTrue("ES twin must be closed", esImpl().isIndexClosed(DUAL_WORKING));
+        assertTrue("OS twin must be closed too (mirror)",
+                osIndexAPI.isIndexClosed(IndexTag.OS.tag(DUAL_WORKING)));
+
+        APILocator.getESIndexAPI().openIndex(DUAL_WORKING); // reopen by the bare name
+        assertFalse("ES twin must be open again", esImpl().isIndexClosed(DUAL_WORKING));
+        assertFalse("OS twin must be open again (mirror)",
+                osIndexAPI.isIndexClosed(IndexTag.OS.tag(DUAL_WORKING)));
+
+        Logger.info(this, "✅ close/open Phase 1 — mirrored to both engines: " + DUAL_WORKING);
+    }
+
     // =========================================================================
-    // activateIndex — pointer-store writes verified against real DB
+    // Orphan bootstrap repair — bare cluster index missing from the store (#36237)
     // =========================================================================
+
+    /**
+     * Given Scenario: Phase 1. A <b>bare</b> OS index physically exists in the cluster (default
+     *                 settings, empty mapping — no custom {@code my_analyzer}, no dotCMS dynamic
+     *                 templates) but is absent from the index store. This is the orphan left by a
+     *                 prior bootstrap that created the index but never committed its store pointer,
+     *                 reproduced bare exactly as QA did for #36237 TC-003.
+     * When : the bootstrap seam {@code createContentIndex(name, shards, OS, ...)} runs.
+     * Then : the orphan is deleted and recreated from scratch, so the index now carries the FULL
+     *        settings (custom {@code my_analyzer}) and base mapping (dotCMS dynamic templates).
+     *        This is the regression guard for TC-003 — reusing the bare orphan in place left it
+     *        half-mapped and triggered {@code putMapping HTTP 400} (analyzer not found).
+     */
+    @Test
+    public void test_bootstrap_bareOrphan_phase1_isRecreatedWithFullSettingsAndMapping()
+            throws Exception {
+        setPhase(1);
+
+        // Pre: create a BARE orphan — default settings, no mapping (QA recreated it as PUT {}).
+        osIndexAPI.createIndex(physicalDualWorking, 0);
+        assertTrue("Pre: bare orphan must exist in OS",
+                osIndexAPI.indexExists(physicalDualWorking));
+        assertFalse("Pre: bare orphan must NOT yet carry the dotCMS dynamic templates",
+                mappingOps.getMapping(DUAL_WORKING).contains("template_1"));
+        assertFalse("Pre: bare orphan must NOT yet define the custom my_analyzer",
+                analyzers().containsKey("my_analyzer"));
+
+        // When: run the orphan-aware bootstrap seam against the real OS collaborators.
+        final boolean result = ((ContentletIndexAPIImpl) contentletIndexAPI())
+                .createContentIndex(DUAL_WORKING, 1, IndexTag.OS,
+                        opsOS, osIndexAPI, MappingHelper.getInstance());
+
+        // Then: the orphan was repaired — full settings + base mapping are present.
+        assertTrue("Bootstrap must report the recreated index as available", result);
+        assertTrue("Recreated index must exist in OS",
+                osIndexAPI.indexExists(physicalDualWorking));
+        assertTrue("Recreated index must carry the dotCMS dynamic templates (base mapping restored)",
+                mappingOps.getMapping(DUAL_WORKING).contains("template_1"));
+        assertTrue("Recreated index must define the custom my_analyzer (settings restored)",
+                analyzers().containsKey("my_analyzer"));
+
+        Logger.info(this, "✅ bootstrap bare-orphan Phase 1 — recreated with full settings + mapping");
+    }
 
     /**
      * Given Scenario: Phase 0. ES store is currently pointing at the pre-existing app index.
@@ -913,6 +1169,22 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
 
     private static void setPhase(final int ordinal) {
         Config.setProperty(FLAG_KEY, String.valueOf(ordinal));
+    }
+
+    /**
+     * Reads back the analyzer map configured on the {@link #physicalDualWorking} OS index.
+     * Returns an empty map when the index has no analysis settings (e.g. a bare orphan).
+     */
+    private Map<String, ?> analyzers() throws IOException {
+        final OpenSearchClient client = clientProvider.getClient();
+        final GetIndexResponse response = client.indices().get(b -> b.index(physicalDualWorking));
+        final var indexState = response.result().get(physicalDualWorking);
+        if (indexState == null || indexState.settings() == null
+                || indexState.settings().index() == null
+                || indexState.settings().index().analysis() == null) {
+            return Map.of();
+        }
+        return indexState.settings().index().analysis().analyzer();
     }
 
     private static ContentletIndexAPI contentletIndexAPI() {

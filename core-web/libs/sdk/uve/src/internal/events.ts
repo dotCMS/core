@@ -9,6 +9,7 @@ import {
     findDotCMSVTLData,
     getClosestDotCMSContainerData,
     getDotCMSPageBounds,
+    getNativeEventBinder,
     readContentletDataset
 } from '../lib/dom/dom.utils';
 
@@ -28,11 +29,13 @@ export function onContentChanges(callback: UVEEventHandler) {
         }
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.CONTENT_CHANGES
     };
@@ -54,11 +57,13 @@ export function onPageReload(callback: UVEEventHandler) {
         }
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.PAGE_RELOAD
     };
@@ -162,13 +167,13 @@ export function onAutoBounds(callback: UVEEventHandler) {
         subtree: true
     });
 
-    // Scrolling inside the iframe doesn't change layout, so ResizeObserver
-    // doesn't fire, but every contentlet's viewport-relative position
-    // (getBoundingClientRect) does change. Re-emit bounds after each
-    // scroll burst settles so the editor's pinned selected overlay
-    // re-anchors to the on-screen position.
+    // Scrolling doesn't change layout (ResizeObserver won't fire) but moves
+    // every contentlet, so re-emit bounds after the scroll settles to re-anchor
+    // the selected overlay. Native binder so it survives the iframe rewrite
+    // under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
     const onScroll = () => scheduleEmit();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    nativeWindow.addEventListener('scroll', onScroll, { passive: true });
 
     // Flush channel: the editor occasionally needs an immediate snapshot
     // of bounds (drag enter, where the dropzone has to know container
@@ -182,7 +187,8 @@ export function onAutoBounds(callback: UVEEventHandler) {
         }
         emit();
     };
-    window.addEventListener('message', onFlush);
+    // Native binder (reused from `scroll` above): survives the iframe rewrite too.
+    nativeWindow.addEventListener('message', onFlush);
 
     return {
         unsubscribe: () => {
@@ -192,8 +198,8 @@ export function onAutoBounds(callback: UVEEventHandler) {
             }
             resizeObserver.disconnect();
             mutationObserver.disconnect();
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('message', onFlush);
+            nativeWindow.removeEventListener('scroll', onScroll);
+            nativeWindow.removeEventListener('message', onFlush);
             observed = [];
         },
         event: UVEEventType.AUTO_BOUNDS
@@ -218,11 +224,13 @@ export function onIframeScroll(callback: UVEEventHandler) {
         }
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.IFRAME_SCROLL
     };
@@ -255,11 +263,13 @@ export function onScrollToSection(callback: UVEEventHandler) {
         callback({ sectionIndex, offsetTop: el.offsetTop });
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.SCROLL_TO_SECTION
     };
@@ -337,17 +347,19 @@ export function onContentletHovered(callback: UVEEventHandler) {
         callback(contentletHoveredPayload);
     };
 
-    // We intentionally do not fire null on document `pointerleave`: the
-    // editor's hover toolbar lives in the parent window (outside the
-    // iframe), so leaving the iframe usually means the user is heading
-    // for the toolbar. Killing the overlay there would yank the toolbar
-    // away just as the user reaches for it. Dead-space-inside-iframe
-    // is already covered by the `pointermove` null branch above.
-    document.addEventListener('pointermove', pointerMoveCallback);
+    // We intentionally do not fire null on `pointerleave`: the editor's hover
+    // toolbar lives in the parent window, so leaving the iframe usually means
+    // the user is reaching for it — killing the overlay would yank it away.
+    //
+    // Bind to `document.documentElement` (a fresh node on each iframe rewrite)
+    // rather than `document`, which goes dead under Zone.js after a rewrite.
+    // `pointermove` bubbles to <html>, so no-Zone behavior is identical. See
+    // getNativeEventBinder for the full rationale.
+    document.documentElement.addEventListener('pointermove', pointerMoveCallback);
 
     return {
         unsubscribe: () => {
-            document.removeEventListener('pointermove', pointerMoveCallback);
+            document.documentElement.removeEventListener('pointermove', pointerMoveCallback);
         },
         event: UVEEventType.CONTENTLET_HOVERED
     };
@@ -431,15 +443,21 @@ export function onContentletClicked(callback: UVEEventHandler) {
         }
     };
 
-    // Capture phase so we run BEFORE the page's own click handlers and can
-    // preventDefault/stopPropagation effectively.
-    document.addEventListener('click', clickCallback, { capture: true });
-    window.addEventListener('message', selectionClearedCallback);
+    // Capture phase so we run BEFORE the page's own click handlers. Bound to
+    // `document.documentElement` (a fresh node on each iframe rewrite) rather
+    // than `document`, which goes dead under Zone.js after a rewrite; capture on
+    // <html> still runs first. See getNativeEventBinder for the full rationale.
+    document.documentElement.addEventListener('click', clickCallback, { capture: true });
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', selectionClearedCallback);
 
     return {
         unsubscribe: () => {
-            document.removeEventListener('click', clickCallback, { capture: true });
-            window.removeEventListener('message', selectionClearedCallback);
+            document.documentElement.removeEventListener('click', clickCallback, {
+                capture: true
+            });
+            nativeWindow.removeEventListener('message', selectionClearedCallback);
         },
         event: UVEEventType.CONTENTLET_CLICKED
     };

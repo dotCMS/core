@@ -177,6 +177,44 @@ public class FocalPointAPITest {
         assertFalse(focalPointAPI.readFocalPoint(invalidAssetID, "fileAsset").isPresent());
 
     }
-    
-    
+
+    /**
+     * Method to test: the focal-point persistence wired into the image-tool save flow. On Save,
+     * {@link com.dotmarketing.servlets.BinaryExporterServlet} reads the focal point from the
+     * request params ({@link FocalPointAPI#parseFocalPointFromParams(Map)}) and writes it directly
+     * onto the generated temp file ({@link FocalPointAPI#writeFocalPoint(String, String, FocalPoint)}).
+     * <p>
+     * Test scenario: parse a focal point from a request param map, write it onto a freshly created
+     * temp file, and read it back — mirroring exactly what the servlet does on Save. The direct
+     * write is what makes the focal survive even when the image exporter serves the rendition from
+     * cache and never runs the FocalPoint filter (the side effect that otherwise persists it).
+     * <p>
+     * Expected: the focal point is persisted on the saved temp and reads back equal.
+     */
+    @Test
+    public void Test_Persist_Focal_Point_On_Temp_From_Save_Params() throws Exception {
+        final String fieldVar = "fileAsset";
+        final FocalPoint expected = new FocalPoint(0.2f, 0.3f);
+
+        // 1. The servlet pulls the focal point out of the request params (the /fp/x,y URL segment).
+        final Map<String, String[]> params = ImmutableMap.of("fp", new String[] {"0.2,0.3"});
+        final Optional<FocalPoint> parsed = focalPointAPI.parseFocalPointFromParams(params);
+        assertTrue("Focal point parsed from save params", parsed.isPresent());
+
+        // 2. A temp file is generated for the edited image.
+        final HttpServletRequest request = mockHttpServletRequest();
+        final DotTempFile dotTempFile = APILocator.getTempFileAPI().createEmptyTempFile("temp", request);
+        assertTrue(dotTempFile.file.createNewFile());
+        assertTrue(dotTempFile.file.setLastModified(System.currentTimeMillis()));
+
+        // 3. The servlet writes the focal point straight onto that temp (independent of the filter).
+        focalPointAPI.writeFocalPoint(dotTempFile.id, fieldVar, parsed.get());
+
+        // 4. Reopening the editor reads the focal back from the temp's metadata.
+        final Optional<FocalPoint> persisted = focalPointAPI.readFocalPoint(dotTempFile.id, fieldVar);
+        assertTrue("Focal point persisted on the saved temp", persisted.isPresent());
+        assertEquals(expected, persisted.get());
+    }
+
+
 }

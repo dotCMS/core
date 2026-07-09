@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -15,10 +16,15 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -27,6 +33,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -216,6 +223,74 @@ public class RelationshipUtilTest {
             if (englishOnly.getInode() != null) {
                 ContentletDataGen.remove(englishOnly);
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link RelationshipUtil#getRelatedContentFromQuery(Relationship, ContentType, long, String, User)}
+     * Given Scenario: The CSV-import relationship-resolution entry point resolves a related
+     *   contentlet by identifier on behalf of a user that does NOT have READ permission on it.
+     *   Identifiers are resolved internally via the system user, so without an explicit permission
+     *   gate the import could relate content the caller cannot see (#35222).
+     * ExpectedResult: The contentlet the user cannot READ is filtered out (empty result), while the
+     *   system user still resolves it.
+     */
+    @Test
+    public void test_getRelatedContentFromQuery_filtersOutContentUserCannotRead()
+            throws DotSecurityException, DotDataException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+        final ContentType parentType = createContentType("RelParent" + System.currentTimeMillis());
+        final ContentType childType = createContentType("RelChild" + System.currentTimeMillis());
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Role otherRole = new RoleDataGen().nextPersisted();
+
+        Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                .name("rel").variable("rel").contentTypeId(parentType.id())
+                .values(String.valueOf(
+                        WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childType.variable()).build();
+        relationshipField = contentTypeFieldAPI.save(relationshipField, user);
+        final Relationship relationship = relationshipAPI.byTypeValue(
+                parentType.variable() + "." + relationshipField.variable());
+
+        final Contentlet child = new ContentletDataGen(childType.id())
+                .languageId(defaultLang).nextPersisted();
+
+        try {
+            // Restrict the child directly with an individual permission (so it no longer inherits
+            // from host/type), granting only an unrelated role — the limited user is therefore
+            // denied READ regardless of the default host permissions.
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(child.getPermissionId(), otherRole.getId(),
+                    readEdit, true), child, user, false);
+
+            // Precondition: the limited user truly cannot read the child
+            assertFalse(permissionAPI.doesUserHavePermission(child,
+                    PermissionAPI.PERMISSION_READ, limitedUser, false));
+
+            // Limited user: the unreadable child must be filtered out of the resolved relationship
+            final List<Contentlet> limitedResults = RelationshipUtil.getRelatedContentFromQuery(
+                    relationship, parentType, defaultLang, child.getIdentifier(), limitedUser);
+            assertNotNull(limitedResults);
+            assertTrue("Content the user cannot READ must not be resolved",
+                    limitedResults.isEmpty());
+
+            // System user still resolves the child (the filter only excludes on missing READ)
+            final List<Contentlet> adminResults = RelationshipUtil.getRelatedContentFromQuery(
+                    relationship, parentType, defaultLang, child.getIdentifier(), user);
+            assertEquals(1, adminResults.size());
+            assertEquals(child.getIdentifier(), adminResults.get(0).getIdentifier());
+        } finally {
+            if (child.getInode() != null) {
+                ContentletDataGen.remove(child);
+            }
+            UserDataGen.remove(limitedUser);
+            RoleDataGen.remove(otherRole);
+            contentTypeAPI.delete(parentType);
+            contentTypeAPI.delete(childType);
         }
     }
 

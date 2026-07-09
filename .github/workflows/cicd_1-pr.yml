@@ -9,7 +9,7 @@
 # - Uses concurrency to manage multiple runs
 # - Modular structure using reusable workflows
 # - Conditional execution based on initialization results
-# - Comprehensive PR checks including build, tests, and Semgrep analysis
+# - Comprehensive PR checks including build and tests
 # - Final status notification
 #
 # Security Note:
@@ -112,23 +112,11 @@ jobs:
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
-  semgrep:
-    name: PR Semgrep
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled() && fromJSON(needs.initialize.outputs.filters).build == 'true' &&
-      (
-      (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
-      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
-      )
-    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
-    secrets:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ semgrep,test ]
+    needs: [ test ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

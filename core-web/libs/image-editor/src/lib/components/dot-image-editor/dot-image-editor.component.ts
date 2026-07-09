@@ -1,7 +1,8 @@
-import { injectDispatch } from '@ngrx/signals/events';
+import { Events, injectDispatch } from '@ngrx/signals/events';
 
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ConfirmationService, ConfirmEventType } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -27,8 +28,8 @@ import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-im
  * Full-screen "Edit image" modal shell, opened through PrimeNG's `DialogService`.
  * Assembles the header, canvas, side panels and footer over a single
  * {@link ImageEditorStore} instance scoped to this dialog. It owns the dialog
- * lifecycle: it requests the asset on init and guards close/cancel against unsaved
- * edits (saving the edited image is deferred to a separate issue).
+ * lifecycle: it requests the asset on init, closes with the saved temp file when a
+ * save succeeds, and guards close/cancel against unsaved edits.
  */
 @Component({
     selector: 'dot-image-editor',
@@ -66,6 +67,7 @@ export class DotImageEditorComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dispatch = injectDispatch(imageEditorLifecycleEvents);
     readonly #historyDispatch = injectDispatch(imageEditorHistoryEvents);
+    readonly #events = inject(Events);
     readonly #document = inject(DOCUMENT);
     // The PrimeNG dialog hosting this editor: injectable because the dialog content
     // is declared inside `<p-dialog>` in DynamicDialog's template, so we sit in the
@@ -84,6 +86,13 @@ export class DotImageEditorComponent {
         // The editor owns its dialog, so it owns full-screen too: resize the host
         // `.p-dialog` to fill the viewport whenever `isFullscreen` flips.
         effect(() => this.#applyFullscreen(this.store.isFullscreen()));
+
+        // A successful save resolves the editor with the staged temp file; a failed
+        // save keeps the dialog open and surfaces the error in the template.
+        this.#events
+            .on(imageEditorLifecycleEvents.saveSucceeded)
+            .pipe(takeUntilDestroyed())
+            .subscribe(({ payload }) => this.#dialogRef.close(payload));
     }
 
     /**

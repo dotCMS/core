@@ -42,13 +42,16 @@ export function withTransform() {
                     flipH: !state.transform.flipH
                 };
 
+                // A flip is a discrete toggle, not a continuous control: pass a null
+                // coalesceKey so each click is its own history step (two flips of the
+                // same axis are two entries, not one silently updated in place).
                 return transformPatch(
                     state,
                     transform,
                     state.crop,
                     'flip',
                     'Flip horizontal',
-                    'flipH'
+                    null
                 );
             }),
             on(imageEditorTransformEvents.flipVToggled, (_event, state) => {
@@ -57,14 +60,8 @@ export function withTransform() {
                     flipV: !state.transform.flipV
                 };
 
-                return transformPatch(
-                    state,
-                    transform,
-                    state.crop,
-                    'flip',
-                    'Flip vertical',
-                    'flipV'
-                );
+                // Discrete toggle — see flipHToggled: null disables coalescing.
+                return transformPatch(state, transform, state.crop, 'flip', 'Flip vertical', null);
             }),
             on(imageEditorTransformEvents.outputDimsChanged, ({ payload }, state) => {
                 const transform: TransformState = {

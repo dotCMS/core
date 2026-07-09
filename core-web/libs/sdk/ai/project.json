@@ -13,36 +13,22 @@
             }
         },
         "build": {
-            "executor": "@nx/rollup:rollup",
-            "outputs": ["{options.outputPath}"],
             "dependsOn": ["generate-spec"],
-            "options": {
-                "format": ["esm", "cjs"],
-                "compiler": "tsc",
-                "generateExportsField": true,
-                "additionalEntryPoints": [
-                    "libs/sdk/ai/src/sandbox/index.ts",
-                    "libs/sdk/ai/src/adapter/index.ts",
-                    "libs/sdk/ai/src/spec/index.ts"
-                ],
-                "outputPath": "dist/libs/sdk/ai",
-                "assets": [
-                    {
-                        "input": "libs/sdk/ai",
-                        "output": ".",
-                        "glob": "*.md"
-                    }
-                ],
-                "main": "libs/sdk/ai/src/runtime.ts",
-                "tsConfig": "libs/sdk/ai/tsconfig.lib.json"
-            }
+            "cache": true,
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ]
         },
         "publish": {
             "executor": "nx:run-commands",
+            "dependsOn": ["build"],
             "options": {
                 "command": "node tools/scripts/publish.mjs sdk-ai {args.ver} {args.tag}"
-            },
-            "dependsOn": ["build"]
+            }
         },
         "nx-release-publish": {
             "options": {
@@ -50,19 +36,20 @@
             }
         },
         "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/sdk/ai/src/**/*.ts", "libs/sdk/ai/scripts/**/*.ts"]
+                "args": ["src/**/*.ts", "scripts/**/*.ts"]
             }
         },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "dependsOn": ["generate-spec"],
             "options": {
-                "jestConfig": "libs/sdk/ai/jest.config.ts",
                 "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
     }

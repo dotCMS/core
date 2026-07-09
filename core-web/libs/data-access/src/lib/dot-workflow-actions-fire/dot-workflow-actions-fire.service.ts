@@ -17,6 +17,8 @@ export interface DotActionRequestOptions {
     action: ActionToFire;
     individualPermissions?: { [key: string]: string[] };
     formData?: FormData;
+    /** Language of the contentlet version to fire against (sent as `?language=`). */
+    language?: string | number;
 }
 
 export interface DotFireActionOptions<T> {
@@ -196,6 +198,28 @@ export class DotWorkflowActionsFireService {
     }
 
     /**
+     * Fire the default PUBLISH action against an existing contentlet, resolved by the
+     * `identifier` in `data` and the given language. Used to check in and publish a new
+     * version of the `dotAsset` referenced by an Image/File field from the image editor.
+     *
+     * @template T
+     * @param {{ [key: string]: string }} data contentlet fields (must include `identifier`)
+     * @param {string | number} [language] language of the version to fire against
+     * @returns {Observable<T>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    publishContentletByIdentifier<T>(
+        data: { [key: string]: string },
+        language?: string | number
+    ): Observable<T> {
+        return this.request<T>({
+            data,
+            action: ActionToFire.PUBLISH,
+            language
+        });
+    }
+
+    /**
      * Fire an "DELETE" action over the content type received with the specified data
      *
      * @template T
@@ -239,7 +263,8 @@ export class DotWorkflowActionsFireService {
         data,
         action,
         individualPermissions,
-        formData
+        formData,
+        language
     }: DotActionRequestOptions): Observable<T> {
         let url = `${this.BASE_URL}/actions/default/fire/${action}`;
 
@@ -248,6 +273,10 @@ export class DotWorkflowActionsFireService {
             ? { contentlet, individualPermissions }
             : { contentlet };
         const params = new URLSearchParams({});
+
+        if (language !== undefined && language !== null && `${language}` !== '') {
+            params.append('language', `${language}`);
+        }
 
         // It's not best approach but this legacy code
         if (contentlet['inode']) {
