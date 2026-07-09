@@ -3,7 +3,10 @@ import { Component } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
-import { DotRelatedContentNavigationStore } from './dot-related-content-navigation.store';
+import {
+    DotRelatedContentNavigationStore,
+    toRelatedContentCrumbs
+} from './dot-related-content-navigation.store';
 
 @Component({ selector: 'dot-test-stub', template: 'stub', standalone: true })
 class StubCmp {}
@@ -43,6 +46,15 @@ describe('DotRelatedContentNavigationStore', () => {
             expect(store.trailInodes()).toEqual([A.inode, B.inode, C.inode]);
         }));
 
+        it('yields an empty trail when rc is repeated (router hands back a string[])', fakeAsync(() => {
+            // A repeated query param makes Angular return an array; the typeof guard
+            // must not blow up on .split.
+            router.navigateByUrl('/content/inode-c?rc=inode-a&rc=inode-b');
+            tick();
+
+            expect(store.trailInodes()).toEqual([]);
+        }));
+
         it('shows a placeholder for a crumb whose title is not cached (cold load)', fakeAsync(() => {
             router.navigateByUrl('/content/inode-c?rc=inode-a,inode-b,inode-c');
             tick();
@@ -54,55 +66,24 @@ describe('DotRelatedContentNavigationStore', () => {
     });
 
     describe('appendToTrail', () => {
-        it('seeds [current, target] when starting fresh and registers titles', fakeAsync(() => {
-            router.navigateByUrl('/content/inode-a');
-            tick();
-
-            const next = store.appendToTrail(A, B);
+        it('seeds [current, target] when the current trail is empty and registers titles', () => {
+            const next = store.appendToTrail([], A, B);
             expect(next).toEqual([A.inode, B.inode]);
 
-            // Titles were registered, so the crumbs are labeled once the trail
-            // reflects them.
-            store.setInMemoryTrail(next);
-            expect(store.trail()).toEqual([
+            // Titles were registered, so toRelatedContentCrumbs labels them.
+            expect(toRelatedContentCrumbs(next, store.titleCache())).toEqual([
                 { inode: A.inode, title: A.title },
                 { inode: B.inode, title: B.title }
             ]);
-        }));
+        });
 
-        it('appends to an existing trail', fakeAsync(() => {
-            router.navigateByUrl('/content/inode-b?rc=inode-a,inode-b');
-            tick();
-
-            expect(store.appendToTrail(B, C)).toEqual([A.inode, B.inode, C.inode]);
-        }));
-    });
-
-    describe('setInMemoryTrail (dialog / overlay)', () => {
-        it('overrides the URL trail when set', fakeAsync(() => {
-            router.navigateByUrl('/content/inode-x?rc=inode-a,inode-b');
-            tick();
-
-            store.setInMemoryTrail(['m1', 'm2']);
-            expect(store.trailInodes()).toEqual(['m1', 'm2']);
-        }));
-
-        it('treats an empty in-memory trail as authoritative (not the URL)', fakeAsync(() => {
-            router.navigateByUrl('/content/inode-x?rc=inode-a,inode-b');
-            tick();
-
-            store.setInMemoryTrail([]);
-            expect(store.trailInodes()).toEqual([]);
-        }));
-
-        it('reverts to the URL trail when cleared with null', fakeAsync(() => {
-            router.navigateByUrl('/content/inode-x?rc=inode-a,inode-b');
-            tick();
-
-            store.setInMemoryTrail(['m1']);
-            store.setInMemoryTrail(null);
-            expect(store.trailInodes()).toEqual([A.inode, B.inode]);
-        }));
+        it('appends to the passed-in current trail (caller owns it)', () => {
+            expect(store.appendToTrail([A.inode, B.inode], B, C)).toEqual([
+                A.inode,
+                B.inode,
+                C.inode
+            ]);
+        });
     });
 
     describe('buildTrailForSavedInode', () => {

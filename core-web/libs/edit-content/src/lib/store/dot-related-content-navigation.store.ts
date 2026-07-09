@@ -28,20 +28,10 @@ interface RelatedContentNavigationState {
      * until revisited). Kept as a Record for JSON-serializability.
      */
     titleCache: Record<string, string>;
-
-    /**
-     * In-memory trail used when the editor cannot rely on the URL (dialog/overlay
-     * presentation). `null` means "derive the trail from the URL" — the full-screen
-     * default, so nothing changes there. A non-null array (even empty) makes the
-     * in-memory trail the source of truth. Set by the DialogEditContentHost while a
-     * dialog is open and cleared when it closes.
-     */
-    inMemoryTrail: string[] | null;
 }
 
 const initialState: RelatedContentNavigationState = {
-    titleCache: {},
-    inMemoryTrail: null
+    titleCache: {}
 };
 
 /**
@@ -49,6 +39,18 @@ const initialState: RelatedContentNavigationState = {
  * after a hard refresh, until that content is revisited.
  */
 const MISSING_TITLE = '…';
+
+/**
+ * Maps trail inodes to breadcrumb crumbs, labeling each from the title cache (or a
+ * placeholder when uncached). Shared by the URL-driven trail (this store) and the
+ * dialog host's per-instance in-memory trail.
+ */
+export function toRelatedContentCrumbs(
+    inodes: string[],
+    titleCache: Record<string, string>
+): DotRelatedContentCrumb[] {
+    return inodes.map((inode) => ({ inode, title: titleCache[inode] ?? MISSING_TITLE }));
+}
 
 /**
  * Holds the related-content navigation trail and exposes it as breadcrumb crumbs.
@@ -84,30 +86,23 @@ export const DotRelatedContentNavigationStore = signalStore(
             { initialValue: router.url ?? '' }
         );
 
-        const urlTrailInodes = computed(() => {
+        const trailInodes = computed(() => {
             // `parseUrl` always returns a UrlTree in production; the guards keep
             // the store resilient under partially-mocked routers in tests.
             const rc = router.parseUrl(url() ?? '')?.queryParams?.[RELATED_TRAIL_PARAM];
 
-            return rc ? rc.split(',').filter(Boolean) : [];
+            // Angular's `Params` types `rc` as `any`; a repeated query param would
+            // arrive as a string[]. Only split when it is actually a string.
+            return typeof rc === 'string' ? rc.split(',').filter(Boolean) : [];
         });
 
-        // The in-memory trail wins when set (dialog/overlay); otherwise the URL is
-        // the source of truth (full-screen — unchanged behavior).
-        const trailInodes = computed(() => store.inMemoryTrail() ?? urlTrailInodes());
-
         return {
-            /** The trail as bare inodes, from the in-memory trail or the `rc` param. */
+            /** The trail as bare inodes, derived from the `rc` query param. */
             trailInodes,
             /** The trail as crumbs (inode + cached title) for the breadcrumb. */
-            trail: computed<DotRelatedContentCrumb[]>(() => {
-                const cache = store.titleCache();
-
-                return trailInodes().map((inode) => ({
-                    inode,
-                    title: cache[inode] ?? MISSING_TITLE
-                }));
-            })
+            trail: computed<DotRelatedContentCrumb[]>(() =>
+                toRelatedContentCrumbs(trailInodes(), store.titleCache())
+            )
         };
     }),
     withMethods((store) => {
@@ -126,33 +121,25 @@ export const DotRelatedContentNavigationStore = signalStore(
             /**
              * Computes the trail after navigating into a related content, without
              * performing any navigation — the host decides how to move (router URL
-             * vs in-place reload). Registers both titles and seeds the trail with
-             * the current content as the first crumb when starting fresh, so the
-             * banner shows where navigation began (`origin › target`).
+             * vs in-place reload) and owns its own current trail (URL-derived for
+             * full-screen, in-memory for the dialog), which it passes in as
+             * `currentTrail`. Registers both titles and seeds the trail with the
+             * current content as the first crumb when starting fresh, so the banner
+             * shows where navigation began (`origin › target`).
              *
              * @returns The next trail as bare inodes.
              */
             appendToTrail(
+                currentTrail: string[],
                 current: DotRelatedContentCrumb,
                 target: DotRelatedContentCrumb
             ): string[] {
                 registerTitle(current.inode, current.title);
                 registerTitle(target.inode, target.title);
 
-                const currentTrail = store.trailInodes();
-
                 return currentTrail.length === 0
                     ? [current.inode, target.inode]
                     : [...currentTrail, target.inode];
-            },
-
-            /**
-             * Sets (or clears) the in-memory trail. Passing `null` reverts to the
-             * URL-driven trail (full-screen). Used by the dialog host to keep the
-             * trail without touching the URL, and to reset it on close.
-             */
-            setInMemoryTrail(trail: string[] | null): void {
-                patchState(store, { inMemoryTrail: trail });
             },
 
             /**

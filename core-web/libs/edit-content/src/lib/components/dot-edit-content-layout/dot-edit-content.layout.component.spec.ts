@@ -6,7 +6,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -46,7 +46,10 @@ import { DotEditContentLayoutComponent } from './dot-edit-content.layout.compone
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
+import {
+    EDIT_CONTENT_HOST,
+    InPlaceNavigationRequest
+} from '../../services/host/edit-content-host.model';
 import {
     DotRelatedContentCrumb,
     DotRelatedContentNavigationStore
@@ -66,15 +69,18 @@ const MOCK_FORM_VALUES: FormValues = {
     language: 'en-us'
 };
 
-// Controllable trail for the related-content navigation store mock. A real
-// signal so the component's `relatedNavItems` computed reacts when it changes.
+// Controllable trail for the host mock. A real signal so the component's
+// `$relatedNavItems` computed reacts when it changes.
 const relatedTrailSignal = signal<DotRelatedContentCrumb[]>([]);
 
 // Full-screen host mock: no in-place navigation, identity resolved as empty (the
-// store's initialize() is spied per-test where it matters).
+// store's initialize() is spied per-test where it matters). `trail` is the host's
+// own signal now (the layout reads host.trail(), not the nav store directly).
 const mockEditContentHost = {
     inPlaceNavigation: false,
     inPlaceNavigation$: undefined,
+    trail: relatedTrailSignal,
+    setTrail: jest.fn(),
     resolveIdentity: jest.fn().mockReturnValue({}),
     reportSaved: jest.fn(),
     reloadContent: jest.fn(),
@@ -164,7 +170,6 @@ describe('EditContentLayoutComponent', () => {
                 trail: relatedTrailSignal,
                 registerTitle: jest.fn(),
                 buildTrailForSavedInode: jest.fn().mockReturnValue(null),
-                navigateToRelated: jest.fn()
             })
         ]
     });
@@ -626,13 +631,13 @@ describe('EditContentLayoutComponent', () => {
         it('returns an empty model when there is no trail', () => {
             relatedTrailSignal.set([]);
 
-            expect(spectator.component.relatedNavItems()).toEqual([]);
+            expect(spectator.component.$relatedNavItems()).toEqual([]);
         });
 
         it('builds routerLink crumbs with a trimmed rc; the current (last) crumb is a plain label', () => {
             relatedTrailSignal.set([A, B, C]);
 
-            expect(spectator.component.relatedNavItems()).toEqual([
+            expect(spectator.component.$relatedNavItems()).toEqual([
                 // First crumb: navigating back to the origin clears rc (single item → null).
                 {
                     label: 'TA',
@@ -650,6 +655,167 @@ describe('EditContentLayoutComponent', () => {
                 { label: 'TC' }
             ]);
         });
+    });
+});
+
+// Separate top-level describe (fresh TestBed) for the in-place host path: the
+// default mock above is full-screen (inPlaceNavigation false, inPlaceNavigation$
+// undefined), so the layout's in-place reload subscription and the breadcrumb's
+// `command` branch are only reachable with a dedicated in-place host.
+describe('EditContentLayoutComponent - In-place (dialog) host', () => {
+    const A: DotRelatedContentCrumb = { inode: 'iA', title: 'TA' };
+    const B: DotRelatedContentCrumb = { inode: 'iB', title: 'TB' };
+
+    let navigation$: Subject<InPlaceNavigationRequest>;
+    const inPlaceTrail = signal<DotRelatedContentCrumb[]>([]);
+    const inPlaceHost = {
+        inPlaceNavigation: true,
+        inPlaceNavigation$: undefined as unknown as Subject<InPlaceNavigationRequest>,
+        trail: inPlaceTrail,
+        setTrail: jest.fn(),
+        resolveIdentity: jest.fn().mockReturnValue({}),
+        reportSaved: jest.fn(),
+        reloadContent: jest.fn(),
+        setContentTitle: jest.fn(),
+        addBreadcrumb: jest.fn(),
+        goToSavedContent: jest.fn(),
+        goToRestoredVersion: jest.fn(),
+        goToRelatedContent: jest.fn(),
+        goToCrumb: jest.fn()
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentLayoutComponent,
+        imports: [
+            MessageModule,
+            ButtonModule,
+            MockComponent(DotEditContentFormComponent),
+            MockComponent(DotEditContentSidebarComponent),
+            DotMessagePipe
+        ],
+        componentProviders: [
+            DotEditContentStore,
+            mockProvider(DotWorkflowsActionsService),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotEditContentService),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService),
+            mockProvider(DotContentletService),
+            mockProvider(DotVersionableService),
+            ConfirmationService,
+            { provide: EDIT_CONTENT_HOST, useValue: inPlaceHost }
+        ],
+        providers: [
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(MessageService),
+            mockProvider(DialogService),
+            mockProvider(DotLanguagesService),
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest
+                    .fn()
+                    .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
+            }),
+            mockProvider(DotSystemConfigService, { getSystemConfig: jest.fn().mockReturnValue(of({})) }),
+            GlobalStore,
+            {
+                provide: DotCurrentUserService,
+                useValue: { getCurrentUser: () => of({ userId: '123', userName: 'John Doe' }) }
+            },
+            { provide: ActivatedRoute, useValue: { snapshot: { params: {} } } },
+            mockProvider(Router, { navigate: jest.fn(), url: '/test-url', events: of() }),
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DotRelatedContentNavigationStore, {
+                trail: inPlaceTrail,
+                registerTitle: jest.fn()
+            })
+        ]
+    });
+
+    let spectator: Spectator<DotEditContentLayoutComponent>;
+    let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
+
+    beforeEach(() => {
+        navigation$ = new Subject<InPlaceNavigationRequest>();
+        inPlaceHost.inPlaceNavigation$ = navigation$;
+        inPlaceTrail.set([]);
+        Object.values(inPlaceHost).forEach((v) => (v as jest.Mock)?.mockClear?.());
+        inPlaceHost.resolveIdentity.mockReturnValue({});
+
+        spectator = createComponent({ detectChanges: false });
+        store = spectator.inject(DotEditContentStore, true);
+        jest.spyOn(store, 'initializeExistingContent').mockImplementation(() => undefined);
+        jest.spyOn(store, 'initialize').mockImplementation(() => undefined);
+        spectator.detectChanges();
+    });
+
+    it('builds a `command` crumb (not routerLink) that calls goToCrumb with the trimmed trail', () => {
+        inPlaceTrail.set([A, B, { inode: 'iC', title: 'TC' }]);
+        const items = spectator.component.$relatedNavItems();
+
+        // Earlier crumb uses command, not routerLink.
+        expect(items[0].routerLink).toBeUndefined();
+        expect(typeof items[0].command).toBe('function');
+
+        items[0].command!({} as never);
+        expect(inPlaceHost.goToCrumb).toHaveBeenCalledWith('iA', ['iA']);
+    });
+
+    it('reloads immediately (committing the trail) when the form is clean', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+
+        navigation$.next({ inode: 'iB', trail: ['iA', 'iB'] });
+
+        expect(inPlaceHost.setTrail).toHaveBeenCalledWith(['iA', 'iB']);
+        expect(store.initializeExistingContent).toHaveBeenCalledWith(
+            expect.objectContaining({ inode: 'iB' })
+        );
+    });
+
+    it('does NOT commit the trail or reload when the user keeps editing (dirty)', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+        const confirm = spectator.inject(ConfirmationService, true);
+        // "Keep editing" == accept → onCancel (no-op). Simulate by invoking accept.
+        jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+            opts.accept?.();
+
+            return confirm;
+        });
+
+        navigation$.next({ inode: 'iB', trail: ['iA', 'iB'] });
+
+        expect(inPlaceHost.setTrail).not.toHaveBeenCalled();
+        expect(store.initializeExistingContent).not.toHaveBeenCalled();
+    });
+
+    it('commits the trail and reloads when the user discards changes (dirty)', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+        const confirm = spectator.inject(ConfirmationService, true);
+        // "Discard" == reject with REJECT type → onConfirm (reload).
+        jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+            (opts.reject as (t: ConfirmEventType) => void)?.(ConfirmEventType.REJECT);
+
+            return confirm;
+        });
+
+        navigation$.next({ inode: 'iB', trail: ['iA', 'iB'] });
+
+        expect(inPlaceHost.setTrail).toHaveBeenCalledWith(['iA', 'iB']);
+        expect(store.initializeExistingContent).toHaveBeenCalledWith(
+            expect.objectContaining({ inode: 'iB' })
+        );
+    });
+
+    it('reloads without touching the trail for a locale switch (request has no trail)', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+
+        navigation$.next({ inode: 'iLocale' });
+
+        expect(inPlaceHost.setTrail).not.toHaveBeenCalled();
+        expect(store.initializeExistingContent).toHaveBeenCalledWith(
+            expect.objectContaining({ inode: 'iLocale' })
+        );
     });
 });
 
@@ -730,7 +896,6 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
                 trail: relatedTrailSignal,
                 registerTitle: jest.fn(),
                 buildTrailForSavedInode: jest.fn().mockReturnValue(null),
-                navigateToRelated: jest.fn()
             })
         ]
     });

@@ -36,6 +36,14 @@ export class RouterEditContentHost implements EditContentHost {
     /** Full-screen navigates through the router, not in place. */
     readonly inPlaceNavigation = false;
 
+    /** URL-derived trail (the `rc` query param), owned by the shared nav store. */
+    readonly trail = this.#relatedNav.trail;
+
+    setTrail(): void {
+        // no-op: the full-screen trail lives in the URL, which this host's own
+        // navigation already updates via the `rc` query param.
+    }
+
     resolveIdentity(): EditContentIdentity {
         // Read the current leaf route so this works regardless of where the host
         // is provided (the shell) versus where the `:id` param lives (the child).
@@ -109,7 +117,11 @@ export class RouterEditContentHost implements EditContentHost {
     }
 
     goToRelatedContent(current: DotRelatedContentCrumb, target: DotRelatedContentCrumb): void {
-        const trail = this.#relatedNav.appendToTrail(current, target);
+        const trail = this.#relatedNav.appendToTrail(
+            this.#relatedNav.trailInodes(),
+            current,
+            target
+        );
         this.#navigateToTrail(target.inode, trail);
     }
 

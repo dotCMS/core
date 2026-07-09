@@ -1,10 +1,22 @@
 import { Observable } from 'rxjs';
 
-import { InjectionToken } from '@angular/core';
+import { InjectionToken, Signal } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotRelatedContentCrumb } from '../../store/dot-related-content-navigation.store';
+
+/**
+ * A request to reload the editor in place (in-place hosts only). `trail`, when
+ * present, is the related-content trail to commit **once the navigation is
+ * confirmed** (i.e. after the unsaved-changes check) — so cancelling never leaves
+ * a stale breadcrumb. It is absent for a locale reload, which keeps the current
+ * trail untouched.
+ */
+export interface InPlaceNavigationRequest {
+    inode: string;
+    trail?: string[];
+}
 
 /**
  * The content the editor should open, resolved by the host from wherever its
@@ -98,11 +110,27 @@ export interface EditContentHost {
     readonly inPlaceNavigation: boolean;
 
     /**
-     * Emits the inode the host wants the editor to load in place. Only defined for
-     * in-place hosts (dialog); the full-screen host navigates via the router and
-     * leaves this undefined. The layout subscribes and reloads with a dirty check.
+     * Emits a reload request the host wants the editor to perform in place. Only
+     * defined for in-place hosts (dialog); the full-screen host navigates via the
+     * router and leaves this undefined. The layout subscribes, runs the dirty check,
+     * and — only if the user proceeds — reloads and commits the request's trail.
      */
-    readonly inPlaceNavigation$?: Observable<string>;
+    readonly inPlaceNavigation$?: Observable<InPlaceNavigationRequest>;
+
+    /**
+     * The related-content breadcrumb trail for this editor's presentation. URL-derived
+     * for the router host (shared, reflects the `rc` param); a per-instance in-memory
+     * signal for the dialog host (so an overlay never disturbs a full-screen editor's
+     * trail behind it).
+     */
+    readonly trail: Signal<DotRelatedContentCrumb[]>;
+
+    /**
+     * Commits a trail as the editor's current trail. In-place hosts store it; the
+     * router host is a no-op because its trail is derived from the URL, which its
+     * own navigation already updated.
+     */
+    setTrail(inodes: string[]): void;
 
     /**
      * Navigates into a related content, extending the navigation trail. The host

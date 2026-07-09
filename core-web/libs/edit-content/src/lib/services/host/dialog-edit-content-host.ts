@@ -1,17 +1,22 @@
 import { Subject } from 'rxjs';
 
-import { Injectable, OnDestroy, inject } from '@angular/core';
+import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { EditContentHost, EditContentIdentity } from './edit-content-host.model';
+import {
+    EditContentHost,
+    EditContentIdentity,
+    InPlaceNavigationRequest
+} from './edit-content-host.model';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import {
     DotRelatedContentCrumb,
-    DotRelatedContentNavigationStore
+    DotRelatedContentNavigationStore,
+    toRelatedContentCrumbs
 } from '../../store/dot-related-content-navigation.store';
 
 /**
@@ -22,32 +27,36 @@ import {
  *
  * - **Identity** comes from the dialog config, not the route.
  * - **Navigation** (related content, locale switch) reloads the editor **in
- *   place** via {@link inPlaceNavigation$} instead of a route change.
+ *   place** via {@link inPlaceNavigation$} instead of a route change. The trail is
+ *   emitted with the request and committed by the layout only after the
+ *   unsaved-changes check passes — so cancelling never leaves a stale breadcrumb.
+ * - **The trail** is a per-instance signal (not the shared root store), so an open
+ *   dialog never blanks the breadcrumb of a full-screen editor behind it.
  * - **The save result** is forwarded to the opener via {@link saved$}.
  *
- * Provided by {@link DotEditContentDialogComponent}; clears the in-memory trail on
- * destroy so full-screen editors revert to their URL-driven trail.
+ * Provided by {@link DotEditContentDialogComponent}.
  */
 @Injectable()
 export class DialogEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #config = inject(DynamicDialogConfig, { optional: true });
-    readonly #navigation = new Subject<string>();
-    readonly #saved = new Subject<DotCMSContentlet>();
+    readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
+    readonly #saved$ = new Subject<DotCMSContentlet>();
+
+    /** Per-instance trail; starts empty and never touches the shared root store. */
+    readonly #trailInodes = signal<string[]>([]);
 
     /** The dialog reloads the editor in place rather than via the router. */
     readonly inPlaceNavigation = true;
 
-    readonly inPlaceNavigation$ = this.#navigation.asObservable();
+    readonly inPlaceNavigation$ = this.#navigation$.asObservable();
 
     /** Emits each successful save so the dialog can notify its opener. */
-    readonly saved$ = this.#saved.asObservable();
+    readonly saved$ = this.#saved$.asObservable();
 
-    constructor() {
-        // A dialog starts with its own empty trail (in-memory), independent of
-        // whatever URL trail a full-screen editor behind it may have.
-        this.#relatedNav.setInMemoryTrail([]);
-    }
+    readonly trail = computed<DotRelatedContentCrumb[]>(() =>
+        toRelatedContentCrumbs(this.#trailInodes(), this.#relatedNav.titleCache())
+    );
 
     resolveIdentity(): EditContentIdentity {
         const data = this.#config?.data as EditContentDialogData | undefined;
@@ -59,13 +68,16 @@ export class DialogEditContentHost implements EditContentHost, OnDestroy {
     }
 
     reportSaved(contentlet: DotCMSContentlet): void {
-        this.#saved.next(contentlet);
+        this.#saved$.next(contentlet);
     }
 
     reloadContent(inode: string): void {
-        // Same in-place mechanism as related-content navigation: the layout picks
-        // this up and reloads after the dirty check.
-        this.#navigation.next(inode);
+        // Locale switch: reload the content, keep the current trail (no `trail`).
+        this.#navigation$.next({ inode });
+    }
+
+    setTrail(inodes: string[]): void {
+        this.#trailInodes.set(inodes);
     }
 
     setContentTitle(): void {
@@ -86,20 +98,18 @@ export class DialogEditContentHost implements EditContentHost, OnDestroy {
     }
 
     goToRelatedContent(current: DotRelatedContentCrumb, target: DotRelatedContentCrumb): void {
-        const trail = this.#relatedNav.appendToTrail(current, target);
-        this.#relatedNav.setInMemoryTrail(trail);
-        this.#navigation.next(target.inode);
+        // Compute the next trail from THIS host's current trail but do not commit it
+        // yet — the layout commits it (setTrail) only after the dirty check passes.
+        const trail = this.#relatedNav.appendToTrail(this.#trailInodes(), current, target);
+        this.#navigation$.next({ inode: target.inode, trail });
     }
 
     goToCrumb(inode: string, trailInodes: string[]): void {
-        this.#relatedNav.setInMemoryTrail(trailInodes);
-        this.#navigation.next(inode);
+        this.#navigation$.next({ inode, trail: trailInodes });
     }
 
     ngOnDestroy(): void {
-        // Revert to the URL-driven trail so full-screen editors are unaffected.
-        this.#relatedNav.setInMemoryTrail(null);
-        this.#navigation.complete();
-        this.#saved.complete();
+        this.#navigation$.complete();
+        this.#saved$.complete();
     }
 }

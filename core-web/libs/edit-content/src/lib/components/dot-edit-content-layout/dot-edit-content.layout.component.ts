@@ -36,7 +36,10 @@ import { DotCollapseBreadcrumbComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
+import {
+    EDIT_CONTENT_HOST,
+    InPlaceNavigationRequest
+} from '../../services/host/edit-content-host.model';
 import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotEditContentCompareComponent } from '../dot-edit-content-compare/dot-edit-content-compare.component';
@@ -148,8 +151,8 @@ export class DotEditContentLayoutComponent {
      * - Dialog: a `command` that asks the host to reload the editor in place,
      *   since a router link would navigate the host page behind the dialog.
      */
-    readonly relatedNavItems = computed<MenuItem[]>(() => {
-        const trail = this.#relatedNav.trail();
+    readonly $relatedNavItems = computed<MenuItem[]>(() => {
+        const trail = this.#host.trail();
         const inPlace = this.#host.inPlaceNavigation;
 
         return trail.map((crumb, index) => {
@@ -206,7 +209,7 @@ export class DotEditContentLayoutComponent {
         if (inPlaceNavigation$) {
             inPlaceNavigation$
                 .pipe(takeUntilDestroyed())
-                .subscribe((inode) => this.#reloadInPlace(inode));
+                .subscribe((request) => this.#reloadInPlace(request));
         }
 
         // Cache the current content's title so the "Relating content" breadcrumb
@@ -329,10 +332,21 @@ export class DotEditContentLayoutComponent {
      * Reloads the editor in place with a different content (in-place navigation
      * hosts only), prompting to discard unsaved changes first. Full-screen hosts
      * never call this — they reload through a route change.
+     *
+     * The request's `trail` (when present) is committed to the host **only if the
+     * reload actually proceeds** — so choosing "Keep editing" leaves the breadcrumb
+     * untouched rather than showing a content that never opened.
      */
-    #reloadInPlace(inode: string): void {
-        const reload = () =>
-            this.$store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+    #reloadInPlace(request: InPlaceNavigationRequest): void {
+        const reload = () => {
+            if (request.trail) {
+                this.#host.setTrail(request.trail);
+            }
+            this.$store.initializeExistingContent({
+                inode: request.inode,
+                depth: DotContentletDepths.TWO
+            });
+        };
 
         if (this.hasUnsavedChanges()) {
             this.#confirmIfDirty(reload, () => undefined);

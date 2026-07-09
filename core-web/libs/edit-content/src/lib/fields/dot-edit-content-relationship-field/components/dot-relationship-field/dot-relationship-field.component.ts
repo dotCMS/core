@@ -277,7 +277,7 @@ export class DotRelationshipFieldComponent
      *
      * @param item The related contentlet whose title was clicked.
      */
-    openRelated(item: DotCMSContentlet) {
+    openRelated(item: DotCMSContentlet): void {
         if (!this.$canNavigate() || !item?.inode) {
             return;
         }

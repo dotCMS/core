@@ -1,14 +1,38 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 
+import { signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRouteSnapshot, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 
 import { RouterEditContentHost } from './router-edit-content-host';
 
-import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
+import {
+    DotRelatedContentCrumb,
+    DotRelatedContentNavigationStore
+} from '../../store/dot-related-content-navigation.store';
+
+// Builds a fake ActivatedRouteSnapshot tree (root → ...leaf) so resolveIdentity's
+// firstChild walk can be exercised.
+const routeTree = (
+    levels: { params?: Record<string, string>; queryParams?: Record<string, string> }[]
+): ActivatedRouteSnapshot => {
+    const nodes = levels.map(
+        (l) =>
+            ({
+                params: l.params ?? {},
+                queryParams: l.queryParams ?? {},
+                firstChild: null
+            }) as unknown as ActivatedRouteSnapshot
+    );
+    nodes.forEach((n, i) => {
+        (n as { firstChild: ActivatedRouteSnapshot | null }).firstChild = nodes[i + 1] ?? null;
+    });
+
+    return nodes[0];
+};
 
 describe('RouterEditContentHost', () => {
     let spectator: SpectatorService<RouterEditContentHost>;
@@ -20,18 +44,29 @@ describe('RouterEditContentHost', () => {
         registerTitle: jest.Mock;
         buildTrailForSavedInode: jest.Mock;
         appendToTrail: jest.Mock;
+        trailInodes: jest.Mock;
+        trail: ReturnType<typeof signal<DotRelatedContentCrumb[]>>;
     };
+
+    const trailSignal = signal<DotRelatedContentCrumb[]>([]);
 
     const createHost = createServiceFactory({
         service: RouterEditContentHost,
         providers: [
-            mockProvider(Router, { navigate: jest.fn() }),
+            mockProvider(Router, {
+                navigate: jest.fn(),
+                routerState: {
+                    snapshot: { root: routeTree([{}]) }
+                }
+            }),
             mockProvider(Title, { setTitle: jest.fn() }),
             mockProvider(GlobalStore, { addNewBreadcrumb: jest.fn() }),
             mockProvider(DotRelatedContentNavigationStore, {
                 registerTitle: jest.fn(),
                 buildTrailForSavedInode: jest.fn().mockReturnValue('a,b'),
-                appendToTrail: jest.fn().mockReturnValue(['inode-a', 'inode-b'])
+                appendToTrail: jest.fn().mockReturnValue(['inode-a', 'inode-b']),
+                trailInodes: jest.fn().mockReturnValue(['inode-a']),
+                trail: trailSignal
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('dotCMS')
@@ -40,6 +75,7 @@ describe('RouterEditContentHost', () => {
     });
 
     beforeEach(() => {
+        trailSignal.set([]);
         spectator = createHost();
         host = spectator.service;
         router = spectator.inject(Router) as unknown as typeof router;
@@ -60,6 +96,43 @@ describe('RouterEditContentHost', () => {
     it('reports that it does not navigate in place', () => {
         expect(host.inPlaceNavigation).toBe(false);
         expect(host.inPlaceNavigation$).toBeUndefined();
+    });
+
+    it('exposes the shared nav-store trail', () => {
+        trailSignal.set([{ inode: 'x', title: 'X' }]);
+        expect(host.trail()).toEqual([{ inode: 'x', title: 'X' }]);
+    });
+
+    it('setTrail is a no-op (the URL owns the full-screen trail)', () => {
+        expect(() => host.setTrail(['a', 'b'])).not.toThrow();
+    });
+
+    describe('resolveIdentity', () => {
+        it('reads id/contentType/folderPath from the leaf route', () => {
+            (
+                router as unknown as { routerState: { snapshot: { root: ActivatedRouteSnapshot } } }
+            ).routerState.snapshot.root = routeTree([
+                { params: { id: 'inode-1' }, queryParams: { folderPath: 'a/b/' } }
+            ]);
+
+            expect(host.resolveIdentity()).toEqual({
+                inode: 'inode-1',
+                contentTypeId: undefined,
+                folderPath: 'a/b/'
+            });
+        });
+
+        it('walks firstChild down to the leaf route (nested routes)', () => {
+            (
+                router as unknown as { routerState: { snapshot: { root: ActivatedRouteSnapshot } } }
+            ).routerState.snapshot.root = routeTree([{}, {}, { params: { contentType: 'Blog' } }]);
+
+            expect(host.resolveIdentity()).toEqual({
+                inode: undefined,
+                contentTypeId: 'Blog',
+                folderPath: undefined
+            });
+        });
     });
 
     describe('setContentTitle', () => {
@@ -133,6 +206,7 @@ describe('RouterEditContentHost', () => {
             );
 
             expect(relatedNav.appendToTrail).toHaveBeenCalledWith(
+                ['inode-a'],
                 { inode: 'inode-a', title: 'A' },
                 { inode: 'inode-b', title: 'B' }
             );

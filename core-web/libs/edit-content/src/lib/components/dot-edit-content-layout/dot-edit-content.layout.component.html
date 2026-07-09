@@ -7,7 +7,7 @@
     @let showInvalidMessage = $store.formStatus() === 'invalid';
     @let isEnabledNewContentEditor = $store.isEnabledNewContentEditor();
 
-    @let relatingTrail = relatedNavItems();
+    @let relatingTrail = $relatedNavItems();
     @let topBarHasMessages =
         (isEnabledNewContentEditor && showBetaMessage) ||
         lockWarningMessage ||
