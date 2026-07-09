@@ -210,15 +210,21 @@ jobs:
            do NOT treat it as NO_FINDINGS. Instead include a warning in the comment:
            ⚠️ **<Domain> review unavailable** — sub-agent failed, manual review required for this area.
 
-        ## STEP 5 — Post a single PR comment
+        ## STEP 5 — Upsert a single sticky PR comment
 
-        Write the full review body to a temp file, then post it with --body-file.
-        This avoids any risk of shell injection from delimiter collisions.
+        Keep exactly ONE backend-review comment per PR and edit it in place on
+        every run, so it always reflects the CURRENT state of the branch. This is
+        mandatory: when a push resolves earlier findings, the previous comment
+        must be updated (to the smaller finding set, or to "no issues found") —
+        never leave a stale comment showing findings that have already been fixed.
+
+        Write the full review body to a temp file first (posting with a file
+        avoids any risk of shell injection from delimiter collisions).
 
         Write findings to /tmp/dotcms_review_body.md using this format.
         The FIRST LINE must always be exactly: <!-- dotcms-backend-review -->
-        This marker is invisible in GitHub's rendered markdown and identifies this
-        as a dotCMS backend review comment.
+        This marker is invisible in GitHub's rendered markdown and is how you
+        find the existing comment to edit on later runs.
 
         <!-- dotcms-backend-review -->
         ## 🔍 dotCMS Backend Review
@@ -237,16 +243,24 @@ jobs:
         **Next steps**
         - 🔴 / 🟠 Fix locally and push — these need your judgment
         - 🟡 You can ask me to handle mechanical fixes inline: `@claude fix <issue description> in <File.java>`
-        - Every new push triggers a fresh review automatically
-
-        Then post it as a new comment (each push gets its own comment for a historical record):
-
-          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
+        - Every new push updates this comment automatically
 
         If ALL agents returned NO_FINDINGS, write this to /tmp/dotcms_review_body.md instead:
           <!-- dotcms-backend-review -->
           ✅ **dotCMS Backend Review**: no issues found.
-        Then post it the same way.
+
+        Then UPSERT the comment. Always run this exact logic — it edits the
+        existing marker comment when one exists and only creates a new comment on
+        the first run. Do not skip it, even when the result is "no issues found":
+
+          EXISTING_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --paginate --jq '[.[] | select(.body | contains("<!-- dotcms-backend-review -->"))] | last | .id')
+          if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$EXISTING_ID --method PATCH -F body=@/tmp/dotcms_review_body.md
+            echo "Updated existing backend-review comment $EXISTING_ID"
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
+            echo "Created backend-review comment"
+          fi
 
         ## STEP 6 — Submit a formal GitHub review
 
