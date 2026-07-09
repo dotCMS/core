@@ -593,6 +593,51 @@ hand carries genuine semantic intent — and routing by tag is the natural expre
 - Index timestamp is part of the identity — never hardcode index names
 - Working index is always a superset — never write to live without also writing to working
 
+### Non-finite numbers (`NaN` / `Infinity`) in manual JSON serialization — #36478
+
+**Rule: any `float`/`double` you serialize that originates from an underlying search/index/DB/compute
+API can be non-finite. Coerce it to `null` before it reaches the serializer. Never assume a number is
+finite just because it is a "score", "distance", or "average".**
+
+**Where non-finite values come from.** Elasticsearch/OpenSearch set a hit `_score` to **`NaN`**
+whenever the hit is *not relevance-scored* — any query that **sorts by a field** without
+`track_scores: true`, plus `filter` / `constant_score` / aggregation-only (`size: 0`) contexts. The
+same hazard applies to suggester option `score`, aggregation metric values (avg/sum/stats on empty or
+degenerate buckets), pgvector distances, and any Java-computed ratio/division (`0.0/0.0 → NaN`,
+`x/0.0 → Infinity`).
+
+**Both serializers are traps, in different ways:**
+
+| Serializer | Behavior on a non-finite number | Symptom |
+|------------|----------------------------------|---------|
+| dotCMS `com.dotmarketing.util.json.JSONObject` / `JSONArray` (strict) | `testValidity()` throws `JSONException("JSON does not allow non-finite numbers.")` — **twice over**: eagerly inside `.put(key, value)` *and* again at serialization inside `numberToString` (reached from `.toString()`) | **HTTP 500** |
+| Jackson `ObjectMapper` | Does **not** throw by default; writes the bare tokens `NaN` / `Infinity` / `-Infinity`, which are **not valid JSON** | Strict client parsers (`JSON.parse`, most SDKs) **reject the response**; silently non-standard payload. `QUOTE_NON_NUMERIC_NUMBERS` only turns them into `"NaN"` strings — still not a number/null a consumer expects |
+
+**Why the ES cutover exposed this.** The pre-#36398 endpoints returned Elasticsearch's *native*
+serializer output (`SearchResponse.toString()`), and ES XContent serializes non-finite as `null`.
+#36398 rebuilt the same wire shape through the **strict** dotCMS `JSONObject`, which rejects what ES
+tolerated — turning a silently-null field into a 500. Matching ES's native `null` behavior is
+therefore the correct fix, not an arbitrary choice.
+
+**The pattern (see `ESContentResourcePortlet.toLegacyEsJson` / `hitsToLegacyJson`):**
+
+- Guard every **explicit** numeric `.put(...)` — the strict writer validates *eagerly*, so the value
+  must already be finite-or-`null` when inserted:
+  ```java
+  .put("_score", finiteOrNull(hit.getScore()))   // NaN/Infinity -> JSONObject.NULL
+  ```
+- For values that enter a tree **unvalidated** — via `new JSONObject(Map)` / bean-wrapping (e.g. the
+  suggester block, `_source` numerics) — a per-field guard is not enough: they skip the eager check
+  but still throw at `.toString()`. Either sanitize the source map, or run one recursive pass over the
+  built tree that coerces every non-finite `Float`/`Double` to `JSONObject.NULL` before serializing.
+  Only `float`/`double` can be non-finite; integral and `BigDecimal` values are safe.
+
+**Regression coverage.** `ESContentResourcePortletNaNScoreTest` (fast unit test) drives the adapter
+with `NaN`/`Infinity` scores and asserts `_score: null` instead of a throw. Note the integration
+tests in `ESContentResourcePortletTest` use relevance-scored `bool`/`term` queries, so they do **not**
+reproduce the trigger — an end-to-end guard needs a *field-sorted* (or `constant_score`/`size:0`)
+query asserting HTTP 200.
+
 ### Index name divergence between providers
 
 **Fresh install** (Phases 1–3 from day zero): ES and OS indices are created in the same bootstrap
