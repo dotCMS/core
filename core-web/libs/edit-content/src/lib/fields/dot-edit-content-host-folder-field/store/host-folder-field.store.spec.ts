@@ -348,6 +348,7 @@ describe('HostFolderFiledStore', () => {
             expect(store.selectedSite()).toBe(site);
             expect(store.pendingNode()).toBe(site);
             expect(store.searchTerm()).toBe('');
+            expect(store.siteSearchTerm()).toBe('');
             expect(store.searchResults()).toBe(null);
             expect(service.searchFolders).toHaveBeenCalledWith(
                 {
@@ -888,6 +889,37 @@ describe('HostFolderFiledStore', () => {
             expect(store.overlayOpen()).toBe(false);
             expect(store.pendingNode()).toBe(confirmed);
             expect(store.confirmedNode()).toBe(confirmed);
+            expect(store.siteSearchTerm()).toBe('');
+        });
+    });
+
+    describe('filteredSites / setSiteSearchTerm', () => {
+        beforeEach(() => {
+            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            store.loadSites({ path: null, isRequired: false });
+        });
+
+        it('should return all sites when siteSearchTerm is empty', () => {
+            expect(store.filteredSites()).toEqual(store.sites());
+        });
+
+        it('should filter sites case-insensitively by label', () => {
+            store.setSiteSearchTerm('DEMO');
+
+            expect(store.filteredSites()).toEqual([TREE_SELECT_SITES_MOCK[0]]);
+        });
+
+        it('should return empty when no site matches the search term', () => {
+            store.setSiteSearchTerm('no-match');
+
+            expect(store.filteredSites()).toEqual([]);
+        });
+
+        it('should reset siteSearchTerm when selecting a different site', () => {
+            store.setSiteSearchTerm('demo');
+            store.selectSite(TREE_SELECT_SITES_MOCK[1]);
+
+            expect(store.siteSearchTerm()).toBe('');
         });
     });
 });

@@ -149,10 +149,9 @@ export class HostFolderField {
         const toggle = node.locator('.p-tree-node-toggle-button').first();
         await toggle.waitFor({ state: 'visible', timeout: 10000 });
         const responsePromise = this.page
-            .waitForResponse(
-                (r) => this.isFolderSearchResponse(r.url(), r.status()),
-                { timeout: 15000 }
-            )
+            .waitForResponse((r) => this.isFolderSearchResponse(r.url(), r.status()), {
+                timeout: 15000
+            })
             .catch(() => null);
         await toggle.click();
         await responsePromise;

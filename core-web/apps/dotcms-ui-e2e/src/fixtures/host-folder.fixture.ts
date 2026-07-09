@@ -72,7 +72,8 @@ export const test = base.extend<{
             deleteContentType: (id) => deleteContentType(request, id),
             createFolders: (siteName, paths) => createFolders(request, siteName, paths),
             createManyFolders: (siteName, paths) => createFolders(request, siteName, paths),
-            buildFolderPaths: (prefix, count, parentPath) => buildFolderPaths(prefix, count, parentPath),
+            buildFolderPaths: (prefix, count, parentPath) =>
+                buildFolderPaths(prefix, count, parentPath),
             getDefaultSite: async () => {
                 const sites = await getSites(request);
                 const site = sites.find((s) => s.default);

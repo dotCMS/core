@@ -1,8 +1,8 @@
 import {
-    SpectatorHost,
     byTestId,
     createHostFactory,
     mockProvider,
+    SpectatorHost,
     SpyObject
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet, mockMatchMedia } from '@dotcms/utils-testing';
@@ -18,7 +19,7 @@ import { DotHostFolderFieldComponent } from './components/host-folder-field/host
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { TREE_SELECT_SITES_MOCK, HOST_FOLDER_TEXT_MOCK } from '../../utils/mocks';
+import { HOST_FOLDER_TEXT_MOCK, TREE_SELECT_SITES_MOCK } from '../../utils/mocks';
 
 @Component({
     standalone: false,
@@ -45,6 +46,9 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             HostFolderFiledStore,
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn()
+            }),
             mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
                 getCurrentSiteAsTreeNodeItem: jest.fn(() => of(TREE_SELECT_SITES_MOCK[0])),

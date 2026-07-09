@@ -1,20 +1,25 @@
 import {
-    Spectator,
     byTestId,
     createComponentFactory,
     mockProvider,
+    Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { Clipboard } from '@angular/cdk/clipboard';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { Popover } from 'primeng/popover';
+
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
 import { DotHostFolderFieldComponent } from './host-folder-field.component';
 
-import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK } from '../../../../utils/mocks';
+import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../../utils/mocks';
 import { HostFolderFiledStore } from '../../store/host-folder-field.store';
 import { MessageServiceMock } from '../../utils/mocks';
 
@@ -28,6 +33,9 @@ describe('DotHostFolderFieldComponent', () => {
         component: DotHostFolderFieldComponent,
         providers: [
             HostFolderFiledStore,
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn()
+            }),
             mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
                 searchFolders: jest.fn(() =>
@@ -142,6 +150,82 @@ describe('DotHostFolderFieldComponent', () => {
         spectator.component.onSearchInput(event);
 
         expect(store.search).toHaveBeenCalledWith('foo');
+    });
+
+    it('should forward the sites search input value to the store', () => {
+        jest.spyOn(store, 'setSiteSearchTerm');
+        const input = document.createElement('input');
+        input.value = 'demo';
+        const event = { target: input } as unknown as Event;
+
+        spectator.component.onSiteSearchInput(event);
+
+        expect(store.setSiteSearchTerm).toHaveBeenCalledWith('demo');
+    });
+
+    describe('sites panel header', () => {
+        beforeEach(fakeAsync(() => {
+            tick();
+        }));
+
+        const createSite = (label: string): TreeNodeItem => ({
+            key: label,
+            label,
+            data: {
+                id: label,
+                hostname: label,
+                path: '',
+                type: 'site'
+            },
+            expandedIcon: 'pi pi-folder-open',
+            collapsedIcon: 'pi pi-folder'
+        });
+
+        const showSitesPanel = () => {
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const trigger = document.createElement('button');
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            popover.show(event, trigger);
+            spectator.detectChanges();
+        };
+
+        it('should show the Sites label when there are five or fewer sites', fakeAsync(() => {
+            const sites = [createSite('site-1'), createSite('site-2'), createSite('site-3')];
+            service.getSitesTreePath.mockReturnValue(of(sites));
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            spectator.detectChanges();
+            showSitesPanel();
+
+            expect(spectator.query(byTestId('host-folder-sites-search-input'))).toBeNull();
+            expect(spectator.query('[data-testid="host-folder-sites"]')).toHaveText('Sites');
+        }));
+
+        it('should show the sites search input when there are more than five sites', fakeAsync(() => {
+            const sites = [
+                createSite('site-1'),
+                createSite('site-2'),
+                createSite('site-3'),
+                createSite('site-4'),
+                createSite('site-5'),
+                createSite('site-6')
+            ];
+            service.getSitesTreePath.mockReturnValue(of(sites));
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            expect(store.sites()).toHaveLength(6);
+            spectator.detectChanges();
+            showSitesPanel();
+
+            const searchInput =
+                spectator.query(byTestId('host-folder-sites-search-input')) ??
+                document.querySelector('[data-testid="host-folder-sites-search-input"]');
+
+            expect(searchInput).toBeTruthy();
+            expect(spectator.query('[data-testid="host-folder-sites"]')).not.toHaveText('SITES');
+        }));
     });
 
     describe('onLoadMoreNode', () => {

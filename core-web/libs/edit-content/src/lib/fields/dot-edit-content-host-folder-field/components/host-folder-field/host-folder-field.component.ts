@@ -106,7 +106,8 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * Removes PrimeNG's default popover content padding; sections manage their own spacing.
      */
     protected readonly popoverPt = {
-        content: { class: '!p-0' }
+        root: { class: 'overflow-hidden' },
+        content: { class: '!p-0 overflow-hidden' }
     };
 
     /**
@@ -193,6 +194,14 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     onSearchInput(event: Event): void {
         const value = (event.target as HTMLInputElement).value;
         this.store.search(value);
+    }
+
+    /**
+     * Forwards the sites search input's value to the store for local filtering.
+     */
+    onSiteSearchInput(event: Event): void {
+        const value = (event.target as HTMLInputElement).value;
+        this.store.setSiteSearchTerm(value);
     }
 
     /**

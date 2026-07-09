@@ -18,6 +18,7 @@ const FILE_MESSAGES_MOCK = {
     'error.form.validator.required': 'This field is required',
     'dot.file.field.host.folder.trigger.placeholder': 'Select Host/Folder',
     'dot.file.field.host.folder.sites.label': 'Sites',
+    'dot.file.field.host.folder.sites.search.placeholder': 'Search sites...',
     'dot.file.field.host.folder.search.placeholder': 'Search folders in this site...',
     'dot.file.field.host.folder.action.select': 'Select',
     'dot.file.field.host.folder.action.load.more': 'Load {0} more',

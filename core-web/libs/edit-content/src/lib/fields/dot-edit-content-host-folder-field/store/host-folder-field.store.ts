@@ -20,6 +20,7 @@ import { DotBrowsingService, normalizeHostFolderBrowsePath } from '@dotcms/ui';
 export const PEER_PAGE_LIMIT = 7000;
 export const FOLDER_PAGE_LIMIT = 40;
 export const MIN_SEARCH_LENGTH = 3;
+export const SITE_SEARCH_THRESHOLD = 5;
 export const ROOT_NODE_KEY = 'root';
 
 export const SYSTEM_HOST_NAME = 'System Host';
@@ -92,6 +93,7 @@ export type HostFolderFiledState = {
     foldersStatus: ComponentStatus;
     nodePagination: Record<string, NodePaginationState>;
     searchTerm: string;
+    siteSearchTerm: string;
     searchResults: TreeNodeItem[] | null;
     searchStatus: ComponentStatus;
     confirmedNode: TreeNodeItem | null;
@@ -109,6 +111,7 @@ export const initialState: HostFolderFiledState = {
     foldersStatus: ComponentStatus.INIT,
     nodePagination: {},
     searchTerm: '',
+    siteSearchTerm: '',
     searchResults: null,
     searchStatus: ComponentStatus.INIT,
     confirmedNode: null,
@@ -175,11 +178,13 @@ export const HostFolderFiledStore = signalStore(
     withState(initialState),
     withComputed(
         ({
+            sites,
             sitesStatus,
             overlayOpen,
             confirmedNode,
             pendingNode,
             searchTerm,
+            siteSearchTerm,
             searchResults,
             folders,
             foldersStatus,
@@ -253,6 +258,20 @@ export const HostFolderFiledStore = signalStore(
              * (the folder search endpoint requires at least `MIN_SEARCH_LENGTH` characters).
              */
             isSearching: computed(() => searchTerm().length >= MIN_SEARCH_LENGTH),
+            /**
+             * Sites filtered by the local search term (case-insensitive label match).
+             * Returns all sites when the term is empty.
+             */
+            filteredSites: computed(() => {
+                const term = siteSearchTerm().trim().toLowerCase();
+                const allSites = sites();
+
+                if (!term) {
+                    return allSites;
+                }
+
+                return allSites.filter((site) => site.label.toLowerCase().includes(term));
+            }),
             /**
              * Folders to render in the tree: search results while searching, otherwise the
              * regular (lazily-loaded) folder tree for the selected site.
@@ -503,8 +522,15 @@ export const HostFolderFiledStore = signalStore(
             closeOverlay: () => {
                 patchState(store, {
                     overlayOpen: false,
-                    pendingNode: store.confirmedNode()
+                    pendingNode: store.confirmedNode(),
+                    siteSearchTerm: ''
                 });
+            },
+            /**
+             * Updates the local site search term used to filter the Sites list.
+             */
+            setSiteSearchTerm: (term: string) => {
+                patchState(store, { siteSearchTerm: term });
             }
         };
     }),
@@ -682,6 +708,7 @@ export const HostFolderFiledStore = signalStore(
                     folders: [],
                     nodePagination: {},
                     searchTerm: '',
+                    siteSearchTerm: '',
                     searchResults: null,
                     pendingNode: site
                 });
