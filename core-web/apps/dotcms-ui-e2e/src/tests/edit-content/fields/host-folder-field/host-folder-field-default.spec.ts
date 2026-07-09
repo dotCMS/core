@@ -29,4 +29,40 @@ test.describe('Default Host/Folder Selection', () => {
         await field.expectVisible();
         await field.expectLabelMatchesPattern(/.+\..+/);
     });
+
+    test('selects site root through the popover and updates the trigger label @critical', async ({
+        adminPage,
+        apiHelpers
+    }) => {
+        const defaultSite = await apiHelpers.getDefaultSite();
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new HostFolderField(adminPage);
+        await field.selectSiteRoot(defaultSite.hostname);
+
+        await field.expectLabelContains(defaultSite.hostname);
+    });
+
+    test('selects a folder through the popover and updates the trigger label @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const defaultSite = await apiHelpers.getDefaultSite();
+        const folderName = `popover-folder-${testSuffix}`;
+        await apiHelpers.createFolders(defaultSite.hostname, [`/${folderName}`]);
+
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new HostFolderField(adminPage);
+        await field.openOverlay();
+        await field.selectSite(defaultSite.hostname);
+        const partial = folderName.substring(0, Math.min(6, folderName.length));
+        await field.searchFolders(partial);
+        await field.selectFolderFlow(folderName);
+
+        await field.expectLabelContains(folderName);
+    });
 });
