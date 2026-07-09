@@ -253,8 +253,13 @@ jobs:
         existing marker comment when one exists and only creates a new comment on
         the first run. Do not skip it, even when the result is "no issues found":
 
-          EXISTING_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --paginate --jq '[.[] | select(.body | contains("<!-- dotcms-backend-review -->"))] | last | .id')
-          if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
+          # Emit one bare id per matching comment and take the last globally with
+          # tail -n1. Do NOT use an aggregate jq filter (e.g. `[...] | last`) here:
+          # with --paginate, gh runs --jq once PER PAGE and concatenates, so an
+          # aggregate returns a per-page result and non-matching pages emit `null`,
+          # yielding a multi-line EXISTING_ID that breaks the PATCH on busy PRs.
+          EXISTING_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --paginate --jq '.[] | select(.body | contains("<!-- dotcms-backend-review -->")) | .id' | tail -n1)
+          if [ -n "$EXISTING_ID" ]; then
             gh api repos/${{ github.repository }}/issues/comments/$EXISTING_ID --method PATCH -F body=@/tmp/dotcms_review_body.md
             echo "Updated existing backend-review comment $EXISTING_ID"
           else
