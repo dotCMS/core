@@ -41,23 +41,13 @@ const serializedContainer = computed(() =>
 </script>
 
 <template>
-  <ContainerNotFound
-    v-if="!containerData"
-    :identifier="container.identifier"
-  />
-  <EmptyContainer
-    v-else-if="isEmpty"
-    v-bind="dotAttributes"
-  />
-  <div
-    v-else
-    v-bind="dotAttributes"
-  >
-    <Contentlet
-      v-for="contentlet in contentlets"
-      :key="contentlet.identifier"
-      :contentlet="contentlet"
-      :container="serializedContainer"
-    />
-  </div>
+    <ContainerNotFound v-if="!containerData" :identifier="container.identifier" />
+    <EmptyContainer v-else-if="isEmpty" v-bind="dotAttributes" />
+    <div v-else v-bind="dotAttributes">
+        <Contentlet
+            v-for="contentlet in contentlets"
+            :key="contentlet.identifier"
+            :contentlet="contentlet"
+            :container="serializedContainer" />
+    </div>
 </template>

@@ -20,7 +20,9 @@ import { getUVEState } from '@dotcms/uve';
  * @param when the UVE mode to check against
  * @returns a readonly computed that is `true` when the current UVE mode matches
  */
-export function useDotCMSShowWhen(when: MaybeRefOrGetter<UVE_MODE>): Readonly<ComputedRef<boolean>> {
+export function useDotCMSShowWhen(
+    when: MaybeRefOrGetter<UVE_MODE>
+): Readonly<ComputedRef<boolean>> {
     // `getUVEState()` reads `window`, so we resolve it after mount and keep the
     // result `false` during SSR / the initial render.
     const mounted = ref(false);
