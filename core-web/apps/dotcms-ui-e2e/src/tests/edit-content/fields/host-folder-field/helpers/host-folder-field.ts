@@ -12,6 +12,7 @@ export class HostFolderField {
     readonly sitesPanel: Locator;
     readonly foldersPanel: Locator;
     readonly searchInput: Locator;
+    readonly sitesSearchInput: Locator;
     readonly folderTree: Locator;
     readonly selectButton: Locator;
     readonly copyButton: Locator;
@@ -29,13 +30,14 @@ export class HostFolderField {
         this.sitesPanel = page.getByTestId('host-folder-sites');
         this.foldersPanel = page.getByTestId('host-folder-folders');
         this.searchInput = page.getByTestId('host-folder-search-input');
+        this.sitesSearchInput = page.getByTestId('host-folder-sites-search-input');
         this.folderTree = page.getByTestId('host-folder-tree');
         this.selectButton = page.getByTestId('host-folder-select');
         this.copyButton = this.root.getByTestId('host-folder-copy');
         this.copyIcon = this.root.getByTestId('host-folder-copy-icon');
     }
 
-    private overlayContent(): Locator {
+    private overlayFooterAnchor(): Locator {
         return this.page.getByTestId('host-folder-select');
     }
 
@@ -43,7 +45,7 @@ export class HostFolderField {
         await this.trigger.scrollIntoViewIfNeeded();
         await expect(this.trigger).toBeEnabled();
         await this.trigger.click();
-        await expect(this.overlayContent()).toBeVisible({ timeout: 15000 });
+        await expect(this.overlayFooterAnchor()).toBeVisible({ timeout: 15000 });
     }
 
     /** @deprecated Use openOverlay */
@@ -57,11 +59,11 @@ export class HostFolderField {
     }
 
     async expectOverlayOpen() {
-        await expect(this.overlayContent()).toBeVisible({ timeout: 15000 });
+        await expect(this.overlayFooterAnchor()).toBeVisible({ timeout: 15000 });
     }
 
     async expectOverlayClosed() {
-        await expect(this.overlayContent()).toBeHidden({ timeout: 10000 });
+        await expect(this.overlayFooterAnchor()).toBeHidden({ timeout: 10000 });
     }
 
     /** @deprecated Use expectOverlayOpen */
@@ -286,6 +288,18 @@ export class HostFolderField {
         await responsePromise;
     }
 
+    async searchSites(term: string) {
+        await this.sitesSearchInput.fill(term);
+    }
+
+    async expectSitesSearchVisible(visible: boolean) {
+        if (visible) {
+            await expect(this.sitesSearchInput).toBeVisible({ timeout: 5000 });
+        } else {
+            await expect(this.sitesSearchInput).toBeHidden({ timeout: 5000 });
+        }
+    }
+
     /** @deprecated Use searchFolders */
     async filterTree(text: string) {
         return this.searchFolders(text);
@@ -304,4 +318,40 @@ export class HostFolderField {
             .locator('.p-tree-node:not(:has([data-testid="host-folder-load-more"]))')
             .count();
     }
+}
+
+/** Mocks GET /api/v1/site list responses so site-count UI is deterministic in E2E. */
+export function mockSitesList(page: Page, count: number): Promise<void> {
+    const entity = Array.from({ length: count }, (_, index) => ({
+        name: `hf-e2e-site-${index + 1}.test`,
+        identifier: `hf-e2e-site-${index + 1}-id`,
+        aliases: null,
+        archived: false
+    }));
+
+    return page.route('**/api/v1/site**', (route) => {
+        const url = route.request().url();
+        const { pathname } = new URL(url);
+        const isSiteList =
+            route.request().method() === 'GET' &&
+            pathname.endsWith('/api/v1/site') &&
+            !url.includes('currentSite');
+
+        if (!isSiteList) {
+            return route.continue();
+        }
+
+        return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            json: {
+                entity,
+                pagination: {
+                    currentPage: 1,
+                    perPage: 15,
+                    totalEntries: count
+                }
+            }
+        });
+    });
 }

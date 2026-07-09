@@ -20,7 +20,7 @@ import { DotBrowsingService } from '@dotcms/ui';
 import { DotHostFolderFieldComponent } from './host-folder-field.component';
 
 import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../../utils/mocks';
-import { HostFolderFiledStore } from '../../store/host-folder-field.store';
+import { HostFolderFiledStore, SITE_SEARCH_THRESHOLD } from '../../store/host-folder-field.store';
 import { MessageServiceMock } from '../../utils/mocks';
 
 describe('DotHostFolderFieldComponent', () => {
@@ -153,14 +153,14 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should forward the sites search input value to the store', () => {
-        jest.spyOn(store, 'setSiteSearchTerm');
+        jest.spyOn(store, 'filterSites');
         const input = document.createElement('input');
         input.value = 'demo';
         const event = { target: input } as unknown as Event;
 
         spectator.component.onSiteSearchInput(event);
 
-        expect(store.setSiteSearchTerm).toHaveBeenCalledWith('demo');
+        expect(store.filterSites).toHaveBeenCalledWith('demo');
     });
 
     describe('sites panel header', () => {
@@ -181,6 +181,10 @@ describe('DotHostFolderFieldComponent', () => {
             collapsedIcon: 'pi pi-folder'
         });
 
+        const queryInOverlay = (testId: string): Element | null =>
+            spectator.query(byTestId(testId)) ??
+            document.querySelector(`[data-testid="${testId}"]`);
+
         const showSitesPanel = () => {
             const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
             const popover = popoverDe.componentInstance as Popover;
@@ -199,31 +203,36 @@ describe('DotHostFolderFieldComponent', () => {
             spectator.detectChanges();
             showSitesPanel();
 
-            expect(spectator.query(byTestId('host-folder-sites-search-input'))).toBeNull();
+            expect(queryInOverlay('host-folder-sites-search-input')).toBeNull();
+            expect(spectator.query('[data-testid="host-folder-sites"]')).toHaveText('Sites');
+        }));
+
+        it('should show the Sites label when site count equals SITE_SEARCH_THRESHOLD', fakeAsync(() => {
+            const sites = Array.from({ length: SITE_SEARCH_THRESHOLD }, (_, i) =>
+                createSite(`site-${i + 1}`)
+            );
+            service.getSitesTreePath.mockReturnValue(of(sites));
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            spectator.detectChanges();
+            showSitesPanel();
+
+            expect(queryInOverlay('host-folder-sites-search-input')).toBeNull();
             expect(spectator.query('[data-testid="host-folder-sites"]')).toHaveText('Sites');
         }));
 
         it('should show the sites search input when there are more than five sites', fakeAsync(() => {
-            const sites = [
-                createSite('site-1'),
-                createSite('site-2'),
-                createSite('site-3'),
-                createSite('site-4'),
-                createSite('site-5'),
-                createSite('site-6')
-            ];
+            const sites = Array.from({ length: SITE_SEARCH_THRESHOLD + 1 }, (_, i) =>
+                createSite(`site-${i + 1}`)
+            );
             service.getSitesTreePath.mockReturnValue(of(sites));
             store.loadSites({ path: null, isRequired: false });
             tick();
-            expect(store.sites()).toHaveLength(6);
+            expect(store.sites()).toHaveLength(SITE_SEARCH_THRESHOLD + 1);
             spectator.detectChanges();
             showSitesPanel();
 
-            const searchInput =
-                spectator.query(byTestId('host-folder-sites-search-input')) ??
-                document.querySelector('[data-testid="host-folder-sites-search-input"]');
-
-            expect(searchInput).toBeTruthy();
+            expect(queryInOverlay('host-folder-sites-search-input')).toBeTruthy();
             expect(spectator.query('[data-testid="host-folder-sites"]')).not.toHaveText('SITES');
         }));
     });

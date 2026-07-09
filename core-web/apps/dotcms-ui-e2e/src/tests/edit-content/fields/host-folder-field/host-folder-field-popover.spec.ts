@@ -1,6 +1,6 @@
 import { NewEditContentFormPage } from '@pages';
 
-import { HostFolderField } from './helpers/host-folder-field';
+import { HostFolderField, mockSitesList } from './helpers/host-folder-field';
 
 import { expect, test } from '../../../../fixtures/host-folder.fixture';
 
@@ -67,5 +67,38 @@ test.describe('Host/Folder Popover UX', () => {
         const sites = field.sitesPanel.getByTestId('host-folder-site-item');
         await expect(sites.first()).toBeVisible({ timeout: 10000 });
         expect(await sites.count()).toBeGreaterThan(0);
+    });
+
+    test('sites panel shows Sites label when site count is within search threshold @smoke', async ({
+        adminPage
+    }) => {
+        await mockSitesList(adminPage, 3);
+
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new HostFolderField(adminPage);
+        await field.openOverlay();
+
+        await field.expectSitesSearchVisible(false);
+        await expect(field.sitesPanel).toContainText('Sites');
+    });
+
+    test('sites search filters list and shows empty state when site count exceeds threshold @smoke', async ({
+        adminPage
+    }) => {
+        await mockSitesList(adminPage, 6);
+
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new HostFolderField(adminPage);
+        await field.openOverlay();
+
+        await field.expectSitesSearchVisible(true);
+        await field.searchSites('zzzz-no-match-zzzz');
+        await expect(field.sitesPanel.getByTestId('host-folder-sites-empty')).toBeVisible();
+        await field.searchSites('');
+        await expect(field.sitesPanel.getByTestId('host-folder-site-item').first()).toBeVisible();
     });
 });

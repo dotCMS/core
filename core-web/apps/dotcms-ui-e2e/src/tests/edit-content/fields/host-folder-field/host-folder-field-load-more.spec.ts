@@ -30,7 +30,7 @@ test.describe('Host/Folder Load More Pagination', () => {
     }) => {
         const prefix = `hfroot-${testSuffix}`;
         const targetFolder = `${prefix}-${ROOT_FOLDER_COUNT}`;
-        await apiHelpers.createManyFolders(
+        await apiHelpers.createFolders(
             siteName,
             apiHelpers.buildFolderPaths(prefix, ROOT_FOLDER_COUNT)
         );
@@ -79,7 +79,7 @@ test.describe('Host/Folder Load More Pagination', () => {
         const targetFolder = `${prefix}-${NESTED_CHILD_COUNT}`;
 
         await apiHelpers.createFolders(siteName, [`/${parentName}`]);
-        await apiHelpers.createManyFolders(
+        await apiHelpers.createFolders(
             siteName,
             apiHelpers.buildFolderPaths(prefix, NESTED_CHILD_COUNT, `/${parentName}`)
         );

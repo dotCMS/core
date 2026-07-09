@@ -49,7 +49,6 @@ export const test = base.extend<{
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
         deleteContentType: (id: string) => Promise<void>;
         createFolders: (siteName: string, paths: string[]) => Promise<void>;
-        createManyFolders: (siteName: string, paths: string[]) => Promise<void>;
         buildFolderPaths: (prefix: string, count: number, parentPath?: string) => string[];
         getDefaultSite: () => Promise<Site>;
         getCurrentSite: () => Promise<Site>;
@@ -69,7 +68,6 @@ export const test = base.extend<{
             createContentType: (payload) => createFakeContentType(request, payload),
             deleteContentType: (id) => deleteContentType(request, id),
             createFolders: (siteName, paths) => createFolders(request, siteName, paths),
-            createManyFolders: (siteName, paths) => createFolders(request, siteName, paths),
             buildFolderPaths: (prefix, count, parentPath) =>
                 buildFolderPaths(prefix, count, parentPath),
             getDefaultSite: async () => {

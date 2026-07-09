@@ -17,6 +17,7 @@ import {
     FOLDER_PAGE_LIMIT,
     HostFolderFiledStore,
     ROOT_NODE_KEY,
+    SITE_SEARCH_THRESHOLD,
     SYSTEM_HOST_NAME
 } from './host-folder-field.store';
 
@@ -921,5 +922,52 @@ describe('HostFolderFiledStore', () => {
 
             expect(store.siteSearchTerm()).toBe('');
         });
+    });
+
+    describe('showSitesSearch', () => {
+        const createSite = (label: string): TreeNodeItem => ({
+            key: label,
+            label,
+            data: { id: label, hostname: label, path: '', type: 'site' },
+            expandedIcon: 'pi pi-folder-open',
+            collapsedIcon: 'pi pi-folder'
+        });
+
+        it('should be false when site count equals SITE_SEARCH_THRESHOLD', () => {
+            const sites = Array.from({ length: SITE_SEARCH_THRESHOLD }, (_, i) =>
+                createSite(`site-${i + 1}`)
+            );
+            service.getSitesTreePath.mockReturnValue(of(sites));
+            store.loadSites({ path: null, isRequired: false });
+
+            expect(store.showSitesSearch()).toBe(false);
+        });
+
+        it('should be true when site count exceeds SITE_SEARCH_THRESHOLD', () => {
+            const sites = Array.from({ length: SITE_SEARCH_THRESHOLD + 1 }, (_, i) =>
+                createSite(`site-${i + 1}`)
+            );
+            service.getSitesTreePath.mockReturnValue(of(sites));
+            store.loadSites({ path: null, isRequired: false });
+
+            expect(store.showSitesSearch()).toBe(true);
+        });
+    });
+
+    describe('filterSites', () => {
+        beforeEach(() => {
+            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            store.loadSites({ path: null, isRequired: false });
+        });
+
+        it('should debounce site search term updates', fakeAsync(() => {
+            store.filterSites('demo');
+            expect(store.siteSearchTerm()).toBe('');
+
+            tick(150);
+
+            expect(store.siteSearchTerm()).toBe('demo');
+            expect(store.filteredSites()).toEqual([TREE_SELECT_SITES_MOCK[0]]);
+        }));
     });
 });

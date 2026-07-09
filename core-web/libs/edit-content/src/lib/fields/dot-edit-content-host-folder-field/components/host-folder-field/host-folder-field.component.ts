@@ -131,6 +131,8 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
         content: { class: 'w-full max-w-full overflow-x-hidden' }
     };
 
+    protected readonly trackBySiteKey = (_index: number, site: TreeNodeItem) => site.key;
+
     private readonly destroyRef = inject(DestroyRef);
     private readonly injector = inject(Injector);
     private readonly clipboard = inject(Clipboard);
@@ -192,16 +194,18 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * the minimum length before querying the backend.
      */
     onSearchInput(event: Event): void {
-        const value = (event.target as HTMLInputElement).value;
-        this.store.search(value);
+        this.store.search(this.readInputValue(event));
     }
 
     /**
-     * Forwards the sites search input's value to the store for local filtering.
+     * Forwards the sites search input's value to the store for debounced local filtering.
      */
     onSiteSearchInput(event: Event): void {
-        const value = (event.target as HTMLInputElement).value;
-        this.store.setSiteSearchTerm(value);
+        this.store.filterSites(this.readInputValue(event));
+    }
+
+    private readInputValue(event: Event): string {
+        return (event.target as HTMLInputElement).value;
     }
 
     /**

@@ -59,10 +59,12 @@
     data-testid="host-folder-overlay">
     <div class="flex flex-col overflow-hidden">
         <div class="flex h-96 min-h-0 w-full">
+            @let filteredSites = store.filteredSites();
+            @let selectedSiteKey = store.selectedSite()?.key;
             <div
                 class="flex h-full w-64 min-w-0 flex-none flex-col overflow-hidden border-r border-gray-300 p-4"
                 data-testid="host-folder-sites">
-                @if (store.sites().length > 5) {
+                @if (store.showSitesSearch()) {
                     <p-iconField class="w-full shrink-0 pb-3">
                         <p-inputIcon class="pi pi-search text-sm text-surface-500" />
                         <input
@@ -89,15 +91,22 @@
                         data-testid="host-folder-sites-error">
                         {{ 'dot.file.field.host.folder.error.sites' | dm }}
                     </span>
+                } @else if (filteredSites.length === 0) {
+                    <span
+                        class="block p-2 text-sm text-gray-600"
+                        data-testid="host-folder-sites-empty">
+                        {{ 'dot.file.field.host.folder.empty.sites' | dm }}
+                    </span>
                 } @else {
                     <p-scroller
                         class="min-h-0 flex-1"
                         [pt]="scrollerPt"
-                        [items]="store.filteredSites()"
+                        [items]="filteredSites"
                         [itemSize]="42"
+                        [trackBy]="trackBySiteKey"
                         scrollHeight="100%">
                         <ng-template pTemplate="item" let-site>
-                            @let isSelectedSite = store.selectedSite()?.key === site.key;
+                            @let isSelectedSite = selectedSiteKey === site.key;
                             <div class="pb-1.5">
                                 <button
                                     type="button"
@@ -178,7 +187,7 @@
                         <ng-template let-node pTemplate="load-more">
                             <button
                                 type="button"
-                                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-sm text-(--color-palette-primary-500) hover:underline"
+                                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-sm text-primary-500 hover:underline"
                                 data-testid="host-folder-load-more"
                                 (click)="onLoadMoreNode(node, $event)">
                                 <i class="pi pi-plus-circle"></i>

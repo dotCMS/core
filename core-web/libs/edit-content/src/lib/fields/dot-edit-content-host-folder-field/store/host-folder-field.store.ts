@@ -259,6 +259,10 @@ export const HostFolderFiledStore = signalStore(
              */
             isSearching: computed(() => searchTerm().length >= MIN_SEARCH_LENGTH),
             /**
+             * Whether the sites panel should show a search input instead of the static label.
+             */
+            showSitesSearch: computed(() => sites().length > SITE_SEARCH_THRESHOLD),
+            /**
              * Sites filtered by the local search term (case-insensitive label match).
              * Returns all sites when the term is empty.
              */
@@ -527,11 +531,21 @@ export const HostFolderFiledStore = signalStore(
                 });
             },
             /**
-             * Updates the local site search term used to filter the Sites list.
+             * Updates the local site search term used to filter the Sites list (immediate).
              */
             setSiteSearchTerm: (term: string) => {
                 patchState(store, { siteSearchTerm: term });
-            }
+            },
+            /**
+             * Debounced site search input handler for filtering the Sites list locally.
+             */
+            filterSites: rxMethod<string>(
+                pipe(
+                    debounceTime(150),
+                    distinctUntilChanged(),
+                    tap((term) => patchState(store, { siteSearchTerm: term }))
+                )
+            )
         };
     }),
     withMethods((store, dotHttpErrorManagerService = inject(DotHttpErrorManagerService)) => {
