@@ -276,6 +276,21 @@ describe('DotHostFolderFieldComponent', () => {
             expect(event.stopPropagation).toHaveBeenCalled();
             expect(store.loadMore).toHaveBeenCalledWith(parent);
         });
+
+        it('should load more search results instead of folders when a search is active', () => {
+            jest.spyOn(store, 'loadMoreSearchResults');
+            jest.spyOn(store, 'loadMore');
+            jest.spyOn(store, 'isSearching').mockReturnValue(true);
+            const node = { key: 'load-more:search', type: 'load-more' as const };
+            const event = new Event('click');
+            jest.spyOn(event, 'stopPropagation');
+
+            spectator.component.onLoadMoreNode(node, event);
+
+            expect(event.stopPropagation).toHaveBeenCalled();
+            expect(store.loadMoreSearchResults).toHaveBeenCalled();
+            expect(store.loadMore).not.toHaveBeenCalled();
+        });
     });
 
     it('should commit the pending selection and hide the overlay on Select', () => {
@@ -406,7 +421,7 @@ describe('DotHostFolderFieldComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('host-folder-trigger-label'))).toHaveText(
-            'demo.dotcms.com / level1 / child1'
+            '//demo.dotcms.com/level1/child1/'
         );
     });
 

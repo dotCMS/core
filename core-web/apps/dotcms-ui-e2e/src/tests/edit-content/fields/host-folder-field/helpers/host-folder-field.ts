@@ -82,6 +82,10 @@ export class HostFolderField {
         await expect(this.label).toContainText(partial, { timeout: 15000, ignoreCase: true });
     }
 
+    async expectLabelMatchesPattern(pattern: RegExp) {
+        await expect(this.label).toHaveText(pattern, { timeout: 15000 });
+    }
+
     async expectVisible() {
         await this.trigger.waitFor({ state: 'visible', timeout: 15000 });
     }

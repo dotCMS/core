@@ -7,6 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
 import {
+    catchError,
     debounceTime,
     distinctUntilChanged,
     filter,
@@ -31,6 +32,7 @@ export const FOLDER_PAGE_LIMIT = 40;
 export const MIN_SEARCH_LENGTH = 3;
 export const SITE_SEARCH_THRESHOLD = 5;
 export const ROOT_NODE_KEY = 'root';
+export const SEARCH_LOAD_MORE_KEY = 'search';
 
 export const SYSTEM_HOST_NAME = 'System Host';
 
@@ -64,16 +66,6 @@ function stripLoadMore(nodes: TreeNodeItem[] | undefined): TreeNodeItem[] {
     return (nodes ?? []).filter((node) => node.type !== LOAD_MORE_NODE_TYPE);
 }
 
-const HOST_FOLDER_DISPLAY_PATH_SEPARATOR = ' / ';
-
-/**
- * Formats a host/folder label for display in the field trigger.
- * Example: `demo.dotcms.com/application/apivtl/` → `demo.dotcms.com / application / apivtl`
- */
-export function formatHostFolderDisplayPath(label: string): string {
-    return label.split('/').filter(Boolean).join(HOST_FOLDER_DISPLAY_PATH_SEPARATOR);
-}
-
 export type NodePaginationState = {
     page: number;
     hasMore: boolean;
@@ -105,6 +97,7 @@ export type HostFolderFiledState = {
     siteSearchTerm: string;
     searchResults: TreeNodeItem[] | null;
     searchStatus: ComponentStatus;
+    searchPagination: NodePaginationState;
     confirmedNode: TreeNodeItem | null;
     pendingNode: TreeNodeItem | null;
     overlayOpen: boolean;
@@ -123,6 +116,7 @@ export const initialState: HostFolderFiledState = {
     siteSearchTerm: '',
     searchResults: null,
     searchStatus: ComponentStatus.INIT,
+    searchPagination: { page: 1, hasMore: false, loading: false },
     confirmedNode: null,
     pendingNode: null,
     overlayOpen: false,
@@ -198,7 +192,25 @@ export const HostFolderFiledStore = signalStore(
             folders,
             foldersStatus,
             searchStatus
-        }) => ({
+        }) => {
+            /**
+             * Full path in `//hostname/path/` format, shared by the field trigger label
+             * and the copy-to-clipboard action so both stay in sync.
+             */
+            const fullPath = computed(() => {
+                const node = confirmedNode();
+
+                if (!node?.data) {
+                    return '';
+                }
+
+                const { hostname, path } = node.data;
+                const cleanHostname = hostname.replace('//', '');
+
+                return `//${cleanHostname}${path ? path : '/'}`;
+            });
+
+            return {
             /**
              * Icon classes for the field trigger: spinner while the initial sites/value
              * resolution is in flight, otherwise a chevron reflecting the overlay state.
@@ -236,32 +248,11 @@ export const HostFolderFiledStore = signalStore(
                 return null;
             }),
             /**
-             * Full path in `//hostname/path/` format, used by the copy-to-clipboard action.
+             * Full path in `//hostname/path/` format, used by the copy-to-clipboard action
+             * and the field trigger label.
              */
-            copyPath: computed(() => {
-                const node = confirmedNode();
-
-                if (!node?.data) {
-                    return '';
-                }
-
-                const { hostname, path } = node.data;
-                const cleanHostname = hostname.replace('//', '');
-
-                return `//${cleanHostname}${path ? path : '/'}`;
-            }),
-            /**
-             * Human-readable full path for the field trigger (hostname and folders separated by ` / `).
-             */
-            displayPath: computed(() => {
-                const node = confirmedNode();
-
-                if (!node?.label) {
-                    return '';
-                }
-
-                return formatHostFolderDisplayPath(node.label);
-            }),
+            copyPath: fullPath,
+            displayPath: fullPath,
             /**
              * Whether the current search term is long enough to trigger a backend search
              * (the folder search endpoint requires at least `MIN_SEARCH_LENGTH` characters).
@@ -339,7 +330,8 @@ export const HostFolderFiledStore = signalStore(
 
                 return findByKey(source);
             })
-        })
+            };
+        }
     ),
     withMethods((store, dotHttpErrorManagerService = inject(DotHttpErrorManagerService)) => {
         const dotBrowsingService = inject(DotBrowsingService);
@@ -507,7 +499,8 @@ export const HostFolderFiledStore = signalStore(
                         if (!term) {
                             patchState(store, {
                                 searchResults: null,
-                                searchStatus: ComponentStatus.IDLE
+                                searchStatus: ComponentStatus.IDLE,
+                                searchPagination: { page: 1, hasMore: false, loading: false }
                             });
 
                             return EMPTY;
@@ -526,27 +519,106 @@ export const HostFolderFiledStore = signalStore(
                                     siteId: site.data.id,
                                     path: '/',
                                     recursive: true,
-                                    name: term
+                                    name: term,
+                                    page: 1,
+                                    per_page: FOLDER_PAGE_LIMIT
                                 },
                                 site.data.hostname
                             )
                             .pipe(
                                 tapResponse({
-                                    next: ({ folders }) =>
+                                    next: ({ folders, pagination }) => {
+                                        const hasMore =
+                                            pagination.currentPage * pagination.perPage <
+                                            pagination.totalEntries;
+
                                         patchState(store, {
-                                            searchResults: folders,
-                                            searchStatus: ComponentStatus.LOADED
-                                        }),
+                                            searchResults: hasMore
+                                                ? [...folders, createLoadMoreNode(SEARCH_LOAD_MORE_KEY)]
+                                                : folders,
+                                            searchStatus: ComponentStatus.LOADED,
+                                            searchPagination: { page: 1, hasMore, loading: false }
+                                        });
+                                    },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
                                             searchResults: [],
-                                            searchStatus: ComponentStatus.ERROR
+                                            searchStatus: ComponentStatus.ERROR,
+                                            searchPagination: { page: 1, hasMore: false, loading: false }
                                         });
                                     }
                                 })
                             );
                     })
+                )
+            ),
+            /**
+             * Loads the next page of search results for the current search term.
+             * Appends to the existing `searchResults` and re-evaluates `hasMore`,
+             * mirroring `loadFolders`'s pagination but for a flat (non-tree) list.
+             */
+            searchMore: rxMethod<{
+                term: string;
+                siteId: string;
+                hostname: string;
+                page: number;
+            }>(
+                pipe(
+                    switchMap(({ term, siteId, hostname, page }) =>
+                        dotBrowsingService
+                            .searchFolders(
+                                {
+                                    siteId,
+                                    path: '/',
+                                    recursive: true,
+                                    name: term,
+                                    page,
+                                    per_page: FOLDER_PAGE_LIMIT
+                                },
+                                hostname
+                            )
+                            .pipe(
+                                tapResponse({
+                                    next: ({ folders, pagination }) => {
+                                        if (store.searchTerm() !== term) {
+                                            return;
+                                        }
+
+                                        const hasMore =
+                                            pagination.currentPage * pagination.perPage <
+                                            pagination.totalEntries;
+                                        const nextResults = [
+                                            ...stripLoadMore(store.searchResults() ?? []),
+                                            ...folders
+                                        ];
+
+                                        patchState(store, {
+                                            searchResults: hasMore
+                                                ? [
+                                                      ...nextResults,
+                                                      createLoadMoreNode(SEARCH_LOAD_MORE_KEY)
+                                                  ]
+                                                : nextResults,
+                                            searchPagination: { page, hasMore, loading: false }
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        if (store.searchTerm() !== term) {
+                                            return;
+                                        }
+
+                                        dotHttpErrorManagerService.handle(error);
+                                        patchState(store, {
+                                            searchPagination: {
+                                                ...store.searchPagination(),
+                                                loading: false
+                                            }
+                                        });
+                                    }
+                                })
+                            )
+                    )
                 )
             ),
             /**
@@ -708,6 +780,15 @@ export const HostFolderFiledStore = signalStore(
                                 const site = sites.find((item) => item.data?.hostname === hostname);
 
                                 return { site, node, tree };
+                            }),
+                            catchError((error: HttpErrorResponse) => {
+                                dotHttpErrorManagerService.handle(error);
+
+                                return of({
+                                    site: undefined as TreeNodeItem | undefined,
+                                    node: null as TreeNodeItem | null,
+                                    tree: null as CustomTreeNode['tree']
+                                });
                             })
                         );
                     }),
@@ -835,6 +916,25 @@ export const HostFolderFiledStore = signalStore(
                     page: nextPage,
                     append: true,
                     targetNode: node ?? undefined
+                });
+            },
+            /**
+             * Loads the next page (40 more) of search results for the current search term.
+             */
+            loadMoreSearchResults: () => {
+                const site = store.selectedSite();
+                const term = store.searchTerm();
+                if (!site || !term) {
+                    return;
+                }
+
+                const nextPage = store.searchPagination().page + 1;
+
+                store.searchMore({
+                    term,
+                    siteId: site.data.id,
+                    hostname: site.data.hostname,
+                    page: nextPage
                 });
             }
         };

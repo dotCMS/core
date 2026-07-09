@@ -133,16 +133,16 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     protected readonly trackBySiteKey = (_index: number, site: TreeNodeItem) => site.key;
 
-    private readonly destroyRef = inject(DestroyRef);
-    private readonly injector = inject(Injector);
-    private readonly clipboard = inject(Clipboard);
-    private $copyResetTimer: ReturnType<typeof setTimeout> | undefined;
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #injector = inject(Injector);
+    readonly #clipboard = inject(Clipboard);
+    #copyResetTimer: ReturnType<typeof setTimeout> | undefined;
 
     constructor() {
         super();
         this.handlePathToSaveChange(this.store.pathToSave);
         this.handleChangeValue(this.$value);
-        this.destroyRef.onDestroy(() => clearTimeout(this.$copyResetTimer));
+        this.#destroyRef.onDestroy(() => clearTimeout(this.#copyResetTimer));
     }
 
     /**
@@ -165,7 +165,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     onOverlayShow(): void {
         this.store.openOverlay();
-        afterNextRender(() => this.scrollSelectedFolderIntoView(), { injector: this.injector });
+        afterNextRender(() => this.scrollSelectedFolderIntoView(), { injector: this.#injector });
     }
 
     /**
@@ -210,11 +210,19 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     /**
      * Loads the next page for the level owning the "Load more" sentinel node clicked.
-     * `node.parent` is the folder whose children are being paginated, or `undefined`
-     * for the root-level sentinel (which maps to `loadMore(null)`).
+     * In search mode, that's the next page of search results; otherwise `node.parent` is
+     * the folder whose children are being paginated, or `undefined` for the root-level
+     * sentinel (which maps to `loadMore(null)`).
      */
     onLoadMoreNode(node: TreeNodeItem, event: Event): void {
         event.stopPropagation();
+
+        if (this.store.isSearching()) {
+            this.store.loadMoreSearchResults();
+
+            return;
+        }
+
         this.store.loadMore(node.parent ?? null);
     }
 
@@ -235,10 +243,10 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
             return;
         }
 
-        clearTimeout(this.$copyResetTimer);
-        if (this.clipboard.copy(path)) {
+        clearTimeout(this.#copyResetTimer);
+        if (this.#clipboard.copy(path)) {
             this.$pathCopied.set(true);
-            this.$copyResetTimer = setTimeout(() => this.$pathCopied.set(false), 1500);
+            this.#copyResetTimer = setTimeout(() => this.$pathCopied.set(false), 1500);
         }
     }
 

@@ -300,16 +300,16 @@ describe('HostFolderFiledStore', () => {
             store.commit();
             expect(store.pathToSave()).toBe('demo.dotcms.com:/');
             expect(store.copyPath()).toBe('//demo.dotcms.com/');
-            expect(store.displayPath()).toBe('demo.dotcms.com');
+            expect(store.displayPath()).toBe('//demo.dotcms.com/');
         });
 
-        it('should format a nested folder path correctly', () => {
+        it('should format a nested folder path correctly, matching copyPath', () => {
             const node = TREE_SELECT_MOCK[0].children[0];
             store.setPendingNode(node);
             store.commit();
             expect(store.pathToSave()).toBe('demo.dotcms.com:/level1/');
             expect(store.copyPath()).toBe('//demo.dotcms.com/level1/');
-            expect(store.displayPath()).toBe('demo.dotcms.com / level1');
+            expect(store.displayPath()).toBe('//demo.dotcms.com/level1/');
         });
 
         it('should be null when there is no confirmed node', () => {
@@ -889,7 +889,14 @@ describe('HostFolderFiledStore', () => {
             tick(500);
 
             expect(service.searchFolders).toHaveBeenCalledWith(
-                { siteId: site.data.id, path: '/', recursive: true, name: 'match' },
+                {
+                    siteId: site.data.id,
+                    path: '/',
+                    recursive: true,
+                    name: 'match',
+                    page: 1,
+                    per_page: FOLDER_PAGE_LIMIT
+                },
                 site.data.hostname
             );
             expect(store.searchResults()).toEqual(results);
@@ -923,6 +930,139 @@ describe('HostFolderFiledStore', () => {
             expect(store.searchLoadFailed()).toBe(true);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
         }));
+
+        it('should append a load-more sentinel to searchResults when more pages are available', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [{ key: 'match-1' } as TreeNodeItem],
+                    pagination: { currentPage: 1, perPage: FOLDER_PAGE_LIMIT, totalEntries: 45 }
+                })
+            );
+
+            store.search('match');
+            tick(500);
+
+            const results = store.searchResults();
+            expect(results).toHaveLength(2);
+            expect(results[1].type).toBe('load-more');
+            expect(store.searchPagination()).toEqual({ page: 1, hasMore: true, loading: false });
+        }));
+
+        it('should not append a load-more sentinel when all results fit on one page', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [{ key: 'match-1' } as TreeNodeItem],
+                    pagination: { currentPage: 1, perPage: FOLDER_PAGE_LIMIT, totalEntries: 1 }
+                })
+            );
+
+            store.search('match');
+            tick(500);
+
+            expect(store.searchResults()).toHaveLength(1);
+            expect(store.searchPagination()).toEqual({ page: 1, hasMore: false, loading: false });
+        }));
+    });
+
+    describe('Method: loadMoreSearchResults', () => {
+        it('should append the next page of search results and drop the sentinel once exhausted', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [{ key: 'match-1' } as TreeNodeItem],
+                    pagination: { currentPage: 1, perPage: FOLDER_PAGE_LIMIT, totalEntries: 45 }
+                })
+            );
+
+            store.search('match');
+            tick(500);
+            expect(store.searchResults()).toHaveLength(2);
+
+            service.searchFolders.mockClear();
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [{ key: 'match-2' } as TreeNodeItem],
+                    pagination: { currentPage: 2, perPage: FOLDER_PAGE_LIMIT, totalEntries: 45 }
+                })
+            );
+
+            store.loadMoreSearchResults();
+            tick();
+
+            expect(service.searchFolders).toHaveBeenCalledWith(
+                {
+                    siteId: site.data.id,
+                    path: '/',
+                    recursive: true,
+                    name: 'match',
+                    page: 2,
+                    per_page: FOLDER_PAGE_LIMIT
+                },
+                site.data.hostname
+            );
+
+            const results = store.searchResults();
+            expect(results).toEqual([{ key: 'match-1' }, { key: 'match-2' }]);
+            expect(store.searchPagination()).toEqual({ page: 2, hasMore: false, loading: false });
+        }));
+
+        it('should ignore a stale response if the search term changed while loading more', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [{ key: 'match-1' } as TreeNodeItem],
+                    pagination: { currentPage: 1, perPage: FOLDER_PAGE_LIMIT, totalEntries: 45 }
+                })
+            );
+
+            store.search('match');
+            tick(500);
+
+            // loadMoreSearchResults subscribes to this Subject; it's never resolved before
+            // the term changes, simulating an in-flight "load more" request for 'match'.
+            const staleResponse = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.searchFolders.mockReturnValue(staleResponse);
+            store.loadMoreSearchResults();
+
+            // A new search term resolves against its own (immediate) observable, unrelated
+            // to the still-pending `staleResponse`.
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [{ key: 'other-1' } as TreeNodeItem],
+                    pagination: { currentPage: 1, perPage: FOLDER_PAGE_LIMIT, totalEntries: 1 }
+                })
+            );
+            store.search('other');
+            tick(500);
+
+            // The stale "load more" request for 'match' finally resolves after the term
+            // changed — it must not clobber the current 'other' results.
+            staleResponse.next({
+                folders: [{ key: 'stale' } as TreeNodeItem],
+                pagination: { currentPage: 2, perPage: FOLDER_PAGE_LIMIT, totalEntries: 45 }
+            });
+
+            expect(store.searchResults()).toEqual([{ key: 'other-1' }]);
+        }));
+
+        it('should be a no-op when there is no active search term', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockClear();
+
+            store.loadMoreSearchResults();
+
+            expect(service.searchFolders).not.toHaveBeenCalled();
+        });
     });
 
     describe('Error handling', () => {
@@ -935,6 +1075,42 @@ describe('HostFolderFiledStore', () => {
             expect(store.sitesLoadFailed()).toBe(true);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
         });
+
+        it('should surface a buildTreeByPaths failure instead of leaving loadSites stuck in LOADING forever', fakeAsync(() => {
+            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            service.buildTreeByPaths.mockReturnValue(throwError(() => httpError));
+
+            store.loadSites({ path: 'demo.dotcms.com/level1', isRequired: false });
+            tick();
+
+            expect(store.selectedSite()).toBe(null);
+            expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+
+            // A subsequent loadSites call must still work — the rxMethod subscription
+            // shouldn't have been killed by the earlier unhandled error.
+            service.buildTreeByPaths.mockReturnValue(
+                of({
+                    node: TREE_SELECT_MOCK[0].children[0],
+                    tree: {
+                        path: '/',
+                        folders: [],
+                        parent: {
+                            hostName: 'demo.dotcms.com',
+                            id: 'demo-id',
+                            path: '/',
+                            addChildrenAllowed: true
+                        }
+                    }
+                })
+            );
+
+            store.loadSites({ path: 'demo.dotcms.com/level1', isRequired: false });
+            tick();
+
+            expect(store.selectedSite()?.label).toBe('demo.dotcms.com');
+            expect(store.sitesStatus()).toBe(ComponentStatus.LOADED);
+        }));
 
         it('should surface loadFolders HTTP errors and delegate to DotHttpErrorManagerService', () => {
             const site = TREE_SELECT_SITES_MOCK[0];
