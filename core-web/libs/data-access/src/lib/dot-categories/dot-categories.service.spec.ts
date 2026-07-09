@@ -3,7 +3,7 @@ jest.mock('@dotcms/utils', () => ({
     getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
 }));
 
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
 import { DotCMSAPIResponse, DotCategory } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';

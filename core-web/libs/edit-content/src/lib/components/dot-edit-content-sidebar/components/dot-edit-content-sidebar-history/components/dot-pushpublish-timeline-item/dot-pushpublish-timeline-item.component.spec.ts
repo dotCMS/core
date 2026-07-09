@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@openng/spectator/jest';
 
 import { DatePipe } from '@angular/common';
 import { By } from '@angular/platform-browser';

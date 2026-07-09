@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

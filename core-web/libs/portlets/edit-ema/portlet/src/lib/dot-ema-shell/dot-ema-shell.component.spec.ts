@@ -1,12 +1,12 @@
 import { describe, expect } from '@jest/globals';
+import { patchState } from '@ngrx/signals';
 import {
     SpyObject,
     createComponentFactory,
     Spectator,
     byTestId,
     mockProvider
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Subject, of } from 'rxjs';
 
