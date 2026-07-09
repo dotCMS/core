@@ -12,7 +12,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { MessageService, SelectItem } from 'primeng/api';
 
@@ -30,6 +29,7 @@ import {
 import { ComponentStatus, DotCMSWorkflow, DotContentletDepths } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
 
@@ -173,7 +173,7 @@ export function withWorkflow() {
                 messageService = inject(MessageService),
                 dotMessageService = inject(DotMessageService),
                 dotWorkflowService = inject(DotWorkflowService),
-                router = inject(Router)
+                host = inject(EDIT_CONTENT_HOST)
             ) => ({
                 /**
                  * Sets the selected workflow scheme ID and updates related state in the store.
@@ -307,17 +307,17 @@ export function withWorkflow() {
                                             });
                                         }
 
-                                        // Only navigate if NOT in dialog mode and the inode has changed
-                                        const isDialogMode = store.isDialogMode();
-                                        if (
-                                            !isDialogMode &&
-                                            contentlet.inode !== currentContentlet?.inode
-                                        ) {
-                                            router.navigate(['/content', contentlet.inode], {
-                                                replaceUrl: true,
-                                                queryParamsHandling: 'preserve'
-                                            });
-                                        }
+                                        // Navigate to the saved content. The host decides how:
+                                        // the full-screen host reconciles the related-content
+                                        // trail and navigates when the inode changed; the dialog
+                                        // host stays in place (no-op).
+                                        host.goToSavedContent(
+                                            {
+                                                inode: contentlet.inode,
+                                                title: contentlet.title
+                                            },
+                                            currentContentlet?.inode
+                                        );
 
                                         messageService.clear();
                                         messageService.add({

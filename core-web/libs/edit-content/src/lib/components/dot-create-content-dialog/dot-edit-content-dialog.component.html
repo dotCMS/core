@@ -4,9 +4,6 @@
             @case (ComponentStatus.LOADED) {
                 <dot-edit-content-form-layout
                     #editContentLayout
-                    [contentTypeId]="data?.contentTypeId"
-                    [contentletInode]="data?.contentletInode"
-                    (contentSaved)="onContentSaved($event)"
                     data-testid="edit-content-layout" />
             }
             @case (ComponentStatus.ERROR) {

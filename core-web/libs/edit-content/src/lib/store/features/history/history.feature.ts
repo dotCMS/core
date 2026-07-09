@@ -12,7 +12,6 @@ import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, effect, untracked, computed } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -33,6 +32,7 @@ import {
     DotPushPublishHistoryItem
 } from '../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { EditContentState } from '../../edit-content.store';
 
 /**
@@ -70,7 +70,7 @@ export function withHistory() {
                 messageService = inject(MessageService),
                 dotMessageService = inject(DotMessageService),
                 dotContentletService = inject(DotContentletService),
-                router = inject(Router)
+                host = inject(EDIT_CONTENT_HOST)
             ) => {
                 /**
                  * Deletes a version by inode and reloads the versions list reactively
@@ -147,17 +147,13 @@ export function withHistory() {
                             return dotVersionableService.bringBack(inode).pipe(
                                 tapResponse({
                                     next: (restoredVersion) => {
-                                        // Navigate to the restored version if the inode has changed and not in dialog mode
-                                        const isDialogMode = store.isDialogMode();
-                                        if (
-                                            !isDialogMode &&
-                                            restoredVersion.inode !== currentContentlet?.inode
-                                        ) {
-                                            router.navigate(['/content', restoredVersion.inode], {
-                                                replaceUrl: true,
-                                                queryParamsHandling: 'preserve'
-                                            });
-                                        }
+                                        // Navigate to the restored version. The host decides how:
+                                        // the full-screen host navigates when the inode changed;
+                                        // the dialog host stays in place (no-op).
+                                        host.goToRestoredVersion(
+                                            restoredVersion.inode,
+                                            currentContentlet?.inode
+                                        );
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         // Handle restoration errors

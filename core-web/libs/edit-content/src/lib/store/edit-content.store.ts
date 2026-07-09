@@ -1,7 +1,6 @@
 import { patchState, signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
 import {
     ComponentStatus,
@@ -18,7 +17,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { withActivities } from './features/activities/activities.feature';
-import { withContent, DialogInitializationOptions } from './features/content/content.feature';
+import { withContent } from './features/content/content.feature';
 import { withFieldVisibility } from './features/field-visibility/field-visibility.feature';
 import { withForm } from './features/form/form.feature';
 import { withHistory } from './features/history/history.feature';
@@ -38,12 +37,12 @@ import {
     UIState,
     DotPushPublishHistoryItem
 } from '../models/dot-edit-content.model';
+import { EDIT_CONTENT_HOST } from '../services/host/edit-content-host.model';
 
 export interface EditContentState {
     // Root state
     state: ComponentStatus;
     error: string | null;
-    isDialogMode: boolean;
 
     // Content state
     contentType: DotCMSContentType | null;
@@ -109,12 +108,6 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string;
     };
-    /**
-     * Set by switchLocale (dialog mode) when a translated-locale switch is pending
-     * confirmation. The layout component watches this, shows the unsaved-changes
-     * dialog if needed, then calls confirmPendingLocaleSwitch or cancelPendingLocaleSwitch.
-     */
-    pendingLocaleInode: string | null;
 
     // Activities state
     activities: Activity[];
@@ -181,7 +174,6 @@ export const initialRootState: EditContentState = {
     // Root state
     state: ComponentStatus.INIT,
     error: null,
-    isDialogMode: false,
 
     // Content state
     contentType: null,
@@ -245,7 +237,6 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
-    pendingLocaleInode: null,
 
     // Activities state
     activities: [],
@@ -310,75 +301,30 @@ export const DotEditContentStore = signalStore(
     }),
     // Add methods after all features to have access to all store methods
     // Now that withUI comes before withContent, this method can access both UI and content methods
-    withMethods((store) => {
-        // Inject ActivatedRoute in the proper injection context (within the factory function)
-        const activatedRoute = inject(ActivatedRoute);
+    withMethods((store, host = inject(EDIT_CONTENT_HOST)) => ({
+        /**
+         * Initializes the editor from the identity resolved by the host — the
+         * route params in full-screen, the dialog config in overlay mode. This is
+         * the single, presentation-agnostic entry point (there is no separate
+         * route-vs-dialog path). Called once by the layout after the store exists.
+         */
+        initialize(): void {
+            const { inode, contentTypeId, folderPath } = host.resolveIdentity();
 
-        return {
-            /**
-             * Initializes the store for dialog mode with the provided parameters.
-             * This method handles all the logic for dialog initialization including:
-             * - Enabling dialog mode
-             * - Initializing content based on provided parameters
-             * - Handling both new content creation and existing content editing
-             *
-             * @param options - The dialog initialization options
-             * @param options.contentTypeId - Content type ID for creating new content
-             * @param options.contentletInode - Contentlet inode for editing existing content
-             */
-            initializeDialogMode(options: DialogInitializationOptions): void {
-                const { contentTypeId, contentletInode } = options;
-
-                // Enable dialog mode to prevent route-based initialization
-                store.enableDialogMode();
-
-                // Initialize based on provided parameters
-                if (contentTypeId) {
-                    store.initializeNewContent(contentTypeId);
-                } else if (contentletInode) {
-                    store.initializeExistingContent({
-                        inode: contentletInode,
-                        depth: DotContentletDepths.TWO
-                    });
-                }
-            },
-
-            /**
-             * Initializes the store for route-based mode using ActivatedRoute parameters.
-             * This method should be called by route-based components after the store is created.
-             * It will only initialize if dialog mode is not enabled.
-             */
-            initializeAsPortlet(): void {
-                // Skip route-based initialization if in dialog mode
-                if (store.isDialogMode()) {
-                    return;
-                }
-
-                // Use the ActivatedRoute that was injected in the closure
-                const params = activatedRoute.snapshot?.params;
-                const queryParams = activatedRoute.snapshot?.queryParams;
-
-                // Store query params first (synchronous) so they are available
-                // when the async content initialization completes and the form reads them.
-                const supportedQueryParams: EditContentQueryParams = {};
-                if (queryParams?.['folderPath']) {
-                    supportedQueryParams.folderPath = queryParams['folderPath'];
-                }
-
-                patchState(store, { queryParams: supportedQueryParams });
-
-                if (params) {
-                    const contentType = params['contentType'];
-                    const inode = params['id'];
-
-                    // TODO: refactor this when we will use EditContent as sidebar
-                    if (inode) {
-                        store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
-                    } else if (contentType) {
-                        store.initializeNewContent(contentType);
-                    }
-                }
+            // Store query params first (synchronous) so they are available when the
+            // async content initialization completes and the form reads them.
+            const supportedQueryParams: EditContentQueryParams = {};
+            if (folderPath) {
+                supportedQueryParams.folderPath = folderPath;
             }
-        };
-    })
+
+            patchState(store, { queryParams: supportedQueryParams });
+
+            if (inode) {
+                store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+            } else if (contentTypeId) {
+                store.initializeNewContent(contentTypeId);
+            }
+        }
+    }))
 );

@@ -54,6 +54,7 @@ import {
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
@@ -81,6 +82,15 @@ describe('DotFormComponent', () => {
 
         providers: [
             DotEditContentStore,
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn()
+                }
+            },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
             // Due using the store directly
             mockProvider(DotWorkflowsActionsService),

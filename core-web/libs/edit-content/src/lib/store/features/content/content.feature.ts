@@ -5,7 +5,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
-import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import { switchMap } from 'rxjs/operators';
@@ -24,24 +23,12 @@ import {
     DotContentletDepth,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { transformFormDataFn } from '../../../utils/functions.util';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
-
-const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
-
-/**
- * Options for initializing the store in dialog mode
- */
-export interface DialogInitializationOptions {
-    /** Content type ID for creating new content */
-    contentTypeId?: string;
-    /** Contentlet inode for editing existing content */
-    contentletInode?: string;
-}
 
 export function withContent() {
     return signalStoreFeature(
@@ -139,9 +126,8 @@ export function withContent() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 router = inject(Router),
                 dotWorkflowService = inject(DotWorkflowService),
-                title = inject(Title),
                 dotMessageService = inject(DotMessageService),
-                globalStore = inject(GlobalStore)
+                host = inject(EDIT_CONTENT_HOST)
             ) => ({
                 /**
                  * Initializes the state for creating new content of a specified type.
@@ -188,19 +174,14 @@ export function withContent() {
 
                                         const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
 
-                                        // Dialog overlays another route context (e.g. UVE); skip title
-                                        // and breadcrumb updates to avoid overwriting the host page title
-                                        // and stacking duplicate trails with the shell breadcrumb.
-                                        if (!store.isDialogMode()) {
-                                            title.setTitle(
-                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                            );
-                                            globalStore.addNewBreadcrumb({
-                                                label: titleString,
-                                                target: '_self',
-                                                url: `/dotAdmin/#/content/new/${contentType.variable}`
-                                            });
-                                        }
+                                        // The host decides whether these apply: the full-screen
+                                        // host updates the title/breadcrumb, the dialog host
+                                        // no-ops them (it overlays another route context).
+                                        host.setContentTitle(titleString);
+                                        host.addBreadcrumb({
+                                            label: titleString,
+                                            url: `/dotAdmin/#/content/new/${contentType.variable}`
+                                        });
 
                                         patchState(store, {
                                             contentType,
@@ -303,19 +284,14 @@ export function withContent() {
 
                                         const titleString = `${contentlet.title}`;
 
-                                        // Dialog overlays another route context (e.g. UVE); skip title
-                                        // and breadcrumb updates to avoid overwriting the host page title
-                                        // and stacking duplicate trails with the shell breadcrumb.
-                                        if (!store.isDialogMode()) {
-                                            title.setTitle(
-                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                            );
-                                            globalStore.addNewBreadcrumb({
-                                                label: titleString,
-                                                target: '_self',
-                                                url: `/dotAdmin/#/content/${contentlet.inode}`
-                                            });
-                                        }
+                                        // The host decides whether these apply: the full-screen
+                                        // host updates the title/breadcrumb, the dialog host
+                                        // no-ops them (it overlays another route context).
+                                        host.setContentTitle(titleString);
+                                        host.addBreadcrumb({
+                                            label: titleString,
+                                            url: `/dotAdmin/#/content/${contentlet.inode}`
+                                        });
 
                                         patchState(store, {
                                             contentType,

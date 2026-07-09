@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -45,6 +46,11 @@ import { DotEditContentLayoutComponent } from './dot-edit-content.layout.compone
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
+import {
+    DotRelatedContentCrumb,
+    DotRelatedContentNavigationStore
+} from '../../store/dot-related-content-navigation.store';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
@@ -58,6 +64,26 @@ const MOCK_FORM_VALUES: FormValues = {
     title: 'Test Title',
     content: 'Test Content',
     language: 'en-us'
+};
+
+// Controllable trail for the related-content navigation store mock. A real
+// signal so the component's `relatedNavItems` computed reacts when it changes.
+const relatedTrailSignal = signal<DotRelatedContentCrumb[]>([]);
+
+// Full-screen host mock: no in-place navigation, identity resolved as empty (the
+// store's initialize() is spied per-test where it matters).
+const mockEditContentHost = {
+    inPlaceNavigation: false,
+    inPlaceNavigation$: undefined,
+    resolveIdentity: jest.fn().mockReturnValue({}),
+    reportSaved: jest.fn(),
+    reloadContent: jest.fn(),
+    setContentTitle: jest.fn(),
+    addBreadcrumb: jest.fn(),
+    goToSavedContent: jest.fn(),
+    goToRestoredVersion: jest.fn(),
+    goToRelatedContent: jest.fn(),
+    goToCrumb: jest.fn()
 };
 
 describe('EditContentLayoutComponent', () => {
@@ -87,7 +113,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
             mockProvider(DotVersionableService),
-            ConfirmationService
+            ConfirmationService,
+            { provide: EDIT_CONTENT_HOST, useValue: mockEditContentHost }
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -132,11 +159,21 @@ describe('EditContentLayoutComponent', () => {
                 get: jest.fn((key: string, ...args: unknown[]) =>
                     key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
                 )
+            }),
+            mockProvider(DotRelatedContentNavigationStore, {
+                trail: relatedTrailSignal,
+                registerTitle: jest.fn(),
+                buildTrailForSavedInode: jest.fn().mockReturnValue(null),
+                navigateToRelated: jest.fn()
             })
         ]
     });
 
     beforeEach(() => {
+        mockEditContentHost.resolveIdentity.mockReturnValue({});
+        mockEditContentHost.reportSaved.mockClear();
+        mockEditContentHost.reloadContent.mockClear();
+
         spectator = createComponent({
             detectChanges: false
         });
@@ -168,160 +205,48 @@ describe('EditContentLayoutComponent', () => {
         expect(spectator.query(ConfirmDialog)).toBeTruthy();
     });
 
-    describe('Route Mode Initialization', () => {
-        it('should initialize from route when no dialog inputs are provided', () => {
-            // Create a fresh component to test route mode initialization
-            const routeSpectator = createComponent({ detectChanges: false });
-            const routeStore = routeSpectator.inject(DotEditContentStore, true);
-            const initializeFromRouteSpy = jest.spyOn(routeStore, 'initializeAsPortlet');
+    describe('Initialization', () => {
+        it('should initialize the editor from the host identity on creation', () => {
+            // initialize() runs in the constructor and asks the host who to open.
+            mockEditContentHost.resolveIdentity.mockClear();
 
-            // Component is created without any inputs (route mode)
-            routeSpectator.detectChanges();
+            createComponent({ detectChanges: false });
 
-            expect(initializeFromRouteSpy).toHaveBeenCalled();
-        });
-
-        it('should not initialize dialog mode when no inputs provided', () => {
-            // Create a fresh component to test route mode initialization
-            const routeSpectator = createComponent({ detectChanges: false });
-            const routeStore = routeSpectator.inject(DotEditContentStore, true);
-            const initializeDialogModeSpy = jest.spyOn(routeStore, 'initializeDialogMode');
-
-            // Component is created without any inputs (route mode)
-            routeSpectator.detectChanges();
-
-            expect(initializeDialogModeSpy).not.toHaveBeenCalled();
+            expect(mockEditContentHost.resolveIdentity).toHaveBeenCalled();
         });
     });
 
-    describe('Dialog Mode Initialization', () => {
-        it('should initialize dialog mode when contentTypeId input is provided', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeAsPortlet');
+    describe('Save reporting', () => {
+        it('should report the save to the host and mark pristine on workflow success', () => {
+            const freshSpectator = createComponent({ detectChanges: false });
+            const freshStore = freshSpectator.inject(DotEditContentStore, true);
+            const host = freshSpectator.inject(EDIT_CONTENT_HOST, true);
 
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
+            const markFormPristineSpy = jest.spyOn(freshSpectator.component, 'markFormPristine');
+            jest.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+            jest.spyOn(freshStore, 'clearWorkflowActionSuccess');
 
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: 'blog-post',
-                contentletInode: ''
-            });
-            expect(initializeFromRouteSpy).not.toHaveBeenCalled();
-        });
+            freshSpectator.detectChanges();
 
-        it('should initialize dialog mode when contentletInode input is provided', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            const dialogEditContentService = dialogSpectator.inject(DotEditContentService, true);
-
-            // Mock the service method for this specific component instance
-            dialogEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
-
-            const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeAsPortlet');
-
-            dialogSpectator.setInput('contentletInode', 'abc123');
-
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: '',
-                contentletInode: 'abc123'
-            });
-            expect(initializeFromRouteSpy).not.toHaveBeenCalled();
-        });
-
-        it('should re-initialize when input values change', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-
-            // Set initial input
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: 'blog-post',
-                contentletInode: ''
-            });
-
-            // Change input
-            dialogSpectator.setInput('contentTypeId', 'news-article');
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: 'news-article',
-                contentletInode: ''
-            });
-
-            expect(initializeDialogModeSpy).toHaveBeenCalledTimes(2);
-        });
-    });
-
-    describe('Content Saved Output Emission', () => {
-        it('should emit contentSaved when workflow action succeeds in dialog mode', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-
-            // Mock store signals before setting up the component
-            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
-            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-            jest.spyOn(dialogStore, 'clearWorkflowActionSuccess');
-
-            const contentSavedSpy = jest.spyOn(dialogSpectator.component.contentSaved, 'emit');
-
-            // Set input to trigger dialog mode and initialize effects
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-
-            expect(contentSavedSpy).toHaveBeenCalledWith(MOCK_CONTENTLET_1_TAB);
-            expect(dialogStore.clearWorkflowActionSuccess).toHaveBeenCalled();
-        });
-
-        it('should mark the form pristine after a successful workflow action', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-
-            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
-
-            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
-            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-
+            expect(host.reportSaved).toHaveBeenCalledWith(MOCK_CONTENTLET_1_TAB);
             expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should mark pristine and clear success but not emit in route mode', () => {
-            const routeSpectator = createComponent({ detectChanges: false });
-            const routeStore = routeSpectator.inject(DotEditContentStore, true);
-
-            const markFormPristineSpy = jest.spyOn(routeSpectator.component, 'markFormPristine');
-            jest.spyOn(routeStore, 'isDialogMode').mockReturnValue(false);
-            jest.spyOn(routeStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-            jest.spyOn(routeStore, 'clearWorkflowActionSuccess');
-
-            const contentSavedSpy = jest.spyOn(routeSpectator.component.contentSaved, 'emit');
-
-            // Initialize component in route mode (no inputs)
-            routeSpectator.detectChanges();
-
-            expect(contentSavedSpy).not.toHaveBeenCalled();
-            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
-            expect(routeStore.clearWorkflowActionSuccess).toHaveBeenCalledTimes(1);
+            expect(freshStore.clearWorkflowActionSuccess).toHaveBeenCalledTimes(1);
         });
 
         it('should be a no-op when there is no workflow action success', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
+            const freshSpectator = createComponent({ detectChanges: false });
+            const freshStore = freshSpectator.inject(DotEditContentStore, true);
+            const host = freshSpectator.inject(EDIT_CONTENT_HOST, true);
 
-            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
-            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
-            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(null);
-            jest.spyOn(dialogStore, 'clearWorkflowActionSuccess');
+            const markFormPristineSpy = jest.spyOn(freshSpectator.component, 'markFormPristine');
+            jest.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(freshStore, 'clearWorkflowActionSuccess');
 
-            const contentSavedSpy = jest.spyOn(dialogSpectator.component.contentSaved, 'emit');
+            freshSpectator.detectChanges();
 
-            // Set input to trigger dialog mode
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-
-            expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(host.reportSaved).not.toHaveBeenCalled();
             expect(markFormPristineSpy).not.toHaveBeenCalled();
-            expect(dialogStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
+            expect(freshStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
         });
     });
 
@@ -605,91 +530,6 @@ describe('EditContentLayoutComponent', () => {
         });
     });
 
-    describe('Pending Locale Switch', () => {
-        it('should call confirmPendingLocaleSwitch directly when the form is clean', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            const confirmSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
-            const cancelSpy = jest.spyOn(dsStore, 'cancelPendingLocaleSwitch');
-
-            ds.detectChanges();
-
-            expect(confirmSpy).toHaveBeenCalledTimes(1);
-            expect(cancelSpy).not.toHaveBeenCalled();
-        });
-
-        it('should open the confirm dialog when the form is dirty', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const confirmDialogSpy = jest.spyOn(dsConfirmService, 'confirm');
-
-            ds.detectChanges();
-
-            expect(confirmDialogSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should call confirmPendingLocaleSwitch when the user discards changes', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const confirmSwitchSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
-
-            let rejectFn: ((type?: ConfirmEventType) => void) | undefined;
-            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
-                rejectFn = opts.reject as (type?: ConfirmEventType) => void;
-            });
-
-            ds.detectChanges();
-            rejectFn!(ConfirmEventType.REJECT);
-
-            expect(confirmSwitchSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should call cancelPendingLocaleSwitch when the user keeps editing', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const cancelSwitchSpy = jest.spyOn(dsStore, 'cancelPendingLocaleSwitch');
-
-            let acceptFn: (() => void) | undefined;
-            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
-                acceptFn = opts.accept;
-            });
-
-            ds.detectChanges();
-            acceptFn!();
-
-            expect(cancelSwitchSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should not trigger confirm or switch when pendingLocaleInode is null', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue(null);
-            const confirmSwitchSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
-            const confirmDialogSpy = jest.spyOn(dsConfirmService, 'confirm');
-
-            ds.detectChanges();
-
-            expect(confirmDialogSpy).not.toHaveBeenCalled();
-            expect(confirmSwitchSpy).not.toHaveBeenCalled();
-        });
-    });
-
     describe('Warning Messages', () => {
         beforeEach(() => {
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -775,6 +615,42 @@ describe('EditContentLayoutComponent', () => {
             }));
         });
     });
+
+    describe('relatedNavItems (Relating content breadcrumb)', () => {
+        const A: DotRelatedContentCrumb = { inode: 'iA', title: 'TA' };
+        const B: DotRelatedContentCrumb = { inode: 'iB', title: 'TB' };
+        const C: DotRelatedContentCrumb = { inode: 'iC', title: 'TC' };
+
+        afterEach(() => relatedTrailSignal.set([]));
+
+        it('returns an empty model when there is no trail', () => {
+            relatedTrailSignal.set([]);
+
+            expect(spectator.component.relatedNavItems()).toEqual([]);
+        });
+
+        it('builds routerLink crumbs with a trimmed rc; the current (last) crumb is a plain label', () => {
+            relatedTrailSignal.set([A, B, C]);
+
+            expect(spectator.component.relatedNavItems()).toEqual([
+                // First crumb: navigating back to the origin clears rc (single item → null).
+                {
+                    label: 'TA',
+                    routerLink: ['/content', 'iA'],
+                    queryParams: { rc: null },
+                    queryParamsHandling: 'merge'
+                },
+                {
+                    label: 'TB',
+                    routerLink: ['/content', 'iB'],
+                    queryParams: { rc: 'iA,iB' },
+                    queryParamsHandling: 'merge'
+                },
+                // Current content — not a link.
+                { label: 'TC' }
+            ]);
+        });
+    });
 });
 
 // Separate top-level describe so the outer beforeEach above (which creates a component and
@@ -803,7 +679,8 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
             mockProvider(DotVersionableService),
-            ConfirmationService
+            ConfirmationService,
+            { provide: EDIT_CONTENT_HOST, useValue: mockEditContentHost }
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -848,6 +725,12 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
                 get: jest.fn((key: string, ...args: unknown[]) =>
                     key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
                 )
+            }),
+            mockProvider(DotRelatedContentNavigationStore, {
+                trail: relatedTrailSignal,
+                registerTitle: jest.fn(),
+                buildTrailForSavedInode: jest.fn().mockReturnValue(null),
+                navigateToRelated: jest.fn()
             })
         ]
     });

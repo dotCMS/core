@@ -12,7 +12,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -25,13 +24,7 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotCMSContentlet,
-    DotContentletDepth,
-    DotContentletDepths,
-    DotLanguage
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import {
     BINARY_OPTION,
     BinaryOptionDialogData,
@@ -39,6 +32,7 @@ import {
 } from '@dotcms/ui';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import {
     prepareContentletForCopy,
     sortLocalesTranslatedFirst
@@ -49,13 +43,7 @@ import { EditContentState } from '../../edit-content.store';
 export function withLocales() {
     return signalStoreFeature(
         {
-            state: type<EditContentState>(),
-            methods: type<{
-                initializeExistingContent: (params: {
-                    inode: string;
-                    depth: DotContentletDepth;
-                }) => void;
-            }>()
+            state: type<EditContentState>()
         },
         withComputed((store) => ({
             /**
@@ -79,7 +67,7 @@ export function withLocales() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 dotMessageService = inject(DotMessageService),
                 dialogService = inject(DialogService),
-                router = inject(Router),
+                host = inject(EDIT_CONTENT_HOST),
                 workflowActionService = inject(DotWorkflowsActionsService)
             ) => ({
                 /**
@@ -175,25 +163,6 @@ export function withLocales() {
                 ),
 
                 /**
-                 * Clears the pending locale and proceeds with the switch.
-                 * Called by the layout after the user confirms discarding unsaved changes.
-                 */
-                confirmPendingLocaleSwitch: () => {
-                    const inode = store.pendingLocaleInode();
-                    if (!inode) return;
-                    patchState(store, { pendingLocaleInode: null });
-                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
-                },
-
-                /**
-                 * Clears the pending locale without switching.
-                 * Called by the layout when the user chooses to keep editing.
-                 */
-                cancelPendingLocaleSwitch: () => {
-                    patchState(store, { pendingLocaleInode: null });
-                },
-
-                /**
                  * Switches the locale and updates the state accordingly.
                  *
                  * @param {DotLanguage} locale - The locale to switch to.
@@ -203,7 +172,7 @@ export function withLocales() {
                         switchMap((locale: DotLanguage) => {
                             /**
                              * Checks if the locale is translated. If it is, retrieves the content
-                             * by its identifier and locale id and navigates to the content page by inode.
+                             * by its identifier and locale id and reloads the editor for that inode.
                              */
                             if (locale.translated) {
                                 return dotEditContentService
@@ -216,22 +185,10 @@ export function withLocales() {
                                             next: (contentlet) => {
                                                 patchState(store, { isManualTranslation: false });
 
-                                                if (store.isDialogMode()) {
-                                                    // Signal the layout to handle the dirty-content
-                                                    // check before reloading. The layout watches
-                                                    // pendingLocaleInode and calls confirm/cancel.
-                                                    patchState(store, {
-                                                        pendingLocaleInode: contentlet.inode
-                                                    });
-                                                } else {
-                                                    router.navigate(
-                                                        ['/content', contentlet.inode],
-                                                        {
-                                                            replaceUrl: true,
-                                                            queryParamsHandling: 'preserve'
-                                                        }
-                                                    );
-                                                }
+                                                // The host reloads the editor: a route change in
+                                                // full-screen (guard handles the dirty check) or an
+                                                // in-place reload in the dialog (layout handles it).
+                                                host.reloadContent(contentlet.inode);
                                             },
                                             error: (error: HttpErrorResponse) => {
                                                 dotHttpErrorManagerService.handle(error);
