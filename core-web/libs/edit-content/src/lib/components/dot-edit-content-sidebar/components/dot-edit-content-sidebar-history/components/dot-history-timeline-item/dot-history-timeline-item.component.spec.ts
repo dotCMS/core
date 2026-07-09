@@ -167,7 +167,7 @@ describe('DotHistoryTimelineItemComponent', () => {
         it.each([
             [new Date(2026, 4, 16, 0, 0).getTime(), 'May 16, 2026 - 12:00 AM'],
             [new Date(2026, 4, 16, 12, 0).getTime(), 'May 16, 2026 - 12:00 PM'],
-            [new Date(2026, 4, 16, 13, 10).getTime(), 'May 16, 2026 - 1:10 PM']
+            [new Date(2026, 4, 16, 23, 59).getTime(), 'May 16, 2026 - 11:59 PM']
         ])('should format %s as "%s" (AM/PM boundaries)', (modDate, expected) => {
             spectator.setInput('item', { ...mockVersionItem, modDate });
             spectator.detectChanges();
