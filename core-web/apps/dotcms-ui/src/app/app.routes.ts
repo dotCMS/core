@@ -171,7 +171,7 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
     },
     {
-        path: 'publishing-queue',
+        path: 'publishing-queue-beta',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },

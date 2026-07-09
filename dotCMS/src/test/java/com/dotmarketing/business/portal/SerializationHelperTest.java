@@ -60,8 +60,8 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("plugins-legacy")));
             assertTrue("PortletList should contain 'publishing-queue' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue")));
-            assertTrue("PortletList should contain 'publishing-queue-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue-legacy")));
+            assertTrue("PortletList should contain 'publishing-queue-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue-beta")));
 
             // Check the Angular categories portlet
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()
