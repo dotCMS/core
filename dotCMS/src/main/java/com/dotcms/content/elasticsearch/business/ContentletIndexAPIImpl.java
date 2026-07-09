@@ -78,6 +78,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
@@ -174,6 +175,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private final PhaseRouter<ContentletIndexOperations> router;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+
+    /**
+     * Max seconds a single reindex-journal entry may spend loading/mapping its contentlets
+     * before it is marked failed and the queue moves on — guards against hung filesystem I/O
+     * on network-backed storage (issue #36498). {@code 0} disables the guard.
+     */
+    public static final String REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS =
+            "REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS";
+
+    private static final Lazy<ReindexMappingRunner> mappingRunner = Lazy.of(() ->
+            new ReindexMappingRunner(
+                    () -> Config.getIntProperty(REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS, 120),
+                    Config.getIntProperty("REINDEX_CONTENTLET_MAPPING_MAX_THREADS", 8),
+                    DbConnectionFactory::closeSilently));
 
     public ContentletIndexAPIImpl() {
         this(new ContentletIndexOperationsES(),
@@ -2318,12 +2333,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private void appendBulkRequestToProcessor(final IndexBulkProcessor proc,
             final ReindexEntry idx) throws DotDataException {
         try {
-            for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
-                Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
-                        contentlet.getInode(), idx.getPriority()));
-                contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
-            }
+            // Bounded timeout: loading and mapping touch binary files, and a hung stat on
+            // network-backed storage must fail this entry instead of wedging the reindex
+            // thread forever (issue #36498).
+            mappingRunner.get().run(() -> {
+                for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
+                    Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
+                            contentlet.getInode(), idx.getPriority()));
+                    contentlet.setIndexPolicy(IndexPolicy.DEFER);
+                    addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
+                }
+                return null;
+            }, "reindex entry with identifier '" + idx.getIdentToIndex() + "'");
         } catch (final Exception e) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
         }
