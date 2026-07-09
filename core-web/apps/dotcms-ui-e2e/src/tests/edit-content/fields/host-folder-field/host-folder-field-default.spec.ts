@@ -20,14 +20,16 @@ test.describe('Default Host/Folder Selection', () => {
     });
 
     test('default field shows a site selection for new content @critical', async ({
-        adminPage
+        adminPage,
+        apiHelpers
     }) => {
+        const defaultSite = await apiHelpers.getDefaultSite();
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(contentTypeVariable);
 
         const field = new HostFolderField(adminPage);
         await field.expectVisible();
-        await field.expectLabelMatchesPattern(/.+\..+/);
+        await field.expectLabelContains(defaultSite.hostname);
     });
 
     test('selects site root through the popover and updates the trigger label @critical', async ({
