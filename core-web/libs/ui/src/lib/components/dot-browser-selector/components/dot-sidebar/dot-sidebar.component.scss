@@ -2,11 +2,10 @@
     height: 100%;
     display: flex;
     ::ng-deep {
-        .p-tree-node-label {
+        .p-treenode-label {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            min-width: 0;
         }
     }
 }
