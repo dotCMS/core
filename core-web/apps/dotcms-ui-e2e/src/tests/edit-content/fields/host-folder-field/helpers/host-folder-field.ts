@@ -108,11 +108,11 @@ export class HostFolderField {
     async selectSite(name: string) {
         const item = this.siteItem(name);
         await item.waitFor({ state: 'visible', timeout: 10000 });
+        // Re-clicking the already-selected site is a store no-op (no folder/search call).
         const responsePromise = this.page
-            .waitForResponse(
-                (r) => r.url().includes('/api/v1/folder/search') && r.status() === 200,
-                { timeout: 5000 }
-            )
+            .waitForResponse((r) => this.isFolderSearchResponse(r.url(), r.status()), {
+                timeout: 5000
+            })
             .catch(() => null);
         await item.click();
         await responsePromise;
@@ -120,15 +120,18 @@ export class HostFolderField {
 
     /**
      * Selects the first site in the sites panel and returns its label text.
+     * Tolerates a no-op when that site is already selected (no folder/search request).
      */
     async selectFirstSite(): Promise<string> {
         const item = this.sitesPanel.getByTestId('host-folder-site-item').first();
         await item.waitFor({ state: 'visible', timeout: 10000 });
         const label = item.locator('.truncate').first();
         const text = ((await label.textContent()) ?? '').trim();
-        const responsePromise = this.page.waitForResponse(
-            (r) => r.url().includes('/api/v1/folder/search') && r.status() === 200
-        );
+        const responsePromise = this.page
+            .waitForResponse((r) => this.isFolderSearchResponse(r.url(), r.status()), {
+                timeout: 5000
+            })
+            .catch(() => null);
         await item.click();
         await responsePromise;
         return text;
@@ -174,6 +177,8 @@ export class HostFolderField {
 
     /**
      * Selects a site root: opens overlay, optionally picks site, confirms Select.
+     * When no siteName is given, confirms the already-selected site (typical for new
+     * content) without re-clicking — re-select is a store no-op and skips folder/search.
      */
     async selectSiteRoot(siteName?: string): Promise<string> {
         await this.openOverlay();
@@ -182,7 +187,10 @@ export class HostFolderField {
             await this.selectSite(siteName);
             selectedName = siteName;
         } else {
-            selectedName = await this.selectFirstSite();
+            selectedName = ((await this.label.textContent()) ?? '').trim();
+            await expect(this.sitesPanel.getByTestId('host-folder-site-item').first()).toBeVisible({
+                timeout: 10000
+            });
         }
         await this.confirmSelection();
         return selectedName;

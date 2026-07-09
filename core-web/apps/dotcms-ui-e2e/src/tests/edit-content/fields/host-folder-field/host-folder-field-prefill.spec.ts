@@ -13,6 +13,7 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
     let contentTypeVariable: string;
     let siteName: string;
     let folderName: string;
+    let alternateFolderName: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const contentType = await apiHelpers.createContentType(
@@ -23,8 +24,9 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         const defaultSite = await apiHelpers.getDefaultSite();
         siteName = defaultSite.hostname;
         folderName = `folder-1-${testSuffix}`;
+        alternateFolderName = `folder-2-${testSuffix}`;
 
-        await apiHelpers.createFolders(siteName, [`/${folderName}`]);
+        await apiHelpers.createFolders(siteName, [`/${folderName}`, `/${alternateFolderName}`]);
     });
 
     test('folderPath query param pre-fills the Host/Folder field @critical', async ({
@@ -73,15 +75,9 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         await field.expectLabelContains(folderName);
 
         await field.openOverlay();
-        const sites = field.sitesPanel.getByTestId('host-folder-site-item');
-        const alternateSite = sites.nth(1);
-        const alternateSiteName = (
-            (await alternateSite.locator('.truncate').textContent()) ?? ''
-        ).trim();
-        await alternateSite.click();
-        await field.confirmSelection();
+        await field.selectFolderFlow(alternateFolderName);
 
-        await field.expectLabelContains(alternateSiteName);
+        await field.expectLabelContains(alternateFolderName);
         await expect(field.label).not.toContainText(folderName, { ignoreCase: true });
     });
 
