@@ -181,8 +181,8 @@ export class DotEditContentLayoutComponent {
     });
 
     /**
-     * Present when rendered inside a PrimeNG DynamicDialog; null in route mode.
-     * Used to intercept dialog close events for the dirty-content guard.
+     * Present when rendered inside a PrimeNG DynamicDialog; null otherwise (e.g.
+     * full-screen). Used to intercept dialog close events for the dirty-content guard.
      */
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
 
@@ -246,7 +246,7 @@ export class DotEditContentLayoutComponent {
     }
 
     /**
-     * Sets up two intercepts for dirty-content confirmation in dialog mode:
+     * Sets up two intercepts for dirty-content confirmation when rendered inside a dialog:
      *
      * 1. pDialog.close override — catches all UI-triggered closes (X button, ESC
      *    key, mask click). p-dialog.close() sets _visible = false synchronously

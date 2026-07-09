@@ -11,7 +11,7 @@ import { filter, map } from 'rxjs/operators';
  * A single step in the related-content navigation trail.
  */
 export interface DotRelatedContentCrumb {
-    /** Inode used as the `:id` route param to load this content. */
+    /** Inode of the content this crumb points to. */
     inode: string;
     /** Content title shown as the breadcrumb label. */
     title: string;
@@ -51,20 +51,21 @@ const initialState: RelatedContentNavigationState = {
 const MISSING_TITLE = '…';
 
 /**
- * Drives related-content navigation for the full-screen edit-content editor and
- * exposes the breadcrumb trail.
+ * Holds the related-content navigation trail and exposes it as breadcrumb crumbs.
+ * It does not navigate — that is the {@link EditContentHost}'s job; this store only
+ * owns the trail data and title cache.
  *
- * **The URL is the source of truth.** The trail lives in the `rc` query param
- * (comma-separated inodes, current last); this store derives `trail`/`trailInodes`
- * reactively from the router URL. That gives browser back/forward and refresh for
- * free — there is no in-memory copy of the trail to keep in sync with the route.
+ * **Two trail sources, one reader:**
+ * - Full-screen: the URL is the source of truth. The trail lives in the `rc` query
+ *   param (comma-separated inodes, current last) and is derived reactively from the
+ *   router URL, so browser back/forward and refresh work for free. `inMemoryTrail`
+ *   stays `null`.
+ * - Dialog/overlay: there is no URL to use, so the trail is kept in `inMemoryTrail`
+ *   (set by the dialog host). When non-null it takes precedence over the URL.
  *
- * Provided in **root** so it survives the destroy/recreate the editor goes
- * through on every `:id → :id` navigation (the `content` route opts out of route
- * reuse).
- *
- * Navigation always goes through the Angular router, so the existing
- * `unsavedChangesGuard` prompts on unsaved changes for free.
+ * Provided in **root** so it survives the destroy/recreate the full-screen editor
+ * goes through on every `:id → :id` navigation (the `content` route opts out of
+ * route reuse) and is reachable from either host.
  */
 export const DotRelatedContentNavigationStore = signalStore(
     { providedIn: 'root' },
@@ -161,10 +162,6 @@ export const DotRelatedContentNavigationStore = signalStore(
              * `newInode`, or `null` when there is no active trail. The caller
              * (post-save navigation) uses it so the breadcrumb stays consistent
              * with the freshly-saved version.
-             *
-             * Note: navigation to earlier crumbs is driven declaratively by
-             * `routerLink` on the breadcrumb items (built in the layout), so there
-             * is no imperative "navigate to crumb" method here.
              *
              * @param newInode The inode of the just-saved content version.
              */

@@ -209,9 +209,9 @@ export function withWorkflow() {
                  *
                  * This method triggers a sequence of events to fire a workflow action
                  * and handles the response or error. If the action is successful,
-                 * it updates the store with the new contentlet and actions. In route mode,
-                 * it also navigates to the content view with the updated contentlet.
-                 * In dialog mode, it only updates the store without navigation.
+                 * it updates the store with the new contentlet and actions and asks the
+                 * host to navigate to the saved content (the host decides how: router
+                 * navigation full-screen, in-place/no-op in a dialog).
                  * In case of an error, it updates the state with an error message.
                  *
                  * @param options The options required to fire the workflow action.
