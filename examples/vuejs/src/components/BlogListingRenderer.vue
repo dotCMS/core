@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { useEditableDotCMSPage } from '@dotcms/vue';
+import { useDotCMSClient, useEditableDotCMSPage } from '@dotcms/vue';
 import { computed, ref, watch } from 'vue';
 
 import BlogCard from '@/components/BlogCard.vue';
 import Header from '@/components/header/Header.vue';
-import { dotCMSClient } from '@/lib/dotCMSClient';
 import type { Blog, PageExtraContent } from '@/types/content';
 import type { DotCMSPageContent } from '@/utils/pageResponse';
 
 const props = defineProps<{ pageResponse: DotCMSPageContent }>();
 
-const page = useEditableDotCMSPage(props.pageResponse);
+const dotCMSClient = useDotCMSClient();
+const page = useEditableDotCMSPage(() => props.pageResponse);
 const content = computed(() => (page.value?.content ?? {}) as PageExtraContent);
 const navigation = computed(() => content.value.navigation);
 const allBlogs = computed(() => content.value.blogs ?? []);

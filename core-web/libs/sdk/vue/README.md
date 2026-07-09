@@ -14,6 +14,7 @@ The `@dotcms/vue` SDK is the dotCMS official Vue 3 library. It empowers Vue deve
 -   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
     -   [Example Project](#example-project-)
 -   [SDK Reference](#sdk-reference)
+    -   [createDotCMSVue / useDotCMSClient](#createdotcmsvue--usedotcmsclient)
     -   [DotCMSLayoutBody](#dotcmslayoutbody)
     -   [DotCMSEditableText](#dotcmseditabletext)
     -   [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
@@ -95,17 +96,67 @@ Requires **Vue 3.4+** (declared as a peer dependency). The install also brings i
 
 ### dotCMS Client Configuration
 
+Install the dotCMS Vue plugin once at startup. It builds the client and provides
+it to the whole app, so components retrieve it with `useDotCMSClient()` instead
+of importing a module-level singleton — the Vue analog of Angular's
+`provideDotCMSClient`.
+
+```ts
+// main.ts
+import { createApp } from 'vue';
+import { createDotCMSVue } from '@dotcms/vue';
+
+import App from './App.vue';
+
+const app = createApp(App);
+
+app.use(
+    createDotCMSVue({
+        dotcmsUrl: import.meta.env.VITE_DOTCMS_HOST,
+        authToken: import.meta.env.VITE_DOTCMS_AUTH_TOKEN, // Optional for public content
+        siteId: import.meta.env.VITE_DOTCMS_SITE_ID, // Optional site identifier/name
+        requestOptions: {
+            // The UVE needs fresh data so in-context edits are reflected immediately.
+            cache: 'no-cache'
+        }
+    })
+);
+
+app.mount('#app');
+```
+
+Then, in any component:
+
+```vue
+<script setup lang="ts">
+import { useDotCMSClient } from '@dotcms/vue';
+
+const client = useDotCMSClient();
+const { pageAsset } = await client.page.get('/');
+</script>
+```
+
+> **Using the client outside a component?** Code that runs before/outside a
+> component `setup` — e.g. a Vue Router page loader — can't call
+> `useDotCMSClient()`. Keep a reference to the plugin and read its `.client`:
+>
+> ```ts
+> export const dotCMSVue = createDotCMSVue({ ...config });
+> export const dotCMSClient = dotCMSVue.client; // same instance the plugin provides
+> ```
+
+If you prefer to manage the client yourself, `createDotCMSClient` from
+`@dotcms/client` is still available and works with all of this SDK's components
+and composables — the plugin is a convenience, not a requirement.
+
 ```typescript
 import { createDotCMSClient } from '@dotcms/client';
 
 export const dotCMSClient = createDotCMSClient({
     dotcmsUrl: import.meta.env.VITE_DOTCMS_HOST,
-    authToken: import.meta.env.VITE_DOTCMS_AUTH_TOKEN, // Optional for public content
-    siteId: import.meta.env.VITE_DOTCMS_SITE_ID, // Optional site identifier/name
-    requestOptions: {
-        // The UVE needs fresh data so in-context edits are reflected immediately.
-        cache: 'no-cache'
-    }
+    authToken: import.meta.env.VITE_DOTCMS_AUTH_TOKEN,
+    siteId: import.meta.env.VITE_DOTCMS_SITE_ID,
+    requestOptions: { cache: 'no-cache' }
 });
 ```
 
@@ -224,6 +275,26 @@ Looking to get started quickly? Our [Vue.js starter project](https://github.com/
 
 All components, composables and utilities are imported from `@dotcms/vue`.
 
+### createDotCMSVue / useDotCMSClient
+
+`createDotCMSVue(config)` returns a Vue plugin that builds a dotCMS client and
+provides it app-wide. `useDotCMSClient()` retrieves that client from any
+component. See [dotCMS Client Configuration](#dotcms-client-configuration) for
+the full setup.
+
+```ts
+import { createDotCMSVue } from '@dotcms/vue';
+
+const plugin = createDotCMSVue({ dotcmsUrl, authToken /* …DotCMSClientConfig */ });
+app.use(plugin);
+```
+
+| Export                    | Signature                                            | Description                                                                                     |
+| ------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `createDotCMSVue(config)` | `(config: DotCMSClientConfig) => DotCMSVuePlugin`    | Vue plugin for `app.use()`. `config` is the same object accepted by `createDotCMSClient`.       |
+| `useDotCMSClient()`       | `() => DotCMSClient`                                 | Returns the provided client. Throws if the plugin was not installed. Call it inside `setup`.    |
+| `DotCMSVuePlugin.client`  | `DotCMSClient`                                        | The created client instance, for use outside components (e.g. router loaders).                  |
+
 ### DotCMSLayoutBody
 
 `DotCMSLayoutBody` renders the layout for a dotCMS page (rows → columns → containers → contentlets), dispatching each contentlet to the mapped component. It supports both production and development modes.
@@ -329,6 +400,20 @@ const props = defineProps<{ contentlet: DotCMSBasicContentlet }>();
 | `className`       | `string`                    | ❌       | -       | CSS class applied to the container                              |
 | `style`           | `CSSProperties`             | ❌       | -       | Inline styles for the container                                 |
 | `isDevMode`       | `boolean`                   | ❌       | `false` | When `true`, shows a visible message for invalid/unknown blocks |
+
+> **`className`/`style` vs native `class`/`style`:** the `className` and `style`
+> props mirror the React SDK so the same code shape works across frameworks. This
+> component renders one of two root elements (an error box or the content
+> container), so Vue's automatic attribute fallthrough does **not** apply — a
+> native `class="prose"` on the tag will not reach the container. Use the
+> `className` and `style` props to style the container:
+>
+> ```vue
+> <DotCMSBlockEditorRenderer
+>     :blocks="contentlet.body"
+>     class-name="prose max-w-none"
+>     :style="{ marginTop: '1rem' }" />
+> ```
 
 #### Usage
 

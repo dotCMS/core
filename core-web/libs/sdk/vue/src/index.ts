@@ -1,5 +1,9 @@
 // Public entry for @dotcms/vue.
 
+// Client plugin
+export { createDotCMSVue, useDotCMSClient, DOTCMS_CLIENT } from './lib/client/dotcms-client.plugin';
+export type { DotCMSClient, DotCMSVuePlugin } from './lib/client/dotcms-client.plugin';
+
 // Composables (UVE integration)
 export { useEditableDotCMSPage } from './lib/composables/useEditableDotCMSPage';
 export { useDotCMSShowWhen } from './lib/composables/useDotCMSShowWhen';
