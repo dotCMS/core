@@ -2,8 +2,10 @@
 <Configuration status="INFO">
     <Properties>
         <!-- Framework/plumbing packages collapsed in stack traces ("... suppressed NN lines").
-             All com.dotcms/com.dotmarketing frames and exception messages remain visible. -->
-        <Property name="stack.filter">org.apache.catalina,
+             All com.dotcms/com.dotmarketing frames and exception messages remain visible.
+             Defaults can be overridden per-environment via CMS_LOG4J_STACK_FILTER and
+             CMS_LOG4J_CONSOLE_PATTERN env vars. -->
+        <Property name="DEFAULT_STACK_FILTER">org.apache.catalina,
             org.apache.coyote,
             org.apache.tomcat,
             javax.servlet,
@@ -17,10 +19,13 @@
             sun.nio.ch,
             jdk.internal.reflect,
             java.lang.reflect</Property>
+        <Property name="stack.filter">${env:CMS_LOG4J_STACK_FILTER:-${DEFAULT_STACK_FILTER}}</Property>
+        <Property name="DEFAULT_CONSOLE_PATTERN">%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %msg{nolookups}%n%xEx{filters(${stack.filter})}</Property>
+        <Property name="CONSOLE_PATTERN">${env:CMS_LOG4J_CONSOLE_PATTERN:-${DEFAULT_CONSOLE_PATTERN}}</Property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %msg{nolookups}%n%xEx{filters(${stack.filter})}" />
+            <PatternLayout pattern="${CONSOLE_PATTERN}" />
         </Console>
     </Appenders>
     <Loggers>
