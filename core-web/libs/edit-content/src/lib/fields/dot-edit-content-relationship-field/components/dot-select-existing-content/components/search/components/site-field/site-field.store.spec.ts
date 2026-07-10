@@ -1,7 +1,7 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { mockProvider, SpyObject } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
+import { createFakeEvent } from '@openng/spectator';
+import { mockProvider, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
