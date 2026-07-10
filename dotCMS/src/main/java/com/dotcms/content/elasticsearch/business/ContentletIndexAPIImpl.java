@@ -1853,6 +1853,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // never left half-deleted. Broadcast the LOGICAL (untagged) name to every write provider
         // so each re-derives its OWN physical name (ES → bare, OS → .os). Track the read
         // provider's result as the primary (issue #35640).
+        // Divergent names are normal after a migration catchup, so the shadow leg skips names its
+        // engine does not hold instead of ERROR-logging an expected miss, and real shadow failures
+        // follow the shadow-write log policy (fire-and-forget); only the primary delete failure is
+        // logged at ERROR and reflected in the returned result (issue #36423).
         final ContentletIndexOperations primary = router.readProvider();
         final List<ContentletIndexOperations> targets = router.writeProviders();
         final String nameForTargets = IndexTag.OS.untag(indexName);
@@ -1870,16 +1874,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // (1) Delete the cluster index. A failure here must NOT abort the operation —
             // keep going so the remaining engine and the DB pointers are still handled.
             try {
-                final boolean r = ops.indexAPI().delete(physicalName);
-                if (ops == primary) {
-                    primaryResult = r;
+                if (ops != primary && !ops.indexAPI().indexExists(physicalName)) {
+                    // Expected divergent-name miss on the shadow leg — log via the shadow-write
+                    // policy instead of an ERROR stack trace (issue #36423). Fall through so the
+                    // DB pointer for this engine is still cleared in step (2) below.
+                    logShadowWriteFailure(this.getClass(),
+                            "Skipping shadow delete of " + physicalName
+                            + ": index does not exist in the shadow provider (divergent names"
+                            + " are expected during migration catchup)", null);
+                } else {
+                    final boolean r = ops.indexAPI().delete(physicalName);
+                    if (ops == primary) {
+                        primaryResult = r;
+                    }
                 }
             } catch (final Exception e) {
-                Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
                 if (ops == primary) {
+                    // Primary (authoritative) failure — surface at ERROR and reflect in the result.
+                    Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
                     primaryResult = false;
+                } else {
+                    logShadowWriteFailure(this.getClass(),
+                            "Shadow delete failed (fire-and-forget in dual-write phase): "
+                            + physicalName + ": " + e.getMessage(), e);
                 }
-                // shadow failures are fire-and-forget in dual-write phases
             }
             // (2) Always remove the indicies-table pointer for this engine, even if the cluster
             // delete above failed, so no DB row is left dangling at a deleted index.

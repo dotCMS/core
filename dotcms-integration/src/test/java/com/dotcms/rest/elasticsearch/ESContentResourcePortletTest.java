@@ -41,9 +41,15 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
@@ -336,6 +342,163 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
         assertTrue("aggregations must contain the declared 'types' terms aggregation with a legacy "
                 + "'buckets' array (ES-native typed key like 'sterms#types', or plain 'types')",
                 typesAggFound);
+    }
+
+    /**
+     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, String, boolean)}
+     * Given scenario: a query that <b>sorts by a field</b> and does not set {@code track_scores}.
+     *          Elasticsearch/OpenSearch then return a non-finite ({@code NaN}) {@code _score} for
+     *          every hit (the hits are not relevance-scored).
+     * Expected result: HTTP 200 and each hit's {@code _score} serialized as {@code null} (the
+     *          Elasticsearch-native wire format), <b>not</b> HTTP 500
+     *          {@code "JSON does not allow non-finite numbers."}. Regression guard for
+     *          <a href="https://github.com/dotCMS/core/issues/36478">#36478</a>.
+     */
+    @Test
+    public void test_search_fieldSortedQuery_nonFiniteScore_returnsOkWithNullScore() throws Exception {
+        final ContentType contentType = createContentTypeWithPublishedContent();
+
+        final String jsonQuery = "{\n"
+                + "  \"query\": { \"bool\": { \"must\": { \"term\": { \"contenttype\": \""
+                + contentType.variable() + "\" } } } },\n"
+                + "  \"sort\": [ { \"moddate\": \"desc\" } ]\n"
+                + "}";
+
+        final Response response = new ESContentResourcePortlet()
+                .search(createHttpRequest(false), new MockHttpResponse(), jsonQuery, "0", true, null, false);
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertHitScoresAreNull(response.getEntity().toString());
+    }
+
+    /**
+     * Method to test: {@link ESContentResourcePortlet#searchRaw(HttpServletRequest)}
+     * Given scenario: the same field-sorted (non-relevance-scored) query posted to
+     *          {@code /api/es/raw}, whose body is read from the request input stream.
+     * Expected result: HTTP 200 and {@code _score: null} per hit — {@code /api/es/raw} shares the
+     *          {@code toLegacyEsJson} adapter with {@code /api/es/search}, so it is subject to the
+     *          same #36478 regression and must be guarded too.
+     */
+    @Test
+    public void test_searchRaw_fieldSortedQuery_nonFiniteScore_returnsOkWithNullScore() throws Exception {
+        final ContentType contentType = createContentTypeWithPublishedContent();
+
+        final String jsonQuery = "{\n"
+                + "  \"query\": { \"bool\": { \"must\": { \"term\": { \"contenttype\": \""
+                + contentType.variable() + "\" } } } },\n"
+                + "  \"sort\": [ { \"moddate\": \"desc\" } ]\n"
+                + "}";
+
+        final Response response = new ESContentResourcePortlet()
+                .searchRaw(createHttpRequestWithBody(jsonQuery));
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        // searchRaw returns the legacy ES-wire object directly (no "esresponse" wrapper array).
+        assertHitScoresAreNull(response.getEntity().toString(), false);
+    }
+
+    /**
+     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, String, boolean)}
+     * Given scenario: a field-sorted query that <b>does</b> set {@code track_scores: true}, forcing
+     *          Elasticsearch to compute a finite relevance score.
+     * Expected result: HTTP 200 and a finite (non-null) {@code _score} — the non-finite guard must
+     *          not alter legitimate finite scores.
+     */
+    @Test
+    public void test_search_fieldSortedQuery_withTrackScores_preservesFiniteScore() throws Exception {
+        final ContentType contentType = createContentTypeWithPublishedContent();
+
+        final String jsonQuery = "{\n"
+                + "  \"track_scores\": true,\n"
+                + "  \"query\": { \"bool\": { \"must\": { \"term\": { \"contenttype\": \""
+                + contentType.variable() + "\" } } } },\n"
+                + "  \"sort\": [ { \"moddate\": \"desc\" } ]\n"
+                + "}";
+
+        final Response response = new ESContentResourcePortlet()
+                .search(createHttpRequest(false), new MockHttpResponse(), jsonQuery, "0", true, null, false);
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+        final JSONObject esresponse = new JSONObject(response.getEntity().toString())
+                .getJSONArray("esresponse").getJSONObject(0);
+        final JSONArray hits = esresponse.getJSONObject("hits").getJSONArray("hits");
+        assertTrue("query must return at least one hit", hits.length() > 0);
+        assertTrue("a track_scores query must keep a finite (non-null) _score",
+                !hits.getJSONObject(0).isNull("_score"));
+    }
+
+    private ContentType createContentTypeWithPublishedContent() throws Exception {
+        final long now = System.currentTimeMillis();
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().name("Title").velocityVarName("title").next())
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "nan-score-" + now)
+                .nextPersisted();
+        ContentletDataGen.publish(contentlet);
+        APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
+        return contentType;
+    }
+
+    /** Asserts every hit's {@code _score} is {@code null}, reading the {@code /api/es/search} "esresponse" wrapper. */
+    private void assertHitScoresAreNull(final String entity) throws JSONException {
+        assertHitScoresAreNull(entity, true);
+    }
+
+    private void assertHitScoresAreNull(final String entity, final boolean wrappedInEsResponse)
+            throws JSONException {
+        final JSONObject esresponse = wrappedInEsResponse
+                ? new JSONObject(entity).getJSONArray("esresponse").getJSONObject(0)
+                : new JSONObject(entity);
+        final JSONArray hits = esresponse.getJSONObject("hits").getJSONArray("hits");
+        assertTrue("field-sorted query must return at least one hit", hits.length() > 0);
+        for (int i = 0; i < hits.length(); i++) {
+            assertTrue("_score of a non-relevance-scored (field-sorted) hit must serialize as null",
+                    hits.getJSONObject(i).isNull("_score"));
+        }
+    }
+
+    private HttpServletRequest createHttpRequestWithBody(final String body) throws Exception {
+        final HttpServletRequest request = createHttpRequest(false);
+        when(request.getInputStream())
+                .thenReturn(new MockServletInputStream(
+                        new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8))));
+        return request;
+    }
+
+    /** Minimal {@link ServletInputStream} over a byte array, to feed a request body to {@code searchRaw}. */
+    private static class MockServletInputStream extends ServletInputStream {
+
+        private final InputStream sourceStream;
+
+        MockServletInputStream(final InputStream sourceStream) {
+            this.sourceStream = sourceStream;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return sourceStream.read();
+        }
+
+        @Override
+        public boolean isFinished() {
+            try {
+                return sourceStream.available() == 0;
+            } catch (final IOException e) {
+                return true;
+            }
+        }
+
+        @Override
+        public boolean isReady() {
+            return true;
+        }
+
+        @Override
+        public void setReadListener(final ReadListener readListener) {
+            // no-op: synchronous read is sufficient for the test
+        }
     }
 
     private HttpServletRequest createHttpRequest(final boolean anonymous) throws Exception{
