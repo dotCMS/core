@@ -409,11 +409,12 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                         + inode
                         + java.io.File.separator
                         + field.variable());
-        if (binaryFileFolder.exists()) {
-            final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
-            if (files != null && files.length > 0) {
-                return Optional.of(files[0]);
-            }
+        // No exists() pre-check: listFiles() returns null for a missing folder, and every
+        // avoided stat matters on network-backed storage — this exact stat wedged the reindex
+        // pipeline on a hung S3-FUSE mount (issue #36498).
+        final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
+        if (files != null && files.length > 0) {
+            return Optional.of(files[0]);
         }
 
         return Optional.empty();
