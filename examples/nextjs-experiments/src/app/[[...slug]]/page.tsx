@@ -9,6 +9,7 @@ import { Page } from "@/views/Page";
 
 interface SlugPageProps {
     params: Promise<{ slug?: string[] }>;
+    searchParams: Promise<{ variantName?: string }>;
 }
 
 function getPath(slug?: string[]) {
@@ -17,9 +18,11 @@ function getPath(slug?: string[]) {
 
 export async function generateMetadata({
     params,
+    searchParams,
 }: SlugPageProps): Promise<Metadata> {
     const { slug } = await params;
-    const pageContent = await getDotCMSPage(getPath(slug));
+    const { variantName } = await searchParams;
+    const pageContent = await getDotCMSPage(getPath(slug), variantName);
 
     if (isPageError(pageContent)) {
         return { title: "Error" };
@@ -28,10 +31,11 @@ export async function generateMetadata({
     return { title: getPageTitle(pageContent, "Not Found") };
 }
 
-export default async function Home({ params }: SlugPageProps) {
+export default async function Home({ params, searchParams }: SlugPageProps) {
     const { slug } = await params;
     const path = getPath(slug);
-    const pageContent = await getDotCMSPage(path);
+    const { variantName } = await searchParams;
+    const pageContent = await getDotCMSPage(path, variantName);
 
     if (isPageError(pageContent)) {
         return <ErrorPage error={{ status: getErrorStatus(pageContent.error) }} />;

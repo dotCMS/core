@@ -18,9 +18,11 @@ import {
  * On failure it returns `{ error }` so callers can branch without try/catch;
  * use the guards in `@/utils/pageResponse` to narrow the result.
  */
-export const getDotCMSPage = cache(async (path: string) => {
+export const getDotCMSPage = cache(async (path: string, variantName?: string) => {
   try {
+      console.log("Fetching page", path, variantName);
     return await dotCMSClient.page.get<{ content: PageExtraContent }>(path, {
+      variantName,
       graphql: {
         content: {
           blogs: blogQuery,
