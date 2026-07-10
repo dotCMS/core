@@ -13,6 +13,7 @@ on:
     paths:
       - '.claude/skills/**'
       - '.claude/tools/**'
+      - '.agents/skills/**'   # external skills feed the catalog; changes here can make it stale
       - '.github/workflows/cicd_pr_skill-lint.yml'
 
 permissions:
