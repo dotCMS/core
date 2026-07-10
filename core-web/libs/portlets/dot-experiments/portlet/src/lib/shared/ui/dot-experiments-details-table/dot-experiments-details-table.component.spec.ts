@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotStringTemplateOutletDirective } from '@dotcms/ui';

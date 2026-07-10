@@ -1,0 +1,8 @@
+<dot-publishing-queue-toolbar
+    (uploadClick)="openUpload()"
+    (selectBundleClick)="openSelectBundle()"
+    (deleteClick)="confirmDeleteBundles()" />
+
+<dot-publishing-queue-table />
+
+<p-confirmDialog [draggable]="false" [position]="'center'" styleClass="w-[500px]" />
