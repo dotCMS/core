@@ -48,11 +48,11 @@ echo "LTS: $LTS_NUMBER"
 
 Verify the extracted value matches the version format `XX.YY.ZZ` (digits only, dot-separated, e.g. `24.12.27`). If extraction fails or the result does not match that format, treat the branch as non-LTS and fall through to Case B.
 
-**Case B — on any other branch:** The skill can still run, but the user MUST supply the LTS version as an argument. Accept the version from the skill invocation argument (e.g., `/lts-backport 24.12.27`).
+**Case B — on any other branch:** The skill can still run, but the user MUST supply the LTS version as an argument. Accept the version from the skill invocation argument (e.g., `/dot-release-backport-lts 24.12.27`).
 
 The argument must match the format `\d{2}\.\d{2}\.\d{2}` (e.g., `24.12.27`). If it does not match or no argument was provided, stop and tell the user:
 
-> "Current branch `CURRENT_BRANCH` is not an LTS release branch (expected format: `release-X.Y.Z_lts`). Please provide the LTS version number as an argument, e.g.: `/lts-backport 24.12.27`"
+> "Current branch `CURRENT_BRANCH` is not an LTS release branch (expected format: `release-X.Y.Z_lts`). Please provide the LTS version number as an argument, e.g.: `/dot-release-backport-lts 24.12.27`"
 
 If a valid version argument was provided, derive the target branch name:
 ```
