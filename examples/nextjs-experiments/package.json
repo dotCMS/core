@@ -10,7 +10,7 @@
     },
     "dependencies": {
         "@dotcms/client": "next",
-        "@dotcms/experiments": "^1.5.5-next.2303",
+        "@dotcms/experiments": "next",
         "@dotcms/react": "next",
         "@dotcms/types": "next",
         "@dotcms/uve": "next",
