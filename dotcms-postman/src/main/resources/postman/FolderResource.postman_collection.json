@@ -152,7 +152,7 @@
                   "        pm.expect(folderEntry.inode).to.not.equal(undefined);",
                   "        pm.expect(folderEntry.path).to.not.equal(undefined);",
                   "    });",
-                  "});",
+                  "});",`
                   ""
                 ],
                 "type": "text/javascript",
