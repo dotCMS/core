@@ -172,7 +172,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     onOverlayShow(): void {
         this.store.openOverlay();
-        afterNextRender(() => this.scrollSelectedFolderIntoView(), { injector: this.#injector });
+        afterNextRender(() => this.#scrollSelectedFolderIntoView(), { injector: this.#injector });
     }
 
     /**
@@ -201,17 +201,17 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * the minimum length before querying the backend.
      */
     onSearchInput(event: Event): void {
-        this.store.search(this.readInputValue(event));
+        this.store.search(this.#readInputValue(event));
     }
 
     /**
      * Forwards the sites search input's value to the store for debounced local filtering.
      */
     onSiteSearchInput(event: Event): void {
-        this.store.filterSites(this.readInputValue(event));
+        this.store.filterSites(this.#readInputValue(event));
     }
 
-    private readInputValue(event: Event): string {
+    #readInputValue(event: Event): string {
         return (event.target as HTMLInputElement).value;
     }
 
@@ -262,14 +262,14 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * animation frame while the initial folders request is still loading, up to a small
      * bound, since the selected node only exists in the DOM once its ancestors are rendered.
      */
-    private scrollSelectedFolderIntoView(attempt = 0): void {
+    #scrollSelectedFolderIntoView(attempt = 0): void {
         if (!this.store.overlayOpen() || !this.store.treeSelection()) {
             return;
         }
 
         if (this.store.foldersLoading()) {
             if (attempt < 10) {
-                requestAnimationFrame(() => this.scrollSelectedFolderIntoView(attempt + 1));
+                requestAnimationFrame(() => this.#scrollSelectedFolderIntoView(attempt + 1));
             }
 
             return;

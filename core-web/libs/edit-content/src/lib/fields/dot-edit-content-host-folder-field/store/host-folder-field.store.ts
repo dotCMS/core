@@ -648,7 +648,10 @@ export const HostFolderFiledStore = signalStore(
                 patchState(store, {
                     overlayOpen: false,
                     pendingNode: store.confirmedNode(),
-                    siteSearchTerm: ''
+                    siteSearchTerm: '',
+                    searchStatus: ComponentStatus.INIT,
+                    searchResults: null,
+                    searchPagination: { page: 1, hasMore: false, loading: false }
                 });
             },
             /**
@@ -854,6 +857,8 @@ export const HostFolderFiledStore = signalStore(
                     searchTerm: '',
                     siteSearchTerm: '',
                     searchResults: null,
+                    searchStatus: ComponentStatus.INIT,
+                    searchPagination: { page: 1, hasMore: false, loading: false },
                     pendingNode: site
                 });
 
