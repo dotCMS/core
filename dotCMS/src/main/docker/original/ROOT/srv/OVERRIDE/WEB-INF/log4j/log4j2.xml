@@ -3,29 +3,13 @@
     <Properties>
         <Property name="DOTCMS_LOG_FILE">${sys:catalina.home}/logs/dotcms.log</Property>
         <Property name="DOTCMS_FILENAME_PATTERN">${sys:catalina.home}/logs/archive/dotcms-%i.log.gz</Property>
-        <!-- Framework/plumbing packages collapsed in stack traces ("... suppressed NN lines").
-             All com.dotcms/com.dotmarketing frames and exception messages remain visible.
-             Defaults can be overridden per-environment via CMS_LOG4J_STACK_FILTER,
-             CMS_LOG4J_MESSAGE_PATTERN and CMS_LOG4J_CONSOLE_PATTERN env vars. -->
-        <Property name="DEFAULT_STACK_FILTER">org.apache.catalina,
-            org.apache.coyote,
-            org.apache.tomcat,
-            javax.servlet,
-            org.tuckey,
-            io.vavr,
-            graphql.execution,
-            graphql.kickstart,
-            graphql.GraphQL,
-            java.util.concurrent,
-            java.lang.Thread,
-            sun.nio.ch,
-            jdk.internal.reflect,
-            java.lang.reflect</Property>
-        <Property name="stack.filter">${env:CMS_LOG4J_STACK_FILTER:-${DEFAULT_STACK_FILTER}}</Property>
-        <Property name="DEFAULT_MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n%xEx{filters(${stack.filter})}</Property>
-        <Property name="MESSAGE_PATTERN">${env:CMS_LOG4J_MESSAGE_PATTERN:-${DEFAULT_MESSAGE_PATTERN}}</Property>
-        <Property name="DEFAULT_CONSOLE_PATTERN">%d{HH:mm:ss.SSS}  %-5level %logger{2} - %msg%n%xEx{filters(${stack.filter})}</Property>
-        <Property name="CONSOLE_PATTERN">${env:CMS_LOG4J_CONSOLE_PATTERN:-${DEFAULT_CONSOLE_PATTERN}}</Property>
+        <!-- Pattern layouts come from env vars whose defaults are set by
+             /srv/35-set-logging-defaults.sh (this file is only installed alongside it, by
+             20-copy-overriden-files.sh). Filtered framework packages collapse in stack
+             traces to "... suppressed NN lines"; all com.dotcms/com.dotmarketing frames
+             and exception messages remain visible. -->
+        <Property name="MESSAGE_PATTERN">${env:CMS_LOG4J_MESSAGE_PATTERN}</Property>
+        <Property name="CONSOLE_PATTERN">${env:CMS_LOG4J_CONSOLE_PATTERN}</Property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
