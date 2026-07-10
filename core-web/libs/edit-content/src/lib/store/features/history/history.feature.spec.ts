@@ -1544,6 +1544,28 @@ describe('HistoryFeature', () => {
 
             expect(store.loadingVersionInode()).toBeNull();
         }));
+
+        it('should keep the current compare state when updating the comparison fails', fakeAsync(() => {
+            const currentCompare = { ...mockContentlet, inode: 'current-compare-inode' };
+            patchState(store, {
+                compareContentlet: currentCompare,
+                uiState: { ...store.uiState(), view: 'compare' }
+            });
+
+            dotContentletService.getContentletByInode.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.handleHistoryAction({
+                type: DotHistoryTimelineItemActionType.COMPARE,
+                item: { ...mockContentletVersion, inode: 'failing-inode' }
+            });
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+            expect(store.compareContentlet()).toEqual(currentCompare);
+            expect(store.uiState().view).toBe('compare');
+        }));
     });
 
     describe('compareData', () => {
