@@ -33,6 +33,7 @@ jobs:
           sparse-checkout: |
             .claude/skills
             .claude/tools
+            .agents/skills
             .nvmrc
           sparse-checkout-cone-mode: false
 
