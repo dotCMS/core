@@ -3,11 +3,27 @@
     <Properties>
         <Property name="DOTCMS_LOG_FILE">${sys:catalina.home}/logs/dotcms.log</Property>
         <Property name="DOTCMS_FILENAME_PATTERN">${sys:catalina.home}/logs/archive/dotcms-%i.log.gz</Property>
-        <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
+        <!-- Framework/plumbing packages collapsed in stack traces ("... suppressed NN lines").
+             All com.dotcms/com.dotmarketing frames and exception messages remain visible. -->
+        <Property name="stack.filter">org.apache.catalina,
+            org.apache.coyote,
+            org.apache.tomcat,
+            javax.servlet,
+            org.tuckey,
+            io.vavr,
+            graphql.execution,
+            graphql.kickstart,
+            graphql.GraphQL,
+            java.util.concurrent,
+            java.lang.Thread,
+            sun.nio.ch,
+            jdk.internal.reflect,
+            java.lang.reflect</Property>
+        <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n%xEx{filters(${stack.filter})}</Property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2} - %msg%n" />
+            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2} - %msg%n%xEx{filters(${stack.filter})}" />
         </Console>
         <!--  Generic Logging File -->
         <RollingFile name="Generic-File"
