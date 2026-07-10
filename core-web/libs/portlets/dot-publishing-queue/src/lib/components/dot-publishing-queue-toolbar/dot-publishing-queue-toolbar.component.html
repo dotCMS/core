@@ -1,0 +1,57 @@
+<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.search()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'publishing-queue.search.placeholder' | dm"
+                [attr.aria-label]="'publishing-queue.search.placeholder' | dm"
+                data-testid="pq-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <dot-publishing-queue-status-filter />
+
+        <div class="ml-auto flex items-center gap-2">
+            @if ($hasBulkActions()) {
+                <p-button
+                    [label]="'publishing-queue.delete-bundles' | dm"
+                    [text]="true"
+                    severity="danger"
+                    (onClick)="$deleteClick.emit()"
+                    [pt]="{ root: { 'data-testid': 'pq-bulk-delete' } }" />
+            }
+            <p-button
+                [label]="'publishing-queue.refresh' | dm"
+                icon="pi pi-refresh"
+                [text]="true"
+                (onClick)="store.refresh()"
+                [pt]="{ root: { 'data-testid': 'pq-refresh-btn' } }" />
+            @if ($hasBulkActions()) {
+                <p-button
+                    [label]="'publishing-queue.retry-send' | dm"
+                    (onClick)="onBulkRetry()"
+                    [pt]="{ root: { 'data-testid': 'pq-bulk-retry' } }" />
+            } @else {
+                <p-menu
+                    #addBundleMenu
+                    [model]="addBundleItems"
+                    [popup]="true"
+                    appendTo="body"
+                    showTransitionOptions="0ms"
+                    hideTransitionOptions="0ms"
+                    data-testid="pq-add-bundle-menu" />
+                <p-button
+                    [label]="'publishing-queue.add-bundle' | dm"
+                    icon="pi pi-chevron-down"
+                    iconPos="right"
+                    (onClick)="addBundleMenu.toggle($event)"
+                    [attr.aria-label]="'publishing-queue.add-bundle' | dm"
+                    data-testid="pq-add-bundle-btn" />
+            }
+        </div>
+    </div>
+</p-toolbar>
