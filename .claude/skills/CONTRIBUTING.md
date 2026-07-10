@@ -40,7 +40,7 @@ description: >                           # required — see §5, this drives tri
   Verify release notes are complete. Use when preparing a dotCMS release
   or when the user mentions release notes, changelog, or version bump.
 owner: "@dotcms/platform"                # required — who fixes it / answers questions
-status: experimental                     # required — experimental | active | superseded
+status: experimental                     # required — experimental | active | superseded | deprecated
 related: [dot-release-rollback]          # optional — adjacent skills (see §4)
 supersedes: dot-release-old-notes        # optional — replacement link (see §4)
 ---

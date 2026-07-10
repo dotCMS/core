@@ -2,7 +2,7 @@
 // Validates first-party skills. Exit 0 = pass, 1 = fail.
 // Runs in CI (cicd_pr_skill-lint.yml) and locally via `just skills-lint`.
 import { readFileSync } from 'node:fs';
-import { CATALOG_PATH, listSkills, loadConfig, isGrandfathered, buildCatalog } from './skill-lib.mjs';
+import { CATALOG_PATH, listSkills, loadConfig, isGrandfathered, buildCatalog, skillNameRegex } from './skill-lib.mjs';
 
 const cfg = loadConfig();
 const skills = listSkills().filter((s) => s.firstParty);
@@ -10,9 +10,7 @@ const errors = [];
 const warnings = [];
 
 const prefix = cfg.vendorPrefix;
-// action segment: lowercase alphanumeric groups joined by single hyphens —
-// rejects leading/trailing hyphens and double hyphens (e.g. dot-issue-triage-, dot-issue--x).
-const domainRe = new RegExp(`^${prefix}(${cfg.approvedDomains.join('|')})-[a-z0-9]+(-[a-z0-9]+)*$`);
+const domainRe = skillNameRegex(cfg);
 
 // --- Per-skill checks ---------------------------------------------------
 // Grandfathered (legacy) skills are exempt: their issues become warnings (a
