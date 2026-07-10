@@ -1,0 +1,42 @@
+# Publish a per-PR test image when the "PR: docker image" label is applied to an
+# existing PR (no new commit). The push-on-commit path lives in cicd_1-pr.yml,
+# which publishes right after build. This entry covers the label-applied case by
+# reusing the newest docker-image artifact already built for the head SHA.
+#
+# Uses pull_request_target so it runs from main (DOCKER_* secrets never run in
+# PR-modifiable code on this path) and so the GITHUB_TOKEN can comment.
+# Internal branches only: fork PRs have no secrets.
+
+name: 'Publish PR Test Image'
+run-name: "Publish PR Docker [#${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.ref }}]"
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+concurrency:
+  group: publish-pr-test-image-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish
+    if: >-
+      github.event.label.name == 'PR: docker image' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/cicd_comp_publish-pr-test-image.yml
+    with:
+      pr: ${{ github.event.pull_request.number }}
+      sha: ${{ github.event.pull_request.head.sha }}
+      branch: ${{ github.event.pull_request.head.ref }}
+      # artifact_run_id omitted -> reusable workflow discovers it by SHA
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
