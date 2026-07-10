@@ -692,13 +692,17 @@ reindex finish (or aborting it explicitly) over flipping the phase mid-drain.
 
 ### Fan-out routing with divergent index names — resolved (#35640)
 
-**Status: routing resolved via the transparent-mirror principle; log-noise refinement still open.**
+**Status: routing resolved via the transparent-mirror principle (#35640); expected-miss log
+noise on the shadow leg resolved for `delete()` (#36423, QA #36219 TC-041); primary-failure
+propagation for `delete()` tracked in #36430; still open for other fan-out methods.**
 
 When a public `@IndexRouter` method accepts an index name and the phase requires fan-out, the
 **routing** is settled: the caller passes the logical name and each provider derives its OWN
 physical name (ES → bare, OS → `.os`) before touching its cluster — the name is never sent verbatim
-to the wrong provider. This is implemented in `ContentletIndexAPIImpl.delete` (untag → broadcast)
-and in `IndexAPIImpl` for the maintenance/lifecycle ops:
+to the wrong provider. Deleting by **either** the ES (bare) or the OS (`.os`) name removes the index
+in every engine that holds it (bidirectional transparent mirror), so the mirror is never left
+half-deleted. This is implemented in `ContentletIndexAPIImpl.delete` (untag → broadcast) and in
+`IndexAPIImpl` for the maintenance/lifecycle ops:
 
 - **List ops** (`flushCaches`, `optimize`) partition the incoming list by `IndexTag.resolve` and
   hand each provider only the names it owns.
@@ -706,14 +710,27 @@ and in `IndexAPIImpl` for the maintenance/lifecycle ops:
   a per-provider name via `providerName(impl, name)` — the OS leg gets the `.os`-tagged name, ES the
   bare name. (Site-search is the exception: its OS copy is not `.os`-tagged, so it stays bare.)
 
-Covered in `OpenSearchUpgradeSuite` by `ContentletIndexAPIImplMigrationIntegrationTest`
-(delete/close/open/flush across both engines).
+**Resolved for `delete()` — expected-miss log noise (#36423):** when an index genuinely exists in
+only one engine (divergent names after a catchup), the shadow leg now does an exists-check and
+**skips** the cluster delete instead of attempting it and logging an ERROR stack trace for the
+expected miss. The skip and any genuine shadow failure are logged through the shadow-write policy
+(`DOTCMS_SHADOW_WRITE_LOG_LEVEL`, default WARN); only the primary (read-provider) leg logs at ERROR.
+The DB pointer for each engine is still cleared even when its cluster delete is skipped. Surfacing
+primary failures to the *caller* (the `PhaseRouter.writeBoolean` contract: re-throw after all
+providers were called) is tracked separately in #36430. Covered in `OpenSearchUpgradeSuite` by
+`ContentletIndexAPIImplMigrationIntegrationTest` (name only in ES → shadow skip; deleting by the
+`.os` name → both engines via the transparent mirror).
 
-**Still open — expected-miss log noise:** when an index genuinely exists in only one engine
-(divergent names after a catchup), the other leg's shadow attempt misses. That miss is fire-and-forget
-(the mirror op still succeeds where the index exists) but is currently logged at ERROR rather than
-being recognized as an expected divergent-name miss. An exists-check-and-skip on the shadow leg,
-logging through the shadow-write policy (`DOTCMS_SHADOW_WRITE_LOG_LEVEL`), is the pending refinement.
+**Still open for other fan-out methods** (e.g. mapping and lifecycle operations):
+
+- The same exists-check "expected miss vs. genuine failure" distinction has not been applied
+  outside `delete()`; a 404 on the shadow leg of those ops may still surface as ERROR noise where
+  it signals an expected divergent-name miss rather than a transient cluster error.
+- Verify that `loadProviderIndices` / `ProviderIndices` correctly returns `null` (skip) for a
+  provider whose store has no record yet, rather than silently passing a stale or wrong name.
+
+Until test coverage exists for those scenarios, treat other public `@IndexRouter` methods that
+accept a raw index name string in dual-write phases as **untested for the name-mismatch case**.
 
 ---
 
