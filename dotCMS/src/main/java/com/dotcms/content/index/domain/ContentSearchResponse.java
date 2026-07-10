@@ -39,22 +39,25 @@ import javax.annotation.Nullable;
  *                        sub-aggregations and {@code top_hits} preserved); Velocity resolves
  *                        {@code $results.aggregations.<name>} through this map
  */
-// {@code aggregations} is suppressed for Jackson at the CLASS level (not with a method-level
-// {@code @JsonIgnore} on {@link #getAggregations()}) on purpose: the neutral Jackson JSON must not
-// carry {@code aggregations} — the tree is already serialized as {@code aggregationTree}, and a
-// method-level {@code @JsonIgnore} would ALSO hide it from the reflection-based
+// The Velocity-only aliases {@code aggregations}, {@code tookInMillis} and {@code suggest} are
+// suppressed for Jackson at the CLASS level (not with method-level {@code @JsonIgnore} on the
+// getters) on purpose. Each is redundant on the neutral Jackson wire (the tree is serialized as
+// {@code aggregationTree}, timing as {@code tookMillis}, and suggestions are wire-omitted), but a
+// method-level {@code @JsonIgnore} would ALSO hide them from the reflection-based
 // {@code com.dotmarketing.util.json.JSONObject} bean constructor that {@code JSONTool.generate(Object)}
-// uses (it honours {@code @JsonIgnore}). That reflection path is what {@code $json.generate($response)}
-// templates walk, so hiding {@code aggregations} there is exactly the #36435 regression. A class-level
-// {@code @JsonIgnoreProperties} is read by Jackson but NOT by the vendored JSONObject, so it keeps the
-// wire shape unchanged while leaving {@code getAggregations()} visible to Velocity's json tool.
-@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"aggregations"})
+// uses — it honours {@code @JsonIgnore}. That reflection path is exactly what
+// {@code $json.generate($response)} templates walk, so a method-level ignore silently drops the data
+// there (issue #36435 — originally only {@code aggregations} was reported, {@code tookInMillis} and
+// {@code suggest} shared the same latent regression). A class-level {@code @JsonIgnoreProperties} is
+// read by Jackson but NOT by the vendored JSONObject, so it keeps the wire shape unchanged while
+// leaving the {@code getX()} aliases visible to Velocity's json tool.
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"aggregations", "tookInMillis", "suggest"})
 public record ContentSearchResponse(
         SearchHits hits,
         @Nullable String scrollId,
         long tookMillis,
         Map<String, Aggregation> aggregationTree,
-        @com.fasterxml.jackson.annotation.JsonIgnore Map<String, Object> suggest) {
+        Map<String, Object> suggest) {
 
     /**
      * Canonical constructor. {@code aggregationTree} and {@code suggest} default to an empty map when
@@ -82,8 +85,10 @@ public record ContentSearchResponse(
     // that access WITHOUT changing the JSON wire shape:
     //  - getHits()/getScrollId() return the same values as the record components, so Jackson merges
     //    them into the existing "hits"/"scrollId" fields (no new key, no duplicate).
-    //  - getTookInMillis()/getAggregations() carry @JsonIgnore so they remain Velocity-only and
-    //    never add a field to the neutral JSON.
+    //  - getTookInMillis()/getAggregations()/getSuggest() are Velocity-only and must NOT add a field
+    //    to the neutral JSON; that suppression lives in the class-level @JsonIgnoreProperties above
+    //    (Jackson-only) rather than a method-level @JsonIgnore, so they stay visible to the
+    //    reflection-based $json.generate() path (issue #36435).
 
     /** Velocity/back-compat alias for {@link #hits()}; serializes as the same {@code hits} field. */
     public SearchHits getHits() {
@@ -97,9 +102,11 @@ public record ContentSearchResponse(
 
     /**
      * Velocity/back-compat alias mirroring Elasticsearch {@code SearchResponse.getTookInMillis()}.
-     * {@code @JsonIgnore} keeps the neutral JSON unchanged (timing is serialized as {@code tookMillis}).
+     * Deliberately NOT annotated {@code @JsonIgnore}: it must stay visible to the reflection-based
+     * {@code $json.generate($response)} path (issue #36435). The neutral Jackson JSON is kept
+     * unchanged (timing is serialized only as {@code tookMillis}) by the class-level
+     * {@code @JsonIgnoreProperties("tookInMillis")}.
      */
-    @com.fasterxml.jackson.annotation.JsonIgnore
     public long getTookInMillis() {
         return tookMillis;
     }
@@ -122,11 +129,12 @@ public record ContentSearchResponse(
 
     /**
      * Velocity/back-compat alias for {@link #suggest()}, exposing search suggestions as
-     * {@code $r.suggest}. Kept {@code @JsonIgnore} (like the {@code suggest} component itself) so the
-     * neutral JSON shape of {@code /api/es/raw} is unchanged; the ES-wire {@code suggest} block is
-     * emitted only by the {@code /api/es/search} legacy adapter.
+     * {@code $r.suggest}. Deliberately NOT annotated {@code @JsonIgnore}: it must stay visible to the
+     * reflection-based {@code $json.generate($response)} path (issue #36435). The neutral JSON shape of
+     * {@code /api/es/raw} is unchanged (suggestions are wire-omitted) via the class-level
+     * {@code @JsonIgnoreProperties("suggest")}; the ES-wire {@code suggest} block is emitted only by the
+     * {@code /api/es/search} legacy adapter.
      */
-    @com.fasterxml.jackson.annotation.JsonIgnore
     public Map<String, Object> getSuggest() {
         return suggest;
     }
