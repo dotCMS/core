@@ -1,4 +1,4 @@
-import { byText, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byText, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';

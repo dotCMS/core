@@ -128,10 +128,9 @@
                                 @if (showThumbnail) {
                                     <div
                                         class="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
-                                        <dot-contentlet-thumbnail
-                                            [iconSize]="'24px'"
+                                        <dot-content-thumbnail
                                             [contentlet]="item"
-                                            [playableVideo]="false"
+                                            iconSize="24px"
                                             data-testId="contentlet-thumbnail" />
                                     </div>
                                 }
@@ -170,11 +169,12 @@
                     @case ('image') {
                         <td class="w-24 max-w-24 min-w-24" [class.cursor-not-allowed]="isDisabled">
                             <div class="flex items-center justify-center">
-                                <dot-contentlet-thumbnail
-                                    [iconSize]="'30px'"
-                                    [contentlet]="item"
-                                    [playableVideo]="false"
-                                    data-testId="contentlet-thumbnail" />
+                                <div class="h-14 w-20 shrink-0 overflow-hidden rounded-md">
+                                    <dot-content-thumbnail
+                                        [contentlet]="item"
+                                        iconSize="30px"
+                                        data-testId="contentlet-thumbnail" />
+                                </div>
                             </div>
                         </td>
                     }
