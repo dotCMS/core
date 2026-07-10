@@ -22,7 +22,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { debounceTime, filter, map, take } from 'rxjs/operators';
+import { debounceTime, filter, map, take, tap } from 'rxjs/operators';
 
 import {
     DotCategoriesService,
@@ -246,12 +246,26 @@ export class DotContentDriveFieldFilterComponent {
     });
 
     /**
-     * Labels for the values chosen in the lazy multi-select (Tag/Category). Those options are
-     * paged in on demand, so the value→label pairs aren't known up front; we cache each selected
-     * option's label here to render the chip summary without re-fetching. Survives URL restore only
-     * as far as the value itself (a cold-restored value falls back to showing the raw value).
+     * value → label for Tag/Category options, populated by the loader as pages come in (see
+     * `$lazyLoader`). Lets the chip summary show the option name instead of the raw id — including
+     * a Category inode restored from the URL, once its page loads. A value whose page hasn't loaded
+     * yet falls back to showing the raw value.
      */
     readonly #lazyLabelByValue = signal<Record<string, string>>({});
+
+    /** Records the value→label of loaded options so the chip summary can resolve ids to names. */
+    #cacheLazyLabels(options: FieldFilterOption[]): void {
+        if (!options.length) {
+            return;
+        }
+
+        this.#lazyLabelByValue.update((cache) => {
+            const next = { ...cache };
+            for (const option of options) next[option.value] = option.label;
+
+            return next;
+        });
+    }
 
     /**
      * Page loader handed to the shared lazy multi-select for Tag/Category. Tag options are keyed by
@@ -272,7 +286,8 @@ export class DotContentDriveFieldFilterComponent {
                                 value: tag.label
                             })),
                             hasMore: this.#hasMore(response, page, perPage)
-                        }))
+                        })),
+                        tap((result) => this.#cacheLazyLabels(result.options))
                     );
         }
 
@@ -293,7 +308,8 @@ export class DotContentDriveFieldFilterComponent {
                         value: category.inode
                     })),
                     hasMore: this.#hasMore(response, page, perPage)
-                }))
+                })),
+                tap((result) => this.#cacheLazyLabels(result.options))
             );
         };
     });
@@ -485,17 +501,10 @@ export class DotContentDriveFieldFilterComponent {
     }
 
     /**
-     * The lazy multi-select emitted a new selection (Tag/Category). Cache each option's label for
-     * the chip summary, then store the values (comma-joined via the shared serializer).
+     * The lazy multi-select emitted a new selection (Tag/Category). The labels are already cached
+     * by the loader as pages load, so just store the values (comma-joined via the shared serializer).
      */
     protected onLazySelectionChange(options: DotLazyMultiselectOption[]): void {
-        this.#lazyLabelByValue.update((cache) => {
-            const next = { ...cache };
-            for (const option of options) next[option.value] = option.label;
-
-            return next;
-        });
-
         this.#patch(
             serializeUserSearchableValue(
                 options.map((option) => option.value),

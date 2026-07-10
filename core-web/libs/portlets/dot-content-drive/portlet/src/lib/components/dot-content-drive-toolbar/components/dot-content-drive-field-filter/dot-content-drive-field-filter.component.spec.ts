@@ -163,6 +163,23 @@ describe('DotContentDriveFieldFilterComponent', () => {
         });
     });
 
+    describe('lazy multi-select (Tag / Category)', () => {
+        it('should resolve a stored Category inode to its name in the chip once options load', () => {
+            store.getFilterValue.mockReturnValue('i1');
+            spectator.setInput(
+                'field',
+                field({ variable: 'cat', fieldType: 'Category', values: 'root' })
+            );
+            spectator.detectChanges();
+
+            // Opening the popover loads the category page; the loader caches inode → name.
+            openPopover();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-values'))?.textContent).toContain('News');
+        });
+    });
+
     describe('relationship', () => {
         const relationshipField = () =>
             field({
