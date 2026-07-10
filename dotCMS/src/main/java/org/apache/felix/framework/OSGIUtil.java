@@ -482,6 +482,12 @@ public class OSGIUtil {
 
                 Logger.debug(this, ()-> "****** Has found jars on upload, folder, acquiring the lock and reloading the OSGI restart *****");
 
+                // Capture the jar names now, before the reload moves them out of the upload folder, so
+                // an async restart failure can be correlated back to the upload that triggered it.
+                final String[] uploadedJars = uploadFolderFile.list(new SuffixFileFilter(".jar"));
+                final String uploadedJarNames = UtilMethods.isSet(uploadedJars)
+                        ? String.join(", ", uploadedJars) : "unknown";
+
                 try {
 
                     Logger.debug(this, () -> "Trying to lock to start the reload");
@@ -511,7 +517,7 @@ public class OSGIUtil {
                                 // This also covers failure modes restartOsgiOnlyLocal does not handle
                                 // itself (e.g. a pub/sub publish failure inside restartOsgiClusterWide).
                                 final String errorMsg = "Cluster-wide OSGI restart failed after bundle "
-                                        + "upload: " + getExceptionMessage(re);
+                                        + "upload [" + uploadedJarNames + "]: " + getExceptionMessage(re);
                                 Logger.error(this, errorMsg, re);
                                 pushBundleUploadError(errorMsg);
                             }
