@@ -670,6 +670,24 @@ rollback, with no impact on normal operation.
 > **Status**: Option 1 (runbook) is the only mitigation currently in place. Option 2 and 3 are
 > not yet implemented — tracked as technical debt before Phase 2 goes to production.
 
+#### Phase rollback during an in-flight full reindex (#36471)
+
+Rolling `FEATURE_FLAG_OPEN_SEARCH_PHASE` back to 0 **while a full reindex is draining the
+journal** is a distinct hazard from the mapping drift above. The phase is re-read per journal
+batch, so the remaining entries index to ES only and the OS reindex pair freezes partially
+populated. The ES switchover then completes in Phase 0.
+
+**Fixed behavior:** the Phase-0 switchover (and abort) now treats this state as an OS reindex
+abort — the active OS working/live rows survive in the store (the legacy `indicies` update is
+scoped to its own NULL-version rows), the OS reindex slots are cleared, and the partial physical
+`.os` pair is deleted from the cluster so a later boot catchup can never adopt it as active. The
+abort is logged at WARN with the deleted index names.
+
+**Operational rule:** the OS pair that survives the rollback is the *old* one — it stops
+receiving writes in Phase 0 and drifts exactly as described above. Before re-activating Phase 2,
+trigger a full reindex so OS is rebuilt in a dual-write phase. Prefer letting an in-flight
+reindex finish (or aborting it explicitly) over flipping the phase mid-drain.
+
 ---
 
 ### Fan-out routing with divergent index names — resolved (#35640)

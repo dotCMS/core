@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 

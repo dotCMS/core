@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory, SpyObject } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, SpyObject } from '@openng/spectator/jest';
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { Editor } from 'tinymce';

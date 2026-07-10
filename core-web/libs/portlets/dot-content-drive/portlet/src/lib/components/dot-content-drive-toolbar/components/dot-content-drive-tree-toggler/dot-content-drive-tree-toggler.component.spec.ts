@@ -1,5 +1,5 @@
 import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 
 import { DotContentDriveTreeTogglerComponent } from './dot-content-drive-tree-toggler.component';
 

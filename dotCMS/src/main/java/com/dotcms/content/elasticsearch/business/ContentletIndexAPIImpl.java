@@ -1424,6 +1424,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not mirror reindex switchover to OS store", osEx);
                 }
+            } else {
+                // Phase 0 with OS reindex slots present = the phase flag was rolled back while
+                // a dual-write full reindex was in flight (#36471). The OS pair is partial and
+                // must never survive as adoptable state.
+                abortStrandedOsReindex();
             }
 
             // Async: merge index segments and expand replicas on the newly active indices,
@@ -1521,6 +1526,65 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         notifyAdminsOfFailedReindex();
         return true;
+    }
+
+    /**
+     * Aborts a stranded OS reindex left behind by a Phase-0 rollback during an in-flight
+     * dual-write full reindex (#36471). When the phase flag is rolled back mid-journal-drain,
+     * the OS reindex pair stops receiving writes and stays partial; the OS store still holds
+     * the reindex slots pointing at it. Left alone, those slots make {@code isInFullReindex()}
+     * report true again on a later flip to Phase 2 (triggering a switchover over null ES
+     * pointers), and the partial indices are the exact {@code .os} twins of the promoted ES
+     * names — what a boot catchup would mirror-adopt as active, silently serving a fraction
+     * of the content.
+     *
+     * <p>Clears the slots first (the safety-critical part — active working/live pointers are
+     * preserved), then deletes the partial physical indices best-effort. Never throws: this
+     * runs inside the ES switchover/abort, which must not be undone by OS housekeeping.</p>
+     */
+    private void abortStrandedOsReindex() {
+        try {
+            final Optional<VersionedIndices> osExisting =
+                    versionedIndicesAPI.loadDefaultVersionedIndices();
+            final Optional<String> reindexWorking =
+                    osExisting.flatMap(VersionedIndices::reindexWorking);
+            final Optional<String> reindexLive =
+                    osExisting.flatMap(VersionedIndices::reindexLive);
+            if (reindexWorking.isEmpty() && reindexLive.isEmpty()) {
+                return;
+            }
+            Logger.warn(this, "Migration phase was rolled back to 0 during a full reindex:"
+                    + " aborting the OS reindex — clearing the OS reindex slots and deleting the"
+                    + " partial indices [" + reindexWorking.orElse("none") + ", "
+                    + reindexLive.orElse("none") + "] so they can never be adopted as active"
+                    + " (#36471)");
+
+            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
+            osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
+            osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+            osExisting.flatMap(VersionedIndices::siteSearch).ifPresent(osBuilder::siteSearch);
+            // reindexWorking / reindexLive intentionally omitted → cleared
+            final VersionedIndices rebuilt = osBuilder.build();
+            if (rebuilt.hasAnyIndex()) {
+                versionedIndicesAPI.saveIndices(rebuilt);
+            } else {
+                // The reindex slots were the only OS pointers (e.g. the active OS pair was
+                // deleted via the index-management flow mid-reindex). saveIndices contractually
+                // rejects an empty record — remove the version row instead, same as
+                // clearOsStorePointer (#35640), so the physical deletes below still run.
+                versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
+            }
+
+            for (final Optional<String> name : List.of(reindexWorking, reindexLive)) {
+                name.ifPresent(idx -> Try.run(() -> operationsOS.indexAPI().delete(idx))
+                        .onFailure(e -> Logger.warn(this,
+                                "Could not delete partial OS reindex index " + idx
+                                        + " — delete it manually", e)));
+            }
+        } catch (Exception osEx) {
+            Logger.warn(this, "Could not abort the stranded OS reindex (#36471) — the OS store"
+                    + " may still hold reindex slots pointing at partial indices", osEx);
+        }
     }
 
     /**
@@ -2899,6 +2963,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not clear OS reindex slots during abort", osEx);
                 }
+            } else {
+                // Same mid-reindex rollback state as the switchover path (#36471), reached when
+                // the operator aborts instead of letting the journal drain.
+                abortStrandedOsReindex();
             }
 
         } catch (Exception e) {
