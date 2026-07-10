@@ -30,7 +30,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { DialogEditContentHost } from '../../services/host/dialog-edit-content-host';
+import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 
 describe('DotEditContentDialogComponent', () => {
     let spectator: Spectator<DotEditContentDialogComponent>;
@@ -148,7 +148,7 @@ describe('DotEditContentDialogComponent', () => {
 
         const contentlet = { inode: 'inode' } as DotCMSContentlet;
         // The editor reports the save through the host; the dialog tracks it.
-        spectator.inject(DialogEditContentHost, true).reportSaved(contentlet);
+        spectator.inject(OverlayEditContentHost, true).reportSaved(contentlet);
 
         // Callback must NOT fire before the close actually completes
         component.closeDialog();
@@ -179,7 +179,7 @@ describe('DotEditContentDialogComponent', () => {
 
         const contentlet = { inode: 'inode', title: 'Test Content' } as DotCMSContentlet;
 
-        spectator.inject(DialogEditContentHost, true).reportSaved(contentlet);
+        spectator.inject(OverlayEditContentHost, true).reportSaved(contentlet);
         component.closeDialog();
 
         // closeSpy is the original close fn captured before #interceptDirtyClose overrides it.

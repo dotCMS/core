@@ -18,8 +18,8 @@ import { pushFormBridge, popFormBridge } from '@dotcms/edit-content-bridge';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
-import { DialogEditContentHost } from '../../services/host/dialog-edit-content-host';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
+import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
 /**
@@ -53,8 +53,8 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
         // is in-place, and chrome updates are no-ops. Inherited by the layout
         // rendered in the template and its store. The concrete class is provided so
         // this component can read `saved$`; the layout/store see it via the token.
-        DialogEditContentHost,
-        { provide: EDIT_CONTENT_HOST, useExisting: DialogEditContentHost }
+        OverlayEditContentHost,
+        { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost }
     ],
     templateUrl: './dot-edit-content-dialog.component.html',
     styleUrls: ['./dot-edit-content-dialog.component.scss'],
@@ -63,7 +63,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
 export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig);
-    readonly #host = inject(DialogEditContentHost);
+    readonly #host = inject(OverlayEditContentHost);
 
     readonly editContentLayout = viewChild<DotEditContentLayoutComponent>('editContentLayout');
 

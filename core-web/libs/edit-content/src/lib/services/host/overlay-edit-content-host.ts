@@ -20,10 +20,10 @@ import {
 } from '../../store/dot-related-content-navigation.store';
 
 /**
- * Overlay {@link EditContentHost}: the editor is mounted inside a dialog that
- * overlays another route context (e.g. UVE or a "create related content" flow).
- * It must not touch the router, the document title, or the shell breadcrumb —
- * doing so would navigate the host page away or stack duplicate trails.
+ * Overlay {@link EditContentHost}: the editor is mounted in an overlay (a dialog
+ * or a side panel) on top of another route context (e.g. UVE or a "create related
+ * content" flow). It must not touch the router, the document title, or the shell
+ * breadcrumb — doing so would navigate the host page away or stack duplicate trails.
  *
  * - **Identity** comes from the dialog config, not the route.
  * - **Navigation** (related content, locale switch) reloads the editor **in
@@ -31,13 +31,14 @@ import {
  *   emitted with the request and committed by the layout only after the
  *   unsaved-changes check passes — so cancelling never leaves a stale breadcrumb.
  * - **The trail** is a per-instance signal (not the shared root store), so an open
- *   dialog never blanks the breadcrumb of a full-screen editor behind it.
+ *   overlay never blanks the breadcrumb of a full-screen editor behind it.
  * - **The save result** is forwarded to the opener via {@link saved$}.
  *
- * Provided by {@link DotEditContentDialogComponent}.
+ * Presentation-agnostic across overlays: the same host backs both the dialog and a
+ * side panel — only the chrome (the component that provides it) differs.
  */
 @Injectable()
-export class DialogEditContentHost implements EditContentHost, OnDestroy {
+export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #config = inject(DynamicDialogConfig, { optional: true });
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();

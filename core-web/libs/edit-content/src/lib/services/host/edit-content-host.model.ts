@@ -42,7 +42,7 @@ export interface EditContentIdentity {
  *
  * - **Full-screen** ({@link RouterEditContentHost}) — identity from the route,
  *   real router navigation, document title and shell breadcrumb updates.
- * - **Dialog / overlay** ({@link DialogEditContentHost}) — identity from the
+ * - **Dialog / overlay** ({@link OverlayEditContentHost}) — identity from the
  *   dialog config, in-place reloads, and chrome updates are no-ops.
  *
  * This is the seam that removes the scattered `isDialogMode` conditionals: the

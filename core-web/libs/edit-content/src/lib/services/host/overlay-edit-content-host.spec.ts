@@ -4,18 +4,18 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DialogEditContentHost } from './dialog-edit-content-host';
+import { OverlayEditContentHost } from './overlay-edit-content-host';
 
 import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
 
-describe('DialogEditContentHost', () => {
-    let spectator: SpectatorService<DialogEditContentHost>;
-    let host: DialogEditContentHost;
+describe('OverlayEditContentHost', () => {
+    let spectator: SpectatorService<OverlayEditContentHost>;
+    let host: OverlayEditContentHost;
     let relatedNav: { appendToTrail: jest.Mock; titleCache: jest.Mock };
     let config: DynamicDialogConfig;
 
     const createHost = createServiceFactory({
-        service: DialogEditContentHost,
+        service: OverlayEditContentHost,
         providers: [
             mockProvider(DotRelatedContentNavigationStore, {
                 appendToTrail: jest.fn().mockReturnValue(['inode-a', 'inode-b']),

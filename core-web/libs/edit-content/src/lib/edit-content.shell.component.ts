@@ -24,7 +24,7 @@ import { RouterEditContentHost } from './services/host/router-edit-content-host'
         { provide: IMAGE_EDITOR_LAUNCHER, useClass: AngularImageEditorLauncher },
         // Full-screen presentation: the editor navigates via the router and owns
         // the document title / shell breadcrumb. Inherited by the layout and its
-        // store. The dialog path provides DialogEditContentHost instead.
+        // store. The dialog path provides OverlayEditContentHost instead.
         { provide: EDIT_CONTENT_HOST, useClass: RouterEditContentHost }
     ],
     template: '<p-toast /> <router-outlet />',
