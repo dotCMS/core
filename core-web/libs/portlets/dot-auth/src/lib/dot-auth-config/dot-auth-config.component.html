@@ -24,7 +24,9 @@
             }
         }
 
-        <div [class.inherited-locked]="!store.isSystem() && !isOverriding()">
+        <div
+            [class.inherited-locked]="!store.isSystem() && !isOverriding()"
+            [attr.inert]="!store.isSystem() && !isOverriding() ? '' : null">
             <!-- Track header: SSO -->
             <div class="track-header">
                 <div class="track-icon">
@@ -220,6 +222,7 @@
                                 [config]="store.draft().oidc"
                                 [syncLabel]="'dotauth.field.syncOnLogin' | dm"
                                 syncKey="syncOnLogin"
+                                [showSync]="false"
                                 (fieldChange)="onProvisioningChange('oidc', $event)" />
                         </div>
                     </div>
@@ -352,12 +355,14 @@
         <div class="field">
             <label
                 class="text-[0.8125rem]"
-                [innerHTML]="'dotauth.confirm.clear.instruction' | dm"></label>
+                [innerHTML]="
+                    'dotauth.confirm.clear.instruction' | dm: [clearConfirmPhrase]
+                "></label>
             <input
                 pInputText
                 [ngModel]="clearConfirmText()"
                 (ngModelChange)="clearConfirmText.set($event)"
-                placeholder="clear configuration"
+                [placeholder]="clearConfirmPhrase"
                 class="w-full" />
         </div>
     </div>
@@ -370,7 +375,7 @@
             [label]="'dotauth.action.clear-config' | dm"
             severity="danger"
             icon="pi pi-trash"
-            [disabled]="clearConfirmText() !== 'clear configuration'"
+            [disabled]="clearConfirmText() !== clearConfirmPhrase"
             (onClick)="clearConfig()" />
     </ng-template>
 </p-dialog>

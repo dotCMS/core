@@ -237,8 +237,8 @@ export class DotAuthListComponent {
 
     confirmClearSystem(): void {
         this.#confirmationService.confirm({
-            header: this.#dotMessageService.get('dotauth.confirm.clear.header'),
-            message: this.#dotMessageService.get('dotauth.confirm.clear-system.message'),
+            header: this.#dotMessageService.get('dotauth.confirm.clear.system.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.clear.system.message'),
             acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
             rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-danger',
@@ -248,8 +248,8 @@ export class DotAuthListComponent {
 
     confirmClearSite(row: { hostId: string }): void {
         this.#confirmationService.confirm({
-            header: this.#dotMessageService.get('dotauth.confirm.clear.header'),
-            message: this.#dotMessageService.get('dotauth.confirm.clear-site.message'),
+            header: this.#dotMessageService.get('dotauth.confirm.clear.site.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.clear.site.message'),
             acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
             rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-danger',
