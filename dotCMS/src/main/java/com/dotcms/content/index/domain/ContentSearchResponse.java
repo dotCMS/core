@@ -39,6 +39,16 @@ import javax.annotation.Nullable;
  *                        sub-aggregations and {@code top_hits} preserved); Velocity resolves
  *                        {@code $results.aggregations.<name>} through this map
  */
+// {@code aggregations} is suppressed for Jackson at the CLASS level (not with a method-level
+// {@code @JsonIgnore} on {@link #getAggregations()}) on purpose: the neutral Jackson JSON must not
+// carry {@code aggregations} — the tree is already serialized as {@code aggregationTree}, and a
+// method-level {@code @JsonIgnore} would ALSO hide it from the reflection-based
+// {@code com.dotmarketing.util.json.JSONObject} bean constructor that {@code JSONTool.generate(Object)}
+// uses (it honours {@code @JsonIgnore}). That reflection path is what {@code $json.generate($response)}
+// templates walk, so hiding {@code aggregations} there is exactly the #36435 regression. A class-level
+// {@code @JsonIgnoreProperties} is read by Jackson but NOT by the vendored JSONObject, so it keeps the
+// wire shape unchanged while leaving {@code getAggregations()} visible to Velocity's json tool.
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"aggregations"})
 public record ContentSearchResponse(
         SearchHits hits,
         @Nullable String scrollId,
@@ -97,10 +107,15 @@ public record ContentSearchResponse(
     /**
      * Velocity/back-compat alias exposing the aggregation tree as {@code $r.aggregations}, matching
      * {@code ContentSearchResults#getAggregations()} so {@code $dotcontent.raw(...)} and
-     * {@code $dotcontent.search(...)} templates walk aggregations the same way. {@code @JsonIgnore}
-     * keeps the neutral JSON unchanged (the tree is serialized as {@code aggregationTree}).
+     * {@code $dotcontent.search(...)} templates walk aggregations the same way.
+     *
+     * <p>Deliberately NOT annotated {@code @JsonIgnore}: this accessor must stay visible to the
+     * reflection-based {@code com.dotmarketing.util.json.JSONObject} bean constructor behind
+     * {@code JSONTool.generate(Object)}, so {@code $json.generate($response).aggregations...} templates
+     * keep working (issue #36435). The neutral Jackson JSON is kept unchanged (the tree is serialized
+     * only as {@code aggregationTree}) by the class-level {@code @JsonIgnoreProperties("aggregations")}
+     * instead — Jackson honours it, the vendored JSONObject does not.</p>
      */
-    @com.fasterxml.jackson.annotation.JsonIgnore
     public Map<String, Aggregation> getAggregations() {
         return aggregationTree;
     }
