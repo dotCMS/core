@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotAiService } from '@dotcms/data-access';

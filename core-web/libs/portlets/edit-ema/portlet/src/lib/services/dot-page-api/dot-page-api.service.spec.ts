@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator';
 
 import { UVE_MODE } from '@dotcms/types';
 

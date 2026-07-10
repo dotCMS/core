@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
 import { DotFolder, DotFolderEntity } from '@dotcms/dotcms-models';
 import { createFakeFolder } from '@dotcms/utils-testing';

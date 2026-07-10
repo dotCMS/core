@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
