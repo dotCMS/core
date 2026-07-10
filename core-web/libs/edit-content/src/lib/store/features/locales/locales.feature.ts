@@ -271,6 +271,11 @@ export function withLocales() {
                                         const parsedCurrentActions = parseCurrentActions(
                                             parsedSchemes[defaultSchemeId]?.actions || []
                                         );
+                                        // Remember the version we came from: the new translation has
+                                        // no inode yet, so related-content navigation uses this as
+                                        // the trail origin (see openRelated in the relationship field).
+                                        const translationSourceInode =
+                                            store.contentlet()?.inode ?? null;
                                         patchState(store, {
                                             currentLocale: locale,
                                             schemes: parsedSchemes,
@@ -283,6 +288,7 @@ export function withLocales() {
                                             isManualTranslation: copyType === 'manual',
                                             error: null,
                                             formValues: null,
+                                            translationSourceInode,
                                             contentlet:
                                                 copyType === 'populate'
                                                     ? prepareContentletForCopy(

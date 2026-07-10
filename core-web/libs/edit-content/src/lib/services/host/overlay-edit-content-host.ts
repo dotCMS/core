@@ -89,9 +89,25 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         // no-op: the dialog must not stack a trail onto the shell breadcrumb.
     }
 
-    goToSavedContent(): void {
-        // no-op: the dialog stays in place after a save; the store patch and the
-        // reported result already surface the outcome to the opener.
+    goToSavedContent(
+        contentlet: { inode: string; title: string },
+        previousInode: string | undefined
+    ): void {
+        // The dialog does not navigate, but a save mints a NEW inode. Repoint the
+        // current (last) crumb of the in-memory trail from the pre-save inode to the
+        // new one — otherwise the breadcrumb keeps labeling the stale inode and a
+        // title change made in the dialog never shows. Mirrors RouterEditContentHost,
+        // which does the same via the `rc` query param.
+        if (contentlet.inode === previousInode) {
+            return;
+        }
+
+        this.#relatedNav.registerTitle(contentlet.inode, contentlet.title);
+
+        const trail = this.#trailInodes();
+        if (trail.length) {
+            this.#trailInodes.set([...trail.slice(0, -1), contentlet.inode]);
+        }
     }
 
     goToRestoredVersion(): void {

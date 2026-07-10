@@ -11,7 +11,7 @@ import { DotRelatedContentNavigationStore } from '../../store/dot-related-conten
 describe('OverlayEditContentHost', () => {
     let spectator: SpectatorService<OverlayEditContentHost>;
     let host: OverlayEditContentHost;
-    let relatedNav: { appendToTrail: jest.Mock; titleCache: jest.Mock };
+    let relatedNav: { appendToTrail: jest.Mock; titleCache: jest.Mock; registerTitle: jest.Mock };
     let config: DynamicDialogConfig;
 
     const createHost = createServiceFactory({
@@ -19,7 +19,8 @@ describe('OverlayEditContentHost', () => {
         providers: [
             mockProvider(DotRelatedContentNavigationStore, {
                 appendToTrail: jest.fn().mockReturnValue(['inode-a', 'inode-b']),
-                titleCache: jest.fn().mockReturnValue({ 'inode-a': 'A', 'inode-b': 'B' })
+                titleCache: jest.fn().mockReturnValue({ 'inode-a': 'A', 'inode-b': 'B' }),
+                registerTitle: jest.fn()
             }),
             mockProvider(DynamicDialogConfig, { data: undefined })
         ]
@@ -74,11 +75,30 @@ describe('OverlayEditContentHost', () => {
     });
 
     // Chrome/route intents overlay another context, so they are safe no-ops.
-    it('treats title/breadcrumb/save/restore as no-ops', () => {
+    it('treats title/breadcrumb/restore as no-ops', () => {
         expect(() => host.setContentTitle('x')).not.toThrow();
         expect(() => host.addBreadcrumb({ label: 'x', url: '/y' })).not.toThrow();
-        expect(() => host.goToSavedContent()).not.toThrow();
-        expect(() => host.goToRestoredVersion()).not.toThrow();
+        expect(() => host.goToRestoredVersion('1', undefined)).not.toThrow();
+    });
+
+    describe('goToSavedContent', () => {
+        it('repoints the trail current crumb to the new inode after a save', () => {
+            // A→B trail; save B into a new inode B'. The last crumb must follow.
+            host.setTrail(['inode-a', 'inode-b']);
+
+            host.goToSavedContent({ inode: 'inode-b2', title: 'B saved' }, 'inode-b');
+
+            expect(relatedNav.registerTitle).toHaveBeenCalledWith('inode-b2', 'B saved');
+            expect(host.trail().map((c) => c.inode)).toEqual(['inode-a', 'inode-b2']);
+        });
+
+        it('does nothing when the inode did not change', () => {
+            host.setTrail(['inode-a', 'inode-b']);
+
+            host.goToSavedContent({ inode: 'inode-b', title: 'B' }, 'inode-b');
+
+            expect(host.trail().map((c) => c.inode)).toEqual(['inode-a', 'inode-b']);
+        });
     });
 
     describe('goToRelatedContent', () => {

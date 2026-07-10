@@ -108,6 +108,13 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string;
     };
+    /**
+     * Inode of the content we were editing right before switching to an
+     * untranslated locale (populate/manual). The new translation has no inode yet,
+     * so related-content navigation uses this as the trail origin (the version we
+     * came from) instead of starting a fresh trail.
+     */
+    translationSourceInode: string | null;
 
     // Activities state
     activities: Activity[];
@@ -237,6 +244,7 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
+    translationSourceInode: null,
 
     // Activities state
     activities: [],

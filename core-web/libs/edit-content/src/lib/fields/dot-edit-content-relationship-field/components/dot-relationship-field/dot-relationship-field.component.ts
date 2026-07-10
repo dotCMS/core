@@ -283,14 +283,24 @@ export class DotRelationshipFieldComponent
         }
 
         const current = this.#editContentStore.contentlet();
-        // Guard against a missing current inode and self-navigation (a content
-        // related to itself) — navigating to the content already open is a no-op.
-        if (!current?.inode || current.inode === item.inode) {
+        // Navigating to the content already open is a no-op.
+        if (current?.inode === item.inode) {
+            return;
+        }
+
+        // The current content may have no inode yet — an unsaved new translation
+        // (locale switch → populate/manual). In that case seed the trail with the
+        // version we came from (translationSourceInode) as the origin.
+        const originInode = current?.inode ?? this.#editContentStore.translationSourceInode();
+
+        // No usable origin (or it is the target itself): start a fresh trail.
+        if (!originInode || originInode === item.inode) {
+            this.#host.goToCrumb(item.inode, [item.inode]);
             return;
         }
 
         this.#host.goToRelatedContent(
-            { inode: current.inode, title: current.title ?? '' },
+            { inode: originInode, title: current?.title ?? '' },
             { inode: item.inode, title: item.title ?? '' }
         );
     }
