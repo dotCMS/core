@@ -1,8 +1,8 @@
 /**
  * Media type resolved for a thumbnail. `pdf` and `image` render the same way
  * (an `<img>` of a server-rendered raster) but are kept distinct so consumers
- * and tests stay expressive; `svg` renders with `object-contain` so vector
- * images are never cropped or distorted.
+ * and tests stay expressive. `svg` resolves to the raw vector URL (never a
+ * rasterized crop) but renders `object-cover` like every other image type.
  */
 export type DotContentThumbnailType = 'image' | 'svg' | 'pdf' | 'video' | 'icon';
 

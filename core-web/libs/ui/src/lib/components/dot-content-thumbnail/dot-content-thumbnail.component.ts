@@ -44,8 +44,8 @@ const EMPTY_THUMBNAIL: DotContentThumbnail = {
  * <dot-content-thumbnail [thumbnail]="model" />
  * ```
  *
- * Fills its parent container (`h-full w-full`); media renders `object-cover`
- * (`object-contain` for SVG). The icon glyph auto-scales with the container
+ * Fills its parent container (`h-full w-full`); all media (image/pdf/svg)
+ * renders `object-cover`. The icon glyph auto-scales with the container
  * (override with `iconSize`) and can be recolored via the
  * `--dot-content-thumbnail-icon-color` CSS custom property.
  *
@@ -191,8 +191,20 @@ export class DotContentThumbnailComponent {
             : EMPTY_THUMBNAIL;
     });
 
-    /** Effective render type; falls back to 'icon' on media error, resets when the model changes. */
-    protected readonly $type = linkedSignal<DotContentThumbnailType>(() => this.$model().type);
+    // Primitive projections of $model. $model returns a fresh object literal on
+    // every recompute, so keying the linkedSignals below directly off it would
+    // reset them on any content-identical recompute (e.g. an inline-literal
+    // [options] that changes reference each CD cycle), discarding an
+    // onLoaded()/onFailed() override and stranding the thumbnail on the skeleton.
+    // Keying off these primitives resets only when the type or src actually change.
+    private readonly $modelType = computed(() => this.$model().type);
+    private readonly $modelSrc = computed(() => this.$model().src);
+
+    /** Effective render type; falls back to 'icon' on media error, resets when the model's type/src change. */
+    protected readonly $type = linkedSignal<DotContentThumbnailType>(() => {
+        this.$modelSrc(); // track src so a media swap re-arms the icon fallback for the new media
+        return this.$modelType();
+    });
 
     /** Skeleton applies to async media that stays hidden until it paints — not icons nor playable videos. */
     protected readonly $hasLoadingOverlay = computed(() => {
@@ -201,10 +213,11 @@ export class DotContentThumbnailComponent {
         return type !== 'icon' && !(type === 'video' && this.$model().playable);
     });
 
-    /** Icon has no async load, so it starts (and resets) as 'loaded'. */
-    protected readonly $state = linkedSignal<DotContentThumbnailState>(() =>
-        this.$model().type === 'icon' ? 'loaded' : 'loading'
-    );
+    /** Icon has no async load, so it starts (and resets) as 'loaded'; a media swap re-enters 'loading'. */
+    protected readonly $state = linkedSignal<DotContentThumbnailState>(() => {
+        this.$modelSrc(); // track src so a media swap re-enters loading until the new media paints
+        return this.$modelType() === 'icon' ? 'loaded' : 'loading';
+    });
 
     constructor() {
         effect(() => this.stateChange.emit(this.$state()));

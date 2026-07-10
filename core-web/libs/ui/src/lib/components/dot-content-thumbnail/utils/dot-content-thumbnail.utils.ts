@@ -210,7 +210,7 @@ export function contentletToThumbnailModel(
     if (mimeType === PDF_MIME_TYPE) {
         return {
             type: 'pdf',
-            src: `/contentAsset/image/${inode}/${variable}/pdf_page/1/resize_w/250/quality_q/45`,
+            src: `/contentAsset/image/${inode}/${variable || 'asset'}/pdf_page/1/resize_w/250/quality_q/45`,
             icon,
             alt
         };

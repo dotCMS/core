@@ -415,8 +415,11 @@ export class DotFileFieldComponent
      * so it is fetched lazily here: from the version URL for saved contentlets,
      * from the reference URL for temp files. Saving re-uploads the edited text,
      * keeping the asset a vector.
+     *
+     * @param fieldVariable the binary field variable, used to resolve the version
+     * URL for SVGs stored in a custom field (beyond the built-in asset/fileAsset)
      */
-    #openSvgSourceEditor(uploaded: UploadedFile | null): void {
+    #openSvgSourceEditor(uploaded: UploadedFile | null, fieldVariable: string): void {
         if (!uploaded) {
             return;
         }
@@ -434,7 +437,7 @@ export class DotFileFieldComponent
                 ? file.referenceUrl
                 : file['assetVersion'] ||
                   file['fileAssetVersion'] ||
-                  file[`${file['fieldVariable']}Version`];
+                  file[`${fieldVariable}Version`];
 
         if (!textUrl) {
             this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
@@ -472,7 +475,7 @@ export class DotFileFieldComponent
         // save, so the edit action routes to the source-code editor instead, with the
         // file's text loaded.
         if (this.#currentMetadata()?.contentType?.toLowerCase() === SVG_MIME_TYPE) {
-            this.#openSvgSourceEditor(uploaded);
+            this.#openSvgSourceEditor(uploaded, variable);
 
             return;
         }
