@@ -267,6 +267,56 @@
                 "targetName": "e2e:dev:headless",
                 "ciTargetName": "e2e-ci"
             }
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build",
+                "serveTargetName": "serve",
+                "previewTargetName": "preview",
+                "serveStaticTargetName": "serve-static",
+                "devTargetName": "dev",
+                "typecheckTargetName": "typecheck"
+            },
+            "include": ["libs/edit-content-bridge/**/*"]
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build:standalone",
+                "serveTargetName": "serve",
+                "previewTargetName": "preview",
+                "serveStaticTargetName": "serve-static",
+                "devTargetName": "dev",
+                "typecheckTargetName": "typecheck"
+            },
+            "include": ["libs/sdk/analytics/**/*"]
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build:iife",
+                "serveTargetName": "serve",
+                "previewTargetName": "preview",
+                "serveStaticTargetName": "serve-static",
+                "devTargetName": "dev",
+                "typecheckTargetName": "typecheck"
+            },
+            "include": ["libs/sdk/experiments/**/*"]
+        },
+        {
+            "plugin": "@nx/rollup/plugin",
+            "options": {
+                "buildTargetName": "build"
+            },
+            "include": [
+                "libs/sdk/ai/**/*",
+                "libs/sdk/client/**/*",
+                "libs/sdk/experiments/**/*",
+                "libs/sdk/react/**/*",
+                "libs/sdk/types/**/*",
+                "libs/sdk/uve/**/*"
+            ]
         }
     ],
     "defaultBase": "main",

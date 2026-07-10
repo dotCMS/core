@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator';
 import { of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';

@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpyObject,
     byTestId
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

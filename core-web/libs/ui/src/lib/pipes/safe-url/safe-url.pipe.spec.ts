@@ -1,4 +1,4 @@
-import { createPipeFactory, mockProvider, SpectatorPipe, SpyObject } from '@ngneat/spectator/jest';
+import { createPipeFactory, mockProvider, SpectatorPipe, SpyObject } from '@openng/spectator/jest';
 
 import { DomSanitizer } from '@angular/platform-browser';
 
