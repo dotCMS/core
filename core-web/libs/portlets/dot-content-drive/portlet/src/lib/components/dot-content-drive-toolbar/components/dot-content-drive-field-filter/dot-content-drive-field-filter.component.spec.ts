@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { DialogService } from 'primeng/dynamicdialog';

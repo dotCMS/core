@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { DotMessageService } from '@dotcms/data-access';
