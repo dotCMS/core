@@ -329,6 +329,10 @@ public class PageResourceHelper implements Serializable {
 
         if (page instanceof HTMLPageAsset) {
 
+            if (!permissionAPI.doesUserHavePermission(HTMLPageAsset.class.cast(page), PermissionAPI.PERMISSION_WRITE, user, pageMode.respectAnonPerms)) {
+                throw new DotSecurityException(String.format("User '%s' does not have WRITE permission on Page '%s'",
+                        user.getUserId(), page.getIdentifier()));
+            }
             final Contentlet newPage = this.contentletAPI.copyContentlet(
                     HTMLPageAsset.class.cast(page), user, pageMode.respectAnonPerms);
 
