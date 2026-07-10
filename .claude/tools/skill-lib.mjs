@@ -23,10 +23,12 @@ export function parseFrontmatter(text) {
   const out = {};
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const kv = line.match(/^([A-Za-z_][\w-]*):\s?(.*)$/);
+    const kv = line.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
     if (!kv) continue;
     const key = kv[1];
-    let val = kv[2];
+    // Trim so aligned/extra-spaced values (`related:  [a, b]`) still hit the
+    // array/block-scalar branches instead of being misread as scalar strings.
+    let val = kv[2].trim();
 
     if (val === '>' || val === '|' || val === '>-' || val === '|-') {
       // Block scalar: consume following more-indented lines.
