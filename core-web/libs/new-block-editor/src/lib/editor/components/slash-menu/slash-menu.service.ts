@@ -289,9 +289,13 @@ export class SlashMenuService {
 
     /** Debounced re-query for the active async sub-menu; dedupes consecutive identical queries. */
     private scheduleSubmenuSearch(query: string): void {
-        if (query === this.submenuPendingQuery) return;
+        if (query === this.submenuPendingQuery) {
+            return;
+        }
         this.submenuPendingQuery = query;
-        if (this.submenuSearchTimer) clearTimeout(this.submenuSearchTimer);
+        if (this.submenuSearchTimer) {
+            clearTimeout(this.submenuSearchTimer);
+        }
         this.zone.run(() => this.isLoading.set(true));
         const token = ++this.submenuSearchToken;
         this.submenuSearchTimer = setTimeout(
@@ -303,12 +307,16 @@ export class SlashMenuService {
     /** Runs the active async sub-menu search and applies the result unless it's stale. */
     private runSubmenuSearch(query: string, token: number): void {
         const search = this.submenuSearch;
-        if (!search) return;
+        if (!search) {
+            return;
+        }
         search(query)
             .then((items) => {
                 // Drop results that arrive after a newer query, or after the sub-menu closed /
                 // switched level, so a slow response can't overwrite the current rows.
-                if (token !== this.submenuSearchToken || !this.isInSubmenu) return;
+                if (token !== this.submenuSearchToken || !this.isInSubmenu) {
+                    return;
+                }
                 this.subMenuAllItems = items;
                 this.zone.run(() => {
                     this.items.set(items);
@@ -317,7 +325,9 @@ export class SlashMenuService {
                 });
             })
             .catch(() => {
-                if (token !== this.submenuSearchToken || !this.isInSubmenu) return;
+                if (token !== this.submenuSearchToken || !this.isInSubmenu) {
+                    return;
+                }
                 this.zone.run(() => this.isLoading.set(false));
             });
     }
