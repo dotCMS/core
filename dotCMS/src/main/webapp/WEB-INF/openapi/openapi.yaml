@@ -10404,7 +10404,7 @@ paths:
       operationId: searchFolders
       parameters:
       - description: Optional case-insensitive partial match on folder name (minimum
-          3 characters when provided)
+          2 characters when provided)
         in: query
         name: name
         schema:
@@ -10467,7 +10467,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
           description: Paginated list of matching folders
         "400":
-          description: '''siteId'' is required; ''name'' must be at least 3 characters
+          description: '''siteId'' is required; ''name'' must be at least 2 characters
             if provided'
         "401":
           description: User is not authenticated
