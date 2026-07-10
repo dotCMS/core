@@ -171,6 +171,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.identifier(UtilMethods.isNotSet(contentlet.getIdentifier()) ? StringPool.BLANK : contentlet.getIdentifier() );
         builder.inode( UtilMethods.isNotSet(contentlet.getInode()) ? StringPool.BLANK : contentlet.getInode() );
 
+        
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
             if (isNotMappable(field)) {
