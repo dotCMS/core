@@ -1,4 +1,4 @@
-import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import { SpyObject, mockProvider } from '@openng/spectator/jest';
 import { Subject, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
