@@ -4,7 +4,7 @@ import {
     createHostFactory,
     Spectator,
     SpectatorHost
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
