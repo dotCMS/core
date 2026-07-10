@@ -4,7 +4,7 @@ import {
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';

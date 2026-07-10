@@ -1,4 +1,4 @@
-import { mockProvider } from '@ngneat/spectator/jest';
+import { mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';

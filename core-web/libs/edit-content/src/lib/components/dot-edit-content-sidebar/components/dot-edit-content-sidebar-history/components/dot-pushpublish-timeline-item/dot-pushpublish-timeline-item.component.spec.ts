@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
 
 import { By } from '@angular/platform-browser';
 

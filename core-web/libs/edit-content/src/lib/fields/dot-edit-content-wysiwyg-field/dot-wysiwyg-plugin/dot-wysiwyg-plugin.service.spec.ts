@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
+import { createServiceFactory, SpectatorService } from '@openng/spectator';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 

@@ -1,5 +1,6 @@
 import { SpyObject, mockProvider } from '@openng/spectator/jest';
 import { Subject, of, throwError } from 'rxjs';
+import { createFakeEvent } from '@openng/spectator';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
