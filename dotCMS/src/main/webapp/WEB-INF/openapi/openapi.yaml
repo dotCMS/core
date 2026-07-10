@@ -12389,7 +12389,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
+                $ref: "#/components/schemas/ResponseEntitySetStringView"
           description: Bundle upload accepted and scheduled. Any required OSGi restart
             happens asynchronously; watch the OSGI_FRAMEWORK_RESTART / OSGI_BUNDLES_LOADED
             / OSGI_BUNDLES_UPLOAD_FAILED system events for the outcome.
@@ -33110,6 +33110,32 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SessionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySetStringView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
         errors:
           type: array
           items:

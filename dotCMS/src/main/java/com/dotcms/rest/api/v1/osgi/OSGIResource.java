@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.osgi;
 
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityListView;
+import com.dotcms.rest.ResponseEntitySetStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -662,7 +663,7 @@ public class OSGIResource {
                                     + "OSGI_BUNDLES_LOADED / OSGI_BUNDLES_UPLOAD_FAILED system events for "
                                     + "the outcome.",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityStringView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySetStringView.class))),
                     @ApiResponse(responseCode = "403", description = "Can not access the upload folder or invalid OSGI Upload request"),
             })
     public final Response uploadBundles(@Context final HttpServletRequest request,
