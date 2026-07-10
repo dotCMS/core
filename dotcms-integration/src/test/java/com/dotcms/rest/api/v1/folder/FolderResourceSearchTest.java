@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -10,6 +11,9 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.FolderSearchPaginator;
@@ -209,6 +213,101 @@ public class FolderResourceSearchTest {
                 getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
                 "a", "/", true, "some-site-id",
                 "name", "ASC", 1, 40);
+    }
+
+    // ── hasChildren field tests ───────────────────────────────────────────────
+
+    /**
+     * Given Scenario: Parent folder has a child folder; search for the parent as admin. <br>
+     * Expected Result: The parent folder's {@code hasChildren} is {@code true}.
+     */
+    @Test
+    public void test_searchFolders_hasChildren_trueWhenSubfolderExists()
+            throws DotDataException, DotSecurityException {
+        final long ts = System.currentTimeMillis();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("hc-parent-" + ts).nextPersisted();
+        new FolderDataGen().site(site).parent(parent).name("hc-child-" + ts).nextPersisted();
+
+        final var result = search("hc-parent-" + ts, null, true, site.getIdentifier());
+
+        Assert.assertNotNull(result);
+        @SuppressWarnings("unchecked")
+        final List<FolderSearchView> views = (List<FolderSearchView>) result.getEntity();
+        Assert.assertEquals(1, views.size());
+        Assert.assertTrue("hasChildren should be true when a child folder exists",
+                views.get(0).hasChildren());
+    }
+
+    /**
+     * Given Scenario: Folder has no child folders; search for it as admin. <br>
+     * Expected Result: The folder's {@code hasChildren} is {@code false}.
+     */
+    @Test
+    public void test_searchFolders_hasChildren_falseForLeafFolder()
+            throws DotDataException, DotSecurityException {
+        final long ts = System.currentTimeMillis();
+        final Host site = new SiteDataGen().nextPersisted();
+        new FolderDataGen().site(site).name("hc-leaf-" + ts).nextPersisted();
+
+        final var result = search("hc-leaf-" + ts, null, true, site.getIdentifier());
+
+        Assert.assertNotNull(result);
+        @SuppressWarnings("unchecked")
+        final List<FolderSearchView> views = (List<FolderSearchView>) result.getEntity();
+        Assert.assertEquals(1, views.size());
+        Assert.assertFalse("hasChildren should be false for a leaf folder",
+                views.get(0).hasChildren());
+    }
+
+    /**
+     * Given Scenario: Parent folder has a child folder, but the current user lacks READ on the
+     * child. <br>
+     * Expected Result: The parent folder's {@code hasChildren} is {@code false} because the child
+     * is not visible to this user.
+     */
+    @Test
+    public void test_searchFolders_hasChildren_falseWhenChildExistsButNoReadPermission()
+            throws DotDataException, DotSecurityException {
+        final long ts = System.currentTimeMillis();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("hc-perm-parent-" + ts).nextPersisted();
+        final Folder child  = new FolderDataGen().site(site).parent(parent).name("hc-perm-child-" + ts).nextPersisted();
+
+        // Create a limited user with no additional role assignments
+        final User limitedUser = new UserDataGen()
+                .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole())
+                .nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
+
+        final String limitedRoleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId();
+        final String adminRoleId   = APILocator.getRoleAPI().loadRoleByKey(adminUser.getUserId()).getId();
+
+        // Grant READ on parent to limited user (individual permission breaks inheritance)
+        APILocator.getPermissionAPI().save(
+                new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        parent.getPermissionId(), limitedRoleId, PermissionAPI.PERMISSION_READ, true),
+                parent, APILocator.systemUser(), false);
+
+        // Set individual permissions on child for admin only — limited user has no READ
+        APILocator.getPermissionAPI().save(
+                new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        child.getPermissionId(), adminRoleId, PermissionAPI.PERMISSION_READ, true),
+                child, APILocator.systemUser(), false);
+
+        final var result = resource.searchFolders(
+                getHttpRequest(limitedUser.getEmailAddress(), password), response,
+                "hc-perm-parent-" + ts, "/", true, site.getIdentifier(),
+                "name", "ASC", 1, 40);
+
+        Assert.assertNotNull(result);
+        @SuppressWarnings("unchecked")
+        final List<FolderSearchView> views = (List<FolderSearchView>) result.getEntity();
+        Assert.assertEquals(1, views.size());
+        Assert.assertFalse("hasChildren should be false when user lacks READ on children",
+                views.get(0).hasChildren());
     }
 
     /**
