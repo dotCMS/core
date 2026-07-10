@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-
-import { DatePipe } from '@angular/common';
-=======
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
->>>>>>> origin/main
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@openng/spectator/jest';
-=======
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
->>>>>>> origin/main
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
 
 import { By } from '@angular/platform-browser';
 
