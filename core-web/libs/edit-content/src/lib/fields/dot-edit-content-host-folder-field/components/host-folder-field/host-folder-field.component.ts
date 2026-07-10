@@ -104,9 +104,16 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     /**
      * Removes PrimeNG's default popover content padding; sections manage their own spacing.
+     * PrimeNG's own (unlayered) styles set `border: 1px solid var(--p-popover-border-color)`,
+     * which beats a Tailwind `border-gray-300` utility class regardless of source order since
+     * Tailwind utilities live in a CSS layer. Overriding the CSS variable via inline style is
+     * the only way to make the popover border match the internal border-gray-300 dividers.
      */
     protected readonly popoverPt = {
-        root: { class: 'overflow-hidden' },
+        root: {
+            class: 'overflow-hidden',
+            style: { '--p-popover-border-color': 'var(--p-inputtext-border-color)' }
+        },
         content: { class: '!p-0 overflow-hidden' }
     };
 

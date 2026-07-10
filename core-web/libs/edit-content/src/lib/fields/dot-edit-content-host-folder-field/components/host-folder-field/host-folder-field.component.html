@@ -63,10 +63,10 @@
             @let filteredSites = store.filteredSites();
             @let selectedSiteKey = store.selectedSite()?.key;
             <div
-                class="flex h-full w-64 min-w-0 flex-none flex-col overflow-hidden border-r border-gray-300 p-4"
+                class="flex h-full w-64 min-w-0 flex-none flex-col overflow-hidden border-r border-(--p-inputtext-border-color) p-4"
                 data-testid="host-folder-sites">
                 @if (store.showSitesSearch()) {
-                    <p-iconField class="w-full shrink-0 pb-3">
+                    <p-iconField class="mb-3 w-full shrink-0">
                         <p-inputIcon class="pi pi-search text-sm text-surface-500" />
                         <input
                             pInputText
