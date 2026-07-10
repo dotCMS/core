@@ -24,16 +24,17 @@ export const aiSearchIndexName = "example-travel-lux";
 
 
 /**
- * Centralized experiments configuration for dotCMS Experiments
+ * Centralized configuration for dotCMS A/B Experiments.
  *
- * This configuration is used by: (NEED TO UPDATE)
- * - DotContentAnalytics provider in layout.js
- * - useContentAnalytics() hook when used standalone (optional)
+ * Consumed by `withExperiments()` (from `@dotcms/experiments`) in
+ * `src/views/Page.tsx`, which wraps `DotCMSLayoutBody` to serve experiment
+ * variants and report results. The `apiKey` acts as the enable switch: when it
+ * is empty the page renders without experiments.
  *
- * Environment variables required:
- * - NEXT_PUBLIC_DOTCMS_HOST
- * - NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY
- * - NEXT_PUBLIC_EXPERIMENTS_DEBUG
+ * Environment variables:
+ * - NEXT_PUBLIC_DOTCMS_HOST            → server (required)
+ * - NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY → apiKey (required to enable experiments)
+ * - NEXT_PUBLIC_EXPERIMENTS_DEBUG      → debug (optional; "true" enables verbose logging)
  */
 export const experimentsConfig = {
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST ?? "",

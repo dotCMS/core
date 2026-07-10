@@ -47,6 +47,14 @@ export function BlogListingPage(pageResponse: Parameters<typeof useEditableDotCM
                 if (active) {
                     setSearchResults(contentlets);
                 }
+            })
+            .catch((error) => {
+                if (active) {
+                    console.error('Blog search failed', error);
+                    // Fall back to the page-provided blogs instead of leaving
+                    // the previous (now stale) search results on screen.
+                    setSearchResults(null);
+                }
             });
 
         return () => {
