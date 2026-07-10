@@ -633,6 +633,10 @@ public class PageResourceHelper implements Serializable {
             throw new DoesNotExistException(
                     "The Contentlet being copied does not exist. Content id: " + copyContentletForm.getContentId());
         }
+        if (!permissionAPI.doesUserHavePermission(currentContentlet, PermissionAPI.PERMISSION_WRITE, user, pageMode.respectAnonPerms)) {
+            throw new DotSecurityException(String.format("User '%s' does not have WRITE permission on Contentlet '%s'",
+                    user.getUserId(), currentContentlet.getIdentifier()));
+        }
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
         Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
