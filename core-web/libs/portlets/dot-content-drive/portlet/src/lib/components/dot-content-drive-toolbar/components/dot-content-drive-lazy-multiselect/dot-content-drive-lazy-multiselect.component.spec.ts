@@ -1,5 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -112,6 +112,43 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
             spectator.triggerEventHandler('p-listbox', 'onChange', { value: ['unknown'] });
 
             expect(emitted).toEqual([[{ label: 'unknown', value: 'unknown' }]]);
+        });
+
+        it('should keep an earlier page label after a search reset', () => {
+            jest.useFakeTimers();
+            build(
+                jest
+                    .fn()
+                    .mockReturnValueOnce(page([{ label: 'Angular', value: 'a' }]))
+                    .mockReturnValue(page([{ label: 'Backend', value: 'b' }]))
+            );
+
+            // Search resets the option list to a page that no longer contains 'a'.
+            const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
+            spectator.typeInElement('b', input);
+            jest.advanceTimersByTime(DEBOUNCE_TIME);
+
+            const emitted: DotLazyMultiselectOption[][] = [];
+            spectator.component.selectionChange.subscribe((value) => emitted.push(value));
+            spectator.triggerEventHandler('p-listbox', 'onChange', { value: ['a', 'b'] });
+
+            // 'a' keeps its label from the accumulated map, not a raw-value fallback.
+            expect(emitted).toEqual([
+                [
+                    { label: 'Angular', value: 'a' },
+                    { label: 'Backend', value: 'b' }
+                ]
+            ]);
+            jest.useRealTimers();
+        });
+    });
+
+    describe('error handling', () => {
+        it('should stop loading (and paging) when a page request fails', () => {
+            build(jest.fn().mockReturnValue(throwError(() => new Error('boom'))));
+
+            expect(spectator.component.$state.loading()).toBe(false);
+            expect(spectator.component.$state.canLoadMore()).toBe(false);
         });
     });
 });

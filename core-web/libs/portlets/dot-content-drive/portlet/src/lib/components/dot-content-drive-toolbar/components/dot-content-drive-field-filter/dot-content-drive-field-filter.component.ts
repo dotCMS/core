@@ -58,7 +58,8 @@ import {
     FIELD_FILTER_TAG_TYPE,
     FIELD_FILTER_TIME_ONLY_TYPE,
     PANEL_SCROLL_HEIGHT,
-    USER_SEARCHABLE_PREFIX
+    USER_SEARCHABLE_PREFIX,
+    USER_SEARCHABLE_VALUE_SEPARATOR
 } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 import {
@@ -330,7 +331,7 @@ export class DotContentDriveFieldFilterComponent {
         if (!raw) return null;
 
         const dates = raw
-            .split(',')
+            .split(USER_SEARCHABLE_VALUE_SEPARATOR)
             .filter(Boolean)
             .map((iso) => new Date(iso));
 
@@ -388,7 +389,7 @@ export class DotContentDriveFieldFilterComponent {
         }
 
         if (control === 'date') {
-            const [from, to] = raw.split(',');
+            const [from, to] = raw.split(USER_SEARCHABLE_VALUE_SEPARATOR);
 
             return [
                 [from, to]

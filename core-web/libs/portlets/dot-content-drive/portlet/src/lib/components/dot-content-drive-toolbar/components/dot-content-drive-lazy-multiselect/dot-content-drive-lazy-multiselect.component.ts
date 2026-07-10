@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { Observable, Subject } from 'rxjs';
+import { EMPTY, Observable, Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -20,7 +20,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
-import { debounceTime, take, takeUntil } from 'rxjs/operators';
+import { catchError, debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import {
     CHIP_FILTER_LISTBOX_PT,
@@ -118,6 +118,14 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
     readonly #cancel$ = new Subject<void>();
     readonly #search$ = new Subject<string>();
 
+    /**
+     * Accumulated value → label across every page loaded this session. `onChange` resolves labels
+     * from here rather than the current page only, so a value selected earlier keeps its label
+     * after a search reset or paging (otherwise it would emit `label = value`, which for Category
+     * is the raw inode and would overwrite the good cached label upstream).
+     */
+    readonly #labelByValue = new Map<string, string>();
+
     constructor() {
         this.#search$
             .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed(this.#destroyRef))
@@ -162,9 +170,11 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
     }
 
     protected onChange(values: string[]): void {
-        const byValue = new Map(this.$state.options().map((option) => [option.value, option]));
         this.selectionChange.emit(
-            (values ?? []).map((value) => byValue.get(value) ?? { label: value, value })
+            (values ?? []).map((value) => ({
+                label: this.#labelByValue.get(value) ?? value,
+                value
+            }))
         );
     }
 
@@ -175,8 +185,23 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
             perPage: PER_PAGE,
             filter: this.$state.filter()
         })
-            .pipe(take(1), takeUntil(this.#cancel$), takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                take(1),
+                takeUntil(this.#cancel$),
+                // A failed page must not leave the list spinning forever; stop loading and stop
+                // paging so the empty state shows instead of a permanent spinner.
+                catchError(() => {
+                    patchState(this.$state, { loading: false, canLoadMore: false });
+
+                    return EMPTY;
+                }),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe(({ options, hasMore }) => {
+                for (const option of options) {
+                    this.#labelByValue.set(option.value, option.label);
+                }
+
                 patchState(this.$state, {
                     options: append ? [...this.$state.options(), ...options] : options,
                     canLoadMore: hasMore,
