@@ -1,6 +1,7 @@
 package org.apache.felix.framework;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -12,9 +13,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
@@ -368,6 +372,112 @@ public class OSGIUtilTest {
         } finally {
             uninstallQuietly(bundle);
             restoreOsgiExtras();
+        }
+    }
+
+    /**
+     * Method to test: {@link OSGIUtil} upload-processing restart decision ({@code processOsgiPackages}).
+     * Given Scenario: a PEER cluster node has already merged {@link #TARGET_PACKAGE} into the shared
+     * {@code osgi-extra.conf}, but THIS node's framework was started without it, so its live export
+     * snapshot ({@code liveExportedPackages}) still lacks it — the exact #36434 "Mode A" cluster race.
+     * ExpectedResult: {@code processOsgiPackages} returns {@code true} (this node must restart) even
+     * though the on-disk {@code osgi-extra.conf} already lists the package. The pre-fix code compared
+     * the plugin packages against the shared FILE and would have returned {@code false} (skipping the
+     * restart, so the package was never published on this node). A control case with the package
+     * already present in the live snapshot must return {@code false} (no restart needed).
+     */
+    @Test
+    public void test_zzz_04_restart_decision_uses_live_snapshot_not_shared_file() throws Exception {
+
+        final String targetClause = TARGET_PACKAGE + ";version=0";
+
+        // Clean baseline: TARGET_PACKAGE absent from both the running framework and the conf file.
+        restartWithExtraPackages(pristineExports());
+        final File uploadDir = Files.createTempDirectory("osgi-upload-37894").toFile();
+        uploadDir.deleteOnExit();
+        try {
+            // Simulate a PEER node's write: the shared osgi-extra.conf now lists TARGET_PACKAGE, but we
+            // deliberately do NOT restart, so this node's live snapshot stays stale (without it).
+            final String confPath = OSGIUtil.getInstance().getOsgiExtraConfigPath();
+            Files.write(new File(confPath).toPath(),
+                    (pristineExports() + ",\n" + targetClause).getBytes(StandardCharsets.UTF_8));
+
+            // Precondition: the shared FILE reports the package as exported...
+            assertTrue("Precondition: shared osgi-extra.conf should now list the package",
+                    OSGIUtil.getInstance().getExportedPackagesAsSet().stream()
+                            .anyMatch(p -> p.contains(TARGET_PACKAGE)));
+            // ...while the live snapshot (what the framework actually started with) does NOT.
+            assertFalse("Precondition: live snapshot must NOT contain the package yet",
+                    liveExportedPackages().stream().anyMatch(p -> p.contains(TARGET_PACKAGE)));
+
+            // REGRESSION: live snapshot lacks the package -> this node MUST restart, even though the
+            // shared file already has it. Pre-fix (compare-against-file) returned false here => Mode A.
+            writeFragmentJar(new File(uploadDir, "peer-race-a.jar"));
+            assertTrue("Node must restart when its live framework lacks the package even though a peer "
+                            + "already wrote it to the shared osgi-extra.conf (Mode A regression)",
+                    invokeProcessOsgiPackages(uploadDir, new String[]{"peer-race-a.jar"},
+                            Set.of(targetClause)));
+
+            // CONTROL: once the live snapshot DOES export the package, no restart is needed.
+            setLiveExportedPackages(withEntry(liveExportedPackages(), targetClause));
+            writeFragmentJar(new File(uploadDir, "peer-race-b.jar"));
+            assertFalse("No restart expected when the running framework already exports the package",
+                    invokeProcessOsgiPackages(uploadDir, new String[]{"peer-race-b.jar"},
+                            Set.of(targetClause)));
+        } finally {
+            restoreOsgiExtras();
+        }
+    }
+
+    /** Reflectively reads the private {@code liveExportedPackages} snapshot for assertions. */
+    @SuppressWarnings("unchecked")
+    private static Set<String> liveExportedPackages() throws Exception {
+        final Field field = OSGIUtil.class.getDeclaredField("liveExportedPackages");
+        field.setAccessible(true);
+        return (Set<String>) field.get(OSGIUtil.getInstance());
+    }
+
+    /** Reflectively overwrites the private {@code liveExportedPackages} snapshot (control case). */
+    private static void setLiveExportedPackages(final Set<String> value) throws Exception {
+        final Field field = OSGIUtil.class.getDeclaredField("liveExportedPackages");
+        field.setAccessible(true);
+        field.set(OSGIUtil.getInstance(), value);
+    }
+
+    private static Set<String> withEntry(final Set<String> base, final String entry) {
+        final Set<String> copy = new LinkedHashSet<>(base);
+        copy.add(entry);
+        return copy;
+    }
+
+    /** Invokes the private {@code processOsgiPackages} decision method and returns its needsRestart flag. */
+    private static boolean invokeProcessOsgiPackages(final File uploadDir, final String[] pathnames,
+            final Set<String> osgiUserPackages) throws Exception {
+        final Method method = OSGIUtil.class.getDeclaredMethod(
+                "processOsgiPackages", File.class, String[].class, Set.class, boolean.class);
+        method.setAccessible(true);
+        // testDryRun=false: we assert the restart decision, not package-string validation.
+        return (boolean) method.invoke(
+                OSGIUtil.getInstance(), uploadDir, pathnames, osgiUserPackages, false);
+    }
+
+    /**
+     * Writes a minimal OSGi FRAGMENT jar to the given file. A fragment is used so the move step in
+     * {@code processOsgiPackages} deletes it (fragments are not moved to the load folder), leaving no
+     * unresolved bundle behind after the test.
+     */
+    private static void writeFragmentJar(final File dest) throws Exception {
+        final Manifest manifest = new Manifest();
+        final Attributes attrs = manifest.getMainAttributes();
+        attrs.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attrs.putValue("Bundle-ManifestVersion", "2");
+        attrs.putValue("Bundle-SymbolicName", dest.getName().replace(".jar", ""));
+        attrs.putValue("Bundle-Version", "1.0.0");
+        // Exact value OSGIUtil/ResourceCollectorUtil.isFragmentJar recognizes, so the move step
+        // deletes this jar instead of leaving it (unresolved) in the shared load folder.
+        attrs.putValue("Fragment-Host", "system.bundle; extension:=framework");
+        try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(dest.toPath()), manifest)) {
+            // manifest-only fragment: nothing else to write
         }
     }
 

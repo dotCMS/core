@@ -489,8 +489,11 @@ public class OSGIUtil {
                     // Under the cluster lock: read plugin(s), (re)write exports, move jars to load,
                     // and decide whether THIS node must restart. The lock is held only for that
                     // decision + move; the restart is submitted off-thread after the lock is released.
-                    final Boolean needsRestart = lockManager.tryClusterLock(
-                            (ReturnableDelegate<Boolean>) () -> this.fireReload(uploadFolderFile, testDryRun));
+                    // Bind to a typed local so the ReturnableDelegate<Boolean> overload of
+                    // tryClusterLock is selected without an inline cast.
+                    final ReturnableDelegate<Boolean> reloadTask =
+                            () -> this.fireReload(uploadFolderFile, testDryRun);
+                    final Boolean needsRestart = lockManager.tryClusterLock(reloadTask);
                     Logger.debug(this, () -> "File Reload Done");
 
                     if (Boolean.TRUE.equals(needsRestart)) {
@@ -503,9 +506,14 @@ public class OSGIUtil {
                             try {
                                 this.restartOsgiClusterWide();
                             } catch (final Exception re) {
-                                // log the full context here (the POST has already returned 200).
-                                Logger.error(this, "Cluster-wide OSGI restart failed after bundle upload: "
-                                        + getExceptionMessage(re), re);
+                                // The POST has already returned 200, so surface the async failure to the
+                                // admin (system event + error toast) in addition to logging full context.
+                                // This also covers failure modes restartOsgiOnlyLocal does not handle
+                                // itself (e.g. a pub/sub publish failure inside restartOsgiClusterWide).
+                                final String errorMsg = "Cluster-wide OSGI restart failed after bundle "
+                                        + "upload: " + getExceptionMessage(re);
+                                Logger.error(this, errorMsg, re);
+                                pushBundleUploadError(errorMsg);
                             }
                         });
                     }
@@ -583,6 +591,17 @@ public class OSGIUtil {
             this.writeExtraPackagesFiles(exportedPackagesSet, testDryRun);
             // Move the jars to the load folder while still holding the cluster lock, so the restart
             // decision returned to the caller cannot be raced away by another node emptying upload.
+            //
+            // KNOWN LIMITATION (deferred to Stage 2 — issue #36504): the jars land in the
+            // fileinstall-watched `load` folder BEFORE the async restart (see checkUploadFolder)
+            // has republished the new exports. Because `load` is shared across the cluster and
+            // fileinstall polls it continuously, there is a brief window in which a still-stale
+            // framework can auto-start a just-moved bundle before the new package is exported,
+            // producing a TRANSIENT, self-healing "osgi.wiring.package=...(version>=0.0.0)" error
+            // that clears on the pending restart. This window exists on BOTH this (origin) node and
+            // remote nodes; it is NOT the persistent "Mode A" failure this change fixes. The full
+            // remedy (node-local `load` + verify-exports-before-start / version-gated apply) is
+            // intentionally deferred to Stage 2 (#36504).
             this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
             return true;
 
