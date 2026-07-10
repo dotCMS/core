@@ -1,11 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import {
     createServiceFactory,
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';

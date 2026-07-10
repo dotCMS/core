@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_DRAG_ITEM } from '@dotcms/portlets/content-drive/ui';

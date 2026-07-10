@@ -1,5 +1,5 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Dispatcher } from '@ngrx/signals/events';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 

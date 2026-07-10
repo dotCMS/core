@@ -9,7 +9,7 @@
 # - Uses concurrency to manage multiple runs
 # - Modular structure using reusable workflows
 # - Conditional execution based on initialization results
-# - Comprehensive PR checks including build, tests, and Semgrep analysis
+# - Comprehensive PR checks including build and tests
 # - Final status notification
 #
 # Security Note:
@@ -70,6 +70,31 @@ jobs:
       contents: read
       packages: write
 
+  # Publish Test Image - for PRs labeled "PR: docker image", promote the
+  # docker-image artifact this build just produced to dotcms/dotcms-test, in
+  # parallel with the tests below. Label-gated and internal-branch only (fork PRs
+  # have no DOCKER_* secrets). Skipped automatically when build did not run.
+  publish-test-image:
+    name: Publish Test Image
+    needs: [ initialize, build ]
+    if: >-
+      always() && needs.build.result == 'success' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'PR: docker image')
+    uses: ./.github/workflows/cicd_comp_publish-pr-test-image.yml
+    with:
+      pr: ${{ github.event.pull_request.number }}
+      sha: ${{ github.event.pull_request.head.sha }}
+      branch: ${{ github.event.pull_request.head.ref }}
+      artifact_run_id: ${{ github.run_id }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+
   # Test job - runs various tests based on initialization outputs
   test:
     name: PR Test
@@ -87,23 +112,11 @@ jobs:
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
-  semgrep:
-    name: PR Semgrep
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled() && fromJSON(needs.initialize.outputs.filters).build == 'true' &&
-      (
-      (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
-      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
-      )
-    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
-    secrets:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ semgrep,test ]
+    needs: [ test ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

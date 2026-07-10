@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';

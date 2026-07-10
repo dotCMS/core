@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
