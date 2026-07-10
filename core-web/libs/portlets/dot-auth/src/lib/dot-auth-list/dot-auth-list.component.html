@@ -2,7 +2,11 @@
 <p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
 
 <div class="list-page">
-    @if (!store.system().configured && !store.system().headlessConfigured) {
+    @if (
+        store.status() === 'loaded' &&
+        !store.system().configured &&
+        !store.system().headlessConfigured
+    ) {
         <!-- Empty state: no provider configured yet -->
         <section class="empty-state-card" data-testid="dotauth-empty-state">
             <div class="empty-state-icon">
@@ -28,7 +32,7 @@
                     data-testid="dotauth-empty-configure-headless" />
             </div>
         </section>
-    } @else {
+    } @else if (store.status() === 'loaded') {
         <!-- System hero card -->
         <section class="system-hero" data-testid="dotauth-system-card">
             <div class="flex min-w-0 flex-1 flex-col">

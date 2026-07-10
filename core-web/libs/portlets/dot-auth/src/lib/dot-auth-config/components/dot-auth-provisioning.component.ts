@@ -46,6 +46,8 @@ export class DotAuthProvisioningComponent {
     readonly config = input.required<DotAuthProvisioningConfig & Record<string, unknown>>();
     readonly syncLabel = input.required<string>();
     readonly syncKey = input<string>('syncOnLogin');
+    // ponytail: OIDC has no backend key for sync-on-login yet; hide the toggle there
+    readonly showSync = input<boolean>(true);
 
     readonly fieldChange = output<ProvisioningChange>();
 

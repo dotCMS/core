@@ -72,6 +72,7 @@ export class DotAuthConfigComponent implements OnInit {
     readonly isOverriding = signal(false);
     readonly showClearDialog = signal(false);
     readonly clearConfirmText = signal('');
+    readonly clearConfirmPhrase = this.#dotMessageService.get('dotauth.confirm.clear.phrase');
 
     readonly #pendingSaveToast = signal(false);
     readonly #pendingClearToast = signal(false);
@@ -139,6 +140,13 @@ export class DotAuthConfigComponent implements OnInit {
     }
 
     save(): void {
+        if (this.store.draft().protocol === 'none') {
+            this.#messages.add({
+                severity: 'warn',
+                summary: this.#dotMessageService.get('dotauth.validation.protocol.required')
+            });
+            return;
+        }
         const started = this.store.saveSso();
         if (started) {
             this.#pendingSaveToast.set(true);

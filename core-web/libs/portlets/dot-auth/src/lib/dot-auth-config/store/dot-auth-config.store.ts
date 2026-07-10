@@ -268,7 +268,7 @@ export const DotAuthConfigStore = signalStore(
                     });
             },
 
-            revokeAllSessionRefs(): void {
+            revokeAllSessionRefs(onSuccess?: () => void): void {
                 service
                     .revokeAllSessionRefs()
                     .pipe(
@@ -278,7 +278,7 @@ export const DotAuthConfigStore = signalStore(
                             return EMPTY;
                         })
                     )
-                    .subscribe();
+                    .subscribe(() => onSuccess?.());
             }
         };
     })
