@@ -14,20 +14,22 @@
                     (ngModelChange)="onChange('autoProvision', $event)" />
             </div>
         </div>
-        <div class="field">
-            <label>
-                {{ syncLabel() }}
-                <i
-                    class="label-tip pi pi-question-circle"
-                    [pTooltip]="'dotauth.tooltip.syncOnLogin' | dm"
-                    tooltipPosition="top"></i>
-            </label>
-            <div class="toggle-row flex items-center gap-2.5">
-                <p-toggleswitch
-                    [ngModel]="config()[syncKey()]"
-                    (ngModelChange)="onChange(syncKey(), $event)" />
+        @if (showSync()) {
+            <div class="field">
+                <label>
+                    {{ syncLabel() }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        [pTooltip]="'dotauth.tooltip.syncOnLogin' | dm"
+                        tooltipPosition="top"></i>
+                </label>
+                <div class="toggle-row flex items-center gap-2.5">
+                    <p-toggleswitch
+                        [ngModel]="config()[syncKey()]"
+                        (ngModelChange)="onChange(syncKey(), $event)" />
+                </div>
             </div>
-        </div>
+        }
         <div class="field full">
             <label>
                 {{ 'dotauth.field.defaultRoles' | dm }}

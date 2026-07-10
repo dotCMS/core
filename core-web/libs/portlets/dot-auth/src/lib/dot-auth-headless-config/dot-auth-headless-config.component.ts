@@ -99,7 +99,13 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
             acceptLabel: this.#dotMessageService.get('dotauth.action.revoke-all'),
             rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-danger',
-            accept: () => this.store.revokeAllSessionRefs()
+            accept: () =>
+                this.store.revokeAllSessionRefs(() =>
+                    this.#messages.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('dotauth.toast.sessions-revoked')
+                    })
+                )
         });
     }
 
