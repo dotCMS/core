@@ -1,5 +1,5 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { DotCopyContentService, DotHttpErrorManagerService } from '@dotcms/data-access';

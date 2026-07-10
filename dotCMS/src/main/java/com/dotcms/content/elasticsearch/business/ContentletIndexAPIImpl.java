@@ -1853,7 +1853,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // never left half-deleted. Broadcast the LOGICAL (untagged) name to every write provider
         // so each re-derives its OWN physical name (ES → bare, OS → .os). Track the read
         // provider's result as the primary (issue #35640).
-        // Primary failures are re-thrown after every provider has been called, matching the
+        // Divergent names are normal after a migration catchup, so the shadow leg skips names its
+        // engine does not hold instead of ERROR-logging an expected miss, and real shadow failures
+        // follow the shadow-write log policy (fire-and-forget) (issue #36423). Primary failures
+        // are logged at ERROR and re-thrown after every provider has been called, matching the
         // PhaseRouter.writeBoolean contract — pre-migration these propagated to the caller, and
         // swallowing them lets the REST layer report success for a failed delete (#36430).
         final ContentletIndexOperations primary = router.readProvider();
@@ -1874,9 +1877,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // (1) Delete the cluster index. A failure here must NOT abort the operation —
             // keep going so the remaining engine and the DB pointers are still handled.
             try {
-                final boolean r = ops.indexAPI().delete(physicalName);
-                if (ops == primary) {
-                    primaryResult = r;
+                if (ops != primary && !ops.indexAPI().indexExists(physicalName)) {
+                    // Expected divergent-name miss on the shadow leg — log via the shadow-write
+                    // policy instead of an ERROR stack trace (issue #36423). Fall through so the
+                    // DB pointer for this engine is still cleared in step (2) below.
+                    logShadowWriteFailure(this.getClass(),
+                            "Skipping shadow delete of " + physicalName
+                            + ": index does not exist in the shadow provider (divergent names"
+                            + " are expected during migration catchup)", null);
+                } else {
+                    final boolean r = ops.indexAPI().delete(physicalName);
+                    if (ops == primary) {
+                        primaryResult = r;
+                    }
                 }
             } catch (final Exception e) {
                 if (ops == primary && isIndexNotFound(e)) {
@@ -1888,15 +1901,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     Logger.debug(this.getClass(),
                             "Delete of " + physicalName + " hit a missing index; treating as a no-op");
                     primaryResult = true;
-                } else {
+                } else if (ops == primary) {
+                    // Genuine primary failure (engine down, auth, ...) — surface at ERROR and
+                    // re-throw to the caller so the REST layer does not report success (#36430).
                     Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
-                    if (ops == primary) {
-                        // Genuine primary failure (engine down, auth, ...) must surface to the
-                        // caller so the REST layer does not report success (#36430).
-                        primaryEx = e instanceof RuntimeException
-                                ? (RuntimeException) e : new DotRuntimeException(e);
-                    }
-                    // shadow failures are fire-and-forget in dual-write phases
+                    primaryEx = e instanceof RuntimeException
+                            ? (RuntimeException) e : new DotRuntimeException(e);
+                } else {
+                    // Shadow failures are fire-and-forget in dual-write phases (#36423).
+                    logShadowWriteFailure(this.getClass(),
+                            "Shadow delete failed (fire-and-forget in dual-write phase): "
+                            + physicalName + ": " + e.getMessage(), e);
                 }
             }
             // (2) Always remove the indicies-table pointer for this engine, even if the cluster

@@ -112,7 +112,7 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 - `tsconfig.spec.json` tsconfig.spec.json must have "isolatedModules": true in compilerOptions
 - `tsconfig.json` — do NOT add `"strict": true` or `"module": "preserve"`
 - `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`)
-- Import `mockProvider` from `@ngneat/spectator/jest` (not `@ngneat/spectator`)
+- Import `mockProvider` from `@openng/spectator/jest` (not `@openng/spectator`)
 
 ### SignalStore Tests
 

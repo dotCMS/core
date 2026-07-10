@@ -1,4 +1,4 @@
-import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';

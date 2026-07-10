@@ -1,5 +1,5 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { DotContentTypeService } from '@dotcms/data-access';

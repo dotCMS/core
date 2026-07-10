@@ -475,6 +475,32 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     }
 
     /**
+     * Given Scenario: Phase 1 (dual-write) with divergent names — {@code ES_WORKING} exists
+     *                 only in the legacy set; there is no {@code .os} sibling for it
+     *                 (the normal state after a migration catchup deployment).
+     * When : {@code delete(ES_WORKING)} is called with the bare logical name.
+     * Then : the ES index is removed and the call reports success; the shadow leg is skipped
+     *        (no delete attempt against a {@code .os} name that does not exist), so no
+     *        ERROR-level index_not_found noise is produced (#36423). Works in single-cluster
+     *        mode because the missing {@code .os} physical name is distinct from the bare name.
+     */
+    @Test
+    public void test_delete_phase1_bareNameOnlyInEs_skipsShadowAndSucceeds() {
+        setPhase(1);
+
+        assertTrue("Pre: bare name must exist in the legacy set", esImpl().indexExists(ES_WORKING));
+        assertFalse("Pre: no .os sibling may exist",
+                osIndexAPI.indexExists(opsOS.toPhysicalName(ES_WORKING)));
+
+        final boolean deleted = contentletIndexAPI().delete(ES_WORKING);
+
+        assertTrue("Primary delete must report success despite the missing .os sibling", deleted);
+        assertFalse("ES index must be gone after delete", esImpl().indexExists(ES_WORKING));
+
+        Logger.info(this, "✅ delete Phase 1 — bare-only-in-ES removed, shadow skipped: " + ES_WORKING);
+    }
+
+    /**
      * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
      * When : {@code delete()} is called with the {@code .os}-tagged name (as the QA/preview UI
      *        shows the OS index), with cascade on (default).
