@@ -99,6 +99,7 @@
                 </label>
                 <input
                     pInputText
+                    autocomplete="off"
                     [ngModel]="oidc().clientId"
                     (ngModelChange)="onChange('clientId', $event)" />
                 @if (error('clientId')) {
@@ -131,6 +132,7 @@
                     <input
                         pInputText
                         type="password"
+                        autocomplete="new-password"
                         [ngModel]="oidc().clientSecret"
                         (ngModelChange)="onChange('clientSecret', $event)" />
                     @if (error('clientSecret')) {
