@@ -12,7 +12,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -21,6 +20,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.util.io.pem.PemObject;
 
 /**
  * Generates a self-signed RSA keypair for SAML SP request signing.
@@ -76,10 +76,12 @@ final class SamlKeyPairGenerator {
         final StringWriter sw = new StringWriter();
         try (JcaPEMWriter pw = new JcaPEMWriter(sw)) {
             if (obj instanceof PrivateKey) {
-                // Write as PKCS#8 ("BEGIN PRIVATE KEY") — BouncyCastle 1.70
-                // defaults to PKCS#1 ("BEGIN RSA PRIVATE KEY") for RSA keys,
-                // but the SAML bundle's IdpConfigCredentialResolver expects PKCS#8.
-                pw.writeObject(PrivateKeyInfo.getInstance(((PrivateKey) obj).getEncoded()));
+                // Force the PKCS#8 "BEGIN PRIVATE KEY" label. JcaPEMWriter re-labels
+                // RSA keys as PKCS#1 ("BEGIN RSA PRIVATE KEY") even when handed a
+                // PrivateKeyInfo (observed on BC 1.84), and the SAML bundle's
+                // IdpConfigCredentialResolver only strips the PKCS#8 header before
+                // base64-decoding — a PKCS#1 header corrupts the decode.
+                pw.writeObject(new PemObject("PRIVATE KEY", ((PrivateKey) obj).getEncoded()));
             } else {
                 pw.writeObject(obj);
             }
