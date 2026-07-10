@@ -29,7 +29,7 @@ import { DotBrowsingService, normalizeHostFolderBrowsePath } from '@dotcms/ui';
 
 export const PEER_PAGE_LIMIT = 7000;
 export const FOLDER_PAGE_LIMIT = 40;
-export const MIN_SEARCH_LENGTH = 3;
+export const MIN_SEARCH_LENGTH = 2;
 export const SITE_SEARCH_THRESHOLD = 5;
 export const ROOT_NODE_KEY = 'root';
 export const SEARCH_LOAD_MORE_KEY = 'search';
@@ -486,8 +486,8 @@ export const HostFolderFiledStore = signalStore(
             ),
             /**
              * Searches folders within the currently selected site (recursive), scoped by
-             * name. Clears search results when the term is empty; ignores 1-2 char terms
-             * since the backend requires a minimum of 3 characters.
+             * name. Clears search results when the term is empty; ignores single-character
+             * terms since the backend requires a minimum of 2 characters.
              */
             search: rxMethod<string>(
                 pipe(

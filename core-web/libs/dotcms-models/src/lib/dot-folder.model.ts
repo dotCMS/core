@@ -66,7 +66,7 @@ export interface FolderSearchView {
  * @property {string} siteId - Site identifier to scope the search (required)
  * @property {string} [path] - Path scope for the search. Defaults to '/' (site root)
  * @property {boolean} [recursive] - false = direct children of `path` only (default); true = search all descendants
- * @property {string} [name] - Optional case-insensitive partial match on folder name (minimum 3 characters when provided)
+ * @property {string} [name] - Optional case-insensitive partial match on folder name (minimum 2 characters when provided)
  * @property {'name' | 'mod_date'} [orderby] - Column to sort by
  * @property {'ASC' | 'DESC'} [direction] - Sort direction
  * @property {number} [page] - Page number (1-based, default 1)

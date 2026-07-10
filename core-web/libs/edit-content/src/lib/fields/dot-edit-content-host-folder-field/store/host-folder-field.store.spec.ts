@@ -854,11 +854,52 @@ describe('HostFolderFiledStore', () => {
             store.selectSite(site);
             service.searchFolders.mockClear();
 
-            store.search('ab');
+            store.search('a');
             tick(500);
 
             expect(service.searchFolders).not.toHaveBeenCalled();
             expect(store.searchResults()).toBe(null);
+        }));
+
+        it('should search folders when the term is exactly the minimum length (2 chars), matching short folder names', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockClear();
+
+            const results: TreeNodeItem[] = [
+                {
+                    key: 'fx-1',
+                    label: 'demo.dotcms.com/fx/',
+                    data: {
+                        id: 'fx-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/fx/',
+                        type: 'folder'
+                    }
+                }
+            ];
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: results,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.search('fx');
+            tick(500);
+
+            expect(service.searchFolders).toHaveBeenCalledWith(
+                {
+                    siteId: site.data.id,
+                    path: '/',
+                    recursive: true,
+                    name: 'fx',
+                    page: 1,
+                    per_page: FOLDER_PAGE_LIMIT
+                },
+                site.data.hostname
+            );
+            expect(store.searchResults()).toEqual(results);
         }));
 
         it('should search folders recursively within the selected site when the term is long enough', fakeAsync(() => {
