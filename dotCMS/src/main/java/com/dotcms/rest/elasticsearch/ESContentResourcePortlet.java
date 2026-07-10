@@ -359,11 +359,24 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			arr.put(new JSONObject()
 					.put("_id", hit.getId())
 					.put("_index", hit.getIndex())
-					.put("_score", hit.getScore())
+					.put("_score", finiteOrNull(hit.getScore()))
 					.put("_source", new JSONObject(hit.getSourceAsMap())));
 		}
 		hitsObj.put("hits", arr);
 		return hitsObj;
+	}
+
+	/**
+	 * Elasticsearch emits a non-finite {@code _score} ({@code NaN}) for hits that are not
+	 * relevance-scored — field-sorted queries (unless {@code track_scores=true}), and
+	 * filter/{@code constant_score}/aggregation-only contexts. dotCMS's JSON writer rejects
+	 * {@code NaN}/{@code Infinity} ({@code JSONObject.testValidity} throws "JSON does not allow
+	 * non-finite numbers"), so coerce non-finite values to {@code null} — matching Elasticsearch's
+	 * native wire format, which the legacy {@code /api/es/search} contract emitted before the
+	 * phase-aware SearchAPI cutover (#36398).
+	 */
+	private static Object finiteOrNull(final float value) {
+		return Float.isFinite(value) ? Float.valueOf(value) : JSONObject.NULL;
 	}
 
 	/** Maps the neutral aggregation tree (keyed by aggregation name) to the ES-native {@code aggregations} JSON. */

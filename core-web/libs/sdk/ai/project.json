@@ -13,29 +13,15 @@
             }
         },
         "build": {
-            "executor": "@nx/rollup:rollup",
-            "outputs": ["{options.outputPath}"],
             "dependsOn": ["generate-spec"],
-            "options": {
-                "format": ["esm", "cjs"],
-                "compiler": "tsc",
-                "generateExportsField": true,
-                "additionalEntryPoints": [
-                    "libs/sdk/ai/src/sandbox/index.ts",
-                    "libs/sdk/ai/src/adapter/index.ts",
-                    "libs/sdk/ai/src/spec/index.ts"
-                ],
-                "outputPath": "dist/libs/sdk/ai",
-                "assets": [
-                    {
-                        "input": "libs/sdk/ai",
-                        "output": ".",
-                        "glob": "*.md"
-                    }
-                ],
-                "main": "libs/sdk/ai/src/runtime.ts",
-                "tsConfig": "libs/sdk/ai/tsconfig.lib.json"
-            }
+            "cache": true,
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ]
         },
         "publish": {
             "executor": "nx:run-commands",
