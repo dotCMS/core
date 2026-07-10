@@ -2,8 +2,7 @@
 // Validates first-party skills. Exit 0 = pass, 1 = fail.
 // Runs in CI (cicd_pr_skill-lint.yml) and locally via `just skills-lint`.
 import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
-import { CATALOG_PATH, listSkills, loadConfig, isGrandfathered } from './skill-lib.mjs';
+import { CATALOG_PATH, listSkills, loadConfig, isGrandfathered, buildCatalog } from './skill-lib.mjs';
 
 const cfg = loadConfig();
 const skills = listSkills().filter((s) => s.firstParty);
@@ -11,7 +10,9 @@ const errors = [];
 const warnings = [];
 
 const prefix = cfg.vendorPrefix;
-const domainRe = new RegExp(`^${prefix}(${cfg.approvedDomains.join('|')})-[a-z0-9-]+$`);
+// action segment: lowercase alphanumeric groups joined by single hyphens —
+// rejects leading/trailing hyphens and double hyphens (e.g. dot-issue-triage-, dot-issue--x).
+const domainRe = new RegExp(`^${prefix}(${cfg.approvedDomains.join('|')})-[a-z0-9]+(-[a-z0-9]+)*$`);
 
 // --- Per-skill checks ---------------------------------------------------
 // Grandfathered (legacy) skills are exempt: their issues become warnings (a
@@ -67,15 +68,11 @@ for (let i = 0; i < active.length; i++) {
   }
 }
 
-// --- Catalog freshness: regenerate and diff -----------------------------
+// --- Catalog freshness: compare committed file to freshly-built content --
+// buildCatalog() is pure (no write), so linting never mutates CATALOG.md on disk.
 function safeRead(p) { try { return readFileSync(p, 'utf8'); } catch { return null; } }
-const before = safeRead(CATALOG_PATH);
-try {
-  execSync('node .claude/tools/gen-skills-catalog.mjs', { stdio: 'pipe' });
-  const after = safeRead(CATALOG_PATH);
-  if (before !== after) errors.push(`CATALOG.md is stale — run 'just skills-catalog' and commit the result`);
-} catch (e) {
-  errors.push(`failed to regenerate catalog: ${e.message}`);
+if (safeRead(CATALOG_PATH) !== buildCatalog().content) {
+  errors.push(`CATALOG.md is stale — run 'just skills-catalog' and commit the result`);
 }
 
 // --- Report -------------------------------------------------------------

@@ -1,7 +1,7 @@
 {
   "vendorPrefix": "dot-",
   "approvedDomains": ["issue", "pr", "release", "cicd", "content", "ui", "sdk"],
-  "validStatuses": ["experimental", "active", "superseded"],
+  "validStatuses": ["experimental", "active", "superseded", "deprecated"],
   "requiredFields": ["name", "description", "owner", "status"],
   "grandfathered": [
     "skill-doctor"

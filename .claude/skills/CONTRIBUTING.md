@@ -4,7 +4,7 @@ How to add and maintain a dotCMS skill. The rules here are **enforced by tooling
 
 - **Fast path:** `just new-skill` → fill in `SKILL.md` → open a PR.
 - **Catalog:** [CATALOG.md](CATALOG.md) — the browsable inventory. Auto-generated; never hand-edit it.
-- **Enforcement:** `just skills-lint` locally, and the `Skill Lint` CI check on every PR that touches `.claude/skills/**`.
+- **Enforcement:** `just skills-lint` locally (optional, run it before you push — see §7), and the `Skill Lint` CI check that runs automatically and gates every PR touching `.claude/skills/**`.
 
 ---
 
@@ -66,13 +66,17 @@ Implication: don't assume Claude enforces these, and **don't reuse the reserved 
 | --- | --- |
 | **`experimental`** | Published and usable, but **not yet the canonical one for its job.** May change or be replaced. New skills start here. |
 | **`active`** | Vetted and canonical. The one to reach for — and the one to *extend* rather than fork. |
-| **`superseded`** | Replaced by something better. Kept for reference/back-compat only; not for new work. |
+| **`superseded`** | Retired **because a specific better skill replaced it** (carries `superseded-by:`). Kept for reference/back-compat only; not for new work. |
+| **`deprecated`** | Retired **with no replacement** — obsolete or no longer needed, and slated for removal. Nothing supersedes it; there's simply nothing to use instead. |
 
-**Lifecycle: `experimental → active → superseded`**
+> `superseded` vs `deprecated`: both mean "don't use for new work," but `superseded` points you to a replacement and `deprecated` doesn't. Pick `deprecated` when the capability is going away entirely.
+
+**Lifecycle: `experimental → active → superseded` *or* `deprecated`**
 
 - **→ experimental** — set automatically by `just new-skill`. You never choose it.
 - **experimental → active** — a deliberate promotion by the `owner`, via a PR that flips the field, once the skill has proven out. *(You may open the **first** PR already `active` if you're confident it works and it's been exercised; otherwise leave it `experimental` and promote later.)*
 - **→ superseded** — set on the **old** skill by the author of the **replacing** skill, in the same PR (see §4).
+- **→ deprecated** — set by the `owner` when the skill is being retired with no successor. No `superseded-by:` (there's nothing to point at).
 
 ---
 
@@ -121,7 +125,8 @@ Deliberately lightweight: four stages, minimal gates.
 
 ### Maintain
 - Each skill has one **`owner`** (frontmatter) — responsible for fixes and questions.
-- **Retiring:** set `status: superseded` + `superseded-by:` (CI enforces the reverse link); keep the skill one release cycle for reference, then delete the folder (the catalog updates itself).
+- **Retiring with a replacement:** set the old skill's `status: superseded` + `superseded-by:` (CI enforces the reverse link); keep it one release cycle for reference, then delete the folder (the catalog updates itself).
+- **Retiring with no replacement:** set `status: deprecated` (no `superseded-by:`); keep it one release cycle, then delete the folder.
 - **Duplicate found in the wild:** merge into the better one, mark the other `superseded`, update references.
 
 ---
@@ -132,7 +137,7 @@ Deliberately lightweight: four stages, minimal gates.
 | --- | --- |
 | `just new-skill` | Scaffold a valid skill (prompts for domain/action, warns on near-matches, seeds frontmatter, regenerates the catalog). Accepts flags for non-interactive use: `--domain --action --target --owner --description`. |
 | `just skills-catalog` | Regenerate `CATALOG.md` from frontmatter. |
-| `just skills-lint` | Validate naming, frontmatter, supersedes links, and catalog freshness — the exact check CI runs. |
+| `just skills-lint` | Validate naming, frontmatter, supersedes links, and catalog freshness — the exact check CI runs. **When:** run it before you open or push to a PR, and any time you've hand-edited a skill or its frontmatter *without* `just new-skill`. It's optional (CI runs the same check and is the real gate), but it takes ~1s and catches the problem locally instead of via a red build and a round-trip. Most useful after manual edits, where you must also run `just skills-catalog` and commit the result — otherwise CI fails on a stale catalog. |
 
 **Grandfathered skills:** skills listed in `skills.config.json` are exempt from naming/`owner`/`status` checks — their lint issues show as **warnings**, not failures. This is reserved for **vendored/generic skills we did not author** (currently `skill-doctor`), which intentionally keep their upstream name and get no `dot-` prefix. First-party skills should never be grandfathered — bring them into convention instead.
 

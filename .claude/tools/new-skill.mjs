@@ -42,7 +42,7 @@ try {
       const inter = [...keywords].filter((k) => t.has(k)).length;
       return { dir: s.dir, score: inter };
     })
-    .filter((x) => x.score > 0 || existing.some((s) => s.dir === name))
+    .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
