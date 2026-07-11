@@ -506,6 +506,14 @@ public class OSGIUtil {
                         Logger.info(this, () -> "Exported packages changed; scheduling cluster-wide OSGI restart");
                         // Restart off-thread so the caller (e.g. the upload POST) returns immediately.
                         DotConcurrentFactory.getInstance().getSingleSubmitter("OSGIRestart").submit(() -> {
+                            // Push the "restarting" event BEFORE the (blocking) restart so the UI shows
+                            // the spinner while it is happening. This intentionally differs from the
+                            // synchronous restartOsgi() / _restart endpoint paths, which push after the
+                            // restart returns: here the restart runs off-thread, so pushing after would
+                            // only flip the UI to "restarting" once the work is already done. A restart
+                            // FAILURE is not signalled as success — it is surfaced via
+                            // OSGI_BUNDLES_UPLOAD_FAILED (pushBundleUploadError) in the catch below, which
+                            // resets the UI state.
                             Try.run(() -> APILocator.getSystemEventsAPI()
                                     .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload()))
                                     .onFailure(ev -> Logger.error(OSGIUtil.this, ev.getMessage()));
