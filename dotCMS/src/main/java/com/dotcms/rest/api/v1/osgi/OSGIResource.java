@@ -718,7 +718,7 @@ public class OSGIResource {
         // refresh strategy is running by schedule job
         OSGIUtil.getInstance().checkUploadFolder();
 
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntitySetStringView(
                 files.stream().map(File::getName).collect(Collectors.toSet())))
                 .build();
     }

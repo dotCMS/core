@@ -13,6 +13,7 @@ import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.ReturnableDelegate;
+import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.osgi.HostActivator;
@@ -220,14 +221,39 @@ public class OSGIUtil {
         if(UtilMethods.isEmpty(extraPackages)) {
             return ;
         }
-        
-        if("RESET".equals(extraPackages)) {
-            new File(OSGIUtil.getInstance().getOsgiExtraConfigPath()).delete();
-            debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
-            return;
+
+        final boolean reset = "RESET".equals(extraPackages);
+
+        // Validate before locking: the dry-run is a pure validation with no side effects, so it stays
+        // outside the cluster lock (keeps the lock hold short and preserves the OsgiException the REST
+        // layer maps to a 400).
+        if (!reset && Config.getBooleanProperty("OSGI_TEST_DRY_RUN", true) && testDryRun) {
+            this.testDryRun(extraPackages);
         }
 
-        this.persistOsgiExtras(extraPackages, testDryRun);
+        // Serialize osgi-extra.conf mutations cluster-wide under the SAME lock the upload pipeline uses
+        // (checkUploadFolder), so a manual edit / RESET on one node cannot clobber an in-progress upload
+        // merge on another node (lost update). Keeping the shared file consistent with live state is
+        // exactly what this fix is about — this closes the gap for the other writer of the file (#36434).
+        final ClusterLockManager<String> lockManager =
+                DotConcurrentFactory.getInstance().getClusterLockManager(OSGI_RESTART_LOCK_KEY);
+        try {
+            lockManager.tryClusterLock((VoidDelegate) () -> {
+                if (reset) {
+                    new File(OSGIUtil.getInstance().getOsgiExtraConfigPath()).delete();
+                } else {
+                    // Dry-run already performed above; do not repeat it inside the lock.
+                    this.persistOsgiExtras(extraPackages, false);
+                }
+            });
+        } catch (final Throwable t) {
+            // Preserve the original unchecked exception type (e.g. DotRuntimeException) so the REST
+            // layer maps it to the same response as before.
+            if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            }
+            throw new DotRuntimeException(getExceptionMessage(t), t);
+        }
 
         //restart OSGI after delay (manual extra-packages edit path keeps the debounce)
         debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
@@ -524,10 +550,14 @@ public class OSGIUtil {
                                 // admin (system event + error toast) in addition to logging full context.
                                 // This also covers failure modes restartOsgiOnlyLocal does not handle
                                 // itself (e.g. a pub/sub publish failure inside restartOsgiClusterWide).
-                                final String errorMsg = "Cluster-wide OSGI restart failed after bundle "
-                                        + "upload [" + uploadedJarNames + "]: " + getExceptionMessage(re);
-                                Logger.error(this, errorMsg, re);
-                                pushBundleUploadError(errorMsg);
+                                // Log the full detail (jar names + exception) to the server log only...
+                                Logger.error(this, "Cluster-wide OSGI restart failed after bundle upload ["
+                                        + uploadedJarNames + "]: " + getExceptionMessage(re), re);
+                                // ...but keep the broadcast generic: pushBundleUploadError notifies every
+                                // logged-in backend user (GLOBAL visibility), so jar names and exception
+                                // text must not be exposed there (#36434).
+                                pushBundleUploadError("Cluster-wide OSGI restart failed after a bundle "
+                                        + "upload. Check the dotCMS server logs for details.");
                             }
                         });
                     }
