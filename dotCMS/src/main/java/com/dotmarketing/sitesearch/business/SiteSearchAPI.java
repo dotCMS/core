@@ -79,4 +79,15 @@ public interface SiteSearchAPI {
     List<String> listClosedIndices();
 
 	public void deleteOldSiteSearchIndices();
+
+	/**
+	 * Deletes a single site-search index by name from every engine that holds it (ES and, during a
+	 * migration, its OpenSearch counterpart), mirroring the operator's single-index view. The
+	 * active (default) site-search index cannot be deleted — deactivate it first.
+	 *
+	 * @param indexName the site-search index name (must be a {@code sitesearch_*} name)
+	 * @throws DotDataException if the name is not a site-search index or the delete fails
+	 * @throws IOException      on an index-engine error
+	 */
+	void deleteIndex(String indexName) throws DotDataException, IOException;
 }

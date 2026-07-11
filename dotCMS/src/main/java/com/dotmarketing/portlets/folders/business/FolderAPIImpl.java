@@ -830,14 +830,19 @@ public class FolderAPIImpl implements FolderAPI  {
 				page, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, params.user(), params.respectFrontendRoles())
 				.stream().map(Permissionable::getPermissionId).collect(Collectors.toSet());
 
-		// 5. Map to views.
+		// 5. Determine which folders have permission-visible children.
+		final Set<String> parentPathsWithVisibleChildren =
+				findParentPathsWithVisibleChildren(page, params);
+
+		// 6. Map to views.
 		final var views = page.stream()
 				.map(folder -> {
 					final var fullPath   = folder.getPath();
 					final var parentPath = fullPath.substring(0, fullPath.length() - folder.getName().length() - 1);
 					return new FolderSearchView(
 							folder.getIdentifier(), folder.getInode(), folder.getName(),
-							parentPath, canAddIds.contains(folder.getPermissionId()));
+							parentPath, canAddIds.contains(folder.getPermissionId()),
+							parentPathsWithVisibleChildren.contains(folder.getPath()));
 				})
 				.toList();
 
@@ -845,6 +850,32 @@ public class FolderAPIImpl implements FolderAPI  {
 		result.setTotalResults(total);
 		result.addAll(views);
 		return result;
+	}
+
+	/**
+	 * Returns the set of folder paths (e.g. {@code "/content/blog/"}) from {@code page} that have
+	 * at least one direct child folder readable by the requesting user. Two SQL round-trips: one to
+	 * fetch all children in bulk, one batch permission check on the result.
+	 */
+	private Set<String> findParentPathsWithVisibleChildren(
+			final List<Folder> page, final FolderSearchParams params) throws DotDataException, DotSecurityException {
+
+		final Set<String> pagePaths = page.stream().map(Folder::getPath).collect(Collectors.toSet());
+		final List<Folder> allChildren = folderFactory.findDirectChildFolders(params.siteId(), pagePaths);
+
+		if (allChildren.isEmpty()) {
+			return Set.of();
+		}
+
+		return permissionAPI
+				.filterCollection(allChildren, PermissionAPI.PERMISSION_READ,
+						params.user(), params.respectFrontendRoles())
+				.stream()
+				.map(child -> {
+					final var childPath = child.getPath();
+					return childPath.substring(0, childPath.length() - child.getName().length() - 1);
+				})
+				.collect(Collectors.toSet());
 	}
 
 	@CloseDBIfOpened

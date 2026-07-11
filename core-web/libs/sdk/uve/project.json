@@ -23,27 +23,15 @@
             }
         },
         "build": {
-            "executor": "@nx/rollup:rollup",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "main": "libs/sdk/uve/src/index.ts",
-                "additionalEntryPoints": ["libs/sdk/uve/src/internal.ts"],
-                "generateExportsField": true,
-                "outputPath": "dist/libs/sdk/uve",
-                "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
-                "project": "libs/sdk/uve/package.json",
-                "entryFile": "libs/sdk/uve/src/index.ts",
-                "compiler": "babel",
-                "format": ["esm", "cjs"],
-                "extractCss": false,
-                "assets": [
-                    {
-                        "input": "libs/sdk/uve",
-                        "output": ".",
-                        "glob": "*.md"
-                    }
-                ]
-            }
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ]
         },
         "build:js": {
             "executor": "@nx/esbuild:esbuild",

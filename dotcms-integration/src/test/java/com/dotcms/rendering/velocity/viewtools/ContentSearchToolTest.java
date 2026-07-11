@@ -326,6 +326,50 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             #end
             """;
 
+    /**
+     * The customer's <b>other</b> idiom (issue #36435): instead of navigating the Velocity object
+     * directly (the path {@link #verbatimCustomerVtl_rendersAfterFix()} covers), the template first
+     * round-trips the raw response through {@code $json.generate($rawResults.response)} and then walks
+     * the resulting {@code JSONObject}: {@code $results.aggregations.<name>.buckets}.
+     *
+     * <p>{@code $rawResults.response} is the {@link ContentSearchResponse} exposed by
+     * {@link ContentSearchResults#getResponse()}. {@code $json.generate(Object)} is literally
+     * {@code new com.dotmarketing.util.json.JSONObject(response)} — a reflection/bean serializer that
+     * only sees {@code getX()} accessors and honours {@code @JsonIgnore}. Before the fix,
+     * {@code getAggregations()} carried {@code @JsonIgnore}, so the aggregations vanished from the
+     * generated JSON and this loop iterated zero times (silent empty sitemap). The fix moves that
+     * suppression to a class-level {@code @JsonIgnoreProperties} that only Jackson honours, so the
+     * reflection serializer keeps {@code aggregations} — this loop must now emit buckets.</p>
+     *
+     * <p>Note: the legacy {@code .get("asMap")} hop the customer used only ever existed because the
+     * pre-migration object was an ES {@code Aggregations} (which had {@code getAsMap()}); the neutral
+     * tree is flatter, so the correct navigation is {@code aggregations.<name>.buckets} directly.</p>
+     */
+    private static final String JSON_GENERATE_VTL = """
+            #set($esQuery = '{
+                "aggs": {
+                    "content_types": {
+                        "terms": { "field": "contentType", "size": 5 }
+                    }
+                },
+                "size": 0,
+                "query": {
+                    "bool": {
+                        "filter": [ { "term": { "live": true } } ]
+                    }
+                }
+            }')
+
+            ## The #36435 idiom: JSON-ify the raw response FIRST, then navigate the JSONObject.
+            #set($rawResults = $estool.search($esQuery))
+            #set($results = $json.generate($rawResults.response))
+            aggregations: $!{results.aggregations}
+            #foreach($group in $results.aggregations.content_types.buckets)
+              json key: $!{group.key}
+              json docCount: $!{group.docCount}
+            #end
+            """;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -378,11 +422,17 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         return tool;
     }
 
-    /** Builds a Velocity context with the live {@code $estool} and a mock {@code $response} bound. */
+    /**
+     * Builds a Velocity context with the live {@code $estool}, a mock {@code $response} and the
+     * {@code $json} tool bound. {@link JSONTool} needs no real init ({@code init(Object)} is a no-op
+     * and {@code generate(Object)} is stateless), so a plain instance mirrors what the Velocity
+     * toolbox binds as {@code $json}.
+     */
     private Context velocityContext() {
         final Context ctx = new VelocityContext();
         ctx.put("estool", liveContentTool());
         ctx.put("response", mock(HttpServletResponse.class));
+        ctx.put("json", new JSONTool());
         return ctx;
     }
 
@@ -405,6 +455,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
                 Pattern.compile("docCount:\\s*\\d+").matcher(output).find());
         assertTrue("FIX (#36026): nested top_hits must be reachable, emitting 'hit id:' lines",
                 output.contains("hit id:"));
+    }
+
+    /**
+     * End-to-end regression for <a href="https://github.com/dotCMS/core/issues/36435">#36435</a>:
+     * drives the customer's {@code $json.generate($rawResults.response)}-then-navigate idiom through
+     * the real dotCMS Velocity engine and asserts the aggregation buckets survive the JSON round-trip
+     * (the {@code json key:} / {@code json docCount:} loop must execute). This is the path #36026/#36027
+     * did NOT cover — those navigate the Velocity object directly; this one serializes first.
+     */
+    @Test
+    public void jsonGenerateThenNavigateVtl_emitsBuckets() throws Exception {
+        final String output = VelocityUtil.eval(JSON_GENERATE_VTL, velocityContext());
+        Logger.info(this, "\n===== $json.generate VTL output =====\n" + output + "\n================================");
+
+        assertTrue("FIX (#36435): $json.generate($rawResults.response) must keep the aggregations, so "
+                        + "the bucket loop executes and emits 'json key:' lines",
+                output.contains("json key:"));
+        assertTrue("FIX (#36435): bucket doc counts must render with real numbers after the JSON round-trip",
+                Pattern.compile("json docCount:\\s*\\d+").matcher(output).find());
     }
 
     /**

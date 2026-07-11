@@ -4,7 +4,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     forwardRef,
     inject,
@@ -27,7 +26,11 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
-import { DotContentletStatusBadgeComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
@@ -50,13 +53,13 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         MenuModule,
         DotMessagePipe,
         DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent,
         LanguagePipe,
         PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
     styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
         RelationshipFieldStore,
         {
