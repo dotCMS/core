@@ -37,6 +37,10 @@
     overflow: hidden;
     user-select: none;
     cursor: pointer;
+    // Narrow layout (container height: auto): cap the card like the media
+    // thumbnails instead of growing with the whole text content. Ignored on
+    // the wide layout, where both axes are definite.
+    aspect-ratio: 16 / 9;
 }
 
 .dot-file-field-preview__code-content {
@@ -56,6 +60,10 @@
     justify-content: center;
     overflow: hidden;
     background-color: #e5e7eb;
+    // Narrow layout (container height: auto): keep every card the same height
+    // regardless of the media's natural ratio. Ignored on the wide layout,
+    // where both width and height are definite.
+    aspect-ratio: 16 / 9;
 
     @container preview (min-width: 500px) {
         max-width: 17.5rem;
@@ -196,17 +204,6 @@
     text-decoration: none;
 }
 
-// Third-party web-component internals – cannot be styled with Tailwind
-:host {
-    dot-contentlet-thumbnail::ng-deep {
-        .thumbnail img,
-        .background-image:not(.svg-thumbnail) img {
-            object-fit: cover;
-        }
-    }
-}
-
-// Third-party web-component internals – cannot be styled with Tailwind
 .preview-container--fade .preview-code_container::after {
     content: "";
     background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);

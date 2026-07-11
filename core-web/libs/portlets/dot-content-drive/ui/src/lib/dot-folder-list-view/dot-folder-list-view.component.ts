@@ -5,7 +5,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     effect,
     inject,
     input,
@@ -33,6 +32,7 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
@@ -46,6 +46,7 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
         ButtonModule,
         TagModule,
         DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
@@ -53,7 +54,6 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
         DotLocaleTagPipe,
         NgTemplateOutlet
     ],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
     styleUrls: ['./dot-folder-list-view.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

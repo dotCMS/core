@@ -152,6 +152,8 @@ export interface EditContentState {
     isViewingHistoricalVersion: boolean;
     historicalVersionInode: string | null;
     originalContentlet: DotCMSContentlet | null;
+    /** Inode of the version currently being fetched (view/compare click), for loading feedback */
+    loadingVersionInode: string | null;
 
     /**
      * Map of field variable names currently hidden via the BridgeAPI show()/hide() methods.
@@ -275,6 +277,7 @@ export const initialRootState: EditContentState = {
     isViewingHistoricalVersion: false,
     historicalVersionInode: null,
     originalContentlet: null,
+    loadingVersionInode: null,
 
     // Field visibility state (controlled by BridgeAPI)
     hiddenFields: {} as Record<string, boolean>,
