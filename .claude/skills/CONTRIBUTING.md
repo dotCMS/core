@@ -139,6 +139,8 @@ Deliberately lightweight: four stages, minimal gates.
 | `just skills-catalog` | Regenerate `CATALOG.md` from frontmatter. |
 | `just skills-lint` | Validate naming, frontmatter, supersedes links, and catalog freshness — the exact check CI runs. **When:** run it before you open or push to a PR, and any time you've hand-edited a skill or its frontmatter *without* `just new-skill`. It's optional (CI runs the same check and is the real gate), but it takes ~1s and catches the problem locally instead of via a red build and a round-trip. Most useful after manual edits, where you must also run `just skills-catalog` and commit the result — otherwise CI fails on a stale catalog. |
 
+> **`just new-skill` vs the `skill-creator` skill:** use `just new-skill` so your skill is born passing CI (correct name, frontmatter, and catalog); use `skill-creator` if you want help authoring the *content* — but the CI check judges the result regardless of how it was made.
+
 **Grandfathered skills:** skills predating the `dot-` convention are listed in `skills.config.json` and exempt from naming/`owner`/`status` checks — their issues show as **warnings** (a punch-list), not failures. A follow-up rename PR will bring them into convention and remove them from the list.
 
 **External skills** (symlinked from `.agents/skills/` — `nx-*`, `angular-developer`, etc.) are not governed here; they appear in the catalog's "External" section for visibility only.
