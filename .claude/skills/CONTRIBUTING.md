@@ -139,7 +139,15 @@ Deliberately lightweight: four stages, minimal gates.
 | `just skills-catalog` | Regenerate `CATALOG.md` from frontmatter. |
 | `just skills-lint` | Validate naming, frontmatter, supersedes links, and catalog freshness — the exact check CI runs. **When:** run it before you open or push to a PR, and any time you've hand-edited a skill or its frontmatter *without* `just new-skill`. It's optional (CI runs the same check and is the real gate), but it takes ~1s and catches the problem locally instead of via a red build and a round-trip. Most useful after manual edits, where you must also run `just skills-catalog` and commit the result — otherwise CI fails on a stale catalog. |
 
-> **`just new-skill` vs the `skill-creator` skill:** use `just new-skill` so your skill is born passing CI (correct name, frontmatter, and catalog); use `skill-creator` if you want help authoring the *content* — but the CI check judges the result regardless of how it was made.
+> **`just new-skill` and the `skill-creator` skill are complementary, not alternatives.** `just new-skill` makes the box compliant (correct name, frontmatter, catalog); `skill-creator` helps you fill the box (draft the body, tune the `description` for triggering, run evals). CI judges the result regardless of how it was made.
+>
+> **Want authoring help *and* compliance? Scaffold first, author second:**
+> 1. `just new-skill` — creates the compliant shell before any content exists.
+> 2. Point `skill-creator` at that skill ("improve this existing skill at `.claude/skills/dot-…`") so it edits the *content*, leaving the name and governance frontmatter intact.
+> 3. `just skills-catalog` then `just skills-lint` — skill-creator usually rewrites the `description`, which the catalog shows, so regenerate it before pushing.
+> 4. Open the PR — CI confirms.
+>
+> Don't run `skill-creator` *first*: it creates a non-`dot-` folder with no `owner`/`status` and eval scaffolding tied to that name, forcing a rename and rework afterward.
 
 **Grandfathered skills:** skills predating the `dot-` convention are listed in `skills.config.json` and exempt from naming/`owner`/`status` checks — their issues show as **warnings** (a punch-list), not failures. A follow-up rename PR will bring them into convention and remove them from the list.
 
