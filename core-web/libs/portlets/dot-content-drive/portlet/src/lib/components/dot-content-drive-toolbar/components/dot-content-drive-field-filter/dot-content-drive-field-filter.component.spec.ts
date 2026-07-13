@@ -55,7 +55,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
                     .fn()
                     .mockReturnValue(of({ entity: [{ categoryName: 'News', inode: 'i1' }] })),
                 getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getSelectedHierarchy: jest.fn().mockReturnValue(of([{ inode: 'i1', name: 'News' }]))
+                getCategory: jest.fn().mockReturnValue(of({ inode: 'i1', categoryName: 'News' }))
             }),
             mockProvider(DotContentletService, {
                 getContentletByInode: jest
@@ -176,7 +176,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             spectator.detectChanges();
             spectator.detectChanges();
 
-            expect(categoriesService.getSelectedHierarchy).toHaveBeenCalledWith(['i1']);
+            expect(categoriesService.getCategory).toHaveBeenCalledWith('i1');
             expect(spectator.query(byTestId('chip-values'))?.textContent).toContain('News');
         });
     });

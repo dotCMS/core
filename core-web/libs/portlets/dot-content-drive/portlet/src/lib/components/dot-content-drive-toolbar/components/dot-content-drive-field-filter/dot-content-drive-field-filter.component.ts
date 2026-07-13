@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { forkJoin, of, Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -22,7 +22,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { debounceTime, filter, map, take, tap } from 'rxjs/operators';
+import { catchError, debounceTime, filter, map, take, tap } from 'rxjs/operators';
 
 import {
     DotCategoriesService,
@@ -30,7 +30,7 @@ import {
     DotMessageService,
     DotTagsService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotSelectExistingContentComponent,
     getContentTypeIdFromRelationship,
@@ -472,17 +472,22 @@ export class DotContentDriveFieldFilterComponent {
         });
     }
 
-    /** Resolves Category inodes to their names in one request and caches them for the chip summary. */
+    /** Prefetches the needed categories by inode and caches their names for the chip summary. */
     #resolveCategoryLabels(inodes: string[]): void {
-        this.#categoriesService
-            .getSelectedHierarchy(inodes)
+        forkJoin(
+            inodes.map((inode) =>
+                this.#categoriesService.getCategory(inode).pipe(catchError(() => of(null)))
+            )
+        )
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((categories) => {
                 this.#cacheLazyLabels(
-                    categories.map((category) => ({
-                        value: category.inode,
-                        label: category.name ?? category.categoryName ?? category.inode
-                    }))
+                    categories
+                        .filter((category): category is DotCategory => category !== null)
+                        .map((category) => ({
+                            value: category.inode,
+                            label: category.categoryName ?? category.inode
+                        }))
                 );
             });
     }

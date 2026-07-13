@@ -80,16 +80,16 @@ export class DotCategoriesService {
     }
 
     /**
-     * Resolves categories (by inode or key) to their hierarchy, including each category's display
-     * `name`. Lets a caller holding only persisted category ids (e.g. inodes restored from a URL)
-     * label them in one request. POST /api/v1/categories/hierarchy.
-     * @param keys - Category inodes or keys to resolve.
-     * @returns Observable with the resolved categories.
+     * Retrieves a single category by its inode or key. The endpoint resolves by inode first, then
+     * key, so a caller holding a persisted category inode (e.g. restored from a URL) can look up
+     * its display name. GET /api/v1/categories/{idOrKey}.
+     * @param idOrKey - Category inode or key.
+     * @returns Observable with the resolved category.
      */
-    getSelectedHierarchy(keys: string[]): Observable<DotCategory[]> {
+    getCategory(idOrKey: string): Observable<DotCategory> {
         return this.#http
-            .post<DotCMSAPIResponse<DotCategory[]>>('/api/v1/categories/hierarchy', { keys })
-            .pipe(map((response) => response.entity ?? []));
+            .get<DotCMSAPIResponse<DotCategory>>(`/api/v1/categories/${idOrKey}`)
+            .pipe(map((response) => response.entity));
     }
 
     /**
