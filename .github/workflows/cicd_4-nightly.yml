@@ -63,15 +63,16 @@ on:
         type: boolean
         default: false
       opensearch_phase:
-        description: 'Run the integration suites under an ES->OS migration phase (0=off/default). When set to 1/2/3, deployment is skipped (test-only run).'
+        description: 'Run the integration suites under ES->OS migration phase(s). none=off/default; 1/2/3 = single phase; all = sweep 1,2,3. Any active value skips deployment (test-only run).'
         type: choice
         required: false
-        default: '0'
+        default: 'none'
         options:
-          - '0'
+          - 'none'
           - '1'
           - '2'
           - '3'
+          - 'all'
 
 jobs:
   # Setup job - determines the commit to build from.
@@ -154,7 +155,8 @@ jobs:
       run-all-tests: ${{ inputs.run-all-tests || true }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       e2e: false
-      # On-demand ES->OS phased run: '0'/empty (or scheduled) -> off; 1/2/3 -> phased integration suites.
+      # On-demand ES->OS phased run: 'none'/empty (or scheduled) -> off; 1/2/3 -> single phase;
+      # all -> sweep phases 1,2,3 across the integration battery.
       opensearch_phase: ${{ inputs.opensearch_phase }}
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
@@ -178,11 +180,11 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
 
   # Deployment job - deploys to the nightly environment.
-  # Skipped for on-demand ES->OS phased runs (opensearch_phase 1/2/3): those are test-only,
+  # Skipped for on-demand ES->OS phased runs (opensearch_phase 1/2/3/all): those are test-only,
   # so we never deploy a build that ran under a non-default migration phase.
   deployment:
     needs: [ setup, initialize,build-cli,test ]
-    if: always() && !failure() && !cancelled() && (inputs.opensearch_phase == '' || inputs.opensearch_phase == '0')
+    if: always() && !failure() && !cancelled() && !contains(fromJSON('["1","2","3","all"]'), inputs.opensearch_phase)
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
