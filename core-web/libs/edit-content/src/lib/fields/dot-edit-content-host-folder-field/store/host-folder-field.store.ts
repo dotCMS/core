@@ -194,8 +194,7 @@ export const HostFolderFiledStore = signalStore(
             searchStatus
         }) => {
             /**
-             * Full path in `//hostname/path/` format, shared by the field trigger label
-             * and the copy-to-clipboard action so both stay in sync.
+             * Full path in `//hostname/path/` format, used by the copy-to-clipboard action.
              */
             const fullPath = computed(() => {
                 const node = confirmedNode();
@@ -208,6 +207,29 @@ export const HostFolderFiledStore = signalStore(
                 const cleanHostname = hostname.replace('//', '');
 
                 return `//${cleanHostname}${path ? path : '/'}`;
+            });
+
+            /**
+             * Human-readable path for the field trigger label: hostname only for site root,
+             * otherwise hostname and folder segments joined with ` / `.
+             */
+            const displayPath = computed(() => {
+                const node = confirmedNode();
+
+                if (!node?.data) {
+                    return '';
+                }
+
+                const cleanHostname = node.data.hostname.replace('//', '');
+                const path = node.data.path;
+
+                if (!path || path === '/') {
+                    return cleanHostname;
+                }
+
+                const segments = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+
+                return [cleanHostname, ...segments].join(' / ');
             });
 
             return {
@@ -248,11 +270,10 @@ export const HostFolderFiledStore = signalStore(
                     return null;
                 }),
                 /**
-                 * Full path in `//hostname/path/` format, used by the copy-to-clipboard action
-                 * and the field trigger label.
+                 * Full path in `//hostname/path/` format, used by the copy-to-clipboard action.
                  */
                 copyPath: fullPath,
-                displayPath: fullPath,
+                displayPath,
                 /**
                  * Whether the current search term is long enough to trigger a backend search
                  * (the folder search endpoint requires at least `MIN_SEARCH_LENGTH` characters).
@@ -262,6 +283,21 @@ export const HostFolderFiledStore = signalStore(
                  * Whether the sites panel should show a search input instead of the static label.
                  */
                 showSitesSearch: computed(() => sites().length > SITE_SEARCH_THRESHOLD),
+                /**
+                 * Whether the folders panel should show the search input. Hidden only when the
+                 * selected site has finished loading and contains no folders.
+                 */
+                showFolderSearch: computed(() => {
+                    if (searchTerm().length >= MIN_SEARCH_LENGTH) {
+                        return true;
+                    }
+
+                    if (foldersStatus() !== ComponentStatus.LOADED) {
+                        return true;
+                    }
+
+                    return folders().length > 0;
+                }),
                 /**
                  * Sites filtered by the local search term (case-insensitive label match).
                  * Returns all sites when the term is empty.
@@ -869,12 +905,13 @@ export const HostFolderFiledStore = signalStore(
              * Selects a site in the overlay: resets folders/search/pagination and loads the
              * new site's root-level folders. Also stages the site itself as the pending
              * selection, so clicking "Select" right away targets the site root. Re-selecting
-             * the already-selected site (e.g. re-clicking it while browsing a preselected
-             * nested path) is a no-op, so the resolved folder tree and pending selection
-             * aren't lost.
+             * the already-selected site (e.g. re-clicking it while browsing a nested folder)
+             * stages the site root as pending and clears folder selection without reloading
+             * the folder tree.
              */
             selectSite: (site: TreeNodeItem) => {
                 if (store.selectedSite()?.key === site.key) {
+                    patchState(store, { pendingNode: site });
                     return;
                 }
 

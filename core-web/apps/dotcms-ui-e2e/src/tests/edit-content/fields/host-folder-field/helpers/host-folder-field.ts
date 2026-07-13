@@ -108,7 +108,7 @@ export class HostFolderField {
     async selectSite(name: string) {
         const item = this.siteItem(name);
         await item.waitFor({ state: 'visible', timeout: 10000 });
-        // Re-clicking the already-selected site is a store no-op (no folder/search call).
+        // Re-clicking the already-selected site stages site root only (no folder/search call).
         const responsePromise = this.page
             .waitForResponse((r) => this.isFolderSearchResponse(r.url(), r.status()), {
                 timeout: 5000
@@ -120,7 +120,7 @@ export class HostFolderField {
 
     /**
      * Selects the first site in the sites panel and returns its label text.
-     * Tolerates a no-op when that site is already selected (no folder/search request).
+     * Tolerates no folder/search request when that site is already selected.
      */
     async selectFirstSite(): Promise<string> {
         const item = this.sitesPanel.getByTestId('host-folder-site-item').first();
@@ -178,7 +178,8 @@ export class HostFolderField {
     /**
      * Selects a site root: opens overlay, optionally picks site, confirms Select.
      * When no siteName is given, confirms the already-selected site (typical for new
-     * content) without re-clicking — re-select is a store no-op and skips folder/search.
+     * content) without re-clicking — the site is already selected and no folder/search
+     * request is needed.
      */
     async selectSiteRoot(siteName?: string): Promise<string> {
         await this.openOverlay();

@@ -24,6 +24,7 @@ const FILE_MESSAGES_MOCK = {
     'dot.file.field.host.folder.action.load.more': 'Load {0} more',
     'dot.file.field.host.folder.copy.tooltip': 'Copy path',
     'dot.file.field.host.folder.empty.folders': 'No folders found',
+    'dot.file.field.host.folder.empty.folders.site': 'No folders in this site',
     'dot.file.field.host.folder.empty.sites': 'No sites found',
     'dot.file.field.host.folder.error.sites': 'Unable to load sites. Please try again.',
     'dot.file.field.host.folder.error.folders': 'Unable to load folders. Please try again.',

@@ -251,6 +251,71 @@ describe('DotHostFolderFieldComponent', () => {
         }));
     });
 
+    describe('folders panel empty states', () => {
+        const queryInOverlay = (testId: string): Element | null =>
+            spectator.query(byTestId(testId)) ??
+            document.querySelector(`[data-testid="${testId}"]`);
+
+        const showFoldersPanel = () => {
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const trigger = document.createElement('button');
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            popover.show(event, trigger);
+            spectator.detectChanges();
+        };
+
+        it('should hide the folder search and show the site empty state when the site has no folders', fakeAsync(() => {
+            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                })
+            );
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            expect(queryInOverlay('host-folder-search-input')).toBeNull();
+            expect(queryInOverlay('host-folder-folders-empty')).toHaveText(
+                'No folders in this site'
+            );
+        }));
+
+        it('should show the folder search and search empty state when search has no matches', fakeAsync(() => {
+            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            service.searchFolders.mockImplementation((params) => {
+                if (params.recursive) {
+                    return of({
+                        folders: [],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                    });
+                }
+
+                return of({
+                    folders: [TREE_SELECT_MOCK[0].children[0]],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                });
+            });
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            store.search('no-match');
+            tick(300);
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            expect(queryInOverlay('host-folder-search-input')).toBeTruthy();
+            expect(queryInOverlay('host-folder-folders-empty')).toHaveText('No folders found');
+        }));
+    });
+
     describe('onLoadMoreNode', () => {
         it('should load more root folders when the sentinel has no parent', () => {
             jest.spyOn(store, 'loadMore');
@@ -404,7 +469,7 @@ describe('DotHostFolderFieldComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('host-folder-trigger-label'))).toHaveText(
-            '//demo.dotcms.com/level1/child1/'
+            'demo.dotcms.com / level1 / child1'
         );
     });
 

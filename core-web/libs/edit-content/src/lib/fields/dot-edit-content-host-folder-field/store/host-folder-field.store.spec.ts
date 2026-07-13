@@ -300,7 +300,7 @@ describe('HostFolderFiledStore', () => {
             store.commit();
             expect(store.pathToSave()).toBe('demo.dotcms.com:/');
             expect(store.copyPath()).toBe('//demo.dotcms.com/');
-            expect(store.displayPath()).toBe('//demo.dotcms.com/');
+            expect(store.displayPath()).toBe('demo.dotcms.com');
         });
 
         it('should format a nested folder path correctly, matching copyPath', () => {
@@ -309,7 +309,7 @@ describe('HostFolderFiledStore', () => {
             store.commit();
             expect(store.pathToSave()).toBe('demo.dotcms.com:/level1/');
             expect(store.copyPath()).toBe('//demo.dotcms.com/level1/');
-            expect(store.displayPath()).toBe('//demo.dotcms.com/level1/');
+            expect(store.displayPath()).toBe('demo.dotcms.com / level1');
         });
 
         it('should be null when there is no confirmed node', () => {
@@ -364,23 +364,22 @@ describe('HostFolderFiledStore', () => {
             expect(store.folders()).toEqual(mockFolders);
         });
 
-        it('should be a no-op when re-selecting the already-selected site, preserving folders and pendingNode', () => {
+        it('should stage the site root when re-selecting the already-selected site, clearing folder selection', () => {
             const site = TREE_SELECT_SITES_MOCK[0];
-            const mockFolders: TreeNodeItem[] = [
-                {
-                    key: 'folder-1',
-                    label: 'demo.dotcms.com/folder1/',
-                    data: {
-                        id: 'folder-1',
-                        hostname: 'demo.dotcms.com',
-                        path: '/folder1/',
-                        type: 'folder'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
-                    leaf: false
-                }
-            ];
+            const folder: TreeNodeItem = {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/folder1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder1/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                leaf: false
+            };
+            const mockFolders: TreeNodeItem[] = [folder];
             service.searchFolders.mockReturnValue(
                 of({
                     folders: mockFolders,
@@ -389,16 +388,17 @@ describe('HostFolderFiledStore', () => {
             );
 
             store.selectSite(site);
+            store.setPendingNode(folder);
             service.searchFolders.mockClear();
 
-            const pendingBeforeReclick = store.pendingNode();
             const foldersBeforeReclick = store.folders();
 
             store.selectSite(site);
 
             expect(service.searchFolders).not.toHaveBeenCalled();
-            expect(store.pendingNode()).toBe(pendingBeforeReclick);
+            expect(store.pendingNode()).toBe(site);
             expect(store.folders()).toBe(foldersBeforeReclick);
+            expect(store.treeSelection()).toBe(null);
         });
     });
 
@@ -1415,6 +1415,75 @@ describe('HostFolderFiledStore', () => {
             store.loadSites({ path: null, isRequired: false });
 
             expect(store.showSitesSearch()).toBe(true);
+        });
+    });
+
+    describe('showFolderSearch', () => {
+        const site = TREE_SELECT_SITES_MOCK[0];
+        const mockFolders: TreeNodeItem[] = [
+            {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/folder1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder1/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                leaf: false
+            }
+        ];
+
+        it('should be true while folders are loading', () => {
+            const folders$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.searchFolders.mockReturnValue(folders$.asObservable());
+
+            store.selectSite(site);
+
+            expect(store.foldersStatus()).toBe(ComponentStatus.LOADING);
+            expect(store.showFolderSearch()).toBe(true);
+        });
+
+        it('should be false when folders loaded and the site has no folders', () => {
+            service.searchFolders.mockReturnValue(
+                of({ folders: [], pagination: mockPagination })
+            );
+
+            store.selectSite(site);
+
+            expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+            expect(store.folders()).toEqual([]);
+            expect(store.showFolderSearch()).toBe(false);
+        });
+
+        it('should be true when folders loaded and the site has folders', () => {
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: mockFolders,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.selectSite(site);
+
+            expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+            expect(store.showFolderSearch()).toBe(true);
+        });
+
+        it('should be true when a search term is active even if the site has no folders', () => {
+            service.searchFolders.mockReturnValue(
+                of({ folders: [], pagination: mockPagination })
+            );
+
+            store.selectSite(site);
+            store.search('ab');
+
+            expect(store.showFolderSearch()).toBe(true);
         });
     });
 
