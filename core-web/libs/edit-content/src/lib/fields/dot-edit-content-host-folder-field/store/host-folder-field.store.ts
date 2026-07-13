@@ -211,125 +211,127 @@ export const HostFolderFiledStore = signalStore(
             });
 
             return {
-            /**
-             * Icon classes for the field trigger: spinner while the initial sites/value
-             * resolution is in flight, otherwise a chevron reflecting the overlay state.
-             */
-            iconClasses: computed(() => {
-                const loading = sitesStatus() === ComponentStatus.LOADING;
-                const open = overlayOpen();
+                /**
+                 * Icon classes for the field trigger: spinner while the initial sites/value
+                 * resolution is in flight, otherwise a chevron reflecting the overlay state.
+                 */
+                iconClasses: computed(() => {
+                    const loading = sitesStatus() === ComponentStatus.LOADING;
+                    const open = overlayOpen();
 
-                return {
-                    'pi-spin': loading,
-                    'pi-spinner': loading,
-                    'pi-chevron-up': !loading && open,
-                    'pi-chevron-down': !loading && !open
-                };
-            }),
-            /**
-             * Whether the confirmed selection is a site root or a folder, used to pick
-             * between the Material "globe" icon and the folder icon in the field trigger.
-             */
-            triggerIconType: computed<'site' | 'folder'>(() => {
-                const node = confirmedNode();
+                    return {
+                        'pi-spin': loading,
+                        'pi-spinner': loading,
+                        'pi-chevron-up': !loading && open,
+                        'pi-chevron-down': !loading && !open
+                    };
+                }),
+                /**
+                 * Whether the confirmed selection is a site root or a folder, used to pick
+                 * between the Material "globe" icon and the folder icon in the field trigger.
+                 */
+                triggerIconType: computed<'site' | 'folder'>(() => {
+                    const node = confirmedNode();
 
-                return node?.data?.type === 'folder' ? 'folder' : 'site';
-            }),
-            pathToSave: computed(() => {
-                const node = confirmedNode();
+                    return node?.data?.type === 'folder' ? 'folder' : 'site';
+                }),
+                pathToSave: computed(() => {
+                    const node = confirmedNode();
 
-                if (node?.data) {
-                    const { data } = node;
-                    const newHostname = data.hostname.replace('//', '');
+                    if (node?.data) {
+                        const { data } = node;
+                        const newHostname = data.hostname.replace('//', '');
 
-                    return `${newHostname}:${data.path ? data.path : '/'}`;
-                }
-
-                return null;
-            }),
-            /**
-             * Full path in `//hostname/path/` format, used by the copy-to-clipboard action
-             * and the field trigger label.
-             */
-            copyPath: fullPath,
-            displayPath: fullPath,
-            /**
-             * Whether the current search term is long enough to trigger a backend search
-             * (the folder search endpoint requires at least `MIN_SEARCH_LENGTH` characters).
-             */
-            isSearching: computed(() => searchTerm().length >= MIN_SEARCH_LENGTH),
-            /**
-             * Whether the sites panel should show a search input instead of the static label.
-             */
-            showSitesSearch: computed(() => sites().length > SITE_SEARCH_THRESHOLD),
-            /**
-             * Sites filtered by the local search term (case-insensitive label match).
-             * Returns all sites when the term is empty.
-             */
-            filteredSites: computed(() => {
-                const term = siteSearchTerm().trim().toLowerCase();
-                const allSites = sites();
-
-                if (!term) {
-                    return allSites;
-                }
-
-                return allSites.filter((site) => site.label.toLowerCase().includes(term));
-            }),
-            /**
-             * Folders to render in the tree: search results while searching, otherwise the
-             * regular (lazily-loaded) folder tree for the selected site.
-             */
-            displayedFolders: computed(() => {
-                if (searchTerm().length >= MIN_SEARCH_LENGTH) {
-                    return searchResults() ?? [];
-                }
-
-                return folders();
-            }),
-            foldersLoading: computed(() => foldersStatus() === ComponentStatus.LOADING),
-            sitesLoadFailed: computed(() => sitesStatus() === ComponentStatus.ERROR),
-            foldersLoadFailed: computed(
-                () =>
-                    foldersStatus() === ComponentStatus.ERROR &&
-                    searchTerm().length < MIN_SEARCH_LENGTH
-            ),
-            searchLoadFailed: computed(() => searchStatus() === ComponentStatus.ERROR),
-            /**
-             * The staged folder resolved to its matching object reference inside the folders
-             * currently rendered by the tree, so `p-tree`'s `[selection]` binding (which relies
-             * on referential equality against `value`) highlights it correctly. A plain
-             * `pendingNode()` read can go stale after tree mutations that clone the array
-             * (e.g. `loadFolders`'s `structuredClone`), so we re-resolve by `key` on every read.
-             */
-            treeSelection: computed<TreeNodeItem | null>(() => {
-                const pending = pendingNode();
-                if (!pending) {
-                    return null;
-                }
-
-                const source =
-                    searchTerm().length >= MIN_SEARCH_LENGTH ? (searchResults() ?? []) : folders();
-
-                const findByKey = (nodes: TreeNodeItem[]): TreeNodeItem | null => {
-                    for (const node of nodes) {
-                        if (node.key === pending.key) {
-                            return node;
-                        }
-
-                        if (Array.isArray(node.children)) {
-                            const found = findByKey(node.children as TreeNodeItem[]);
-                            if (found) {
-                                return found;
-                            }
-                        }
+                        return `${newHostname}:${data.path ? data.path : '/'}`;
                     }
 
                     return null;
-                };
+                }),
+                /**
+                 * Full path in `//hostname/path/` format, used by the copy-to-clipboard action
+                 * and the field trigger label.
+                 */
+                copyPath: fullPath,
+                displayPath: fullPath,
+                /**
+                 * Whether the current search term is long enough to trigger a backend search
+                 * (the folder search endpoint requires at least `MIN_SEARCH_LENGTH` characters).
+                 */
+                isSearching: computed(() => searchTerm().length >= MIN_SEARCH_LENGTH),
+                /**
+                 * Whether the sites panel should show a search input instead of the static label.
+                 */
+                showSitesSearch: computed(() => sites().length > SITE_SEARCH_THRESHOLD),
+                /**
+                 * Sites filtered by the local search term (case-insensitive label match).
+                 * Returns all sites when the term is empty.
+                 */
+                filteredSites: computed(() => {
+                    const term = siteSearchTerm().trim().toLowerCase();
+                    const allSites = sites();
 
-                return findByKey(source);
-            })
+                    if (!term) {
+                        return allSites;
+                    }
+
+                    return allSites.filter((site) => site.label.toLowerCase().includes(term));
+                }),
+                /**
+                 * Folders to render in the tree: search results while searching, otherwise the
+                 * regular (lazily-loaded) folder tree for the selected site.
+                 */
+                displayedFolders: computed(() => {
+                    if (searchTerm().length >= MIN_SEARCH_LENGTH) {
+                        return searchResults() ?? [];
+                    }
+
+                    return folders();
+                }),
+                foldersLoading: computed(() => foldersStatus() === ComponentStatus.LOADING),
+                sitesLoadFailed: computed(() => sitesStatus() === ComponentStatus.ERROR),
+                foldersLoadFailed: computed(
+                    () =>
+                        foldersStatus() === ComponentStatus.ERROR &&
+                        searchTerm().length < MIN_SEARCH_LENGTH
+                ),
+                searchLoadFailed: computed(() => searchStatus() === ComponentStatus.ERROR),
+                /**
+                 * The staged folder resolved to its matching object reference inside the folders
+                 * currently rendered by the tree, so `p-tree`'s `[selection]` binding (which relies
+                 * on referential equality against `value`) highlights it correctly. A plain
+                 * `pendingNode()` read can go stale after tree mutations that clone the array
+                 * (e.g. `loadFolders`'s `structuredClone`), so we re-resolve by `key` on every read.
+                 */
+                treeSelection: computed<TreeNodeItem | null>(() => {
+                    const pending = pendingNode();
+                    if (!pending) {
+                        return null;
+                    }
+
+                    const source =
+                        searchTerm().length >= MIN_SEARCH_LENGTH
+                            ? (searchResults() ?? [])
+                            : folders();
+
+                    const findByKey = (nodes: TreeNodeItem[]): TreeNodeItem | null => {
+                        for (const node of nodes) {
+                            if (node.key === pending.key) {
+                                return node;
+                            }
+
+                            if (Array.isArray(node.children)) {
+                                const found = findByKey(node.children as TreeNodeItem[]);
+                                if (found) {
+                                    return found;
+                                }
+                            }
+                        }
+
+                        return null;
+                    };
+
+                    return findByKey(source);
+                })
             };
         }
     ),
@@ -534,7 +536,10 @@ export const HostFolderFiledStore = signalStore(
 
                                         patchState(store, {
                                             searchResults: hasMore
-                                                ? [...folders, createLoadMoreNode(SEARCH_LOAD_MORE_KEY)]
+                                                ? [
+                                                      ...folders,
+                                                      createLoadMoreNode(SEARCH_LOAD_MORE_KEY)
+                                                  ]
                                                 : folders,
                                             searchStatus: ComponentStatus.LOADED,
                                             searchPagination: { page: 1, hasMore, loading: false }
@@ -545,7 +550,11 @@ export const HostFolderFiledStore = signalStore(
                                         patchState(store, {
                                             searchResults: [],
                                             searchStatus: ComponentStatus.ERROR,
-                                            searchPagination: { page: 1, hasMore: false, loading: false }
+                                            searchPagination: {
+                                                page: 1,
+                                                hasMore: false,
+                                                loading: false
+                                            }
                                         });
                                     }
                                 })

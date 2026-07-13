@@ -200,7 +200,7 @@ export class DotBrowsingService {
             },
             expandedIcon: 'pi pi-folder-open',
             collapsedIcon: 'pi pi-folder',
-            leaf: !folder.addChildrenAllowed
+            leaf: !folder.hasChildren
         };
     }
 

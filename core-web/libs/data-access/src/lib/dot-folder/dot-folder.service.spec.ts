@@ -141,8 +141,22 @@ describe('DotFolderService', () => {
 
     describe('searchFolders', () => {
         const mockSearchFolders: FolderSearchView[] = [
-            { id: '1', inode: 'inode-1', name: 'folder1', path: '/', addChildrenAllowed: true },
-            { id: '2', inode: 'inode-2', name: 'folder2', path: '/', addChildrenAllowed: false }
+            {
+                id: '1',
+                inode: 'inode-1',
+                name: 'folder1',
+                path: '/',
+                addChildrenAllowed: true,
+                hasChildren: true
+            },
+            {
+                id: '2',
+                inode: 'inode-2',
+                name: 'folder2',
+                path: '/',
+                addChildrenAllowed: false,
+                hasChildren: false
+            }
         ];
         const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
 

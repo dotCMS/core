@@ -50,6 +50,7 @@ export interface DotFolderEntity {
  * @property {string} name - The folder's own name (not the full path)
  * @property {string} path - The path of the parent folder that contains this folder
  * @property {boolean} addChildrenAllowed - Whether new child folders can be added to this folder
+ * @property {boolean} hasChildren - Whether the folder has at least one visible child folder for the requesting user
  */
 export interface FolderSearchView {
     id: string;
@@ -57,6 +58,7 @@ export interface FolderSearchView {
     name: string;
     path: string;
     addChildrenAllowed: boolean;
+    hasChildren: boolean;
 }
 
 /**

@@ -300,14 +300,16 @@ describe('DotBrowsingService', () => {
                     inode: 'inode-1',
                     name: 'folder1',
                     path: '/',
-                    addChildrenAllowed: true
+                    addChildrenAllowed: true,
+                    hasChildren: true
                 },
                 {
                     id: 'folder-2',
                     inode: 'inode-2',
                     name: 'folder2',
                     path: '/',
-                    addChildrenAllowed: false
+                    addChildrenAllowed: false,
+                    hasChildren: false
                 }
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
@@ -355,6 +357,31 @@ describe('DotBrowsingService', () => {
                 });
         });
 
+        it('should set leaf from hasChildren, not addChildrenAllowed', (done) => {
+            const mockFolders: FolderSearchView[] = [
+                {
+                    id: 'folder-3',
+                    inode: 'inode-3',
+                    name: 'allowed-but-empty',
+                    path: '/',
+                    addChildrenAllowed: true,
+                    hasChildren: false
+                }
+            ];
+            const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
+
+            dotFolderService.searchFolders.mockReturnValue(
+                of({ folders: mockFolders, pagination: mockPagination })
+            );
+
+            spectator.service
+                .searchFolders({ siteId: 'site-1' }, 'example.com')
+                .subscribe(({ folders }) => {
+                    expect(folders[0].leaf).toBe(true);
+                    done();
+                });
+        });
+
         it('should build nested folder paths from a non-root parent path', (done) => {
             const mockFolders: FolderSearchView[] = [
                 {
@@ -362,7 +389,8 @@ describe('DotBrowsingService', () => {
                     inode: 'inode-3',
                     name: 'child',
                     path: '/level1',
-                    addChildrenAllowed: true
+                    addChildrenAllowed: true,
+                    hasChildren: true
                 }
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
