@@ -425,10 +425,28 @@ export const HostFolderFiledStore = signalStore(
                                                           ]
                                                         : nextChildren;
 
-                                                    patchState(store, {
-                                                        folders: structuredClone(store.folders()),
-                                                        nodePagination
-                                                    });
+                                                    const isSearching =
+                                                        store.searchTerm().length >=
+                                                        MIN_SEARCH_LENGTH;
+                                                    const currentSearchResults =
+                                                        store.searchResults();
+
+                                                    if (isSearching && currentSearchResults) {
+                                                        patchState(store, {
+                                                            searchResults:
+                                                                structuredClone(
+                                                                    currentSearchResults
+                                                                ),
+                                                            nodePagination
+                                                        });
+                                                    } else {
+                                                        patchState(store, {
+                                                            folders: structuredClone(
+                                                                store.folders()
+                                                            ),
+                                                            nodePagination
+                                                        });
+                                                    }
                                                 } else {
                                                     const prevFolders = params.append
                                                         ? stripLoadMore(store.folders())
@@ -658,6 +676,7 @@ export const HostFolderFiledStore = signalStore(
                     overlayOpen: false,
                     pendingNode: store.confirmedNode(),
                     siteSearchTerm: '',
+                    searchTerm: '',
                     searchStatus: ComponentStatus.INIT,
                     searchResults: null,
                     searchPagination: { page: 1, hasMore: false, loading: false }

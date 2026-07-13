@@ -564,6 +564,77 @@ describe('HostFolderFiledStore', () => {
             expect(service.searchFolders).not.toHaveBeenCalled();
         });
 
+        it('should update searchResults when expanding a folder from search results', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const searchResultNode: TreeNodeItem = {
+                key: 'match-1',
+                label: 'demo.dotcms.com/match/',
+                data: {
+                    id: 'match-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/match/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+            const childFolders: TreeNodeItem[] = [
+                {
+                    key: 'child-1',
+                    label: 'demo.dotcms.com/match/child1/',
+                    data: {
+                        id: 'child-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/match/child1/',
+                        type: 'folder'
+                    }
+                }
+            ];
+
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [searchResultNode],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+            store.selectSite(site);
+            store.search('match');
+            tick(500);
+
+            const searchResultsBeforeExpand = store.searchResults();
+            expect(searchResultsBeforeExpand).toEqual([searchResultNode]);
+            expect(store.isSearching()).toBe(true);
+            expect(store.searchTerm()).toBe('match');
+
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: childFolders,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+            store.expandNode(buildEvent(searchResultNode));
+
+            expect(service.searchFolders).toHaveBeenCalledWith(
+                {
+                    siteId: site.data.id,
+                    path: searchResultNode.data.path,
+                    recursive: false,
+                    page: 1,
+                    per_page: FOLDER_PAGE_LIMIT
+                },
+                site.data.hostname
+            );
+            expect(searchResultNode.children).toEqual(childFolders);
+            expect(store.searchResults()).toEqual([
+                {
+                    ...searchResultNode,
+                    children: childFolders,
+                    icon: 'pi pi-folder-open',
+                    leaf: false
+                }
+            ]);
+            expect(store.searchResults()).not.toBe(searchResultsBeforeExpand);
+        }));
+
         it('should load sibling nodes concurrently without leaving the first stuck in loading', () => {
             const site = TREE_SELECT_SITES_MOCK[0];
             store.selectSite(site);
@@ -1225,6 +1296,66 @@ describe('HostFolderFiledStore', () => {
             expect(store.confirmedNode()).toBe(confirmed);
             expect(store.siteSearchTerm()).toBe('');
         });
+
+        it('should reset search state when the overlay is closed so reopening shows the browse tree', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const browseFolders: TreeNodeItem[] = [
+                {
+                    key: 'folder-1',
+                    label: 'demo.dotcms.com/folder1/',
+                    data: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folder1/',
+                        type: 'folder'
+                    },
+                    expandedIcon: 'pi pi-folder-open',
+                    collapsedIcon: 'pi pi-folder',
+                    leaf: false
+                }
+            ];
+            const searchResultFolders: TreeNodeItem[] = [
+                {
+                    key: 'match-1',
+                    label: 'demo.dotcms.com/match/',
+                    data: {
+                        id: 'match-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/match/',
+                        type: 'folder'
+                    }
+                }
+            ];
+
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: browseFolders,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+            store.selectSite(site);
+
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: searchResultFolders,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+            store.openOverlay();
+            store.search('match');
+            tick(500);
+
+            expect(store.searchTerm()).toBe('match');
+            expect(store.isSearching()).toBe(true);
+            expect(store.searchResults()).toEqual(searchResultFolders);
+
+            store.closeOverlay();
+
+            expect(store.searchTerm()).toBe('');
+            expect(store.searchResults()).toBe(null);
+            expect(store.isSearching()).toBe(false);
+            expect(store.displayedFolders()).toEqual(browseFolders);
+        }));
     });
 
     describe('filteredSites / setSiteSearchTerm', () => {

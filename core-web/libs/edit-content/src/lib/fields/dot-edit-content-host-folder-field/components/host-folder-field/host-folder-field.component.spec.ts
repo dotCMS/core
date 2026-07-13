@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { Clipboard } from '@angular/cdk/clipboard';
@@ -303,12 +303,12 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     describe('onOverlayShow', () => {
-        type ComponentWithPrivateScroll = {
-            scrollSelectedFolderIntoView: (attempt?: number) => void;
+        const stubFolderTree = (root: HTMLElement | undefined) => {
+            Object.defineProperty(spectator.component, '$folderTree', {
+                value: () => (root ? { el: { nativeElement: root } } : undefined),
+                writable: true
+            });
         };
-
-        const componentWithScroll = () =>
-            spectator.component as unknown as ComponentWithPrivateScroll;
 
         it('should open the overlay through the store', () => {
             jest.spyOn(store, 'openOverlay');
@@ -319,70 +319,10 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should schedule a scroll to the selected folder once the overlay renders', async () => {
-            const scrollSpy = jest.spyOn(componentWithScroll(), 'scrollSelectedFolderIntoView');
-
-            spectator.component.onOverlayShow();
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-
-            expect(scrollSpy).toHaveBeenCalled();
-        });
-    });
-
-    describe('scrollSelectedFolderIntoView', () => {
-        type ComponentWithPrivateScroll = {
-            scrollSelectedFolderIntoView: (attempt?: number) => void;
-        };
-
-        const callScroll = () =>
-            (
-                spectator.component as unknown as ComponentWithPrivateScroll
-            ).scrollSelectedFolderIntoView();
-
-        const stubFolderTree = (root: HTMLElement | undefined) => {
-            Object.defineProperty(spectator.component, '$folderTree', {
-                value: () => (root ? { el: { nativeElement: root } } : undefined),
-                writable: true
-            });
-        };
-
-        it('should not scroll when the overlay is not open', () => {
             const node = TREE_SELECT_MOCK[0].children[0];
             store.setPendingNode(node);
-            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
-
-            callScroll();
-
-            expect(scrollIntoViewSpy).not.toHaveBeenCalled();
-        });
-
-        it('should not scroll when there is no selected folder', () => {
-            store.openOverlay();
-            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
-
-            callScroll();
-
-            expect(scrollIntoViewSpy).not.toHaveBeenCalled();
-        });
-
-        it('should retry on the next animation frame while folders are still loading', () => {
-            const node = TREE_SELECT_MOCK[0].children[0];
-            store.setPendingNode(node);
-            store.openOverlay();
             jest.spyOn(store, 'treeSelection').mockReturnValue(node);
-            jest.spyOn(store, 'foldersLoading').mockReturnValue(true);
-            const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
-
-            callScroll();
-
-            expect(rafSpy).toHaveBeenCalled();
-        });
-
-        it('should scroll the selected node into view once folders finish loading', () => {
-            const node = TREE_SELECT_MOCK[0].children[0];
-            store.setPendingNode(node);
-            store.openOverlay();
-            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
+            jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
 
             const selectedElement = document.createElement('div');
             selectedElement.classList.add('p-tree-node-content', 'p-tree-node-selected');
@@ -393,9 +333,52 @@ describe('DotHostFolderFieldComponent', () => {
             treeRoot.appendChild(selectedElement);
             stubFolderTree(treeRoot);
 
-            callScroll();
+            spectator.component.onOverlayShow();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
 
             expect(scrollIntoViewSpy).toHaveBeenCalledWith({ block: 'nearest' });
+        });
+
+        it('should not scroll when the overlay is not open', async () => {
+            const node = TREE_SELECT_MOCK[0].children[0];
+            store.setPendingNode(node);
+            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
+            jest.spyOn(store, 'overlayOpen').mockReturnValue(false);
+            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+
+            spectator.component.onOverlayShow();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(scrollIntoViewSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not scroll when there is no selected folder', async () => {
+            jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
+            jest.spyOn(store, 'treeSelection').mockReturnValue(null);
+            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+
+            spectator.component.onOverlayShow();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(scrollIntoViewSpy).not.toHaveBeenCalled();
+        });
+
+        it('should retry on the next animation frame while folders are still loading', async () => {
+            const node = TREE_SELECT_MOCK[0].children[0];
+            store.setPendingNode(node);
+            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
+            jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
+            jest.spyOn(store, 'foldersLoading').mockReturnValue(true);
+            const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
+
+            spectator.component.onOverlayShow();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(rafSpy).toHaveBeenCalled();
         });
     });
 
