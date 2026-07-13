@@ -182,8 +182,8 @@ test-integration-phase phase='3' test='':
 # and is the recommended way to triage what fails under a given phase. Each suite is a separate
 # Maven run, so docker containers are restarted per suite; the loop continues past failures and
 # prints a summary at the end (non-zero exit if any suite failed).
-# Usage: just test-integration-phase-all [PHASE]   e.g. `just test-integration-phase-all 1`
-test-integration-phase-all phase='3':
+# Usage: just test-integration-phase-per-suite [PHASE]   e.g. `just test-integration-phase-per-suite 1`
+test-integration-phase-per-suite phase='3':
    #!/usr/bin/env bash
    set -uo pipefail
    suites="MainSuite1a MainSuite1b MainSuite2a MainSuite2b MainSuite3a Junit5Suite1"
