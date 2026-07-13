@@ -445,6 +445,46 @@ export class DotContentDriveFieldFilterComponent {
 
             untracked(() => this.#resolveRelationshipItem(identifier));
         });
+
+        // Resolve stored Category inodes to their names on load (cold URL restore) so the chip
+        // shows names without opening the dropdown — one request for all unresolved inodes, cached.
+        // Tag needs no resolution (its stored value is the label). Signals read up front (see above).
+        effect(() => {
+            const control = this.$control();
+            const fieldType = this.$field().fieldType;
+            const raw = this.$rawValue();
+            const cached = this.#lazyLabelByValue();
+
+            if (
+                control !== 'lazy-multiselect' ||
+                fieldType !== FIELD_FILTER_CATEGORY_TYPE ||
+                !raw
+            ) {
+                return;
+            }
+
+            const unresolved = parseMultiValue(raw).filter((value) => !cached[value]);
+            if (!unresolved.length) {
+                return;
+            }
+
+            untracked(() => this.#resolveCategoryLabels(unresolved));
+        });
+    }
+
+    /** Resolves Category inodes to their names in one request and caches them for the chip summary. */
+    #resolveCategoryLabels(inodes: string[]): void {
+        this.#categoriesService
+            .getSelectedHierarchy(inodes)
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((categories) => {
+                this.#cacheLazyLabels(
+                    categories.map((category) => ({
+                        value: category.inode,
+                        label: category.name ?? category.categoryName ?? category.inode
+                    }))
+                );
+            });
     }
 
     /** Fetches and caches the related contentlet by identifier (the `/content/{id}` endpoint accepts one). */

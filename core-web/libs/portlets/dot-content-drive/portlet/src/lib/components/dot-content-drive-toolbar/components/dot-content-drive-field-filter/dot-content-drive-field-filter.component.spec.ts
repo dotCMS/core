@@ -38,6 +38,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let dialogService: SpyObject<DialogService>;
     let contentletService: SpyObject<DotContentletService>;
+    let categoriesService: SpyObject<DotCategoriesService>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveFieldFilterComponent,
@@ -53,7 +54,8 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 getChildrenPaginated: jest
                     .fn()
                     .mockReturnValue(of({ entity: [{ categoryName: 'News', inode: 'i1' }] })),
-                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] }))
+                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
+                getSelectedHierarchy: jest.fn().mockReturnValue(of([{ inode: 'i1', name: 'News' }]))
             }),
             mockProvider(DotContentletService, {
                 getContentletByInode: jest
@@ -74,6 +76,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
         store = spectator.inject(DotContentDriveStore, true);
         dialogService = spectator.inject(DialogService, true);
         contentletService = spectator.inject(DotContentletService, true);
+        categoriesService = spectator.inject(DotCategoriesService, true);
     });
 
     afterEach(() => jest.clearAllMocks());
@@ -164,18 +167,16 @@ describe('DotContentDriveFieldFilterComponent', () => {
     });
 
     describe('lazy multi-select (Tag / Category)', () => {
-        it('should resolve a stored Category inode to its name in the chip once options load', () => {
+        it('should resolve a stored Category inode to its name on load (without opening the dropdown)', () => {
             store.getFilterValue.mockReturnValue('i1');
             spectator.setInput(
                 'field',
                 field({ variable: 'cat', fieldType: 'Category', values: 'root' })
             );
             spectator.detectChanges();
-
-            // Opening the popover loads the category page; the loader caches inode → name.
-            openPopover();
             spectator.detectChanges();
 
+            expect(categoriesService.getSelectedHierarchy).toHaveBeenCalledWith(['i1']);
             expect(spectator.query(byTestId('chip-values'))?.textContent).toContain('News');
         });
     });

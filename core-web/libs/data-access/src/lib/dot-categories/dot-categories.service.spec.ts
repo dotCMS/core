@@ -114,6 +114,25 @@ describe('DotCategoriesService', () => {
         req.flush(mockResponse);
     });
 
+    it('should resolve selected hierarchy by inodes/keys via POST /hierarchy', () => {
+        const mockCategory = createFakeCategory({ categoryName: 'News' });
+        const mockResponse: DotCMSAPIResponse<DotCategory[]> = {
+            entity: [mockCategory],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {}
+        };
+
+        spectator.service.getSelectedHierarchy(['i1', 'i2']).subscribe((res) => {
+            expect(res).toEqual([mockCategory]);
+        });
+
+        const req = spectator.expectOne('/api/v1/categories/hierarchy', HttpMethod.POST);
+        expect(req.request.body).toEqual({ keys: ['i1', 'i2'] });
+        req.flush(mockResponse);
+    });
+
     it('should create a category', () => {
         const mockCategory = createFakeCategory({ categoryName: 'New Category' });
         const mockResponse: DotCMSAPIResponse<DotCategory> = {
