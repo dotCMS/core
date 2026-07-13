@@ -9,7 +9,7 @@
     "@faker-js/faker": "9.3.0",
     "@playwright/test": "^1.48.2",
     "@types/node": "^22.5.4",
-    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
     "axe-html-reporter": "^2.2.11",
     "dotenv": "^16.4.5",
     "eslint": "^9.17.0",
@@ -17,7 +17,7 @@
     "eslint-plugin-playwright": "^2.1.0",
     "prettier": "3.4.2",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.19.0"
+    "typescript-eslint": "^8.64.0"
   },
   "dependencies": {
     "jsdom": "^25.0.1",
