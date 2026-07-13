@@ -97,6 +97,13 @@ public class ContentDriveFieldFilterResolver {
                     fieldVariable));
         }
 
+        if (field instanceof RelationshipField) {
+            // Distinct from the generic "unsupported type" below so the FE can tell "not yet"
+            // (deferred to v1.1) from "never".
+            throw new BadRequestException(String.format(
+                    "Field '%s' is a Relationship field; relationship filtering is not available yet "
+                            + "(planned for v1.1).", fieldVariable));
+        }
         final RoutingBucket bucket = routingBucketFor(field);
         if (null == bucket) {
             throw new BadRequestException(String.format(
@@ -162,15 +169,25 @@ public class ContentDriveFieldFilterResolver {
             final ContentType contentType, final RoutingBucket bucket, final Object rawValue) {
 
         final Map<?, ?> map = (Map<?, ?>) rawValue;
-        final Object from = map.get(FROM_KEY);
-        final Object to = map.get(TO_KEY);
+        final String from = trimToNull(map.get(FROM_KEY));
+        final String to = trimToNull(map.get(TO_KEY));
         if (null == from && null == to) {
             throw new BadRequestException(String.format(
-                    "Field '%s' range filter must set at least one of 'from'/'to'.", fieldVariable));
+                    "Field '%s' range filter must set at least one non-empty 'from'/'to' bound.",
+                    fieldVariable));
         }
-        return FieldSearchCriteria.range(fieldVariable, field, contentType, bucket,
-                null == from ? null : from.toString().trim(),
-                null == to ? null : to.toString().trim());
+        return FieldSearchCriteria.range(fieldVariable, field, contentType, bucket, from, to);
+    }
+
+    /**
+     * Returns the trimmed string form of the value, or {@code null} when it is null or blank.
+     */
+    private static String trimToNull(final Object value) {
+        if (null == value) {
+            return null;
+        }
+        final String trimmed = value.toString().trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private FieldSearchCriteria buildMulti(final String fieldVariable, final Field field,

@@ -145,10 +145,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     @CloseDBIfOpened
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int maxRows) {
         final SelectQuery sqlQuery = this.selectQuery(browserQuery);
-        final boolean useElasticSearchForTextFiltering = isUseElasticSearchForFiltering(browserQuery);
+        final boolean useElasticSearchForFiltering = isUseElasticSearchForFiltering(browserQuery);
 
         try {
-            if (useElasticSearchForTextFiltering) {
+            if (useElasticSearchForFiltering) {
                 // Permission filtering and page slicing happen inside — return directly.
                 return doElasticSearchTextFiltering(browserQuery, maxRows, sqlQuery);
             }
