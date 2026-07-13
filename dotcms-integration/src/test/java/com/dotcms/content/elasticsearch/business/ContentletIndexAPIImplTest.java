@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -333,9 +334,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         boolean foundWorking = false;
         boolean foundLive = false;
         for (String index : indices) {
-            if (index.equals(liveIndex)) {
+            // Tolerate the .os tag added to OS-backed indices under migration phases 1/2/3
+            // (in OS-only phase 3 listDotCMSIndices() returns only the .os-tagged names).
+            final String logical = IndexTag.strip(index);
+            if (logical.equals(liveIndex)) {
                 foundLive = true;
-            } else if (index.equals(workingIndex)) {
+            } else if (logical.equals(workingIndex)) {
                 foundWorking = true;
             }
         }
@@ -369,9 +373,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         foundWorking = false;
         foundLive = false;
         for (String index : indices) {
-            if (index.equals(liveIndex)) {
+            // Tolerate the .os tag added to OS-backed indices under migration phases 1/2/3
+            // (in OS-only phase 3 listDotCMSIndices() returns only the .os-tagged names).
+            final String logical = IndexTag.strip(index);
+            if (logical.equals(liveIndex)) {
                 foundLive = true;
-            } else if (index.equals(workingIndex)) {
+            } else if (logical.equals(workingIndex)) {
                 foundWorking = true;
             }
         }
