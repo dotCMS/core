@@ -81,12 +81,16 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         await expect(field.label).not.toContainText(folderName, { ignoreCase: true });
     });
 
-    test('empty folderPath query param falls back to default', async ({ adminPage }) => {
+    test('empty folderPath query param falls back to default', async ({
+        adminPage,
+        apiHelpers
+    }) => {
+        const currentSite = await apiHelpers.getCurrentSite();
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNewWithFolderPath(contentTypeVariable, '');
 
         const field = new HostFolderField(adminPage);
-        await field.expectLabelMatchesPattern(/.+\..+/);
+        await field.expectLabelContains(currentSite.hostname);
         await field.expectFormFunctional();
     });
 });
