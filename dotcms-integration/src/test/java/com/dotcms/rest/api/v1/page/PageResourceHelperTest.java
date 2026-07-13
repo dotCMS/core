@@ -496,7 +496,7 @@ public class PageResourceHelperTest {
      *                 content type (mirrors issue #34215 reproduction steps).
      * Should: throw DotSecurityException — the copy must be blocked at the instance level.
      */
-    @Test(expected = DotSecurityException.class)
+    @Test
     public void copyContentlet_whenUserHasReadOnlyPermissionOnInstance_throwsDotSecurityException()
             throws DotDataException, DotSecurityException {
 
@@ -537,7 +537,13 @@ public class PageResourceHelperTest {
 
         final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
 
-        PageResourceHelper.getInstance().copyContentlet(form, readOnlyUser, PageMode.PREVIEW_MODE, language);
+        try {
+            PageResourceHelper.getInstance().copyContentlet(form, readOnlyUser, PageMode.PREVIEW_MODE, language);
+            org.junit.Assert.fail("Expected DotSecurityException — user with READ-only on contentlet instance must not be able to copy it");
+        } catch (final DotSecurityException e) {
+            assertTrue("Exception message should reference the contentlet identifier",
+                    e.getMessage().contains(contentlet.getIdentifier()));
+        }
     }
 
     /**
@@ -545,7 +551,7 @@ public class PageResourceHelperTest {
      * Given Scenario: A user has READ-only permission on a page instance.
      * Should: throw DotSecurityException before any copy attempt is made on the page node.
      */
-    @Test(expected = DotSecurityException.class)
+    @Test
     public void copyPage_whenUserHasReadOnlyPermissionOnPage_throwsDotSecurityException()
             throws DotDataException, DotSecurityException {
 
@@ -569,7 +575,13 @@ public class PageResourceHelperTest {
 
         final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
 
-        PageResourceHelper.getInstance().copyPage(page, readOnlyUser, PageMode.PREVIEW_MODE, language);
+        try {
+            PageResourceHelper.getInstance().copyPage(page, readOnlyUser, PageMode.PREVIEW_MODE, language);
+            org.junit.Assert.fail("Expected DotSecurityException — user with READ-only on page instance must not be able to deep-copy it");
+        } catch (final DotSecurityException e) {
+            assertTrue("Exception message should reference the page identifier",
+                    e.getMessage().contains(page.getIdentifier()));
+        }
     }
 
     /**
