@@ -5,7 +5,9 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -444,6 +446,15 @@ public class BrowserAPIImpl implements BrowserAPI {
                     return doHybridSingleChunkedQueryES(browserQuery, maxRows, sqlQuery);
                 case PURE_ES:
                 default:
+                    // PURE_ES bypasses the DB select entirely and doesn't build per-field clauses,
+                    // so it can neither apply DB-routed (Tag) predicates nor index-routed field
+                    // clauses. Rather than silently return unfiltered content, fail loudly. Content
+                    // Drive runs the default HYBRID heuristic, so this only trips on misconfiguration.
+                    if (!browserQuery.getFieldCriteria().isEmpty()) {
+                        throw new DotRuntimeException("Content Drive field filters (userSearchable) "
+                                + "are not supported under the PURE_ES heuristic; use "
+                                + "HYBRID_SINGLE_CHUNKED_QUERY_ES.");
+                    }
                     return doPureESQuery(browserQuery, maxRows);
             }
         } catch (DotSecurityException e) {
@@ -1213,16 +1224,39 @@ public class BrowserAPIImpl implements BrowserAPI {
             final Field field = criteria.getField();
             final ContentType contentType = criteria.getContentType();
             final String luceneFieldName = contentType.variable() + "." + field.variable();
+
+            // Multi-Select/Checkbox "in list" must be OR (match any) to be consistent with Tag and
+            // Category (both OR-in-list) and with the multi-pick UI. The shared TextFieldStrategy
+            // ANDs its tokens, so build the OR group directly for these two field types.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.MULTI
+                    && (field instanceof MultiSelectField || field instanceof CheckboxField)) {
+                final String orClause = buildMultiValueOrClause(luceneFieldName, criteria.getValues());
+                if (UtilMethods.isSet(orClause)) {
+                    clauses.append(' ').append(orClause);
+                }
+                continue;
+            }
+
+            final String luceneValue = fieldCriteriaLuceneValue(criteria);
             final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
             final FieldContext fieldContext = new FieldContext.Builder()
                     .withContentType(contentType)
                     .withUser(browserQuery.user)
                     .withFieldName(luceneFieldName)
-                    .withFieldValue(fieldCriteriaLuceneValue(criteria))
+                    .withFieldValue(luceneValue)
                     .build();
             final String clause = handler.apply(fieldContext);
             if (UtilMethods.isSet(clause)) {
                 clauses.append(' ').append(clause.trim());
+            } else if (UtilMethods.isSet(luceneValue)) {
+                // A non-empty value that yields no clause means the field type has no registered
+                // handler (getHandler falls back to a BLANK-producing function). Without this the
+                // criterion would silently drop and the field would return everything unfiltered.
+                Logger.warn(this, String.format(
+                        "No Lucene clause produced for INDEX-routed field '%s' (type %s) with a " +
+                                "non-empty value; the criterion is being ignored. A field strategy " +
+                                "handler is likely missing for this field type.",
+                        luceneFieldName, field.type().getSimpleName()));
             }
         }
         return clauses.length() == 0 ? BLANK : clauses.toString().trim();
@@ -1259,6 +1293,33 @@ public class BrowserAPIImpl implements BrowserAPI {
             default:
                 return criteria.getValues().isEmpty() ? BLANK : criteria.getValues().get(0);
         }
+    }
+
+    /**
+     * Builds an OR (match-any) Lucene clause for a multi-value field, mirroring the "contains"
+     * matching style of {@code TextFieldStrategy} (regular + {@code _dotraw}) but combining the
+     * values with OR inside a single mandatory group. Used for Multi-Select/Checkbox so their
+     * "in list" semantics match Tag/Category (both OR-in-list) rather than the AND the shared text
+     * strategy would produce.
+     *
+     * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
+     * @param values    The selected values.
+     * @return A clause like {@code +(f:*a* f_dotraw:*a* f:*b* f_dotraw:*b*)}, or {@link #BLANK}.
+     */
+    private String buildMultiValueOrClause(final String fieldName, final List<String> values) {
+        final StringBuilder inner = new StringBuilder();
+        for (final String value : values) {
+            final String token = value.trim();
+            if (token.isEmpty()) {
+                continue;
+            }
+            if (inner.length() > 0) {
+                inner.append(' ');
+            }
+            inner.append(fieldName).append(":*").append(token).append("* ")
+                    .append(fieldName).append("_dotraw:*").append(token).append('*');
+        }
+        return inner.length() == 0 ? BLANK : "+(" + inner + ")";
     }
 
     /**

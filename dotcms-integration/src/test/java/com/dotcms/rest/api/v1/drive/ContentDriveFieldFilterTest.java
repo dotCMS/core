@@ -3,7 +3,9 @@ package com.dotcms.rest.api.v1.drive;
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
+import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -23,6 +25,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +78,8 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     private static final String TEXT_VAR = "topic";
     private static final String TAG_VAR = "labels";
     private static final String DATE_VAR = "postingDate";
+    private static final String MULTI_VAR = "sections";
+    private static final String BOOL_VAR = "featured";
     private static final String NON_SEARCHABLE_VAR = "notSearchable";
 
     // angular text + tags [angular, cms] + 2024
@@ -116,6 +122,12 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         new FieldDataGen().type(DateTimeField.class).name(DATE_VAR).velocityVarName(DATE_VAR)
                 .values("").defaultValue("")
                 .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(MultiSelectField.class).name(MULTI_VAR).velocityVarName(MULTI_VAR)
+                .values("news|news\r\npress|press\r\nopinion|opinion").defaultValue("")
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(CheckboxField.class).name(BOOL_VAR).velocityVarName(BOOL_VAR)
+                .values("true|true\r\nfalse|false").defaultValue("")
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
         // Not user-searchable — filtering on it must be rejected.
         new FieldDataGen().type(TextField.class).name(NON_SEARCHABLE_VAR).velocityVarName(NON_SEARCHABLE_VAR)
                 .contentTypeId(typeWithFields.id()).searchable(false).indexed(true).nextPersisted();
@@ -125,6 +137,8 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(TEXT_VAR, "angular")
                 .setProperty(TAG_VAR, "angular,cms")
                 .setProperty(DATE_VAR, date(2024))
+                .setProperty(MULTI_VAR, "news")
+                .setProperty(BOOL_VAR, "true")
                 .folder(testFolder)
                 .nextPersisted();
 
@@ -133,6 +147,8 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(TEXT_VAR, "react")
                 .setProperty(TAG_VAR, "vue")
                 .setProperty(DATE_VAR, date(2020))
+                .setProperty(MULTI_VAR, "press")
+                .setProperty(BOOL_VAR, "false")
                 .folder(testFolder)
                 .nextPersisted();
 
@@ -140,6 +156,7 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty("title", "Angular no tags " + uniqueId)
                 .setProperty(TEXT_VAR, "angular")
                 .setProperty(DATE_VAR, date(2026))
+                .setProperty(BOOL_VAR, "false")
                 .folder(testFolder)
                 .nextPersisted();
 
@@ -148,8 +165,9 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     }
 
     private static Date date(final int year) {
-        // year-01-01 00:00:00 UTC-ish; only the year matters for the range assertions.
-        return new Date(year - 1900, 0, 1);
+        // year-01-01T00:00:00Z — explicit UTC so the range assertions don't depend on the CI
+        // agent's default timezone.
+        return Date.from(LocalDate.of(year, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant());
     }
 
     private Set<String> driveInodes(final DriveRequestForm request)
@@ -258,6 +276,74 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         assertFalse(inodes.contains(reactWithVue.getInode()));
         assertFalse("angular but untagged item must be excluded by the tag criterion",
                 inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * Multi-Select "in list" is OR (match any): filtering by [news, press] returns both items,
+     * filtering by [news] returns only the news item. Consistent with Tag/Category OR-in-list.
+     */
+    @Test
+    public void testMultiSelectOrsValues() throws DotDataException, DotSecurityException {
+        final Set<String> either = driveInodes(baseRequest()
+                .userSearchable(Map.of(MULTI_VAR, List.of("news", "press")))
+                .build());
+        assertTrue("news item must match [news, press]", either.contains(angularWithTags.getInode()));
+        assertTrue("press item must match [news, press]", either.contains(reactWithVue.getInode()));
+
+        final Set<String> onlyNews = driveInodes(baseRequest()
+                .userSearchable(Map.of(MULTI_VAR, List.of("news")))
+                .build());
+        assertTrue("news item must match [news]", onlyNews.contains(angularWithTags.getInode()));
+        assertFalse("press item must not match [news]", onlyNews.contains(reactWithVue.getInode()));
+    }
+
+    /**
+     * Boolean (checkbox) equals: filtering by {@code featured=true} returns only the true item.
+     */
+    @Test
+    public void testBooleanCheckboxFilter() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(BOOL_VAR, true))
+                .build());
+        assertTrue("featured=true item must match", inodes.contains(angularWithTags.getInode()));
+        assertFalse("featured=false item must not match", inodes.contains(reactWithVue.getInode()));
+        assertFalse("featured=false item must not match", inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * Open-ended range (only {@code from}) matches everything at or after the bound.
+     */
+    @Test
+    public void testOpenEndedDateRange() throws DotDataException, DotSecurityException {
+        final Map<String, Object> onlyFrom = new java.util.HashMap<>();
+        onlyFrom.put("from", "2023-01-01");
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(DATE_VAR, onlyFrom))
+                .build());
+        assertTrue("2024 item is after 2023", inodes.contains(angularWithTags.getInode()));
+        assertTrue("2026 item is after 2023", inodes.contains(angularNoTags.getInode()));
+        assertFalse("2020 item is before 2023", inodes.contains(reactWithVue.getInode()));
+    }
+
+    /**
+     * A range value on a text field (kind/type mismatch) is rejected.
+     */
+    @Test
+    public void testKindMismatchReturns400() {
+        assert400(baseRequest()
+                .userSearchable(Map.of(TEXT_VAR, Map.of("from", "1", "to", "2")))
+                .build());
+    }
+
+    private void assert400(final DriveRequestForm request) {
+        try {
+            driveInodes(request);
+            fail("Expected a BadRequestException");
+        } catch (final BadRequestException e) {
+            // expected
+        } catch (final Exception e) {
+            fail("Expected a BadRequestException, got: " + e.getClass().getName());
+        }
     }
 
     /**
