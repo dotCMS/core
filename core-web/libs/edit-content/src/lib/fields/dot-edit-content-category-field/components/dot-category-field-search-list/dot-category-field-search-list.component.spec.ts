@@ -1,5 +1,5 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createFakeEvent } from '@openng/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
 

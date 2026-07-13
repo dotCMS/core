@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
+import { SpectatorService, createServiceFactory } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
