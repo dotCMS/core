@@ -159,6 +159,9 @@ public final class FieldSearchCriteria {
         return booleanValue;
     }
 
+    // equals/hashCode intentionally omit `field` (identity is the field variable + parsed value):
+    // within a single-content-type request the field and its type are fully determined by
+    // fieldVariable, so comparing them would be redundant.
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
