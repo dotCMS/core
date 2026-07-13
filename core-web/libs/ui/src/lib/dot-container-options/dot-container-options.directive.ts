@@ -35,7 +35,10 @@ export class DotContainerOptionsDirective implements OnInit {
     private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
     private readonly control: Select;
-    private readonly maxOptions = 10;
+    // Fetch a generous page so every matching Container is shown in the grouped dropdown.
+    // The dropdown also filters server-side as the user types (see onFilter), so this is
+    // the upper bound of options shown at once, not the total the user can reach.
+    private readonly maxOptions = 100;
     private readonly loadErrorMessage: string;
 
     constructor() {

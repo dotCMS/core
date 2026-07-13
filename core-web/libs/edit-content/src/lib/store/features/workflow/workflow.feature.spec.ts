@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
 import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';

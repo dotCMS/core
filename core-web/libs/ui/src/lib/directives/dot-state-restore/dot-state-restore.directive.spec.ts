@@ -1,4 +1,4 @@
-import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/jest';
+import { SpectatorDirective, createDirectiveFactory } from '@openng/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
 

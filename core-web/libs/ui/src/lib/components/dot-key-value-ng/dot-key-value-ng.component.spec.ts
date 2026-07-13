@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory, byTestId } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, byTestId } from '@openng/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
 
