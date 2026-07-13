@@ -40,7 +40,7 @@ description: >                           # required — see §5, this drives tri
   Verify release notes are complete. Use when preparing a dotCMS release
   or when the user mentions release notes, changelog, or version bump.
 owner: "@dotcms/platform"                # required — who fixes it / answers questions
-status: experimental                     # required — experimental | active | superseded
+status: experimental                     # required — experimental | active | superseded | deprecated
 related: [dot-release-rollback]          # optional — adjacent skills (see §4)
 supersedes: dot-release-old-notes        # optional — replacement link (see §4)
 ---
@@ -138,6 +138,16 @@ Deliberately lightweight: four stages, minimal gates.
 | `just new-skill` | Scaffold a valid skill (prompts for domain/action, warns on near-matches, seeds frontmatter, regenerates the catalog). Accepts flags for non-interactive use: `--domain --action --target --owner --description`. |
 | `just skills-catalog` | Regenerate `CATALOG.md` from frontmatter. |
 | `just skills-lint` | Validate naming, frontmatter, supersedes links, and catalog freshness — the exact check CI runs. **When:** run it before you open or push to a PR, and any time you've hand-edited a skill or its frontmatter *without* `just new-skill`. It's optional (CI runs the same check and is the real gate), but it takes ~1s and catches the problem locally instead of via a red build and a round-trip. Most useful after manual edits, where you must also run `just skills-catalog` and commit the result — otherwise CI fails on a stale catalog. |
+
+> **`just new-skill` and the `skill-creator` skill are complementary, not alternatives.** `just new-skill` makes the box compliant (correct name, frontmatter, catalog); `skill-creator` helps you fill the box (draft the body, tune the `description` for triggering, run evals). CI judges the result regardless of how it was made.
+>
+> **Want authoring help *and* compliance? Scaffold first, author second:**
+> 1. `just new-skill` — creates the compliant shell before any content exists.
+> 2. Point `skill-creator` at that skill ("improve this existing skill at `.claude/skills/dot-…`") so it edits the *content*, leaving the name and governance frontmatter intact.
+> 3. `just skills-catalog` then `just skills-lint` — skill-creator usually rewrites the `description`, which the catalog shows, so regenerate it before pushing.
+> 4. Open the PR — CI confirms.
+>
+> Don't run `skill-creator` *first*: it creates a non-`dot-` folder with no `owner`/`status` and eval scaffolding tied to that name, forcing a rename and rework afterward.
 
 **Grandfathered skills:** skills listed in `skills.config.json` are exempt from naming/`owner`/`status` checks — their lint issues show as **warnings**, not failures. This is reserved for **vendored/generic skills we did not author** (currently `skill-doctor`), which intentionally keep their upstream name and get no `dot-` prefix. First-party skills should never be grandfathered — bring them into convention instead.
 

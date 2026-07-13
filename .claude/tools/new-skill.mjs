@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
-import { SKILLS_DIR, listSkills, loadConfig } from './skill-lib.mjs';
+import { SKILLS_DIR, listSkills, loadConfig, skillNameRegex } from './skill-lib.mjs';
 
 const cfg = loadConfig();
 const argv = process.argv.slice(2);
@@ -32,6 +32,12 @@ try {
   const action = flag('action') || await ask('Action (verb, e.g. triage, rollback)');
   const target = flag('target') || await ask('Target (optional noun, blank to skip)', '');
   const name = `${cfg.vendorPrefix}${domain}-${action}${target ? `-${target}` : ''}`.toLowerCase().replace(/\s+/g, '-');
+
+  // Correct-by-construction: reject a name the linter would fail, before creating anything.
+  if (!skillNameRegex(cfg).test(name)) {
+    console.error(`\n❌ '${name}' is not a valid skill name. Action/target must be lowercase alphanumerics separated by single hyphens — no underscores, dots, or other punctuation.`);
+    process.exit(1);
+  }
 
   // Creation-time duplicate check.
   const existing = listSkills().filter((s) => s.firstParty);

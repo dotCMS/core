@@ -23,10 +23,12 @@ export function parseFrontmatter(text) {
   const out = {};
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const kv = line.match(/^([A-Za-z_][\w-]*):\s?(.*)$/);
+    const kv = line.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
     if (!kv) continue;
     const key = kv[1];
-    let val = kv[2];
+    // Trim so aligned/extra-spaced values (`related:  [a, b]`) still hit the
+    // array/block-scalar branches instead of being misread as scalar strings.
+    let val = kv[2].trim();
 
     if (val === '>' || val === '|' || val === '>-' || val === '|-') {
       // Block scalar: consume following more-indented lines.
@@ -57,10 +59,15 @@ export function listSkills() {
   for (const e of entries) {
     const full = join(SKILLS_DIR, e.name);
     const isSymlink = lstatSync(full).isSymbolicLink();
-    if (!isSymlink && !lstatSync(full).isDirectory()) continue; // skip files (CATALOG.md, config, etc.)
+    if (!isSymlink && !lstatSync(full).isDirectory()) continue; // skip plain files (CATALOG.md, config, etc.)
     const skillMd = join(full, 'SKILL.md');
-    if (!existsSync(skillMd)) continue;
-    const fm = parseFrontmatter(readFileSync(skillMd, 'utf8'));
+    const hasMd = existsSync(skillMd);
+    // A real dir without a SKILL.md isn't a skill. Symlinks are always included
+    // even when their target isn't checked out, so external rows stay present
+    // (keyed by dir name) and the catalog is deterministic regardless of whether
+    // .agents/skills is materialized.
+    if (!isSymlink && !hasMd) continue;
+    const fm = hasMd ? parseFrontmatter(readFileSync(skillMd, 'utf8')) : {};
     skills.push({ dir: e.name, path: skillMd, isSymlink, firstParty: !isSymlink, fm });
   }
   return skills.sort((a, b) => a.dir.localeCompare(b.dir));
@@ -68,6 +75,14 @@ export function listSkills() {
 
 export function isGrandfathered(cfg, name) {
   return cfg.grandfathered.includes(name);
+}
+
+// The one true skill-naming pattern: dot-<approved-domain>-<action>[-target],
+// where each segment after the domain is lowercase alphanumerics joined by
+// single hyphens (no leading/trailing/double hyphen). Shared by skill-lint (the
+// gate) and new-skill (the scaffolder) so they can never disagree.
+export function skillNameRegex(cfg) {
+  return new RegExp(`^${cfg.vendorPrefix}(${cfg.approvedDomains.join('|')})-[a-z0-9]+(-[a-z0-9]+)*$`);
 }
 
 // Build the CATALOG.md contents as a string. Pure — no filesystem writes — so
@@ -111,7 +126,9 @@ export function buildCatalog() {
     '',
     '| Name | Source |',
     '| --- | --- |',
-    ...external.map((s) => `| \`${s.fm.name || s.dir}\` | \`.agents/skills/${s.dir}\` |`),
+    // Keyed on dir (not fm.name) so the row never depends on reading through the
+    // symlink — the catalog stays byte-identical whether or not the target is checked out.
+    ...external.map((s) => `| \`${s.dir}\` | \`.agents/skills/${s.dir}\` |`),
     '',
   ];
   return { content: lines.join('\n'), firstPartyCount: firstParty.length, externalCount: external.length };

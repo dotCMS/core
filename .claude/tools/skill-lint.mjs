@@ -2,7 +2,7 @@
 // Validates first-party skills. Exit 0 = pass, 1 = fail.
 // Runs in CI (cicd_pr_skill-lint.yml) and locally via `just skills-lint`.
 import { readFileSync } from 'node:fs';
-import { CATALOG_PATH, listSkills, loadConfig, isGrandfathered, buildCatalog } from './skill-lib.mjs';
+import { CATALOG_PATH, listSkills, loadConfig, isGrandfathered, buildCatalog, skillNameRegex } from './skill-lib.mjs';
 
 const cfg = loadConfig();
 const skills = listSkills().filter((s) => s.firstParty);
@@ -10,9 +10,7 @@ const errors = [];
 const warnings = [];
 
 const prefix = cfg.vendorPrefix;
-// action segment: lowercase alphanumeric groups joined by single hyphens —
-// rejects leading/trailing hyphens and double hyphens (e.g. dot-issue-triage-, dot-issue--x).
-const domainRe = new RegExp(`^${prefix}(${cfg.approvedDomains.join('|')})-[a-z0-9]+(-[a-z0-9]+)*$`);
+const domainRe = skillNameRegex(cfg);
 
 // --- Per-skill checks ---------------------------------------------------
 // Grandfathered (legacy) skills are exempt: their issues become warnings (a
@@ -54,11 +52,18 @@ for (const s of skills) {
     else if (target.status !== 'superseded') errors.push(`[${s.dir}] supersedes '${fm.supersedes}' but that skill's status is '${target.status || '—'}' (must be 'superseded')`);
     else if (target['superseded-by'] !== (fm.name || s.dir)) errors.push(`[${fm.supersedes}] must set 'superseded-by: ${fm.name || s.dir}' to match`);
   }
+  // Reverse direction: a skill declaring it was superseded must point at an
+  // existing replacer that supersedes it back — otherwise retirement is half-done.
+  if (fm['superseded-by']) {
+    const replacer = byName.get(fm['superseded-by']);
+    if (!replacer) errors.push(`[${s.dir}] superseded-by '${fm['superseded-by']}' which does not exist`);
+    else if (replacer.supersedes !== (fm.name || s.dir)) errors.push(`[${s.dir}] superseded-by '${fm['superseded-by']}' but that skill does not declare 'supersedes: ${fm.name || s.dir}'`);
+  }
 }
 
 // --- Duplicate similarity (soft Flag: warns, does not fail) --------------
 const tokenize = (s) => new Set((s || '').toLowerCase().match(/[a-z]{4,}/g) || []);
-const active = skills.filter((s) => !isGrandfathered(cfg, s.dir));
+const active = skills.filter((s) => !(isGrandfathered(cfg, s.fm.name || s.dir) || isGrandfathered(cfg, s.dir)));
 for (let i = 0; i < active.length; i++) {
   for (let j = i + 1; j < active.length; j++) {
     const a = tokenize(active[i].fm.description), b = tokenize(active[j].fm.description);
