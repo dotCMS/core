@@ -20,6 +20,13 @@
 name: 'Scheduled OpenSearch Phase Sweep'
 run-name: "OpenSearch Phase Sweep [${{ inputs.opensearch_phase || 'all' }}]"
 
+# Only one phase sweep at a time. A phased sweep is expensive and its result matters,
+# so we let an in-progress run finish and queue any new one (e.g. a manual dispatch
+# fired while the weekly run is going) rather than cancelling it.
+concurrency:
+  group: opensearch-phase-sweep
+  cancel-in-progress: false
+
 on:
   schedule:
     # Weekly, Sunday 06:00 UTC — off-peak and clear of the 03:18 daily nightly.
