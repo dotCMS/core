@@ -3264,8 +3264,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @Override
     public long getIndexDocumentCount(final String indexName) {
-        return router.readProvider().getIndexDocumentCount(
-                indexAPI.getNameWithClusterIDPrefix(indexName));
+        // Resolve the physical name through the read provider's own toPhysicalName so the OS read
+        // path (phases 2/3) receives the .os-tagged name. getNameWithClusterIDPrefix adds only the
+        // cluster prefix (no .os tag), so under OS reads the index was reported as not found.
+        final ContentletIndexOperations readProvider = router.readProvider();
+        return readProvider.getIndexDocumentCount(readProvider.toPhysicalName(indexName));
     }
 
     /**
