@@ -63,10 +63,9 @@
              the beta message. -->
         @if (relatingTrail.length >= 2) {
             <div
-                class="edit-content-layout__relating-content flex min-h-[42px] items-center gap-3 border-b border-gray-300 bg-blue-50 px-8 py-2"
+                class="flex min-h-11 items-center gap-3 bg-blue-50 px-8 py-2"
                 data-testId="edit-content-layout__relating-content">
-                <span
-                    class="shrink-0 text-sm font-semibold tracking-wide text-primary-500 uppercase">
+                <span class="shrink-0 font-semibold text-blue-600">
                     {{ 'edit.content.relating.content' | dm }}:
                 </span>
                 <dot-collapse-breadcrumb [model]="relatingTrail" />
