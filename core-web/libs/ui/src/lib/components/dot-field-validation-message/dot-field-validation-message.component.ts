@@ -42,6 +42,13 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
     @Input()
     patternErrorMessage: string;
 
+    /**
+     * Overrides the copy shown for a `required` error, without affecting
+     * any other validator's message on the same field.
+     */
+    @Input()
+    requiredErrorMessage: string;
+
     defaultMessage: string;
     errorMsg = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -121,7 +128,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
 
                     case 'required':
                         errorTranslated = this.dotMessageService.get(
-                            NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
+                            this.requiredErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
                         );
                         break;
 

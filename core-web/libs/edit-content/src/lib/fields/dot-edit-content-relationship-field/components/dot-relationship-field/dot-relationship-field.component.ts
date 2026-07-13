@@ -4,7 +4,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     forwardRef,
     inject,
@@ -19,12 +18,17 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule, TableRowReorderEvent } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
-import { DotContentletStatusBadgeComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
@@ -41,17 +45,18 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
     selector: 'dot-relationship-field',
     imports: [
         TableModule,
+        TagModule,
         ButtonModule,
         MenuModule,
         DotMessagePipe,
         DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent,
         LanguagePipe,
         PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
     styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
         RelationshipFieldStore,
         {
@@ -102,6 +107,14 @@ export class DotRelationshipFieldComponent
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /**
+     * Tracks whether the initial value synchronization has already happened.
+     * Used to avoid marking the control as touched on the first (programmatic)
+     * value sync so a required, empty field does not show its validation error
+     * before the user interacts with it.
+     */
+    #hasSyncedInitialValue = false;
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -367,7 +380,11 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Updates the value of the field.
+     * Syncs the formatted relationship value to the form control.
+     *
+     * The control is only marked as touched on user-driven changes (second and
+     * subsequent emissions), never on the initial programmatic sync, so a
+     * required, empty field does not display its validation error on first render.
      *
      * @param value - The value to update.
      */
@@ -377,7 +394,15 @@ export class DotRelationshipFieldComponent
         }
 
         this.onChange(value);
-        this.onTouched();
+
+        // Only mark the control as touched on genuine user-driven changes, not on the
+        // initial value sync — otherwise a required, empty field shows its validation
+        // error as soon as the form renders.
+        if (this.#hasSyncedInitialValue) {
+            this.onTouched();
+        } else {
+            this.#hasSyncedInitialValue = true;
+        }
     });
 
     /**

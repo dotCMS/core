@@ -50,7 +50,7 @@ Unsure? **Codegen first.** Avoid fragile `#dijit_*` IDs, CSS when `data-testid` 
 - **Nav:** `Portlet` from `@utils/portlets`; new content via `NewEditContentFormPage.goToNew()` (listing → New), not direct `/content/new/` URL.
 - **Dojo menus:** wait for menu visibility, then click normally (no `force: true`).
 
-Field-specific selectors and flows: copy `tests/.../helpers/` and nearest `*.spec.ts` (e.g. `relationship-field/`).
+Field-specific selectors and flows: copy `tests/.../helpers/` and nearest `*.spec.ts` (e.g. `relationship-field/`, `key-value-field/`).
 
 ## Where to put code
 

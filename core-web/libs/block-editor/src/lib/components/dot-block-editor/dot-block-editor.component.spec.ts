@@ -1,5 +1,5 @@
-import { Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator } from '@openng/spectator';
+import { createComponentFactory } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';

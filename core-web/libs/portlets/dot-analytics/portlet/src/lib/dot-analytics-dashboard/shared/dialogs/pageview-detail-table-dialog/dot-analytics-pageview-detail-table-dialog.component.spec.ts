@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory } from '@openng/spectator/jest';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 

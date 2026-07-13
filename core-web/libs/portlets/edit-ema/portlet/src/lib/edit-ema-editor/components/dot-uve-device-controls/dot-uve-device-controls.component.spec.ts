@@ -1,5 +1,5 @@
-import { byTestId } from '@ngneat/spectator';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId } from '@openng/spectator';
+import { Spectator, createComponentFactory } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';

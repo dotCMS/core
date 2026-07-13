@@ -1,5 +1,5 @@
-import { InferInputSignals } from '@ngneat/spectator';
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { InferInputSignals } from '@openng/spectator';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of, throwError, timer } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';

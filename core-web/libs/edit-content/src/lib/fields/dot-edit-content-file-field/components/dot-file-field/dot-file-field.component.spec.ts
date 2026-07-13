@@ -1,19 +1,23 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
 
-import { BINARY_FIELD_MOCK, IMAGE_FIELD_MOCK } from '../../../../utils/mocks';
+import { BINARY_FIELD_MOCK, FILE_FIELD_MOCK, IMAGE_FIELD_MOCK } from '../../../../utils/mocks';
 import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 import {
     LegacyDialogImageEditorLauncher,
@@ -23,6 +27,7 @@ import { DotFileFieldUploadService } from '../../services/upload-file/upload-fil
 import { FileFieldStore } from '../../store/file-field.store';
 import { DotFileFieldPreviewComponent } from '../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from '../dot-file-field-ui-message/dot-file-field-ui-message.component';
+import { DotFormFileEditorComponent } from '../dot-form-file-editor/dot-form-file-editor.component';
 
 describe('DotFileFieldComponent', () => {
     let spectator: Spectator<DotFileFieldComponent>;
@@ -45,6 +50,7 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DialogService),
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
+            mockProvider(DotWorkflowActionsFireService),
             { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockImageEditorLauncher },
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Test Message')
@@ -180,7 +186,9 @@ describe('DotFileFieldComponent', () => {
             mockImageEditorLauncher.open.mockReturnValue(of(EDITED_TEMP_FILE));
             setupBinaryWithImage();
 
-            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+            const applySpy = jest
+                .spyOn(spectator.component.store, 'applyEditedImage')
+                .mockImplementation();
 
             spectator.component.onEditImage();
 
@@ -192,7 +200,7 @@ describe('DotFileFieldComponent', () => {
                     mimeType: 'image/png'
                 })
             );
-            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
+            expect(applySpy).toHaveBeenCalled();
         });
 
         it('should fall back to the legacy editor when the new launcher is unavailable', () => {
@@ -205,13 +213,172 @@ describe('DotFileFieldComponent', () => {
             const legacyOpenSpy = jest
                 .spyOn(legacy, 'open')
                 .mockReturnValue(of(EDITED_TEMP_FILE) as never);
-            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+            const applySpy = jest
+                .spyOn(spectator.component.store, 'applyEditedImage')
+                .mockImplementation();
 
             spectator.component.onEditImage();
 
             expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
             expect(legacyOpenSpy).toHaveBeenCalled();
-            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
+            expect(applySpy).toHaveBeenCalled();
+        });
+
+        it('should route SVG contentlets to the source-code editor with the fetched text', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+            setupBinaryWithImage();
+
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockReturnValue({
+                onClose: of(null),
+                close: jest.fn()
+            });
+
+            spectator.component.store.setPreviewFile({
+                source: 'contentlet',
+                file: {
+                    ...createFakeContentlet({}),
+                    inode: 'svg-inode',
+                    fileAssetVersion: '/dA/svg-inode/fileAsset/test.svg',
+                    metaData: { isImage: true, contentType: 'image/svg+xml', name: 'test.svg' }
+                }
+            } as never);
+            spectator.detectChanges();
+
+            spectator.component.onEditImage();
+
+            const httpTesting = spectator.inject(HttpTestingController);
+            httpTesting.expectOne('/dA/svg-inode/fileAsset/test.svg').flush('<svg>source</svg>');
+
+            expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
+            expect(dialogService.open).toHaveBeenCalledWith(
+                DotFormFileEditorComponent,
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        uploadedFile: expect.objectContaining({
+                            file: expect.objectContaining({ content: '<svg>source</svg>' })
+                        })
+                    })
+                })
+            );
+        });
+
+        it('should route temp SVGs to the source-code editor using the reference URL', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+            setupBinaryWithImage();
+
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockReturnValue({
+                onClose: of(null),
+                close: jest.fn()
+            });
+
+            spectator.component.store.setPreviewFile({
+                source: 'temp',
+                file: {
+                    id: 'temp-svg',
+                    fileName: 'test.svg',
+                    referenceUrl: '/dA/temp-svg/tmp/test.svg',
+                    metadata: { isImage: true, contentType: 'image/svg+xml', name: 'test.svg' }
+                }
+            } as never);
+            spectator.detectChanges();
+
+            spectator.component.onEditImage();
+
+            const httpTesting = spectator.inject(HttpTestingController);
+            httpTesting.expectOne('/dA/temp-svg/tmp/test.svg').flush('<svg>temp</svg>');
+
+            expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
+            expect(dialogService.open).toHaveBeenCalledWith(
+                DotFormFileEditorComponent,
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        uploadedFile: expect.objectContaining({
+                            file: expect.objectContaining({ content: '<svg>temp</svg>' })
+                        })
+                    })
+                })
+            );
+        });
+    });
+
+    describe('edit image availability', () => {
+        const IMAGE_ASSET_META = { isImage: true, contentType: 'image/png', name: 'beach.png' };
+        const NON_IMAGE_ASSET_META = {
+            isImage: false,
+            contentType: 'application/pdf',
+            name: 'doc.pdf'
+        };
+
+        // Hydrates the preview from a referenced dotAsset contentlet (Image/File
+        // fields), whose metadata lives in `assetMetaData`.
+        const setReferencedAsset = (
+            field: typeof IMAGE_FIELD_MOCK,
+            assetMetaData: Record<string, unknown>
+        ) => {
+            spectator = createComponent({
+                props: {
+                    field,
+                    contentlet: createFakeContentlet({ [field.variable]: 'ref-identifier' }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+
+            spectator.component.store.setPreviewFile({
+                source: 'contentlet',
+                file: { identifier: 'ref-identifier', inode: 'ref-inode', assetMetaData } as never
+            });
+            spectator.detectChanges();
+        };
+
+        it('shows the editor for an Image field pointing at an image asset', () => {
+            setReferencedAsset(IMAGE_FIELD_MOCK, IMAGE_ASSET_META);
+            expect(spectator.component.$canEditImage()).toBe(true);
+        });
+
+        it('shows the editor for a File field when the referenced asset is an image', () => {
+            setReferencedAsset(FILE_FIELD_MOCK, IMAGE_ASSET_META);
+            expect(spectator.component.$canEditImage()).toBe(true);
+        });
+
+        it('hides the editor for a File field when the referenced asset is not an image', () => {
+            setReferencedAsset(FILE_FIELD_MOCK, NON_IMAGE_ASSET_META);
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('hides the editor for an empty Image field', () => {
+            spectator = createComponent({
+                props: {
+                    field: IMAGE_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [IMAGE_FIELD_MOCK.variable]: null }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('keeps Binary hidden for a non-image file', () => {
+            spectator = createComponent({
+                props: {
+                    field: BINARY_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [BINARY_FIELD_MOCK.variable]: null }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+            spectator.component.store.setPreviewFile({
+                source: 'temp',
+                file: {
+                    id: 'temp-1',
+                    fileName: 'doc.pdf',
+                    metadata: { isImage: false, contentType: 'application/pdf', name: 'doc.pdf' }
+                }
+            } as never);
+            spectator.detectChanges();
+            expect(spectator.component.$canEditImage()).toBe(false);
         });
     });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { byTestId, createDirectiveFactory } from '@ngneat/spectator/jest';
+import { byTestId, createDirectiveFactory } from '@openng/spectator/jest';
 
 import { UVE_MODE, UVEState } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';

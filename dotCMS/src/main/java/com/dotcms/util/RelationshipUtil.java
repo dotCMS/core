@@ -7,6 +7,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -37,6 +38,8 @@ public class RelationshipUtil {
 
     private static final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
+    private static final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
 
     /**
      * Returns a list of related contentlet given a comma separated list of lucene queries and/or contentlet identifiers
@@ -57,7 +60,15 @@ public class RelationshipUtil {
         List<Contentlet> relatedContentlets = List.of();
 
         if (UtilMethods.isSet(query)) {
-            relatedContentlets = filterContentlet(language, query, user, true);
+            // Resolve related content as read-only references only. This path just needs the
+            // related contentlets to write the parent's relationship (Tree) records
+            relatedContentlets = filterContentlet(language, query, user, false);
+            // filterContentlet resolves identifiers via the system user internally, so enforce READ
+            // for the acting user here — on the import path only — to avoid relating content the
+            // user cannot see (#35222). Batch-filter in a single round-trip (JAVA_STANDARDS:
+            // permission checks batch vs scalar).
+            relatedContentlets = permissionAPI.filterCollection(
+                    relatedContentlets, PermissionAPI.PERMISSION_READ, user, false);
             validateRelatedContent(relationship, contentType, relatedContentlets);
         }
 

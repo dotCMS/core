@@ -1,5 +1,5 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { createFakeEvent } from '@openng/spectator';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ReactiveFormsModule } from '@angular/forms';

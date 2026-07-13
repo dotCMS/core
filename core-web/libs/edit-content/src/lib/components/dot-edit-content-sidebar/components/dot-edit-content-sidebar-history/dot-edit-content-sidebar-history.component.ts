@@ -60,6 +60,15 @@ export class DotEditContentSidebarHistoryComponent {
     $status = input<ComponentStatus>(ComponentStatus.LOADING, { alias: 'status' });
 
     /**
+     * Current status of the push publish history, independent from the
+     * versions status so reloading versions never flashes this section
+     * @readonly
+     */
+    $pushPublishStatus = input<ComponentStatus>(ComponentStatus.LOADING, {
+        alias: 'pushPublishStatus'
+    });
+
+    /**
      * Current content identifier
      * @readonly
      */
@@ -84,6 +93,13 @@ export class DotEditContentSidebarHistoryComponent {
      * @readonly
      */
     $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
+
+    /**
+     * Inode of the version currently being fetched after a view/compare click,
+     * used to show inline loading feedback on the corresponding timeline item
+     * @readonly
+     */
+    $loadingVersionInode = input<string | null>(null, { alias: 'loadingVersionInode' });
 
     /**
      * List of push publish history items to display (accumulated items from store)
@@ -117,6 +133,13 @@ export class DotEditContentSidebarHistoryComponent {
      * Determines if the history is in a loading state
      */
     readonly $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
+
+    /**
+     * Determines if the push publish history is in a loading state
+     */
+    readonly $isPushPublishLoading = computed(
+        () => this.$pushPublishStatus() === ComponentStatus.LOADING
+    );
 
     /**
      * Determines if there are history items to display
@@ -203,7 +226,7 @@ export class DotEditContentSidebarHistoryComponent {
      * Load more push publish items when the Push Publish timeline reaches its end.
      */
     onPushPublishTimelineReachedEnd(): void {
-        if (this.$hasMorePushPublishItems() && !this.$isLoading()) {
+        if (this.$hasMorePushPublishItems() && !this.$isPushPublishLoading()) {
             this.loadNextPushPublishPage();
         }
     }
