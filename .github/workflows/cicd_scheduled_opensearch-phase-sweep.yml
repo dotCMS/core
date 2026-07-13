@@ -1,0 +1,100 @@
+# Scheduled OpenSearch Phase Sweep
+#
+# Runs the integration battery under EVERY ES->OS migration phase (1, 2, 3) on a
+# schedule, so regressions in the migration flow are caught automatically without
+# any developer having to opt a PR in. This is the automated counterpart to:
+#   - the "OpenSearch:Phase-<N>" PR label (opt-in, single phase, per PR), and
+#   - the nightly workflow_dispatch "opensearch_phase" dropdown (manual, on-demand).
+#
+# It is deliberately test-only: it builds + runs the phased integration suites and
+# reports, but NEVER deploys (a build exercised under a non-default migration phase
+# must not be promoted). Only the integration test type is enabled — the other
+# suites (jvm/frontend/postman/cli) do not vary by phase, so running them here would
+# just waste minutes.
+#
+# The heavy lifting lives in cicd_comp_test-phase.yml: opensearch_phase=all fans each
+# integration MainSuite/Junit5 entry out once per phase (6 suites x 3 phases = 18
+# jobs) with fail-fast disabled so every phase runs to completion and failures are
+# attributable per phase. The OpenSearch Upgrade Suite is left untouched.
+
+name: 'Scheduled OpenSearch Phase Sweep'
+run-name: "OpenSearch Phase Sweep [${{ inputs.opensearch_phase || 'all' }}]"
+
+on:
+  schedule:
+    # Weekly, Sunday 06:00 UTC — off-peak and clear of the 03:18 daily nightly.
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
+    inputs:
+      opensearch_phase:
+        description: 'ES->OS migration phase(s) to sweep. all = 1,2,3; or pick a single phase.'
+        type: choice
+        required: false
+        default: 'all'
+        options:
+          - 'all'
+          - '1'
+          - '2'
+          - '3'
+      use-latest-commit:
+        description: 'Build from current HEAD of main (default) — kept for parity with the nightly dispatch.'
+        type: boolean
+        default: true
+
+jobs:
+  # Initialize — no change detection; this sweep always runs the full integration battery.
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      change-detection: 'disabled'
+
+  # Build — only runs if initialization found no reusable artifacts.
+  build:
+    name: Phase Sweep Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+    permissions:
+      contents: read
+      packages: write
+
+  # Test — integration only, fanned out across the requested phase(s).
+  # opensearch_phase defaults to 'all' on the scheduled trigger (inputs are empty there).
+  test:
+    name: Phase Sweep Test
+    needs: [ initialize, build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      run-all-tests: false
+      integration: true
+      e2e: false
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      opensearch_phase: ${{ inputs.opensearch_phase || 'all' }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+    permissions:
+      contents: read
+      packages: write
+
+  # Finalize — aggregate results from the phased matrix.
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, test ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Report — generate and send the final workflow report.
+  report:
+    name: Report
+    if: always()
+    needs: [ finalize ]
+    uses: ./.github/workflows/cicd_post-workflow-reporting.yml
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
