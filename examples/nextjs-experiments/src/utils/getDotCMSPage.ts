@@ -20,7 +20,6 @@ import {
  */
 export const getDotCMSPage = cache(async (path: string, variantName?: string) => {
   try {
-      console.log("Fetching page", path, variantName);
     return await dotCMSClient.page.get<{ content: PageExtraContent }>(path, {
       variantName,
       graphql: {

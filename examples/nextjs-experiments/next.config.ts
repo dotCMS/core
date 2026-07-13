@@ -2,7 +2,11 @@ import type { NextConfig } from "next";
 
 import { dotCMSHost } from "./src/config/dotcms.config";
 
-const url = new URL(dotCMSHost);
+// Fall back to a local default so the app still boots before `.env.local`
+// exists — `new URL("")` would otherwise throw `TypeError: Invalid URL` at
+// config-load time (matches the guard in `src/utils/imageLoader.ts`).
+const resolvedHost = dotCMSHost || "http://localhost:8080";
+const url = new URL(resolvedHost);
 
 const nextConfig: NextConfig = {
   // This example is a standalone app; pin the workspace root so Next.js doesn't
@@ -28,7 +32,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/dA/:path*",
-        destination: `${dotCMSHost}/dA/:path*`,
+        destination: `${resolvedHost}/dA/:path*`,
       },
     ];
   },

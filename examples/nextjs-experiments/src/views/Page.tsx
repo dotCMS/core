@@ -29,8 +29,6 @@ export function Page({ pageContent }: PageProps) {
         })
         : DotCMSLayoutBody;
 
-    console.log("pageAsset", pageAsset);
-
     return (
         <div className="flex min-h-dvh flex-col bg-bg">
             {pageAsset?.layout.header && <Header navItems={navigation?.children} />}
