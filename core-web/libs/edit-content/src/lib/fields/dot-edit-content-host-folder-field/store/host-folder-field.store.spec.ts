@@ -16,6 +16,7 @@ import { DotBrowsingService } from '@dotcms/ui';
 import {
     FOLDER_PAGE_LIMIT,
     HostFolderFiledStore,
+    LOAD_MORE_NODE_TYPE,
     ROOT_NODE_KEY,
     SITE_SEARCH_THRESHOLD,
     SYSTEM_HOST_NAME
@@ -112,6 +113,9 @@ describe('HostFolderFiledStore', () => {
                                 path: '/',
                                 addChildrenAllowed: true
                             }
+                        },
+                        pagination: {
+                            [ROOT_NODE_KEY]: { page: 1, hasMore: false }
                         }
                     })
                 );
@@ -134,6 +138,53 @@ describe('HostFolderFiledStore', () => {
                     hasMore: false,
                     loading: false
                 });
+            }));
+
+            it('should seed nodePagination and inject a Load more sentinel when buildTreeByPaths reports hasMore', fakeAsync(() => {
+                const [site] = TREE_SELECT_MOCK;
+                const targetNode = {
+                    ...site.children[0],
+                    key: 'gallery',
+                    data: {
+                        ...site.children[0].data,
+                        path: '/gallery/'
+                    },
+                    children: undefined
+                };
+                const rootFolders = [{ ...site.children[0], children: undefined }, targetNode];
+
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                service.buildTreeByPaths.mockReturnValue(
+                    of({
+                        node: targetNode,
+                        tree: {
+                            path: '/',
+                            folders: rootFolders
+                        },
+                        pagination: {
+                            [ROOT_NODE_KEY]: { page: 2, hasMore: true }
+                        }
+                    })
+                );
+
+                store.loadSites({ path: 'demo.dotcms.com/gallery', isRequired: false });
+                tick();
+
+                expect(store.confirmedNode().key).toBe('gallery');
+                expect(store.nodePagination()[ROOT_NODE_KEY]).toEqual({
+                    page: 2,
+                    hasMore: true,
+                    loading: false
+                });
+
+                const folders = store.folders();
+                const loadMoreNode = folders[folders.length - 1];
+                expect(loadMoreNode.type).toBe(LOAD_MORE_NODE_TYPE);
+                expect(loadMoreNode.key).toBe(`load-more:${ROOT_NODE_KEY}`);
+                expect(folders.slice(0, -1).map((folder) => folder.key)).toEqual([
+                    site.children[0].key,
+                    'gallery'
+                ]);
             }));
         });
 

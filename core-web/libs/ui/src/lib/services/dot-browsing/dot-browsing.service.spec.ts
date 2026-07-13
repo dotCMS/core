@@ -17,7 +17,11 @@ import {
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
-import { DotBrowsingService, normalizeHostFolderBrowsePath } from './dot-browsing.service';
+import {
+    DotBrowsingService,
+    normalizeHostFolderBrowsePath,
+    TREE_ROOT_NODE_KEY
+} from './dot-browsing.service';
 
 describe('DotBrowsingService', () => {
     let spectator: SpectatorService<DotBrowsingService>;
@@ -532,6 +536,14 @@ describe('DotBrowsingService', () => {
                 );
                 expect(level1Node?.expanded).toBe(true);
                 expect(level1Node?.children).toHaveLength(2);
+                expect(result.pagination?.[TREE_ROOT_NODE_KEY]).toEqual({
+                    page: 1,
+                    hasMore: false
+                });
+                expect(result.pagination?.['parent-level1']).toEqual({
+                    page: 1,
+                    hasMore: false
+                });
                 expect(dotFolderService.searchFolders).toHaveBeenCalledTimes(2);
                 expect(dotFolderService.searchFolders).toHaveBeenCalledWith({
                     siteId,
@@ -540,6 +552,117 @@ describe('DotBrowsingService', () => {
                     page: 1,
                     per_page: 40
                 });
+                done();
+            });
+        });
+
+        it('should paginate a level until the target segment is found beyond page 1', (done) => {
+            const folderPath = '/gallery/';
+
+            dotFolderService.searchFolders.mockImplementation((params) => {
+                if (params.path === '/' && params.page === 1) {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'images',
+                                name: 'images',
+                                path: '/',
+                                hasChildren: true
+                            })
+                        ],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 45 }
+                    });
+                }
+
+                if (params.path === '/' && params.page === 2) {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'gallery',
+                                name: 'gallery',
+                                path: '/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: { currentPage: 2, perPage: 40, totalEntries: 45 }
+                    });
+                }
+
+                return of({ folders: [], pagination: defaultPagination });
+            });
+
+            spectator.service.buildTreeByPaths(siteId, hostname, folderPath).subscribe((result) => {
+                expect(result.node?.key).toBe('gallery');
+                expect(result.node?.data?.path).toBe('/gallery/');
+                expect(result.tree?.folders.map((folder) => folder.key)).toEqual([
+                    'images',
+                    'gallery'
+                ]);
+                expect(result.pagination?.[TREE_ROOT_NODE_KEY]).toEqual({
+                    page: 2,
+                    hasMore: false
+                });
+                expect(dotFolderService.searchFolders).toHaveBeenCalledTimes(2);
+                expect(dotFolderService.searchFolders).toHaveBeenNthCalledWith(1, {
+                    siteId,
+                    path: '/',
+                    recursive: false,
+                    page: 1,
+                    per_page: 40
+                });
+                expect(dotFolderService.searchFolders).toHaveBeenNthCalledWith(2, {
+                    siteId,
+                    path: '/',
+                    recursive: false,
+                    page: 2,
+                    per_page: 40
+                });
+                done();
+            });
+        });
+
+        it('should keep hasMore true when the target is found but more siblings remain', (done) => {
+            const folderPath = '/gallery/';
+
+            dotFolderService.searchFolders.mockImplementation((params) => {
+                if (params.path === '/' && params.page === 1) {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'aaa',
+                                name: 'aaa',
+                                path: '/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: { currentPage: 1, perPage: 1, totalEntries: 3 }
+                    });
+                }
+
+                if (params.path === '/' && params.page === 2) {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'gallery',
+                                name: 'gallery',
+                                path: '/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: { currentPage: 2, perPage: 1, totalEntries: 3 }
+                    });
+                }
+
+                return of({ folders: [], pagination: defaultPagination });
+            });
+
+            spectator.service.buildTreeByPaths(siteId, hostname, folderPath).subscribe((result) => {
+                expect(result.node?.key).toBe('gallery');
+                expect(result.pagination?.[TREE_ROOT_NODE_KEY]).toEqual({
+                    page: 2,
+                    hasMore: true
+                });
+                expect(dotFolderService.searchFolders).toHaveBeenCalledTimes(2);
                 done();
             });
         });

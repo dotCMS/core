@@ -1,8 +1,8 @@
-import { Observable, forkJoin } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map } from 'rxjs/operators';
+import { expand, filter, map, reduce, switchMap } from 'rxjs/operators';
 
 import {
     DEFAULT_FOLDER_SEARCH_PER_PAGE,
@@ -16,8 +16,21 @@ import {
     DotPagination,
     FolderSearchParams,
     FolderSearchView,
+    TreeLevelPagination,
     TreeNodeItem
 } from '@dotcms/dotcms-models';
+
+/**
+ * Pagination key for the site-root folder level. Shared with the host/folder field
+ * store so `loadFolders` / `loadMore` and `buildTreeByPaths` use the same map key.
+ */
+export const TREE_ROOT_NODE_KEY = 'root';
+
+type LevelLoadResult = {
+    folders: TreeNodeItem[];
+    page: number;
+    hasMore: boolean;
+};
 
 /**
  * Normalizes a persisted host/folder browse path into the plain `hostname/path/` format
@@ -219,10 +232,14 @@ export class DotBrowsingService {
      * `hasChildren`. Fetches one level per ancestor (not the target's own children —
      * those load lazily on expand).
      *
+     * When the target segment is not on page 1 of a level, successive pages are
+     * fetched until it appears (or pages are exhausted). Per-level pagination
+     * metadata is returned so callers can seed "Load more" state correctly.
+     *
      * @param {string} siteId - Site identifier for folder search scoping
      * @param {string} hostname - Hostname used to build folder labels/paths
      * @param {string} folderPath - Folder path within the site (e.g. `/level1/level2/`)
-     * @returns {Observable<CustomTreeNode>} Observable that emits the resolved tree and target node
+     * @returns {Observable<CustomTreeNode>} Observable that emits the resolved tree, target node, and pagination
      */
     buildTreeByPaths(
         siteId: string,
@@ -230,58 +247,88 @@ export class DotBrowsingService {
         folderPath: string
     ): Observable<CustomTreeNode> {
         const segments = folderPath.split('/').filter(Boolean);
-        const parentPaths = this.#buildParentPaths(segments);
-
-        const requests = parentPaths.map((path) =>
-            this.searchFolders(
-                {
-                    siteId,
-                    path,
-                    recursive: false,
-                    page: 1,
-                    per_page: DEFAULT_FOLDER_SEARCH_PER_PAGE
-                },
-                hostname
-            )
+        const targetPaths = segments.map(
+            (_, index) => `/${segments.slice(0, index + 1).join('/')}/`
         );
+        const pagination: Record<string, TreeLevelPagination> = {};
 
-        return forkJoin(requests).pipe(
-            map((results) => {
-                const rootChildren = results[0]?.folders ?? [];
-                const targetPaths = segments.map(
-                    (_, index) => `/${segments.slice(0, index + 1).join('/')}/`
-                );
+        const resolveLevel = (
+            segmentIndex: number,
+            parentPath: string,
+            levelKey: string,
+            ancestorNode: TreeNodeItem | null
+        ): Observable<{
+            node: TreeNodeItem | null;
+            folders: TreeNodeItem[];
+        }> => {
+            const targetPath = targetPaths[segmentIndex];
 
-                let targetNode: TreeNodeItem | null = null;
-                let currentLevel = rootChildren;
+            return this.#loadLevelUntilTarget(siteId, hostname, parentPath, targetPath).pipe(
+                switchMap(({ folders, page, hasMore }) => {
+                    pagination[levelKey] = { page, hasMore };
 
-                for (let index = 0; index < segments.length; index++) {
-                    const folderNode = currentLevel.find(
-                        (item) => item.data?.path === targetPaths[index]
-                    );
+                    const folderNode = folders.find((item) => item.data?.path === targetPath);
 
                     if (!folderNode) {
-                        break;
+                        return of({
+                            node: ancestorNode,
+                            folders
+                        });
                     }
 
-                    targetNode = folderNode;
+                    const isLastSegment = segmentIndex >= segments.length - 1;
 
-                    const nextResult = results[index + 1];
-                    if (nextResult) {
-                        folderNode.children = nextResult.folders;
-                        folderNode.expanded = true;
-                        currentLevel = nextResult.folders;
+                    if (isLastSegment) {
+                        return of({
+                            node: folderNode,
+                            folders
+                        });
                     }
-                }
 
-                return {
-                    node: targetNode,
+                    return resolveLevel(
+                        segmentIndex + 1,
+                        targetPath,
+                        folderNode.key ?? folderNode.data.id,
+                        folderNode
+                    ).pipe(
+                        map(({ node, folders: childFolders }) => {
+                            folderNode.children = childFolders;
+                            folderNode.expanded = true;
+
+                            return {
+                                node,
+                                folders
+                            };
+                        })
+                    );
+                })
+            );
+        };
+
+        if (segments.length === 0) {
+            return this.#loadLevelUntilTarget(siteId, hostname, '/', null).pipe(
+                map(({ folders, page, hasMore }) => ({
+                    node: null,
                     tree: {
                         path: '/',
-                        folders: rootChildren
+                        folders
+                    },
+                    pagination: {
+                        [TREE_ROOT_NODE_KEY]: { page, hasMore }
                     }
-                };
-            })
+                }))
+            );
+        }
+
+        return resolveLevel(0, '/', TREE_ROOT_NODE_KEY, null).pipe(
+            map(({ node, folders }) => ({
+                node,
+                tree: {
+                    path: '/',
+                    folders
+                },
+                pagination
+            }))
         );
     }
 
@@ -322,21 +369,54 @@ export class DotBrowsingService {
     }
 
     /**
-     * Builds the parent paths needed to resolve each segment of a folder path.
-     * For `['level1','level2']` returns `['/', '/level1/']` — root plus each ancestor,
-     * excluding the target's own children listing.
+     * Loads a single folder level, fetching successive pages until `targetPath` is
+     * present among the accumulated children (or no more pages remain). When
+     * `targetPath` is null, only page 1 is fetched.
      */
-    #buildParentPaths(segments: string[]): string[] {
-        if (segments.length === 0) {
-            return ['/'];
-        }
+    #loadLevelUntilTarget(
+        siteId: string,
+        hostname: string,
+        path: string,
+        targetPath: string | null
+    ): Observable<LevelLoadResult> {
+        const fetchPage = (page: number) =>
+            this.searchFolders(
+                {
+                    siteId,
+                    path,
+                    recursive: false,
+                    page,
+                    per_page: DEFAULT_FOLDER_SEARCH_PER_PAGE
+                },
+                hostname
+            ).pipe(
+                map(({ folders, pagination }) => ({
+                    folders,
+                    page,
+                    hasMore: pagination.currentPage * pagination.perPage < pagination.totalEntries
+                }))
+            );
 
-        const parentPaths = ['/'];
+        return fetchPage(1).pipe(
+            expand((result) => {
+                if (
+                    !targetPath ||
+                    !result.hasMore ||
+                    result.folders.some((folder) => folder.data?.path === targetPath)
+                ) {
+                    return EMPTY;
+                }
 
-        for (let index = 0; index < segments.length - 1; index++) {
-            parentPaths.push(`/${segments.slice(0, index + 1).join('/')}/`);
-        }
-
-        return parentPaths;
+                return fetchPage(result.page + 1);
+            }),
+            reduce(
+                (acc: LevelLoadResult, result: LevelLoadResult) => ({
+                    folders: [...acc.folders, ...result.folders],
+                    page: result.page,
+                    hasMore: result.hasMore
+                }),
+                { folders: [], page: 1, hasMore: false }
+            )
+        );
     }
 }

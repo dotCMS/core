@@ -25,13 +25,14 @@ import {
     TreeNodeItem,
     TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
-import { DotBrowsingService, normalizeHostFolderBrowsePath } from '@dotcms/ui';
+import { DotBrowsingService, normalizeHostFolderBrowsePath, TREE_ROOT_NODE_KEY } from '@dotcms/ui';
 
 export const PEER_PAGE_LIMIT = 7000;
 export const FOLDER_PAGE_LIMIT = 40;
 export const MIN_SEARCH_LENGTH = 2;
 export const SITE_SEARCH_THRESHOLD = 5;
-export const ROOT_NODE_KEY = 'root';
+/** Re-export of TREE_ROOT_NODE_KEY for existing store consumers/tests. */
+export const ROOT_NODE_KEY = TREE_ROOT_NODE_KEY;
 export const SEARCH_LOAD_MORE_KEY = 'search';
 
 export const SYSTEM_HOST_NAME = 'System Host';
@@ -125,19 +126,34 @@ export const initialState: HostFolderFiledState = {
 };
 
 /**
- * Walks an already-resolved folder tree (e.g. from `buildTreeByPaths`) and marks every
- * node that already has a `children` array as fully loaded, so the overlay doesn't
- * re-fetch levels that were populated during initialization from a preselected path.
+ * Seeds `nodePagination` from an already-resolved folder tree (e.g. from
+ * `buildTreeByPaths`). Uses the optional per-level `pagination` metadata so
+ * "Load more" continues from the correct page; levels with loaded children but
+ * no entry default to `{ page: 1, hasMore: false }` so `expandNode` skips a
+ * re-fetch of already-populated branches.
  */
-function buildInitialPaginationMap(folders: TreeNodeItem[]): Record<string, NodePaginationState> {
+function buildInitialPaginationMap(
+    folders: TreeNodeItem[],
+    pagination?: Record<string, { page: number; hasMore: boolean }>
+): Record<string, NodePaginationState> {
+    const fromMeta = (key: string): NodePaginationState => {
+        const entry = pagination?.[key];
+
+        return {
+            page: entry?.page ?? 1,
+            hasMore: entry?.hasMore ?? false,
+            loading: false
+        };
+    };
+
     const map: Record<string, NodePaginationState> = {
-        [ROOT_NODE_KEY]: { page: 1, hasMore: false, loading: false }
+        [ROOT_NODE_KEY]: fromMeta(ROOT_NODE_KEY)
     };
 
     const walk = (nodes: TreeNodeItem[]) => {
         nodes.forEach((node) => {
             if (Array.isArray(node.children)) {
-                map[node.key] = { page: 1, hasMore: false, loading: false };
+                map[node.key] = fromMeta(node.key);
                 walk(node.children as TreeNodeItem[]);
             }
         });
@@ -146,6 +162,37 @@ function buildInitialPaginationMap(folders: TreeNodeItem[]): Record<string, Node
     walk(folders);
 
     return map;
+}
+
+/**
+ * Appends a synthetic "Load more" sentinel to any level whose pagination still
+ * has more pages, so pre-resolved trees from `buildTreeByPaths` keep the same
+ * in-tree load-more UX as lazily browsed levels.
+ */
+function injectLoadMoreSentinels(
+    folders: TreeNodeItem[],
+    pagination: Record<string, NodePaginationState>
+): TreeNodeItem[] {
+    const withSentinel = (nodes: TreeNodeItem[], levelKey: string): TreeNodeItem[] => {
+        const cleaned = stripLoadMore(nodes).map((node) => {
+            if (!Array.isArray(node.children)) {
+                return node;
+            }
+
+            return {
+                ...node,
+                children: withSentinel(node.children as TreeNodeItem[], node.key)
+            };
+        });
+
+        if (pagination[levelKey]?.hasMore) {
+            return [...cleaned, createLoadMoreNode(levelKey)];
+        }
+
+        return cleaned;
+    };
+
+    return withSentinel(folders, ROOT_NODE_KEY);
 }
 
 /**
@@ -826,7 +873,8 @@ export const HostFolderFiledStore = signalStore(
                             return of({
                                 site: undefined as TreeNodeItem | undefined,
                                 node: null as TreeNodeItem | null,
-                                tree: null as CustomTreeNode['tree']
+                                tree: null as CustomTreeNode['tree'],
+                                pagination: undefined as CustomTreeNode['pagination']
                             });
                         }
 
@@ -840,7 +888,8 @@ export const HostFolderFiledStore = signalStore(
                             return of({
                                 site,
                                 node: null as TreeNodeItem | null,
-                                tree: null as CustomTreeNode['tree']
+                                tree: null as CustomTreeNode['tree'],
+                                pagination: undefined as CustomTreeNode['pagination']
                             });
                         }
 
@@ -853,7 +902,8 @@ export const HostFolderFiledStore = signalStore(
                             return of({
                                 site: undefined as TreeNodeItem | undefined,
                                 node: null as TreeNodeItem | null,
-                                tree: null as CustomTreeNode['tree']
+                                tree: null as CustomTreeNode['tree'],
+                                pagination: undefined as CustomTreeNode['pagination']
                             });
                         }
 
@@ -868,19 +918,25 @@ export const HostFolderFiledStore = signalStore(
                                 folderPath
                             )
                             .pipe(
-                                map(({ node, tree }) => ({ site, node, tree })),
+                                map(({ node, tree, pagination }) => ({
+                                    site,
+                                    node,
+                                    tree,
+                                    pagination
+                                })),
                                 catchError((error: HttpErrorResponse) => {
                                     dotHttpErrorManagerService.handle(error);
 
                                     return of({
                                         site: undefined as TreeNodeItem | undefined,
                                         node: null as TreeNodeItem | null,
-                                        tree: null as CustomTreeNode['tree']
+                                        tree: null as CustomTreeNode['tree'],
+                                        pagination: undefined as CustomTreeNode['pagination']
                                     });
                                 })
                             );
                     }),
-                    tap(({ site, node, tree }) => {
+                    tap(({ site, node, tree, pagination }) => {
                         if (!site) {
                             // The preselected value (or default) couldn't be matched to a site
                             // in the currently loaded list (e.g. an archived/inaccessible site,
@@ -902,8 +958,12 @@ export const HostFolderFiledStore = signalStore(
 
                         if (tree?.folders) {
                             expandFoldersToTarget(tree.folders, node?.data?.path);
-                            changes.folders = tree.folders;
-                            changes.nodePagination = buildInitialPaginationMap(tree.folders);
+                            const nodePagination = buildInitialPaginationMap(
+                                tree.folders,
+                                pagination
+                            );
+                            changes.folders = injectLoadMoreSentinels(tree.folders, nodePagination);
+                            changes.nodePagination = nodePagination;
                         } else {
                             changes.folders = [];
                         }
