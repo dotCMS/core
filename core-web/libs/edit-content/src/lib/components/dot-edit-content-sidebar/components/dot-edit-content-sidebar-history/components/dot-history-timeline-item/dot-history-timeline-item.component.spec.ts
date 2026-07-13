@@ -138,6 +138,17 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
 
+        it('should show a spinner while the version is being fetched', () => {
+            spectator.setInput('isLoadingVersion', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('version-loading-spinner'))).toBeTruthy();
+        });
+
+        it('should not show a spinner when the version is not being fetched', () => {
+            expect(spectator.query(byTestId('version-loading-spinner'))).toBeFalsy();
+        });
+
         it('should show the exact date/time — not "Current" — for the working (most recent) version', () => {
             spectator.setInput('item', {
                 ...mockVersionItem,

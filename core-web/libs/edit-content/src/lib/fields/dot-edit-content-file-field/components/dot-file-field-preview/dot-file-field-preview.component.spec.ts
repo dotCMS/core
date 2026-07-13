@@ -67,6 +67,15 @@ describe('DotFileFieldPreviewComponent', () => {
             expect(spectator.query(byTestId('download-btn'))).toBeTruthy();
         });
 
+        it('should render the unified thumbnail with the temp file pdf src', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+            ).toBe(TEMP_FILE_MOCK.thumbnailUrl);
+        });
+
         it('should call downloadAsset when click on the download btn', () => {
             const downloadSpy = jest
                 .spyOn(spectator.component, 'downloadAsset')
@@ -78,6 +87,17 @@ describe('DotFileFieldPreviewComponent', () => {
 
             spectator.click(spectator.query(byTestId('download-btn')));
             expect(downloadSpy).toHaveBeenCalledWith(expectedUrl);
+        });
+
+        it('should render with fallback metadata when the temp file has none (image editor save)', () => {
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, metadata: undefined }
+            } as unknown);
+            spectator.detectChanges();
+
+            expect(spectator.component).toBeTruthy();
+            expect(spectator.query(byTestId('metadata-title'))).toHaveText(TEMP_FILE_MOCK.fileName);
         });
 
         it('should not show download button when referenceUrl is missing', () => {
@@ -122,9 +142,15 @@ describe('DotFileFieldPreviewComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should be have a dot-contentlet-thumbnail', () => {
+        it('should render the unified thumbnail with the contentlet image src', () => {
             spectator.detectChanges();
-            expect(spectator.query('dot-contentlet-thumbnail')).toBeTruthy();
+
+            const { inode, modDate } = NEW_FILE_MOCK.entity;
+
+            expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+            ).toBe(`/dA/${inode}/asset/500w/50q?r=${modDate}`);
         });
 
         it('should show proper metadata', () => {
