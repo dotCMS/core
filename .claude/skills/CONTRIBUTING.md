@@ -23,7 +23,7 @@ Format: `dot-<domain>-<action>` with an optional `-<target>`. The **`<domain>`**
 | `dot-content-` | Content, contentlets, indexing |
 | `dot-ui-` | Frontend / editor / UI workflows |
 
-Examples: `dot-issue-triage`, `dot-release-rollback`, `dot-cicd-diagnose`.
+Examples: `dot-issue-manage`, `dot-release-rollback`, `dot-cicd-diagnose`.
 
 Need a domain that isn't listed? Add it to `approvedDomains` in `skills.config.json` **in the same PR** (that edit is the review point for "is this a real new domain?").
 
@@ -149,6 +149,6 @@ Deliberately lightweight: four stages, minimal gates.
 >
 > Don't run `skill-creator` *first*: it creates a non-`dot-` folder with no `owner`/`status` and eval scaffolding tied to that name, forcing a rename and rework afterward.
 
-**Grandfathered skills:** skills predating the `dot-` convention are listed in `skills.config.json` and exempt from naming/`owner`/`status` checks — their issues show as **warnings** (a punch-list), not failures. A follow-up rename PR will bring them into convention and remove them from the list.
+**Grandfathered skills:** skills listed in `skills.config.json` are exempt from naming/`owner`/`status` checks — their lint issues show as **warnings**, not failures. This is reserved for **vendored/generic skills we did not author** (currently `skill-doctor`), which intentionally keep their upstream name and get no `dot-` prefix. First-party skills should never be grandfathered — bring them into convention instead.
 
 **External skills** (symlinked from `.agents/skills/` — `nx-*`, `angular-developer`, etc.) are not governed here; they appear in the catalog's "External" section for visibility only.

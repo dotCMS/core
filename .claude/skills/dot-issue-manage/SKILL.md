@@ -1,5 +1,7 @@
 ---
-name: dotcms-github-issues
+name: dot-issue-manage
+owner: "@dotcms/scout"
+status: active
 description: Create GitHub issues using repository templates. Use when the user asks to create an issue, bug report, feature request, task, spike, epic, or UX requirement. Also use when the user describes a problem, bug, enhancement, or work item that should be tracked. Also use when the user asks to update, query, or view an existing GitHub issue. Also use when the user wants to find, search, list, or discover issues — assigned to them, open for their team, recently active, or matching a keyword. Supports both English and Spanish input.
 ---
 

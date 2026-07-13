@@ -44,7 +44,7 @@ This skill provides automated diagnosis of CI/CD failures across all DotCMS work
 ## Skill Structure
 
 ```
-cicd-diagnostics/
+dot-cicd-diagnose/
 ├── SKILL.md              # Main skill instructions (concise, <300 lines)
 ├── WORKFLOWS.md          # Detailed workflow documentation
 ├── LOG_ANALYSIS.md       # Advanced log analysis techniques
@@ -66,7 +66,7 @@ The skill activates automatically when you ask questions like:
 
 Or invoke explicitly:
 ```bash
-/cicd-diagnostics
+/dot-cicd-diagnose
 ```
 
 ## Example Scenarios
