@@ -605,7 +605,7 @@ export class DotContentDriveFieldFilterComponent {
             }
         });
 
-        ref.onClose
+        ref?.onClose
             .pipe(
                 filter((items): items is DotCMSContentlet[] => Array.isArray(items)),
                 take(1),
