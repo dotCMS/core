@@ -23,7 +23,7 @@ Format: `dot-<domain>-<action>` with an optional `-<target>`. The **`<domain>`**
 | `dot-content-` | Content, contentlets, indexing |
 | `dot-ui-` | Frontend / editor / UI workflows |
 
-Examples: `dot-issue-triage`, `dot-release-rollback`, `dot-cicd-diagnose`.
+Examples: `dot-issue-manage`, `dot-release-rollback`, `dot-cicd-diagnose`.
 
 Need a domain that isn't listed? Add it to `approvedDomains` in `skills.config.json` **in the same PR** (that edit is the review point for "is this a real new domain?").
 

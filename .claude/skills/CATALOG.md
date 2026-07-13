@@ -3,7 +3,7 @@
 
 Auto-generated inventory of dotCMS skills. **Check here before creating a new skill** — if something close exists, extend it or mark yours `related`, don't fork. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-_8 first-party · 6 external (symlinked)._
+_7 first-party · 6 external (symlinked)._
 
 ## First-party skills (`dot-*`)
 
@@ -11,7 +11,6 @@ _8 first-party · 6 external (symlinked)._
 | --- | --- | --- | --- | --- |
 | `dot-cicd-diagnose` | active | @dotcms/platform | Use when a GitHub Actions workflow fails, PR build breaks, merge queue rejects, nightly reports failures, or user mentions CI/CD test failures in dotCMS/core. … | — |
 | `dot-issue-manage` | active | @dotcms/scout | Create GitHub issues using repository templates. Use when the user asks to create an issue, bug report, feature request, task, spike, epic, or UX requirement. … | — |
-| `dot-issue-triage` | active | @dotcms/scout | Triage GitHub issues using the AI triage pipeline. Fetches the next issue from the "Needs Triage" project column (or a specific issue), creates an agent team t… | — |
 | `dot-release-backport-lts` | active | @dotcms/platform | Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Use when applying… | — |
 | `dot-release-rollback-check` | active | @dotcms/platform | Check whether a dotCMS release can be safely rolled back to a previous version by inspecting all PRs merged between the two versions for rollback-safety labels… | — |
 | `dot-sdk-analytics` | active | @dotcms/falcon | Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions install… | — |
