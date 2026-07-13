@@ -18,7 +18,7 @@ This project demonstrates how to run **A/B Experiments** on a [Next.js](https://
 If you just want to see experiments working end to end, follow these steps (details for each are further down):
 
 1. **Start dotCMS + experiments** via the [Docker Compose stack](../../docker/docker-compose-examples/experiments/README.md) — `./start-experiments.sh` from that directory. This brings up dotCMS with the full starter, the analytics infrastructure, and **configures the Experiments app by default**.
-2. **Set up `.env.local`** — `cp .env.local.example .env.local` and fill in the host, auth token, site ID, and the experiments key (see [Step 3: Configure the Next.js Application](#step-3-configure-the-nextjs-application)).
+2. **Set up `.env.local`** — `cp .env.local.example .env.local` and fill in the host, auth token, site ID, and the experiments key (see [Step 2: Configure the Next.js Application](#step-2-configure-the-nextjs-application)).
 3. **Set up the UVE app** in dotCMS — point the Universal Visual Editor at `http://localhost:3000` (see [Configure the Universal Visual Editor](#c-configure-the-universal-visual-editor)).
 4. **Install dependencies** — `npm install`.
 5. **Run the dev server** — `npm run dev`.
@@ -51,20 +51,17 @@ The integration uses dotCMS APIs to fetch content and the Universal Visual Edito
     - [dotCMS Requirements](#dotcms-requirements)
     - [Knowledge Prerequisites](#knowledge-prerequisites)
 - [dotCMS SDK Dependencies](#dotcms-sdk-dependencies)
+    - [Installing @dotcms/experiments](#installing-dotcmsexperiments)
 - [Setup Guide](#setup-guide)
-    - [Step 1: Create the Next.js Application](#step-1-create-the-nextjs-application)
-    - [Step 2: Configure dotCMS Access](#step-2-configure-dotcms-access)
-    - [Step 3: Configure the Next.js Application](#step-3-configure-the-nextjs-application)
-    - [Step 4: Run the Application](#step-4-run-the-application)
+    - [Step 1: Configure dotCMS Access](#step-1-configure-dotcms-access)
+    - [Step 2: Configure the Next.js Application](#step-2-configure-the-nextjs-application)
+    - [Step 3: Run the Application](#step-3-run-the-application)
 - [Edit your page in the Universal Visual Editor](#edit-your-page-in-the-universal-visual-editor)
-- [Advanced: Next.js + dotCMS Architecture](#advanced-nextjs--dotcms-architecture)
-    - [Integration Overview](#integration-overview)
-    - [File Structure](#file-structure)
     - [Understanding the Structure](#understanding-the-structure)
-    - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
-    - [How to Render Your Page](#how-to-render-your-page)
-- [Conclusion](#conclusion)
-- [Learn More](#learn-more)
+    - [How the Content is Fetched from dotCMS](#how-the-content-is-fetched-from-dotcms)
+        - [The getDotCMSPage utility and serving a specific variant](#the-getdotcmspage-utility-and-serving-a-specific-variant)
+        - [Enabling A/B Experiments with withExperiments](#enabling-ab-experiments-with-withexperiments)
+- [Experiments (headless)](#experiments-headless)
 
 ## Prerequisites
 
@@ -147,9 +144,7 @@ If the entry is present, the package installed correctly and you're ready to con
 
 ## Setup Guide
 
-This guide will walk you through the process of setting up the dotCMS Next.js example from scratch.
-
-This will create a new directory with the example code and install all necessary dependencies.
+This guide walks you through configuring dotCMS access, wiring up the Next.js application, and running it against your experiments-enabled dotCMS instance.
 
 ### Step 1: Configure dotCMS Access
 
@@ -168,7 +163,7 @@ Once you have a site, you can log in with the credentials and start creating con
 #### B. Create a dotCMS API Key
 
 > [!TIP]
-> Make your API Token had read-only permissions for Pages, Folders, Assets, and Content. Using a key with minimal permissions follows security best practices.
+> Make sure your API Token has read-only permissions for Pages, Folders, Assets, and Content. Using a key with minimal permissions follows security best practices.
 
 This integration requires an API Key with read-only permissions for security best practices:
 
@@ -181,7 +176,7 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 
 #### C. Configure the Universal Visual Editor
 
-The [Universal Visual Editor (UVE)](https://dev.dotcms.com/docs/universal-visual-editor) is a critical feature that creates a bridge between your dotCMS instance and your Next.js application. This integration **Enables real-time visual editing** and allows content editors to see and modify your actual Next.js pages directly from within dotCMS.
+The [Universal Visual Editor (UVE)](https://dev.dotcms.com/docs/universal-visual-editor) is a critical feature that creates a bridge between your dotCMS instance and your Next.js application. It **enables real-time visual editing** and allows content editors to see and modify your actual Next.js pages directly from within dotCMS.
 
 To set up the Universal Visual Editor:
 
@@ -205,7 +200,7 @@ For detailed instructions, see the [dotCMS UVE Headless Configuration](https://d
 
 This configuration tells dotCMS that when editors are working on content in the admin panel, they should see your Next.js application running at `http://localhost:3000`. The pattern `(.*)` means this applies to all pages in your site.
 
-### Step 3: Configure the Next.js Application
+### Step 2: Configure the Next.js Application
 
 #### A. Set Environment Variables
 
@@ -219,11 +214,11 @@ cp .env.local.example .env.local
 Then set each variable in the `.env.local` file:
 
 - `NEXT_PUBLIC_DOTCMS_HOST`: The URL of your dotCMS site (e.g. `http://localhost:8080/`, or `http://localhost:8082/` if you use the Docker stack).
-- `NEXT_PUBLIC_DOTCMS_AUTH_TOKEN`: The API Key you created in Step 2B.
+- `NEXT_PUBLIC_DOTCMS_AUTH_TOKEN`: The API Key you created in Step 1B.
 - `NEXT_PUBLIC_DOTCMS_SITE_ID`: The site key of the site you want to use.
 - `NEXT_PUBLIC_DOTCMS_MODE`: The runtime mode for the app (e.g. `production`).
 - `NODE_TLS_REJECT_UNAUTHORIZED`: Set to `0` to allow self-signed certificates when connecting to a local dotCMS over HTTPS. **Local development only** — do not use in production.
-- `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY`: The machine-to-machine (M2M) analytics key used to track and evaluate experiments. This is the key found under the **Experiments app** in dotCMS — see Step 2C below.
+- `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY`: The machine-to-machine (M2M) analytics key used to track and evaluate experiments. This is the key found under the **Experiments app** in dotCMS — see Step 2B below.
 - `NEXT_PUBLIC_EXPERIMENTS_DEBUG` _(optional)_: Set to `true` to enable verbose experiments/analytics debug logging. Defaults to off. Consumed by the centralized `experimentsConfig` (see [Understanding the Structure](#understanding-the-structure)).
 
 The site ID variable refers to the site that will be used to pull content into your Next.js app. dotCMS is a multi-site CMS, meaning a single instance can manage multiple websites; the site ID specifies which site's content should be pulled into your Next.js app. If left empty or given an incorrect value, content will be pulled from the default site configured in dotCMS.
@@ -234,7 +229,7 @@ You can find the values for this variable — site keys or identifiers both work
 
 The `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY` is the analytics key that authorizes the Next.js app to report and evaluate experiment data. You can find it in dotCMS under **Settings → Apps → dotExperiments-config** (the Experiments app). If you used the [Experiments Docker Compose stack](../../docker/docker-compose-examples/experiments/README.md), this app is pre-configured and the key is auto-generated by the analytics configurator — just copy it from the app into your `.env.local`.
 
-### Step 4: Run the Application
+### Step 3: Run the Application
 
 Run the development server with one of the following commands:
 
@@ -307,6 +302,7 @@ import { createDotCMSClient } from "@dotcms/client";
 import {
     dotCMSAuthToken,
     dotCMSHost,
+    dotCMSLogLevel,
     dotCMSSiteId,
 } from "@/config/dotcms.config";
 
@@ -314,7 +310,7 @@ export const dotCMSClient = createDotCMSClient({
     dotcmsUrl: dotCMSHost,
     authToken: dotCMSAuthToken,
     siteId: dotCMSSiteId,
-    logLevel: process.env.NODE_ENV === "development" ? "verbose" : "default",
+    logLevel: dotCMSLogLevel,
     requestOptions: {
         // UVE needs fresh data so in-context edits are reflected immediately.
         cache: "no-cache",
@@ -323,6 +319,48 @@ export const dotCMSClient = createDotCMSClient({
 ```
 
 Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/).
+
+#### The `getDotCMSPage` utility and serving a specific variant
+
+Page fetching is centralized in `src/utils/getDotCMSPage.ts`. The utility is wrapped in React's `cache()` so that multiple callers within a single request — for example `generateMetadata` and the page body in `src/app/[[...slug]]/page.tsx` — share a single network round-trip. On failure it returns `{ error }` so callers can branch with the guards in `@/utils/pageResponse` instead of using `try/catch`.
+
+It accepts an optional `variantName` that is forwarded to the dotCMS page API, so the page can be rendered as a specific experiment variant:
+
+```ts
+// src/utils/getDotCMSPage.ts
+export const getDotCMSPage = cache(async (path: string, variantName?: string) => {
+    try {
+        return await dotCMSClient.page.get<{ content: PageExtraContent }>(path, {
+            variantName,
+            graphql: {
+                /* blogs, destinations, navigation … */
+            },
+        });
+    } catch (error) {
+        return { error };
+    }
+});
+```
+
+The catch-all route reads `variantName` from the request's query string and passes it through. This means you can force a given variant by appending `?variantName=<variant>` to any URL (for example `http://localhost:3000/?variantName=my-variant`), which is useful for previewing and debugging individual experiment variants:
+
+```tsx
+// src/app/[[...slug]]/page.tsx
+interface SlugPageProps {
+    params: Promise<{ slug?: string[] }>;
+    searchParams: Promise<{ variantName?: string }>;
+}
+
+export default async function Home({ params, searchParams }: SlugPageProps) {
+    const { slug } = await params;
+    const { variantName } = await searchParams;
+    const pageContent = await getDotCMSPage(getPath(slug), variantName);
+    // …
+}
+```
+
+> [!NOTE]
+> `generateMetadata` reads the same `searchParams.variantName` and forwards it to `getDotCMSPage` too, so the page's metadata (e.g. its title) matches the variant being rendered. Because both calls share the cached fetch, passing the same `variantName` costs only one request.
 
 #### Enabling A/B Experiments with `withExperiments`
 
