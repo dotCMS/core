@@ -49,7 +49,8 @@ const rawComponents = computed(() => {
 const slots = useSlots();
 const contentletSlots = computed(() => {
     const out: Record<string, Slot> = {};
-    for (const [name, slot] of Object.entries(slots)) {
+    const entries = Object.entries(slots) as [string, Slot | undefined][];
+    for (const [name, slot] of entries) {
         if (slot && name.startsWith(CONTENTLET_SLOT_PREFIX)) {
             out[name.slice(CONTENTLET_SLOT_PREFIX.length)] = slot;
         }
