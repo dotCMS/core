@@ -404,6 +404,11 @@ export function serializeMultiValue(values: string[]): string {
  * @param {string} fieldType
  * @return {*}  {string}
  */
+/** Narrows a user-searchable value to a `{ from, to }` date range (object, not array). */
+function isDateRange(value: DotContentDriveUserSearchableValue): value is DotContentDriveDateRange {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export function serializeUserSearchableValue(
     value: DotContentDriveUserSearchableValue | null | undefined,
     fieldType: string
@@ -413,12 +418,17 @@ export function serializeUserSearchableValue(
     }
 
     if (isDateFieldFilterType(fieldType)) {
-        const range = value as DotContentDriveDateRange;
-        if (!range?.from && !range?.to) {
+        // Guard the shape rather than blindly casting: a mismatched fieldType/value pair yields ''
+        // (not filtering) instead of a misleading partial range.
+        if (!isDateRange(value)) {
             return '';
         }
 
-        return `${range.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${range.to ?? ''}`;
+        if (!value.from && !value.to) {
+            return '';
+        }
+
+        return `${value.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${value.to ?? ''}`;
     }
 
     if (isMultiValueFieldFilterType(fieldType)) {

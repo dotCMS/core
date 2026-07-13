@@ -12,12 +12,17 @@ import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
 import {
+    DotCategoriesService,
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotMessageService,
+    DotTagsService
 } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import { createFakeTextField, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
@@ -84,6 +89,22 @@ describe('DotContentDriveToolbarComponent', () => {
                 get: jest.fn().mockReturnValue(of())
             }),
             mockProvider(DotHttpErrorManagerService),
+            // Field-filter chips render inside the toolbar; provide their dependencies.
+            mockProvider(DotTagsService, {
+                getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [] }))
+            }),
+            mockProvider(DotCategoriesService, {
+                getChildrenPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
+                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
+                getCategory: jest.fn().mockReturnValue(of(null))
+            }),
+            mockProvider(DotContentletService, {
+                getContentletByInode: jest.fn().mockReturnValue(of(null))
+            }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            },
             provideHttpClient()
         ],
         detectChanges: false
@@ -348,6 +369,23 @@ describe('DotContentDriveToolbarComponent', () => {
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+    });
+
+    describe('field-filter chips', () => {
+        it('should render a chip only for active variables resolved against loaded fields', () => {
+            store.userSearchableFields.set([
+                createFakeTextField({ variable: 'body', name: 'Body' })
+            ]);
+            // 'ghost' has no matching loaded field (the URL-restore / stale case) and must be dropped.
+            store.userSearchableActive.set(['body', 'ghost']);
+            spectator.detectChanges();
+
+            expect(spectator.component.$activeFieldFilters().map((f) => f.variable)).toEqual([
+                'body'
+            ]);
+            expect(spectator.query(byTestId('field-filter-chip-body'))).toBeTruthy();
+            expect(spectator.query(byTestId('field-filter-chip-ghost'))).toBeNull();
         });
     });
 });

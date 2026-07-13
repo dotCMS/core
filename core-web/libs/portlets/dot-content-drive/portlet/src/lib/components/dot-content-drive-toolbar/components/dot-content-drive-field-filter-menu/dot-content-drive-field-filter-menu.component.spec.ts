@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
 
@@ -148,5 +148,32 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
             spectator.query(byTestId('field-filter-menu-option-body'), { root: true })
         ).toBeNull();
         expect(spectator.query(byTestId('field-filter-menu-empty'), { root: true })).toBeTruthy();
+    });
+
+    it('should clear field filters when the active content type changes, but not on first load', () => {
+        const contentType = signal<string[] | undefined>(['blog']);
+        store.getFilterValue.mockImplementation((key: string) =>
+            key === 'contentType' ? contentType() : undefined
+        );
+
+        spectator.detectChanges();
+        // First load resolves an active type but must not clear.
+        expect(store.clearUserSearchableFilters).not.toHaveBeenCalled();
+
+        contentType.set(['news']);
+        spectator.detectChanges();
+        // Switching to a different type drops the previous type's field filters.
+        expect(store.clearUserSearchableFilters).toHaveBeenCalled();
+    });
+
+    it('should handle a getContentType error and reset the fields', () => {
+        const httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
+        contentTypeService.getContentType.mockReturnValue(throwError(() => new Error('boom')));
+        store.getFilterValue.mockReturnValue(['blog']);
+
+        spectator.detectChanges();
+
+        expect(httpErrorManager.handle).toHaveBeenCalled();
+        expect(store.setUserSearchableFields).toHaveBeenCalledWith([]);
     });
 });

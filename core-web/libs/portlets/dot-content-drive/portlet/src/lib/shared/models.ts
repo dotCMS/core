@@ -160,6 +160,12 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * entry only lands in `filters` once the chip has a value.
      */
     userSearchableActive: string[];
+    /**
+     * Whether the field metadata for the active content type has been resolved (even to an empty
+     * set). Distinguishes "not fetched yet" from "fetched, none eligible" so a cold URL restore can
+     * hold the first search until fields load, instead of firing one that drops the `us.*` values.
+     */
+    userSearchableFieldsLoaded: boolean;
 }
 
 /**

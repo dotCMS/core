@@ -6,13 +6,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import {
-    DotCMSContentTypeField,
-    DotContentDriveItem,
-    DotContentDriveSearchResponse,
-    DotSite
-} from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
@@ -318,6 +314,21 @@ describe('DotContentDriveStore', () => {
 
                 const request = store.$request();
 
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to false when a field filter is active', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { 'us.body': 'hello' },
+                    isTreeExpanded: false
+                });
+                store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+
+                const request = store.$request();
+
+                expect(request.userSearchable).toEqual({ body: 'hello' });
                 expect(request.showFolders).toBe(false);
             });
 
@@ -743,6 +754,30 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
     });
 
+    it('should defer the search while a restored us.* filter has no field metadata yet', () => {
+        // Cold URL restore: a us.* value is present but the field metadata hasn't loaded.
+        // Drive loadItems() directly (the init effect would overwrite state from empty queryParams).
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: { 'us.body': 'hello' },
+            isTreeExpanded: false
+        });
+
+        store.loadItems();
+
+        // No search yet — searching now would drop the us.* value from the payload.
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+
+        // Once the field metadata arrives, the search fires with the value shaped in.
+        store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+        store.loadItems();
+
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({ userSearchable: { body: 'hello' } })
+        );
+    });
+
     it('should clear selected items when loading items', () => {
         // Set some selected items
         store.setSelectedItems([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
@@ -835,15 +870,6 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
     });
 
     describe('User-searchable field filters', () => {
-        const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTypeField =>
-            ({
-                variable: 'aField',
-                fieldType: 'Text',
-                dataType: 'TEXT',
-                values: '',
-                ...overrides
-            }) as DotCMSContentTypeField;
-
         it('should add a chip to the active list without touching the filter bag', () => {
             store.addUserSearchableField('title');
 
@@ -860,7 +886,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         });
 
         it('should clear all field filters, the active list and the cached fields', () => {
-            store.setUserSearchableFields([field({ variable: 'title' })]);
+            store.setUserSearchableFields([createFakeTextField({ variable: 'title' })]);
             store.addUserSearchableField('title');
             store.patchFilters({ 'us.title': 'review', baseType: ['1'] });
 
@@ -881,8 +907,8 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 isTreeExpanded: false
             });
             store.setUserSearchableFields([
-                field({ variable: 'title', fieldType: 'Text' }),
-                field({ variable: 'tags', fieldType: 'Tag' })
+                createFakeTextField({ variable: 'title' }),
+                createFakeTagField({ variable: 'tags' })
             ]);
             store.patchFilters({ 'us.title': 'review', 'us.tags': 'angular,cms' });
 

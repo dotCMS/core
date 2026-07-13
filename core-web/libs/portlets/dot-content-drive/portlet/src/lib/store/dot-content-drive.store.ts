@@ -63,7 +63,8 @@ const initialState: DotContentDriveState = {
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
     pages: [DEFAULT_PAGE],
     userSearchableFields: [],
-    userSearchableActive: []
+    userSearchableActive: [],
+    userSearchableFieldsLoaded: false
 };
 
 export const DotContentDriveStore = signalStore(
@@ -75,6 +76,10 @@ export const DotContentDriveStore = signalStore(
                     () => {
                         const paginationSignal = pagination();
                         const page = untracked(() => pages()[paginationSignal?.page - 1]);
+                        const userSearchable = buildUserSearchablePayload(
+                            filters(),
+                            userSearchableFields()
+                        );
 
                         return {
                             assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
@@ -91,10 +96,7 @@ export const DotContentDriveStore = signalStore(
                             workflow: filters()?.workflow?.length
                                 ? parseWorkflowFilter(filters()?.workflow)
                                 : undefined,
-                            userSearchable: buildUserSearchablePayload(
-                                filters(),
-                                userSearchableFields()
-                            ),
+                            userSearchable,
                             contentCursor: page.contentCursor ?? 0,
                             folderCursor: page.folderCursor ?? 0,
                             maxResults: paginationSignal?.limit,
@@ -105,7 +107,10 @@ export const DotContentDriveStore = signalStore(
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
                                 !filters()?.languageId?.length &&
-                                !filters()?.workflow?.length
+                                !filters()?.workflow?.length &&
+                                // A field-based filter narrows to content, so hide folders too —
+                                // consistent with the other filters above.
+                                !userSearchable
                         };
                     },
                     {
@@ -137,7 +142,11 @@ export const DotContentDriveStore = signalStore(
                     pages: [DEFAULT_PAGE],
                     // Which field-filter chips to show — parsed from the `us.*` value keys at the
                     // decode layer (getUserSearchableActive), keeping this method free of that logic.
-                    userSearchableActive: getUserSearchableActive(filters)
+                    userSearchableActive: getUserSearchableActive(filters),
+                    // Field metadata for the restored type isn't loaded yet; loadItems waits on this
+                    // so a restored `us.*` filter isn't dropped from the first search request.
+                    userSearchableFields: [],
+                    userSearchableFieldsLoaded: false
                 });
             },
             setItems(items: DotContentDriveItem[]) {
@@ -235,7 +244,10 @@ export const DotContentDriveStore = signalStore(
              * the field-filter chips (to render controls) and by `$request` (to reshape values).
              */
             setUserSearchableFields(fields: DotCMSContentTypeField[]) {
-                patchState(store, { userSearchableFields: fields });
+                patchState(store, {
+                    userSearchableFields: fields,
+                    userSearchableFieldsLoaded: true
+                });
             },
             /**
              * Shows a field-filter chip by adding it to the active list only — NOT to `filters`.
@@ -267,6 +279,7 @@ export const DotContentDriveStore = signalStore(
                     filters: restFilters,
                     userSearchableFields: [],
                     userSearchableActive: [],
+                    userSearchableFieldsLoaded: false,
                     pagination: { ...store.pagination(), offset: 0, page: 1 },
                     pages: [DEFAULT_PAGE]
                 });
@@ -281,6 +294,20 @@ export const DotContentDriveStore = signalStore(
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier == SYSTEM_HOST.identifier) {
+                    return;
+                }
+
+                // Hold the search while a restored `us.*` filter has no field metadata yet: the
+                // payload builder can only shape values it has a field for, so searching now would
+                // drop them and briefly show unfiltered results. Read untracked so these don't
+                // become search-effect dependencies (adding an empty chip must not re-fire a
+                // search); once fields load, `$request` itself changes and re-runs this.
+                const fieldsPending = untracked(
+                    () =>
+                        store.userSearchableActive().length > 0 &&
+                        !store.userSearchableFieldsLoaded()
+                );
+                if (fieldsPending) {
                     return;
                 }
 

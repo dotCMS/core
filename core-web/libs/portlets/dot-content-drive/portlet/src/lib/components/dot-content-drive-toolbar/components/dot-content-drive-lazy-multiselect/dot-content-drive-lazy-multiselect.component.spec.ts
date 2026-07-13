@@ -144,11 +144,13 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
     });
 
     describe('error handling', () => {
-        it('should stop loading (and paging) when a page request fails', () => {
+        it('should stop loading (and paging) and flag a distinct error when a page request fails', () => {
             build(jest.fn().mockReturnValue(throwError(() => new Error('boom'))));
 
             expect(spectator.component.$state.loading()).toBe(false);
             expect(spectator.component.$state.canLoadMore()).toBe(false);
+            expect(spectator.component.$state.error()).toBe(true);
+            expect(spectator.query(byTestId('lazy-multiselect-error'))).toBeTruthy();
         });
     });
 });

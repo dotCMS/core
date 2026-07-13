@@ -60,6 +60,7 @@ const PER_PAGE = 20;
 interface State {
     options: DotLazyMultiselectOption[];
     loading: boolean;
+    error: boolean;
     filter: string;
     canLoadMore: boolean;
     currentPage: number;
@@ -106,6 +107,7 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
     readonly $state = signalState<State>({
         options: [],
         loading: false,
+        error: false,
         filter: '',
         canLoadMore: true,
         currentPage: 1
@@ -135,6 +137,7 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
                     filter,
                     currentPage: 1,
                     canLoadMore: true,
+                    error: false,
                     options: []
                 });
                 this.#load();
@@ -179,7 +182,7 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
     }
 
     #load(append = false): void {
-        patchState(this.$state, { loading: true });
+        patchState(this.$state, { loading: true, error: false });
         this.$loadPage()({
             page: this.$state.currentPage(),
             perPage: PER_PAGE,
@@ -188,10 +191,15 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
             .pipe(
                 take(1),
                 takeUntil(this.#cancel$),
-                // A failed page must not leave the list spinning forever; stop loading and stop
-                // paging so the empty state shows instead of a permanent spinner.
+                // A failed page must not leave the list spinning forever; stop loading and paging
+                // and flag the error so the panel shows a distinct "failed" state rather than a
+                // silent "no results" that looks like an empty search.
                 catchError(() => {
-                    patchState(this.$state, { loading: false, canLoadMore: false });
+                    patchState(this.$state, {
+                        loading: false,
+                        canLoadMore: false,
+                        error: true
+                    });
 
                     return EMPTY;
                 }),

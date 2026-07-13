@@ -40,6 +40,10 @@
                 data-testid="lazy-multiselect-empty">
                 @if ($state.loading()) {
                     <i class="pi pi-spin pi-spinner text-2xl"></i>
+                } @else if ($state.error()) {
+                    <span class="text-sm" data-testid="lazy-multiselect-error">
+                        {{ 'content-drive.field-filter.more.error' | dm }}
+                    </span>
                 } @else {
                     <span class="text-sm">{{ 'content-drive.field-filter.more.empty' | dm }}</span>
                 }

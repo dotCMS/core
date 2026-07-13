@@ -496,7 +496,13 @@ export class DotContentDriveFieldFilterComponent {
     #resolveRelationshipItem(identifier: string): void {
         this.#contentletService
             .getContentletByInode(identifier)
-            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                take(1),
+                // Best-effort title resolution: on a 404 (item deleted), 500 or network error, keep
+                // the chip's neutral count fallback rather than breaking — the value still filters.
+                catchError(() => of(null)),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe((contentlet) => {
                 if (contentlet) {
                     this.#relationshipItemById.update((cache) => ({

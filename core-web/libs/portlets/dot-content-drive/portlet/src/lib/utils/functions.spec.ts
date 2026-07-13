@@ -6,9 +6,15 @@ import {
     DotFolder,
     DotContentDriveFolder,
     DotContentDriveItem,
-    DotCMSContentlet,
-    DotCMSContentTypeField
+    DotCMSContentlet
 } from '@dotcms/dotcms-models';
+import {
+    createFakeCheckboxField,
+    createFakeDateField,
+    createFakeSelectField,
+    createFakeTagField,
+    createFakeTextField
+} from '@dotcms/utils-testing';
 
 import {
     decodeFilters,
@@ -30,16 +36,6 @@ import {
 } from './functions';
 
 import { DotContentDriveFilters } from '../shared/models';
-
-/** Minimal content-type field fixture for the user-searchable helpers. */
-const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTypeField =>
-    ({
-        variable: 'aField',
-        fieldType: 'Text',
-        dataType: 'TEXT',
-        values: '',
-        ...overrides
-    }) as DotCMSContentTypeField;
 
 describe('Utility Functions', () => {
     describe('decodeFilters', () => {
@@ -843,21 +839,17 @@ describe('User-searchable field helpers', () => {
 
     describe('isBinaryCheckboxField', () => {
         it('should be true for a single-option checkbox', () => {
-            expect(isBinaryCheckboxField(field({ fieldType: 'Checkbox', values: '|true' }))).toBe(
-                true
-            );
+            expect(isBinaryCheckboxField(createFakeCheckboxField({ values: '|true' }))).toBe(true);
         });
 
         it('should be false for a multi-option checkbox', () => {
-            expect(
-                isBinaryCheckboxField(field({ fieldType: 'Checkbox', values: 'A|a\r\nB|b' }))
-            ).toBe(false);
+            expect(isBinaryCheckboxField(createFakeCheckboxField({ values: 'A|a\r\nB|b' }))).toBe(
+                false
+            );
         });
 
         it('should be false for non-checkbox fields', () => {
-            expect(isBinaryCheckboxField(field({ fieldType: 'Select', values: 'A|a' }))).toBe(
-                false
-            );
+            expect(isBinaryCheckboxField(createFakeSelectField({ values: 'A|a' }))).toBe(false);
         });
     });
 
@@ -914,6 +906,13 @@ describe('User-searchable field helpers', () => {
         it('should stringify a single value', () => {
             expect(serializeUserSearchableValue('published', 'Select')).toBe('published');
         });
+
+        it('should return an empty string for a non-range value on a Date field', () => {
+            // Mismatched fieldType/value (a string where a range is expected) must not produce a
+            // misleading partial range.
+            expect(serializeUserSearchableValue('not-a-range', 'Date')).toBe('');
+            expect(serializeUserSearchableValue(['a', 'b'], 'Date')).toBe('');
+        });
     });
 
     describe('buildUserSearchablePayload', () => {
@@ -930,9 +929,9 @@ describe('User-searchable field helpers', () => {
                 'us.postingDate': '2024-01-01,2024-12-31'
             };
             const fields = [
-                field({ variable: 'title', fieldType: 'Text' }),
-                field({ variable: 'tags', fieldType: 'Tag' }),
-                field({ variable: 'postingDate', fieldType: 'Date' })
+                createFakeTextField({ variable: 'title' }),
+                createFakeTagField({ variable: 'tags' }),
+                createFakeDateField({ variable: 'postingDate' })
             ];
 
             const payload = buildUserSearchablePayload(filters, fields);
@@ -945,9 +944,7 @@ describe('User-searchable field helpers', () => {
         });
 
         it('should emit a boolean for a binary checkbox and always include it', () => {
-            const fields = [
-                field({ variable: 'featured', fieldType: 'Checkbox', values: '|true' })
-            ];
+            const fields = [createFakeCheckboxField({ variable: 'featured', values: '|true' })];
 
             expect(buildUserSearchablePayload({ 'us.featured': 'true' }, fields)).toEqual({
                 featured: true
@@ -958,7 +955,7 @@ describe('User-searchable field helpers', () => {
         });
 
         it('should skip empty non-binary values and fields without loaded metadata', () => {
-            const fields = [field({ variable: 'title', fieldType: 'Text' })];
+            const fields = [createFakeTextField({ variable: 'title' })];
 
             // us.title is empty, and us.unknown has no field metadata → both skipped.
             const payload = buildUserSearchablePayload(
