@@ -10,7 +10,10 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,6 +31,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -484,6 +488,88 @@ public class PageResourceHelperTest {
         final String allSchemas = schemas.toString();
         assertTrue(allSchemas.contains(typeA.variable()));
         assertTrue(allSchemas.contains(typeB.variable()));
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#copyContentlet(CopyContentletForm, User, PageMode, Language)}
+     * Given Scenario: A user has READ-only permission on a contentlet instance but Publish on the
+     *                 content type (mirrors issue #34215 reproduction steps).
+     * Should: throw DotSecurityException — the copy must be blocked at the instance level.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void copyContentlet_whenUserHasReadOnlyPermissionOnInstance_throwsDotSecurityException()
+            throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User readOnlyUser = new UserDataGen()
+                .roles(role, TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        // Assign READ-only on the specific contentlet instance, breaking inheritance from the type
+        final List<Permission> perms = new ArrayList<>();
+        perms.add(new Permission(contentlet.getPermissionId(), role.getId(),
+                PermissionAPI.PERMISSION_READ, true));
+        APILocator.getPermissionAPI().assignPermissions(perms, contentlet, APILocator.systemUser(), false);
+
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen().setContentlet(contentlet)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final CopyContentletForm form = new CopyContentletForm.Builder()
+                .pageId(page.getIdentifier())
+                .containerId(container.getIdentifier())
+                .relationType("1")
+                .contentId(contentlet.getIdentifier())
+                .build();
+
+        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+
+        PageResourceHelper.getInstance().copyContentlet(form, readOnlyUser, PageMode.PREVIEW_MODE, language);
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#copyPage(com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage, User, PageMode, Language)}
+     * Given Scenario: A user has READ-only permission on a page instance.
+     * Should: throw DotSecurityException before any copy attempt is made on the page node.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void copyPage_whenUserHasReadOnlyPermissionOnPage_throwsDotSecurityException()
+            throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User readOnlyUser = new UserDataGen()
+                .roles(role, TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        // Assign READ-only on the page instance, breaking inheritance
+        final List<Permission> perms = new ArrayList<>();
+        perms.add(new Permission(page.getPermissionId(), role.getId(),
+                PermissionAPI.PERMISSION_READ, true));
+        APILocator.getPermissionAPI().assignPermissions(perms, page, APILocator.systemUser(), false);
+
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        PageResourceHelper.getInstance().copyPage(page, readOnlyUser, PageMode.PREVIEW_MODE, language);
     }
 
     /**
