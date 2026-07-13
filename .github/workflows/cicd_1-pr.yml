@@ -109,12 +109,12 @@ jobs:
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
       cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       e2e: ${{ fromJSON(needs.initialize.outputs.filters).build == 'true' }}
-      # Run the integration battery under an ES->OS migration phase when the PR carries a
-      # "PR: opensearch phase <N>" label. No label -> empty -> default phase-0 behavior.
+      # Run the integration battery under an ES->OS migration phase when the PR carries an
+      # "OpenSearch:Phase-<N>" label. No label -> empty -> default phase-0 behavior.
       opensearch_phase: >-
-        ${{ (contains(github.event.pull_request.labels.*.name, 'PR: opensearch phase 1') && '1')
-         || (contains(github.event.pull_request.labels.*.name, 'PR: opensearch phase 2') && '2')
-         || (contains(github.event.pull_request.labels.*.name, 'PR: opensearch phase 3') && '3')
+        ${{ (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-1') && '1')
+         || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-2') && '2')
+         || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-3') && '3')
          || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
