@@ -119,7 +119,11 @@ describe('HostFolderFiledStore', () => {
                 store.loadSites({ path: 'demo.dotcms.com/level1', isRequired: false });
                 tick();
 
-                expect(service.buildTreeByPaths).toHaveBeenCalledWith('demo.dotcms.com/level1');
+                expect(service.buildTreeByPaths).toHaveBeenCalledWith(
+                    'demo.dotcms.com',
+                    'demo.dotcms.com',
+                    '/level1/'
+                );
                 expect(store.selectedSite().key).toBe(site.key);
                 expect(store.confirmedNode().key).toBe(targetNode.key);
                 expect(store.pendingNode().key).toBe(targetNode.key);
@@ -158,7 +162,11 @@ describe('HostFolderFiledStore', () => {
                 store.loadSites({ path: 'demo.dotcms.com:/level1/', isRequired: false });
                 tick();
 
-                expect(service.buildTreeByPaths).toHaveBeenCalledWith('demo.dotcms.com/level1/');
+                expect(service.buildTreeByPaths).toHaveBeenCalledWith(
+                    'demo.dotcms.com',
+                    'demo.dotcms.com',
+                    '/level1/'
+                );
             }));
 
             it('should normalize a leading double-slash persisted path before calling buildTreeByPaths', fakeAsync(() => {
@@ -185,7 +193,11 @@ describe('HostFolderFiledStore', () => {
                 store.loadSites({ path: '//demo.dotcms.com/level1/', isRequired: false });
                 tick();
 
-                expect(service.buildTreeByPaths).toHaveBeenCalledWith('demo.dotcms.com/level1/');
+                expect(service.buildTreeByPaths).toHaveBeenCalledWith(
+                    'demo.dotcms.com',
+                    'demo.dotcms.com',
+                    '/level1/'
+                );
             }));
         });
 
@@ -259,34 +271,11 @@ describe('HostFolderFiledStore', () => {
 
             it('should surface an error instead of leaving the store silently uninitialized when the persisted path resolves to a hostname not present in the sites list (e.g. an archived/inaccessible site)', fakeAsync(() => {
                 service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
-                service.buildTreeByPaths.mockReturnValue(
-                    of({
-                        node: {
-                            key: 'unknown-node',
-                            label: 'unknown-site.dotcms.com/level1/',
-                            data: {
-                                id: 'unknown-node',
-                                hostname: 'unknown-site.dotcms.com',
-                                path: '/level1/',
-                                type: 'folder'
-                            }
-                        },
-                        tree: {
-                            path: '/',
-                            folders: [],
-                            parent: {
-                                hostName: 'unknown-site.dotcms.com',
-                                id: 'unknown-site-id',
-                                path: '/',
-                                addChildrenAllowed: true
-                            }
-                        }
-                    })
-                );
 
                 store.loadSites({ path: 'unknown-site.dotcms.com/level1', isRequired: false });
                 tick();
 
+                expect(service.buildTreeByPaths).not.toHaveBeenCalled();
                 expect(store.selectedSite()).toBe(null);
                 expect(store.confirmedNode()).toBe(null);
                 expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
@@ -564,7 +553,7 @@ describe('HostFolderFiledStore', () => {
             expect(service.searchFolders).not.toHaveBeenCalled();
         });
 
-        it('should update searchResults when expanding a folder from search results', fakeAsync(() => {
+        it('should not expand leaf search results', fakeAsync(() => {
             const site = TREE_SELECT_SITES_MOCK[0];
             const searchResultNode: TreeNodeItem = {
                 key: 'match-1',
@@ -575,20 +564,8 @@ describe('HostFolderFiledStore', () => {
                     path: '/match/',
                     type: 'folder'
                 },
-                leaf: false
+                leaf: true
             };
-            const childFolders: TreeNodeItem[] = [
-                {
-                    key: 'child-1',
-                    label: 'demo.dotcms.com/match/child1/',
-                    data: {
-                        id: 'child-1',
-                        hostname: 'demo.dotcms.com',
-                        path: '/match/child1/',
-                        type: 'folder'
-                    }
-                }
-            ];
 
             service.searchFolders.mockReturnValue(
                 of({
@@ -600,39 +577,13 @@ describe('HostFolderFiledStore', () => {
             store.search('match');
             tick(500);
 
-            const searchResultsBeforeExpand = store.searchResults();
-            expect(searchResultsBeforeExpand).toEqual([searchResultNode]);
             expect(store.isSearching()).toBe(true);
-            expect(store.searchTerm()).toBe('match');
+            service.searchFolders.mockClear();
 
-            service.searchFolders.mockReturnValue(
-                of({
-                    folders: childFolders,
-                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
-                })
-            );
             store.expandNode(buildEvent(searchResultNode));
 
-            expect(service.searchFolders).toHaveBeenCalledWith(
-                {
-                    siteId: site.data.id,
-                    path: searchResultNode.data.path,
-                    recursive: false,
-                    page: 1,
-                    per_page: FOLDER_PAGE_LIMIT
-                },
-                site.data.hostname
-            );
-            expect(searchResultNode.children).toEqual(childFolders);
-            expect(store.searchResults()).toEqual([
-                {
-                    ...searchResultNode,
-                    children: childFolders,
-                    icon: 'pi pi-folder-open',
-                    leaf: false
-                }
-            ]);
-            expect(store.searchResults()).not.toBe(searchResultsBeforeExpand);
+            expect(service.searchFolders).not.toHaveBeenCalled();
+            expect(searchResultNode.children).toBeUndefined();
         }));
 
         it('should load sibling nodes concurrently without leaving the first stuck in loading', () => {
@@ -1450,9 +1401,7 @@ describe('HostFolderFiledStore', () => {
         });
 
         it('should be false when folders loaded and the site has no folders', () => {
-            service.searchFolders.mockReturnValue(
-                of({ folders: [], pagination: mockPagination })
-            );
+            service.searchFolders.mockReturnValue(of({ folders: [], pagination: mockPagination }));
 
             store.selectSite(site);
 
@@ -1476,9 +1425,7 @@ describe('HostFolderFiledStore', () => {
         });
 
         it('should be true when a search term is active even if the site has no folders', () => {
-            service.searchFolders.mockReturnValue(
-                of({ folders: [], pagination: mockPagination })
-            );
+            service.searchFolders.mockReturnValue(of({ folders: [], pagination: mockPagination }));
 
             store.selectSite(site);
             store.search('ab');

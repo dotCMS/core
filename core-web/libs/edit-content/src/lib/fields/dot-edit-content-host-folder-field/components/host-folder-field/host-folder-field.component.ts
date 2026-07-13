@@ -5,6 +5,7 @@ import {
     afterNextRender,
     ChangeDetectionStrategy,
     Component,
+    computed,
     DestroyRef,
     forwardRef,
     inject,
@@ -119,16 +120,37 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     /**
      * Removes PrimeNG's default tree padding; the folders section manages its own spacing.
+     * Search results use top-aligned icons and roomier row spacing to match the design.
+     * PrimeNG sets node gap/padding via CSS variables (`--p-tree-node-gap`, etc.) which beat
+     * Tailwind gap utilities, so search-mode spacing is applied through inline style overrides.
      */
-    protected readonly treePt = {
-        root: { class: '!p-0 flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden' },
-        wrapper: { class: 'min-w-0 overflow-x-hidden' },
-        rootChildren: { class: 'min-w-0 w-full overflow-x-hidden' },
-        node: { class: 'min-w-0 max-w-full' },
-        nodeChildren: { class: 'min-w-0 overflow-x-hidden' },
-        nodeContent: { class: 'min-w-0 max-w-full overflow-hidden' },
-        nodeLabel: { class: 'min-w-0 flex-1 truncate overflow-hidden' }
-    };
+    protected readonly treePt = computed(() => {
+        const isSearching = this.store.isSearching();
+
+        return {
+            root: { class: '!p-0 flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden' },
+            wrapper: { class: 'min-w-0 overflow-x-hidden' },
+            rootChildren: isSearching
+                ? {
+                      class: 'min-w-0 w-full overflow-x-hidden',
+                      style: { '--p-tree-gap': '0.5rem' }
+                  }
+                : { class: 'min-w-0 w-full overflow-x-hidden' },
+            node: { class: 'min-w-0 max-w-full' },
+            nodeChildren: { class: 'min-w-0 overflow-x-hidden' },
+            nodeContent: isSearching
+                ? {
+                      class: 'min-w-0 max-w-full overflow-hidden !items-start',
+                      style: {
+                          '--p-tree-node-gap': '1rem',
+                          '--p-tree-node-padding': '0.5rem'
+                      }
+                  }
+                : { class: 'min-w-0 max-w-full overflow-hidden' },
+            nodeIcon: isSearching ? { class: 'mt-1 shrink-0 self-start' } : undefined,
+            nodeLabel: { class: 'min-w-0 flex-1 overflow-hidden leading-snug' }
+        };
+    });
 
     /**
      * Clips horizontal overflow from PrimeNG Scroller so long site names do not scroll sideways.
@@ -213,6 +235,26 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     #readInputValue(event: Event): string {
         return (event.target as HTMLInputElement).value;
+    }
+
+    /**
+     * Formats a search-result folder node as a human-readable breadcrumb for the
+     * secondary label line (hostname + folder segments joined with ` / `).
+     */
+    protected formatSearchNodePath(node: TreeNodeItem): string {
+        const hostname = node.data?.hostname?.replace('//', '') ?? '';
+        const path = node.data?.path;
+
+        if (!path || path === '/') {
+            return hostname;
+        }
+
+        const segments = path
+            .replace(/^\/+|\/+$/g, '')
+            .split('/')
+            .filter(Boolean);
+
+        return [hostname, ...segments].join(' / ');
     }
 
     /**

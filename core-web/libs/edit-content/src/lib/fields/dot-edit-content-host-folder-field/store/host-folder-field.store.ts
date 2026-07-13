@@ -227,7 +227,10 @@ export const HostFolderFiledStore = signalStore(
                     return cleanHostname;
                 }
 
-                const segments = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+                const segments = path
+                    .replace(/^\/+|\/+$/g, '')
+                    .split('/')
+                    .filter(Boolean);
 
                 return [cleanHostname, ...segments].join(' / ');
             });
@@ -841,23 +844,41 @@ export const HostFolderFiledStore = signalStore(
                             });
                         }
 
-                        return dotBrowsingService.buildTreeByPaths(path).pipe(
-                            map(({ node, tree }) => {
-                                const hostname = tree?.parent?.hostName;
-                                const site = sites.find((item) => item.data?.hostname === hostname);
-
-                                return { site, node, tree };
-                            }),
-                            catchError((error: HttpErrorResponse) => {
-                                dotHttpErrorManagerService.handle(error);
-
-                                return of({
-                                    site: undefined as TreeNodeItem | undefined,
-                                    node: null as TreeNodeItem | null,
-                                    tree: null as CustomTreeNode['tree']
-                                });
-                            })
+                        const [hostname, ...folderSegments] = path.split('/').filter(Boolean);
+                        const site = sites.find(
+                            (item) => item.data?.hostname === hostname || item.label === hostname
                         );
+
+                        if (!site?.data?.id) {
+                            return of({
+                                site: undefined as TreeNodeItem | undefined,
+                                node: null as TreeNodeItem | null,
+                                tree: null as CustomTreeNode['tree']
+                            });
+                        }
+
+                        const folderPath = folderSegments.length
+                            ? `/${folderSegments.join('/')}/`
+                            : '/';
+
+                        return dotBrowsingService
+                            .buildTreeByPaths(
+                                site.data.id,
+                                site.data.hostname ?? hostname,
+                                folderPath
+                            )
+                            .pipe(
+                                map(({ node, tree }) => ({ site, node, tree })),
+                                catchError((error: HttpErrorResponse) => {
+                                    dotHttpErrorManagerService.handle(error);
+
+                                    return of({
+                                        site: undefined as TreeNodeItem | undefined,
+                                        node: null as TreeNodeItem | null,
+                                        tree: null as CustomTreeNode['tree']
+                                    });
+                                })
+                            );
                     }),
                     tap(({ site, node, tree }) => {
                         if (!site) {

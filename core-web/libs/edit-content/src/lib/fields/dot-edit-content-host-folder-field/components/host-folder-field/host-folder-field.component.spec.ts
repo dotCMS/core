@@ -314,6 +314,127 @@ describe('DotHostFolderFieldComponent', () => {
             expect(queryInOverlay('host-folder-search-input')).toBeTruthy();
             expect(queryInOverlay('host-folder-folders-empty')).toHaveText('No folders found');
         }));
+
+        it('should show search result path on a second gray line as breadcrumb', fakeAsync(() => {
+            const searchResult: TreeNodeItem = {
+                key: 'ai',
+                label: 'demo.dotcms.com/application/apivtl/ai/',
+                data: {
+                    id: 'ai',
+                    hostname: 'demo.dotcms.com',
+                    path: '/application/apivtl/ai/',
+                    type: 'folder'
+                },
+                leaf: true
+            };
+
+            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            service.searchFolders.mockImplementation((params) => {
+                if (params.recursive) {
+                    return of({
+                        folders: [searchResult],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                    });
+                }
+
+                return of({
+                    folders: [],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                });
+            });
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            store.search('ai');
+            tick(300);
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const pathEl = queryInOverlay('host-folder-search-result-path');
+            expect(pathEl).toBeTruthy();
+            expect(pathEl).toHaveText('demo.dotcms.com / application / apivtl / ai');
+            expect(pathEl?.textContent).not.toMatch(/\(/);
+            expect(pathEl).toHaveClass('text-surface-500');
+
+            const nodeContent = document.querySelector('.p-tree-node-content');
+            expect(nodeContent?.className).toContain('items-start');
+            expect(document.querySelector('.p-tree-node-leaf')).toBeTruthy();
+        }));
+
+        it('should not show expand chevrons in search mode because results are flat leaves', fakeAsync(() => {
+            const searchResult: TreeNodeItem = {
+                key: 'containers',
+                label: 'demo.dotcms.com/application/containers/',
+                data: {
+                    id: 'containers',
+                    hostname: 'demo.dotcms.com',
+                    path: '/application/containers/',
+                    type: 'folder'
+                },
+                leaf: true
+            };
+
+            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            service.searchFolders.mockImplementation((params) => {
+                if (params.recursive) {
+                    return of({
+                        folders: [searchResult],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                    });
+                }
+
+                return of({
+                    folders: [],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                });
+            });
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            store.search('containers');
+            tick(300);
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            expect(document.querySelector('.p-tree-node-leaf')).toBeTruthy();
+            expect(store.searchResults()[0]?.leaf).toBe(true);
+        }));
+    });
+
+    describe('formatSearchNodePath', () => {
+        it('should format nested folder path as breadcrumb with hostname', () => {
+            const node: TreeNodeItem = {
+                key: 'ai',
+                label: 'demo.dotcms.com/application/apivtl/ai/',
+                data: {
+                    id: 'ai',
+                    hostname: 'demo.dotcms.com',
+                    path: '/application/apivtl/ai/',
+                    type: 'folder'
+                }
+            };
+
+            expect(spectator.component['formatSearchNodePath'](node)).toBe(
+                'demo.dotcms.com / application / apivtl / ai'
+            );
+        });
+
+        it('should return hostname only for site root path', () => {
+            const node: TreeNodeItem = {
+                key: 'root',
+                label: 'demo.dotcms.com/',
+                data: {
+                    id: 'root',
+                    hostname: 'demo.dotcms.com',
+                    path: '/',
+                    type: 'folder'
+                }
+            };
+
+            expect(spectator.component['formatSearchNodePath'](node)).toBe('demo.dotcms.com');
+        });
     });
 
     describe('onLoadMoreNode', () => {

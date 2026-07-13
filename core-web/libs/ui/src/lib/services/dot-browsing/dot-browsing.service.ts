@@ -4,7 +4,11 @@ import { Injectable, inject } from '@angular/core';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotFolderService, DotSiteService } from '@dotcms/data-access';
+import {
+    DEFAULT_FOLDER_SEARCH_PER_PAGE,
+    DotFolderService,
+    DotSiteService
+} from '@dotcms/data-access';
 import {
     ContentByFolderParams,
     CustomTreeNode,
@@ -170,7 +174,7 @@ export class DotBrowsingService {
         return this.#folderService.searchFolders(params).pipe(
             map(({ folders, pagination }) => ({
                 folders: folders.map((folder) =>
-                    this.#createFolderSearchTreeNode(folder, hostname)
+                    this.#createFolderSearchTreeNode(folder, hostname, params.recursive === true)
                 ),
                 pagination
             }))
@@ -183,9 +187,14 @@ export class DotBrowsingService {
      *
      * @param {FolderSearchView} folder - The folder search result to create a TreeNodeItem from
      * @param {string} hostname - Hostname of the site the folder belongs to
+     * @param {boolean} flat - When true (recursive name search), nodes are always leaves and cannot expand
      * @returns {TreeNodeItem} The TreeNodeItem created from the FolderSearchView
      */
-    #createFolderSearchTreeNode(folder: FolderSearchView, hostname: string): TreeNodeItem {
+    #createFolderSearchTreeNode(
+        folder: FolderSearchView,
+        hostname: string,
+        flat = false
+    ): TreeNodeItem {
         const parentPath = folder.path.endsWith('/') ? folder.path : `${folder.path}/`;
         const path = `${parentPath}${folder.name}/`;
 
@@ -200,78 +209,78 @@ export class DotBrowsingService {
             },
             expandedIcon: 'pi pi-folder-open',
             collapsedIcon: 'pi pi-folder',
-            leaf: !folder.hasChildren
+            leaf: flat ? true : !folder.hasChildren
         };
     }
 
     /**
-     * Builds a hierarchical tree structure based on the provided path.
-     * Splits the path into segments and creates a nested tree structure
-     * by making multiple API calls for each path segment.
+     * Builds a hierarchical tree structure for a preselected folder path using the
+     * paginated `/folder/search` endpoint so each node gets a correct `leaf` from
+     * `hasChildren`. Fetches one level per ancestor (not the target's own children —
+     * those load lazily on expand).
      *
-     * @param {string} path - The full path to build the tree from (e.g., 'hostname/folder1/folder2')
-     * @returns {Observable<CustomTreeNode>} Observable that emits a CustomTreeNode containing the complete tree structure and the target node
+     * @param {string} siteId - Site identifier for folder search scoping
+     * @param {string} hostname - Hostname used to build folder labels/paths
+     * @param {string} folderPath - Folder path within the site (e.g. `/level1/level2/`)
+     * @returns {Observable<CustomTreeNode>} Observable that emits the resolved tree and target node
      */
-    buildTreeByPaths(path: string): Observable<CustomTreeNode> {
-        const paths = this.#createPaths(path);
+    buildTreeByPaths(
+        siteId: string,
+        hostname: string,
+        folderPath: string
+    ): Observable<CustomTreeNode> {
+        const segments = folderPath.split('/').filter(Boolean);
+        const parentPaths = this.#buildParentPaths(segments);
 
-        const requests = paths.reverse().map((path) => {
-            const split = path.split('/');
-            const [hostName] = split;
-            const subPath = split.slice(1).join('/');
-
-            const fullPath = `${hostName}/${subPath}`;
-
-            return this.getFoldersTreeNode(fullPath);
-        });
+        const requests = parentPaths.map((path) =>
+            this.searchFolders(
+                {
+                    siteId,
+                    path,
+                    recursive: false,
+                    page: 1,
+                    per_page: DEFAULT_FOLDER_SEARCH_PER_PAGE
+                },
+                hostname
+            )
+        );
 
         return forkJoin(requests).pipe(
-            map((response) => {
-                const [mainNode] = response;
+            map((results) => {
+                const rootChildren = results[0]?.folders ?? [];
+                const targetPaths = segments.map(
+                    (_, index) => `/${segments.slice(0, index + 1).join('/')}/`
+                );
 
-                return response
-                    .map((node, index, array) => {
-                        const next = array[index + 1];
-                        const currentParent = node.parent;
-                        if (next && currentParent && currentParent.path !== '/') {
-                            const hasParentFolder = next.folders.some(
-                                (folder) => folder.key === currentParent.id
-                            );
-                            if (!hasParentFolder) {
-                                next.folders.unshift(this.#createFolderTreeNode(currentParent));
-                            }
-                        }
-                        return node;
-                    })
-                    .reduce(
-                        (rta, node, index, array) => {
-                            const next = array[index + 1];
-                            if (next) {
-                                const folder = next.folders.find(
-                                    (item) => item.key === node.parent.id
-                                );
-                                if (folder) {
-                                    folder.children = node.folders;
-                                    // Mark the ancestor as expanded so `p-tree` renders this
-                                    // branch open immediately instead of requiring a manual
-                                    // expand click.
-                                    folder.expanded = true;
-                                    if (mainNode.parent.id === folder.key) {
-                                        rta.node = folder;
-                                    }
-                                }
-                            }
+                let targetNode: TreeNodeItem | null = null;
+                let currentLevel = rootChildren;
 
-                            rta.tree = {
-                                path: node.parent.path,
-                                folders: node.folders,
-                                parent: node.parent
-                            };
-
-                            return rta;
-                        },
-                        { tree: null, node: null } as CustomTreeNode
+                for (let index = 0; index < segments.length; index++) {
+                    const folderNode = currentLevel.find(
+                        (item) => item.data?.path === targetPaths[index]
                     );
+
+                    if (!folderNode) {
+                        break;
+                    }
+
+                    targetNode = folderNode;
+
+                    const nextResult = results[index + 1];
+                    if (nextResult) {
+                        folderNode.children = nextResult.folders;
+                        folderNode.expanded = true;
+                        currentLevel = nextResult.folders;
+                    }
+                }
+
+                return {
+                    node: targetNode,
+                    tree: {
+                        path: '/',
+                        folders: rootChildren
+                    }
+                };
             })
         );
     }
@@ -313,34 +322,21 @@ export class DotBrowsingService {
     }
 
     /**
-     * Converts a JSON string into a JavaScript object.
-     * Create all paths based in a Path
-     *
-     * @param {string} path - the path
-     * @return {string[]} - An array with all posibles paths
-     *
-     * @usageNotes
-     *
-     * ### Example
-     *
-     * ```ts
-     * const path = 'demo.com/level1/level2';
-     * const paths = createPaths(path);
-     * console.log(paths); // ['demo.com/', 'demo.com/level1/', 'demo.com/level1/level2/']
-     * ```
+     * Builds the parent paths needed to resolve each segment of a folder path.
+     * For `['level1','level2']` returns `['/', '/level1/']` — root plus each ancestor,
+     * excluding the target's own children listing.
      */
-    #createPaths(path: string): string[] {
-        const split = path.split('/').filter((item) => item !== '');
-        return split.reduce((array, item, index) => {
-            const prev = array[index - 1];
-            let path = `${item}/`;
-            if (prev) {
-                path = `${prev}${path}`;
-            }
+    #buildParentPaths(segments: string[]): string[] {
+        if (segments.length === 0) {
+            return ['/'];
+        }
 
-            array.push(path);
+        const parentPaths = ['/'];
 
-            return array;
-        }, [] as string[]);
+        for (let index = 0; index < segments.length - 1; index++) {
+            parentPaths.push(`/${segments.slice(0, index + 1).join('/')}/`);
+        }
+
+        return parentPaths;
     }
 }

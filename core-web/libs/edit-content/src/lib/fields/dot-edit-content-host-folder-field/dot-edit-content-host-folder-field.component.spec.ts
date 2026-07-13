@@ -158,7 +158,9 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             // The leading `//` is stripped before calling buildTreeByPaths so the folder
             // search API receives a well-formed `hostname/path/` value.
             expect(service.buildTreeByPaths).toHaveBeenCalledWith(
-                'demo.dotcms.com/application/apivtl/'
+                'demo.dotcms.com',
+                'demo.dotcms.com',
+                '/application/apivtl/'
             );
             expect(store.selectedSite()?.key).toBe(site.key);
             expect(store.confirmedNode()?.key).toBe(nestedNode.key);

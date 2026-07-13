@@ -382,6 +382,31 @@ describe('DotBrowsingService', () => {
                 });
         });
 
+        it('should mark recursive search results as leaves even when hasChildren is true', (done) => {
+            const mockFolders: FolderSearchView[] = [
+                {
+                    id: 'folder-1',
+                    inode: 'inode-1',
+                    name: 'folder1',
+                    path: '/',
+                    addChildrenAllowed: true,
+                    hasChildren: true
+                }
+            ];
+            const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
+
+            dotFolderService.searchFolders.mockReturnValue(
+                of({ folders: mockFolders, pagination: mockPagination })
+            );
+
+            spectator.service
+                .searchFolders({ siteId: 'site-1', recursive: true, name: 'folder' }, 'example.com')
+                .subscribe(({ folders }) => {
+                    expect(folders[0].leaf).toBe(true);
+                    done();
+                });
+        });
+
         it('should build nested folder paths from a non-root parent path', (done) => {
             const mockFolders: FolderSearchView[] = [
                 {
@@ -437,150 +462,139 @@ describe('DotBrowsingService', () => {
     });
 
     describe('buildTreeByPaths', () => {
-        it('should build hierarchical tree structure from path', (done) => {
-            const path = 'example.com/level1/level2';
+        const siteId = 'site-1';
+        const hostname = 'example.com';
+        const defaultPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
 
-            // Mock responses for each path segment
-            const level2Folders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'parent-level2',
-                    hostName: 'example.com',
-                    path: '/level1/level2',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'child-level2',
-                    hostName: 'example.com',
-                    path: '/level1/level2/child',
-                    addChildrenAllowed: true
-                })
-            ];
+        const createSearchFolder = (options: {
+            id: string;
+            name: string;
+            path: string;
+            hasChildren?: boolean;
+        }): FolderSearchView => ({
+            id: options.id,
+            inode: `${options.id}-inode`,
+            name: options.name,
+            path: options.path,
+            addChildrenAllowed: true,
+            hasChildren: options.hasChildren ?? false
+        });
 
-            const level1Folders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'parent-level1',
-                    hostName: 'example.com',
-                    path: '/level1',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'parent-level2',
-                    hostName: 'example.com',
-                    path: '/level1/level2',
-                    addChildrenAllowed: true
-                })
-            ];
+        it('should build hierarchical tree structure from folder path using searchFolders', (done) => {
+            const folderPath = '/level1/level2/';
 
-            const rootFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'root',
-                    hostName: 'example.com',
-                    path: '/',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'parent-level1',
-                    hostName: 'example.com',
-                    path: '/level1',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            // Mock responses for each path in reverse order (as paths are reversed in the service)
-            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
-                if (requestedPath === '//example.com/level1/level2/') {
-                    return of(level2Folders);
-                } else if (requestedPath === '//example.com/level1/') {
-                    return of(level1Folders);
-                } else if (requestedPath === '//example.com/') {
-                    return of(rootFolders);
+            dotFolderService.searchFolders.mockImplementation((params) => {
+                if (params.path === '/') {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'parent-level1',
+                                name: 'level1',
+                                path: '/',
+                                hasChildren: true
+                            })
+                        ],
+                        pagination: defaultPagination
+                    });
                 }
 
-                return of([]);
+                if (params.path === '/level1/') {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'parent-level2',
+                                name: 'level2',
+                                path: '/level1/',
+                                hasChildren: true
+                            }),
+                            createSearchFolder({
+                                id: 'child-level2',
+                                name: 'child',
+                                path: '/level1/level2/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: defaultPagination
+                    });
+                }
+
+                return of({ folders: [], pagination: defaultPagination });
             });
 
-            spectator.service.buildTreeByPaths(path).subscribe((result) => {
-                expect(result).toBeDefined();
-                expect(result.tree).toBeDefined();
-                expect(result.tree?.folders).toBeDefined();
-                expect(dotFolderService.getFolders).toHaveBeenCalledTimes(3);
+            spectator.service.buildTreeByPaths(siteId, hostname, folderPath).subscribe((result) => {
+                expect(result.tree?.folders).toHaveLength(1);
+                expect(result.node?.key).toBe('parent-level2');
+                expect(result.node?.data?.path).toBe('/level1/level2/');
+                expect(result.node?.children).toBeUndefined();
+
+                const level1Node = result.tree?.folders.find(
+                    (folder) => folder.key === 'parent-level1'
+                );
+                expect(level1Node?.expanded).toBe(true);
+                expect(level1Node?.children).toHaveLength(2);
+                expect(dotFolderService.searchFolders).toHaveBeenCalledTimes(2);
+                expect(dotFolderService.searchFolders).toHaveBeenCalledWith({
+                    siteId,
+                    path: '/',
+                    recursive: false,
+                    page: 1,
+                    per_page: 40
+                });
                 done();
             });
         });
 
-        it('should handle single level path', (done) => {
-            const path = 'example.com';
-
-            const rootFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'root',
-                    hostName: 'example.com',
-                    path: '/',
-                    addChildrenAllowed: true
+        it('should handle a single folder segment', (done) => {
+            dotFolderService.searchFolders.mockReturnValue(
+                of({
+                    folders: [
+                        createSearchFolder({
+                            id: 'parent-level1',
+                            name: 'level1',
+                            path: '/',
+                            hasChildren: false
+                        })
+                    ],
+                    pagination: defaultPagination
                 })
-            ];
+            );
 
-            dotFolderService.getFolders.mockReturnValue(of(rootFolders));
-
-            spectator.service.buildTreeByPaths(path).subscribe((result) => {
-                expect(result).toBeDefined();
-                expect(result.tree).toBeDefined();
-                expect(dotFolderService.getFolders).toHaveBeenCalledWith('//example.com/');
+            spectator.service.buildTreeByPaths(siteId, hostname, '/level1/').subscribe((result) => {
+                expect(result.node?.key).toBe('parent-level1');
+                expect(result.node?.leaf).toBe(true);
+                expect(dotFolderService.searchFolders).toHaveBeenCalledTimes(1);
                 done();
             });
         });
 
-        it('should handle empty path segments', (done) => {
-            const path = 'example.com//level1';
-
-            const rootFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'root',
-                    hostName: 'example.com',
-                    path: '/',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'parent-level1',
-                    hostName: 'example.com',
-                    path: '/level1',
-                    addChildrenAllowed: true
+        it('should handle empty path segments in folder path', (done) => {
+            dotFolderService.searchFolders.mockReturnValue(
+                of({
+                    folders: [
+                        createSearchFolder({
+                            id: 'parent-level1',
+                            name: 'level1',
+                            path: '/',
+                            hasChildren: false
+                        })
+                    ],
+                    pagination: defaultPagination
                 })
-            ];
+            );
 
-            const level1Folders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'parent-level1',
-                    hostName: 'example.com',
-                    path: '/level1',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
-                if (requestedPath === '//example.com/level1/') {
-                    return of(level1Folders);
-                } else if (requestedPath === '//example.com/') {
-                    return of(rootFolders);
-                }
-
-                return of([]);
-            });
-
-            spectator.service.buildTreeByPaths(path).subscribe((result) => {
+            spectator.service.buildTreeByPaths(siteId, hostname, '/level1/').subscribe((result) => {
                 expect(result).toBeDefined();
-                expect(dotFolderService.getFolders).toHaveBeenCalledTimes(2);
+                expect(dotFolderService.searchFolders).toHaveBeenCalledTimes(1);
                 done();
             });
         });
 
         it('should handle errors when building tree', (done) => {
-            const path = 'example.com/level1';
             const error = new Error('Failed to fetch folders');
 
-            dotFolderService.getFolders.mockReturnValue(throwError(() => error));
+            dotFolderService.searchFolders.mockReturnValue(throwError(() => error));
 
-            spectator.service.buildTreeByPaths(path).subscribe({
+            spectator.service.buildTreeByPaths(siteId, hostname, '/level1/').subscribe({
                 next: () => fail('should have thrown an error'),
                 error: (err) => {
                     expect(err).toBe(error);
@@ -589,253 +603,126 @@ describe('DotBrowsingService', () => {
             });
         });
 
-        it('should always return tree with defined parent and hostName for single level path', (done) => {
-            const path = 'example.com';
-            const rootParent = createFakeFolder({
-                id: 'root',
-                hostName: 'example.com',
-                path: '/',
-                addChildrenAllowed: true
-            });
+        it('should set leaf from hasChildren for navigation tree nodes', (done) => {
+            dotFolderService.searchFolders.mockReturnValue(
+                of({
+                    folders: [
+                        createSearchFolder({
+                            id: 'folder-with-children',
+                            name: 'level1',
+                            path: '/',
+                            hasChildren: true
+                        }),
+                        createSearchFolder({
+                            id: 'folder-without-children',
+                            name: 'empty',
+                            path: '/',
+                            hasChildren: false
+                        })
+                    ],
+                    pagination: defaultPagination
+                })
+            );
 
-            const rootFolders: DotFolder[] = [rootParent];
+            spectator.service.buildTreeByPaths(siteId, hostname, '/level1/').subscribe((result) => {
+                const withChildren = result.tree?.folders.find(
+                    (folder) => folder.key === 'folder-with-children'
+                );
+                const withoutChildren = result.tree?.folders.find(
+                    (folder) => folder.key === 'folder-without-children'
+                );
 
-            dotFolderService.getFolders.mockReturnValue(of(rootFolders));
-
-            spectator.service.buildTreeByPaths(path).subscribe((result) => {
-                expect(result.tree).toBeDefined();
-                expect(result.tree?.parent).toBeDefined();
-                expect(result.tree?.parent?.hostName).toBe('example.com');
-                expect(result.tree?.path).toBe('/');
-                // Consumer (host-folder-field.store) can safely use tree.parent.hostName
-                expect(() => {
-                    const hostName = result.tree?.parent?.hostName;
-                    return hostName;
-                }).not.toThrow();
+                expect(withChildren?.leaf).toBe(false);
+                expect(withoutChildren?.leaf).toBe(true);
                 done();
             });
         });
 
-        it('should always return tree with defined parent and hostName for multi level path (regression: tree.parent.hostName in host-folder-field.store)', (done) => {
-            const path = 'demo.com/level1/level2';
-
-            const level2Parent = createFakeFolder({
-                id: 'parent-level2',
-                hostName: 'demo.com',
-                path: '/level1/level2',
-                addChildrenAllowed: true
-            });
-
-            const level2Folders: DotFolder[] = [
-                level2Parent,
-                createFakeFolder({
-                    id: 'child-level2',
-                    hostName: 'demo.com',
-                    path: '/level1/level2/child',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            const level1Folders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'parent-level1',
-                    hostName: 'demo.com',
-                    path: '/level1',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'parent-level2',
-                    hostName: 'demo.com',
-                    path: '/level1/level2',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            const rootFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'root',
-                    hostName: 'demo.com',
-                    path: '/',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'parent-level1',
-                    hostName: 'demo.com',
-                    path: '/level1',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
-                if (requestedPath === '//demo.com/level1/level2/') {
-                    return of(level2Folders);
+        it('should stop gracefully when a target segment is missing from paginated results', (done) => {
+            dotFolderService.searchFolders.mockImplementation((params) => {
+                if (params.path === '/') {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'parent-level1',
+                                name: 'level1',
+                                path: '/',
+                                hasChildren: true
+                            })
+                        ],
+                        pagination: defaultPagination
+                    });
                 }
-                if (requestedPath === '//demo.com/level1/') {
-                    return of(level1Folders);
+
+                if (params.path === '/level1/') {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'sibling-a',
+                                name: 'sibling-a',
+                                path: '/level1/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: defaultPagination
+                    });
                 }
-                if (requestedPath === '//demo.com/') {
-                    return of(rootFolders);
-                }
-                return of([]);
+
+                return of({ folders: [], pagination: defaultPagination });
             });
 
-            spectator.service.buildTreeByPaths(path).subscribe((result) => {
-                expect(result.tree).toBeDefined();
-                expect(result.tree?.parent).toBeDefined();
-                expect(result.tree?.parent?.hostName).toBeDefined();
-                expect(result.tree?.parent?.hostName).toBe('demo.com');
-                // Simulates host-folder-field.store: item.data.hostname === tree.parent.hostName
-                expect(() => {
-                    const tree = result.tree;
-                    if (tree) {
-                        return tree.parent?.hostName;
-                    }
-                }).not.toThrow();
-                done();
-            });
-        });
-
-        it('should find target folder when parent is missing from paginated response (unshift parent into next.folders)', (done) => {
-            // Simulates: getFolders('//demo.com/level1/') has limited pagination and does NOT return
-            // the folder for level2; the service unshifts currentParent into next.folders so the
-            // reduce can still find it and set folder.children / result.node.
-            const path = 'demo.com/level1/level2';
-
-            const level2Parent = createFakeFolder({
-                id: 'parent-level2',
-                hostName: 'demo.com',
-                path: '/level1/level2',
-                addChildrenAllowed: true
-            });
-
-            const level2Folders: DotFolder[] = [
-                level2Parent,
-                createFakeFolder({
-                    id: 'child-level2',
-                    hostName: 'demo.com',
-                    path: '/level1/level2/child',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            const level1Parent = createFakeFolder({
-                id: 'parent-level1',
-                hostName: 'demo.com',
-                path: '/level1',
-                addChildrenAllowed: true
-            });
-
-            // Pagination: level1 response does NOT include level2 (only other siblings)
-            const level1Folders: DotFolder[] = [
-                level1Parent,
-                createFakeFolder({
-                    id: 'sibling-a',
-                    hostName: 'demo.com',
-                    path: '/level1/sibling-a',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            const rootFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'root',
-                    hostName: 'demo.com',
-                    path: '/',
-                    addChildrenAllowed: true
-                }),
-                level1Parent
-            ];
-
-            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
-                if (requestedPath === '//demo.com/level1/level2/') {
-                    return of(level2Folders);
-                }
-                if (requestedPath === '//demo.com/level1/') {
-                    return of(level1Folders);
-                }
-                if (requestedPath === '//demo.com/') {
-                    return of(rootFolders);
-                }
-                return of([]);
-            });
-
-            spectator.service.buildTreeByPaths(path).subscribe((result) => {
-                expect(result.tree).toBeDefined();
-                expect(result.node).toBeDefined();
-                // Target node should be the level2 folder (linked from level1.folders via unshift)
-                expect(result.node?.key).toBe('parent-level2');
-                expect(result.node?.data?.path).toBe('/level1/level2');
-                // Children were attached by reduce (level2's folders)
-                expect(result.node?.children).toBeDefined();
-                expect(Array.isArray(result.node?.children)).toBe(true);
-                expect(result.node?.children?.length).toBeGreaterThan(0);
-                done();
-            });
+            spectator.service
+                .buildTreeByPaths(siteId, 'demo.com', '/level1/level2/')
+                .subscribe((result) => {
+                    expect(result.node?.key).toBe('parent-level1');
+                    expect(result.node?.data?.path).toBe('/level1/');
+                    done();
+                });
         });
 
         it('should mark ancestor folders as expanded so the tree opens to the target node', (done) => {
-            const path = 'demo.com/application/apivtl';
-
-            const targetFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'apivtl',
-                    hostName: 'demo.com',
-                    path: '/application/apivtl',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            const applicationFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'application',
-                    hostName: 'demo.com',
-                    path: '/application',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'apivtl',
-                    hostName: 'demo.com',
-                    path: '/application/apivtl',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            const rootFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'root',
-                    hostName: 'demo.com',
-                    path: '/',
-                    addChildrenAllowed: true
-                }),
-                createFakeFolder({
-                    id: 'application',
-                    hostName: 'demo.com',
-                    path: '/application',
-                    addChildrenAllowed: true
-                })
-            ];
-
-            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
-                if (requestedPath === '//demo.com/application/apivtl/') {
-                    return of(targetFolders);
+            dotFolderService.searchFolders.mockImplementation((params) => {
+                if (params.path === '/') {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'application',
+                                name: 'application',
+                                path: '/',
+                                hasChildren: true
+                            })
+                        ],
+                        pagination: defaultPagination
+                    });
                 }
-                if (requestedPath === '//demo.com/application/') {
-                    return of(applicationFolders);
+
+                if (params.path === '/application/') {
+                    return of({
+                        folders: [
+                            createSearchFolder({
+                                id: 'apivtl',
+                                name: 'apivtl',
+                                path: '/application/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: defaultPagination
+                    });
                 }
-                if (requestedPath === '//demo.com/') {
-                    return of(rootFolders);
-                }
-                return of([]);
+
+                return of({ folders: [], pagination: defaultPagination });
             });
 
-            spectator.service.buildTreeByPaths(path).subscribe((result) => {
-                const applicationNode = result.tree?.folders.find(
-                    (folder) => folder.key === 'application'
-                );
-                expect(applicationNode?.expanded).toBe(true);
-                expect(result.node?.key).toBe('apivtl');
-                done();
-            });
+            spectator.service
+                .buildTreeByPaths(siteId, 'demo.com', '/application/apivtl/')
+                .subscribe((result) => {
+                    const applicationNode = result.tree?.folders.find(
+                        (folder) => folder.key === 'application'
+                    );
+                    expect(applicationNode?.expanded).toBe(true);
+                    expect(result.node?.key).toBe('apivtl');
+                    done();
+                });
         });
     });
 

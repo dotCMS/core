@@ -18,7 +18,7 @@
         @if (store.triggerIconType() === 'site') {
             <span class="material-symbols-outlined flex-none text-lg text-surface-500">public</span>
         } @else {
-            <i class="pi pi-folder flex-none text-lg text-surface-500"></i>
+            <span class="material-symbols-outlined flex-none text-lg text-surface-500">folder</span>
         }
 
         <span
@@ -168,9 +168,7 @@
                         data-testid="host-folder-folders-error">
                         {{ 'dot.file.field.host.folder.error.folders' | dm }}
                     </span>
-                } @else if (
-                    !store.foldersLoading() && store.displayedFolders().length === 0
-                ) {
+                } @else if (!store.foldersLoading() && store.displayedFolders().length === 0) {
                     <div
                         class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-surface-500"
                         data-testid="host-folder-folders-empty">
@@ -179,7 +177,8 @@
                             {{
                                 (isSearching
                                     ? 'dot.file.field.host.folder.empty.folders'
-                                    : 'dot.file.field.host.folder.empty.folders.site') | dm
+                                    : 'dot.file.field.host.folder.empty.folders.site'
+                                ) | dm
                             }}
                         </span>
                     </div>
@@ -193,15 +192,24 @@
                         selectionMode="single"
                         scrollHeight="flex"
                         loadingMode="icon"
-                        [pt]="treePt"
+                        [pt]="treePt()"
                         data-testid="host-folder-tree"
                         (onNodeSelect)="onFolderSelect($event)"
                         (onNodeExpand)="onFolderExpand($event)">
                         <ng-template let-node pTemplate="default">
-                            <span class="block w-full min-w-0 truncate">
-                                {{ node.label | dotTruncatePath }}
+                            <span class="flex w-full min-w-0 flex-col gap-1 overflow-hidden">
+                                <span
+                                    class="block w-full min-w-0 truncate"
+                                    [class.font-semibold]="isSearching"
+                                    [class.leading-normal]="isSearching">
+                                    {{ node.label | dotTruncatePath }}
+                                </span>
                                 @if (isSearching && node.data?.path) {
-                                    ({{ node.data.path }})
+                                    <span
+                                        class="block w-full min-w-0 truncate text-sm leading-normal text-surface-500"
+                                        data-testid="host-folder-search-result-path">
+                                        {{ formatSearchNodePath(node) }}
+                                    </span>
                                 }
                             </span>
                         </ng-template>
