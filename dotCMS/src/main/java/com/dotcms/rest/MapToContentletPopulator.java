@@ -41,6 +41,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -324,7 +325,19 @@ public class MapToContentletPopulator  {
         }
 
         try {
-            return (html ? TiptapHtml.toTiptap(value) : TiptapMarkdown.toTiptap(value)).toString();
+            final ObjectNode converted = html ? TiptapHtml.toTiptap(value) : TiptapMarkdown.toTiptap(value);
+            // Non-blank input whose content is entirely stripped (sanitization / unparseable) converts to
+            // an empty document. Storing it would silently clear a field the client meant to populate and
+            // wipe any prior value, so keep the existing value and warn instead. A genuine field-clear
+            // arrives as a blank value (handled above), so this never blocks an intended clear.
+            if (converted.path("content").size() == 0 && UtilMethods.isSet(existing)) {
+                Logger.warn(this, String.format(
+                        "Story Block field [%s]: %s input converted to an empty document; keeping the "
+                                + "existing value rather than clearing the field.",
+                        field.getVelocityVarName(), html ? "HTML" : "Markdown"));
+                return existing;
+            }
+            return converted.toString();
         } catch (final Exception e) {
             // Graceful degradation (consistent with the converters' contract): a conversion failure
             // must never block the save — store the original value and move on.

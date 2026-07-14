@@ -274,4 +274,43 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
         assertEquals("Existing rich document must be preserved untouched", richDoc, stored);
         assertFalse("Markdown overwrite must be ignored", stored.contains("Trying to overwrite"));
     }
+
+    /**
+     * Data-safety guard (#36470 review): HTML whose content is entirely stripped by sanitization
+     * converts to an empty document. That must NOT silently clear a field that already holds content —
+     * the existing value is preserved rather than wiped. A genuine field-clear arrives as a blank value
+     * and is handled before conversion, so preserving here never blocks an intended clear.
+     */
+    @Test
+    public void html_that_converts_to_empty_preserves_existing_content() {
+        final String existing = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\","
+                + "\"content\":[{\"type\":\"text\",\"text\":\"keep me\"}]}]}";
+        final Contentlet contentlet = newContentlet();
+        contentlet.setProperty(STORY_BLOCK_VAR, existing);
+
+        final Contentlet result = new MapToContentletPopulator()
+                .populate(contentlet, propsWith("<iframe src=\"https://evil.example\"></iframe>"));
+
+        assertEquals("Existing content must be preserved when HTML strips to an empty document",
+                existing, result.getStringProperty(STORY_BLOCK_VAR));
+    }
+
+    /**
+     * Same data-safety guard on the Markdown leg (shared code path): a value that parses to no
+     * renderable content — a bare link reference definition — converts to an empty document and must
+     * likewise preserve the existing field rather than clear it.
+     */
+    @Test
+    public void markdown_that_converts_to_empty_preserves_existing_content() {
+        final String existing = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\","
+                + "\"content\":[{\"type\":\"text\",\"text\":\"keep me\"}]}]}";
+        final Contentlet contentlet = newContentlet();
+        contentlet.setProperty(STORY_BLOCK_VAR, existing);
+
+        final Contentlet result = new MapToContentletPopulator()
+                .populate(contentlet, propsWith("[ref]: https://dotcms.com \"title\""));
+
+        assertEquals("Existing content must be preserved when Markdown parses to an empty document",
+                existing, result.getStringProperty(STORY_BLOCK_VAR));
+    }
 }
