@@ -97,13 +97,6 @@ public class ContentDriveFieldFilterResolver {
                     fieldVariable));
         }
 
-        if (field instanceof RelationshipField) {
-            // Distinct from the generic "unsupported type" below so the FE can tell "not yet"
-            // (deferred to v1.1) from "never".
-            throw new BadRequestException(String.format(
-                    "Field '%s' is a Relationship field; relationship filtering is not available yet "
-                            + "(planned for v1.1).", fieldVariable));
-        }
         final RoutingBucket bucket = routingBucketFor(field);
         if (null == bucket) {
             throw new BadRequestException(String.format(
@@ -212,15 +205,12 @@ public class ContentDriveFieldFilterResolver {
 
     /**
      * Maps a field type to its routing bucket per the ADR-0018 contract, or {@code null} when the
-     * field type is out of scope (Relationship is deferred to v1.1; dividers, Binary, JSON,
-     * Key/Value, Block Editor, Constant, Hidden, Custom, File/Image, Host/Folder are excluded).
+     * field type is out of scope (dividers, Binary, JSON, Key/Value, Block Editor, Constant, Hidden,
+     * Custom, File/Image, Host/Folder are excluded). Tag and Relationship resolve in the DB to
+     * preserve read-your-writes; everything else in scope resolves against the index.
      */
     private RoutingBucket routingBucketFor(final Field field) {
-        if (field instanceof RelationshipField) {
-            // v1.1 — DB path against the tree tables, not part of this deliverable.
-            return null;
-        }
-        if (field instanceof TagField) {
+        if (field instanceof TagField || field instanceof RelationshipField) {
             return RoutingBucket.DB;
         }
         if (isIndexRouted(field)) {
@@ -259,7 +249,8 @@ public class ContentDriveFieldFilterResolver {
                 return field instanceof MultiSelectField
                         || field instanceof CheckboxField
                         || field instanceof TagField
-                        || field instanceof CategoryField;
+                        || field instanceof CategoryField
+                        || field instanceof RelationshipField;
             case SCALAR:
                 return field instanceof TextField
                         || field instanceof TextAreaField

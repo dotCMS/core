@@ -5,7 +5,10 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -23,7 +26,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -74,6 +79,10 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
 
     private static ContentType typeWithFields;
     private static ContentType otherType;
+    private static ContentType relatedType;
+    private static String relationshipVar;
+    private static Contentlet childNews;
+    private static Contentlet childPress;
 
     private static final String TEXT_VAR = "topic";
     private static final String TAG_VAR = "labels";
@@ -160,8 +169,53 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .folder(testFolder)
                 .nextPersisted();
 
+        // Relationship setup: typeWithFields (parent) references relatedType (child) via a field.
+        relatedType = new ContentTypeDataGen()
+                .name("DriveFfRelated_" + uniqueId)
+                .velocityVarName("driveFfRelated_" + uniqueId)
+                .baseContentType(BaseContentType.CONTENT)
+                .host(testSite)
+                .nextPersisted();
+
+        relationshipVar = "related";
+        final Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                .name(relationshipVar)
+                .variable(relationshipVar)
+                .contentTypeId(typeWithFields.id())
+                .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(relatedType.variable())
+                .required(false)
+                .indexed(true)
+                .searchable(true)
+                .build();
+        final Field savedRelationshipField =
+                APILocator.getContentTypeFieldAPI().save(relationshipField, systemUser);
+        final Relationship relationship =
+                APILocator.getRelationshipAPI().getRelationshipFromField(savedRelationshipField, systemUser);
+
+        childNews = new ContentletDataGen(relatedType.id())
+                .setProperty("title", "Child news " + uniqueId).folder(testFolder).nextPersisted();
+        childPress = new ContentletDataGen(relatedType.id())
+                .setProperty("title", "Child press " + uniqueId).folder(testFolder).nextPersisted();
+
+        // Re-checkin creates a new working version (new inode); reassign so inode-based assertions
+        // keep pointing at the current version.
+        angularWithTags = relate(angularWithTags, relationship, childNews);
+        reactWithVue = relate(reactWithVue, relationship, childPress);
+
         Logger.info(ContentDriveFieldFilterTest.class,
                 "Field-filter test data ready under " + testAssetPath);
+    }
+
+    /**
+     * Relates a child under the given relationship on a (re-checked-out) parent contentlet and
+     * returns the resulting working version.
+     */
+    private static Contentlet relate(final Contentlet parent, final Relationship relationship,
+            final Contentlet child) {
+        final Contentlet checkedOut = ContentletDataGen.checkout(parent);
+        checkedOut.setProperty(relationship.getChildRelationName(), List.of(child));
+        return ContentletDataGen.checkin(checkedOut);
     }
 
     private static Date date(final int year) {
@@ -323,6 +377,37 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         assertTrue("2024 item is after 2023", inodes.contains(angularWithTags.getInode()));
         assertTrue("2026 item is after 2023", inodes.contains(angularNoTags.getInode()));
         assertFalse("2020 item is before 2023", inodes.contains(reactWithVue.getInode()));
+    }
+
+    /**
+     * Relationship field routes to the DB ({@code tree}): filtering the parent by a child identifier
+     * returns only the parent that references it (read-your-writes, no index involved).
+     */
+    @Test
+    public void testRelationshipFiltersViaDatabase() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(relationshipVar, List.of(childNews.getIdentifier())))
+                .build());
+        assertTrue("parent related to 'news' child must match",
+                inodes.contains(angularWithTags.getInode()));
+        assertFalse("parent related to 'press' child must not match",
+                inodes.contains(reactWithVue.getInode()));
+        assertFalse("unrelated parent must not match",
+                inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * Multiple related identifiers combine with OR (related to any).
+     */
+    @Test
+    public void testRelationshipOrsValues() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(relationshipVar,
+                        List.of(childNews.getIdentifier(), childPress.getIdentifier())))
+                .build());
+        assertTrue(inodes.contains(angularWithTags.getInode()));
+        assertTrue(inodes.contains(reactWithVue.getInode()));
+        assertFalse(inodes.contains(angularNoTags.getInode()));
     }
 
     /**
