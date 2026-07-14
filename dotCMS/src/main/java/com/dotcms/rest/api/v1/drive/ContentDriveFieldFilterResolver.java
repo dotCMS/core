@@ -97,13 +97,6 @@ public class ContentDriveFieldFilterResolver {
                     fieldVariable));
         }
 
-        if (field instanceof RelationshipField) {
-            // Distinct from the generic "unsupported type" below so the FE can tell "not yet"
-            // (deferred to v1.1) from "never".
-            throw new BadRequestException(String.format(
-                    "Field '%s' is a Relationship field; relationship filtering is not available yet "
-                            + "(planned for v1.1).", fieldVariable));
-        }
         final RoutingBucket bucket = routingBucketFor(field);
         if (null == bucket) {
             throw new BadRequestException(String.format(
@@ -118,7 +111,7 @@ public class ContentDriveFieldFilterResolver {
                     fieldVariable, field.getClass().getSimpleName(), kind));
         }
 
-        return build(fieldVariable, field, bucket, kind, rawValue);
+        return build(fieldVariable, field, contentType, bucket, kind, rawValue);
     }
 
     /**
@@ -143,15 +136,17 @@ public class ContentDriveFieldFilterResolver {
     }
 
     private FieldSearchCriteria build(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final FilterKind kind, final Object rawValue) {
+            final ContentType contentType, final RoutingBucket bucket, final FilterKind kind,
+            final Object rawValue) {
 
         switch (kind) {
             case BOOLEAN:
-                return FieldSearchCriteria.bool(fieldVariable, field, bucket, (Boolean) rawValue);
+                return FieldSearchCriteria.bool(fieldVariable, field, contentType, bucket,
+                        (Boolean) rawValue);
             case RANGE:
-                return buildRange(fieldVariable, field, bucket, rawValue);
+                return buildRange(fieldVariable, field, contentType, bucket, rawValue);
             case MULTI:
-                return buildMulti(fieldVariable, field, bucket, rawValue);
+                return buildMulti(fieldVariable, field, contentType, bucket, rawValue);
             case SCALAR:
             default:
                 final String scalar = rawValue.toString().trim();
@@ -159,12 +154,12 @@ public class ContentDriveFieldFilterResolver {
                     throw new BadRequestException(String.format(
                             "Field '%s' has an empty filter value.", fieldVariable));
                 }
-                return FieldSearchCriteria.scalar(fieldVariable, field, bucket, scalar);
+                return FieldSearchCriteria.scalar(fieldVariable, field, contentType, bucket, scalar);
         }
     }
 
     private FieldSearchCriteria buildRange(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final Object rawValue) {
+            final ContentType contentType, final RoutingBucket bucket, final Object rawValue) {
 
         final Map<?, ?> map = (Map<?, ?>) rawValue;
         final String from = trimToNull(map.get(FROM_KEY));
@@ -174,7 +169,7 @@ public class ContentDriveFieldFilterResolver {
                     "Field '%s' range filter must set at least one non-empty 'from'/'to' bound.",
                     fieldVariable));
         }
-        return FieldSearchCriteria.range(fieldVariable, field, bucket, from, to);
+        return FieldSearchCriteria.range(fieldVariable, field, contentType, bucket, from, to);
     }
 
     /**
@@ -189,7 +184,7 @@ public class ContentDriveFieldFilterResolver {
     }
 
     private FieldSearchCriteria buildMulti(final String fieldVariable, final Field field,
-            final RoutingBucket bucket, final Object rawValue) {
+            final ContentType contentType, final RoutingBucket bucket, final Object rawValue) {
 
         final List<String> values = new ArrayList<>();
         for (final Object element : (Iterable<?>) rawValue) {
@@ -205,20 +200,17 @@ public class ContentDriveFieldFilterResolver {
             throw new BadRequestException(String.format(
                     "Field '%s' array filter has no usable values.", fieldVariable));
         }
-        return FieldSearchCriteria.multi(fieldVariable, field, bucket, values);
+        return FieldSearchCriteria.multi(fieldVariable, field, contentType, bucket, values);
     }
 
     /**
      * Maps a field type to its routing bucket per the ADR-0018 contract, or {@code null} when the
-     * field type is out of scope (Relationship is deferred to v1.1; dividers, Binary, JSON,
-     * Key/Value, Block Editor, Constant, Hidden, Custom, File/Image, Host/Folder are excluded).
+     * field type is out of scope (dividers, Binary, JSON, Key/Value, Block Editor, Constant, Hidden,
+     * Custom, File/Image, Host/Folder are excluded). Tag and Relationship resolve in the DB to
+     * preserve read-your-writes; everything else in scope resolves against the index.
      */
     private RoutingBucket routingBucketFor(final Field field) {
-        if (field instanceof RelationshipField) {
-            // v1.1 — DB path against the tree tables, not part of this deliverable.
-            return null;
-        }
-        if (field instanceof TagField) {
+        if (field instanceof TagField || field instanceof RelationshipField) {
             return RoutingBucket.DB;
         }
         if (isIndexRouted(field)) {
@@ -257,7 +249,8 @@ public class ContentDriveFieldFilterResolver {
                 return field instanceof MultiSelectField
                         || field instanceof CheckboxField
                         || field instanceof TagField
-                        || field instanceof CategoryField;
+                        || field instanceof CategoryField
+                        || field instanceof RelationshipField;
             case SCALAR:
                 return field instanceof TextField
                         || field instanceof TextAreaField
