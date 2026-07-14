@@ -176,14 +176,12 @@ public class ContentDriveFieldFilterResolverTest {
     }
 
     @Test
-    public void relationshipGetsDistinctNotYetMessage() {
+    public void relationshipListRoutesToDatabase() {
         final ContentType ct = contentTypeWithAllFields();
-        final BadRequestException ex = assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("relationshipF", List.of("id1")), ct));
-        // The client-facing detail is carried in the JAX-RS response entity, not getMessage().
-        final String detail = String.valueOf(ex.getResponse().getEntity()).toLowerCase();
-        assertTrue("relationship rejection should mention it is not available yet: " + detail,
-                detail.contains("not available yet") || detail.contains("v1.1"));
+        final FieldSearchCriteria c = single(ct, "relationshipF", List.of("id1", "id2"));
+        assertEquals(FilterKind.MULTI, c.getKind());
+        assertEquals(RoutingBucket.DB, c.getBucket());
+        assertEquals(List.of("id1", "id2"), c.getValues());
     }
 
     @Test

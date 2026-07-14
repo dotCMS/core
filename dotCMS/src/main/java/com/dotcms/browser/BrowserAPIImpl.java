@@ -8,6 +8,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -39,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.RenderMode;
@@ -1936,8 +1938,8 @@ public class BrowserAPIImpl implements BrowserAPI {
     /**
      * Appends the DB-routed per-field predicates (Content Drive field filters) to the select query.
      * Per the ADR-0018 routing contract these criteria are resolved in the database to preserve
-     * read-your-writes. Only Tag fields are supported in v1 (Relationship is deferred to v1.1 and is
-     * rejected at request parsing time). Index-routed criteria are intentionally ignored here.
+     * read-your-writes: Tag (via {@code tag}/{@code tag_inode}) and Relationship (via {@code tree}).
+     * Index-routed criteria are intentionally ignored here — they are handled by the ES path.
      * <p>
      * Multiple criteria combine with AND (each adds an {@code and ... in (...)} sub-select), matching
      * the additive filtering model.
@@ -1958,8 +1960,64 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
             if (criteria.getField() instanceof TagField) {
                 appendTagQuery(sqlQuery, workingLiveInode, criteria.getValues(), parameters);
+            } else if (criteria.getField() instanceof RelationshipField) {
+                appendRelationshipQuery(sqlQuery, browserQuery.user, criteria.getField(),
+                        criteria.getValues(), parameters);
             }
         }
+    }
+
+    /**
+     * Appends a Relationship-field predicate resolved against the {@code tree} table (never the
+     * index), so newly related content is filterable immediately (read-your-writes). The values are
+     * the child/parent contentlet <strong>identifiers</strong> selected on the FE.
+     * <p>
+     * The direction is resolved from the field: if it is the parent-side field the browsed content
+     * is the parent and the values are its children ({@code select parent ... where child in (...)});
+     * if it is the child-side field the direction is reversed. Multiple identifiers combine with OR
+     * (related to any); the enclosing sub-select ANDs with the rest of the query. Permission checks
+     * on the related content are intentionally not applied here — the browsed (parent) content still
+     * runs through the permission filter downstream.
+     *
+     * @param sqlQuery    The StringBuilder representing the SQL query being built.
+     * @param user        The {@link User} performing the search (to resolve the relationship).
+     * @param field       The Relationship {@link Field}.
+     * @param identifiers The related contentlet identifiers to match.
+     * @param parameters  The list of SQL parameters to append bind values to.
+     */
+    private void appendRelationshipQuery(final StringBuilder sqlQuery, final User user,
+            final Field field, final List<String> identifiers, final List<Object> parameters) {
+
+        if (identifiers.isEmpty()) {
+            return;
+        }
+        final Relationship relationship = Try.of(
+                        () -> APILocator.getRelationshipAPI().getRelationshipFromField(field, user))
+                .getOrNull();
+        if (null == relationship) {
+            throw new DotRuntimeException(String.format(
+                    "Unable to resolve the relationship for field '%s'.", field.variable()));
+        }
+        // isChildField(rel, field) is true when the field lives on the parent structure and holds
+        // the *children* (dotCMS names a relationship field after its target). In that case the
+        // browsed content is the parent and the FE-sent values are child identifiers, so we select
+        // parents whose tree 'child' column matches. When the field holds parents, reverse it.
+        final boolean fieldHoldsChildren =
+                APILocator.getRelationshipAPI().isChildField(relationship, field);
+        final String selectColumn = fieldHoldsChildren ? "parent" : "child";
+        final String matchColumn = fieldHoldsChildren ? "child" : "parent";
+
+        sqlQuery.append(" and id.id in ( select ").append(selectColumn)
+                .append(" from tree where ").append(matchColumn).append(" in (");
+        for (int i = 0; i < identifiers.size(); i++) {
+            if (i > 0) {
+                sqlQuery.append(", ");
+            }
+            sqlQuery.append("?");
+            parameters.add(identifiers.get(i).trim());
+        }
+        sqlQuery.append(") and relation_type = ? ) ");
+        parameters.add(relationship.getRelationTypeValue());
     }
 
     /**
