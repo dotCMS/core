@@ -13,7 +13,10 @@
                     data-testid="btn-collapse" />
             </div>
             <div class="mx-2">
-                <span class="material-symbols-outlined text-xl! leading-none align-middle text-gray-700">chevron_right</span>
+                <span
+                    class="material-symbols-outlined align-middle text-xl! leading-none text-gray-700">
+                    chevron_right
+                </span>
             </div>
         </div>
     }
@@ -22,7 +25,10 @@
         [model]="$itemsToShow()"
         (onItemClick)="onItemClick.emit($event)">
         <ng-template pTemplate="separator">
-            <span class="material-symbols-outlined text-xl! overflow-hidden leading-none align-middle text-gray-700">chevron_right</span>
+            <span
+                class="material-symbols-outlined overflow-hidden align-middle text-xl! leading-none text-gray-700">
+                chevron_right
+            </span>
         </ng-template>
     </p-breadcrumb>
 </div>
