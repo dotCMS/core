@@ -43,3 +43,4 @@ Release-25.07.10 LTS
 37. https://github.com/dotCMS/core/issues/36147 : Saving contentlets with many-to-many relationship fields and large related-content volumes is extremely slow #36147
 38. https://github.com/dotCMS/core/issues/33784 : [DEFECT] Full cache flush shutdown h22 threadpool #33784
 39. https://github.com/dotCMS/core/issues/33645 : [DEFECT] NPE when fetching content via content api with depth 3 and high limit #33645
+40. https://github.com/dotCMS/core/issues/35896 : fix(security): upgrade Bouncy Castle 1.70 → 1.84 (CVE-2025-14813) #35896
