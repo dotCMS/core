@@ -105,7 +105,7 @@ export class ToolbarComponent implements OnDestroy {
 
     /**
      * Per-PrimeNG-Tooltip delay before any toolbar tooltip appears. Centralized here so
-     * the 44 toolbar buttons stay in sync — change the timing in one place.
+     * the toolbar buttons stay in sync — change the timing in one place.
      */
     protected readonly TOOLTIP_SHOW_DELAY = 350;
 
@@ -338,6 +338,10 @@ export class ToolbarComponent implements OnDestroy {
 
     protected toggleItalic(): void {
         this.editor().chain().focus().toggleItalic().run();
+    }
+
+    protected toggleUnderline(): void {
+        this.editor().chain().focus().toggleUnderline().run();
     }
 
     protected toggleStrike(): void {
