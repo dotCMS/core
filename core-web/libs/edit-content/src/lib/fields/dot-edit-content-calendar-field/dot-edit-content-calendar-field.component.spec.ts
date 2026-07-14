@@ -1,5 +1,5 @@
 import { describe } from '@jest/globals';
-import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';

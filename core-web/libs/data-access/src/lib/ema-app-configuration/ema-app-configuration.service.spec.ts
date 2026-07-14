@@ -1,4 +1,4 @@
-import { createHttpFactory, SpectatorService } from '@ngneat/spectator';
+import { createHttpFactory, SpectatorService } from '@openng/spectator';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';

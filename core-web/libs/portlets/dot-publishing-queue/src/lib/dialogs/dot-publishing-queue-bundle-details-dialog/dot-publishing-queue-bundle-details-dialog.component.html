@@ -1,0 +1,162 @@
+<div class="flex flex-col gap-4" data-testid="pq-detail-dialog">
+    @if (store.detailStatus() === 'loading') {
+        <p-skeleton height="2rem" width="60%" />
+        <p-skeleton height="1.5rem" width="40%" />
+        <p-skeleton height="6rem" width="100%" />
+    } @else if (store.detail(); as detail) {
+        <p-table
+            [value]="$metaRows()"
+            dataKey="key"
+            styleClass="rounded-md border border-surface-200 overflow-hidden text-sm"
+            data-testid="pq-detail-meta">
+            <ng-template pTemplate="body" let-row>
+                <tr data-testid="pq-detail-meta-row" [attr.data-key]="row.key">
+                    <td
+                        class="w-1/3 bg-surface-50 align-top font-semibold whitespace-nowrap text-color">
+                        {{ row.label }}
+                    </td>
+                    <td class="text-color">
+                        @switch (row.key) {
+                            @case ('title') {
+                                <span class="font-semibold">{{ detail.bundleName || '—' }}</span>
+                                @if (detail.assetCount > 0) {
+                                    <span class="text-color-secondary">
+                                        · {{ detail.assetCount }}
+                                        {{ 'publishing-queue.detail.assets-suffix' | dm }}
+                                    </span>
+                                }
+                            }
+                            @case ('status') {
+                                <dot-publishing-status-chip [status]="detail.status" />
+                            }
+                            @case ('scheduledFor') {
+                                {{
+                                    (detail.scheduledPublishDate | date: 'MMM d, y - h:mm:ss a') ||
+                                        '—'
+                                }}
+                            }
+                            @case ('bundleId') {
+                                <span class="font-mono text-xs break-all">
+                                    {{ detail.bundleId }}
+                                </span>
+                            }
+                            @case ('bundleStart') {
+                                {{
+                                    (detail.timestamps.bundleStart
+                                        | date: 'MMM d, y - h:mm:ss a') || '—'
+                                }}
+                            }
+                            @case ('bundleEnd') {
+                                {{
+                                    (detail.timestamps.bundleEnd | date: 'MMM d, y - h:mm:ss a') ||
+                                        '—'
+                                }}
+                            }
+                            @case ('publishStart') {
+                                {{
+                                    (detail.timestamps.publishStart
+                                        | date: 'MMM d, y - h:mm:ss a') || '—'
+                                }}
+                            }
+                            @case ('publishEnd') {
+                                {{
+                                    (detail.timestamps.publishEnd | date: 'MMM d, y - h:mm:ss a') ||
+                                        '—'
+                                }}
+                            }
+                            @case ('filter') {
+                                {{ detail.filterName || detail.filterKey || '—' }}
+                            }
+                            @case ('assets') {
+                                {{ detail.assetCount }}
+                            }
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+
+        <section class="flex flex-col gap-2" data-testid="pq-detail-endpoints">
+            <h4 class="m-0 text-sm font-semibold text-color uppercase">
+                {{ 'publishing-queue.detail.endpoints' | dm }}
+            </h4>
+            @if (detail.environments.length === 0) {
+                <p class="text-color-secondary text-sm" data-testid="pq-detail-endpoints-empty">
+                    {{ 'publishing-queue.detail.no-endpoints' | dm }}
+                </p>
+            } @else {
+                <p-table
+                    [value]="$endpointRows()"
+                    dataKey="key"
+                    styleClass="rounded-md border border-surface-200 overflow-hidden"
+                    data-testid="pq-detail-endpoint-table">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th>{{ 'publishing-queue.detail.environment' | dm }}</th>
+                            <th>{{ 'publishing-queue.detail.endpoint' | dm }}</th>
+                            <th>{{ 'publishing-queue.detail.address' | dm }}</th>
+                            <th class="whitespace-nowrap">
+                                {{ 'publishing-queue.detail.status' | dm }}
+                            </th>
+                            <th>{{ 'publishing-queue.detail.message' | dm }}</th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-row>
+                        <tr data-testid="pq-detail-endpoint-row">
+                            <td class="font-medium text-color">{{ row.envName }}</td>
+                            <td>{{ row.endpoint.serverName }}</td>
+                            <td class="text-xs">
+                                @if (endpointAddress(row.endpoint); as address) {
+                                    {{ address }}
+                                } @else {
+                                    <span class="text-color-secondary">—</span>
+                                }
+                            </td>
+                            <td class="whitespace-nowrap">
+                                @if (row.endpoint.status) {
+                                    <dot-publishing-status-chip [status]="row.endpoint.status" />
+                                } @else {
+                                    <span class="text-color-secondary">—</span>
+                                }
+                            </td>
+                            <td class="text-color-secondary text-xs">
+                                {{ row.endpoint.statusMessage || '—' }}
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            }
+        </section>
+
+        <div class="flex justify-end gap-2 pt-2">
+            @if ($canDownloadManifest()) {
+                <a
+                    [href]="manifestHref(detail.bundleId)"
+                    [download]="'manifest_' + detail.bundleId + '.csv'"
+                    class="p-button p-button-outlined"
+                    data-testid="pq-detail-download-manifest-btn">
+                    <i class="pi pi-file mr-2"></i>
+                    {{ 'publishing-queue.detail.download-manifest' | dm }}
+                </a>
+            }
+            @if ($canDownloadBundle()) {
+                <a
+                    [href]="downloadHref(detail.bundleId)"
+                    [download]="detail.bundleName || detail.bundleId"
+                    class="p-button p-button-outlined"
+                    data-testid="pq-detail-download-btn">
+                    <i class="pi pi-download mr-2"></i>
+                    {{ 'publishing-queue.detail.download' | dm }}
+                </a>
+            }
+            <p-button
+                [label]="'publishing-queue.close' | dm"
+                (onClick)="closeDialog()"
+                data-testid="pq-detail-close-btn" />
+        </div>
+    } @else if (store.detailStatus() === 'error') {
+        <div class="text-color-secondary p-4 text-center" data-testid="pq-detail-error">
+            {{ 'publishing-queue.detail.load-error' | dm }}
+        </div>
+    }
+</div>
