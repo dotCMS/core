@@ -117,6 +117,13 @@ export class DotFormFileEditorComponent implements OnInit {
     );
 
     /**
+     * Whether the current Monaco model has at least one `Error`-severity marker. Drives the
+     * `content` field's error slot in the template — see {@link #hasBlockingErrors} for why only
+     * `Error` severity (not hints/warnings) counts.
+     */
+    readonly $hasSyntaxError = signal(false);
+
+    /**
      * Form group for the file editor component.
      *
      * This form contains the following controls:
@@ -174,6 +181,13 @@ export class DotFormFileEditorComponent implements OnInit {
             .subscribe((value) => {
                 this.store.setFileName(value);
             });
+
+        // ngx-monaco-editor recomputes `content`'s validity (and re-emits statusChanges)
+        // every time the Monaco model's markers change, so this is the reliable trigger to
+        // refresh whether the template should show the syntax-error message.
+        this.contentField.statusChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+            this.$hasSyntaxError.set(this.#hasErrorSeverityMarker());
+        });
     }
 
     /**
@@ -227,13 +241,14 @@ export class DotFormFileEditorComponent implements OnInit {
      * Handles the form submission event.
      *
      * This method performs the following actions:
-     * 1. Checks if the form is invalid. If so, marks the form as dirty and updates its validity status.
+     * 1. Checks if the form is invalid, ignoring the `content` field's `monaco` error (see
+     *    {@link #hasBlockingErrors}). If so, marks the form as dirty and updates its validity status.
      * 2. If the form is valid, retrieves the raw values from the form and triggers the file upload process via the store.
      *
      * @returns {void}
      */
     onSubmit(): void {
-        if (this.form.invalid) {
+        if (this.#hasBlockingErrors()) {
             this.form.markAsDirty();
             this.form.updateValueAndValidity();
 
@@ -242,6 +257,44 @@ export class DotFormFileEditorComponent implements OnInit {
 
         const values = this.form.getRawValue();
         this.store.uploadFile(values);
+    }
+
+    /**
+     * Whether the form has validation errors that should actually block saving.
+     *
+     * `ngx-monaco-editor` registers itself as an `NG_VALIDATORS` for the `content` control
+     * and surfaces ANY marker on the Monaco model — syntax/semantic errors, but also purely
+     * informational TS diagnostics like "declared but never read" — as a single `monaco` form
+     * error, with no severity info attached. Those low-severity hints are shown to the user as
+     * underlines in the editor itself, but shouldn't block Save. Only genuine `Error`-severity
+     * markers (red squiggly) block it, so we read the real markers on the model directly rather
+     * than trusting the presence of the `monaco` form error. Any other error on `content`, or an
+     * invalid `name`, always blocks submission.
+     */
+    #hasBlockingErrors(): boolean {
+        if (this.nameField.invalid) {
+            return true;
+        }
+
+        const contentErrors = this.contentField.errors ?? {};
+        const hasNonMonacoContentErrors = Object.keys(contentErrors).some(
+            (key) => key !== 'monaco'
+        );
+
+        return hasNonMonacoContentErrors || this.#hasErrorSeverityMarker();
+    }
+
+    /** Whether the current Monaco model has at least one `Error`-severity marker. */
+    #hasErrorSeverityMarker(): boolean {
+        const model = this.#editorRef?.getModel();
+
+        if (!model || typeof monaco === 'undefined') {
+            return false;
+        }
+
+        return monaco.editor
+            .getModelMarkers({ resource: model.uri })
+            .some((marker) => marker.severity === monaco.MarkerSeverity.Error);
     }
 
     /**
