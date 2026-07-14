@@ -1,4 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { EMPTY } from 'rxjs';
 
 import { signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -55,6 +56,8 @@ describe('RouterEditContentHost', () => {
         providers: [
             mockProvider(Router, {
                 navigate: jest.fn(),
+                // identityChanges$ subscribes to router.events at construction.
+                events: EMPTY,
                 routerState: {
                     snapshot: { root: routeTree([{}]) }
                 }
@@ -188,12 +191,27 @@ describe('RouterEditContentHost', () => {
             expect(router.navigate).not.toHaveBeenCalled();
         });
 
-        it('should navigate preserving query params when the inode changed', () => {
+        it('repoints the trail current crumb to the restored inode when it changed', () => {
             host.goToRestoredVersion('789', '123');
 
+            expect(relatedNav.buildTrailForSavedInode).toHaveBeenCalledWith('789');
             expect(router.navigate).toHaveBeenCalledWith(['/content', '789'], {
                 replaceUrl: true,
-                queryParamsHandling: 'preserve'
+                queryParams: { rc: 'a,b' },
+                queryParamsHandling: 'merge'
+            });
+        });
+    });
+
+    describe('reloadContent (locale switch)', () => {
+        it('repoints the trail current crumb to the new-locale inode', () => {
+            host.reloadContent('789');
+
+            expect(relatedNav.buildTrailForSavedInode).toHaveBeenCalledWith('789');
+            expect(router.navigate).toHaveBeenCalledWith(['/content', '789'], {
+                replaceUrl: true,
+                queryParams: { rc: 'a,b' },
+                queryParamsHandling: 'merge'
             });
         });
     });

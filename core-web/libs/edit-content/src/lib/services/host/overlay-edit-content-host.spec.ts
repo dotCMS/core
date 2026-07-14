@@ -74,11 +74,21 @@ describe('OverlayEditContentHost', () => {
         });
     });
 
-    // Chrome/route intents overlay another context, so they are safe no-ops.
-    it('treats title/breadcrumb/restore as no-ops', () => {
+    // Chrome intents overlay another context, so they are safe no-ops.
+    it('treats title/breadcrumb as no-ops', () => {
         expect(() => host.setContentTitle('x')).not.toThrow();
         expect(() => host.addBreadcrumb({ label: 'x', url: '/y' })).not.toThrow();
-        expect(() => host.goToRestoredVersion('1', undefined)).not.toThrow();
+    });
+
+    describe('goToRestoredVersion', () => {
+        it('emits an in-place reload for the restored inode (no route to navigate)', (done) => {
+            host.inPlaceNavigation$.subscribe((request) => {
+                expect(request).toEqual({ inode: 'inode-restored' });
+                done();
+            });
+
+            host.goToRestoredVersion('inode-restored');
+        });
     });
 
     describe('goToSavedContent', () => {

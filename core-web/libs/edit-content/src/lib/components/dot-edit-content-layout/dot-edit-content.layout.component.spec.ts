@@ -634,26 +634,28 @@ describe('EditContentLayoutComponent', () => {
             expect(spectator.component.$relatedNavItems()).toEqual([]);
         });
 
-        it('builds routerLink crumbs with a trimmed rc; the current (last) crumb is a plain label', () => {
+        it('builds `command` crumbs that navigate via the host with the trimmed trail; the current (last) crumb is a plain label', () => {
+            mockEditContentHost.goToCrumb.mockClear();
             relatedTrailSignal.set([A, B, C]);
 
-            expect(spectator.component.$relatedNavItems()).toEqual([
-                // First crumb: navigating back to the origin clears rc (single item → null).
-                {
-                    label: 'TA',
-                    routerLink: ['/content', 'iA'],
-                    queryParams: { rc: null },
-                    queryParamsHandling: 'merge'
-                },
-                {
-                    label: 'TB',
-                    routerLink: ['/content', 'iB'],
-                    queryParams: { rc: 'iA,iB' },
-                    queryParamsHandling: 'merge'
-                },
-                // Current content — not a link.
-                { label: 'TC' }
-            ]);
+            const items = spectator.component.$relatedNavItems();
+
+            // Every crumb is a command (not a declarative routerLink) even
+            // full-screen, so the unsaved-changes prompt runs at the source now
+            // that the reused route no longer fires canDeactivate on :id → :id.
+            expect(items.map((i) => i.label)).toEqual(['TA', 'TB', 'TC']);
+            expect(items[0].routerLink).toBeUndefined();
+            expect(items[1].routerLink).toBeUndefined();
+
+            // First crumb trims the trail to the origin; second to [iA, iB].
+            items[0].command!({} as never);
+            expect(mockEditContentHost.goToCrumb).toHaveBeenLastCalledWith('iA', ['iA']);
+
+            items[1].command!({} as never);
+            expect(mockEditContentHost.goToCrumb).toHaveBeenLastCalledWith('iB', ['iA', 'iB']);
+
+            // Current content — plain label, no navigation.
+            expect(items[2].command).toBeUndefined();
         });
     });
 });

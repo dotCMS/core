@@ -143,17 +143,19 @@ export class DotEditContentLayoutComponent {
     /**
      * "Relating content" breadcrumb model built from the navigation trail.
      *
-     * The current (last) crumb is a plain label. Earlier crumbs are clickable:
-     * - Full-screen: a `routerLink` with the `rc` query param trimmed to that
-     *   point — navigation goes through the router (the unsaved-changes guard
-     *   fires, the trail recomputes from the URL) and PrimeNG renders a real
-     *   `<a href>` for a native pointer cursor.
-     * - Dialog: a `command` that asks the host to reload the editor in place,
-     *   since a router link would navigate the host page behind the dialog.
+     * The current (last) crumb is a plain label. Earlier crumbs are a `command`
+     * that asks the host to navigate to that crumb, in both presentations:
+     * - Full-screen: the host updates the URL (`rc` query param) and the reused
+     *   route reloads via `identityChanges$`.
+     * - Dialog: the host reloads the editor in place (a router link would
+     *   navigate the host page behind the dialog).
+     *
+     * A `command` (not a declarative `routerLink`) is used even full-screen so the
+     * unsaved-changes prompt runs at the source — a reused route no longer fires
+     * `canDeactivate` on `:id → :id`, which a `routerLink` would silently bypass.
      */
     readonly $relatedNavItems = computed<MenuItem[]>(() => {
         const trail = this.#host.trail();
-        const inPlace = this.#host.inPlaceNavigation;
 
         return trail.map((crumb, index) => {
             const isCurrent = index === trail.length - 1;
@@ -164,21 +166,10 @@ export class DotEditContentLayoutComponent {
             // Trail trimmed to (and including) this crumb.
             const inodes = trail.slice(0, index + 1).map((c) => c.inode);
 
-            if (inPlace) {
-                return {
-                    label: crumb.title,
-                    command: () => this.#host.goToCrumb(crumb.inode, inodes)
-                };
-            }
-
-            // A single-item trail clears rc (null → removed by the merge).
-            const rc = inodes.length >= 2 ? inodes.join(',') : null;
-
             return {
                 label: crumb.title,
-                routerLink: ['/content', crumb.inode],
-                queryParams: { rc },
-                queryParamsHandling: 'merge'
+                styleClass: 'cursor-pointer',
+                command: () => this.#host.goToCrumb(crumb.inode, inodes)
             };
         });
     });
@@ -211,6 +202,29 @@ export class DotEditContentLayoutComponent {
                 .pipe(takeUntilDestroyed())
                 .subscribe((request) => this.#reloadInPlace(request));
         }
+
+        // URL-driven hosts (full-screen) reuse the component across content
+        // navigations, so re-run initialization on each identity change instead of
+        // relying on a fresh component per navigation. The previous content stays
+        // rendered until the new one loads (see the `isReloading` gate + overlay in
+        // the template). This also covers browser back/forward and deep links.
+        const identityChanges$ = this.#host.identityChanges$;
+        if (identityChanges$) {
+            identityChanges$.pipe(takeUntilDestroyed()).subscribe(() => this.$store.initialize());
+        }
+
+        // A reused route no longer fires `canDeactivate` on `:id → :id`, so enforce
+        // the unsaved-changes prompt before the host performs such a navigation
+        // (breadcrumb, locale switch, version restore, related content). In-place
+        // hosts leave this unset — their reload path already confirms via
+        // `#reloadInPlace`.
+        this.#host.setNavigationGuard?.((proceed) => {
+            if (this.hasUnsavedChanges()) {
+                this.#confirmIfDirty(proceed, () => undefined);
+            } else {
+                proceed();
+            }
+        });
 
         // Cache the current content's title so the "Relating content" breadcrumb
         // can label its crumb. The trail itself lives in the URL (rc query param)

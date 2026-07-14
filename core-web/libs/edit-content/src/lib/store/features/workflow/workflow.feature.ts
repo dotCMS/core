@@ -310,7 +310,9 @@ export function withWorkflow() {
                                         // Navigate to the saved content. The host decides how:
                                         // the full-screen host reconciles the related-content
                                         // trail and navigates when the inode changed; the dialog
-                                        // host stays in place (no-op).
+                                        // host does not navigate — it repoints its in-memory
+                                        // trail's last crumb to the new inode (and registers the
+                                        // new title).
                                         host.goToSavedContent(
                                             {
                                                 inode: contentlet.inode,

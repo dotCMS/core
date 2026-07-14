@@ -115,7 +115,21 @@ export function withContent() {
             /**
              * Computed property that determines if the store's status is equal to ComponentStatus.SAVING.
              */
-            isSaving: computed(() => store.state() === ComponentStatus.SAVING)
+            isSaving: computed(() => store.state() === ComponentStatus.SAVING),
+
+            /**
+             * True while new content is being fetched but the previously loaded
+             * content is still in the store (an in-place reload — e.g. navigating
+             * the related-content breadcrumb). `initializeExistingContent` sets the
+             * state to LOADING without clearing `contentType`/`contentlet`, so the
+             * layout can keep the old data on screen behind a non-destructive
+             * loading overlay (stale-while-revalidate) instead of collapsing the
+             * whole editor to a blank screen. False on the very first load, when
+             * there is no prior content to show.
+             */
+            isReloading: computed(
+                () => store.state() === ComponentStatus.LOADING && !!store.contentType()
+            )
         })),
         withMethods(
             (
@@ -230,7 +244,34 @@ export function withContent() {
                         switchMap(({ inode, depth }) => {
                             patchState(store, {
                                 state: ComponentStatus.LOADING,
-                                hiddenFields: {}
+                                hiddenFields: {},
+                                // The full-screen editor now reuses its component across
+                                // content navigations, so the store persists. Clear the
+                                // previous content's volatile, content-scoped slices to
+                                // prevent leaks (version/push-publish lists accumulate for
+                                // infinite scroll; the compare/historical views belong to
+                                // the old inode). `contentlet`/`contentType` are kept on
+                                // purpose so the previous content stays rendered until the
+                                // new data loads (stale-while-revalidate). Reference pages
+                                // and activities reload on their own via the sidebar's
+                                // identifier effect, so they are not reset here.
+                                versions: [],
+                                versionsPagination: null,
+                                versionsStatus: {
+                                    status: ComponentStatus.INIT,
+                                    error: null
+                                },
+                                pushPublishHistory: [],
+                                pushPublishHistoryPagination: null,
+                                pushPublishHistoryStatus: {
+                                    status: ComponentStatus.INIT,
+                                    error: null
+                                },
+                                isViewingHistoricalVersion: false,
+                                historicalVersionInode: null,
+                                originalContentlet: null,
+                                compareContentlet: null,
+                                translationSourceInode: null
                             });
 
                             return dotEditContentService.getContentById({ id: inode, depth }).pipe(

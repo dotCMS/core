@@ -110,8 +110,11 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         }
     }
 
-    goToRestoredVersion(): void {
-        // no-op: version restore does not navigate inside the dialog.
+    goToRestoredVersion(inode: string): void {
+        // Reload the editor in place so the restored version is reflected. The router
+        // host re-navigates; the overlay has no route, so it reloads via the in-place
+        // navigation stream (mirrors reloadContent). The trail is left untouched.
+        this.#navigation$.next({ inode });
     }
 
     goToRelatedContent(current: DotRelatedContentCrumb, target: DotRelatedContentCrumb): void {

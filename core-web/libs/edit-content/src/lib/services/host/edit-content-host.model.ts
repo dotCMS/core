@@ -118,6 +118,30 @@ export interface EditContentHost {
     readonly inPlaceNavigation$?: Observable<InPlaceNavigationRequest>;
 
     /**
+     * Emits after the editor's identity changes in a host that owns navigation via
+     * the URL (full-screen). The editor's route is reused across `:id → :id`
+     * navigations, so initialization no longer re-runs on its own; the layout
+     * re-runs it on each emission, keeping the URL the source of truth for the
+     * breadcrumb, browser back/forward and deep links while the previous content
+     * stays on screen until the new one loads. Undefined for in-place hosts, which
+     * reload via {@link inPlaceNavigation$} instead.
+     */
+    readonly identityChanges$?: Observable<void>;
+
+    /**
+     * Registers a guard the host runs before a URL navigation it initiates. A
+     * reused route no longer fires `canDeactivate` on same-route (`:id → :id`)
+     * navigation, so the unsaved-changes prompt for in-editor moves (breadcrumb,
+     * locale switch, version restore, related content) is enforced here instead.
+     * The host calls the guard, which invokes `proceed()` only when the form is
+     * clean or the user chose to discard. In-place hosts do not implement this —
+     * the layout guards their reloads directly.
+     *
+     * @param guard Receives a `proceed` callback to run the actual navigation.
+     */
+    setNavigationGuard?(guard: (proceed: () => void) => void): void;
+
+    /**
      * The related-content breadcrumb trail for this editor's presentation. URL-derived
      * for the router host (shared, reflects the `rc` param); a per-instance in-memory
      * signal for the dialog host (so an overlay never disturbs a full-screen editor's
