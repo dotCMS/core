@@ -65,8 +65,19 @@ jobs:
             let pr;
             if (context.eventName === 'workflow_dispatch') {
               const prNumber = Number.parseInt(process.env.PR_NUMBER_INPUT, 10);
+      - name: Resolve PR details
+        id: pr
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let pr;
+            if (context.eventName === 'workflow_dispatch') {
+              const prNumber = parseInt(process.env.PR_NUMBER || '', 10);
               if (!Number.isInteger(prNumber) || prNumber <= 0) {
-                core.setFailed(`Invalid pr_number input: ${process.env.PR_NUMBER_INPUT}`);
+                core.setFailed('Invalid PR number');
                 return;
               }
               const { data } = await github.rest.pulls.get({
@@ -88,6 +99,32 @@ jobs:
             core.setOutput('is_draft', pr.draft ? 'true' : 'false');
             core.setOutput('action',   context.payload.action || 'workflow_dispatch');
 
+      - name: Check for prior Semgrep review (skip Claude if present)
+        id: semgrep
+        uses: actions/github-script@v7
+        env:
+          PR_ACTION: ${{ steps.pr.outputs.action }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // On the very first push of a new PR (opened) or a manual dispatch,
+            // always run Claude — Semgrep cannot have reviewed it yet.
+            const action = process.env.PR_ACTION || '';
+            if (action === 'opened' || action === 'workflow_dispatch') {
+              core.info(`Event '${action}' — bypassing Semgrep check, running Claude unconditionally.`);
+              core.setOutput('found', 'false');
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt(process.env.PR_NUMBER || '', 10);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) {
+              core.setFailed('Invalid PR number');
+              return;
+            }
+            const headSha = process.env.HEAD_SHA || '';
       - name: Skip if draft (manual dispatch)
         if: steps.pr.outputs.is_draft == 'true'
         run: |
