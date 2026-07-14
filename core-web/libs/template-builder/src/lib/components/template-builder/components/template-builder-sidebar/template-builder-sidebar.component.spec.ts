@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -468,8 +468,10 @@ describe('DotFolderListViewComponent', () => {
 
         it('should have a title column', () => {
             const titleColumn = spectator.query(byTestId('item-title'));
+            const titleText = spectator.query(byTestId('item-title-text'));
 
-            expect(titleColumn.textContent.trim()).toBe(firstItem.title);
+            expect(titleColumn).toBeTruthy();
+            expect(titleText.textContent.trim()).toBe(firstItem.title);
         });
 
         it('should have a status column', () => {
@@ -518,7 +520,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should have a contentlet title', () => {
-            const contentletTitle = spectator.query(byTestId('item-title'));
+            const contentletTitle = spectator.query(byTestId('item-title-text'));
 
             expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
         });

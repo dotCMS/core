@@ -12369,6 +12369,15 @@ paths:
       tags:
       - OSGi Plugins
     post:
+      description: "Uploads one or more plugin JARs to the OSGi upload folder and\
+        \ schedules their processing. A 200 confirms the upload was accepted, NOT\
+        \ that the plugin is live: if new packages must be exported the OSGi framework\
+        \ is restarted cluster-wide asynchronously, after this response returns. Restart\
+        \ completion is signalled by the OSGI_FRAMEWORK_RESTART system event and successful\
+        \ deployment by the OSGI_BUNDLES_LOADED event; an asynchronous failure is\
+        \ reported via the OSGI_BUNDLES_UPLOAD_FAILED event and an error notification\
+        \ (check the server logs for the full stack trace). Clients should react to\
+        \ these events rather than assume the plugin is active once the 200 is received."
       operationId: uploadBundles
       requestBody:
         content:
@@ -12380,7 +12389,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
+                $ref: "#/components/schemas/ResponseEntitySetStringView"
+          description: Bundle upload accepted and scheduled. Any required OSGi restart
+            happens asynchronously; watch the OSGI_FRAMEWORK_RESTART / OSGI_BUNDLES_LOADED
+            / OSGI_BUNDLES_UPLOAD_FAILED system events for the outcome.
         "403":
           description: Can not access the upload folder or invalid OSGI Upload request
       summary: Upload bundles to the OSGI framework
@@ -33098,6 +33110,32 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SessionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySetStringView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
         errors:
           type: array
           items:

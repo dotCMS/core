@@ -450,6 +450,13 @@ export namespace Components {
          */
         "size": string;
     }
+    /**
+     * @deprecated Angular code must use `DotContentThumbnailComponent`
+     * (`dot-content-thumbnail`) from `@dotcms/ui` instead — pass the contentlet
+     * via its `contentlet`/`options` inputs or a resolved model via `thumbnail`.
+     * This web component remains only for Stencil-internal use
+     * (`dot-card-contentlet`) and legacy JSP pages. See dotCMS/core#36295.
+     */
     interface DotContentletThumbnail {
         /**
           * @default ''
@@ -1840,6 +1847,13 @@ declare global {
         prototype: HTMLDotContentletLockIconElement;
         new (): HTMLDotContentletLockIconElement;
     };
+    /**
+     * @deprecated Angular code must use `DotContentThumbnailComponent`
+     * (`dot-content-thumbnail`) from `@dotcms/ui` instead — pass the contentlet
+     * via its `contentlet`/`options` inputs or a resolved model via `thumbnail`.
+     * This web component remains only for Stencil-internal use
+     * (`dot-card-contentlet`) and legacy JSP pages. See dotCMS/core#36295.
+     */
     interface HTMLDotContentletThumbnailElement extends Components.DotContentletThumbnail, HTMLStencilElement {
     }
     var HTMLDotContentletThumbnailElement: {
@@ -2751,6 +2765,13 @@ declare namespace LocalJSX {
          */
         "size"?: string;
     }
+    /**
+     * @deprecated Angular code must use `DotContentThumbnailComponent`
+     * (`dot-content-thumbnail`) from `@dotcms/ui` instead — pass the contentlet
+     * via its `contentlet`/`options` inputs or a resolved model via `thumbnail`.
+     * This web component remains only for Stencil-internal use
+     * (`dot-card-contentlet`) and legacy JSP pages. See dotCMS/core#36295.
+     */
     interface DotContentletThumbnail {
         /**
           * @default ''
@@ -3891,6 +3912,13 @@ declare module "@stencil/core" {
              */
             "dot-contentlet-icon": LocalJSX.DotContentletIcon & JSXBase.HTMLAttributes<HTMLDotContentletIconElement>;
             "dot-contentlet-lock-icon": LocalJSX.DotContentletLockIcon & JSXBase.HTMLAttributes<HTMLDotContentletLockIconElement>;
+            /**
+             * @deprecated Angular code must use `DotContentThumbnailComponent`
+             * (`dot-content-thumbnail`) from `@dotcms/ui` instead — pass the contentlet
+             * via its `contentlet`/`options` inputs or a resolved model via `thumbnail`.
+             * This web component remains only for Stencil-internal use
+             * (`dot-card-contentlet`) and legacy JSP pages. See dotCMS/core#36295.
+             */
             "dot-contentlet-thumbnail": LocalJSX.DotContentletThumbnail & JSXBase.HTMLAttributes<HTMLDotContentletThumbnailElement>;
             "dot-context-menu": LocalJSX.DotContextMenu & JSXBase.HTMLAttributes<HTMLDotContextMenuElement>;
             "dot-data-view-button": LocalJSX.DotDataViewButton & JSXBase.HTMLAttributes<HTMLDotDataViewButtonElement>;

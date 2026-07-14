@@ -517,4 +517,10 @@
         <portlet-url>/categories</portlet-url>
     </portlet>
 
+    <portlet>
+        <portlet-name>publishing-queue-beta</portlet-name>
+        <display-name>Content Publishing Tools (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
 </portlet-app>
