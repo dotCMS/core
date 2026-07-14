@@ -12,7 +12,14 @@ export default defineConfig({
         // `root` points to the core-web workspace root so tsconfig path aliases
         // (e.g. @dotcms/types) resolve in bundled sibling sources like @dotcms/uve,
         // which are compiled from source into this build.
-        tsconfigPaths({ root: path.resolve(import.meta.dirname, '../../../') }),
+        // `projects` pins resolution to the base tsconfig (which holds every
+        // @dotcms/* alias) so the plugin does NOT crawl every tsconfig in the
+        // monorepo. That crawl runs inside @nx/vite's project-graph inference
+        // (resolveConfig) and segfaults the native resolver on CI.
+        tsconfigPaths({
+            root: path.resolve(import.meta.dirname, '../../../'),
+            projects: ['tsconfig.base.json']
+        }),
         dts({
             entryRoot: 'src',
             tsConfigFilePath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
