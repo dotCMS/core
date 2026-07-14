@@ -1,33 +1,31 @@
-@if (showAsCompare) {
+@if (showAsCompare()) {
     <div
-        [innerHTML]="
-            htmlWorkingValue$ | async | dotDiff: (htmlCompareValue$ | async) : showDiff | safeHtml
-        "
+        [innerHTML]="htmlWorkingValue() | dotDiff: htmlCompareValue() : showDiff() | safeHtml"
         data-testId="div-compare"></div>
 } @else {
-    <div [innerHTML]="htmlWorkingValue$ | async | safeHtml" data-testId="div-working"></div>
+    <div [innerHTML]="htmlWorkingValue() | safeHtml" data-testId="div-working"></div>
 }
 
 @if (isNewBlockEditorEnabled()) {
     <dot-block-editor
-        [value]="data.working[field]"
+        [value]="data().working[field()]"
         [style.display]="'none'"
         id="blockEditor"
         #blockEditor />
     <dot-block-editor
-        [value]="data.compare[field]"
+        [value]="data().compare[field()]"
         [style.display]="'none'"
         id="blockEditorCompare"
         #blockEditorCompare />
 } @else {
     <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
     <dot-old-block-editor
-        [value]="data.working[field]"
+        [value]="data().working[field()]"
         [style.display]="'none'"
         id="blockEditor"
         #blockEditor />
     <dot-old-block-editor
-        [value]="data.compare[field]"
+        [value]="data().compare[field()]"
         [style.display]="'none'"
         id="blockEditorCompare"
         #blockEditorCompare />
