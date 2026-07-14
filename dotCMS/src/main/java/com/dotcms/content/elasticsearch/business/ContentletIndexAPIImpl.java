@@ -78,6 +78,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
@@ -174,6 +175,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private final PhaseRouter<ContentletIndexOperations> router;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+
+    /**
+     * Max seconds a single reindex-journal entry may spend loading/mapping its contentlets
+     * before it is marked failed and the queue moves on — guards against hung filesystem I/O
+     * on network-backed storage (issue #36498). {@code 0} disables the guard.
+     */
+    public static final String REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS =
+            "REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS";
+
+    private static final Lazy<ReindexMappingRunner> mappingRunner = Lazy.of(() ->
+            new ReindexMappingRunner(
+                    () -> Config.getIntProperty(REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS, 120),
+                    Config.getIntProperty("REINDEX_CONTENTLET_MAPPING_MAX_THREADS", 8),
+                    DbConnectionFactory::closeSilently));
 
     public ContentletIndexAPIImpl() {
         this(new ContentletIndexOperationsES(),
@@ -2336,14 +2351,40 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private void appendBulkRequestToProcessor(final IndexBulkProcessor proc,
             final ReindexEntry idx) throws DotDataException {
         try {
-            for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
-                Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
-                        contentlet.getInode(), idx.getPriority()));
-                contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
-            }
+            // Bounded timeout: loading and mapping touch binary files, and a hung stat on
+            // network-backed storage must fail this entry instead of wedging the reindex
+            // thread forever (issue #36498).
+            mappingRunner().run(() -> {
+                mapEntryForProcessor(proc, idx);
+                return null;
+            }, "reindex entry with identifier '" + idx.getIdentToIndex() + "'");
         } catch (final Exception e) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
+        }
+    }
+
+    /**
+     * The shared timeout guard for per-entry mapping work. Seam for tests, which override it
+     * to supply a runner with a test-controlled timeout and no DB cleanup.
+     */
+    @VisibleForTesting
+    ReindexMappingRunner mappingRunner() {
+        return mappingRunner.get();
+    }
+
+    /**
+     * Loads all versions of the entry's contentlet and appends their index operations to the
+     * processor. Runs on a {@link ReindexMappingRunner} worker thread when the mapping timeout
+     * guard is enabled, so it must not rely on caller-thread state.
+     */
+    @VisibleForTesting
+    void mapEntryForProcessor(final IndexBulkProcessor proc, final ReindexEntry idx)
+            throws Exception {
+        for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
+            Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
+                    contentlet.getInode(), idx.getPriority()));
+            contentlet.setIndexPolicy(IndexPolicy.DEFER);
+            addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
         }
     }
 
@@ -3145,25 +3186,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void deactivateIndex(String indexName) throws DotDataException, IOException {
         if (isMigrationComplete()) {
             // ── Phase 3: OS only ─────────────────────────────────────────────
-            // Copy all existing OS slots, skipping the one being deactivated.
-            // An unset slot defaults to Optional.empty() in VersionedIndicesImpl.
-            // Failure is fatal: this is the primary store, not a shadow copy.
-            final Optional<VersionedIndices> osExisting =
-                    versionedIndicesAPI.loadDefaultVersionedIndices();
-            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-            if (!IndexType.WORKING.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-            }
-            if (!IndexType.LIVE.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-            }
-            if (!IndexType.REINDEX_WORKING.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-            }
-            if (!IndexType.REINDEX_LIVE.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-            }
-            versionedIndicesAPI.saveIndices(osBuilder.build());
+            // Rebuild the OS store without the deactivated slot. Failure is fatal:
+            // this is the primary store, not a shadow copy, so it propagates.
+            mirrorDeactivateToOsStore(indexName);
             return;
         }
 
@@ -3182,30 +3207,51 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         legacyIndiciesAPI.point(builder.build());
 
         // ── OS mirror (Phases 1 and 2, best-effort) ──────────────────────────
-        // Copy all existing OS slots, skipping the slot that matches the deactivated index type.
-        // Failure is non-fatal: OS is a shadow copy during these phases.
+        // Rebuild the OS store without the deactivated slot. Failure is non-fatal:
+        // OS is a shadow copy during these phases, so it is logged and swallowed.
         if (isMigrationStarted()) {
             try {
-                final Optional<VersionedIndices> osExisting =
-                        versionedIndicesAPI.loadDefaultVersionedIndices();
-                final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-                if (!IndexType.WORKING.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-                }
-                if (!IndexType.LIVE.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-                }
-                if (!IndexType.REINDEX_WORKING.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-                }
-                if (!IndexType.REINDEX_LIVE.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-                }
-                versionedIndicesAPI.saveIndices(osBuilder.build());
+                mirrorDeactivateToOsStore(indexName);
             } catch (Exception e) {
                 Logger.warn(this, "Could not mirror index deactivation to OS store for index: "
                         + indexName, e);
             }
+        }
+    }
+
+    /**
+     * Rebuilds the OS {@link VersionedIndices} store, keeping every slot except the one that
+     * matches {@code indexName}, and persists the result.
+     *
+     * <p>When the deactivated slot was the last populated one the rebuilt record is empty, and
+     * {@link com.dotcms.content.index.VersionedIndicesAPI#saveIndices} rejects it by contract
+     * ("At least one index must be specified"). Persisting it naively would either throw
+     * (phase 3, primary store) or — worse — leave a dangling/stale store row that
+     * {@code initOSCatchup} would treat as authoritative on the next restart. So an empty
+     * rebuild removes the version row instead. This mirrors the guard in
+     * {@link #clearOsStorePointer(String)} (issue #35640).</p>
+     */
+    private void mirrorDeactivateToOsStore(final String indexName) throws DotDataException {
+        final Optional<VersionedIndices> osExisting =
+                versionedIndicesAPI.loadDefaultVersionedIndices();
+        final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
+        if (!IndexType.WORKING.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
+        }
+        if (!IndexType.LIVE.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+        }
+        if (!IndexType.REINDEX_WORKING.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
+        }
+        if (!IndexType.REINDEX_LIVE.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
+        }
+        final VersionedIndices osRebuilt = osBuilder.build();
+        if (osRebuilt.hasAnyIndex()) {
+            versionedIndicesAPI.saveIndices(osRebuilt);
+        } else {
+            versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
         }
     }
 

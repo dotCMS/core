@@ -397,11 +397,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 							break; // found one
 						}
 
-						// if it is a binary
+						// if it is a binary — use the in-memory value's name only: getBinary()
+						// stats the filesystem, and a hung stat on network-backed storage here
+						// froze the whole reindex pipeline (issue #36498)
 						if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
-							final File binaryFile = this.getBinary(field.getVelocityVarName());
-							if (null != binaryFile) {
-								binaryValue = binaryFile.getName();
+							final Object rawBinary = this.map.get(field.getVelocityVarName());
+							if (rawBinary instanceof File) {
+								binaryValue = ((File) rawBinary).getName();
 							}
 						}
 					}
@@ -443,8 +445,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
 						final String dotAssetName     = this.getStringProperty(transientNameKey);
 						String assetName              = dotAssetName;
-						if (!isSet(dotAssetName) && null != this.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
-							assetName = this.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
+						// use the in-memory value's name only — getBinary() stats the
+						// filesystem, a hang risk on network-backed storage (issue #36498)
+						final Object rawAsset = this.map.get(DotAssetContentType.ASSET_FIELD_VAR);
+						if (!isSet(dotAssetName) && rawAsset instanceof File) {
+							assetName = ((File) rawAsset).getName();
 							this.setStringProperty(transientNameKey, assetName);
 						}
 

@@ -74,19 +74,26 @@
             <ngx-monaco-editor
                 class="dot-form-file-editor__editor"
                 [class.dot-form-file-editor__editor--disabled]="form.disabled"
+                [class.dot-form-file-editor__editor--error]="$hasSyntaxError()"
                 [class.code-editor-disabled]="form.disabled"
                 [options]="store.monacoConfig()"
                 (init)="onEditorInit($event)"
                 data-testid="code-editor"
                 formControlName="content" />
 
-            @let file = store.file();
-            <div
-                class="dot-form-file-editor__mime-type"
-                [class.dot-form-file-editor__mime-type--hidden]="!file.mimeType">
-                <i class="pi pi-info-circle"></i>
-                <small>Mime Type: {{ file.mimeType }}</small>
-            </div>
+            @if ($hasSyntaxError()) {
+                <small class="p-invalid" data-testid="content-error-msg">
+                    {{ 'dot.file.field.error.syntax' | dm }}
+                </small>
+            } @else {
+                @let file = store.file();
+                <div
+                    class="dot-form-file-editor__mime-type"
+                    [class.dot-form-file-editor__mime-type--hidden]="!file.mimeType">
+                    <i class="pi pi-info-circle"></i>
+                    <small>Mime Type: {{ file.mimeType }}</small>
+                </div>
+            }
         </div>
     </div>
     <div class="dot-form-file-editor__actions">
