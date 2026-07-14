@@ -114,6 +114,24 @@ describe('DotCategoriesService', () => {
         req.flush(mockResponse);
     });
 
+    it('should get a category by inode or key via GET /{idOrKey}', () => {
+        const mockCategory = createFakeCategory({ categoryName: 'News' });
+        const mockResponse: DotCMSAPIResponse<DotCategory> = {
+            entity: mockCategory,
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {}
+        };
+
+        spectator.service.getCategory('i1').subscribe((res) => {
+            expect(res).toEqual(mockCategory);
+        });
+
+        const req = spectator.expectOne('/api/v1/categories/i1', HttpMethod.GET);
+        req.flush(mockResponse);
+    });
+
     it('should create a category', () => {
         const mockCategory = createFakeCategory({ categoryName: 'New Category' });
         const mockResponse: DotCMSAPIResponse<DotCategory> = {
