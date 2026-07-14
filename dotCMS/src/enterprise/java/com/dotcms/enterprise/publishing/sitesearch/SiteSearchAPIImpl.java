@@ -16,6 +16,7 @@ import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -265,6 +266,24 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
     @Override
     public void deleteOldSiteSearchIndices() {
         router.write(SiteSearchAPI::deleteOldSiteSearchIndices);
+    }
+
+    @Override
+    public void deleteIndex(final String indexName) throws DotDataException, IOException {
+        // Guard once, phase-aware: the active (default) site-search index cannot be deleted —
+        // deactivate it first. isDefaultIndex reads the pointer from the phase-appropriate store,
+        // so this reproduces the single-index UX (issue #35640).
+        if (isDefaultIndex(indexName)) {
+            throw new DotStateException("Site-search index '" + indexName
+                    + "' is active and cannot be deleted. Deactivate it first.");
+        }
+        try {
+            router.writeChecked(impl -> impl.deleteIndex(indexName));
+        } catch (DotDataException | IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -16,10 +16,13 @@ import { DotFileFieldUploadService } from '../../services/upload-file/upload-fil
 
 // monacoMock doesn't expose `getLanguages`, which getInfoByLang / the velocity
 // registration call. Provide a no-op so the component's Monaco hooks don't throw.
+// It also doesn't expose `MarkerSeverity`, which #hasErrorSeverityMarker relies on to
+// tell a real syntax error apart from an informational hint/warning marker.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = {
     ...monacoMock,
-    languages: { ...monacoMock.languages, getLanguages: () => [] }
+    languages: { ...monacoMock.languages, getLanguages: () => [] },
+    MarkerSeverity: { Hint: 1, Info: 2, Warning: 4, Error: 8 }
 };
 
 describe('DotFormFileEditorComponent', () => {
@@ -113,6 +116,131 @@ describe('DotFormFileEditorComponent', () => {
             spectator.component.ngOnInit();
 
             expect(spectator.component.$header()).toBe('Edit File');
+        });
+    });
+
+    describe('Content validation (Monaco markers)', () => {
+        // Builds a single Monaco marker of the given severity. Only `severity`/`message`
+        // matter to the gate; the position fields just satisfy the marker shape.
+        const marker = (severity: number, message = 'diagnostic') => ({
+            severity,
+            message,
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: 1,
+            endColumn: 1,
+            owner: 'javascript',
+            resource: null
+        });
+
+        // Drives the editor to a given set of markers AND mirrors what ngx-monaco-editor's
+        // own Validator would then set on the control (any marker -> a single `monaco` error).
+        // The real TS language service that produces these markers can't run in jsdom, so we
+        // inject them; this exercises our gate, not Monaco's marker generation.
+        const setMarkers = (markers: ReturnType<typeof marker>[]) => {
+            jest.spyOn(monaco.editor, 'getModelMarkers').mockReturnValue(markers);
+            spectator.component.contentField.setErrors(
+                markers.length ? { monaco: { value: markers.map((m) => m.message) } } : null
+            );
+        };
+
+        const spyUpload = () =>
+            jest.spyOn(spectator.component.store, 'uploadFile').mockImplementation(() => undefined);
+
+        beforeEach(() => {
+            spectator.component.ngOnInit();
+            spectator.component.form.controls.name.setValue('script.js');
+
+            const editor = monaco.editor.create();
+            spectator.component.onEditorInit(
+                editor as unknown as monaco.editor.IStandaloneCodeEditor
+            );
+        });
+
+        it('should save when the content has no markers and the name is valid', () => {
+            setMarkers([]);
+            const uploadFileSpy = spyUpload();
+
+            spectator.component.onSubmit();
+
+            expect(uploadFileSpy).toHaveBeenCalled();
+            expect(spectator.component.$hasSyntaxError()).toBe(false);
+        });
+
+        it('should save when the content only has Hint-severity markers (e.g. unused-variable diagnostics)', () => {
+            setMarkers(
+                [monaco.MarkerSeverity.Hint, monaco.MarkerSeverity.Hint].map((s) =>
+                    marker(s, "'foo' is declared but its value is never read.")
+                )
+            );
+            const uploadFileSpy = spyUpload();
+
+            spectator.component.onSubmit();
+
+            expect(uploadFileSpy).toHaveBeenCalled();
+            expect(spectator.component.$hasSyntaxError()).toBe(false);
+        });
+
+        it('should save when the content only has Warning-severity markers', () => {
+            setMarkers([marker(monaco.MarkerSeverity.Warning, 'Unreachable code detected.')]);
+            const uploadFileSpy = spyUpload();
+
+            spectator.component.onSubmit();
+
+            expect(uploadFileSpy).toHaveBeenCalled();
+            expect(spectator.component.$hasSyntaxError()).toBe(false);
+        });
+
+        it('should block saving and flag $hasSyntaxError when the content has an Error-severity marker', () => {
+            setMarkers([marker(monaco.MarkerSeverity.Error, "'}' expected.")]);
+            const uploadFileSpy = spyUpload();
+
+            spectator.component.onSubmit();
+
+            expect(uploadFileSpy).not.toHaveBeenCalled();
+            expect(spectator.component.$hasSyntaxError()).toBe(true);
+        });
+
+        it('should block saving when markers mix hints/warnings with at least one Error', () => {
+            setMarkers([
+                marker(
+                    monaco.MarkerSeverity.Hint,
+                    "'foo' is declared but its value is never read."
+                ),
+                marker(monaco.MarkerSeverity.Warning, 'Unreachable code detected.'),
+                marker(monaco.MarkerSeverity.Error, "'}' expected.")
+            ]);
+            const uploadFileSpy = spyUpload();
+
+            spectator.component.onSubmit();
+
+            expect(uploadFileSpy).not.toHaveBeenCalled();
+            expect(spectator.component.$hasSyntaxError()).toBe(true);
+        });
+
+        it('should clear $hasSyntaxError and allow saving once the error markers are resolved', () => {
+            // Start with a real syntax error.
+            setMarkers([marker(monaco.MarkerSeverity.Error, "'}' expected.")]);
+            expect(spectator.component.$hasSyntaxError()).toBe(true);
+
+            // User fixes it: markers clear and ngx-monaco-editor drops the `monaco` error.
+            setMarkers([]);
+            expect(spectator.component.$hasSyntaxError()).toBe(false);
+
+            const uploadFileSpy = spyUpload();
+            spectator.component.onSubmit();
+
+            expect(uploadFileSpy).toHaveBeenCalled();
+        });
+
+        it('should still block saving when the name field is invalid, regardless of content markers', () => {
+            spectator.component.form.controls.name.setValue('nodotextension');
+            setMarkers([]);
+            const uploadFileSpy = spyUpload();
+
+            spectator.component.onSubmit();
+
+            expect(uploadFileSpy).not.toHaveBeenCalled();
         });
     });
 });

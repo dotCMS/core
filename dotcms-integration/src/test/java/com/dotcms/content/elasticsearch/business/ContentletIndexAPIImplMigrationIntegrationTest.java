@@ -448,6 +448,32 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     }
 
     /**
+     * Given Scenario: Phase 1 (dual-write) with divergent names — {@code ES_WORKING} exists
+     *                 only in the legacy set; there is no {@code .os} sibling for it
+     *                 (the normal state after a migration catchup deployment).
+     * When : {@code delete(ES_WORKING)} is called with the bare logical name.
+     * Then : the ES index is removed and the call reports success; the shadow leg is skipped
+     *        (no delete attempt against a {@code .os} name that does not exist), so no
+     *        ERROR-level index_not_found noise is produced (#36423). Works in single-cluster
+     *        mode because the missing {@code .os} physical name is distinct from the bare name.
+     */
+    @Test
+    public void test_delete_phase1_bareNameOnlyInEs_skipsShadowAndSucceeds() {
+        setPhase(1);
+
+        assertTrue("Pre: bare name must exist in the legacy set", esImpl().indexExists(ES_WORKING));
+        assertFalse("Pre: no .os sibling may exist",
+                osIndexAPI.indexExists(opsOS.toPhysicalName(ES_WORKING)));
+
+        final boolean deleted = contentletIndexAPI().delete(ES_WORKING);
+
+        assertTrue("Primary delete must report success despite the missing .os sibling", deleted);
+        assertFalse("ES index must be gone after delete", esImpl().indexExists(ES_WORKING));
+
+        Logger.info(this, "✅ delete Phase 1 — bare-only-in-ES removed, shadow skipped: " + ES_WORKING);
+    }
+
+    /**
      * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
      * When : {@code delete()} is called with the {@code .os}-tagged name (as the QA/preview UI
      *        shows the OS index), with cascade on (default).
@@ -540,13 +566,13 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         assertTrue("OS twin must survive a rejected clear",  osIndexAPI.indexExists(physicalDualWorking));
 
         // Bypass: the same clear now goes through; both twins still exist (recreated empty).
-        Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
         try {
             APILocator.getESIndexAPI().clearIndex(DUAL_WORKING);
             assertTrue("ES twin exists after bypassed clear (recreated)", esImpl().indexExists(DUAL_WORKING));
             assertTrue("OS twin exists after bypassed clear (recreated)", osIndexAPI.indexExists(physicalDualWorking));
         } finally {
-            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
         }
 
         Logger.info(this, "✅ clear Phase 1 — active index guarded, bypass works: " + DUAL_WORKING);
@@ -572,11 +598,11 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         assertTrue("Pre: OS store row must exist with one slot",
                 APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices().isPresent());
 
-        Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
         try {
             contentletIndexAPI().delete(IndexTag.OS.tag(logicalA));
         } finally {
-            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
         }
 
         assertTrue("OS store row must be removed once its last slot was deleted (no dangling pointer)",

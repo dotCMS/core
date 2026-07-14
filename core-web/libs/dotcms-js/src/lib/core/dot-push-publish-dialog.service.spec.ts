@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
+import { createServiceFactory, SpectatorService } from '@openng/spectator';
 
 import { DotPushPublishDialogService } from './dot-push-publish-dialog.service';
 

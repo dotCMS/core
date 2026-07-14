@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { signal, WritableSignal } from '@angular/core';

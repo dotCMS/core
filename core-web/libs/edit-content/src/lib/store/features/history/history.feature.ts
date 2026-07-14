@@ -46,6 +46,18 @@ export const DEFAULT_VERSIONS_PER_PAGE = 40;
 export const DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE = 40;
 
 /**
+ * Version-map key of the system default locale, used as compare fallback
+ * before the current locale is loaded.
+ */
+export const DEFAULT_LOCALE_ISO_KEY = 'en-us';
+
+/**
+ * Index of the History tab in the sidebar tab list. A compare session only
+ * makes sense while this tab is active — leaving it exits compare view.
+ */
+export const HISTORY_SIDEBAR_TAB_INDEX = 1;
+
+/**
  * Feature store for managing content versions state
  */
 export function withHistory() {
@@ -53,10 +65,25 @@ export function withHistory() {
         { state: type<EditContentState>() },
         withComputed((store) => ({
             compareData: computed(() => {
+                // Derive the version-map key from the currently selected locale so the
+                // "current" side of the diff reflects the active locale, not the default one.
+                // Matches backend Language.getIsoCode(): lowercase `languageCode-countryCode`
+                // (or just `languageCode` when there is no country code).
+                const compareContentlet = store.compareContentlet();
+                const locale = store.currentLocale();
+                const language = locale
+                    ? (
+                          locale.isoCode ||
+                          (locale.countryCode
+                              ? `${locale.languageCode}-${locale.countryCode}`
+                              : locale.languageCode)
+                      ).toLowerCase()
+                    : DEFAULT_LOCALE_ISO_KEY;
+
                 return {
-                    inode: store.compareContentlet()?.inode,
-                    identifier: store.compareContentlet()?.identifier,
-                    language: 'en-us'
+                    inode: compareContentlet?.inode,
+                    identifier: compareContentlet?.identifier,
+                    language
                 };
             })
         })),
@@ -202,6 +229,7 @@ export function withHistory() {
                  */
                 const loadVersionContent = rxMethod<string>(
                     pipe(
+                        tap((inode) => patchState(store, { loadingVersionInode: inode })),
                         switchMap((inode) =>
                             dotContentletService.getContentletByInode(inode).pipe(
                                 tapResponse({
@@ -220,11 +248,13 @@ export function withHistory() {
                                             contentlet: versionContent,
                                             compareContentlet: null,
                                             isViewingHistoricalVersion: true,
-                                            historicalVersionInode: inode
+                                            historicalVersionInode: inode,
+                                            loadingVersionInode: null
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         // Handle load errors - show error toast and maintain current version
+                                        patchState(store, { loadingVersionInode: null });
                                         errorManager.handle(error);
                                         messageService.add({
                                             severity: 'error',
@@ -274,6 +304,7 @@ export function withHistory() {
 
                 const loadCompareVersionContent = rxMethod<string>(
                     pipe(
+                        tap((inode) => patchState(store, { loadingVersionInode: inode })),
                         switchMap((inode) =>
                             dotContentletService.getContentletByInode(inode).pipe(
                                 tapResponse({
@@ -290,11 +321,13 @@ export function withHistory() {
                                                 ? store.originalContentlet()
                                                 : currentContentlet,
                                             isViewingHistoricalVersion: false,
-                                            historicalVersionInode: inode
+                                            historicalVersionInode: inode,
+                                            loadingVersionInode: null
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         // Handle load errors - show error toast and maintain current version
+                                        patchState(store, { loadingVersionInode: null });
                                         errorManager.handle(error);
                                         messageService.add({
                                             severity: 'error',
@@ -635,9 +668,18 @@ export function withHistory() {
                      */
                     handleHistoryAction: (action: DotHistoryTimelineItemAction) => {
                         switch (action.type) {
-                            case DotHistoryTimelineItemActionType.VIEW:
-                                // Determine action based on item type and current store state
-                                if (action.item.working) {
+                            case DotHistoryTimelineItemActionType.VIEW: {
+                                const isCompareView = store.uiState().view === 'compare';
+
+                                if (isCompareView) {
+                                    if (action.item.working) {
+                                        // Clicking the current version while comparing exits compare
+                                        exitCompareView();
+                                    } else {
+                                        // Keep the compare layout and diff against the clicked version
+                                        loadCompareVersionContent(action.item.inode);
+                                    }
+                                } else if (action.item.working) {
                                     // If clicking on working version, exit historical view
                                     exitHistoricalView();
                                 } else {
@@ -645,6 +687,7 @@ export function withHistory() {
                                     loadVersionContent(action.item.inode);
                                 }
                                 break;
+                            }
                             case DotHistoryTimelineItemActionType.PREVIEW:
                                 // TODO: Implement preview functionality
 
@@ -715,29 +758,83 @@ export function withHistory() {
         withHooks({
             onInit(store) {
                 /**
-                 * Effect that automatically loads versions and push publish history when contentlet changes
-                 * This ensures both datasets are refreshed when switching between different content
+                 * Effect that reloads the history datasets when the contentlet changes,
+                 * scoped to what each dataset actually depends on:
+                 * - Versions are per identifier + language, so viewing another version
+                 *   (same content, same locale) does not refetch them.
+                 * - Push publish history is per identifier only, so it never reloads on
+                 *   version or locale switches.
+                 * Reloads never clear the current items first: the previous list stays
+                 * visible while loading (page 1 replaces it on response), so the sidebar
+                 * doesn't collapse into skeletons.
                  */
+                let loadedVersionsKey: string | null = null;
+                let loadedPushPublishIdentifier: string | null = null;
+
                 effect(() => {
                     const contentlet = store.contentlet();
 
                     untracked(() => {
                         // Only load data if we have a contentlet with an identifier
-                        if (contentlet?.identifier) {
-                            // Clear existing data to avoid showing stale data during content switches
-                            store.clearVersions();
-                            store.clearPushPublishHistory();
+                        if (!contentlet?.identifier) {
+                            return;
+                        }
 
-                            // Load fresh data for the current contentlet
+                        const versionsKey = `${contentlet.identifier}:${contentlet.languageId}`;
+                        if (versionsKey !== loadedVersionsKey) {
+                            const isInitialLoad = loadedVersionsKey === null;
+                            loadedVersionsKey = versionsKey;
+
+                            if (!isInitialLoad) {
+                                // The content identity (locale or identifier) changed under an
+                                // active compare/historical session — that state belongs to the
+                                // previous context, so discard it. Otherwise a stale
+                                // originalContentlet could later restore the previous locale's
+                                // content when exiting compare or historical view.
+                                patchState(store, {
+                                    compareContentlet: null,
+                                    historicalVersionInode: null,
+                                    originalContentlet: null,
+                                    isViewingHistoricalVersion: false
+                                });
+                            }
+
                             store.loadVersions({
                                 identifier: contentlet.identifier,
                                 page: 1
                             });
+                        }
 
+                        if (contentlet.identifier !== loadedPushPublishIdentifier) {
+                            loadedPushPublishIdentifier = contentlet.identifier;
                             store.loadPushPublishHistory({
                                 identifier: contentlet.identifier,
                                 page: 1
                             });
+                        }
+                    });
+                });
+
+                /**
+                 * Effect that exits compare view when the user leaves the History
+                 * sidebar tab — a compare session belongs to that tab's context.
+                 */
+                let previousSidebarTab: number | null = null;
+
+                effect(() => {
+                    const activeSidebarTab = store.uiState().activeSidebarTab;
+
+                    untracked(() => {
+                        const tabChanged =
+                            previousSidebarTab !== null && activeSidebarTab !== previousSidebarTab;
+                        previousSidebarTab = activeSidebarTab;
+
+                        if (
+                            tabChanged &&
+                            activeSidebarTab !== HISTORY_SIDEBAR_TAB_INDEX &&
+                            store.uiState().view === 'compare'
+                        ) {
+                            store.exitCompareView();
                         }
                     });
                 });
