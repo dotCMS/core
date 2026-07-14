@@ -13,7 +13,10 @@ export default defineConfig(() => {
 
     return {
         root: __dirname,
-        plugins: [tsconfigPaths()],
+        // `root` points to the core-web workspace root so tsconfig path aliases
+        // (e.g. @dotcms/dotcms-models, @dotcms/ui) resolve consistently with the
+        // other SDK vite configs, even though today's bundle graph doesn't need it.
+        plugins: [tsconfigPaths({ root: resolve(__dirname, '../../') })],
         build: {
             // Explicitly set outDir to prevent Vite from resolving paths incorrectly
             // This is critical for reproducible builds, especially when dist folders

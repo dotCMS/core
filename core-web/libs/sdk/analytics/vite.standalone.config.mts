@@ -1,24 +1,16 @@
 /// <reference types='vitest' />
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { defineConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 import { resolve } from 'path';
-
-// These options were migrated by @nx/vite:convert-to-inferred from the project.json file.
-const configValues = { default: {} };
-
-// Determine the correct configValue to use based on the configuration
-const nxConfiguration = process.env.NX_TASK_TARGET_CONFIGURATION ?? 'default';
-
-const options = {
-    ...configValues.default,
-    ...(configValues[nxConfiguration] ?? {})
-};
 
 export default defineConfig({
     root: __dirname,
     cacheDir: '../../../node_modules/.vite/libs/sdk/analytics',
-    plugins: [nxViteTsPaths()],
+    // `root` points to the core-web workspace root so tsconfig path aliases
+    // (e.g. @dotcms/types) resolve in bundled sibling sources like @dotcms/uve,
+    // which are compiled from source into this build.
+    plugins: [tsconfigPaths({ root: resolve(__dirname, '../../../') })],
     build: {
         // Explicitly resolve outDir to prevent output from going to external dist folders
         // This ensures reproducible builds regardless of current working directory
