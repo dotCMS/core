@@ -1,0 +1,363 @@
+package com.dotcms.auth.providers.oauth;
+
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
+import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Strongly-typed configuration read from the {@code dotAuth} App secrets.
+ * <p>
+ * Falls back to the {@code SYSTEM_HOST} secrets if the current site has none —
+ * standard behavior for App-based integrations in dotCMS.
+ */
+public final class OAuthAppConfig implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    // Secret keys — previously mirrored dotOAuth.yml params; since phase 2 they are
+    // edited by the dotAuth portlet, not a YAML descriptor.
+    public static final String KEY_ENABLED             = "enabled";
+    public static final String KEY_PROVIDER_TYPE       = "providerType";
+    public static final String KEY_ISSUER_URL          = "issuerUrl";
+    public static final String KEY_CLIENT_ID           = "clientId";
+    public static final String KEY_CLIENT_SECRET       = "clientSecret";
+    public static final String KEY_SCOPES              = "scopes";
+    public static final String KEY_AUTHORIZATION_URL   = "authorizationUrl";
+    public static final String KEY_TOKEN_URL           = "tokenUrl";
+    public static final String KEY_USERINFO_URL        = "userinfoUrl";
+    public static final String KEY_REVOCATION_URL      = "revocationUrl";
+    public static final String KEY_LOGOUT_URL          = "logoutUrl";
+    public static final String KEY_GROUPS_CLAIM        = "groupsClaim";
+    public static final String KEY_GROUPS_URL          = "groupsUrl";
+    public static final String KEY_EMAIL_CLAIM         = "emailClaim";
+    public static final String KEY_FIRST_NAME_CLAIM    = "firstNameClaim";
+    public static final String KEY_LAST_NAME_CLAIM     = "lastNameClaim";
+    public static final String KEY_GROUP_MAPPINGS      = "groupMappings";
+    public static final String KEY_ENABLE_BACKEND      = "enableBackend";
+    public static final String KEY_ENABLE_FRONTEND     = "enableFrontend";
+    public static final String KEY_EXTRA_ROLES         = "extraRoles";
+    public static final String KEY_BUILD_ROLES_STRATEGY = "buildRolesStrategy";
+    public static final String KEY_CALLBACK_URL        = "callbackUrl";
+    public static final String KEY_HASH_USERID         = "hashUserId";
+    public static final String KEY_AUTO_PROVISION      = "autoProvision";
+
+
+    public final boolean  enabled;
+    public final boolean  enableBackend;
+    public final boolean  enableFrontend;
+    public final boolean  hashUserId;
+    public final boolean  autoProvision;
+    public final String   providerType;
+    public final String   issuerUrl;
+    public final String   clientId;
+    public final char[]   clientSecret;
+    public final String   scopes;
+    public final String   authorizationUrl;
+    public final String   tokenUrl;
+    public final String   userinfoUrl;
+    public final String   revocationUrl;
+    public final String   logoutUrl;
+    public final String   groupsClaim;
+    public final String   groupsUrl;
+    public final String   emailClaim;
+    public final String   firstNameClaim;
+    public final String   lastNameClaim;
+    public final String   groupMappingsJson;
+    public final String[] extraRoles;
+    public final String   buildRolesStrategy;
+    public final String   callbackUrl;
+
+    // Headless session-ref config (only populated on exchange path)
+    public final int      sessionRefTtlMinutes;
+    public final boolean  clampToIdpExp;
+    public final String   allowedOriginsJson;
+    public final String   trustedIdpsJson;
+
+    private OAuthAppConfig(final Map<String, Secret> secrets) {
+        this.enabled          = bool(secrets, KEY_ENABLED,          false);
+        this.enableBackend    = bool(secrets, KEY_ENABLE_BACKEND,   true);
+        this.enableFrontend   = bool(secrets, KEY_ENABLE_FRONTEND,  false);
+        // Default ON. Hashing the namespaced subject keeps user IDs free of ':' (which is
+        // overloaded as a separator across the cache/permission layers) and bounds them to
+        // dotcms.user.id.maxlength. Mirrors SAMLHelper's hash.userid default behavior.
+        this.hashUserId       = bool(secrets, KEY_HASH_USERID,      true);
+        this.autoProvision    = bool(secrets, KEY_AUTO_PROVISION,   true);
+        this.providerType     = str (secrets, KEY_PROVIDER_TYPE,    OAuthConstants.PROVIDER_TYPE_OIDC);
+        this.issuerUrl        = validateUrl(str(secrets, KEY_ISSUER_URL,        null), KEY_ISSUER_URL);
+        this.clientId         = str (secrets, KEY_CLIENT_ID,        null);
+        this.clientSecret     = chars(secrets, KEY_CLIENT_SECRET);
+        this.scopes           = str (secrets, KEY_SCOPES,           "openid email profile");
+        this.authorizationUrl = validateUrl(str(secrets, KEY_AUTHORIZATION_URL, null), KEY_AUTHORIZATION_URL);
+        this.tokenUrl         = validateUrl(str(secrets, KEY_TOKEN_URL,         null), KEY_TOKEN_URL);
+        this.userinfoUrl      = validateUrl(str(secrets, KEY_USERINFO_URL,      null), KEY_USERINFO_URL);
+        this.revocationUrl    = validateUrl(str(secrets, KEY_REVOCATION_URL,    null), KEY_REVOCATION_URL);
+        this.logoutUrl        = validateUrl(str(secrets, KEY_LOGOUT_URL,        null), KEY_LOGOUT_URL);
+        this.groupsClaim      = str (secrets, KEY_GROUPS_CLAIM,     null);
+        this.groupsUrl        = validateUrl(str(secrets, KEY_GROUPS_URL,        null), KEY_GROUPS_URL);
+        this.emailClaim       = str (secrets, KEY_EMAIL_CLAIM,     null);
+        this.firstNameClaim   = str (secrets, KEY_FIRST_NAME_CLAIM, null);
+        this.lastNameClaim    = str (secrets, KEY_LAST_NAME_CLAIM,  null);
+        this.groupMappingsJson = str(secrets, KEY_GROUP_MAPPINGS,   null);
+        this.extraRoles       = split(str(secrets, KEY_EXTRA_ROLES, null));
+        this.buildRolesStrategy = str(secrets, KEY_BUILD_ROLES_STRATEGY,
+                Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
+        this.callbackUrl      = validateUrl(str(secrets, KEY_CALLBACK_URL,      null), KEY_CALLBACK_URL);
+        this.sessionRefTtlMinutes = 0;
+        this.clampToIdpExp        = false;
+        this.allowedOriginsJson   = "[]";
+        this.trustedIdpsJson      = "[]";
+    }
+
+    /**
+     * Headless exchange constructor — reads exclusively from the {@code dotauth-headless}
+     * app key with clean key names (no {@code exchange} prefix, no fallback to SSO keys).
+     */
+    private OAuthAppConfig(final Map<String, Secret> headlessSecrets, final boolean exchange) {
+        this.enabled          = bool(headlessSecrets, "enabled", false);
+        this.enableBackend    = false;
+        this.enableFrontend   = true;
+        this.hashUserId       = bool(headlessSecrets, "hashUserId", true);
+        this.autoProvision    = bool(headlessSecrets, "autoProvision", true);
+        this.providerType     = str (headlessSecrets, "providerType", OAuthConstants.PROVIDER_TYPE_OIDC);
+        this.issuerUrl        = validateUrl(str(headlessSecrets, "issuerUrl", null), "issuerUrl");
+        this.clientId         = str (headlessSecrets, "clientId", null);
+        // Headless exchange is a public-client OIDC flow — no client secret.
+        this.clientSecret     = new char[0];
+        this.scopes           = str (headlessSecrets, "scopes", "openid email profile");
+        this.authorizationUrl = validateUrl(str(headlessSecrets, "authorizationUrl", null), "authorizationUrl");
+        this.tokenUrl         = validateUrl(str(headlessSecrets, "tokenUrl", null), "tokenUrl");
+        this.userinfoUrl      = validateUrl(str(headlessSecrets, "userinfoUrl", null), "userinfoUrl");
+        this.revocationUrl    = validateUrl(str(headlessSecrets, "revocationUrl", null), "revocationUrl");
+        this.logoutUrl        = validateUrl(str(headlessSecrets, "logoutUrl", null), "logoutUrl");
+        this.groupsClaim      = str (headlessSecrets, "groupsClaim", null);
+        this.groupsUrl        = validateUrl(str(headlessSecrets, "groupsUrl", null), "groupsUrl");
+        this.emailClaim       = str (headlessSecrets, "emailClaim", null);
+        this.firstNameClaim   = str (headlessSecrets, "firstNameClaim", null);
+        this.lastNameClaim    = str (headlessSecrets, "lastNameClaim", null);
+        this.groupMappingsJson = str(headlessSecrets, "groupMappings", null);
+        this.extraRoles       = split(str(headlessSecrets, "extraRoles", null));
+        this.buildRolesStrategy = str(headlessSecrets, "buildRolesStrategy",
+                Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
+        this.callbackUrl      = validateUrl(str(headlessSecrets, "callbackUrl", null), "callbackUrl");
+
+        this.sessionRefTtlMinutes = Math.max(0, intVal(str(headlessSecrets, "sessionRefTtlMinutes", "60")));
+        this.clampToIdpExp        = bool(headlessSecrets, "clampToIdpExp", true);
+        this.allowedOriginsJson   = str(headlessSecrets, "allowedOrigins", "[]");
+        this.trustedIdpsJson      = str(headlessSecrets, "trustedIdps", "[]");
+    }
+
+    /**
+     * Look up the OAuth config for the request's host, falling back to SYSTEM_HOST.
+     * Returns empty when no App secrets are set or when the app is not enabled.
+     */
+    public static Optional<OAuthAppConfig> config(final HttpServletRequest request) {
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        return loadSecrets(host).map(OAuthAppConfig::new).filter(c -> c.enabled);
+    }
+
+    /**
+     * System-level lookup for the headless OIDC exchange flow. Reads exclusively from the
+     * {@code dotauth-headless} app key on SYSTEM_HOST — no per-site config, no fallback to SSO.
+     */
+    public static Optional<OAuthAppConfig> exchangeConfig(final HttpServletRequest request) {
+        return loadHeadlessSecrets()
+                .map(secrets -> new OAuthAppConfig(secrets, true))
+                .filter(c -> c.enabled);
+    }
+
+    /** Site-scoped lookup (used by the ViewTool). */
+    public static Optional<OAuthAppConfig> config(final Host host) {
+        return loadSecrets(host).map(OAuthAppConfig::new).filter(c -> c.enabled);
+    }
+
+    private static Optional<Map<String, Secret>> loadSecrets(final Host host) {
+        if (host == null) {
+            return Optional.empty();
+        }
+        final Optional<AppSecrets> appSecrets = Try.of(() ->
+                APILocator.getAppsAPI().getSecrets(OAuthConstants.APP_KEY, true, host, APILocator.systemUser()))
+                .getOrElse(Optional.empty());
+        return appSecrets.map(AppSecrets::getSecrets);
+    }
+
+    private static Optional<Map<String, Secret>> loadHeadlessSecrets() {
+        final Optional<AppSecrets> appSecrets = Try.of(() ->
+                APILocator.getAppsAPI().getSecrets(
+                        com.dotcms.auth.dotAuth.DotAuthConstants.HEADLESS_APP_KEY,
+                        false, APILocator.systemHost(), APILocator.systemUser()))
+                .getOrElse(Optional.empty());
+        return appSecrets.map(AppSecrets::getSecrets);
+    }
+
+    private static String str(final Map<String, Secret> s, final String key, final String def) {
+        final Secret v = s.get(key);
+        if (v == null) {
+            return def;
+        }
+        final String val = Try.of(v::getString).getOrNull();
+        return UtilMethods.isSet(val) ? val.trim() : def;
+    }
+
+    private static boolean bool(final Map<String, Secret> s, final String key, final boolean def) {
+        final Secret v = s.get(key);
+        if (v == null) {
+            return def;
+        }
+        return Try.of(v::getBoolean).getOrElse(def);
+    }
+
+    private static char[] chars(final Map<String, Secret> s, final String key) {
+        final Secret v = s.get(key);
+        if (v == null) {
+            return new char[0];
+        }
+        return Try.of(v::getValue).getOrElse(new char[0]);
+    }
+
+    private static String[] split(final String csv) {
+        return UtilMethods.isSet(csv)
+                ? Arrays.stream(csv.split(",")).map(String::trim).filter(UtilMethods::isSet).toArray(String[]::new)
+                : new String[0];
+    }
+
+    private static int intVal(final String s) {
+        if (s == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (final NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    public boolean isOidc() {
+        return OAuthConstants.PROVIDER_TYPE_OIDC.equalsIgnoreCase(providerType);
+    }
+
+    /**
+     * Create a copy of this config with per-IdP overrides for claim mappings,
+     * role behavior, and provisioning settings. Used by the headless exchange
+     * flow to honor trusted IdP configuration. Callers should normalize
+     * non-String values (e.g. groupMappings as a parsed List) to Strings
+     * before calling this method.
+     */
+    public OAuthAppConfig withTrustedIdpOverrides(final Map<String, Object> idp) {
+        return new OAuthAppConfig(this, idp);
+    }
+
+    private OAuthAppConfig(final OAuthAppConfig base, final Map<String, Object> idpOverrides) {
+        this.enabled            = base.enabled;
+        this.enableBackend      = base.enableBackend;
+        this.enableFrontend     = base.enableFrontend;
+        this.hashUserId         = base.hashUserId;
+        this.providerType       = base.providerType;
+        this.issuerUrl          = base.issuerUrl;
+        this.clientId           = base.clientId;
+        this.clientSecret       = base.clientSecret;
+        this.scopes             = base.scopes;
+        this.authorizationUrl   = base.authorizationUrl;
+        this.tokenUrl           = base.tokenUrl;
+        this.userinfoUrl        = base.userinfoUrl;
+        this.revocationUrl      = base.revocationUrl;
+        this.logoutUrl          = base.logoutUrl;
+        this.groupsClaim        = base.groupsClaim;
+        this.groupsUrl          = base.groupsUrl;
+        this.callbackUrl        = base.callbackUrl;
+        this.sessionRefTtlMinutes = base.sessionRefTtlMinutes;
+        this.clampToIdpExp      = base.clampToIdpExp;
+        this.allowedOriginsJson = base.allowedOriginsJson;
+        this.trustedIdpsJson    = base.trustedIdpsJson;
+
+        this.emailClaim         = idpStr(idpOverrides, "claimEmail",     base.emailClaim);
+        this.firstNameClaim     = idpStr(idpOverrides, "claimFirstName", base.firstNameClaim);
+        this.lastNameClaim      = idpStr(idpOverrides, "claimLastName",  base.lastNameClaim);
+        this.groupMappingsJson  = idpStr(idpOverrides, "groupMappings",  base.groupMappingsJson);
+        this.buildRolesStrategy = idpStr(idpOverrides, "roleBehavior",   base.buildRolesStrategy);
+        this.autoProvision      = idpBool(idpOverrides, "autoProvision", base.autoProvision);
+        final String defaultRolesStr = idpStr(idpOverrides, "defaultRoles", null);
+        this.extraRoles         = defaultRolesStr != null ? split(defaultRolesStr) : base.extraRoles;
+    }
+
+    private static String idpStr(final Map<String, Object> idp, final String key, final String base) {
+        final Object v = idp.get(key);
+        if (v == null) return base;
+        final String s = String.valueOf(v);
+        return UtilMethods.isSet(s) ? s : base;
+    }
+
+    private static boolean idpBool(final Map<String, Object> idp, final String key, final boolean base) {
+        final Object v = idp.get(key);
+        if (v == null) return base;
+        if (v instanceof Boolean) return (Boolean) v;
+        return Boolean.parseBoolean(String.valueOf(v));
+    }
+
+    // ---------- URL validation (SSRF / TLS guards) ----------
+
+    private static final Set<String> ALLOWED_SCHEMES = Set.of("https", "http");
+
+    /**
+     * Validate a configured IdP URL. Rejects non-HTTPS (unless the dev override
+     * {@code OAUTH_ALLOW_INSECURE_URLS} is set), non-HTTP(S) schemes, and any host
+     * that resolves to a loopback, link-local, site-local, or any-local address —
+     * the standard SSRF defense against IMDS (169.254.169.254), localhost, and
+     * RFC1918 ranges. Returns null on rejection; callers treat a null URL as
+     * "not configured" and fall through cleanly.
+     */
+    private static String validateUrl(final String url, final String fieldName) {
+        if (!UtilMethods.isSet(url)) {
+            return null;
+        }
+        final URI uri;
+        try {
+            uri = new URI(url);
+        } catch (final URISyntaxException e) {
+            rejectUrl(fieldName, "not a valid URI (" + e.getMessage() + ")");
+            return null;
+        }
+        final String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+        if (!ALLOWED_SCHEMES.contains(scheme)) {
+            rejectUrl(fieldName, "scheme '" + scheme + "' not allowed");
+            return null;
+        }
+        final boolean allowInsecure = Config.getBooleanProperty("OAUTH_ALLOW_INSECURE_URLS", false);
+        if ("http".equals(scheme) && !allowInsecure) {
+            rejectUrl(fieldName, "http:// is not allowed unless OAUTH_ALLOW_INSECURE_URLS=true");
+            return null;
+        }
+        final String host = uri.getHost();
+        if (!UtilMethods.isSet(host)) {
+            rejectUrl(fieldName, "URI is missing a host");
+            return null;
+        }
+        if (!allowInsecure && OAuthSsrfGuard.isInternalHost(host)) {
+            rejectUrl(fieldName,
+                    "host '" + host + "' resolves to an internal/private address (SSRF guard)");
+            return null;
+        }
+        return url;
+    }
+
+    private static void rejectUrl(final String fieldName, final String reason) {
+        final String msg = "OAuth " + fieldName + " rejected: " + reason;
+        Logger.warn(OAuthAppConfig.class, msg);
+        SecurityLogger.logInfo(OAuthAppConfig.class, msg);
+    }
+
+}

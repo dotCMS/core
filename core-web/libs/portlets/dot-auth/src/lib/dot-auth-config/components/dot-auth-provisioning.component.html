@@ -1,0 +1,140 @@
+<div class="provisioning-layout">
+    <div class="field-grid provisioning-field-grid">
+        <div class="field">
+            <label>
+                {{ 'dotauth.field.autoProvision' | dm }}
+                <i
+                    class="label-tip pi pi-question-circle"
+                    [pTooltip]="'dotauth.tooltip.autoProvision' | dm"
+                    tooltipPosition="top"></i>
+            </label>
+            <div class="toggle-row flex items-center gap-2.5">
+                <p-toggleswitch
+                    [ngModel]="config().autoProvision"
+                    (ngModelChange)="onChange('autoProvision', $event)" />
+            </div>
+        </div>
+        @if (showSync()) {
+            <div class="field">
+                <label>
+                    {{ syncLabel() }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        [pTooltip]="'dotauth.tooltip.syncOnLogin' | dm"
+                        tooltipPosition="top"></i>
+                </label>
+                <div class="toggle-row flex items-center gap-2.5">
+                    <p-toggleswitch
+                        [ngModel]="config()[syncKey()]"
+                        (ngModelChange)="onChange(syncKey(), $event)" />
+                </div>
+            </div>
+        }
+        <div class="field full">
+            <label>
+                {{ 'dotauth.field.defaultRoles' | dm }}
+                <i
+                    class="label-tip pi pi-question-circle"
+                    [pTooltip]="'dotauth.tooltip.defaultRoles' | dm"
+                    tooltipPosition="top"></i>
+            </label>
+            <input
+                pInputText
+                [ngModel]="defaultRolesText()"
+                (ngModelChange)="onDefaultRolesChange($event)" />
+        </div>
+    </div>
+
+    <!-- Role behavior -->
+    <div class="provisioning-group">
+        <div class="provisioning-group-header">
+            <div class="provisioning-group-title">{{ 'dotauth.field.roleBehavior' | dm }}</div>
+            <div class="provisioning-group-description">
+                {{ 'dotauth.field.roleBehavior.detail' | dm }}
+            </div>
+        </div>
+        <div class="role-behavior-grid">
+            @for (opt of roleBehaviorOptions; track opt.value) {
+                <label
+                    class="role-behavior-card"
+                    [class.selected]="config().roleBehavior === opt.value">
+                    <input
+                        type="radio"
+                        [checked]="config().roleBehavior === opt.value"
+                        (change)="onChange('roleBehavior', opt.value)" />
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[0.8125rem] font-semibold">{{ opt.label | dm }}</span>
+                        <span class="text-xs leading-snug text-(--text-color-secondary)">
+                            {{ opt.description | dm }}
+                        </span>
+                    </div>
+                </label>
+            }
+        </div>
+    </div>
+
+    <!-- Group mappings -->
+    <div class="provisioning-group">
+        <div class="provisioning-group-toolbar">
+            <div class="provisioning-group-header">
+                <div class="provisioning-group-title">{{ 'dotauth.field.groupMappings' | dm }}</div>
+                <div class="provisioning-group-description">
+                    {{ 'dotauth.field.groupMappings.detail' | dm }}
+                </div>
+            </div>
+            <p-button
+                size="small"
+                [outlined]="true"
+                icon="pi pi-plus"
+                [label]="'dotauth.action.add-mapping' | dm"
+                (onClick)="onAddMapping()" />
+        </div>
+
+        @if (config().groupMappings.length === 0) {
+            <div class="empty-placeholder">{{ 'dotauth.empty.mappings' | dm }}</div>
+        } @else {
+            <div class="mapping-table-wrap">
+                <table class="mapping-table">
+                    <thead>
+                        <tr>
+                            <th>{{ 'dotauth.field.idpGroup' | dm }}</th>
+                            <th>{{ 'dotauth.field.dotcmsRole' | dm }}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (mapping of config().groupMappings; track $index; let i = $index) {
+                            <tr>
+                                <td>
+                                    <input
+                                        pInputText
+                                        class="mapping-input"
+                                        [ngModel]="mapping.idpGroup"
+                                        (ngModelChange)="onMappingChange(i, 'idpGroup', $event)"
+                                        placeholder="dotcms-admins" />
+                                </td>
+                                <td>
+                                    <input
+                                        pInputText
+                                        class="mapping-input"
+                                        [ngModel]="mapping.dotcmsRole"
+                                        (ngModelChange)="onMappingChange(i, 'dotcmsRole', $event)"
+                                        placeholder="CMS Administrator" />
+                                </td>
+                                <td class="mapping-action">
+                                    <p-button
+                                        size="small"
+                                        [text]="true"
+                                        severity="danger"
+                                        icon="pi pi-trash"
+                                        [attr.aria-label]="'dotauth.action.delete' | dm"
+                                        (onClick)="onRemoveMapping(i)" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

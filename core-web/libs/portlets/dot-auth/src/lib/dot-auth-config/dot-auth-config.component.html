@@ -1,0 +1,381 @@
+<p-toast />
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '520px' }" />
+
+<div class="config-shell">
+    <!-- Main content column -->
+    <div class="config-content">
+        @if (!store.isSystem()) {
+            @if (!isOverriding()) {
+                <div class="inherit-banner">
+                    <i class="pi pi-info-circle text-sm"></i>
+                    <span>{{ 'dotauth.banner.inheriting' | dm }}</span>
+                    <div class="flex-1"></div>
+                    <p-button
+                        size="small"
+                        [label]="'dotauth.action.override' | dm"
+                        icon="pi pi-pencil"
+                        (onClick)="isOverriding.set(true)" />
+                </div>
+            } @else {
+                <div class="override-banner">
+                    <i class="pi pi-pencil text-sm"></i>
+                    <span>{{ 'dotauth.banner.overriding' | dm }}</span>
+                </div>
+            }
+        }
+
+        <div
+            [class.inherited-locked]="!store.isSystem() && !isOverriding()"
+            [attr.inert]="!store.isSystem() && !isOverriding() ? '' : null">
+            <!-- Track header: SSO -->
+            <div class="track-header">
+                <div class="track-icon">
+                    <i class="pi pi-shield text-base"></i>
+                </div>
+                <div>
+                    <h2 class="m-0 text-[1.0625rem] font-semibold tracking-tight">
+                        {{ 'dotauth.config.sso.title' | dm }}
+                    </h2>
+                    <p
+                        class="m-0 mt-0.5 max-w-[60ch] text-[0.8125rem] text-(--text-color-secondary)">
+                        {{ 'dotauth.config.sso.subtitle' | dm }}
+                    </p>
+                </div>
+                <div class="flex-1"></div>
+                <div class="flex items-center gap-2.5">
+                    <span class="text-[0.8125rem] text-(--text-color-secondary)">
+                        {{ 'dotauth.field.ssoEnabled' | dm }}
+                    </span>
+                    <p-toggleswitch
+                        [ngModel]="store.draft().ssoEnabled"
+                        (ngModelChange)="store.update('ssoEnabled', $event)" />
+                </div>
+            </div>
+
+            <!-- Protocol picker -->
+            <div class="section-card" id="sso-protocol">
+                <div class="section-card-head">
+                    <div>
+                        <h3>
+                            {{ 'dotauth.config.protocol.title' | dm }}
+                        </h3>
+                        <div class="sub">{{ 'dotauth.config.protocol.subtitle' | dm }}</div>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <div class="proto-picker">
+                        <div
+                            class="proto-card"
+                            [class.selected]="store.draft().protocol === 'oidc'"
+                            (click)="switchProtocol('oidc')">
+                            @if (store.draft().protocol !== 'oidc') {
+                                <span class="badge">
+                                    {{ 'dotauth.protocol.recommended' | dm }}
+                                </span>
+                            }
+                            @if (store.draft().protocol === 'oidc') {
+                                <span class="check">
+                                    <i class="pi pi-check text-lg"></i>
+                                </span>
+                            }
+                            <div class="icon">
+                                <i class="pi pi-key text-lg"></i>
+                            </div>
+                            <h4>{{ 'dotauth.protocol.oauth' | dm }}</h4>
+                            <p>{{ 'dotauth.protocol.oauth.description' | dm }}</p>
+                        </div>
+                        <div
+                            class="proto-card"
+                            [class.selected]="store.draft().protocol === 'saml'"
+                            (click)="switchProtocol('saml')">
+                            @if (store.draft().protocol === 'saml') {
+                                <span class="check">
+                                    <i class="pi pi-check text-lg"></i>
+                                </span>
+                            }
+                            <div class="icon">
+                                <i class="pi pi-shield text-lg"></i>
+                            </div>
+                            <h4>{{ 'dotauth.protocol.saml' | dm }}</h4>
+                            <p>{{ 'dotauth.protocol.saml.description' | dm }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status banner -->
+            @if (store.draft().ssoEnabled) {
+                <p-message severity="success" [closable]="false">
+                    <span>
+                        <strong>{{ 'dotauth.status.sso-live' | dm }}</strong>
+                        @if (store.isSystem()) {
+                            {{ 'dotauth.status.sso-live.system' | dm }}
+                        } @else {
+                            {{ 'dotauth.status.sso-live.site' | dm }}
+                        }
+                    </span>
+                </p-message>
+            } @else {
+                <p-message severity="info" [closable]="false">
+                    <span>
+                        <strong>{{ 'dotauth.status.sso-inactive' | dm }}</strong>
+                        {{ 'dotauth.status.sso-inactive.detail' | dm }}
+                    </span>
+                </p-message>
+            }
+
+            <div
+                class="section-group"
+                [class.sso-draft-mode]="
+                    !store.draft().ssoEnabled && store.draft().protocol !== 'none'
+                "
+                [attr.data-draft-label]="'dotauth.draft.label' | dm">
+                <!-- Login behavior (protocol-agnostic) -->
+                @if (store.draft().protocol !== 'none') {
+                    <div class="section-card" id="login-behavior">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    {{ 'dotauth.config.loginBehavior.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.loginBehavior.subtitle' | dm }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="field-grid">
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.enableBackend' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            [pTooltip]="'dotauth.tooltip.enableBackend' | dm"
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="toggle-row flex items-center gap-2.5">
+                                        <p-toggleswitch
+                                            [ngModel]="store.draft().enableBackend"
+                                            (ngModelChange)="
+                                                store.update('enableBackend', $event)
+                                            " />
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.enableFrontend' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            [pTooltip]="'dotauth.tooltip.enableFrontend' | dm"
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="toggle-row flex items-center gap-2.5">
+                                        <p-toggleswitch
+                                            [ngModel]="store.draft().enableFrontend"
+                                            (ngModelChange)="
+                                                store.update('enableFrontend', $event)
+                                            " />
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.hashUserId' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            [pTooltip]="'dotauth.tooltip.hashUserId' | dm"
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="toggle-row flex items-center gap-2.5">
+                                        <p-toggleswitch
+                                            [ngModel]="store.draft().hashUserId"
+                                            (ngModelChange)="store.update('hashUserId', $event)" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (store.draft().protocol === 'oidc') {
+                    <!-- OIDC: connection + claims -->
+                    <dot-auth-oidc-connection
+                        [oidc]="store.draft().oidc"
+                        [callbackUrl]="store.draft().callbackUrl"
+                        [errors]="store.errors()"
+                        (fieldChange)="onOidcChange($event)"
+                        (discover)="onDiscoverOidc()" />
+
+                    <!-- OIDC: provisioning -->
+                    <div class="section-card" id="provisioning">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    {{ 'dotauth.config.provisioning.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.provisioning.subtitle' | dm }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-card-body">
+                            <dot-auth-provisioning
+                                [config]="store.draft().oidc"
+                                [syncLabel]="'dotauth.field.syncOnLogin' | dm"
+                                syncKey="syncOnLogin"
+                                [showSync]="false"
+                                (fieldChange)="onProvisioningChange('oidc', $event)" />
+                        </div>
+                    </div>
+
+                    <!-- OIDC: session & logout -->
+                    <div class="section-card" id="session">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    {{ 'dotauth.config.session.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.session.subtitle' | dm }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="field-grid">
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.logoutUrl' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            [pTooltip]="'dotauth.tooltip.logoutUrl' | dm"
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <input
+                                        pInputText
+                                        [ngModel]="store.draft().oidc.logoutUrl"
+                                        (ngModelChange)="store.update('oidc.logoutUrl', $event)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                } @else if (store.draft().protocol === 'saml') {
+                    <!-- SAML: all sections -->
+                    <dot-auth-saml-config
+                        #samlConfig
+                        [saml]="store.draft().saml"
+                        [errors]="store.errors()"
+                        (fieldChange)="onSamlChange($event)"
+                        (fetchMetadata)="onFetchSamlMetadata($event)" />
+
+                    <!-- SAML: provisioning -->
+                    <div class="section-card" id="provisioning">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    {{ 'dotauth.config.provisioning.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.provisioning.subtitle' | dm }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-card-body">
+                            <dot-auth-provisioning
+                                [config]="store.draft().saml"
+                                [syncLabel]="'dotauth.field.syncOnLogin' | dm"
+                                syncKey="syncOnLogin"
+                                (fieldChange)="onProvisioningChange('saml', $event)" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sticky action bar -->
+<footer class="sticky-actions">
+    <div class="sticky-actions-left">
+        @if (store.ssoDirty()) {
+            <span class="dirty-badge">
+                <i class="pi pi-exclamation-triangle text-xs"></i>
+                {{ 'dotauth.config.unsaved' | dm }}
+            </span>
+        } @else {
+            <span class="text-[0.8125rem] text-(--text-color-secondary)">
+                {{ 'dotauth.config.saved' | dm }}
+            </span>
+        }
+        @if (store.errorCount() > 0) {
+            <span class="error-badge">
+                <i class="pi pi-exclamation-triangle text-xs"></i>
+                {{ store.errorCount() }}
+                {{
+                    store.errorCount() === 1
+                        ? ('dotauth.validation.issue' | dm)
+                        : ('dotauth.validation.issues' | dm)
+                }}
+            </span>
+        }
+    </div>
+    <div class="flex gap-2">
+        <p-button [label]="'dotauth.action.cancel' | dm" [text]="true" (onClick)="back()" />
+        <p-button
+            icon="pi pi-trash"
+            [label]="'dotauth.action.clear-config' | dm"
+            severity="danger"
+            [outlined]="true"
+            (onClick)="showClearDialog.set(true)" />
+        <p-button
+            icon="pi pi-save"
+            [label]="'dotauth.action.save' | dm"
+            [loading]="store.status() === 'saving'"
+            [disabled]="!store.ssoDirty()"
+            (onClick)="save()" />
+    </div>
+</footer>
+
+<!-- Clear configuration confirmation dialog -->
+<p-dialog
+    [header]="'dotauth.confirm.clear.title' | dm"
+    [visible]="showClearDialog()"
+    (visibleChange)="showClearDialog.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [style]="{ width: '480px' }">
+    <div class="flex flex-col gap-3">
+        <p class="m-0 text-[0.875rem] text-(--text-color-secondary)">
+            @if (store.isSystem()) {
+                {{ 'dotauth.confirm.clear.message.system' | dm }}
+            } @else {
+                {{ 'dotauth.confirm.clear.message.site' | dm }}
+            }
+        </p>
+        <div class="field">
+            <label
+                class="text-[0.8125rem]"
+                [innerHTML]="
+                    'dotauth.confirm.clear.instruction' | dm: [clearConfirmPhrase]
+                "></label>
+            <input
+                pInputText
+                [ngModel]="clearConfirmText()"
+                (ngModelChange)="clearConfirmText.set($event)"
+                [placeholder]="clearConfirmPhrase"
+                class="w-full" />
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'dotauth.action.cancel' | dm"
+            [text]="true"
+            (onClick)="showClearDialog.set(false); clearConfirmText.set('')" />
+        <p-button
+            [label]="'dotauth.action.clear-config' | dm"
+            severity="danger"
+            icon="pi pi-trash"
+            [disabled]="clearConfirmText() !== clearConfirmPhrase"
+            (onClick)="clearConfig()" />
+    </ng-template>
+</p-dialog>

@@ -1,0 +1,208 @@
+<!-- Track header -->
+<div class="track-header">
+    <div class="track-icon track-icon--headless">
+        <i class="pi pi-code text-base"></i>
+    </div>
+    <div>
+        <h2 class="m-0 text-[1.0625rem] font-semibold tracking-tight">
+            {{ 'dotauth.config.headless.title' | dm }}
+        </h2>
+        <p class="m-0 mt-0.5 max-w-[60ch] text-[0.8125rem] text-(--text-color-secondary)">
+            {{ 'dotauth.config.headless.subtitle' | dm }}
+        </p>
+    </div>
+</div>
+
+<div class="section-group">
+    <!-- Enable headless -->
+    <div class="section-card" id="headless-overview">
+        <div class="section-card-head">
+            <div>
+                <h3>
+                    {{ 'dotauth.config.headless.enable.title' | dm }}
+                </h3>
+                <div class="sub">{{ 'dotauth.config.headless.enable.subtitle' | dm }}</div>
+            </div>
+            <p-toggleswitch
+                [ngModel]="headless().enabled"
+                (ngModelChange)="onChange('enabled', $event)" />
+        </div>
+        <div class="section-card-body">
+            <div class="headless-summary">
+                <div class="headless-summary-item">
+                    <i class="pi pi-send"></i>
+                    <div>
+                        <span class="headless-summary-title">
+                            {{ 'dotauth.headless.summary.endpoint.title' | dm }}
+                        </span>
+                        <span class="headless-summary-detail mono">
+                            {{ 'dotauth.headless.summary.endpoint.value' | dm }}
+                        </span>
+                    </div>
+                </div>
+                <div class="headless-summary-item">
+                    <i class="pi pi-shield"></i>
+                    <div>
+                        <span class="headless-summary-title">
+                            {{ 'dotauth.headless.summary.trusted.title' | dm }}
+                        </span>
+                        <span class="headless-summary-detail">
+                            {{ 'dotauth.headless.summary.trusted.detail' | dm }}
+                        </span>
+                    </div>
+                </div>
+                <div class="headless-summary-item">
+                    <i class="pi pi-key"></i>
+                    <div>
+                        <span class="headless-summary-title">
+                            {{ 'dotauth.headless.summary.session.title' | dm }}
+                        </span>
+                        <span class="headless-summary-detail">
+                            {{ 'dotauth.headless.summary.session.detail' | dm }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- sessionRef behavior -->
+    <div class="section-card" id="headless-tokens">
+        <div class="section-card-head">
+            <div>
+                <h3>
+                    {{ 'dotauth.config.sessionref.title' | dm }}
+                </h3>
+                <div class="sub">{{ 'dotauth.config.sessionref.subtitle' | dm }}</div>
+            </div>
+        </div>
+        <div class="section-card-body">
+            <div class="field-grid">
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.sessionRefTtl' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.sessionRefTtl' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <p-inputNumber
+                        [ngModel]="headless().sessionRefTtlMinutes"
+                        (ngModelChange)="onChange('sessionRefTtlMinutes', $event)" />
+                </div>
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.clampToIdpExp' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.clampToIdpExp' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <div class="toggle-row flex items-center gap-2.5">
+                        <p-toggleswitch
+                            [ngModel]="headless().clampToIdpExp"
+                            (ngModelChange)="onChange('clampToIdpExp', $event)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trusted IdPs -->
+    <div class="section-card" id="headless-idps">
+        <div class="section-card-head">
+            <div>
+                <h3>
+                    {{ 'dotauth.config.trusted-idps.title' | dm }}
+                </h3>
+                <div class="sub">{{ 'dotauth.config.trusted-idps.subtitle' | dm }}</div>
+            </div>
+            <p-button
+                size="small"
+                icon="pi pi-plus"
+                [label]="'dotauth.action.add-idp' | dm"
+                (onClick)="addIdp.emit()" />
+        </div>
+        <div class="section-card-body pt-0">
+            @if ((headless().trustedIdps || []).length === 0) {
+                <div class="empty-placeholder">{{ 'dotauth.empty.trustedIdps' | dm }}</div>
+            } @else {
+                <div class="flex flex-col gap-2">
+                    @for (idp of headless().trustedIdps; track idp.id; let i = $index) {
+                        <dot-auth-trusted-idp-editor
+                            [idp]="idp"
+                            [index]="i"
+                            [expanded]="expandedIdp() === i"
+                            (fieldChange)="onIdpChange($event)"
+                            (toggle)="toggleIdp(i)"
+                            (remove)="removeIdp.emit(i)"
+                            (discover)="discover.emit(i)" />
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Allowed origins -->
+    <div class="section-card" id="headless-origins">
+        <div class="section-card-head">
+            <div>
+                <h3>
+                    {{ 'dotauth.config.allowed-origins.title' | dm }}
+                </h3>
+                <div class="sub">{{ 'dotauth.config.allowed-origins.subtitle' | dm }}</div>
+            </div>
+            <p-button
+                size="small"
+                icon="pi pi-plus"
+                [label]="'dotauth.action.add-origin' | dm"
+                (onClick)="addOrigin.emit()" />
+        </div>
+        <div class="section-card-body">
+            @if ((headless().allowedOrigins || []).length === 0) {
+                <div class="empty-placeholder">{{ 'dotauth.empty.origins' | dm }}</div>
+            } @else {
+                <div class="flex flex-col gap-2">
+                    @for (origin of headless().allowedOrigins; track $index; let i = $index) {
+                        <div class="flex gap-2">
+                            <input
+                                pInputText
+                                class="flex-1"
+                                [ngModel]="origin"
+                                (ngModelChange)="onOriginChange(i, $event)"
+                                placeholder="https://app.example.com" />
+                            <p-button
+                                size="small"
+                                [text]="true"
+                                severity="danger"
+                                icon="pi pi-trash"
+                                [attr.aria-label]="'dotauth.action.delete' | dm"
+                                (onClick)="removeOrigin.emit(i)" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Emergency controls -->
+    <div class="section-card danger" id="headless-tokens-active">
+        <div class="section-card-head">
+            <div>
+                <h3>
+                    {{ 'dotauth.config.emergency.title' | dm }}
+                </h3>
+                <div class="sub">{{ 'dotauth.config.emergency.subtitle' | dm }}</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <p-button
+                    size="small"
+                    severity="danger"
+                    [outlined]="true"
+                    icon="pi pi-refresh"
+                    [label]="'dotauth.action.revoke-all' | dm"
+                    (onClick)="revoke.emit()" />
+            </div>
+        </div>
+    </div>
+</div>

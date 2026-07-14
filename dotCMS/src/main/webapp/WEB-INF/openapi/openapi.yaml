@@ -8,6 +8,9 @@ servers:
 tags:
 - description: AI-powered content generation and analysis endpoints
   name: AI
+- description: "OAuth/OIDC and SAML authentication: per-site configuration (SYSTEM_HOST\
+    \ is the global default) and headless OIDC token exchange"
+  name: dotAuth
 - description: JavaScript execution and server-side scripting
   name: JavaScript
 - description: Content bundle management and deployment
@@ -9431,6 +9434,380 @@ paths:
       summary: Update field variable by field variable name
       tags:
       - Content Type Field
+  /v1/dotauth/discover/oidc:
+    post:
+      description: "Thin authenticated proxy used by the dotAuth portlet to populate\
+        \ issuer, endpoint, JWKS, and supported algorithm fields from a .well-known/openid-configuration\
+        \ URL."
+      operationId: discoverDotAuthOidc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Parsed OIDC discovery fields: issuer, endpoints, JWKS\
+                  \ URI, and signing algorithms"
+          description: Discovery document parsed successfully
+        "400":
+          description: Missing or invalid discovery URL
+        "401":
+          description: Authentication required
+        "500":
+          description: Internal server error
+      summary: Fetch and parse an OIDC discovery document
+      tags:
+      - dotAuth
+  /v1/dotauth/export:
+    post:
+      description: "Exports OAuth/OIDC, SAML, and headless dotAuth AppSecrets into\
+        \ one encrypted Apps export file."
+      operationId: exportDotAuthAppSecrets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Encrypted export file
+        "400":
+          description: Invalid password or no secrets configured
+        "401":
+          description: Authentication required
+        "403":
+          description: Admin access required
+        "500":
+          description: Internal server error
+      summary: Export all dotAuth AppSecrets
+      tags:
+      - dotAuth
+  /v1/dotauth/fetch/saml-metadata:
+    post:
+      description: Authenticated proxy that fetches SAML metadata XML from an IdP's
+        metadata endpoint URL. Returns the raw XML as a string so the admin can review
+        it before saving.
+      operationId: fetchSamlMetadata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Object with a single 'xml' field containing the raw metadata
+                  XML
+          description: Metadata fetched successfully
+        "400":
+          description: Missing or invalid metadata URL
+        "401":
+          description: Authentication required
+        "500":
+          description: Internal server error
+      summary: Fetch SAML IdP metadata XML from a URL
+      tags:
+      - dotAuth
+  /v1/dotauth/headless:
+    delete:
+      description: Deletes the headless config. SSO config is not affected.
+      operationId: clearDotAuthHeadlessConfig
+      responses:
+        "204":
+          description: Headless config cleared
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+      summary: Clear the system-level headless token-exchange configuration
+      tags:
+      - dotAuth
+    put:
+      description: Writes headless config to SYSTEM_HOST. Headless config is system-wide
+        (not per-site). SSO saves/deletes never affect it.
+      operationId: saveDotAuthHeadlessConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          description: Headless config saved
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+      summary: Save the system-level headless token-exchange configuration
+      tags:
+      - dotAuth
+  /v1/dotauth/import:
+    post:
+      description: "Imports an encrypted Apps export file containing only OAuth/OIDC,\
+        \ SAML, and headless dotAuth AppSecrets."
+      operationId: importDotAuthAppSecrets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FormDataMultiPart"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Import result with count of imported secrets
+          description: Import succeeded
+        "400":
+          description: "Invalid password, empty file, or non-dotAuth secrets in file"
+        "401":
+          description: Authentication required
+        "403":
+          description: Admin access required
+        "500":
+          description: Internal server error
+      summary: Import dotAuth AppSecrets
+      tags:
+      - dotAuth
+  /v1/dotauth/oauth/exchange:
+    options:
+      operationId: exchangePreflight
+      responses:
+        default:
+          content:
+            '*/*': {}
+          description: default response
+      tags:
+      - dotAuth
+    post:
+      description: "Validates the caller-supplied id_token against the configured\
+        \ OIDC provider's JWKS (signature, iss, aud == our client_id, exp, nonce),\
+        \ resolves or JIT-provisions the matching dotCMS user, and returns an opaque\
+        \ session-ref bound to that user."
+      operationId: exchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthExchangeForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityOAuthExchangeView"
+          description: Token exchange succeeded
+        "400":
+          description: Malformed payload or non-OIDC provider configured
+        "401":
+          description: "id_token failed validation (signature, iss, aud, exp, or nonce)"
+        "403":
+          description: Resolved dotCMS user exists but is not active
+        "404":
+          description: Exchange endpoint not found
+        "503":
+          description: OAuth is not configured for this site
+      summary: Exchange an OIDC id_token for a dotAuth session-ref
+      tags:
+      - dotAuth
+  /v1/dotauth/oauth/session:
+    delete:
+      description: "Removes the session referenced by the Authorization: Bearer header\
+        \ from the in-memory session cache. Always returns 204 — unknown or missing\
+        \ refs are silently ignored so this is safe to call unconditionally on sign-out."
+      operationId: logout
+      responses:
+        "204":
+          description: Session invalidated (or was unknown)
+      summary: Invalidate the caller's dotAuth session-ref
+      tags:
+      - dotAuth
+  /v1/dotauth/saml/metadata/{hostId}:
+    get:
+      description: "Generates SAML Service Provider metadata XML for the given site.\
+        \ For inherited configs the certificate comes from the SYSTEM_HOST row, but\
+        \ the entity ID and ACS URL use the target site's hostname so the IdP can\
+        \ distinguish per-site requests."
+      operationId: getSamlSpMetadata
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/xml: {}
+          description: SP metadata XML
+        "401":
+          description: Authentication required
+        "404":
+          description: No SAML configuration found for this site
+        "500":
+          description: Internal server error
+      summary: Download SAML SP metadata XML for a site
+      tags:
+      - dotAuth
+  /v1/dotauth/sessionrefs/revoke:
+    post:
+      description: Flushes the dotAuth sessionRef cache. Existing browser sessions
+        are not affected.
+      operationId: revokeDotAuthSessionRefs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: All session-refs revoked
+        "401":
+          description: Authentication required
+        "403":
+          description: Admin access required
+        "500":
+          description: Internal server error
+      summary: Revoke all dotAuth sessionRefs
+      tags:
+      - dotAuth
+  /v1/dotauth/sites:
+    get:
+      description: "Returns the SYSTEM_HOST (global default) status plus a per-site\
+        \ list indicating whether each site has its own OAuth/SAML configuration,\
+        \ inherits from the system default, or is unconfigured."
+      operationId: listDotAuthSites
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDotAuthSitesView"
+          description: Sites retrieved successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to access dotAuth
+        "500":
+          description: Internal server error
+      summary: List all sites with their dotAuth status
+      tags:
+      - dotAuth
+  /v1/dotauth/sites/{hostId}:
+    delete:
+      description: Deletes both OAuth and SAML secret rows for the given hostId. On
+        SYSTEM_HOST this removes the global default; non-system hosts fall back to
+        inheriting from SYSTEM_HOST afterward.
+      operationId: clearDotAuthConfig
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Configuration cleared successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to edit this site
+        "404":
+          description: Site not found
+        "500":
+          description: Internal server error
+      summary: Clear the dotAuth configuration for a site
+      tags:
+      - dotAuth
+    get:
+      description: "Returns the protocol-specific configuration stored for the given\
+        \ hostId. Use the sentinel \"SYSTEM_HOST\" for the global default. When the\
+        \ host has no row of its own and the system default is configured, the response\
+        \ carries inherited=true and values holds the system defaults. Hidden secrets\
+        \ (e.g. clientSecret, privateKey) are masked as \"****\"."
+      operationId: getDotAuthConfig
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDotAuthConfigView"
+          description: Configuration retrieved successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to read this site
+        "404":
+          description: Site not found
+        "500":
+          description: Internal server error
+      summary: Get the dotAuth configuration for a site
+      tags:
+      - dotAuth
+    put:
+      description: Writes the chosen protocol's secrets for the given hostId and deletes
+        the other protocol's row for that host (mutual exclusion). Posting "****"
+        on a hidden field preserves the stored value.
+      operationId: saveDotAuthConfig
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DotAuthConfigForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Configuration saved successfully
+        "400":
+          description: Invalid form payload
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to edit this site
+        "404":
+          description: Site not found
+        "500":
+          description: Internal server error
+      summary: Save (upsert) the dotAuth configuration for a site
+      tags:
+      - dotAuth
   /v1/ema:
     get:
       operationId: getDetails
@@ -26225,6 +26602,51 @@ components:
             type: string
           versionable:
             type: boolean
+    DotAuthConfigForm:
+      type: object
+      properties:
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
+        values:
+          type: object
+          additionalProperties:
+            type: object
+      required:
+      - values
+    DotAuthConfigView:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        headlessValues:
+          type: object
+          additionalProperties:
+            type: object
+        hostId:
+          type: string
+        inherited:
+          type: boolean
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
+        values:
+          type: object
+          additionalProperties:
+            type: object
+    DotAuthSitesView:
+      type: object
+      properties:
+        sites:
+          type: array
+          items:
+            $ref: "#/components/schemas/SiteRowView"
+        system:
+          $ref: "#/components/schemas/SystemView"
     DotTempFile:
       type: object
       properties:
@@ -29554,6 +29976,31 @@ components:
       required:
       - assetPath
       - data
+    OAuthExchangeForm:
+      type: object
+      properties:
+        expirationDays:
+          type: integer
+          format: int32
+        idToken:
+          type: string
+        nonce:
+          type: string
+      required:
+      - idToken
+      - nonce
+    OAuthExchangeView:
+      type: object
+      properties:
+        expirationDays:
+          type: integer
+          format: int32
+        expiresAt:
+          type: string
+        sessionRef:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserSummary"
     OpenFolderForm:
       type: object
       properties:
@@ -31516,6 +31963,52 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityDotAuthConfigView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DotAuthConfigView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDotAuthSitesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DotAuthSitesView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityDropOldVersionsResultView:
       type: object
       properties:
@@ -32424,6 +32917,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MulitreeView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityOAuthExchangeView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/OAuthExchangeView"
         errors:
           type: array
           items:
@@ -35664,6 +36180,24 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
+    SiteRowView:
+      type: object
+      properties:
+        hostId:
+          type: string
+        hostName:
+          type: string
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
+        status:
+          type: string
+          enum:
+          - SITE_OVERRIDE
+          - INHERITED
+          - NOT_CONFIGURED
     SiteVariableForm:
       type: object
       properties:
@@ -35796,6 +36330,18 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
+    SystemView:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        headlessConfigured:
+          type: boolean
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
     TabDividerField:
       type: object
       allOf:
@@ -37713,6 +38259,23 @@ components:
       - path
       - permissions
       - type
+    UserSummary:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+        fullName:
+          type: string
+        lastName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        userId:
+          type: string
     VanityURLView:
       type: object
       properties:

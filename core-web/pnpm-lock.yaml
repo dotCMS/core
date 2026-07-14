@@ -722,6 +722,9 @@ importers:
       jest-preset-angular:
         specifier: 16.0.0
         version: 16.0.0(db4775bb8e1d7033ec04c76ee442fbb7)
+      jest-util:
+        specifier: ^30.0.2
+        version: 30.3.0
       jiti:
         specifier: 2.4.2
         version: 2.4.2

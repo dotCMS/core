@@ -91,6 +91,7 @@ public class CircuitBreakerUrl {
     private final boolean throwWhenError;
     private final Function<Integer, Exception> overrideException;
     private final boolean raiseFailsafe;
+    private final int maxResponseBytes;
 
     public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
@@ -146,7 +147,7 @@ public class CircuitBreakerUrl {
                              final Map<String, String> headers,
                              final boolean verbose,
                              final String rawData) {
-        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true, null, false);
+        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true, null, false, -1);
     }
     
     @VisibleForTesting
@@ -162,6 +163,24 @@ public class CircuitBreakerUrl {
                              final boolean throwWhenError,
                              final Function<Integer, Exception> overrideException,
                              final boolean raiseFailsafe) {
+        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers, verbose, rawData,
+                allowRedirects, throwWhenError, overrideException, raiseFailsafe, -1);
+    }
+
+    @VisibleForTesting
+    public CircuitBreakerUrl(final String proxyUrl,
+                             final long timeoutMs,
+                             final CircuitBreaker circuitBreaker,
+                             final HttpRequestBase request,
+                             final Map<String, String> params,
+                             final Map<String, String> headers,
+                             final boolean verbose,
+                             final String rawData,
+                             final boolean allowRedirects,
+                             final boolean throwWhenError,
+                             final Function<Integer, Exception> overrideException,
+                             final boolean raiseFailsafe,
+                             final int maxResponseBytes) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
@@ -172,6 +191,7 @@ public class CircuitBreakerUrl {
         this.throwWhenError = throwWhenError;
         this.overrideException = this.throwWhenError ? overrideException : null;
         this.raiseFailsafe = raiseFailsafe;
+        this.maxResponseBytes = maxResponseBytes;
 
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
@@ -216,6 +236,49 @@ public class CircuitBreakerUrl {
                         output));
             }
             return output;
+        }
+    }
+
+    /**
+     * Thrown when a response body exceeds the limit configured via
+     * {@link CircuitBreakerUrlBuilder#setMaxResponseBytes(int)}. Always propagated to the
+     * caller, regardless of the {@code raiseFailsafe} setting, so an over-limit response can
+     * never be mistaken for a successful (truncated) one.
+     */
+    public static class ResponseSizeLimitExceededException extends IOException {
+        private ResponseSizeLimitExceededException(final int maxBytes) {
+            super("Response exceeded maximum size of " + maxBytes + " bytes");
+        }
+    }
+
+    private static class BoundedOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final int maxBytes;
+        private int bytesWritten;
+
+        private BoundedOutputStream(final OutputStream delegate, final int maxBytes) {
+            this.delegate = delegate;
+            this.maxBytes = maxBytes;
+        }
+
+        @Override
+        public void write(final int b) throws IOException {
+            checkLimit(1);
+            delegate.write(b);
+            bytesWritten++;
+        }
+
+        @Override
+        public void write(final byte[] b, final int off, final int len) throws IOException {
+            checkLimit(len);
+            delegate.write(b, off, len);
+            bytesWritten += len;
+        }
+
+        private void checkLimit(final int bytesToWrite) throws IOException {
+            if (bytesWritten + bytesToWrite > maxBytes) {
+                throw new ResponseSizeLimitExceededException(maxBytes);
+            }
         }
     }
 
@@ -283,7 +346,9 @@ public class CircuitBreakerUrl {
 
                                 this.response = innerResponse.getStatusLine().getStatusCode();
 
-                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                                IOUtils.copy(
+                                    innerResponse.getEntity().getContent(),
+                                    maxResponseBytes < 0 ? out : new BoundedOutputStream(out, maxResponseBytes));
                             } catch (IOException ex) {
                                 Logger.error(
                                     this,
@@ -308,6 +373,14 @@ public class CircuitBreakerUrl {
         } catch (FailsafeException ee) {
 
             Logger.debug(this.getClass(), ee.getMessage() + " " + this);
+
+            if (ee.getCause() instanceof ResponseSizeLimitExceededException) {
+                // The 2xx status was recorded before the copy aborted; reset it so the partial
+                // body can never read as a successful response, and fail regardless of
+                // raiseFailsafe — a truncated payload must not be returned silently.
+                this.response = -1;
+                throw (ResponseSizeLimitExceededException) ee.getCause();
+            }
 
             if (raiseFailsafe) {
                 throw ee;
