@@ -5,17 +5,17 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import * as path from 'path';
 
 export default defineConfig({
-    root: __dirname,
+    root: import.meta.dirname,
     cacheDir: '../../../node_modules/.vite/libs/sdk/experiments',
 
     plugins: [
         // `root` points to the core-web workspace root so tsconfig path aliases
         // (e.g. @dotcms/types) resolve in bundled sibling sources like @dotcms/uve,
         // which are compiled from source into this build.
-        tsconfigPaths({ root: path.resolve(__dirname, '../../../') }),
+        tsconfigPaths({ root: path.resolve(import.meta.dirname, '../../../') }),
         dts({
             entryRoot: 'src',
-            tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
+            tsConfigFilePath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
             skipDiagnostics: true
         })
     ],
@@ -25,7 +25,7 @@ export default defineConfig({
     build: {
         // Explicitly resolve outDir to prevent output from going to external dist folders
         // This ensures reproducible builds regardless of current working directory
-        outDir: path.resolve(__dirname, '../../../dist/libs/sdk/experiments'),
+        outDir: path.resolve(import.meta.dirname, '../../../dist/libs/sdk/experiments'),
         reportCompressedSize: true,
         emptyOutDir: true,
         commonjsOptions: {

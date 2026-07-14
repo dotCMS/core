@@ -161,7 +161,6 @@
                                 <argument>lint</argument>
                                 <argument>--base=${git.origin.branch}</argument>
                                 <argument>--exclude=tag:skip:lint</argument>
-                                <argument>--verbose</argument>
                             </arguments>
                         </configuration>
                     </execution>
