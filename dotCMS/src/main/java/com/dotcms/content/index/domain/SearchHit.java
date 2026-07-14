@@ -124,7 +124,8 @@ public record SearchHit(
         final List<Object> sortValues = (osSortValues == null || osSortValues.isEmpty())
                 ? null
                 : osSortValues.stream()
-                        .map(fieldValue -> fieldValue.isNull() ? null : fieldValue._get())
+                        .map(fieldValue -> (fieldValue == null || fieldValue.isNull())
+                                ? null : fieldValue._get())
                         .collect(Collectors.toList());
 
         return builder()
