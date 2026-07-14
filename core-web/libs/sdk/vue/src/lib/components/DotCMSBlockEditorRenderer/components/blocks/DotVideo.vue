@@ -19,24 +19,11 @@ const poster = computed(() => attrs.value.data?.thumbnail);
 </script>
 
 <template>
-  <video
-    controls
-    preload="metadata"
-    :width="attrs.width"
-    :height="attrs.height"
-    :poster="poster"
-  >
-    <track
-      default
-      kind="captions"
-      srclang="en"
-    >
-    <source
-      :src="attrs.src"
-      :type="attrs.mimeType"
-    >
-    Your browser does not support the
-    <code>video</code>
-    element.
-  </video>
+    <video controls preload="metadata" :width="attrs.width" :height="attrs.height" :poster="poster">
+        <track default kind="captions" srclang="en" />
+        <source :src="attrs.src" :type="attrs.mimeType" />
+        Your browser does not support the
+        <code>video</code>
+        element.
+    </video>
 </template>

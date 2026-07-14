@@ -76,13 +76,8 @@ const rows = computed(() => props.page?.layout?.body?.rows);
 </script>
 
 <template>
-  <template v-if="rows">
-    <Row
-      v-for="(row, index) in rows"
-      :key="index"
-      :row="row"
-      :index="index + 1"
-    />
-  </template>
-  <ErrorMessage v-else />
+    <template v-if="rows">
+        <Row v-for="(row, index) in rows" :key="index" :row="row" :index="index + 1" />
+    </template>
+    <ErrorMessage v-else />
 </template>

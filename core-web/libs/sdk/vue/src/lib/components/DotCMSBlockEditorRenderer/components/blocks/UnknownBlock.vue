@@ -30,12 +30,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    v-if="getUVEState()"
-    data-testid="unknown-block"
-    :style="boxStyle"
-  >
-    Unknown block type:
-    <strong>{{ node?.type }}</strong>
-  </div>
+    <div v-if="getUVEState()" data-testid="unknown-block" :style="boxStyle">
+        Unknown block type:
+        <strong>{{ node?.type }}</strong>
+    </div>
 </template>
