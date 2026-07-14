@@ -75,6 +75,7 @@ public final class TiptapHtml {
     /** Sane ceiling for a single cell's span; malformed HTML can carry absurd values. */
     private static final int MAX_SPAN = 1000;
 
+    /** Static utility; not instantiable. */
     private TiptapHtml() { }
 
     /**
@@ -99,6 +100,7 @@ public final class TiptapHtml {
     // content is gathered into implicit paragraphs.
     // =====================================================================
 
+    /** Walk {@code parent}'s children as a block sequence, gathering loose inline content into paragraphs. */
     private static void renderBlocks(final Element parent, final ArrayNode sink,
                                      final Deque<ObjectNode> marks, final int depth) {
         if (depth > MAX_DEPTH) {
@@ -112,6 +114,7 @@ public final class TiptapHtml {
         run.flushInto(sink);
     }
 
+    /** Route one child in a block context to the right emitter: block, mark, image, break, or transparent wrapper. */
     private static void dispatchBlock(final Node child, final ArrayNode sink, final InlineRun run,
                                       final Deque<ObjectNode> marks, final int depth) {
         if (depth > MAX_DEPTH) {
@@ -174,6 +177,7 @@ public final class TiptapHtml {
         }
     }
 
+    /** Emit one handled block element ({@code p}, heading, list, {@code pre}, {@code hr}, {@code table}, ...). */
     private static void emitBlock(final String tag, final Element e, final ArrayNode sink,
                                   final Deque<ObjectNode> marks, final int depth) {
         switch (tag) {
@@ -250,6 +254,7 @@ public final class TiptapHtml {
         }
     }
 
+    /** Emit a bullet or ordered list, attaching stray non-{@code li} content to the current item. */
     private static void emitList(final String type, final Element e, final ArrayNode sink,
                                  final Deque<ObjectNode> marks, final int depth) {
         final ObjectNode list = MAPPER.createObjectNode();
@@ -283,6 +288,7 @@ public final class TiptapHtml {
         }
     }
 
+    /** Emit a single {@code <li>} as a listItem node, rendering its children as blocks with a leading paragraph. */
     private static ObjectNode emitListItem(final Element li, final Deque<ObjectNode> marks,
                                            final int depth) {
         final ObjectNode item = newListItem();
@@ -291,6 +297,7 @@ public final class TiptapHtml {
         return item;
     }
 
+    /** Create an empty listItem node whose content array the caller then fills. */
     private static ObjectNode newListItem() {
         final ObjectNode item = MAPPER.createObjectNode();
         item.put("type", "listItem");
@@ -306,6 +313,7 @@ public final class TiptapHtml {
         }
     }
 
+    /** Emit a codeBlock from {@code <pre>}: verbatim text, optional language, no marks. */
     private static void emitCodeBlock(final Element pre, final ArrayNode sink) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("type", "codeBlock");
@@ -322,6 +330,7 @@ public final class TiptapHtml {
         sink.add(node);
     }
 
+    /** Emit a table from this element's own rows; nested tables recurse through their cell. */
     private static void emitTable(final Element table, final ArrayNode sink,
                                   final Deque<ObjectNode> marks, final int depth) {
         final ObjectNode node = MAPPER.createObjectNode();
@@ -362,6 +371,7 @@ public final class TiptapHtml {
         return rows;
     }
 
+    /** Emit a tableRow, or {@code null} when the row has no cells. */
     private static ObjectNode emitTableRow(final Element tr, final int remainingRows,
                                            final Deque<ObjectNode> marks, final int depth) {
         final ObjectNode row = MAPPER.createObjectNode();
@@ -382,6 +392,7 @@ public final class TiptapHtml {
         return row;
     }
 
+    /** Emit a tableCell/tableHeader with clamped colspan/rowspan and at least one paragraph. */
     private static ObjectNode emitTableCell(final Element cell, final boolean header,
                                             final int remainingRows, final Deque<ObjectNode> marks,
                                             final int depth) {
@@ -406,6 +417,10 @@ public final class TiptapHtml {
     // A block descendant is flattened to its inline content (kept valid).
     // =====================================================================
 
+    /**
+     * Walk {@code parent}'s children as inline content; a block descendant is flattened to its inline
+     * content (text preserved) so the result stays valid against an {@code inline*} content model.
+     */
     private static void renderInline(final Element parent, final InlineRun run,
                                      final Deque<ObjectNode> marks, final int depth) {
         if (depth > MAX_DEPTH) {
@@ -453,6 +468,7 @@ public final class TiptapHtml {
     // Nodes, marks, attributes
     // =====================================================================
 
+    /** Build a {@code dotImage} node from an {@code <img>}, or {@code null} to drop it when its src is unsafe/missing. */
     private static ObjectNode imageNode(final Element img, final Deque<ObjectNode> marks) {
         final String src = sanitizeUrl(img.attr("src"));
         if (src == null) {
@@ -498,11 +514,13 @@ public final class TiptapHtml {
         return null;
     }
 
+    /** Whether {@code tag} is an inline element that maps to a Tiptap mark (bold/italic/strike/code/link). */
     private static boolean isMarkTag(final String tag) {
         return BOLD_TAGS.contains(tag) || ITALIC_TAGS.contains(tag) || STRIKE_TAGS.contains(tag)
                 || "code".equals(tag) || "a".equals(tag);
     }
 
+    /** Whether {@code tag} is a block element this converter emits directly (as opposed to a transparent wrapper). */
     private static boolean isHandledBlock(final String tag) {
         switch (tag) {
             case "p": case "h1": case "h2": case "h3": case "h4": case "h5": case "h6":
@@ -513,6 +531,7 @@ public final class TiptapHtml {
         }
     }
 
+    /** Build a mark node of the given type, attaching {@code attrs} only when non-empty. */
     private static ObjectNode mark(final String type, final ObjectNode attrs) {
         final ObjectNode m = MAPPER.createObjectNode();
         m.put("type", type);
@@ -522,6 +541,7 @@ public final class TiptapHtml {
         return m;
     }
 
+    /** Build a text node carrying the active marks outer-first (the deque head is the innermost mark). */
     private static ObjectNode textNode(final String text, final Deque<ObjectNode> marks) {
         final ObjectNode n = MAPPER.createObjectNode();
         n.put("type", "text");
@@ -537,18 +557,21 @@ public final class TiptapHtml {
         return n;
     }
 
+    /** An empty paragraph, used as filler where the content model requires a leading/only block. */
     private static ObjectNode emptyParagraph() {
         final ObjectNode p = MAPPER.createObjectNode();
         p.put("type", "paragraph");
         return p;
     }
 
+    /** Set {@code key} on {@code attrs} only when {@code value} is present, keeping empty attributes off the node. */
     private static void putIfPresent(final ObjectNode attrs, final String key, final String value) {
         if (value != null && !value.isEmpty()) {
             attrs.put(key, value);
         }
     }
 
+    /** Read an int attribute clamped to [{@code min}, {@code max}], falling back to {@code def} when absent or malformed. */
     private static int intAttr(final Element e, final String name, final int def,
                                final int min, final int max) {
         final String raw = e.attr(name);
@@ -562,6 +585,7 @@ public final class TiptapHtml {
         }
     }
 
+    /** Extract the code-block language from a {@code language-xxx} class, or {@code null} when none is set. */
     private static String codeLanguage(final Element pre) {
         // Convention: <pre><code class="language-xxx">. Read it off the first code child if present.
         final Element code = pre.selectFirst("code");
@@ -610,6 +634,7 @@ public final class TiptapHtml {
                 ? url : null;
     }
 
+    /** Log once (at warn) that content beyond {@link #MAX_DEPTH} levels was skipped. */
     private static void noteDepthExceeded() {
         Logger.warn(TiptapHtml.class,
                 "TiptapHtml: HTML nesting exceeded " + MAX_DEPTH + " levels; deeper content skipped.");
@@ -637,6 +662,7 @@ public final class TiptapHtml {
             this.target = target;
         }
 
+        /** Append text under the active marks, collapsing runs of whitespace to a single separator space. */
         void addText(final String rawIn, final Deque<ObjectNode> marks) {
             if (rawIn == null || rawIn.isEmpty()) {
                 return;
@@ -659,6 +685,7 @@ public final class TiptapHtml {
             empty = false;
         }
 
+        /** Append a {@code hardBreak} node (a {@code <br>}), clearing any pending separator space. */
         void addHardBreak() {
             // Emitted bare, matching TiptapMarkdown's hardBreak (marks are not carried on breaks).
             final ObjectNode br = MAPPER.createObjectNode();
@@ -668,6 +695,7 @@ public final class TiptapHtml {
             pendingSpace = false;
         }
 
+        /** Append an atomic inline node ({@code dotImage}), first emitting any pending separator space. */
         void add(final ObjectNode inlineNode) {
             // Preserve a separator space that fell between text and this atomic inline node
             // (e.g. "foo <img> bar" must not become "foo[img]"). The space node is non-empty.
@@ -697,6 +725,7 @@ public final class TiptapHtml {
             // no-op: pending trailing space is intentionally dropped
         }
 
+        /** Clear the buffer and separator state so the run can accumulate the next paragraph. */
         private void reset() {
             target.removeAll();
             empty = true;
