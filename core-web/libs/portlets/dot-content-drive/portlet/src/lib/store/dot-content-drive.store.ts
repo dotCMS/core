@@ -14,7 +14,11 @@ import { ActivatedRoute } from '@angular/router';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentDriveService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotContentDriveItem,
+    DotContentDriveSearchRequest
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
@@ -29,7 +33,8 @@ import {
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
-    SYSTEM_HOST
+    SYSTEM_HOST,
+    USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
     DotContentDriveFilters,
@@ -39,7 +44,12 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { decodeFilters, parseWorkflowFilter } from '../utils/functions';
+import {
+    buildUserSearchablePayload,
+    decodeFilters,
+    getUserSearchableActive,
+    parseWorkflowFilter
+} from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -51,47 +61,69 @@ const initialState: DotContentDriveState = {
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
-    pages: [DEFAULT_PAGE]
+    pages: [DEFAULT_PAGE],
+    userSearchableFields: [],
+    userSearchableActive: [],
+    userSearchableFieldsLoaded: false
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite, pagination, sort, pages }) => {
-        return {
-            $request: computed<DotContentDriveSearchRequest>(() => {
-                const paginationSignal = pagination();
-                const page = untracked(() => pages()[paginationSignal?.page - 1]);
+    withComputed(
+        ({ path, filters, currentSite, pagination, sort, pages, userSearchableFields }) => {
+            return {
+                $request: computed<DotContentDriveSearchRequest>(
+                    () => {
+                        const paginationSignal = pagination();
+                        const page = untracked(() => pages()[paginationSignal?.page - 1]);
+                        const userSearchable = buildUserSearchablePayload(
+                            filters(),
+                            userSearchableFields()
+                        );
 
-                return {
-                    assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
-                    includeSystemHost: true,
-                    filters: {
-                        text: filters()?.title || '',
-                        filterFolders: true
+                        return {
+                            assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                            includeSystemHost: true,
+                            filters: {
+                                text: filters()?.title || '',
+                                filterFolders: true
+                            },
+                            language: filters()?.languageId,
+                            contentTypes: filters()?.contentType,
+                            baseTypes: filters()?.baseType?.map(
+                                (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                            ),
+                            workflow: filters()?.workflow?.length
+                                ? parseWorkflowFilter(filters()?.workflow)
+                                : undefined,
+                            userSearchable,
+                            contentCursor: page.contentCursor ?? 0,
+                            folderCursor: page.folderCursor ?? 0,
+                            maxResults: paginationSignal?.limit,
+                            sortBy: sort()?.field + ':' + sort()?.order,
+                            archived: false,
+                            showFolders:
+                                page.hasMoreFolders &&
+                                !filters()?.baseType?.length &&
+                                !filters()?.contentType?.length &&
+                                !filters()?.languageId?.length &&
+                                !filters()?.workflow?.length &&
+                                // A field-based filter narrows to content, so hide folders too —
+                                // consistent with the other filters above.
+                                !userSearchable
+                        };
                     },
-                    language: filters()?.languageId,
-                    contentTypes: filters()?.contentType,
-                    baseTypes: filters()?.baseType?.map(
-                        (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
-                    ),
-                    workflow: filters()?.workflow?.length
-                        ? parseWorkflowFilter(filters()?.workflow)
-                        : undefined,
-                    contentCursor: page.contentCursor ?? 0,
-                    folderCursor: page.folderCursor ?? 0,
-                    maxResults: paginationSignal?.limit,
-                    sortBy: sort()?.field + ':' + sort()?.order,
-                    archived: false,
-                    showFolders:
-                        page.hasMoreFolders &&
-                        !filters()?.baseType?.length &&
-                        !filters()?.contentType?.length &&
-                        !filters()?.languageId?.length &&
-                        !filters()?.workflow?.length
-                };
-            })
-        };
-    }),
+                    {
+                        // Dedupe structurally-identical requests so the search effect doesn't re-fire on
+                        // no-op recomputes — e.g. selecting a content type loads its fields
+                        // (setUserSearchableFields), which changes `userSearchableFields` but not the
+                        // payload when no `us.*` value is set. A real payload change still differs here.
+                        equal: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+                    }
+                )
+            };
+        }
+    ),
     withMethods((store) => {
         const dotContentDriveService = inject(DotContentDriveService);
         return {
@@ -107,7 +139,14 @@ export const DotContentDriveStore = signalStore(
                         page: 1,
                         offset: 0
                     },
-                    pages: [DEFAULT_PAGE]
+                    pages: [DEFAULT_PAGE],
+                    // Which field-filter chips to show — parsed from the `us.*` value keys at the
+                    // decode layer (getUserSearchableActive), keeping this method free of that logic.
+                    userSearchableActive: getUserSearchableActive(filters),
+                    // Field metadata for the restored type isn't loaded yet; loadItems waits on this
+                    // so a restored `us.*` filter isn't dropped from the first search request.
+                    userSearchableFields: [],
+                    userSearchableFieldsLoaded: false
                 });
             },
             setItems(items: DotContentDriveItem[]) {
@@ -200,6 +239,51 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
+            /**
+             * Caches the eligible searchable fields of the active single content type. Consumed by
+             * the field-filter chips (to render controls) and by `$request` (to reshape values).
+             */
+            setUserSearchableFields(fields: DotCMSContentTypeField[]) {
+                patchState(store, {
+                    userSearchableFields: fields,
+                    userSearchableFieldsLoaded: true
+                });
+            },
+            /**
+             * Shows a field-filter chip by adding it to the active list only — NOT to `filters`.
+             * This keeps the search request unchanged (no reload/flicker); a `us.*` entry lands in
+             * `filters` only once the chip has a value.
+             */
+            addUserSearchableField(variable: string) {
+                if (store.userSearchableActive().includes(variable)) {
+                    return;
+                }
+
+                patchState(store, {
+                    userSearchableActive: [...store.userSearchableActive(), variable]
+                });
+            },
+            /**
+             * Drops every `us.*` field filter, the active chip list, and the cached field metadata.
+             * Called when the active content type changes (removed / another added / switched to a
+             * different single type). The reactive URL write-back removes these entries from the URL.
+             */
+            clearUserSearchableFilters() {
+                const restFilters = Object.fromEntries(
+                    Object.entries(store.filters()).filter(
+                        ([key]) => !key.startsWith(USER_SEARCHABLE_PREFIX)
+                    )
+                );
+
+                patchState(store, {
+                    filters: restFilters,
+                    userSearchableFields: [],
+                    userSearchableActive: [],
+                    userSearchableFieldsLoaded: false,
+                    pagination: { ...store.pagination(), offset: 0, page: 1 },
+                    pages: [DEFAULT_PAGE]
+                });
+            },
             setSelectedItems(items: DotContentDriveItem[]) {
                 patchState(store, { selectedItems: items });
             },
@@ -210,6 +294,20 @@ export const DotContentDriveStore = signalStore(
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier == SYSTEM_HOST.identifier) {
+                    return;
+                }
+
+                // Hold the search while a restored `us.*` filter has no field metadata yet: the
+                // payload builder can only shape values it has a field for, so searching now would
+                // drop them and briefly show unfiltered results. Read untracked so these don't
+                // become search-effect dependencies (adding an empty chip must not re-fire a
+                // search); once fields load, `$request` itself changes and re-runs this.
+                const fieldsPending = untracked(
+                    () =>
+                        store.userSearchableActive().length > 0 &&
+                        !store.userSearchableFieldsLoaded()
+                );
+                if (fieldsPending) {
                     return;
                 }
 

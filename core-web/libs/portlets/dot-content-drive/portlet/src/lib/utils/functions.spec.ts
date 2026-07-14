@@ -8,6 +8,13 @@ import {
     DotContentDriveItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
+import {
+    createFakeCheckboxField,
+    createFakeDateField,
+    createFakeSelectField,
+    createFakeTagField,
+    createFakeTextField
+} from '@dotcms/utils-testing';
 
 import {
     decodeFilters,
@@ -18,7 +25,14 @@ import {
     isFolder,
     parseWorkflowToken,
     workflowEntryToToken,
-    parseWorkflowFilter
+    parseWorkflowFilter,
+    isDateFieldFilterType,
+    isMultiValueFieldFilterType,
+    isBinaryCheckboxField,
+    parseUserSearchableValue,
+    serializeUserSearchableValue,
+    buildUserSearchablePayload,
+    getUserSearchableActive
 } from './functions';
 
 import { DotContentDriveFilters } from '../shared/models';
@@ -762,6 +776,194 @@ describe('Utility Functions', () => {
         it('should return false for null or undefined', () => {
             expect(isFolder(null as unknown as DotContentDriveItem)).toBe(false);
             expect(isFolder(undefined as unknown as DotContentDriveItem)).toBe(false);
+        });
+    });
+});
+
+describe('User-searchable field helpers', () => {
+    describe('decodeFilters - us.* keys', () => {
+        it('should keep a us.* value raw without comma-splitting', () => {
+            const result = decodeFilters('us.publishDate:2024-01-01,2024-12-31');
+
+            expect(result['us.publishDate']).toBe('2024-01-01,2024-12-31');
+        });
+
+        it('should not trim/split even when the raw value has spaces and commas', () => {
+            const result = decodeFilters('us.summary:hello, world');
+
+            expect(result['us.summary']).toBe('hello, world');
+        });
+    });
+
+    describe('getUserSearchableActive', () => {
+        it('should return the field variables of us.* keys, in order, ignoring other filters', () => {
+            expect(
+                getUserSearchableActive({ 'us.title': 'x', baseType: ['1'], 'us.tags': 'a,b' })
+            ).toEqual(['title', 'tags']);
+        });
+
+        it('should return an empty array when there are no us.* keys', () => {
+            expect(getUserSearchableActive({ contentType: ['Blog'] })).toEqual([]);
+        });
+    });
+
+    describe('isDateFieldFilterType', () => {
+        it('should be true for Date, Date-and-Time and Time', () => {
+            expect(isDateFieldFilterType('Date')).toBe(true);
+            expect(isDateFieldFilterType('Date-and-Time')).toBe(true);
+            expect(isDateFieldFilterType('Time')).toBe(true);
+        });
+
+        it('should be false for non-date types', () => {
+            expect(isDateFieldFilterType('Text')).toBe(false);
+            expect(isDateFieldFilterType('Select')).toBe(false);
+        });
+    });
+
+    describe('isMultiValueFieldFilterType', () => {
+        it('should be true for the multi-value types', () => {
+            expect(isMultiValueFieldFilterType('Multi-Select')).toBe(true);
+            expect(isMultiValueFieldFilterType('Checkbox')).toBe(true);
+            expect(isMultiValueFieldFilterType('Tag')).toBe(true);
+            expect(isMultiValueFieldFilterType('Category')).toBe(true);
+        });
+
+        it('should be false for single-value types', () => {
+            expect(isMultiValueFieldFilterType('Text')).toBe(false);
+            expect(isMultiValueFieldFilterType('Select')).toBe(false);
+            expect(isMultiValueFieldFilterType('Radio')).toBe(false);
+            // Relationship is single-value (one related identifier).
+            expect(isMultiValueFieldFilterType('Relationship')).toBe(false);
+        });
+    });
+
+    describe('isBinaryCheckboxField', () => {
+        it('should be true for a single-option checkbox', () => {
+            expect(isBinaryCheckboxField(createFakeCheckboxField({ values: '|true' }))).toBe(true);
+        });
+
+        it('should be false for a multi-option checkbox', () => {
+            expect(isBinaryCheckboxField(createFakeCheckboxField({ values: 'A|a\r\nB|b' }))).toBe(
+                false
+            );
+        });
+
+        it('should be false for non-checkbox fields', () => {
+            expect(isBinaryCheckboxField(createFakeSelectField({ values: 'A|a' }))).toBe(false);
+        });
+    });
+
+    describe('parseUserSearchableValue', () => {
+        it('should return undefined for an empty raw value', () => {
+            expect(parseUserSearchableValue('', 'Text')).toBeUndefined();
+        });
+
+        it('should return the raw string for text/select', () => {
+            expect(parseUserSearchableValue('hello', 'Text')).toBe('hello');
+            expect(parseUserSearchableValue('published', 'Select')).toBe('published');
+        });
+
+        it('should split multi-value types into an array', () => {
+            expect(parseUserSearchableValue('a,b,c', 'Multi-Select')).toEqual(['a', 'b', 'c']);
+        });
+
+        it('should round-trip a multi-value value that contains the separator', () => {
+            // A tag label like "News, Press" must survive serialize → parse intact.
+            const stored = serializeUserSearchableValue(['News, Press', 'cms'], 'Tag');
+
+            expect(stored).not.toContain('News, Press');
+            expect(parseUserSearchableValue(stored, 'Tag')).toEqual(['News, Press', 'cms']);
+        });
+
+        it('should reshape date types into a from/to range', () => {
+            expect(parseUserSearchableValue('2024-01-01,2024-12-31', 'Date')).toEqual({
+                from: '2024-01-01',
+                to: '2024-12-31'
+            });
+        });
+    });
+
+    describe('serializeUserSearchableValue', () => {
+        it('should serialize null/undefined to an empty string', () => {
+            expect(serializeUserSearchableValue(null, 'Text')).toBe('');
+            expect(serializeUserSearchableValue(undefined, 'Text')).toBe('');
+        });
+
+        it('should join a multi-value array with commas', () => {
+            expect(serializeUserSearchableValue(['a', 'b'], 'Multi-Select')).toBe('a,b');
+        });
+
+        it('should serialize a date range to from,to', () => {
+            expect(
+                serializeUserSearchableValue({ from: '2024-01-01', to: '2024-12-31' }, 'Date')
+            ).toBe('2024-01-01,2024-12-31');
+        });
+
+        it('should serialize an empty date range to an empty string', () => {
+            expect(serializeUserSearchableValue({ from: '', to: '' }, 'Date')).toBe('');
+        });
+
+        it('should stringify a single value', () => {
+            expect(serializeUserSearchableValue('published', 'Select')).toBe('published');
+        });
+
+        it('should return an empty string for a non-range value on a Date field', () => {
+            // Mismatched fieldType/value (a string where a range is expected) must not produce a
+            // misleading partial range.
+            expect(serializeUserSearchableValue('not-a-range', 'Date')).toBe('');
+            expect(serializeUserSearchableValue(['a', 'b'], 'Date')).toBe('');
+        });
+    });
+
+    describe('buildUserSearchablePayload', () => {
+        it('should return undefined when there are no us.* entries', () => {
+            const payload = buildUserSearchablePayload({ contentType: ['Blog'] }, []);
+
+            expect(payload).toBeUndefined();
+        });
+
+        it('should reshape each field value by its type', () => {
+            const filters: DotContentDriveFilters = {
+                'us.title': 'review',
+                'us.tags': 'angular,cms',
+                'us.postingDate': '2024-01-01,2024-12-31'
+            };
+            const fields = [
+                createFakeTextField({ variable: 'title' }),
+                createFakeTagField({ variable: 'tags' }),
+                createFakeDateField({ variable: 'postingDate' })
+            ];
+
+            const payload = buildUserSearchablePayload(filters, fields);
+
+            expect(payload).toEqual({
+                title: 'review',
+                tags: ['angular', 'cms'],
+                postingDate: { from: '2024-01-01', to: '2024-12-31' }
+            });
+        });
+
+        it('should emit a boolean for a binary checkbox and always include it', () => {
+            const fields = [createFakeCheckboxField({ variable: 'featured', values: '|true' })];
+
+            expect(buildUserSearchablePayload({ 'us.featured': 'true' }, fields)).toEqual({
+                featured: true
+            });
+            expect(buildUserSearchablePayload({ 'us.featured': 'false' }, fields)).toEqual({
+                featured: false
+            });
+        });
+
+        it('should skip empty non-binary values and fields without loaded metadata', () => {
+            const fields = [createFakeTextField({ variable: 'title' })];
+
+            // us.title is empty, and us.unknown has no field metadata → both skipped.
+            const payload = buildUserSearchablePayload(
+                { 'us.title': '', 'us.unknown': 'x' },
+                fields
+            );
+
+            expect(payload).toBeUndefined();
         });
     });
 });
