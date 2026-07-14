@@ -203,6 +203,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		ServletOutputStream out = null;
 		RandomAccessFile input = null;
 		InputStream is = null;
+		User user = null;
 		// Default to a no-shortyId value
 		try {
 			ShortyId shorty = shortyIdApi.noShorty(uuid);
@@ -253,7 +254,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
-			final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+			user = ServletUtils.getUserAndAuthenticateIfRequired(
 						this.webResource, req, resp);
 			final PageMode mode = PageMode.get(req);
 
@@ -675,7 +676,9 @@ public class BinaryExporterServlet extends HttpServlet {
 		} catch (DotSecurityException e) {
 			try {
 			  if(req.getSession()!=null){
-				if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
+				// any authenticated (non-anonymous) user lacking READ gets a clean 403.
+				// Only anonymous/not-logged-in users are redirected to login with a 401.
+				if(user != null && !user.isAnonymousUser()){
 				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
 					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 				}else{
