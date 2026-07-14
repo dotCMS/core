@@ -4,29 +4,27 @@ import {
     EventEmitter,
     Input,
     OnInit,
-    Output,
-    signal
+    Output
 } from '@angular/core';
 
 import { Editor, JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
 /**
- * Mirrors the **new** block editor ({@link DotCMSEditorComponent}) for compare-view tests:
- * content set via `[value]` is applied with `emitUpdate: false`, so it dispatches a TipTap
- * `transaction` but never emits `valueChange`. `valueChange` fires only on real user edits
- * (`update`). The compare component must rely on the `transaction` — not `valueChange` — to
- * populate the diff on load (issue #36550).
+ * Mirrors the **legacy** block editor ({@link DotBlockEditorComponent}) for compare-view tests:
+ * `editor` is a plain property (not a signal) and content set through `ngModel` emits
+ * `valueChange` on the initial load. This is the trigger the compare component relies on for the
+ * flag-OFF (legacy) path.
  */
 @Component({
-    selector: 'dot-block-editor',
+    selector: 'dot-old-block-editor',
     imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: '<div>Block Editor Mock</div>'
+    template: '<div>Old Block Editor Mock</div>'
 })
-export class BlockEditorMockComponent implements OnInit {
+export class OldBlockEditorMockComponent implements OnInit {
     @Input() value: JSONContent;
-    readonly editor = signal<Editor | null>(null);
+    editor: Editor;
     @Output() valueChange = new EventEmitter<JSONContent>();
 
     ngOnInit() {
@@ -38,12 +36,11 @@ export class BlockEditorMockComponent implements OnInit {
             if (this.value) {
                 editor.commands.setContent(this.value, { emitUpdate: false });
             }
-        });
 
-        editor.on('update', () => {
+            // Legacy editor emits valueChange once ngModel applies the initial content.
             this.valueChange.emit(editor.getJSON());
         });
 
-        this.editor.set(editor);
+        this.editor = editor;
     }
 }
