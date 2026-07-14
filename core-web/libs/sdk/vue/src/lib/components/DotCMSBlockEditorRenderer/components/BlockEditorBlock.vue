@@ -53,61 +53,79 @@ const leafComponent = (type: string) => LEAF_BLOCKS[type];
 </script>
 
 <template>
-    <template v-for="(node, index) in content ?? []" :key="`${node.type}-${index}`">
-        <!-- Custom renderer takes precedence for any matching block type. -->
-        <component
-            :is="customRenderers[node.type]"
-            v-if="customRenderers && customRenderers[node.type]"
-            :node="node">
-            <BlockEditorBlock
-                :content="node.content"
-                :custom-renderers="customRenderers"
-                :is-dev-mode="isDevMode" />
-        </component>
+  <template
+    v-for="(node, index) in content ?? []"
+    :key="`${node.type}-${index}`"
+  >
+    <!-- Custom renderer takes precedence for any matching block type. -->
+    <component
+      :is="customRenderers[node.type]"
+      v-if="customRenderers && customRenderers[node.type]"
+      :node="node"
+    >
+      <BlockEditorBlock
+        :content="node.content"
+        :custom-renderers="customRenderers"
+        :is-dev-mode="isDevMode"
+      />
+    </component>
 
-        <!-- Container blocks: wrap a nested dispatcher of their children. -->
-        <component
-            :is="containerComponent(node.type)"
-            v-else-if="containerComponent(node.type)"
-            :node="node">
-            <BlockEditorBlock
-                :content="node.content"
-                :custom-renderers="customRenderers"
-                :is-dev-mode="isDevMode" />
-        </component>
+    <!-- Container blocks: wrap a nested dispatcher of their children. -->
+    <component
+      :is="containerComponent(node.type)"
+      v-else-if="containerComponent(node.type)"
+      :node="node"
+    >
+      <BlockEditorBlock
+        :content="node.content"
+        :custom-renderers="customRenderers"
+        :is-dev-mode="isDevMode"
+      />
+    </component>
 
-        <!-- Text leaf: applies marks. -->
-        <TextBlock v-else-if="node.type === Blocks.TEXT" :text="node.text" :marks="node.marks" />
+    <!-- Text leaf: applies marks. -->
+    <TextBlock
+      v-else-if="node.type === Blocks.TEXT"
+      :text="node.text"
+      :marks="node.marks"
+    />
 
-        <!-- Attr-driven leaf blocks. -->
-        <component
-            :is="leafComponent(node.type)"
-            v-else-if="leafComponent(node.type)"
-            :node="node" />
+    <!-- Attr-driven leaf blocks. -->
+    <component
+      :is="leafComponent(node.type)"
+      v-else-if="leafComponent(node.type)"
+      :node="node"
+    />
 
-        <!-- Void blocks. -->
-        <br v-else-if="node.type === Blocks.HARDBREAK" />
-        <hr v-else-if="node.type === Blocks.HORIZONTAL_RULE" />
+    <!-- Void blocks. -->
+    <br v-else-if="node.type === Blocks.HARDBREAK">
+    <hr v-else-if="node.type === Blocks.HORIZONTAL_RULE">
 
-        <!-- Complex blocks that recurse internally. -->
-        <TableRenderer
-            v-else-if="node.type === Blocks.TABLE"
-            :content="node.content ?? []"
-            :attrs="node.attrs"
-            :custom-renderers="customRenderers"
-            :is-dev-mode="isDevMode" />
-        <GridBlock
-            v-else-if="node.type === Blocks.GRID_BLOCK"
-            :node="node"
-            :custom-renderers="customRenderers"
-            :is-dev-mode="isDevMode" />
-        <DotContent
-            v-else-if="node.type === Blocks.DOT_CONTENT"
-            :node="node"
-            :custom-renderers="customRenderers"
-            :is-dev-mode="isDevMode" />
+    <!-- Complex blocks that recurse internally. -->
+    <TableRenderer
+      v-else-if="node.type === Blocks.TABLE"
+      :content="node.content ?? []"
+      :attrs="node.attrs"
+      :custom-renderers="customRenderers"
+      :is-dev-mode="isDevMode"
+    />
+    <GridBlock
+      v-else-if="node.type === Blocks.GRID_BLOCK"
+      :node="node"
+      :custom-renderers="customRenderers"
+      :is-dev-mode="isDevMode"
+    />
+    <DotContent
+      v-else-if="node.type === Blocks.DOT_CONTENT"
+      :node="node"
+      :custom-renderers="customRenderers"
+      :is-dev-mode="isDevMode"
+    />
 
-        <!-- Anything else. -->
-        <UnknownBlock v-else :node="node" />
-    </template>
+    <!-- Anything else. -->
+    <UnknownBlock
+      v-else
+      :node="node"
+    />
+  </template>
 </template>

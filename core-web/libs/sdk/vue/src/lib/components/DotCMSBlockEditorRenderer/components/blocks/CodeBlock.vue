@@ -10,5 +10,5 @@ const language = computed(() => props.node?.attrs?.language || '');
 </script>
 
 <template>
-    <pre :data-language="language"><code><slot /></code></pre>
+  <pre :data-language="language"><code><slot /></code></pre>
 </template>
