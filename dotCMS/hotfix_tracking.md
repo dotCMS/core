@@ -99,6 +99,11 @@ This maintenance release includes the following code fixes:
 93. https://github.com/dotCMS/core/issues/34786 : Disable exposed /api/application.wadl endpoint #34786
 94. https://github.com/dotCMS/core/issues/35235 : fix(security): Upgrade vulnerable dependencies flagged by OWASP Dependency Check #35235
 95. https://github.com/dotCMS/core/issues/34212 : fix: Add FIPS mode detection and auto-disable APR SSL Engine #34212
+96. https://github.com/dotCMS/core/issues/35793 : deps: bump Apache Tomcat 9.0.113 → 9.0.118 (resolves 6 published CVEs) #35793
+97. https://github.com/dotCMS/core/issues/35536 : Basic Auth plugin issue: SpeedyAssetServlet rejects anonymously-readable assets when an unrelated Basic Authorization header is present #35536
+98. https://github.com/dotCMS/core/issues/36147 : Saving contentlets with many-to-many relationship fields and large related-content volumes is extremely slow #36147
+99. https://github.com/dotCMS/core/issues/33784 : [DEFECT] Full cache flush shutdown h22 threadpool #33784
+100. https://github.com/dotCMS/core/issues/33645 : [DEFECT] NPE when fetching content via content api with depth 3 and high limit #33645
 
 
 
