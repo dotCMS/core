@@ -11,6 +11,7 @@ export class EditorToolbarStore {
 
     readonly isBold = signal(false);
     readonly isItalic = signal(false);
+    readonly isUnderline = signal(false);
     readonly isStrike = signal(false);
     readonly isCode = signal(false);
     readonly isBulletList = signal(false);
@@ -42,6 +43,7 @@ export class EditorToolbarStore {
             this.zone.run(() => {
                 this.isBold.set(editor.isActive('bold'));
                 this.isItalic.set(editor.isActive('italic'));
+                this.isUnderline.set(editor.isActive('underline'));
                 this.isStrike.set(editor.isActive('strike'));
                 this.isCode.set(editor.isActive('code'));
                 this.isBulletList.set(editor.isActive('bulletList'));
