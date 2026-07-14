@@ -2,7 +2,7 @@ import { Component, h, Host, Prop } from '@stencil/core';
 import { DotContentState } from '@dotcms/dotcms-models';
 
 /**
- * @deprecated Use dot-contentlet-status-chip instead
+ * @deprecated Use dot-contentlet-status-badge instead
  */
 @Component({
     tag: 'dot-state-icon',

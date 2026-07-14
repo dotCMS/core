@@ -1,4 +1,9 @@
 import { NewEditContentFormPage } from '@pages';
+import {
+    createFakePayloadRelationshipField,
+    createFakePayloadTextField,
+    IMMUTABLE_SIMPLE_CONTENT_TYPE
+} from '@utils/dot-content-types.mock';
 
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
@@ -10,10 +15,6 @@ import {
     test,
     TestContentlet
 } from '../../../../fixtures/relationship.fixture';
-
-const IMMUTABLE_SIMPLE_CT = 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType';
-const IMMUTABLE_TEXT_FIELD = 'com.dotcms.contenttype.model.field.ImmutableTextField';
-const IMMUTABLE_REL_FIELD = 'com.dotcms.contenttype.model.field.ImmutableRelationshipField';
 
 /**
  * Blog content type with title + `authors` (1:N) and optional extra relationship fields.
@@ -30,7 +31,7 @@ function blogTypeWithRelationships(
     }[] = []
 ): Record<string, unknown> {
     return {
-        clazz: IMMUTABLE_SIMPLE_CT,
+        clazz: IMMUTABLE_SIMPLE_CONTENT_TYPE,
         name,
         variable,
         host: 'SYSTEM_HOST',
@@ -38,14 +39,12 @@ function blogTypeWithRelationships(
         metadata: { CONTENT_EDITOR2_ENABLED: true },
         workflow: [SYSTEM_WORKFLOW_ID],
         fields: [
-            {
-                clazz: IMMUTABLE_TEXT_FIELD,
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
-            },
-            {
-                clazz: IMMUTABLE_REL_FIELD,
+            }),
+            createFakePayloadRelationshipField({
                 name: 'Authors',
                 variable: 'authors',
                 sortOrder: 2,
@@ -53,17 +52,18 @@ function blogTypeWithRelationships(
                     velocityVar: authorTypeVariable,
                     cardinality: CARDINALITY.ONE_TO_MANY
                 }
-            },
-            ...extraRelationshipFields.map((f) => ({
-                clazz: IMMUTABLE_REL_FIELD,
-                name: f.name,
-                variable: f.variable,
-                sortOrder: f.sortOrder,
-                relationships: {
-                    velocityVar: authorTypeVariable,
-                    cardinality: f.cardinality
-                }
-            }))
+            }),
+            ...extraRelationshipFields.map((f) =>
+                createFakePayloadRelationshipField({
+                    name: f.name,
+                    variable: f.variable,
+                    sortOrder: f.sortOrder,
+                    relationships: {
+                        velocityVar: authorTypeVariable,
+                        cardinality: f.cardinality
+                    }
+                })
+            )
         ]
     };
 }
@@ -248,17 +248,7 @@ test.describe('Custom Columns (showFields)', () => {
         await relationshipField.expectRowCount(2);
 
         // With showFields="title,bio", headers should include Title and Bio
-        const table = relationshipField.table;
-        const headers = table.locator('thead th');
-
-        const headerTexts: string[] = [];
-        const headerCount = await headers.count();
-        for (let i = 0; i < headerCount; i++) {
-            const text = await headers.nth(i).textContent();
-            if (text?.trim()) {
-                headerTexts.push(text.trim().toLowerCase());
-            }
-        }
+        const headerTexts = await relationshipField.getHeaderTexts();
 
         expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
         expect(headerTexts.some((h) => h.includes('bio'))).toBe(true);
@@ -288,21 +278,12 @@ test.describe('Custom Columns (showFields)', () => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blog.inode);
 
-        // Default columns: Title, Language, Status
-        const table = adminPage.getByTestId('relationship-field-table');
-        const headers = table.locator('thead th');
-
-        const headerTexts: string[] = [];
-        const headerCount = await headers.count();
-        for (let i = 0; i < headerCount; i++) {
-            const text = await headers.nth(i).textContent();
-            if (text?.trim()) {
-                headerTexts.push(text.trim().toLowerCase());
-            }
-        }
+        // Default columns: Title, Locales, Status
+        const relationshipField = new RelationshipField(adminPage);
+        const headerTexts = await relationshipField.getHeaderTexts();
 
         expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
-        expect(headerTexts.some((h) => h.includes('language'))).toBe(true);
+        expect(headerTexts.some((h) => h.includes('locales'))).toBe(true);
         expect(headerTexts.some((h) => h.includes('status'))).toBe(true);
     });
 });

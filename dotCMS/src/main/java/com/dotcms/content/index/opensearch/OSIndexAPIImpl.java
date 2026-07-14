@@ -18,6 +18,8 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -34,6 +36,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -87,6 +90,23 @@ public class OSIndexAPIImpl implements IndexAPI {
     private OSClientProvider clientProvider;
 
     /**
+     * Seam over the JVM-terminating exit used by the Phase 3 abort branch of the startup
+     * connection gate. Defaults to the real {@link com.dotcms.shutdown.SystemExitManager}, which
+     * calls {@code Runtime.halt()} and has no test guard. Tests override this via
+     * {@link #setExitHandler(ExitHandler)} so the Phase 3 abort contract can be asserted without
+     * killing the test JVM (issue #36244 follow-up).
+     */
+    private ExitHandler exitHandler = com.dotcms.shutdown.SystemExitManager::immediateExit;
+
+    /**
+     * Functional seam for {@link com.dotcms.shutdown.SystemExitManager#immediateExit(int, String)}.
+     */
+    @FunctionalInterface
+    interface ExitHandler {
+        void exit(int exitCode, String reason);
+    }
+
+    /**
      * No-arg constructor required by CDI for proxy creation.
      * The {@code clientProvider} dependency is injected via field injection after construction.
      */
@@ -99,6 +119,14 @@ public class OSIndexAPIImpl implements IndexAPI {
      */
     OSIndexAPIImpl(OSClientProvider clientProvider) {
         this.clientProvider = clientProvider;
+    }
+
+    /**
+     * Package-private test seam: replaces the JVM-terminating exit so the Phase 3 abort branch of
+     * {@link #waitUtilIndexReady()} can be observed in tests instead of halting the JVM.
+     */
+    void setExitHandler(final ExitHandler exitHandler) {
+        this.exitHandler = exitHandler;
     }
 
     // =========================================================================
@@ -508,25 +536,193 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
     }
 
+    /**
+     * Waits for the OpenSearch cluster to become reachable, retrying up to
+     * {@code OS_CONNECTION_ATTEMPTS} times (falling back to {@code ES_CONNECTION_ATTEMPTS},
+     * default 24) with a {@code OS_CONNECTION_RETRY_SLEEP_SECONDS} (default 5s) pause between
+     * attempts. Used as the OpenSearch startup connection gate (issue #36244).
+     *
+     * <h2>Active probe — not the swallowing {@code getClusterStats()}</h2>
+     * <p>Connectivity is verified with {@code client.info()}, which round-trips to the cluster
+     * and <strong>propagates</strong> any transport / TLS / auth failure. This is deliberate:
+     * {@link #getClusterStats()} catches every exception and returns an empty result, so a retry
+     * loop built on it can never observe a failure — the gate would always pass and the real
+     * error would only surface much later, deep inside {@code createContentIndex} (the opaque
+     * late crash this gate exists to prevent).</p>
+     *
+     * <h2>Phase-aware outcome on exhaustion</h2>
+     * <ul>
+     *   <li><strong>Phase 3 (OS only)</strong> — OS is the primary store and ES is decommissioned,
+     *       so there is no safe fallback: log a FATAL actionable message and abort the JVM via
+     *       {@link com.dotcms.shutdown.SystemExitManager#immediateExit(int, String)} (same as ES
+     *       does today).</li>
+     *   <li><strong>Phase 1 / 2 (shadow)</strong> — OS is not yet primary; ES still holds the
+     *       authoritative state. Instead of killing the server, halt the migration
+     *       ({@link IndexConfigHelper#haltMigration()} resets the phase to
+     *       {@code PHASE_0_MIGRATION_NOT_STARTED}) so dotCMS falls back to ES-only, log an ERROR
+     *       explaining the fallback, and return {@code false}.</li>
+     * </ul>
+     *
+     * @return {@code true} when OS is reachable; {@code false} when OS was unreachable in a
+     *         shadow phase and the migration was halted (ES-only fallback). In Phase 3 this method
+     *         never returns {@code false} — it aborts the JVM instead.
+     */
     @Override
     public boolean waitUtilIndexReady() {
-        ClusterStats stats = null;
         final int attempts = IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_ATTEMPTS, 24);
+        final long sleepMs =
+                IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_RETRY_SLEEP_SECONDS, 5) * 1000L;
+        Exception lastError = null;
         for (int i = 0; i < attempts; i++) {
             try {
-                stats = getClusterStats();
-                break;
+                // Active probe: info() round-trips to the cluster and throws on any failure.
+                clientProvider.getClient().info();
+                return true;
             } catch (Exception e) {
-                Logger.error(this.getClass(),
-                    "OpenSearch Connection Attempt #" + (i + 1) + ": " + e.getMessage());
+                lastError = e;
+                Logger.error(this.getClass(), "OpenSearch Connection Attempt #" + (i + 1)
+                        + " of " + attempts + ": " + e.getMessage());
             }
-            DateUtil.sleep(IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_RETRY_SLEEP_SECONDS, 5) * 1000L);
+            DateUtil.sleep(sleepMs);
         }
-        if (stats == null) {
-            Logger.fatal(this.getClass(), "Cannot connect to OpenSearch, giving up.");
-            com.dotcms.shutdown.SystemExitManager.immediateExit(1, "OpenSearch connection failed");
+        return handleConnectionExhausted(attempts, lastError);
+    }
+
+    /**
+     * Phase-aware handler invoked once the OS connection retries are exhausted.
+     *
+     * @param attempts  the number of attempts that were made (for the log message)
+     * @param lastError the last connection error observed, or {@code null}
+     * @return {@code false} after halting the migration in a shadow phase; never returns in Phase 3
+     *         (the JVM is terminated).
+     */
+    private boolean handleConnectionExhausted(final int attempts, final Exception lastError) {
+        final MigrationPhase phase = MigrationPhase.current();
+        final String cause = lastError != null ? lastError.getMessage() : "unknown";
+        final ConnectionFailureKind kind = classifyConnectionError(lastError);
+        final String detail = "OpenSearch is not reachable after " + attempts + " attempt(s)."
+                + " phase=" + phase.name()
+                + ", endpoints=" + resolveEndpointsForLogging()
+                + ", likelyCause=" + kind.name() + " (" + kind.remediation() + ")"
+                + ", error=" + cause;
+
+        if (phase.isMigrationComplete()) {
+            // Phase 3: OS is primary and ES is decommissioned — no fallback is possible.
+            Logger.fatal(this.getClass(), detail
+                    + " — OS is the primary store in " + phase.name() + "; cannot fall back to ES."
+                    + " Fix the connection per the likely cause above, then restart dotCMS.");
+            exitHandler.exit(1, "OpenSearch connection failed in PHASE_3_OPENSEARCH_ONLY: "
+                    + kind.name());
+            return false; // unreachable in production — immediateExit terminates the JVM
         }
-        return true;
+
+        // Phase 1 / 2 (shadow): ES still holds the authoritative state. Fall back to ES-only
+        // instead of killing the server.
+        Logger.error(this.getClass(), detail
+                + " — OS is a shadow store in " + phase.name() + "; falling back to ES-only"
+                + " (resetting FEATURE_FLAG_OPEN_SEARCH_PHASE to 0 via haltMigration)."
+                + " Fix OS connectivity per the likely cause above and re-enable the migration"
+                + " phase when ready.");
+        IndexConfigHelper.haltMigration();
+        return false;
+    }
+
+    /**
+     * Resolves the configured OpenSearch endpoints for an actionable log message, mirroring
+     * {@code ConfigurableOpenSearchProvider} resolution: the explicit {@code OS_ENDPOINTS} array
+     * when set, otherwise a single {@code protocol://host:port} synthesised from the OS connection
+     * properties (with ES fallback).
+     */
+    private static String resolveEndpointsForLogging() {
+        final String[] endpoints = Config.getStringArrayProperty("OS_ENDPOINTS", null);
+        if (endpoints != null && endpoints.length > 0) {
+            return Arrays.toString(endpoints);
+        }
+        final String protocol = IndexConfigHelper.getString(OSIndexProperty.PROTOCOL, "https");
+        final String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
+        final int    port     = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
+        return protocol + "://" + hostname + ":" + port;
+    }
+
+    /**
+     * Likely root cause of an OpenSearch connection failure, inferred from the exception chain,
+     * so the fatal (Phase 3) / fallback (Phase 1-2) message can name the actual problem and its fix
+     * instead of only echoing a raw transport message (issue #36244 follow-up: error classification
+     * hardening). Motivated by a TLS-scheme mismatch (an {@code http://} client against an
+     * {@code https}-only OS 3.x port) that surfaced only as an opaque {@code ConnectionClosedException}.
+     */
+    enum ConnectionFailureKind {
+        TLS_SCHEME_MISMATCH("TLS/scheme mismatch — the client scheme likely does not match the"
+                + " server (e.g. http:// against an https-only OS port, or https:// against a"
+                + " plaintext port). Align OS_PROTOCOL / OS_TLS_ENABLED with the server's scheme"
+                + " and check the server certificate."),
+        AUTH_FORBIDDEN("authentication/authorization rejected (HTTP 401/403) — verify the OS"
+                + " credentials and that the user has the required cluster permissions."),
+        UNREACHABLE("cluster unreachable (connection refused / timed out / unknown host) — verify"
+                + " OS_ENDPOINTS host:port and that OpenSearch is running and network-reachable."),
+        UNKNOWN("cause could not be classified — inspect the underlying error and stack trace.");
+
+        private final String remediation;
+
+        ConnectionFailureKind(final String remediation) {
+            this.remediation = remediation;
+        }
+
+        String remediation() {
+            return remediation;
+        }
+    }
+
+    /**
+     * Classifies an OpenSearch connection failure by walking the exception chain and matching on
+     * exception type (simple name) and message text. Simple-name / message matching is used
+     * deliberately so this stays free of any compile dependency on transport-layer types (e.g.
+     * Apache HttpClient's {@code ConnectionClosedException}) and remains unit-testable with plain
+     * synthetic exception chains.
+     *
+     * <p>Order matters: TLS/scheme is checked first (its symptoms — closed connection, SSL/plaintext
+     * — otherwise look like a generic unreachable), then auth (401/403), then unreachable.</p>
+     *
+     * @param error the last connection error observed, or {@code null}
+     * @return the inferred {@link ConnectionFailureKind}; never {@code null}
+     */
+    static ConnectionFailureKind classifyConnectionError(final Throwable error) {
+        for (Throwable t = error; t != null; t = t.getCause()) {
+            final String type = t.getClass().getName().toLowerCase(Locale.ROOT);
+            final String msg  = t.getMessage() == null
+                    ? "" : t.getMessage().toLowerCase(Locale.ROOT);
+
+            // TLS / scheme mismatch: SSL handshake errors, or a connection closed with no response
+            // (the classic symptom of speaking http:// to an https-only port).
+            if (type.contains("sslexception")
+                    || type.contains("sslhandshake")
+                    || type.contains("connectionclosedexception")
+                    || msg.contains("unrecognized ssl message")
+                    || msg.contains("plaintext")
+                    || msg.contains("ssl")
+                    || msg.contains("certificat") // certificate / certification path (PKIX)
+                    || msg.contains("pkix")
+                    || msg.contains("connection closed")) {
+                return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
+            }
+            // Authentication / authorization.
+            if (msg.contains("401") || msg.contains("403")
+                    || msg.contains("unauthorized") || msg.contains("forbidden")) {
+                return ConnectionFailureKind.AUTH_FORBIDDEN;
+            }
+            // Host/port unreachable.
+            if (type.contains("connectexception")
+                    || type.contains("unknownhostexception")
+                    || type.contains("sockettimeoutexception")
+                    || type.contains("nohttpresponseexception")
+                    || msg.contains("connection refused")
+                    || msg.contains("timed out")
+                    || msg.contains("timeout")
+                    || msg.contains("unknown host")) {
+                return ConnectionFailureKind.UNREACHABLE;
+            }
+        }
+        return ConnectionFailureKind.UNKNOWN;
     }
 
 

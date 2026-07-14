@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -99,12 +99,17 @@ describe('DotFolderListViewComponent', () => {
         component: DotFolderListViewComponent,
         imports: [],
         providers: [
-            mockProvider(
-                DotMessageService,
-                new MockDotMessageService({
-                    Folder: 'Folder'
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    Folder: 'Folder',
+                    Published: 'Published',
+                    Archived: 'Archived',
+                    Revision: 'Revision',
+                    Draft: 'Draft',
+                    New: 'New'
                 })
-            ),
+            },
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
             mockProvider(DotLanguagesService, {
@@ -463,8 +468,10 @@ describe('DotFolderListViewComponent', () => {
 
         it('should have a title column', () => {
             const titleColumn = spectator.query(byTestId('item-title'));
+            const titleText = spectator.query(byTestId('item-title-text'));
 
-            expect(titleColumn.textContent.trim()).toBe(firstItem.title);
+            expect(titleColumn).toBeTruthy();
+            expect(titleText.textContent.trim()).toBe(firstItem.title);
         });
 
         it('should have a status column', () => {
@@ -513,7 +520,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should have a contentlet title', () => {
-            const contentletTitle = spectator.query(byTestId('item-title'));
+            const contentletTitle = spectator.query(byTestId('item-title-text'));
 
             expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
         });
@@ -650,19 +657,19 @@ describe('DotFolderListViewComponent', () => {
                 expect(lockOpenIcon).toBeFalsy();
             });
 
-            it('should not show status chip for folders', () => {
+            it('should not show status badge for folders', () => {
                 const statusColumn = spectator.query(byTestId('item-status'));
-                const statusChip = statusColumn?.querySelector('p-chip');
+                const statusBadge = statusColumn?.querySelector('dot-contentlet-status-badge');
 
-                expect(statusChip).toBeFalsy();
+                expect(statusBadge).toBeFalsy();
                 expect(statusColumn?.textContent?.trim()).toBe('');
             });
 
-            it('should not show language chip for folders', () => {
+            it('should not show language tag for folders', () => {
                 const languageColumn = spectator.query(byTestId('item-language'));
-                const languageChip = languageColumn?.querySelector('p-chip');
+                const languageTag = languageColumn?.querySelector('p-tag');
 
-                expect(languageChip).toBeFalsy();
+                expect(languageTag).toBeFalsy();
                 expect(languageColumn?.textContent?.trim()).toBe('');
             });
 

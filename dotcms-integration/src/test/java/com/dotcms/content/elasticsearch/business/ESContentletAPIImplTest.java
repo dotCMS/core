@@ -31,6 +31,7 @@ import com.dotcms.datagen.FieldVariableDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.PermissionUtilTest;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -59,6 +60,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelationshipAPI;
@@ -71,6 +73,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -721,27 +724,24 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
-     * Given Scenario: Try to check-in a version of an archived page with {@link Contentlet#DONT_VALIDATE_ME} flag on
-     * ExpectedResult: The method should not throw a {@link NullPointerException}, but a {@link DotDataException} because
-     * we are trying to check-in a version of an archived content
+     * Given Scenario: Check-in a new version of an archived page with {@link Contentlet#DONT_VALIDATE_ME} flag on.
+     * ExpectedResult: The check-in should succeed without throwing. Template propagation is skipped for
+     * archived pages (an archived page is not served, so its template does not need to be synced across
+     * language versions). This previously threw a {@link DotDataException}, which aborted push-publishing
+     * bundles containing archived multi-language HTML pages - see #36051. It must also not throw a
+     * {@link NullPointerException}.
      */
     @Test
-    public void testCheckInArchivedPageShouldThrowDotDataException() {
+    public void testCheckInArchivedPageSkipsTemplatePropagation() {
         final Contentlet contentlet = TestDataUtils
                 .getPageContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
         ContentletDataGen.archive(contentlet);
 
         final Contentlet newVersion = ContentletDataGen.checkout(contentlet);
         newVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
-        try {
-            ContentletDataGen.checkin(newVersion);
-            fail();
-        } catch (Exception e){
-            if (!(e.getCause() instanceof DotDataException)){
-                fail();
-            }
-        }
 
+        final Contentlet result = ContentletDataGen.checkin(newVersion);
+        assertNotNull(result);
     }
 
     /**
@@ -941,6 +941,132 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertRelatedContents(relationship, contentletB, contentletA, contentletC);
         assertRelatedContents(relationship, contentletC, contentletA, contentletB);
 
+    }
+
+    /**
+     * Method to test:
+     * {@link ContentletAPI#deleteRelatedContent(Contentlet, Relationship, boolean, User, boolean)}
+     * When: a limited user with EDIT permission on the parent contentlet, READ permission on one
+     * related child but NO permission on another related child deletes the related content
+     * Should: remove only the relationship to the readable child; the relationship to the
+     * unreadable child must be preserved
+     */
+    @Test
+    public void deleteRelatedContentWithLimitedUserPreservesUnreadableRelationships()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet parent = new ContentletDataGen(parentType).host(host).nextPersisted();
+        final Contentlet readableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final Contentlet unreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+
+        contentletAPI.relateContent(parent, relationship,
+                list(readableChild, unreadableChild), user, false);
+
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        PermissionUtilTest.addPermission(parent, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        PermissionUtilTest.addPermission(readableChild, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+        contentletAPI.deleteRelatedContent(parent, relationship, true, limitedUser, false);
+
+        final List<String> remainingChildren = TreeFactory.getRelatedIdsByParentAndRelationType(
+                parent.getIdentifier(), relationship.getRelationTypeValue());
+        assertEquals("Only the readable relationship must be deleted", 1,
+                remainingChildren.size());
+        assertEquals("The relationship to the unreadable child must be preserved",
+                unreadableChild.getIdentifier(), remainingChildren.get(0));
+    }
+
+    /**
+     * Method to test:
+     * {@link ContentletAPI#relateContent(Contentlet, Relationship, List, User, boolean)}
+     * When: the records list contains the same related contentlet more than once — e.g. a REST
+     * payload listing an identifier twice, or two language versions of the same content
+     * Should: save without a primary key violation and keep a single relationship row
+     */
+    @Test
+    public void relateContentWithDuplicateRecordsSavesSingleRelationship()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet parent = new ContentletDataGen(parentType).host(host).nextPersisted();
+        final Contentlet child = new ContentletDataGen(childType).host(host).nextPersisted();
+
+        contentletAPI.relateContent(parent, relationship, list(child, child), user, false);
+
+        final List<String> relatedChildren = TreeFactory.getRelatedIdsByParentAndRelationType(
+                parent.getIdentifier(), relationship.getRelationTypeValue());
+        assertEquals("Duplicate records must collapse into a single relationship row", 1,
+                relatedChildren.size());
+        assertEquals(child.getIdentifier(), relatedChildren.get(0));
+    }
+
+    /**
+     * Method to test:
+     * {@link ContentletAPI#relateContent(Contentlet, Relationship, List, User, boolean)}
+     * When: a limited user relates new content to a parent that is already related to content
+     * the user cannot READ
+     * Should: preserve the unreadable relationship and append the new relationship after it in
+     * the tree order, so the surviving rows keep their position
+     */
+    @Test
+    public void relateContentWithLimitedUserAppendsAfterPreservedRelationships()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet parent = new ContentletDataGen(parentType).host(host).nextPersisted();
+        final Contentlet readableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final Contentlet unreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+
+        // The existing relationship points to content the limited user cannot READ
+        contentletAPI.relateContent(parent, relationship, list(unreadableChild), user, false);
+
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        PermissionUtilTest.addPermission(parent, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        PermissionUtilTest.addPermission(readableChild, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+        contentletAPI.relateContent(parent, relationship, list(readableChild), limitedUser,
+                false);
+
+        final List<String> relatedChildren = TreeFactory.getRelatedIdsByParentAndRelationType(
+                parent.getIdentifier(), relationship.getRelationTypeValue());
+        assertEquals("Both the preserved and the new relationship must exist", 2,
+                relatedChildren.size());
+        assertEquals("The preserved relationship must keep its position",
+                unreadableChild.getIdentifier(), relatedChildren.get(0));
+        assertEquals("The new relationship must be appended after the preserved one",
+                readableChild.getIdentifier(), relatedChildren.get(1));
     }
 
     /**
@@ -5153,6 +5279,137 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             // parent2 claims same child — MANY_TO_MANY allows this, no cardinality error
             contentletAPI.checkin(parent2, Map.of(relationship, list(child)), user, false);
 
+        } finally {
+            if (parentCT != null) {
+                contentTypeAPI.delete(parentCT);
+            }
+            if (childCT != null) {
+                contentTypeAPI.delete(childCT);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#getContentletRelationships(Contentlet, User)} (via checkin)
+     * Given Scenario: Reproduces the "Translate Manually" save crash (issue #35862). A contentlet is
+     *   checked in with the relationship field holding the raw comma-separated UUID String left by
+     *   {@code MapToContentletPopulator} (no {@code ContentletRelationships} passed), and one of the
+     *   related contentlets has NO version in the target (Spanish) language.
+     * ExpectedResult: Checkin succeeds — no ClassCastException (String to List) and no NullPointerException.
+     *   Both related contentlets are persisted: the one with a Spanish version and the one resolved via
+     *   the English language fallback.
+     */
+    @Test
+    public void getContentletRelationships_relationshipFieldAsString_resolvesWithLanguageFallback()
+            throws DotDataException, DotSecurityException {
+
+        final Language spanish = TestDataUtils.getSpanishLanguage();
+        final long defaultLangId = languageAPI.getDefaultLanguage().getId();
+
+        ContentType parentCT = null;
+        ContentType childCT = null;
+        try {
+            childCT = new ContentTypeDataGen().nextPersisted();
+            parentCT = new ContentTypeDataGen().nextPersisted();
+
+            final Field relField = FieldBuilder.builder(RelationshipField.class)
+                    .name("authors")
+                    .contentTypeId(parentCT.id())
+                    .values(String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(childCT.variable())
+                    .required(false)
+                    .build();
+            final Field savedField = APILocator.getContentTypeFieldAPI().save(relField, user);
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(savedField, user);
+
+            // AuthorA: English + Spanish versions
+            final Contentlet authorAEnglish = new ContentletDataGen(childCT)
+                    .languageId(defaultLangId).setPolicy(IndexPolicy.FORCE).nextPersisted();
+            final Contentlet authorASpanish = contentletAPI.checkout(authorAEnglish.getInode(), user, false);
+            authorASpanish.setLanguageId(spanish.getId());
+            authorASpanish.setIndexPolicy(IndexPolicy.FORCE);
+            contentletAPI.checkin(authorASpanish, user, false);
+
+            // AuthorB: English only — intentionally NO Spanish version
+            final Contentlet authorBEnglish = new ContentletDataGen(childCT)
+                    .languageId(defaultLangId).setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            // Spanish article whose relationship field holds the raw comma-separated UUID String,
+            // exactly as MapToContentletPopulator leaves it during "Translate Manually".
+            final Contentlet article = new ContentletDataGen(parentCT).languageId(spanish.getId()).next();
+            article.setProperty(savedField.variable(),
+                    authorAEnglish.getIdentifier() + "," + authorBEnglish.getIdentifier());
+            article.setIndexPolicy(IndexPolicy.FORCE);
+
+            // Before the fix this threw ClassCastException (String cast to List<Contentlet>).
+            final Contentlet savedArticle = contentletAPI.checkin(article, user, false);
+
+            final List<Contentlet> related = relationshipAPI.dbRelatedContent(relationship, savedArticle);
+            assertNotNull(related);
+            // Relationships are identifier-level. AuthorA has two language versions (EN + ES), so
+            // assert on the set of distinct related identifiers rather than the raw row count.
+            final Set<String> relatedIds = related.stream()
+                    .map(Contentlet::getIdentifier).collect(Collectors.toSet());
+            assertEquals("Exactly two distinct contentlets should be related", 2, relatedIds.size());
+            assertTrue("AuthorA (with Spanish version) should be related",
+                    relatedIds.contains(authorAEnglish.getIdentifier()));
+            assertTrue("AuthorB (English-only fallback) should be related",
+                    relatedIds.contains(authorBEnglish.getIdentifier()));
+        } finally {
+            if (parentCT != null) {
+                contentTypeAPI.delete(parentCT);
+            }
+            if (childCT != null) {
+                contentTypeAPI.delete(childCT);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#getContentletRelationships(Contentlet, User)} (via checkin)
+     * Given Scenario: A contentlet that already has related content is re-checked in with the
+     *   relationship field set to an empty String in the contentlet map (no ContentletRelationships
+     *   passed) — the "clear all relationships" case of the issue #35862 fix.
+     * ExpectedResult: Checkin succeeds and the existing relationships are wiped out.
+     */
+    @Test
+    public void getContentletRelationships_relationshipFieldAsEmptyString_clearsRelationships()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentCT = null;
+        ContentType childCT = null;
+        try {
+            childCT = new ContentTypeDataGen().nextPersisted();
+            parentCT = new ContentTypeDataGen().nextPersisted();
+
+            final Field relField = FieldBuilder.builder(RelationshipField.class)
+                    .name("authors")
+                    .contentTypeId(parentCT.id())
+                    .values(String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(childCT.variable())
+                    .required(false)
+                    .build();
+            final Field savedField = APILocator.getContentTypeFieldAPI().save(relField, user);
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(savedField, user);
+
+            final Contentlet author = new ContentletDataGen(childCT)
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            // Relate the author, then verify it is persisted
+            Contentlet article = new ContentletDataGen(parentCT).setPolicy(IndexPolicy.FORCE).next();
+            article = contentletAPI.checkin(article, Map.of(relationship, list(author)), user, false);
+            assertEquals(1, relationshipAPI.dbRelatedContent(relationship, article).size());
+
+            // Re-checkin with the relationship field set to an empty String in the map
+            final Contentlet cleared = contentletAPI.checkout(article.getInode(), user, false);
+            cleared.setProperty(savedField.variable(), "");
+            cleared.setIndexPolicy(IndexPolicy.FORCE);
+            final Contentlet savedCleared = contentletAPI.checkin(cleared, user, false);
+
+            assertTrue("Relationships should have been cleared",
+                    relationshipAPI.dbRelatedContent(relationship, savedCleared).isEmpty());
         } finally {
             if (parentCT != null) {
                 contentTypeAPI.delete(parentCT);

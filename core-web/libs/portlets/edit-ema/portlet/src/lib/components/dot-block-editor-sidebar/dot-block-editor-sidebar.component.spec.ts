@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
@@ -121,8 +121,7 @@ describe('DotBlockEditorSidebarComponent', () => {
             },
             mockProvider(DotContentTypeService),
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true)),
-                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(true))
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
             })
         ]
     });

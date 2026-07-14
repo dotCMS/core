@@ -93,9 +93,18 @@ public record SearchHit(
         Object source = osHit.source();
         if (source instanceof Map) {
             sourceMap = (Map<String, Object>) source;
+        } else if (source instanceof org.opensearch.client.json.JsonData) {
+            // top_hits aggregation hits carry their _source as JsonData (HitsMetadata<JsonData>),
+            // not a Map — unwrap it so the document survives the conversion instead of being dropped.
+            Map<String, Object> unwrapped;
+            try {
+                unwrapped = ((org.opensearch.client.json.JsonData) source).to(Map.class);
+            } catch (final RuntimeException cannotMap) {
+                unwrapped = null;
+            }
+            sourceMap = unwrapped != null ? unwrapped : Map.of();
         } else {
-            // If "source" is a typed object, we might need custom mapping logic here
-            // For now, we'll create an empty map as fallback
+            // Unknown typed source — fall back to an empty map rather than failing the conversion.
             sourceMap = Map.of();
         }
 

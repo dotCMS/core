@@ -130,6 +130,41 @@ export class DotUploadFileService {
     }
 
     /**
+     * Uploads a file by resolving the content type from a base type instead of an explicit content
+     * type. The base type is sent to the backend, which resolves the matching content type for it
+     * (e.g. `FILEASSET` → File Asset, `DOTASSET` → dotAsset).
+     *
+     * @param file The file to be uploaded or the asset id.
+     * @param baseType The base type to create the contentlet as (e.g. `FILEASSET`, `DOTASSET`).
+     * @param extraData Additional data to be included in the contentlet object. This will be merged
+     * with the base contentlet data in the request body.
+     * @returns An observable that resolves to the created contentlet.
+     */
+    uploadFileByBaseType(
+        file: File | string,
+        baseType: string,
+        extraData?: DotActionRequestOptions['data']
+    ): Observable<DotCMSContentlet> {
+        if (file instanceof File) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            return this.#workflowActionsFireService.newContentletByBaseType<DotCMSContentlet>(
+                baseType,
+                { file: file.name, ...extraData },
+                formData
+            );
+        }
+
+        return this.#workflowActionsFireService.newContentletByBaseType<DotCMSContentlet>(
+            baseType,
+            {
+                asset: file
+            }
+        );
+    }
+
+    /**
      * Uploads a file and returns a contentlet with the content if it's a editable as text file.
      * @param file the file to be uploaded
      * @param extraData additional data to be included in the contentlet object

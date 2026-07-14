@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { patchState } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -445,6 +445,58 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
 
             expect(spectator.component.$state.contentTypes()).toEqual([]);
             expect(spectator.component.$state.loading()).toBe(true);
+        });
+    });
+
+    describe('Focus follows checkbox toggle', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+            openPopover();
+        });
+
+        it('focuses a base type when its checkbox is checked (right list shows its content types)', () => {
+            triggerBaseTypeToggle('FILEASSET');
+
+            expect(spectator.component.$focusedBaseType()).toBe('FILEASSET');
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
+                expect.objectContaining({ type: 'FILEASSET', page: 1 })
+            );
+        });
+
+        it('resets focus to ALL_CONTENT when the focused base type is unchecked', () => {
+            triggerBaseTypeToggle('CONTENT'); // check → focus CONTENT
+            expect(spectator.component.$focusedBaseType()).toBe('CONTENT');
+
+            triggerBaseTypeToggle('CONTENT'); // uncheck the focused base type
+
+            expect(spectator.component.$focusedBaseType()).toBe('__ALL_CONTENT__');
+        });
+
+        it('leaves focus untouched when a base type other than the focused one is unchecked', () => {
+            triggerBaseTypeToggle('CONTENT'); // check → focus CONTENT
+            triggerBaseTypeToggle('WIDGET'); // check → focus WIDGET
+            expect(spectator.component.$focusedBaseType()).toBe('WIDGET');
+
+            triggerBaseTypeToggle('CONTENT'); // uncheck the NON-focused base type
+
+            expect(spectator.component.$focusedBaseType()).toBe('WIDGET');
+            expect(spectator.component.$selectedBaseTypes()).toEqual(['WIDGET']);
+        });
+
+        it('stops mousedown propagation on the checkbox so a sibling popover stays dismissable', () => {
+            // Without this, PrimeNG's popover marks selfClick=true on the
+            // checkbox mousedown and never resets it (the click is
+            // stopPropagation'd), leaving this popover open when another chip
+            // is clicked.
+            const event = { stopPropagation: jest.fn() };
+
+            spectator.triggerEventHandler(
+                '[data-testid="base-type-checkbox-CONTENT"]',
+                'mousedown',
+                event
+            );
+
+            expect(event.stopPropagation).toHaveBeenCalled();
         });
     });
 

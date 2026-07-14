@@ -70,6 +70,7 @@ import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-serv
 import { DotTitleStrategy } from './shared/services/dot-title-strategy.service';
 import { DotIframePortletLegacyResolver } from './view/components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
+import { DotCreateContentletResolver } from './view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.resolver.service';
 import { DotNavigationService } from './view/components/dot-navigation/services/dot-navigation.service';
 import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from './view/components/login/shared/services/dot-login-page-state.service';
@@ -107,6 +108,9 @@ const PROVIDERS: (Provider | EnvironmentProviders)[] = [
     DotGenerateSecurePasswordService,
     IframeOverlayService,
     DotIframePortletLegacyResolver,
+    // App-wide so the legacy create route (/c/content/new/:contentType) resolves from any
+    // entry point (e.g. Content Drive), mirroring DotIframePortletLegacyResolver above.
+    DotCreateContentletResolver,
     MenuGuardService,
     NotificationsService,
     PaginatorService,

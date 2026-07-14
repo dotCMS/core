@@ -1,4 +1,4 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
@@ -8,6 +8,7 @@ import { MessageService } from 'primeng/api';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
 
 import { DotUveActionsHandlerService } from './dot-uve-actions-handler.service';
@@ -15,6 +16,8 @@ import { DotUveActionsHandlerService } from './dot-uve-actions-handler.service';
 import { UpdatedContentlet } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
+import { PageType } from '../../store/models';
+import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 const MOCK_UPDATED_CONTENTLET: UpdatedContentlet = {
     dataset: {
@@ -630,5 +633,142 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
 
         expect(mockStore.setCustomClient).not.toHaveBeenCalled();
         expect(mockStore.pageReload).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field switching)', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+
+    const INODE = 'contentlet-123';
+    const HOST = 'http://localhost';
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            {
+                provide: UVEStore,
+                useValue: buildMockStore()
+            }
+        ]
+    });
+
+    // Store already in INLINE_EDITING with `INODE` as the contentlet under edit.
+    const buildInlineEditingStore = (pageType: PageType) => ({
+        ...buildMockStore(),
+        editorState: signal(EDITOR_STATE.INLINE_EDITING),
+        editorContentArea: signal({
+            payload: { contentlet: { inode: INODE }, container: { identifier: 'container-1' } }
+        }),
+        pageType: signal(pageType),
+        getCurrentTreeNode: jest.fn().mockReturnValue({})
+    });
+
+    const buildDataset = (inode: string) => ({
+        dataset: { inode, fieldName: 'body', mode: 'minimal', language: '1' }
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        spectator = createService();
+        service = spectator.service;
+    });
+
+    it('should move focus to the clicked field without re-opening the copy dialog when switching fields on the same contentlet (headless)', () => {
+        const mockStore = buildInlineEditingStore(PageType.HEADLESS);
+        const copyModal = spectator.inject(DotCopyContentModalService);
+        const contentWindow = { postMessage: jest.fn() } as unknown as Window;
+
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
+                payload: buildDataset(INODE)
+            },
+            {
+                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                dialog: null,
+                inlineEditingService: null,
+                contentWindow,
+                host: HOST,
+                onCopyContent: jest.fn()
+            }
+        );
+
+        expect(copyModal.open).not.toHaveBeenCalled();
+        expect(contentWindow.postMessage).toHaveBeenCalledWith(
+            {
+                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                payload: {
+                    oldInode: INODE,
+                    inode: INODE,
+                    fieldName: 'body',
+                    mode: 'minimal',
+                    language: '1'
+                }
+            },
+            HOST
+        );
+    });
+
+    it('should re-init the inline editor on the clicked field when switching fields on the same contentlet (traditional)', () => {
+        const mockStore = buildInlineEditingStore(PageType.TRADITIONAL);
+        const copyModal = spectator.inject(DotCopyContentModalService);
+        const inlineEditingService = {
+            setTargetInlineMCEDataset: jest.fn(),
+            initEditor: jest.fn()
+        } as unknown as InlineEditService;
+
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
+                payload: buildDataset(INODE)
+            },
+            {
+                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                dialog: null,
+                inlineEditingService,
+                contentWindow: null,
+                host: HOST,
+                onCopyContent: jest.fn()
+            }
+        );
+
+        expect(copyModal.open).not.toHaveBeenCalled();
+        expect(inlineEditingService.setTargetInlineMCEDataset).toHaveBeenCalledWith({
+            oldInode: INODE,
+            inode: INODE,
+            fieldName: 'body',
+            mode: 'minimal',
+            language: '1'
+        });
+        expect(inlineEditingService.initEditor).toHaveBeenCalled();
+    });
+
+    it('should ignore the click when already inline-editing a different contentlet', () => {
+        const mockStore = buildInlineEditingStore(PageType.HEADLESS);
+        const copyModal = spectator.inject(DotCopyContentModalService);
+        const contentWindow = { postMessage: jest.fn() } as unknown as Window;
+
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
+                payload: buildDataset('a-different-inode')
+            },
+            {
+                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                dialog: null,
+                inlineEditingService: null,
+                contentWindow,
+                host: HOST,
+                onCopyContent: jest.fn()
+            }
+        );
+
+        expect(copyModal.open).not.toHaveBeenCalled();
+        expect(contentWindow.postMessage).not.toHaveBeenCalled();
     });
 });

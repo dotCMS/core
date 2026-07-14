@@ -1,0 +1,24 @@
+@if (form) {
+    <form [formGroup]="form" class="form">
+        <div class="field">
+            <label dotFieldRequired for="download-bundle-op">
+                {{ 'download.bundle.i.want' | dm }}
+            </label>
+            <p-selectButton
+                [options]="downloadOptions"
+                id="download-bundle-op"
+                formControlName="downloadOptionSelected"
+                class="w-full"
+                data-testid="download-bundle-form-op" />
+        </div>
+        <div class="field">
+            <label for="download-bundle-filter">{{ 'download.bundle.filter' | dm }}</label>
+            <p-select
+                [options]="filterOptions"
+                id="download-bundle-filter"
+                formControlName="filterKey"
+                appendTo="body"
+                data-testid="download-bundle-form-filter" />
+        </div>
+    </form>
+}

@@ -50,6 +50,21 @@ describe('useExperimentVariant', () => {
             expect(shouldWaitForVariant).toBe(false);
         });
 
+        it(' if is inside UVE in PREVIEW mode (not just EDIT)', () => {
+            const mockData = {
+                runningExperimentId: '1',
+                viewAs: { variantId: '1' }
+            } as DotCMSPageAsset;
+
+            jest.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.PREVIEW } as UVEState);
+
+            const { result } = renderHook(() => useExperimentVariant(mockData));
+
+            const { shouldWaitForVariant } = result.current;
+
+            expect(shouldWaitForVariant).toBe(false);
+        });
+
         it(' if `runningExperimentId` is undefined', () => {
             const mockData = {
                 viewAs: { variantId: EXPERIMENT_DEFAULT_VARIANT_NAME }

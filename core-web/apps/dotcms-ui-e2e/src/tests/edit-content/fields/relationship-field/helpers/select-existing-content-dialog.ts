@@ -206,7 +206,21 @@ export class SelectExistingContentDialog {
         await expect(row).toHaveClass(/opacity-50/);
         await expect(row).toHaveClass(/pointer-events-none/);
 
-        // Checkbox or radio should be disabled
+        const checkbox = row.getByTestId('row-checkbox');
+        const radio = row.getByTestId('row-radio');
+        const control = (await checkbox.count()) > 0 ? checkbox : radio;
+        await expect(control.locator('.p-disabled')).toBeVisible();
+    }
+
+    /**
+     * Asserts the row containing the given text is constrained.
+     */
+    async expectRowConstrainedByText(text: string): Promise<void> {
+        const row = this.rows.filter({ hasText: text });
+        await expect(row).toHaveCount(1);
+        await expect(row).toHaveClass(/opacity-50/);
+        await expect(row).toHaveClass(/pointer-events-none/);
+
         const checkbox = row.getByTestId('row-checkbox');
         const radio = row.getByTestId('row-radio');
         const control = (await checkbox.count()) > 0 ? checkbox : radio;
@@ -218,6 +232,15 @@ export class SelectExistingContentDialog {
      */
     async expectRowSelectable(rowIndex: number): Promise<void> {
         const row = this.rows.nth(rowIndex);
+        await expect(row).not.toHaveClass(/opacity-50/);
+    }
+
+    /**
+     * Asserts the row containing the given text is selectable.
+     */
+    async expectRowSelectableByText(text: string): Promise<void> {
+        const row = this.rows.filter({ hasText: text });
+        await expect(row).toHaveCount(1);
         await expect(row).not.toHaveClass(/opacity-50/);
     }
 

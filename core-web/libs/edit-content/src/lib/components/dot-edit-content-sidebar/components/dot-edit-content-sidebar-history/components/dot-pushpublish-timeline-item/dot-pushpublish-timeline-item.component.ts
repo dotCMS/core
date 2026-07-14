@@ -2,9 +2,8 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
-import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCopyButtonComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-content.model';
 
@@ -23,15 +22,7 @@ import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-con
  */
 @Component({
     selector: 'dot-pushpublish-timeline-item',
-    imports: [
-        AvatarModule,
-        TooltipModule,
-        DotCopyButtonComponent,
-        DotMessagePipe,
-        DotRelativeDatePipe,
-        DatePipe
-    ],
-    providers: [DatePipe],
+    imports: [AvatarModule, DotCopyButtonComponent, DotMessagePipe, DatePipe],
     templateUrl: './dot-pushpublish-timeline-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

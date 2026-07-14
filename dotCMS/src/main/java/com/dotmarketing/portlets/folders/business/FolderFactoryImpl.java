@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -1167,6 +1168,76 @@ public class FolderFactoryImpl extends FolderFactory {
     Collections.sort(folderList, (Folder folder1, Folder folder2) -> folder1.getName()
         .compareToIgnoreCase(folder2.getName()));
     return folderList;
+  }
+
+  private static final Set<String> ALLOWED_SORT_COLUMNS =
+      Set.of("folder.name", "folder.mod_date");
+  private static final String DEFAULT_SORT_COLUMN = "folder.name";
+  private static final String DEFAULT_SORT_DIRECTION = "ASC";
+
+  @Override
+  protected List<Folder> searchFolders(final FolderSearchParams params) throws DotDataException {
+    final var safeOrderBy = ALLOWED_SORT_COLUMNS.contains(params.orderBy()) ? params.orderBy() : DEFAULT_SORT_COLUMN;
+    final var safeDirection = switch (params.orderDirection()) {
+      case "DESC", "desc" -> "DESC";
+      default -> DEFAULT_SORT_DIRECTION;
+    };
+
+    final var sql = new StringBuilder(
+        "SELECT folder.* FROM folder, identifier "
+        + "WHERE folder.identifier = identifier.id "
+        + "AND identifier.host_inode = ? ");
+    final var sqlParams = new ArrayList<String>();
+    sqlParams.add(params.siteId());
+
+    if (UtilMethods.isSet(params.name())) {
+      sql.append("AND LOWER(folder.name) LIKE LOWER(?) ");
+      sqlParams.add("%" + params.name().toLowerCase() + "%");
+    }
+
+    // Normalize: dotCMS stores parent_path and full_path_lc always with a trailing slash.
+    // Ensuring the path ends with '/' means:
+    //   - parent_path = '/foo/'   → direct children only (non-recursive)
+    //   - full_path_lc LIKE '/foo/%' → descendants only, not the folder itself (recursive)
+    final String normalizedPath = params.path().endsWith("/")
+        ? params.path() : params.path() + "/";
+
+    // Skip path condition only when searching the whole site (root + recursive)
+    if (!("/".equals(normalizedPath) && params.recursive())) {
+      if (params.recursive()) {
+        sql.append("AND identifier.full_path_lc LIKE ? ");
+        sqlParams.add(normalizedPath.toLowerCase() + "%");
+      } else {
+        sql.append("AND identifier.parent_path = ? ");
+        sqlParams.add(normalizedPath);
+      }
+    }
+
+    sql.append(String.format("ORDER BY %s %s", safeOrderBy, safeDirection));
+    final var dc = new DotConnect().setSQL(sql.toString());
+    sqlParams.forEach(dc::addParam);
+    return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+  }
+
+  @Override
+  protected List<Folder> findDirectChildFolders(final String hostInode,
+      final Collection<String> parentPaths) throws DotDataException {
+
+    if (parentPaths == null || parentPaths.isEmpty()) {
+      return List.of();
+    }
+
+    final String placeholders = parentPaths.stream().map(p -> "?").collect(Collectors.joining(", "));
+    final String sql = "SELECT folder.* FROM folder, identifier "
+        + "WHERE folder.identifier = identifier.id "
+        + "AND identifier.host_inode = ? "
+        + "AND identifier.asset_type = 'folder' "
+        + "AND identifier.parent_path IN (" + placeholders + ")";
+
+    final DotConnect dc = new DotConnect().setSQL(sql).addParam(hostInode);
+    parentPaths.forEach(dc::addParam);
+
+    return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
   }
 
   @SuppressWarnings("unchecked")

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 
 import { fakeAsync } from '@angular/core/testing';
 
@@ -14,7 +14,8 @@ jest.mock('../../../utils/functions.util', () => ({
     getStoredUIState: jest.fn(() => ({
         activeTab: 0,
         isSidebarOpen: true,
-        activeSidebarTab: 0
+        activeSidebarTab: 0,
+        localeSelectorTab: 'all'
     })),
     saveStoreUIState: jest.fn()
 }));
@@ -47,7 +48,8 @@ describe('UIFeature', () => {
             expect(store.uiState()).toEqual({
                 activeTab: 0,
                 isSidebarOpen: true,
-                activeSidebarTab: 0
+                activeSidebarTab: 0,
+                localeSelectorTab: 'all'
             });
         });
 
@@ -86,6 +88,10 @@ describe('UIFeature', () => {
         it('should compute activeSidebarTab', () => {
             expect(store.activeSidebarTab()).toBe(0);
         });
+
+        it('should compute localeSelectorTab from uiState', () => {
+            expect(store.localeSelectorTab()).toBe('all');
+        });
     });
 
     describe('Methods', () => {
@@ -115,6 +121,24 @@ describe('UIFeature', () => {
             it('should update active sidebar tab in state', () => {
                 store.setActiveSidebarTab(1);
                 expect(store.activeSidebarTab()).toBe(1);
+            });
+        });
+
+        describe('setLocaleSelectorTab', () => {
+            it('should update locale selector tab to translated', () => {
+                store.setLocaleSelectorTab('translated');
+                expect(store.localeSelectorTab()).toBe('translated');
+            });
+
+            it('should update locale selector tab to pending', () => {
+                store.setLocaleSelectorTab('pending');
+                expect(store.localeSelectorTab()).toBe('pending');
+            });
+
+            it('should update locale selector tab back to all', () => {
+                store.setLocaleSelectorTab('translated');
+                store.setLocaleSelectorTab('all');
+                expect(store.localeSelectorTab()).toBe('all');
             });
         });
     });

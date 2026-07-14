@@ -1,6 +1,6 @@
 import { describe } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotPropertiesService } from '@dotcms/data-access';

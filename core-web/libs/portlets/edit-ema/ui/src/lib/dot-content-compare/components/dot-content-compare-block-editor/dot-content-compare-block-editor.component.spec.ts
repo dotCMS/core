@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -305,8 +305,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true)),
-                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(true))
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
             })
         ],
         overrideComponents: [

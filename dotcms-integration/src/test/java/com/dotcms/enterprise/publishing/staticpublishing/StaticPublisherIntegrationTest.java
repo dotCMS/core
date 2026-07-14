@@ -60,7 +60,9 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAssetDifferentLang;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAssetDifferentLangIncludingJustOneg;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePage;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageInOneLangAndWorkingInAnother;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLang;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPageInDefaultLangConfiguredForFallbackLang;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLangIncludingJustOne;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithCSS;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithImage;
@@ -150,12 +152,14 @@ public class StaticPublisherIntegrationTest {
                 getPageWithImage(),
                 getURLMapPageWithImage(),
                 getPageWithCSS(),
-                getLivePageWhenURLMapContentIsNotPopulated()
+                getLivePageWhenURLMapContentIsNotPopulated(),
+                getLivePageInOneLangAndWorkingInAnother()
         };
 
        final TestCase[] testCasesWitLangFilter = {
                getLivePageWithDifferentLangIncludingJustOne(),
-                getLiveFileAssetDifferentLangIncludingJustOneg()
+                getLiveFileAssetDifferentLangIncludingJustOneg(),
+                getWorkingPageInDefaultLangConfiguredForFallbackLang()
         };
 
        final List<TestCase> testCaseWithEmptyLang = Arrays.stream(testCasesWithoutLangFilter)

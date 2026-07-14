@@ -72,7 +72,8 @@
         <p-button
             (click)="closedDialog.emit()"
             [label]="'Cancel' | dm"
-            class="p-button-outlined"
+            [text]="true"
+            severity="secondary"
             data-testId="dialog-cancel" />
         <p-button (click)="confirmCategories()" [label]="'Apply' | dm" data-testId="dialog-apply" />
     </ng-template>

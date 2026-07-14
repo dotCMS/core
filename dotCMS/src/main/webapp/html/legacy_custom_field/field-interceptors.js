@@ -226,6 +226,7 @@ class DotFieldInterceptorManager {
         if (input._dotIntercepted) return input;
 
         let isAngularUpdate = false;
+        const manager = this;
         const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
 
         try {
@@ -234,7 +235,7 @@ class DotFieldInterceptorManager {
                 set(value) {
                     const oldValue = valueDescriptor.get.apply(this);
                     valueDescriptor.set.apply(this, [value]);
-                    if (oldValue !== value && !isAngularUpdate) {
+                    if (oldValue !== value && !isAngularUpdate && manager._dotAngularPush !== variable) {
                         if (window.DotCustomFieldApi) {
                             window.DotCustomFieldApi.set(variable, value);
                         }
@@ -289,6 +290,8 @@ class DotFieldInterceptorManager {
      * Installs global interceptors for input tracking and value changes
      */
     installGlobalInterceptors() {
+        const manager = this;
+
         // Intercept setAttribute calls
         const originalSetAttribute = HTMLInputElement.prototype.setAttribute;
         HTMLInputElement.prototype.setAttribute = function(name, value) {
@@ -296,7 +299,7 @@ class DotFieldInterceptorManager {
             originalSetAttribute.call(this, name, value);
             if (name === 'value' && oldValue !== value && this.hasAttribute('data-angular-tracked')) {
                 const variable = this.name || this.id;
-                if (variable && window.DotCustomFieldApi) {
+                if (variable && manager._dotAngularPush !== variable && window.DotCustomFieldApi) {
                     window.DotCustomFieldApi.set(variable, value);
                 }
             }

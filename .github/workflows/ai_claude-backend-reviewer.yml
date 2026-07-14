@@ -85,7 +85,7 @@ jobs:
       id-token: write
       pull-requests: write
       issues: write
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -95,7 +95,7 @@ jobs:
       enable_mention_detection: false
       claude_args: >-
         --allowedTools
-        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"
+        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh pr review*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"
       prompt: |
         You are the orchestrator of a dotCMS backend code review pipeline.
         Your job is to coordinate specialized sub-agents, collect their findings,
@@ -165,8 +165,8 @@ jobs:
 
         ### Sub-agent 3: Java Standards Reviewer
         Focus exclusively on Java syntax and code quality:
-        - Java 21+ syntax in core modules (text blocks, records, switch expressions)
-          — Java 11 syntax only, EXCEPT in tools/dotcms-cli
+        - Core modules target Java 25 (runtime + compile default); CLI tools may target
+          lower bytecode for portability — flag any code that won't compile at the module's target
         - Raw types: List, Map, Set without generics
         - Missing @Override on methods that override a parent
         - System.out.println — must use Logger.info/error/debug(this, msg)
@@ -210,16 +210,21 @@ jobs:
            do NOT treat it as NO_FINDINGS. Instead include a warning in the comment:
            ⚠️ **<Domain> review unavailable** — sub-agent failed, manual review required for this area.
 
-        ## STEP 5 — Post a single PR comment
+        ## STEP 5 — Upsert a single sticky PR comment
 
-        Write the full review body to a temp file, then post it with --body-file.
-        This avoids any risk of shell injection from delimiter collisions.
+        Keep exactly ONE backend-review comment per PR and edit it in place on
+        every run, so it always reflects the CURRENT state of the branch. This is
+        mandatory: when a push resolves earlier findings, the previous comment
+        must be updated (to the smaller finding set, or to "no issues found") —
+        never leave a stale comment showing findings that have already been fixed.
+
+        Write the full review body to a temp file first (posting with a file
+        avoids any risk of shell injection from delimiter collisions).
 
         Write findings to /tmp/dotcms_review_body.md using this format.
         The FIRST LINE must always be exactly: <!-- dotcms-backend-review -->
-        This marker is invisible in GitHub's rendered markdown and is used to find
-        and update this specific comment on future pushes without touching any other
-        bot comment on the PR.
+        This marker is invisible in GitHub's rendered markdown and is how you
+        find the existing comment to edit on later runs.
 
         <!-- dotcms-backend-review -->
         ## 🔍 dotCMS Backend Review
@@ -238,30 +243,37 @@ jobs:
         **Next steps**
         - 🔴 / 🟠 Fix locally and push — these need your judgment
         - 🟡 You can ask me to handle mechanical fixes inline: `@claude fix <issue description> in <File.java>`
-        - Every new push triggers a fresh review automatically
-
-        Then post it using the marker to find and update the existing review comment,
-        or create a new one if none exists yet:
-
-          COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-            --jq '[.[] | select(.body | startswith("<!-- dotcms-backend-review -->"))] | last | .id // empty')
-
-          if [ -n "$COMMENT_ID" ]; then
-            jq -n --rawfile body /tmp/dotcms_review_body.md '{"body": $body}' \
-              | gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID -X PATCH --input -
-          else
-            gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
-          fi
+        - Every new push updates this comment automatically
 
         If ALL agents returned NO_FINDINGS, write this to /tmp/dotcms_review_body.md instead:
           <!-- dotcms-backend-review -->
           ✅ **dotCMS Backend Review**: no issues found.
-        Then follow the same find-and-update-or-create logic above.
+
+        Then UPSERT the comment. Always run this exact logic — it edits the
+        existing marker comment when one exists and only creates a new comment on
+        the first run. Do not skip it, even when the result is "no issues found":
+
+          # Emit one bare id per matching comment and take the last globally with
+          # tail -n1. Do NOT use an aggregate jq filter (e.g. `[...] | last`) here:
+          # with --paginate, gh runs --jq once PER PAGE and concatenates, so an
+          # aggregate returns a per-page result and non-matching pages emit `null`,
+          # yielding a multi-line EXISTING_ID that breaks the PATCH on busy PRs.
+          EXISTING_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --paginate --jq '.[] | select(.body | contains("<!-- dotcms-backend-review -->")) | .id' | tail -n1)
+          if [ -n "$EXISTING_ID" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$EXISTING_ID --method PATCH -F body=@/tmp/dotcms_review_body.md
+            echo "Updated existing backend-review comment $EXISTING_ID"
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
+            echo "Created backend-review comment"
+          fi
 
         ## STEP 6 — Submit a formal GitHub review
 
-        After posting the comment, submit a formal PR review so that merging is
-        blocked until Critical or High findings are resolved.
+        After upserting the comment, submit a formal PR review so that merging is
+        blocked while Critical or High findings remain, and unblocked once they
+        are resolved. Always submit a review on every run: this reviewer's latest
+        review supersedes its previous one, so a later --approve automatically
+        clears an earlier --request-changes once the findings are fixed.
 
         Check whether the review body contains any Critical or High findings:
 

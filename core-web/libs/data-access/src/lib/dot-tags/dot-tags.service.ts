@@ -51,6 +51,7 @@ export class DotTagsService {
     getTagsPaginated(params: {
         filter?: string;
         site?: string;
+        global?: boolean;
         page?: number;
         per_page?: number;
         orderBy?: string;
@@ -64,6 +65,10 @@ export class DotTagsService {
 
         if (params.site) {
             httpParams = httpParams.set('site', params.site);
+        }
+
+        if (params.global) {
+            httpParams = httpParams.set('global', 'true');
         }
 
         if (params.page) {

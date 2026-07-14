@@ -1,7 +1,5 @@
-import { Subject } from 'rxjs';
-
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -13,6 +11,7 @@ import {
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
+    DotFieldService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotRouterService
@@ -26,9 +25,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/index';
-import { FieldService } from './components/fields/service';
 import { ContentTypesFormComponent } from './components/form';
 
 /**
@@ -43,17 +40,16 @@ import { ContentTypesFormComponent } from './components/form';
     templateUrl: './dot-content-types-edit.component.html',
     standalone: false
 })
-export class DotContentTypesEditComponent implements OnInit, OnDestroy {
+export class DotContentTypesEditComponent implements OnInit {
     private contentTypesInfoService = inject(DotContentTypesInfoService);
     private crudService = inject(DotCrudService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private dotEventsService = inject(DotEventsService);
     private dotRouterService = inject(DotRouterService);
-    private fieldService = inject(FieldService);
+    private fieldService = inject(DotFieldService);
     private route = inject(ActivatedRoute);
     private dotMessageService = inject(DotMessageService);
     router = inject(Router);
-    private dotEditContentTypeCacheService = inject(DotEditContentTypeCacheService);
     readonly #globalStore = inject(GlobalStore);
 
     readonly $contentTypesForm = viewChild<ContentTypesFormComponent>('form');
@@ -72,8 +68,8 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
 
     loadingFields = signal(false);
     savingContentType = signal(false);
+    $renderForm = signal(false);
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
     private destroyRef = inject(DestroyRef);
     ngOnInit(): void {
         this.route.data
@@ -84,7 +80,6 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             .subscribe((contentType: DotCMSContentType) => {
                 const isFirstLoad = !this.data;
                 this.data = contentType;
-                this.dotEditContentTypeCacheService.set(contentType);
                 this.layout = contentType.layout;
                 if (isFirstLoad) {
                     this.checkAndOpenFormDialog();
@@ -112,17 +107,13 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         this.setTemplateInfo();
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-
     /**
      * Handle hide dialog
      *
      * @memberof DotContentTypesEditComponent
      */
     onDialogHide(): void {
+        this.$renderForm.set(false);
         if (!this.isEditMode()) {
             this.dotRouterService.gotoPortlet(`/${this.dotRouterService.currentPortlet.id}`);
         } else {
@@ -140,6 +131,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     startFormDialog(): void {
+        this.$renderForm.set(true);
         this.show.set(true);
         this.setEditContentletDialogOptions();
     }
@@ -221,25 +213,20 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     removeFields(fieldsToDelete: DotCMSContentTypeField[]): void {
+        const fieldIds = fieldsToDelete.map((field) => field.id);
         this.fieldService
-            .deleteFields(this.data.id, fieldsToDelete)
-            .pipe(
-                map((x) => x?.fields),
-                take(1)
-            )
-            .subscribe(
-                (fields: DotCMSContentTypeLayoutRow[]) => {
+            .deleteFields(this.data.id, fieldIds)
+            .pipe(map((x) => x?.fields))
+            .subscribe({
+                next: (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
                 },
-                (err) => {
-                    this.dotHttpErrorManagerService
-                        .handle(err)
-                        .pipe(take(1))
-                        .subscribe(() => {
-                            //
-                        });
+                error: (err) => {
+                    this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+                        //
+                    });
                 }
-            );
+            });
     }
 
     /**
@@ -249,24 +236,18 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      */
     saveFields(layout: DotCMSContentTypeLayoutRow[]): void {
         this.loadingFields.set(true);
-        this.fieldService
-            .saveFields(this.data.id, layout)
-            .pipe(take(1))
-            .subscribe(
-                (fields: DotCMSContentTypeLayoutRow[]) => {
-                    this.layout = fields;
+        this.fieldService.saveFields(this.data.id, layout).subscribe({
+            next: (fields: DotCMSContentTypeLayoutRow[]) => {
+                this.layout = fields;
+                this.loadingFields.set(false);
+            },
+            error: (err) => {
+                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+                    this.$fieldsDropZone().cancelLastDragAndDrop();
                     this.loadingFields.set(false);
-                },
-                (err) => {
-                    this.dotHttpErrorManagerService
-                        .handle(err)
-                        .pipe(take(1))
-                        .subscribe(() => {
-                            this.$fieldsDropZone().cancelLastDragAndDrop();
-                            this.loadingFields.set(false);
-                        });
-                }
-            );
+                });
+            }
+        });
     }
 
     /**
@@ -277,24 +258,18 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      */
     editField(fieldsToEdit: DotCMSContentTypeField): void {
         this.loadingFields.set(true);
-        this.fieldService
-            .updateField(this.data.id, fieldsToEdit)
-            .pipe(take(1))
-            .subscribe(
-                (fields: DotCMSContentTypeLayoutRow[]) => {
-                    this.layout = fields;
+        this.fieldService.updateField(this.data.id, fieldsToEdit).subscribe({
+            next: (fields: DotCMSContentTypeLayoutRow[]) => {
+                this.layout = fields;
+                this.loadingFields.set(false);
+            },
+            error: (err) => {
+                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+                    this.$fieldsDropZone().cancelLastDragAndDrop();
                     this.loadingFields.set(false);
-                },
-                (err) => {
-                    this.dotHttpErrorManagerService
-                        .handle(err)
-                        .pipe(take(1))
-                        .subscribe(() => {
-                            this.$fieldsDropZone().cancelLastDragAndDrop();
-                            this.loadingFields.set(false);
-                        });
-                }
-            );
+                });
+            }
+        });
     }
 
     /**
@@ -320,7 +295,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             cancel: {
                 label: 'Cancel',
                 action: () => {
-                    this.onDialogHide();
+                    this.show.set(false);
                 }
             }
         };
@@ -338,8 +313,8 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 mergeMap((contentTypes: DotCMSContentType[]) => contentTypes),
                 take(1)
             )
-            .subscribe(
-                (contentType: DotCMSContentType) => {
+            .subscribe({
+                next: (contentType: DotCMSContentType) => {
                     this.savingContentType.set(false);
                     this.data = contentType;
                     this.layout = this.data.layout;
@@ -349,15 +324,15 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     );
                     this.show.set(false);
                 },
-                (err) => {
+                error: (err) => {
                     this.savingContentType.set(false);
                     this.handleHttpError(err);
                 }
-            );
+            });
     }
 
     private handleHttpError(err: HttpErrorResponse) {
-        this.dotHttpErrorManagerService.handle(err).pipe(take(1));
+        this.dotHttpErrorManagerService.handle(err).subscribe();
     }
 
     private updateContentType(value: DotCMSContentType): void {
@@ -369,18 +344,17 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         this.savingContentType.set(true);
         this.crudService
             .putData<DotCMSContentType>(`v1/contenttype/id/${this.data.id}`, updatedContentType)
-            .pipe(take(1))
-            .subscribe(
-                (contentType: DotCMSContentType) => {
+            .subscribe({
+                next: (contentType: DotCMSContentType) => {
                     this.savingContentType.set(false);
                     this.data = contentType;
                     this.show.set(false);
                 },
-                (err) => {
+                error: (err) => {
                     this.savingContentType.set(false);
                     this.handleHttpError(err);
                 }
-            );
+            });
     }
 
     // The Content Types endpoint returns workflows (plural) but receive workflow (singular)

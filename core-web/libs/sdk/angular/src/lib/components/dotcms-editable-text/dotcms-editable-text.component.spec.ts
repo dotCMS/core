@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory, SpyObject } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, SpyObject } from '@openng/spectator/jest';
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { Editor } from 'tinymce';
@@ -261,20 +261,38 @@ describe('DotCMSEditableTextComponent', () => {
                     focusSpy = jest.spyOn(spectator.component.editorComponent.editor, 'focus');
                 });
 
-                it("should focus on the editor when the message is 'uve-copy-contentlet-inline-editing-success'", () => {
+                it("should focus on the editor when the message is 'uve-copy-contentlet-inline-editing-success' and the field name matches", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
                                 name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: dotcmsContentletMock.inode,
-                                    inode: dotcmsContentletMock.inode
+                                    inode: dotcmsContentletMock.inode,
+                                    fieldName: 'title'
                                 }
                             }
                         })
                     );
                     spectator.detectChanges();
                     expect(focusSpy).toHaveBeenCalled();
+                });
+
+                it('should not focus on the editor when the inode matches but the field name is for another field', () => {
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            data: {
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                payload: {
+                                    oldInode: dotcmsContentletMock.inode,
+                                    inode: dotcmsContentletMock.inode,
+                                    fieldName: 'anotherField'
+                                }
+                            }
+                        })
+                    );
+                    spectator.detectChanges();
+                    expect(focusSpy).not.toHaveBeenCalled();
                 });
 
                 it("should not focus on the editor when the message is not 'uve-copy-contentlet-inline-editing-success'", () => {

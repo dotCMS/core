@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -17,7 +17,7 @@ import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -150,7 +150,7 @@ describe('DotPagesTableComponent', () => {
             TableModule,
             TooltipModule,
             DotAutofocusDirective,
-            DotContentletStatusChipComponent,
+            DotContentletStatusBadgeComponent,
             DotMessagePipe,
             DotRelativeDatePipe,
             ReactiveFormsModule

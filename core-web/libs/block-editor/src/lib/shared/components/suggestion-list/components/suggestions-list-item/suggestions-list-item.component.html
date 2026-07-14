@@ -3,11 +3,7 @@
         <i class="material-symbols-outlined">{{ url }}</i>
     } @else {
         @if (data?.contentlet) {
-            <dot-contentlet-thumbnail
-                [contentlet]="data.contentlet"
-                [width]="42"
-                [height]="42"
-                [iconSize]="'42px'" />
+            <dot-content-thumbnail [contentlet]="data.contentlet" iconSize="42px" />
         } @else {
             <img [src]="url" alt="" />
         }
@@ -20,8 +16,8 @@
     }
     @if (data?.contentlet) {
         <div class="state">
-            <dot-contentlet-status-chip [state]="data.contentlet" />
-            <dot-badge bordered="true">{{ data.contentlet.language | lowercase }}</dot-badge>
+            <dot-contentlet-status-badge [state]="data.contentlet" />
+            <p-tag severity="info" [value]="data.contentlet.language | lowercase" />
         </div>
     }
 </div>

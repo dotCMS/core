@@ -1,11 +1,11 @@
-import { SpectatorElement } from '@ngneat/spectator';
+import { SpectatorElement } from '@openng/spectator';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';

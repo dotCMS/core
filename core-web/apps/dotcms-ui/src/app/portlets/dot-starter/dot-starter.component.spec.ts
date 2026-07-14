@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Component, EventEmitter, Output } from '@angular/core';
 import { provideRouter } from '@angular/router';

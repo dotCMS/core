@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 
 import { signal } from '@angular/core';
 
@@ -105,6 +105,9 @@ describe('DotUveContentletToolsComponent', () => {
                 useFactory: () => ({
                     editorSelected,
                     $iframeLayoutLocked: () => false,
+                    // Tall enough that none of the fixture areas trigger the
+                    // bottom clip offset unless a test overrides it.
+                    viewIframeHeight: () => 800,
                     // promoteHoverToSelected calls setSelected on the store
                     // before emitting select/quick-edit events. Stub it so
                     // the (click) handler doesn't throw and the output fires.
@@ -627,6 +630,94 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(bounds).toBeTruthy();
                 // The computed uses ?? operator, so undefined x should default to 0
                 expect(parseInt(bounds.style.left, 10)).toBe(0);
+            });
+        });
+
+        describe('hoverTopClipOffset', () => {
+            it('should be null when the top edge is visible', () => {
+                expect(spectator.component.hoverTopClipOffset()).toBeNull();
+            });
+
+            it('should offset the top toolbar row when the top edge is scrolled above the iframe', () => {
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -50 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverTopClipOffset()).toBe(50);
+
+                const actions = spectator.query(byTestId('hover-actions')) as HTMLElement;
+                expect(actions.style.top).toBe('50px');
+                expect(actions.style.transform).toBe('translate(0, 0)');
+            });
+
+            it('should cap the offset at the contentlet height so it never overshoots the box', () => {
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -500 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverTopClipOffset()).toBe(scrolledArea.height);
+            });
+        });
+
+        describe('hoverBottomClipOffset', () => {
+            it('should be null when the bottom edge is visible', () => {
+                expect(spectator.component.hoverBottomClipOffset()).toBeNull();
+            });
+
+            it('should offset the bottom add button when the bottom edge overflows the iframe', () => {
+                // Store mock reports an 800px-tall iframe; y(200) + height(400) - 800 = -200 (fits).
+                // Push the area down so it overflows by 100px.
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: 500 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverBottomClipOffset()).toBe(100);
+
+                const addBottomButton = spectator.query(
+                    byTestId('hover-add-bottom-button')
+                ) as HTMLElement;
+                expect(addBottomButton.style.bottom).toBe('100px');
+                expect(addBottomButton.style.transform).toBe('translate(-50%, 0)');
+            });
+        });
+
+        describe('hoverDragButtonTopOffset', () => {
+            it('should be null when the natural vertical center is visible', () => {
+                // center = y(200) + height(400) / 2 = 400, within the 800px mock iframe.
+                expect(spectator.component.hoverDragButtonTopOffset()).toBeNull();
+            });
+
+            it('should clamp the handle to the top of the iframe when the center is scrolled above it', () => {
+                // center = y(-300) + height(400) / 2 = -100, above the iframe top (0).
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -300 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                // clampedCenter(0) - y(-300) = 300
+                expect(spectator.component.hoverDragButtonTopOffset()).toBe(300);
+
+                const dragButton = spectator.query(byTestId('hover-drag-button'))
+                    ?.parentElement as HTMLElement;
+                expect(dragButton.style.top).toBe('300px');
+            });
+
+            it('should clamp the handle to the bottom of the iframe when the center is scrolled below it', () => {
+                // Store mock reports an 800px-tall iframe.
+                // center = y(700) + height(400) / 2 = 900, below the iframe bottom (800).
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: 700 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                // clampedCenter(800) - y(700) = 100
+                expect(spectator.component.hoverDragButtonTopOffset()).toBe(100);
+            });
+
+            it('should never exceed the contentlet height', () => {
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -5000 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverDragButtonTopOffset()).toBe(scrolledArea.height);
             });
         });
 

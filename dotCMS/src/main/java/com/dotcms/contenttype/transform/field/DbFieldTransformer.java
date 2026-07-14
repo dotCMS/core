@@ -176,10 +176,11 @@ public class DbFieldTransformer implements FieldTransformer {
 			}
 
 		};
-		Field newField = new ImplClassFieldTransformer(field).from();
-		//hydrate field variables
-		newField.fieldVariables();
-		return newField;
+		// Field variables are loaded lazily on first access to Field#fieldVariables() and memoized
+		// on the cached Field/ContentType instance. Do NOT force-load them here: during cold content
+		// hydration this transform runs once per field, so eager loading produced an N+1 burst of
+		// "select ... from field_variable where field_id = ?" for fields whose variables are never read.
+		return new ImplClassFieldTransformer(field).from();
 
 	}
 
@@ -187,7 +188,6 @@ public class DbFieldTransformer implements FieldTransformer {
 	public List<Field> asList() throws DotStateException {
 		List<Field> list = new ArrayList<>();
 		for (Map<String, Object> map : results) {
-		    Field f  = fromMap(map);
 			list.add(fromMap(map));
 		}
 

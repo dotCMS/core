@@ -3,7 +3,14 @@
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        <div class="min-h-0 flex-1 overflow-y-auto px-4">
+            <div class="sticky top-0 z-10 flex min-h-12 items-center bg-white px-2 pt-3">
+                <h2
+                    class="m-0 text-sm leading-none font-bold tracking-[0.08em] text-gray-500 lowercase first-letter:uppercase"
+                    data-testid="comments-title">
+                    {{ 'edit.content.sidebar.tab.comments' | dm }}
+                </h2>
+            </div>
             <p-dataview
                 #dv
                 [value]="$activities()"
@@ -20,7 +27,7 @@
                         ) {
                             <p-card
                                 #activityItem
-                                styleClass="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
+                                class="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
                                 data-testid="activity-item">
                                 <div class="flex items-start gap-3">
                                     <p-avatar
@@ -54,9 +61,9 @@
                     </div>
                 </ng-template>
                 <ng-template #emptymessage>
-                    <span class="block" data-testid="empty-state">
+                    <p class="px-2 py-3 text-sm text-gray-500" data-testid="empty-state">
                         {{ 'edit.content.sidebar.activities.empty' | dm }}
-                    </span>
+                    </p>
                 </ng-template>
             </p-dataview>
         </div>
@@ -77,10 +84,6 @@
                             formControlName="comment"
                             data-testid="activities-input"
                             class="h-auto w-full resize-none text-sm leading-[1.4]"></textarea>
-
-                        <dot-field-validation-message
-                            [field]="form.get('comment')"
-                            class="absolute -bottom-3 left-0 [&_small]:animate-[fadeIn_0.2s_ease-out]" />
 
                         <!-- Character Counter -->
                         <div
@@ -105,10 +108,25 @@
                         </div>
                     </div>
 
+                    <!--
+                        Fixed-height slot: activities-footer is `sticky bottom-0`, so if this
+                        row's height changed when the error message mounts/unmounts, the whole
+                        footer would grow from its bottom anchor and shift the textarea upward.
+                        Reserving the space up front keeps the footer height constant regardless
+                        of whether dot-field-validation-message renders its <small> internally.
+                    -->
+                    <div class="h-3.5" data-testid="activities-error-slot">
+                        <dot-field-validation-message
+                            [field]="form.get('comment')"
+                            [requiredErrorMessage]="'edit.content.sidebar.activities.required'"
+                            class="block [&_small]:animate-[fadeIn_0.2s_ease-out]" />
+                    </div>
+
                     <div class="flex justify-end gap-2">
                         <p-button
                             type="button"
-                            [disabled]="!form.dirty || !commentControl.value?.trim() || $isSaving()"
+                            [text]="true"
+                            [disabled]="$isSaving()"
                             size="small"
                             severity="secondary"
                             data-testid="activities-clear"
@@ -118,9 +136,9 @@
                         <p-button
                             type="submit"
                             [loading]="$isSaving()"
-                            [disabled]="$isSaving() || !commentControl.value?.trim()"
+                            [disabled]="$isSaving()"
                             size="small"
-                            severity="secondary"
+                            severity="primary"
                             data-testid="activities-submit">
                             {{ 'edit.content.sidebar.activities.send' | dm }}
                         </p-button>

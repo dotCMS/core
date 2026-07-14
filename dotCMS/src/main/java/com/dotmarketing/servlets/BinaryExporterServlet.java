@@ -51,6 +51,7 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -108,6 +109,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
 	private final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+	private final FocalPointAPI focalPointAPI = APILocator.getFocalPointAPI();
 	private final WebResource webResource = new WebResource();
 
 	Map<String, BinaryContentExporter> exportersByPathMapping;
@@ -201,6 +203,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		ServletOutputStream out = null;
 		RandomAccessFile input = null;
 		InputStream is = null;
+		User user = null;
 		// Default to a no-shortyId value
 		try {
 			ShortyId shorty = shortyIdApi.noShorty(uuid);
@@ -251,7 +254,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
-			final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+			user = ServletUtils.getUserAndAuthenticateIfRequired(
 						this.webResource, req, resp);
 			final PageMode mode = PageMode.get(req);
 
@@ -412,11 +415,28 @@ public class BinaryExporterServlet extends HttpServlet {
       // THIS IS WHERE THE MAGIC HAPPENS
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
-        final DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
+        DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
         //Temp files time-mark must be updated so they can be recognized by the tempFileAPI
         temp.file.setLastModified(System.currentTimeMillis());
+        // createEmptyTempFile derives metadata from the still-empty file, so the rendered
+        // image would otherwise come back as metadata:null/image:false/mimeType:unknown.
+        // Re-wrap to regenerate metadata from the now-populated file (mirrors
+        // TempFileAPI.createTempFile) so consumers get a usable image preview.
+        if (temp.metadata == null && temp.file.exists()) {
+          temp = new DotTempFile(temp.id, temp.file);
+        }
 		copyMetadata(uuid, fieldVarName, temp);
+        // The focal point is authoritative in the request URL. Write it straight onto the saved
+        // temp AFTER copyMetadata, so it persists even when the image exporter served the rendition
+        // from cache and never ran FocalPointImageFilter (the side effect that otherwise persists
+        // the focal). No-op when the request carries no fp (plain saves / non-focal images);
+        // putCustomMetadataAttributes merges, so only the focalPoint key is set and the metadata
+        // copied above is preserved.
+        final String savedTempId = temp.id;
+        final String focalFieldVar = fieldVarName;
+        focalPointAPI.parseFocalPointFromParams(params)
+                .ifPresent(focalPoint -> focalPointAPI.writeFocalPoint(savedTempId, focalFieldVar, focalPoint));
 		resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
         resp.flushBuffer();
@@ -656,7 +676,9 @@ public class BinaryExporterServlet extends HttpServlet {
 		} catch (DotSecurityException e) {
 			try {
 			  if(req.getSession()!=null){
-				if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
+				// any authenticated (non-anonymous) user lacking READ gets a clean 403.
+				// Only anonymous/not-logged-in users are redirected to login with a 401.
+				if(user != null && !user.isAnonymousUser()){
 				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
 					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 				}else{

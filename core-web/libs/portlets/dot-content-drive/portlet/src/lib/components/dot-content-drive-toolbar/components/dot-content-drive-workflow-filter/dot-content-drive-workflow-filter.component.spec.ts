@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, Subject, throwError } from 'rxjs';
 
 import { By } from '@angular/platform-browser';
@@ -337,6 +337,60 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             stepsA$.next(STEPS_A);
 
             expect(spectator.component.$state().steps).toEqual(STEPS_B);
+        });
+    });
+
+    describe('focus follows checkbox toggle', () => {
+        it('focuses a scheme when its checkbox is checked (right list shows its steps)', () => {
+            spectator.detectChanges();
+            openPanel();
+
+            toggleScheme('a');
+
+            expect(spectator.component.$focusedScheme()).toBe('a');
+            expect(workflowService.getSteps).toHaveBeenCalledWith('a');
+            expect(spectator.component.$state().steps).toEqual(STEPS_A);
+        });
+
+        it('clears focus and the step column when the focused scheme is unchecked', () => {
+            // Scheme A is selected and (via reconcile) focused on open.
+            stubFilters({ workflow: ['a'] });
+            spectator.detectChanges();
+            openPanel();
+            expect(spectator.component.$focusedScheme()).toBe('a');
+
+            toggleScheme('a'); // uncheck the focused scheme
+
+            expect(spectator.component.$focusedScheme()).toBeNull();
+            expect(spectator.component.$state().steps).toEqual([]);
+        });
+
+        it('leaves focus untouched when a scheme other than the focused one is unchecked', () => {
+            // Both selected; reconcile focuses the first kept scheme (A).
+            stubFilters({ workflow: ['a', 'b'] });
+            spectator.detectChanges();
+            openPanel();
+            expect(spectator.component.$focusedScheme()).toBe('a');
+
+            toggleScheme('b'); // uncheck the NON-focused scheme
+
+            expect(spectator.component.$focusedScheme()).toBe('a');
+            expect(spectator.component.$state().steps).toEqual(STEPS_A);
+            expect(store.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
+        });
+
+        it('stops mousedown propagation on the checkbox so a sibling popover stays dismissable', () => {
+            // Without this, PrimeNG's popover marks selfClick=true on the
+            // checkbox mousedown and never resets it (the click is
+            // stopPropagation'd), leaving this popover open when another chip
+            // is clicked.
+            spectator.detectChanges();
+            openPanel();
+            const event = { stopPropagation: jest.fn() };
+
+            spectator.triggerEventHandler(testId('workflow-scheme-checkbox-a'), 'mousedown', event);
+
+            expect(event.stopPropagation).toHaveBeenCalled();
         });
     });
 
