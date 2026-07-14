@@ -36,7 +36,8 @@ export default [
                         '@angular/forms',
                         'vite',
                         'primeng',
-                        '@nx/vite'
+                        '@nx/vite',
+                        'vite-tsconfig-paths'
                     ]
                 }
             ]

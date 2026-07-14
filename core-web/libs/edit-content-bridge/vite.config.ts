@@ -1,18 +1,7 @@
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { defineConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 import { resolve } from 'path';
-
-// These options were migrated by @nx/vite:convert-to-inferred from the project.json file.
-const configValues = { default: { buildLibsFromSource: true } };
-
-// Determine the correct configValue to use based on the configuration
-const nxConfiguration = process.env.NX_TASK_TARGET_CONFIGURATION ?? 'default';
-
-const options = {
-    ...configValues.default,
-    ...(configValues[nxConfiguration] ?? {})
-};
 
 export default defineConfig(() => {
     // Explicitly resolve outDir relative to this config file's location
@@ -24,7 +13,7 @@ export default defineConfig(() => {
 
     return {
         root: __dirname,
-        plugins: [nxViteTsPaths({ buildLibsFromSource: options.buildLibsFromSource })],
+        plugins: [tsconfigPaths()],
         build: {
             // Explicitly set outDir to prevent Vite from resolving paths incorrectly
             // This is critical for reproducible builds, especially when dist folders

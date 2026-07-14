@@ -3,16 +3,19 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig(() => ({
     root: import.meta.dirname,
     cacheDir: '../../../node_modules/.vite/libs/sdk/vue',
     plugins: [
         vue(),
-        nxViteTsPaths(),
-        nxCopyAssetsPlugin(['*.md']),
+        // `root` points to the core-web workspace root so tsconfig path aliases
+        // (e.g. @dotcms/types) resolve in bundled sibling sources like @dotcms/uve,
+        // which are compiled from source into this build/test run.
+        tsconfigPaths({ root: path.resolve(import.meta.dirname, '../../../') }),
+        viteStaticCopy({ targets: [{ src: '*.md', dest: '.' }] }),
         dts({
             entryRoot: 'src',
             tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
@@ -21,7 +24,7 @@ export default defineConfig(() => ({
     ],
     // Uncomment this if you are using workers.
     // worker: {
-    //   plugins: () => [ nxViteTsPaths() ],
+    //   plugins: () => [ tsconfigPaths() ],
     // },
     // Configuration for building your library.
     // See: https://vite.dev/guide/build.html#library-mode

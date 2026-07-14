@@ -1,10 +1,10 @@
 /// <reference types='vitest' />
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import * as path from 'path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 // Plugin simple para copiar README.md
 const copyReadme = {
@@ -23,7 +23,10 @@ export default defineConfig({
 
     plugins: [
         react(),
-        nxViteTsPaths(),
+        // `root` points to the core-web workspace root so tsconfig path aliases
+        // (e.g. @dotcms/types) resolve in bundled sibling sources like @dotcms/uve,
+        // which are compiled from source into this build.
+        tsconfigPaths({ root: path.resolve(__dirname, '../../../') }),
         dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') }),
         copyReadme,
         // Ensure the React entry is tagged as a Client Component in the emitted bundle

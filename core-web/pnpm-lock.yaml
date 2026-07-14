@@ -794,6 +794,12 @@ importers:
       vite-plugin-dts:
         specifier: 4.5.4
         version: 4.5.4(@types/node@20.19.9)(rollup@4.14.0)(typescript@5.9.3)(vite@7.3.2(@types/node@20.19.9)(jiti@2.4.2)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3))
+      vite-plugin-static-copy:
+        specifier: 4.1.1
+        version: 4.1.1(vite@7.3.2(@types/node@20.19.9)(jiti@2.4.2)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3))
+      vite-tsconfig-paths:
+        specifier: 5.1.4
+        version: 5.1.4(typescript@5.9.3)(vite@7.3.2(@types/node@20.19.9)(jiti@2.4.2)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3))
       vitest:
         specifier: 4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.1)(@types/node@20.19.9)(@vitest/ui@4.0.18)(happy-dom@15.7.4)(jiti@2.4.2)(jsdom@28.1.0)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3)
@@ -9921,6 +9927,9 @@ packages:
     resolution: {integrity: sha512-KVbFv2TQtbzCoxAnfD6JcHZTYCzyliEaaeM/gH8qQdkKr5s0OP9scEgvdcngyk7AVdY6YVW/TJHd+lQ/Df3Daw==, tarball: https://registry.npmjs.org/globby/-/globby-6.1.0.tgz}
     engines: {node: '>=0.10.0'}
 
+  globrex@0.1.2:
+    resolution: {integrity: sha512-uHJgbwAMwNFf5mLst7IWLNg14x1CkeqglJb/K3doi4dw6q2IvAAmM/Y81kevy83wP+Sst+nutFTYOGg3d1lsxg==, tarball: https://registry.npmjs.org/globrex/-/globrex-0.1.2.tgz}
+
   good-listener@1.2.2:
     resolution: {integrity: sha512-goW1b+d9q/HIwbVYZzZ6SsTr4IgE+WA44A0GmPIQstuOrgsFcT7VEJ48nmr9GaRtNu0XTKacFLGnBPAM6Afouw==, tarball: https://registry.npmjs.org/good-listener/-/good-listener-1.2.2.tgz}
 
@@ -14158,6 +14167,10 @@ packages:
     resolution: {integrity: sha512-pn99VhoACYR8nFHhxqix+uvsbXineAasWm5ojXoN8xEwK5Kd3/TrhNn1wByuD52UxWRLy8pu+kRMniEi6Eq9Zg==, tarball: https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.16.tgz}
     engines: {node: '>=12.0.0'}
 
+  tinyglobby@0.2.17:
+    resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==, tarball: https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.17.tgz}
+    engines: {node: '>=12.0.0'}
+
   tinymce@6.8.3:
     resolution: {integrity: sha512-3fCHKAeqT+xNwBVESf6iDbDV0VNwZNmfrkx9c/6Gz5iB8piMfaO6s7FvoiTrj1hf1gVbfyLTnz1DooI6DhgINQ==, tarball: https://registry.npmjs.org/tinymce/-/tinymce-6.8.3.tgz}
 
@@ -14348,6 +14361,17 @@ packages:
 
   ts-results@3.3.0:
     resolution: {integrity: sha512-FWqxGX2NHp5oCyaMd96o2y2uMQmSu8Dey6kvyuFdRJ2AzfmWo3kWa4UsPlCGlfQ/qu03m09ZZtppMoY8EMHuiA==, tarball: https://registry.npmjs.org/ts-results/-/ts-results-3.3.0.tgz}
+
+  tsconfck@3.1.6:
+    resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==, tarball: https://registry.npmjs.org/tsconfck/-/tsconfck-3.1.6.tgz}
+    engines: {node: ^18 || >=20}
+    deprecated: unmaintained
+    hasBin: true
+    peerDependencies:
+      typescript: ^5.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   tsconfig-paths-webpack-plugin@4.2.0:
     resolution: {integrity: sha512-zbem3rfRS8BgeNK50Zz5SIQgXzLafiHjOwUAvk/38/o1jHn/V5QAgVUcz884or7WYcPaH3N2CIfUc2u0ul7UcA==, tarball: https://registry.npmjs.org/tsconfig-paths-webpack-plugin/-/tsconfig-paths-webpack-plugin-4.2.0.tgz}
@@ -14609,6 +14633,20 @@ packages:
     resolution: {integrity: sha512-d4sOM8M/8z7vRXHHq/ebbblfaxENjogAAekcfcDCCwAyvGqnPrc7f4NZbvItS+g4WTgerW0xDwSz5qz11JT3vg==, tarball: https://registry.npmjs.org/vite-plugin-dts/-/vite-plugin-dts-4.5.4.tgz}
     peerDependencies:
       typescript: '*'
+      vite: '*'
+    peerDependenciesMeta:
+      vite:
+        optional: true
+
+  vite-plugin-static-copy@4.1.1:
+    resolution: {integrity: sha512-GrlA8YklrAfSyxJ4M3fdQLOo9oNkp56IM9FYgX/WtEgeIFkPwhu4wzpufBCIuNKCa6Fn77FkRdYxkHqV0FwjAw==, tarball: https://registry.npmjs.org/vite-plugin-static-copy/-/vite-plugin-static-copy-4.1.1.tgz}
+    engines: {node: ^22.0.0 || >=24.0.0}
+    peerDependencies:
+      vite: ^6.0.0 || ^7.0.0 || ^8.0.0
+
+  vite-tsconfig-paths@5.1.4:
+    resolution: {integrity: sha512-cYj0LRuLV2c2sMqhqhGpaO3LretdtMn/BVX4cPLanIZuwwrkVl+lK84E/miEXkCHWXuq65rhNN4rXsBcOB3S4w==, tarball: https://registry.npmjs.org/vite-tsconfig-paths/-/vite-tsconfig-paths-5.1.4.tgz}
+    peerDependencies:
       vite: '*'
     peerDependenciesMeta:
       vite:
@@ -18952,7 +18990,7 @@ snapshots:
       '@module-federation/data-prefetch': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@module-federation/dts-plugin': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
       '@module-federation/error-codes': 2.3.1
-      '@module-federation/inject-external-runtime-core-plugin': 2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.7.0(encoding@0.1.13)))
+      '@module-federation/inject-external-runtime-core-plugin': 2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.6.1))
       '@module-federation/managers': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))
       '@module-federation/manifest': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
       '@module-federation/rspack': 2.3.1(@rspack/core@1.7.11(@swc/helpers@0.5.21))(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
@@ -18982,7 +19020,7 @@ snapshots:
       '@module-federation/data-prefetch': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@module-federation/dts-plugin': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
       '@module-federation/error-codes': 2.3.1
-      '@module-federation/inject-external-runtime-core-plugin': 2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.7.0(encoding@0.1.13)))
+      '@module-federation/inject-external-runtime-core-plugin': 2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.6.1))
       '@module-federation/managers': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))
       '@module-federation/manifest': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
       '@module-federation/rspack': 2.3.1(@rspack/core@1.7.11(@swc/helpers@0.5.21))(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
@@ -19017,7 +19055,7 @@ snapshots:
     dependencies:
       '@module-federation/runtime-tools': 0.18.4
 
-  '@module-federation/inject-external-runtime-core-plugin@2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.7.0(encoding@0.1.13)))':
+  '@module-federation/inject-external-runtime-core-plugin@2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.6.1))':
     dependencies:
       '@module-federation/runtime-tools': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))
 
@@ -19129,7 +19167,7 @@ snapshots:
     dependencies:
       '@module-federation/bridge-react-webpack-plugin': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))
       '@module-federation/dts-plugin': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
-      '@module-federation/inject-external-runtime-core-plugin': 2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.7.0(encoding@0.1.13)))
+      '@module-federation/inject-external-runtime-core-plugin': 2.3.1(@module-federation/runtime-tools@2.3.1(node-fetch@2.6.1))
       '@module-federation/managers': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))
       '@module-federation/manifest': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.9.3)(vue-tsc@2.2.12(typescript@5.9.3))
       '@module-federation/runtime-tools': 2.3.1(node-fetch@2.7.0(encoding@0.1.13))
@@ -26571,6 +26609,8 @@ snapshots:
       pify: 2.3.0
       pinkie-promise: 2.0.1
 
+  globrex@0.1.2: {}
+
   good-listener@1.2.2:
     dependencies:
       delegate: 3.2.0
@@ -31849,6 +31889,11 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
 
+  tinyglobby@0.2.17:
+    dependencies:
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
+
   tinymce@6.8.3: {}
 
   tinymce@6.8.6: {}
@@ -32024,6 +32069,10 @@ snapshots:
       '@swc/core': 1.15.8(@swc/helpers@0.5.21)
 
   ts-results@3.3.0: {}
+
+  tsconfck@3.1.6(typescript@5.9.3):
+    optionalDependencies:
+      typescript: 5.9.3
 
   tsconfig-paths-webpack-plugin@4.2.0:
     dependencies:
@@ -32301,6 +32350,25 @@ snapshots:
       - '@types/node'
       - rollup
       - supports-color
+
+  vite-plugin-static-copy@4.1.1(vite@7.3.2(@types/node@20.19.9)(jiti@2.4.2)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3)):
+    dependencies:
+      chokidar: 3.6.0
+      p-map: 7.0.4
+      picocolors: 1.1.1
+      tinyglobby: 0.2.17
+      vite: 7.3.2(@types/node@20.19.9)(jiti@2.4.2)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3)
+
+  vite-tsconfig-paths@5.1.4(typescript@5.9.3)(vite@7.3.2(@types/node@20.19.9)(jiti@2.4.2)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3)):
+    dependencies:
+      debug: 4.4.3
+      globrex: 0.1.2
+      tsconfck: 3.1.6(typescript@5.9.3)
+    optionalDependencies:
+      vite: 7.3.2(@types/node@20.19.9)(jiti@2.4.2)(less@4.6.4)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.56.2)(terser@5.28.1)(tsx@4.19.0)(yaml@2.8.3)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   vite@7.3.1(@types/node@20.19.9)(jiti@2.4.2)(less@4.4.2)(lightningcss@1.31.1)(sass-embedded@1.99.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.19.0)(yaml@2.8.3):
     dependencies:
