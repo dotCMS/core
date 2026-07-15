@@ -321,11 +321,12 @@ describe('DotHostFolderFieldComponent', () => {
             mockSitesPage(sites, SITE_SEARCH_THRESHOLD + 1);
             store.loadSites({ path: null, isRequired: false });
             tick();
+            spectator.detectChanges();
+            showSitesPanel();
             mockSitesPage([], 0);
             store.filterSites('no-match-zzzz');
             tick(300);
             spectator.detectChanges();
-            showSitesPanel();
 
             expect(queryInOverlay('host-folder-sites-empty')).toBeTruthy();
             expect(queryInOverlay('host-folder-sites-search-input')).toBeTruthy();
@@ -444,10 +445,11 @@ describe('DotHostFolderFieldComponent', () => {
             tick();
             store.selectSite(TREE_SELECT_SITES_MOCK[0]);
             tick();
+            spectator.detectChanges();
+            showFoldersPanel();
             store.search('ai');
             tick(300);
             spectator.detectChanges();
-            showFoldersPanel();
 
             const pathEl = queryInOverlay('host-folder-search-result-path');
             expect(pathEl).toBeTruthy();
@@ -491,10 +493,11 @@ describe('DotHostFolderFieldComponent', () => {
             tick();
             store.selectSite(TREE_SELECT_SITES_MOCK[0]);
             tick();
+            spectator.detectChanges();
+            showFoldersPanel();
             store.search('containers');
             tick(300);
             spectator.detectChanges();
-            showFoldersPanel();
 
             expect(document.querySelector('.p-tree-node-leaf')).toBeTruthy();
             expect(store.searchResults()[0]?.leaf).toBe(true);
