@@ -18,9 +18,14 @@ export default defineConfig(() => ({
         // @dotcms/* alias) so the plugin does NOT crawl every tsconfig in the
         // monorepo. That crawl runs inside @nx/vite's project-graph inference
         // (resolveConfig) and segfaults the native resolver on CI.
+        // `loose: true` is required for Vue SFCs: vite-tsconfig-paths only
+        // resolves aliases from .ts/.tsx importers unless allowJs is set on the
+        // loaded tsconfig (tsconfig.base.json has neither), so .vue imports of
+        // @dotcms/* would fail without it.
         tsconfigPaths({
             root: path.resolve(import.meta.dirname, '../../../'),
-            projects: ['tsconfig.base.json']
+            projects: ['tsconfig.base.json'],
+            loose: true
         }),
         viteStaticCopy({ targets: [{ src: '*.md', dest: '.' }] }),
         dts({
