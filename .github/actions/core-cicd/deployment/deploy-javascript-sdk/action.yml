@@ -203,13 +203,6 @@ runs:
           echo "📦 Processing @dotcms/${sdk}..."
           cd "$sdk"
 
-          if [ ! -f package.json ]; then
-            echo "  ⏭️ Skipping $sdk (no package.json)"
-            cd ..
-            echo ""
-            continue
-          fi
-
           ORIGINAL_VERSION=$(jq -r '.version' package.json)
 
           if [ "$PUBLISH_LATEST" = "true" ]; then
