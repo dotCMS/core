@@ -382,6 +382,23 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     }
 
     /**
+     * A malformed (non-date) range bound with Lucene special characters must not break the query
+     * (no 500, no injection): it is escaped and simply matches nothing.
+     */
+    @Test
+    public void testMalformedDateBoundIsSafe() throws DotDataException, DotSecurityException {
+        final Map<String, Object> range = new java.util.HashMap<>();
+        range.put("from", "not-a-date\"] OR title:*");
+        range.put("to", "*");
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(DATE_VAR, range))
+                .build());
+        assertFalse(inodes.contains(angularWithTags.getInode()));
+        assertFalse(inodes.contains(reactWithVue.getInode()));
+        assertFalse(inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
      * Relationship field routes to the DB ({@code tree}): filtering the parent by a child identifier
      * returns only the parent that references it (read-your-writes, no index involved).
      */

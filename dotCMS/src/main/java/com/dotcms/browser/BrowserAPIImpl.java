@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.MultiSelectField;
@@ -1331,7 +1332,19 @@ public class BrowserAPIImpl implements BrowserAPI {
             return "*";
         }
         final Date parsed = parseFlexibleDate(value);
-        return null != parsed ? new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed) : value;
+        if (null == parsed) {
+            // For a date-typed field the bound should be a date. If it isn't, don't let the raw
+            // value reach the Lucene query_string as-is — escape it so a crafted value can't alter
+            // the query structure (an escaped non-date simply matches nothing).
+            Logger.warn(this, String.format(
+                    "Unparseable date range bound '%s'; escaping it (the criterion will match "
+                            + "nothing).", value));
+            return ESUtils.escape(value);
+        }
+        final String normalized = new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed);
+        Logger.debug(this, String.format("Date range bound '%s' normalized to '%s'.", value,
+                normalized));
+        return normalized;
     }
 
     /**
