@@ -1,3 +1,5 @@
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { SpyObject, mockProvider } from '@openng/spectator/jest';
 import { Subject, of, throwError } from 'rxjs';
 
@@ -18,11 +20,61 @@ import {
     HostFolderFiledStore,
     LOAD_MORE_NODE_TYPE,
     ROOT_NODE_KEY,
+    SITE_PAGE_LIMIT,
     SITE_SEARCH_THRESHOLD,
     SYSTEM_HOST_NAME
 } from './host-folder-field.store';
 
 import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../utils/mocks';
+
+function createSitesPageResponse(
+    sites: TreeNodeItem[],
+    totalEntries?: number,
+    currentPage = 1
+): { sites: TreeNodeItem[]; pagination: DotPagination } {
+    return {
+        sites,
+        pagination: {
+            currentPage,
+            perPage: SITE_PAGE_LIMIT,
+            totalEntries: totalEntries ?? sites.length
+        }
+    };
+}
+
+function mockSitesPage(
+    browsingService: SpyObject<DotBrowsingService>,
+    sites: TreeNodeItem[],
+    totalEntries?: number
+): void {
+    browsingService.getSitesPage.mockReturnValue(of(createSitesPageResponse(sites, totalEntries)));
+}
+
+function createSiteList(count: number, prefix = 'site'): TreeNodeItem[] {
+    return Array.from({ length: count }, (_, index) => ({
+        key: `${prefix}-${index}`,
+        label: `${prefix}-${index}.dotcms.com`,
+        data: {
+            id: `${prefix}-${index}`,
+            hostname: `${prefix}-${index}.dotcms.com`,
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    }));
+}
+
+function mockResolveSiteByHostname(
+    browsingService: SpyObject<DotBrowsingService>,
+    resolver: (hostname: string) => TreeNodeItem | null = (hostname) =>
+        [...TREE_SELECT_SITES_MOCK, ...TREE_SELECT_MOCK].find((site) => site.label === hostname) ??
+        null
+): void {
+    browsingService.resolveSiteByHostname.mockImplementation((hostname: string) =>
+        of(resolver(hostname))
+    );
+}
 
 describe('HostFolderFiledStore', () => {
     let store: InstanceType<typeof HostFolderFiledStore>;
@@ -45,7 +97,18 @@ describe('HostFolderFiledStore', () => {
                     handle: jest.fn()
                 }),
                 mockProvider(DotBrowsingService, {
-                    getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
+                    getSitesPage: jest.fn(() =>
+                        of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))
+                    ),
+                    resolveSiteByHostname: jest.fn((hostname: string) => {
+                        const site =
+                            TREE_SELECT_SITES_MOCK.find((item) => item.label === hostname) ??
+                            TREE_SELECT_MOCK.find((item) => item.label === hostname);
+
+                        return of(site ?? null);
+                    }),
+                    getCurrentSiteAsTreeNodeItem: jest.fn(),
+                    buildTreeByPaths: jest.fn(),
                     searchFolders: jest.fn(() => of({ folders: [], pagination: mockPagination }))
                 })
             ]
@@ -61,14 +124,14 @@ describe('HostFolderFiledStore', () => {
     describe('Method: loadSites', () => {
         describe('System Host isRequired', () => {
             it('should include System Host when isRequired is false.', () => {
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                mockSitesPage(service, TREE_SELECT_SITES_MOCK);
                 store.loadSites({ path: null, isRequired: false });
                 const hasSystemHost = store.sites().some((item) => item.label === SYSTEM_HOST_NAME);
                 expect(hasSystemHost).toBe(true);
             });
 
             it('should not include System Host when isRequired is true.', () => {
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                mockSitesPage(service, TREE_SELECT_SITES_MOCK);
                 store.loadSites({ path: null, isRequired: true });
                 const hasSystemHost = store.sites().some((item) => item.label === SYSTEM_HOST_NAME);
                 expect(hasSystemHost).toBe(false);
@@ -78,7 +141,7 @@ describe('HostFolderFiledStore', () => {
         describe('when path is not empty', () => {
             it('should select the node/site if the path is not empty and not required', () => {
                 const node = TREE_SELECT_SITES_MOCK[0];
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                mockSitesPage(service, TREE_SELECT_SITES_MOCK);
                 store.loadSites({ path: node.label, isRequired: false });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
@@ -89,7 +152,7 @@ describe('HostFolderFiledStore', () => {
 
             it('should select the node/site if the path is not empty and is required', () => {
                 const node = TREE_SELECT_SITES_MOCK[0];
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                mockSitesPage(service, TREE_SELECT_SITES_MOCK);
                 store.loadSites({ path: node.label, isRequired: true });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
@@ -100,7 +163,7 @@ describe('HostFolderFiledStore', () => {
                 const [site] = TREE_SELECT_MOCK;
                 const targetNode = site.children[0];
 
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
                     of({
                         node: targetNode,
@@ -153,7 +216,7 @@ describe('HostFolderFiledStore', () => {
                 };
                 const rootFolders = [{ ...site.children[0], children: undefined }, targetNode];
 
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
                     of({
                         node: targetNode,
@@ -193,7 +256,7 @@ describe('HostFolderFiledStore', () => {
                 const [site] = TREE_SELECT_MOCK;
                 const targetNode = site.children[0];
 
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
                     of({
                         node: targetNode,
@@ -224,7 +287,7 @@ describe('HostFolderFiledStore', () => {
                 const [site] = TREE_SELECT_MOCK;
                 const targetNode = site.children[0];
 
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
                     of({
                         node: targetNode,
@@ -259,7 +322,7 @@ describe('HostFolderFiledStore', () => {
                 const targetNode = { ...level1.children[0], expanded: false };
                 const unexpandedLevel1 = { ...level1, expanded: false, children: [targetNode] };
 
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
                     of({
                         node: targetNode,
@@ -289,7 +352,7 @@ describe('HostFolderFiledStore', () => {
 
         describe('when path is empty', () => {
             it('should select System Host if not required', () => {
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                mockSitesPage(service, TREE_SELECT_SITES_MOCK);
                 store.loadSites({ path: null, isRequired: false });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
@@ -298,7 +361,7 @@ describe('HostFolderFiledStore', () => {
 
             it('should select current site if required', fakeAsync(() => {
                 const hostNode = TREE_SELECT_SITES_MOCK[1];
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                mockSitesPage(service, TREE_SELECT_SITES_MOCK);
                 service.getCurrentSiteAsTreeNodeItem.mockReturnValue(of(hostNode));
 
                 store.loadSites({ path: null, isRequired: true });
@@ -310,18 +373,21 @@ describe('HostFolderFiledStore', () => {
         });
 
         describe('when the resolved site cannot be found', () => {
-            it('should surface an error instead of leaving the store silently uninitialized when there are no sites available', () => {
-                service.getSitesTreePath.mockReturnValue(of([]));
+            it('should surface an error instead of leaving the store silently uninitialized when there are no sites available', fakeAsync(() => {
+                mockSitesPage(service, [], 0);
+                service.resolveSiteByHostname.mockReturnValue(of(null));
 
                 store.loadSites({ path: null, isRequired: false });
+                tick();
 
                 expect(store.selectedSite()).toBe(null);
                 expect(store.confirmedNode()).toBe(null);
                 expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
-            });
+            }));
 
             it('should surface an error instead of leaving the store silently uninitialized when the persisted path resolves to a hostname not present in the sites list (e.g. an archived/inaccessible site)', fakeAsync(() => {
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                mockSitesPage(service, TREE_SELECT_SITES_MOCK);
+                service.resolveSiteByHostname.mockReturnValue(of(null));
 
                 store.loadSites({ path: 'unknown-site.dotcms.com/level1', isRequired: false });
                 tick();
@@ -547,6 +613,53 @@ describe('HostFolderFiledStore', () => {
                 site.data.hostname
             );
             expect(node.children).toEqual(childFolders);
+            expect(node.loading).toBe(false);
+        });
+
+        it('should set node.loading on the tree node while children are loading', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const node: TreeNodeItem = {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/folder1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder1/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                leaf: false
+            };
+            const pending$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+
+            service.searchFolders.mockImplementation((params) => {
+                if (params.path === '/folder1/') {
+                    return pending$.asObservable();
+                }
+
+                return of({ folders: [], pagination: mockPagination });
+            });
+            store.selectSite(site);
+            patchState(unprotected(store), {
+                folders: [node],
+                foldersStatus: ComponentStatus.LOADED
+            });
+
+            store.expandNode(buildEvent(node));
+
+            expect(store.folders().find((item) => item.key === 'folder-1')?.loading).toBe(true);
+
+            pending$.next({
+                folders: [],
+                pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+            });
+            pending$.complete();
+
+            expect(store.folders().find((item) => item.key === 'folder-1')?.loading).toBe(false);
         });
 
         it('should not fetch when the node is a leaf', () => {
@@ -705,11 +818,15 @@ describe('HostFolderFiledStore', () => {
             });
 
             store.expandNode(buildEvent(nodeA));
+            expect(
+                store.folders().find((item) => item.key === 'folder-a')?.loading ?? nodeA.loading
+            ).toBe(true);
             expect(store.nodePagination()['folder-a'].loading).toBe(true);
 
             store.expandNode(buildEvent(nodeB));
 
             expect(nodeB.children).toEqual(childrenB);
+            expect(nodeB.loading).toBe(false);
             expect(store.nodePagination()['folder-b'].loading).toBe(false);
             expect(store.nodePagination()['folder-a'].loading).toBe(true);
 
@@ -720,6 +837,9 @@ describe('HostFolderFiledStore', () => {
             pendingA$.complete();
 
             expect(nodeA.children).toEqual(childrenA);
+            expect(
+                store.folders().find((item) => item.key === 'folder-a')?.loading ?? nodeA.loading
+            ).toBe(false);
             expect(store.nodePagination()['folder-a'].loading).toBe(false);
         });
     });
@@ -1181,7 +1301,7 @@ describe('HostFolderFiledStore', () => {
 
     describe('Error handling', () => {
         it('should surface loadSites HTTP errors and delegate to DotHttpErrorManagerService', () => {
-            service.getSitesTreePath.mockReturnValue(throwError(() => httpError));
+            service.getSitesPage.mockReturnValue(throwError(() => httpError));
 
             store.loadSites({ path: null, isRequired: false });
 
@@ -1191,7 +1311,7 @@ describe('HostFolderFiledStore', () => {
         });
 
         it('should surface a buildTreeByPaths failure instead of leaving loadSites stuck in LOADING forever', fakeAsync(() => {
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            mockSitesPage(service, TREE_SELECT_SITES_MOCK);
             service.buildTreeByPaths.mockReturnValue(throwError(() => httpError));
 
             store.loadSites({ path: 'demo.dotcms.com/level1', isRequired: false });
@@ -1360,34 +1480,23 @@ describe('HostFolderFiledStore', () => {
         }));
     });
 
-    describe('filteredSites / setSiteSearchTerm', () => {
+    describe('filteredSites', () => {
         beforeEach(() => {
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            mockSitesPage(service, TREE_SELECT_SITES_MOCK);
             store.loadSites({ path: null, isRequired: false });
         });
 
-        it('should return all sites when siteSearchTerm is empty', () => {
+        it('should mirror the loaded sites list', () => {
             expect(store.filteredSites()).toEqual(store.sites());
         });
 
-        it('should filter sites case-insensitively by label', () => {
-            store.setSiteSearchTerm('DEMO');
-
-            expect(store.filteredSites()).toEqual([TREE_SELECT_SITES_MOCK[0]]);
-        });
-
-        it('should return empty when no site matches the search term', () => {
-            store.setSiteSearchTerm('no-match');
-
-            expect(store.filteredSites()).toEqual([]);
-        });
-
-        it('should reset siteSearchTerm when selecting a different site', () => {
-            store.setSiteSearchTerm('demo');
+        it('should reset siteSearchTerm when selecting a different site', fakeAsync(() => {
+            store.filterSites('demo');
+            tick(300);
             store.selectSite(TREE_SELECT_SITES_MOCK[1]);
 
             expect(store.siteSearchTerm()).toBe('');
-        });
+        }));
     });
 
     describe('showSitesSearch', () => {
@@ -1399,25 +1508,144 @@ describe('HostFolderFiledStore', () => {
             collapsedIcon: 'pi pi-folder'
         });
 
-        it('should be false when site count equals SITE_SEARCH_THRESHOLD', () => {
+        it('should be false when total site count equals SITE_SEARCH_THRESHOLD', fakeAsync(() => {
             const sites = Array.from({ length: SITE_SEARCH_THRESHOLD }, (_, i) =>
                 createSite(`site-${i + 1}`)
             );
-            service.getSitesTreePath.mockReturnValue(of(sites));
+            mockSitesPage(service, sites, SITE_SEARCH_THRESHOLD);
             store.loadSites({ path: null, isRequired: false });
+            tick();
 
             expect(store.showSitesSearch()).toBe(false);
-        });
+        }));
 
-        it('should be true when site count exceeds SITE_SEARCH_THRESHOLD', () => {
+        it('should be true when total site count exceeds SITE_SEARCH_THRESHOLD', fakeAsync(() => {
             const sites = Array.from({ length: SITE_SEARCH_THRESHOLD + 1 }, (_, i) =>
                 createSite(`site-${i + 1}`)
             );
-            service.getSitesTreePath.mockReturnValue(of(sites));
+            mockSitesPage(service, sites, SITE_SEARCH_THRESHOLD + 1);
             store.loadSites({ path: null, isRequired: false });
+            tick();
 
             expect(store.showSitesSearch()).toBe(true);
+        }));
+
+        it('should stay true while a site search term is active even with zero results', fakeAsync(() => {
+            const sites = Array.from({ length: SITE_SEARCH_THRESHOLD + 1 }, (_, i) =>
+                createSite(`site-${i + 1}`)
+            );
+            mockSitesPage(service, sites, SITE_SEARCH_THRESHOLD + 1);
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+
+            mockSitesPage(service, [], 0);
+            store.filterSites('no-match');
+            tick(300);
+
+            expect(store.showSitesSearch()).toBe(true);
+            expect(store.sites()).toEqual([]);
+        }));
+    });
+
+    describe('showTriggerLoading', () => {
+        it('should be false while filtering sites when a confirmed selection already exists', fakeAsync(() => {
+            mockSitesPage(service, TREE_SELECT_SITES_MOCK);
+            store.loadSites({ path: 'demo.dotcms.com', isRequired: false });
+            tick();
+
+            mockSitesPage(service, [TREE_SELECT_SITES_MOCK[0]], 1);
+            store.filterSites('demo');
+            tick();
+
+            expect(store.showTriggerLoading()).toBe(false);
+            expect(store.displayPath()).toBe('demo.dotcms.com');
+        }));
+    });
+
+    describe('Loading states', () => {
+        const site = TREE_SELECT_SITES_MOCK[0];
+
+        it('should keep sitesLoading true until initial path resolution completes', fakeAsync(() => {
+            const sites$ = new Subject<{ sites: TreeNodeItem[]; pagination: DotPagination }>();
+            service.getSitesPage.mockReturnValue(sites$.asObservable());
+
+            store.loadSites({ path: 'demo.dotcms.com', isRequired: false });
+
+            expect(store.sitesLoading()).toBe(true);
+            expect(store.sitesStatus()).toBe(ComponentStatus.LOADING);
+            expect(store.confirmedNode()).toBeNull();
+
+            sites$.next(createSitesPageResponse(TREE_SELECT_SITES_MOCK));
+            sites$.complete();
+            tick();
+
+            expect(store.sitesLoading()).toBe(false);
+            expect(store.sitesStatus()).toBe(ComponentStatus.LOADED);
+            expect(store.confirmedNode()?.key).toBe(site.key);
+        }));
+
+        it('should keep sitesStatus LOADING after sites fetch until buildTreeByPaths resolves', fakeAsync(() => {
+            const tree$ = new Subject<{
+                node: TreeNodeItem;
+                tree: { path: string; folders: TreeNodeItem[] };
+                pagination?: Record<string, { page: number; hasMore: boolean }>;
+            }>();
+            const [mockSite] = TREE_SELECT_MOCK;
+            const targetNode = mockSite.children[0];
+
+            mockSitesPage(service, TREE_SELECT_MOCK);
+            service.buildTreeByPaths.mockReturnValue(tree$.asObservable());
+
+            store.loadSites({ path: 'demo.dotcms.com/level1', isRequired: false });
+            tick();
+
+            expect(store.sites()).toHaveLength(TREE_SELECT_MOCK.length);
+            expect(store.sitesStatus()).toBe(ComponentStatus.LOADING);
+            expect(store.sitesLoading()).toBe(true);
+            expect(store.confirmedNode()).toBeNull();
+
+            tree$.next({
+                node: targetNode,
+                tree: {
+                    path: '/',
+                    folders: mockSite.children
+                }
+            });
+            tree$.complete();
+            tick();
+
+            expect(store.sitesStatus()).toBe(ComponentStatus.LOADED);
+            expect(store.sitesLoading()).toBe(false);
+            expect(store.confirmedNode()?.key).toBe(targetNode.key);
+        }));
+
+        it('should expose showFoldersPanelLoading while folders load with an empty list', () => {
+            const folders$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.searchFolders.mockReturnValue(folders$.asObservable());
+
+            store.selectSite(site);
+
+            expect(store.showFoldersPanelLoading()).toBe(true);
+            expect(store.foldersLoading()).toBe(true);
         });
+
+        it('should expose searchLoading while a backend search is in flight', fakeAsync(() => {
+            const search$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.searchFolders.mockReturnValue(search$.asObservable());
+
+            store.selectSite(site);
+            store.search('match');
+            tick(500);
+
+            expect(store.searchLoading()).toBe(true);
+            expect(store.showFoldersPanelLoading()).toBe(true);
+        }));
     });
 
     describe('showFolderSearch', () => {
@@ -1438,7 +1666,7 @@ describe('HostFolderFiledStore', () => {
             }
         ];
 
-        it('should be true while folders are loading', () => {
+        it('should be false while the folders panel loading state is shown', () => {
             const folders$ = new Subject<{
                 folders: TreeNodeItem[];
                 pagination: DotPagination;
@@ -1448,7 +1676,8 @@ describe('HostFolderFiledStore', () => {
             store.selectSite(site);
 
             expect(store.foldersStatus()).toBe(ComponentStatus.LOADING);
-            expect(store.showFolderSearch()).toBe(true);
+            expect(store.showFoldersPanelLoading()).toBe(true);
+            expect(store.showFolderSearch()).toBe(false);
         });
 
         it('should be false when folders loaded and the site has no folders', () => {
@@ -1487,18 +1716,136 @@ describe('HostFolderFiledStore', () => {
 
     describe('filterSites', () => {
         beforeEach(() => {
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            mockSitesPage(service, TREE_SELECT_SITES_MOCK);
             store.loadSites({ path: null, isRequired: false });
         });
 
-        it('should debounce site search term updates', fakeAsync(() => {
+        it('should keep existing sites during debounce before the search request', fakeAsync(() => {
+            const initialSites = store.sites();
+
+            store.filterSites('demo');
+            tick(100);
+
+            expect(store.sites()).toEqual(initialSites);
+            expect(store.siteSearchTerm()).toBe('');
+        }));
+
+        it('should debounce and query the sites API with the search term', fakeAsync(() => {
+            mockSitesPage(service, [TREE_SELECT_SITES_MOCK[0]], 1);
+            service.getSitesPage.mockClear();
+
             store.filterSites('demo');
             expect(store.siteSearchTerm()).toBe('');
 
-            tick(150);
+            tick(300);
 
             expect(store.siteSearchTerm()).toBe('demo');
+            expect(service.getSitesPage).toHaveBeenCalledWith({
+                filter: 'demo',
+                perPage: SITE_PAGE_LIMIT,
+                page: 1
+            });
             expect(store.filteredSites()).toEqual([TREE_SELECT_SITES_MOCK[0]]);
+        }));
+
+        it('should reload all sites when the search term is cleared', fakeAsync(() => {
+            store.filterSites('');
+            tick(300);
+
+            expect(service.getSitesPage).toHaveBeenLastCalledWith({
+                filter: '*',
+                perPage: SITE_PAGE_LIMIT,
+                page: 1
+            });
+        }));
+    });
+
+    describe('sites pagination guards', () => {
+        it('should set hasMore true when the first page returns a full page', fakeAsync(() => {
+            const pageSites = createSiteList(SITE_PAGE_LIMIT);
+
+            mockSitesPage(service, pageSites);
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+
+            expect(store.sitesPagination().hasMore).toBe(true);
+            expect(store.sitesLoadedPages()).toEqual([1]);
+        }));
+
+        it('should set hasMore false when the page returns fewer than SITE_PAGE_LIMIT items', fakeAsync(() => {
+            mockSitesPage(service, TREE_SELECT_SITES_MOCK);
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+
+            expect(store.sitesPagination().hasMore).toBe(false);
+        }));
+    });
+
+    describe('loadMoreSites', () => {
+        it('should append the next page and dedupe existing sites', fakeAsync(() => {
+            const pageOne = createSiteList(SITE_PAGE_LIMIT);
+            const pageTwo = [createSiteList(1, 'page-two')[0], pageOne[0]];
+
+            mockSitesPage(service, pageOne);
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+
+            service.getSitesPage.mockReturnValue(of(createSitesPageResponse(pageTwo, 80, 2)));
+
+            store.loadMoreSites();
+            tick();
+
+            expect(service.getSitesPage).toHaveBeenLastCalledWith({
+                filter: '*',
+                perPage: SITE_PAGE_LIMIT,
+                page: 2
+            });
+            expect(store.sites()).toHaveLength(SITE_PAGE_LIMIT + 1);
+            expect(store.sitesPagination().hasMore).toBe(false);
+            expect(store.sitesLoadedPages()).toEqual([1, 2]);
+        }));
+
+        it('should not request the same page twice when loadMoreSites is called repeatedly', fakeAsync(() => {
+            const pageOne = createSiteList(SITE_PAGE_LIMIT);
+            const pageTwo = createSiteList(1, 'page-two');
+
+            mockSitesPage(service, pageOne);
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+
+            service.getSitesPage.mockReturnValue(of(createSitesPageResponse(pageTwo, 80, 2)));
+            service.getSitesPage.mockClear();
+
+            store.loadMoreSites();
+            store.loadMoreSites();
+            tick();
+
+            expect(service.getSitesPage).toHaveBeenCalledTimes(1);
+            expect(service.getSitesPage).toHaveBeenCalledWith({
+                filter: '*',
+                perPage: SITE_PAGE_LIMIT,
+                page: 2
+            });
+        }));
+    });
+
+    describe('pinned site resolution', () => {
+        it('should resolve the path site and prepend it without paginating until found', fakeAsync(() => {
+            const pinnedSite = TREE_SELECT_SITES_MOCK[0];
+            const pageSites = [TREE_SELECT_SITES_MOCK[1]];
+
+            service.resolveSiteByHostname.mockReturnValue(of(pinnedSite));
+            mockSitesPage(service, pageSites, 100);
+
+            store.loadSites({ path: pinnedSite.label, isRequired: false });
+            tick();
+
+            expect(service.resolveSiteByHostname).toHaveBeenCalledWith(
+                pinnedSite.label,
+                SITE_PAGE_LIMIT
+            );
+            expect(store.sites()[0].key).toBe(pinnedSite.key);
+            expect(store.sites()).toHaveLength(2);
         }));
     });
 });

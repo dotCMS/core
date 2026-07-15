@@ -21,7 +21,8 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Popover, PopoverModule } from 'primeng/popover';
-import { ScrollerModule } from 'primeng/scroller';
+import { ScrollerLazyLoadEvent, ScrollerModule } from 'primeng/scroller';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 import { Tree, TreeModule } from 'primeng/tree';
 
@@ -45,6 +46,7 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
     imports: [
         PopoverModule,
         ScrollerModule,
+        SkeletonModule,
         TreeModule,
         ButtonModule,
         TooltipModule,
@@ -227,10 +229,53 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     }
 
     /**
-     * Forwards the sites search input's value to the store for debounced local filtering.
+     * Forwards the sites search input's value to the store for debounced API search.
      */
     onSiteSearchInput(event: Event): void {
         this.store.filterSites(this.#readInputValue(event));
+    }
+
+    /**
+     * Loads more sites when the virtual scroller approaches the end of the list.
+     */
+    onSitesLazyLoad(event: ScrollerLazyLoadEvent): void {
+        if (!this.#shouldLoadMoreSites(event)) {
+            return;
+        }
+
+        this.store.loadMoreSites();
+    }
+
+    #shouldLoadMoreSites(event: ScrollerLazyLoadEvent): boolean {
+        if (
+            event?.first === undefined ||
+            Number.isNaN(Number(event.first)) ||
+            (event?.last !== undefined && Number.isNaN(Number(event.last)))
+        ) {
+            return false;
+        }
+
+        const pagination = this.store.sitesPagination();
+
+        if (pagination.loading || !pagination.hasMore) {
+            return false;
+        }
+
+        const currentCount = this.store.sites().length;
+
+        if (currentCount === 0) {
+            return false;
+        }
+
+        const last = event.last !== undefined ? Number(event.last) : Number(event.first);
+        const itemsNeeded = last + 1;
+
+        // Only fetch when the viewport needs items beyond what is already loaded.
+        if (itemsNeeded <= currentCount) {
+            return false;
+        }
+
+        return true;
     }
 
     #readInputValue(event: Event): string {

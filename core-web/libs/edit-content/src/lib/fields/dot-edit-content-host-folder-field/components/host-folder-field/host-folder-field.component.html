@@ -24,10 +24,22 @@
         <span
             class="min-w-0 flex-auto truncate text-(--p-inputtext-color)"
             data-testid="host-folder-trigger-label">
-            {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+            @if (store.showTriggerLoading()) {
+                <span data-testid="host-folder-trigger-skeleton">
+                    <p-skeleton width="60%" height="1rem" />
+                </span>
+            } @else {
+                {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+            }
         </span>
 
-        <i class="pi flex-none text-surface-500" [class]="store.iconClasses()"></i>
+        <i
+            class="pi flex-none text-surface-500"
+            data-testid="host-folder-trigger-icon"
+            [class.pi-spin]="store.showTriggerLoading()"
+            [class.pi-spinner]="store.showTriggerLoading()"
+            [class.pi-chevron-up]="!store.showTriggerLoading() && store.overlayOpen()"
+            [class.pi-chevron-down]="!store.showTriggerLoading() && !store.overlayOpen()"></i>
     </button>
 
     <p-button
@@ -54,7 +66,7 @@
     (onHide)="store.closeOverlay()"
     (onShow)="onOverlayShow()"
     [dismissable]="true"
-    [style]="{ width: $overlayWidth() }"
+    [style]="{ width: $overlayWidth(), minWidth: '40rem' }"
     appendTo="body"
     [pt]="popoverPt"
     data-testid="host-folder-overlay">
@@ -86,7 +98,16 @@
                     </span>
                 }
 
-                @if (store.sitesLoadFailed()) {
+                @if (store.showSitesPanelLoading()) {
+                    <div
+                        class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-surface-500"
+                        data-testid="host-folder-sites-loading">
+                        <i class="pi pi-spin pi-spinner text-2xl text-surface-400"></i>
+                        <span class="text-sm">
+                            {{ 'dot.file.field.host.folder.loading.sites' | dm }}
+                        </span>
+                    </div>
+                } @else if (store.sitesLoadFailed()) {
                     <span
                         class="block p-2 text-sm text-red-600"
                         data-testid="host-folder-sites-error">
@@ -99,13 +120,17 @@
                         {{ 'dot.file.field.host.folder.empty.sites' | dm }}
                     </span>
                 } @else {
-                    <p-scroller
+                    <p-virtualscroller
                         class="min-h-0 flex-1"
                         [pt]="scrollerPt"
                         [items]="filteredSites"
                         [itemSize]="42"
                         [trackBy]="trackBySiteKey"
-                        scrollHeight="100%">
+                        [lazy]="true"
+                        [appendOnly]="true"
+                        [loading]="store.sitesPagination().loading"
+                        scrollHeight="100%"
+                        (onLazyLoad)="onSitesLazyLoad($event)">
                         <ng-template pTemplate="item" let-site>
                             @let isSelectedSite = selectedSiteKey === site.key;
                             <div class="pb-1.5">
@@ -117,6 +142,10 @@
                                     [class.text-primary-500]="isSelectedSite"
                                     [class.text-gray-600]="!isSelectedSite"
                                     [class.hover:bg-gray-100]="!isSelectedSite"
+                                    [pTooltip]="site.label"
+                                    [tooltipDisabled]="site.label.length <= 10"
+                                    tooltipPosition="top"
+                                    [showDelay]="800"
                                     data-testid="host-folder-site-item"
                                     (click)="onSiteSelect(site)">
                                     <span
@@ -134,7 +163,7 @@
                                 </button>
                             </div>
                         </ng-template>
-                    </p-scroller>
+                    </p-virtualscroller>
                 }
             </div>
 
@@ -168,7 +197,20 @@
                         data-testid="host-folder-folders-error">
                         {{ 'dot.file.field.host.folder.error.folders' | dm }}
                     </span>
-                } @else if (!store.foldersLoading() && store.displayedFolders().length === 0) {
+                } @else if (store.showFoldersPanelLoading()) {
+                    <div
+                        class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-surface-500"
+                        data-testid="host-folder-folders-loading">
+                        <i class="pi pi-spin pi-spinner text-2xl text-surface-400"></i>
+                        <span class="text-sm">
+                            {{ 'dot.file.field.host.folder.loading.folders' | dm }}
+                        </span>
+                    </div>
+                } @else if (
+                    !store.foldersLoading() &&
+                    !store.searchLoading() &&
+                    store.displayedFolders().length === 0
+                ) {
                     <div
                         class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-surface-500"
                         data-testid="host-folder-folders-empty">
@@ -188,7 +230,7 @@
                         class="min-h-0 min-w-0 flex-1 overflow-hidden"
                         [value]="store.displayedFolders()"
                         [selection]="store.treeSelection()"
-                        [loading]="store.foldersLoading()"
+                        [loading]="store.foldersLoading() && store.displayedFolders().length > 0"
                         selectionMode="single"
                         scrollHeight="flex"
                         loadingMode="icon"
@@ -223,11 +265,15 @@
                                 {{ 'dot.file.field.host.folder.action.load.more' | dm }}
                             </button>
                         </ng-template>
-                        <ng-template let-expanded pTemplate="togglericon">
-                            <i
-                                class="pi"
-                                [class.pi-chevron-down]="expanded"
-                                [class.pi-chevron-right]="!expanded"></i>
+                        <ng-template pTemplate="togglericon" let-expanded let-loading="loading">
+                            @if (loading) {
+                                <i class="pi pi-spin pi-spinner text-sm text-surface-400"></i>
+                            } @else {
+                                <i
+                                    class="pi text-sm"
+                                    [class.pi-chevron-down]="expanded"
+                                    [class.pi-chevron-right]="!expanded"></i>
+                            }
                         </ng-template>
                     </p-tree>
                 }

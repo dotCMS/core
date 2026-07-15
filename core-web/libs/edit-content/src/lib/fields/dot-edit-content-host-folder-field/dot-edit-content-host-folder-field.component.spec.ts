@@ -51,7 +51,17 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                 handle: jest.fn()
             }),
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
+                getSitesPage: jest.fn(() =>
+                    of({
+                        sites: TREE_SELECT_SITES_MOCK,
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 40,
+                            totalEntries: TREE_SELECT_SITES_MOCK.length
+                        }
+                    })
+                ),
+                resolveSiteByHostname: jest.fn(() => of(null)),
                 getCurrentSiteAsTreeNodeItem: jest.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
                 buildTreeByPaths: jest.fn(() =>
                     of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })
@@ -102,7 +112,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     it('should load sites into the store on init', () => {
         spectator.detectChanges();
 
-        expect(service.getSitesTreePath).toHaveBeenCalled();
+        expect(service.getSitesPage).toHaveBeenCalled();
         expect(store.sites()).toBe(TREE_SELECT_SITES_MOCK);
     });
 

@@ -5,22 +5,29 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { Clipboard } from '@angular/cdk/clipboard';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
+
 import { Popover } from 'primeng/popover';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { TreeNodeItem } from '@dotcms/dotcms-models';
+import { ComponentStatus, TreeNodeItem, DotPagination } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
 import { DotHostFolderFieldComponent } from './host-folder-field.component';
 
 import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../../utils/mocks';
-import { HostFolderFiledStore, SITE_SEARCH_THRESHOLD } from '../../store/host-folder-field.store';
+import {
+    HostFolderFiledStore,
+    SITE_PAGE_LIMIT,
+    SITE_SEARCH_THRESHOLD
+} from '../../store/host-folder-field.store';
 import { MessageServiceMock } from '../../utils/mocks';
 
 describe('DotHostFolderFieldComponent', () => {
@@ -28,6 +35,19 @@ describe('DotHostFolderFieldComponent', () => {
     let service: SpyObject<DotBrowsingService>;
     let clipboard: SpyObject<Clipboard>;
     let store: InstanceType<typeof HostFolderFiledStore>;
+
+    const createSitesPageResponse = (sites: TreeNodeItem[], totalEntries?: number) => ({
+        sites,
+        pagination: {
+            currentPage: 1,
+            perPage: SITE_PAGE_LIMIT,
+            totalEntries: totalEntries ?? sites.length
+        }
+    });
+
+    const mockSitesPage = (sites: TreeNodeItem[], totalEntries?: number) => {
+        service.getSitesPage.mockReturnValue(of(createSitesPageResponse(sites, totalEntries)));
+    };
 
     const createComponent = createComponentFactory({
         component: DotHostFolderFieldComponent,
@@ -37,7 +57,16 @@ describe('DotHostFolderFieldComponent', () => {
                 handle: jest.fn()
             }),
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
+                getSitesPage: jest.fn(() => of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))),
+                resolveSiteByHostname: jest.fn((hostname: string) => {
+                    const site =
+                        TREE_SELECT_SITES_MOCK.find((item) => item.label === hostname) ??
+                        TREE_SELECT_MOCK.find((item) => item.label === hostname);
+
+                    return of(site ?? null);
+                }),
+                getCurrentSiteAsTreeNodeItem: jest.fn(),
+                buildTreeByPaths: jest.fn(),
                 searchFolders: jest.fn(() =>
                     of({
                         folders: [],
@@ -87,12 +116,12 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should load sites on writeValue', () => {
-        service.getSitesTreePath.mockClear();
+        service.getSitesPage.mockClear();
 
         spectator.component.writeValue('//demo.dotcms.com/system/');
         spectator.detectChanges();
 
-        expect(service.getSitesTreePath).toHaveBeenCalled();
+        expect(service.getSitesPage).toHaveBeenCalled();
     });
 
     it('should not toggle the overlay when disabled', () => {
@@ -163,6 +192,56 @@ describe('DotHostFolderFieldComponent', () => {
         expect(store.filterSites).toHaveBeenCalledWith('demo');
     });
 
+    it('should forward sites lazy-load events to the store when near the end of the list', () => {
+        jest.spyOn(store, 'loadMoreSites');
+        const sites = Array.from({ length: SITE_PAGE_LIMIT }, (_, index) => ({
+            ...TREE_SELECT_SITES_MOCK[0],
+            key: `site-${index}`,
+            label: `site-${index}.dotcms.com`
+        }));
+        jest.spyOn(store, 'sites').mockReturnValue(sites);
+        jest.spyOn(store, 'sitesPagination').mockReturnValue({
+            page: 1,
+            hasMore: true,
+            loading: false,
+            totalEntries: 100
+        });
+
+        spectator.component.onSitesLazyLoad({ first: 0, last: SITE_PAGE_LIMIT });
+
+        expect(store.loadMoreSites).toHaveBeenCalled();
+    });
+
+    it('should not load more sites while pagination is loading', () => {
+        jest.spyOn(store, 'loadMoreSites');
+        jest.spyOn(store, 'sites').mockReturnValue(TREE_SELECT_SITES_MOCK);
+        jest.spyOn(store, 'sitesPagination').mockReturnValue({
+            page: 1,
+            hasMore: true,
+            loading: true,
+            totalEntries: 100
+        });
+
+        spectator.component.onSitesLazyLoad({ first: 0, last: 2 });
+
+        expect(store.loadMoreSites).not.toHaveBeenCalled();
+    });
+
+    it('should not load more sites when the viewport is not near the end', () => {
+        jest.spyOn(store, 'loadMoreSites');
+        jest.spyOn(store, 'sites').mockReturnValue(TREE_SELECT_SITES_MOCK);
+        jest.spyOn(store, 'sitesPagination').mockReturnValue({
+            page: 1,
+            hasMore: true,
+            loading: false,
+            totalEntries: 100
+        });
+
+        spectator.component.onSitesLazyLoad({ first: 0, last: 0 });
+
+        expect(store.loadMoreSites).not.toHaveBeenCalled();
+    });
+
     describe('sites panel header', () => {
         beforeEach(fakeAsync(() => {
             tick();
@@ -197,7 +276,7 @@ describe('DotHostFolderFieldComponent', () => {
 
         it('should show the Sites label when there are five or fewer sites', fakeAsync(() => {
             const sites = [createSite('site-1'), createSite('site-2'), createSite('site-3')];
-            service.getSitesTreePath.mockReturnValue(of(sites));
+            mockSitesPage(sites, 3);
             store.loadSites({ path: null, isRequired: false });
             tick();
             spectator.detectChanges();
@@ -211,7 +290,7 @@ describe('DotHostFolderFieldComponent', () => {
             const sites = Array.from({ length: SITE_SEARCH_THRESHOLD }, (_, i) =>
                 createSite(`site-${i + 1}`)
             );
-            service.getSitesTreePath.mockReturnValue(of(sites));
+            mockSitesPage(sites, SITE_SEARCH_THRESHOLD);
             store.loadSites({ path: null, isRequired: false });
             tick();
             spectator.detectChanges();
@@ -225,7 +304,7 @@ describe('DotHostFolderFieldComponent', () => {
             const sites = Array.from({ length: SITE_SEARCH_THRESHOLD + 1 }, (_, i) =>
                 createSite(`site-${i + 1}`)
             );
-            service.getSitesTreePath.mockReturnValue(of(sites));
+            mockSitesPage(sites, SITE_SEARCH_THRESHOLD + 1);
             store.loadSites({ path: null, isRequired: false });
             tick();
             expect(store.sites()).toHaveLength(SITE_SEARCH_THRESHOLD + 1);
@@ -240,14 +319,34 @@ describe('DotHostFolderFieldComponent', () => {
             const sites = Array.from({ length: SITE_SEARCH_THRESHOLD + 1 }, (_, i) =>
                 createSite(`site-${i + 1}`)
             );
-            service.getSitesTreePath.mockReturnValue(of(sites));
+            mockSitesPage(sites, SITE_SEARCH_THRESHOLD + 1);
             store.loadSites({ path: null, isRequired: false });
             tick();
-            store.setSiteSearchTerm('no-match-zzzz');
+            mockSitesPage([], 0);
+            store.filterSites('no-match-zzzz');
+            tick(300);
             spectator.detectChanges();
             showSitesPanel();
 
             expect(queryInOverlay('host-folder-sites-empty')).toBeTruthy();
+            expect(queryInOverlay('host-folder-sites-search-input')).toBeTruthy();
+        }));
+
+        it('should keep the trigger label visible while filtering sites', fakeAsync(() => {
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            store.loadSites({ path: 'demo.dotcms.com', isRequired: false });
+            tick();
+            spectator.detectChanges();
+
+            mockSitesPage([TREE_SELECT_SITES_MOCK[0]], 1);
+            store.filterSites('demo');
+            tick();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('host-folder-trigger-skeleton'))).toBeNull();
+            expect(spectator.query(byTestId('host-folder-trigger-label'))).toHaveText(
+                'demo.dotcms.com'
+            );
         }));
     });
 
@@ -267,7 +366,7 @@ describe('DotHostFolderFieldComponent', () => {
         };
 
         it('should hide the folder search and show the site empty state when the site has no folders', fakeAsync(() => {
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
             service.searchFolders.mockReturnValue(
                 of({
                     folders: [],
@@ -288,7 +387,7 @@ describe('DotHostFolderFieldComponent', () => {
         }));
 
         it('should show the folder search and search empty state when search has no matches', fakeAsync(() => {
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
             service.searchFolders.mockImplementation((params) => {
                 if (params.recursive) {
                     return of({
@@ -328,7 +427,7 @@ describe('DotHostFolderFieldComponent', () => {
                 leaf: true
             };
 
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
             service.searchFolders.mockImplementation((params) => {
                 if (params.recursive) {
                     return of({
@@ -375,7 +474,7 @@ describe('DotHostFolderFieldComponent', () => {
                 leaf: true
             };
 
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
             service.searchFolders.mockImplementation((params) => {
                 if (params.recursive) {
                     return of({
@@ -566,6 +665,164 @@ describe('DotHostFolderFieldComponent', () => {
 
             expect(rafSpy).toHaveBeenCalled();
         });
+    });
+
+    describe('tree node expand loading', () => {
+        const queryInOverlay = (testId: string): Element | null =>
+            spectator.query(byTestId(testId)) ??
+            document.querySelector(`[data-testid="${testId}"]`);
+
+        const showFoldersPanel = () => {
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const trigger = document.createElement('button');
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            popover.show(event, trigger);
+            spectator.detectChanges();
+        };
+
+        it('should show a spinner on the toggler while a folder expand request is pending', fakeAsync(() => {
+            const parentFolder: TreeNodeItem = {
+                key: 'folder-parent',
+                label: 'demo.dotcms.com/parent/',
+                data: {
+                    id: 'folder-parent',
+                    hostname: 'demo.dotcms.com',
+                    path: '/parent/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+            const pending$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: { currentPage: number; perPage: number; totalEntries: number };
+            }>();
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockImplementation((params) => {
+                if (params.path === '/') {
+                    return of({
+                        folders: [parentFolder],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                    });
+                }
+
+                return pending$.asObservable();
+            });
+
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const folderNode = store.folders()[0];
+            spectator.component.onFolderExpand({
+                originalEvent: new Event('click'),
+                node: folderNode
+            });
+            spectator.detectChanges();
+
+            const tree = queryInOverlay('host-folder-tree');
+            expect(tree?.querySelector('.pi-spinner')).toBeTruthy();
+            expect(store.folders().find((item) => item.key === folderNode.key)?.loading).toBe(true);
+
+            pending$.next({
+                folders: [],
+                pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+            });
+            pending$.complete();
+            spectator.detectChanges();
+
+            expect(store.folders().find((item) => item.key === folderNode.key)?.loading).toBe(
+                false
+            );
+            expect(tree?.querySelector('.pi-spinner')).toBeNull();
+        }));
+    });
+
+    describe('loading states', () => {
+        afterEach(() => {
+            jest.restoreAllMocks();
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+        });
+
+        it('should show a skeleton and spinner icon in the trigger while sites are loading', fakeAsync(() => {
+            const sites$ = new Subject<{ sites: TreeNodeItem[]; pagination: DotPagination }>();
+            service.getSitesPage.mockReturnValue(sites$.asObservable());
+
+            patchState(unprotected(store), {
+                confirmedNode: null,
+                pendingNode: null,
+                selectedSite: null,
+                sitesStatus: ComponentStatus.INIT
+            });
+
+            store.loadSites({ path: 'demo.dotcms.com', isRequired: false });
+            spectator.detectChanges();
+
+            expect(store.showTriggerLoading()).toBe(true);
+            expect(spectator.query(byTestId('host-folder-trigger-skeleton'))).toBeTruthy();
+            expect(spectator.query(byTestId('host-folder-trigger-icon'))).toHaveClass('pi-spinner');
+            expect(spectator.query(byTestId('host-folder-trigger-icon'))).toHaveClass('pi-spin');
+            expect(spectator.query(byTestId('host-folder-trigger-label'))).not.toHaveText(
+                'Select Host/Folder'
+            );
+
+            sites$.next(createSitesPageResponse(TREE_SELECT_SITES_MOCK));
+            sites$.complete();
+            tick();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('host-folder-trigger-skeleton'))).toBeNull();
+        }));
+
+        it('should show the sites loading state in the overlay', fakeAsync(() => {
+            const queryInOverlay = (testId: string): Element | null =>
+                spectator.query(byTestId(testId)) ??
+                document.querySelector(`[data-testid="${testId}"]`);
+
+            jest.spyOn(store, 'showSitesPanelLoading').mockReturnValue(true);
+            jest.spyOn(store, 'filteredSites').mockReturnValue([]);
+            spectator.detectChanges();
+
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const trigger = document.createElement('button');
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            popover.show(event, trigger);
+            spectator.detectChanges();
+
+            expect(queryInOverlay('host-folder-sites-loading')).toBeTruthy();
+            expect(queryInOverlay('host-folder-sites-loading')).toHaveText('Loading sites...');
+        }));
+
+        it('should show the folders loading state in the overlay', fakeAsync(() => {
+            const queryInOverlay = (testId: string): Element | null =>
+                spectator.query(byTestId(testId)) ??
+                document.querySelector(`[data-testid="${testId}"]`);
+
+            jest.spyOn(store, 'sitesLoading').mockReturnValue(false);
+            jest.spyOn(store, 'showFoldersPanelLoading').mockReturnValue(true);
+            jest.spyOn(store, 'showFolderSearch').mockReturnValue(false);
+            jest.spyOn(store, 'displayedFolders').mockReturnValue([]);
+            spectator.detectChanges();
+
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const trigger = document.createElement('button');
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            popover.show(event, trigger);
+            spectator.detectChanges();
+
+            expect(queryInOverlay('host-folder-folders-loading')).toBeTruthy();
+            expect(queryInOverlay('host-folder-folders-loading')).toHaveText('Loading folders...');
+            expect(queryInOverlay('host-folder-search-input')).toBeNull();
+        }));
     });
 
     it('should propagate the committed value through the form control accessor', () => {

@@ -20,6 +20,7 @@ import { createFakeContentlet, createFakeFolder, createFakeSite } from '@dotcms/
 import {
     DotBrowsingService,
     normalizeHostFolderBrowsePath,
+    SITE_PAGE_LIMIT,
     TREE_ROOT_NODE_KEY
 } from './dot-browsing.service';
 
@@ -63,6 +64,12 @@ describe('DotBrowsingService', () => {
         });
     });
 
+    const mockPagination: DotPagination = {
+        currentPage: 1,
+        perPage: 40,
+        totalEntries: 2
+    };
+
     describe('getSitesTreePath', () => {
         it('should transform sites into TreeNodeItems', (done) => {
             const mockSites: SiteEntity[] = [
@@ -70,7 +77,9 @@ describe('DotBrowsingService', () => {
                 createFakeSite({ identifier: 'site-2', hostname: 'test.com' })
             ];
 
-            dotSiteService.getSites.mockReturnValue(of({ sites: mockSites }));
+            dotSiteService.getSites.mockReturnValue(
+                of({ sites: mockSites, pagination: mockPagination })
+            );
 
             spectator.service.getSitesTreePath({ filter: 'test' }).subscribe((result) => {
                 expect(result).toHaveLength(2);
@@ -111,7 +120,9 @@ describe('DotBrowsingService', () => {
 
         it('should pass perPage and page parameters to getSites', (done) => {
             const mockSites: SiteEntity[] = [createFakeSite()];
-            dotSiteService.getSites.mockReturnValue(of({ sites: mockSites }));
+            dotSiteService.getSites.mockReturnValue(
+                of({ sites: mockSites, pagination: mockPagination })
+            );
 
             spectator.service
                 .getSitesTreePath({ filter: 'test', perPage: 10, page: 2 })
@@ -126,7 +137,9 @@ describe('DotBrowsingService', () => {
         });
 
         it('should return empty array when no sites are found', (done) => {
-            dotSiteService.getSites.mockReturnValue(of({ sites: [] }));
+            dotSiteService.getSites.mockReturnValue(
+                of({ sites: [], pagination: { ...mockPagination, totalEntries: 0 } })
+            );
 
             spectator.service.getSitesTreePath({ filter: 'test' }).subscribe((result) => {
                 expect(result).toEqual([]);
@@ -144,6 +157,70 @@ describe('DotBrowsingService', () => {
                     expect(err).toBe(error);
                     done();
                 }
+            });
+        });
+    });
+
+    describe('getSitesPage', () => {
+        it('should return sites and pagination metadata', (done) => {
+            const mockSites: SiteEntity[] = [
+                createFakeSite({ identifier: 'site-1', hostname: 'example.com' })
+            ];
+
+            dotSiteService.getSites.mockReturnValue(
+                of({ sites: mockSites, pagination: mockPagination })
+            );
+
+            spectator.service
+                .getSitesPage({ filter: 'demo', perPage: 40, page: 1 })
+                .subscribe((result) => {
+                    expect(result.sites).toHaveLength(1);
+                    expect(result.sites[0].key).toBe('site-1');
+                    expect(result.pagination).toEqual(mockPagination);
+                    expect(dotSiteService.getSites).toHaveBeenCalledWith({
+                        filter: 'demo',
+                        per_page: 40,
+                        page: 1
+                    });
+                    done();
+                });
+        });
+    });
+
+    describe('resolveSiteByHostname', () => {
+        it('should return the site with an exact hostname match', (done) => {
+            const mockSites: SiteEntity[] = [
+                createFakeSite({ identifier: 'site-1', hostname: 'demo.com' }),
+                createFakeSite({ identifier: 'site-2', hostname: 'demo.com.other' })
+            ];
+
+            dotSiteService.getSites.mockReturnValue(
+                of({ sites: mockSites, pagination: mockPagination })
+            );
+
+            spectator.service.resolveSiteByHostname('demo.com').subscribe((result) => {
+                expect(result?.key).toBe('site-1');
+                expect(dotSiteService.getSites).toHaveBeenCalledWith({
+                    filter: 'demo.com',
+                    per_page: SITE_PAGE_LIMIT,
+                    page: 1
+                });
+                done();
+            });
+        });
+
+        it('should return null when no exact hostname match exists', (done) => {
+            const mockSites: SiteEntity[] = [
+                createFakeSite({ identifier: 'site-1', hostname: 'other.com' })
+            ];
+
+            dotSiteService.getSites.mockReturnValue(
+                of({ sites: mockSites, pagination: mockPagination })
+            );
+
+            spectator.service.resolveSiteByHostname('demo.com').subscribe((result) => {
+                expect(result).toBeNull();
+                done();
             });
         });
     });

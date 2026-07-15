@@ -27,7 +27,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotBrowsingService, normalizeHostFolderBrowsePath, TREE_ROOT_NODE_KEY } from '@dotcms/ui';
 
-export const PEER_PAGE_LIMIT = 7000;
+export const SITE_PAGE_LIMIT = 40;
 export const FOLDER_PAGE_LIMIT = 40;
 export const MIN_SEARCH_LENGTH = 2;
 export const SITE_SEARCH_THRESHOLD = 5;
@@ -73,6 +73,13 @@ export type NodePaginationState = {
     loading: boolean;
 };
 
+export type SitesPaginationState = {
+    page: number;
+    hasMore: boolean;
+    loading: boolean;
+    totalEntries: number;
+};
+
 /**
  * Params for loading a level of folders (root or a specific node) through the
  * paginated `searchFolders` endpoint. `append` distinguishes a fresh load
@@ -90,6 +97,10 @@ type LoadFoldersParams = {
 export type HostFolderFiledState = {
     sites: TreeNodeItem[];
     sitesStatus: ComponentStatus;
+    sitesPagination: SitesPaginationState;
+    sitesCatalogTotal: number;
+    sitesLoadedPages: number[];
+    pinnedSiteKey: string | null;
     selectedSite: TreeNodeItem | null;
     folders: TreeNodeItem[];
     foldersStatus: ComponentStatus;
@@ -109,6 +120,10 @@ export type HostFolderFiledState = {
 export const initialState: HostFolderFiledState = {
     sites: [],
     sitesStatus: ComponentStatus.INIT,
+    sitesPagination: { page: 1, hasMore: false, loading: false, totalEntries: 0 },
+    sitesCatalogTotal: 0,
+    sitesLoadedPages: [],
+    pinnedSiteKey: null,
     selectedSite: null,
     folders: [],
     foldersStatus: ComponentStatus.INIT,
@@ -224,13 +239,70 @@ function expandFoldersToTarget(folders: TreeNodeItem[], targetPath: string | und
     walk(folders);
 }
 
+/**
+ * Finds a tree node by key in a folder list, including nested children.
+ */
+function findNodeByKey(nodes: TreeNodeItem[], key: string): TreeNodeItem | null {
+    for (const node of nodes) {
+        if (node.key === key) {
+            return node;
+        }
+
+        if (Array.isArray(node.children)) {
+            const found = findNodeByKey(node.children as TreeNodeItem[], key);
+
+            if (found) {
+                return found;
+            }
+        }
+    }
+
+    return null;
+}
+
+function sitesHasMore(pageSites: TreeNodeItem[]): boolean {
+    return pageSites.length >= SITE_PAGE_LIMIT;
+}
+
+function extractHostnameFromPath(path: string): string {
+    if (!path.includes('/')) {
+        return path;
+    }
+
+    return path.split('/').filter(Boolean)[0];
+}
+
+function prependSite(sites: TreeNodeItem[], pinned: TreeNodeItem | null): TreeNodeItem[] {
+    if (!pinned) {
+        return sites;
+    }
+
+    return [pinned, ...sites.filter((site) => site.key !== pinned.key)];
+}
+
+function mergeSites(existing: TreeNodeItem[], incoming: TreeNodeItem[]): TreeNodeItem[] {
+    const keys = new Set(existing.map((site) => site.key));
+    const newSites = incoming.filter((site) => !keys.has(site.key));
+
+    return [...existing, ...newSites];
+}
+
+function filterSystemHost(sites: TreeNodeItem[], isRequired: boolean): TreeNodeItem[] {
+    if (!isRequired) {
+        return sites;
+    }
+
+    return sites.filter((site) => site.label !== SYSTEM_HOST_NAME);
+}
+
 export const HostFolderFiledStore = signalStore(
     withState(initialState),
     withComputed(
         ({
             sites,
             sitesStatus,
-            overlayOpen,
+            sitesPagination,
+            sitesCatalogTotal,
             confirmedNode,
             pendingNode,
             searchTerm,
@@ -282,22 +354,34 @@ export const HostFolderFiledStore = signalStore(
                 return [cleanHostname, ...segments].join(' / ');
             });
 
-            return {
-                /**
-                 * Icon classes for the field trigger: spinner while the initial sites/value
-                 * resolution is in flight, otherwise a chevron reflecting the overlay state.
-                 */
-                iconClasses: computed(() => {
-                    const loading = sitesStatus() === ComponentStatus.LOADING;
-                    const open = overlayOpen();
+            const sitesLoading = computed(() => sitesStatus() === ComponentStatus.LOADING);
+            const showTriggerLoading = computed(
+                () => sitesStatus() === ComponentStatus.LOADING && !confirmedNode()
+            );
+            const showSitesPanelLoading = computed(() => {
+                if (sites().length > 0) {
+                    return false;
+                }
 
-                    return {
-                        'pi-spin': loading,
-                        'pi-spinner': loading,
-                        'pi-chevron-up': !loading && open,
-                        'pi-chevron-down': !loading && !open
-                    };
-                }),
+                return sitesStatus() === ComponentStatus.LOADING || sitesPagination().loading;
+            });
+            const showFoldersPanelLoading = computed(() => {
+                const loading =
+                    foldersStatus() === ComponentStatus.LOADING ||
+                    searchStatus() === ComponentStatus.LOADING;
+
+                if (!loading) {
+                    return false;
+                }
+
+                if (searchTerm().length >= MIN_SEARCH_LENGTH) {
+                    return (searchResults() ?? []).length === 0;
+                }
+
+                return folders().length === 0;
+            });
+
+            return {
                 /**
                  * Whether the confirmed selection is a site root or a folder, used to pick
                  * between the Material "globe" icon and the folder icon in the field trigger.
@@ -332,12 +416,20 @@ export const HostFolderFiledStore = signalStore(
                 /**
                  * Whether the sites panel should show a search input instead of the static label.
                  */
-                showSitesSearch: computed(() => sites().length > SITE_SEARCH_THRESHOLD),
+                showSitesSearch: computed(
+                    () =>
+                        siteSearchTerm().trim().length > 0 ||
+                        sitesCatalogTotal() > SITE_SEARCH_THRESHOLD
+                ),
                 /**
-                 * Whether the folders panel should show the search input. Hidden only when the
-                 * selected site has finished loading and contains no folders.
+                 * Whether the folders panel should show the search input. Hidden while the panel
+                 * loading state is shown and when the selected site has no folders after load.
                  */
                 showFolderSearch: computed(() => {
+                    if (showFoldersPanelLoading()) {
+                        return false;
+                    }
+
                     if (searchTerm().length >= MIN_SEARCH_LENGTH) {
                         return true;
                     }
@@ -349,19 +441,9 @@ export const HostFolderFiledStore = signalStore(
                     return folders().length > 0;
                 }),
                 /**
-                 * Sites filtered by the local search term (case-insensitive label match).
-                 * Returns all sites when the term is empty.
+                 * Sites currently loaded for the panel (API-backed list; no local filtering).
                  */
-                filteredSites: computed(() => {
-                    const term = siteSearchTerm().trim().toLowerCase();
-                    const allSites = sites();
-
-                    if (!term) {
-                        return allSites;
-                    }
-
-                    return allSites.filter((site) => site.label.toLowerCase().includes(term));
-                }),
+                filteredSites: computed(() => sites()),
                 /**
                  * Folders to render in the tree: search results while searching, otherwise the
                  * regular (lazily-loaded) folder tree for the selected site.
@@ -373,7 +455,12 @@ export const HostFolderFiledStore = signalStore(
 
                     return folders();
                 }),
+                sitesLoading,
+                showTriggerLoading,
+                showSitesPanelLoading,
                 foldersLoading: computed(() => foldersStatus() === ComponentStatus.LOADING),
+                searchLoading: computed(() => searchStatus() === ComponentStatus.LOADING),
+                showFoldersPanelLoading,
                 sitesLoadFailed: computed(() => sitesStatus() === ComponentStatus.ERROR),
                 foldersLoadFailed: computed(
                     () =>
@@ -449,6 +536,25 @@ export const HostFolderFiledStore = signalStore(
                             changes.foldersStatus = ComponentStatus.LOADING;
                         }
 
+                        if (params.targetNode) {
+                            const isSearching = store.searchTerm().length >= MIN_SEARCH_LENGTH;
+                            const currentSearchResults = store.searchResults();
+
+                            if (isSearching && currentSearchResults) {
+                                const cloned = structuredClone(currentSearchResults);
+                                const node = findNodeByKey(cloned, params.key) ?? params.targetNode;
+
+                                node.loading = true;
+                                changes.searchResults = cloned;
+                            } else {
+                                const cloned = structuredClone(store.folders());
+                                const node = findNodeByKey(cloned, params.key) ?? params.targetNode;
+
+                                node.loading = true;
+                                changes.folders = cloned;
+                            }
+                        }
+
                         patchState(store, changes);
                     }),
                     groupBy((params) => params.key),
@@ -490,7 +596,20 @@ export const HostFolderFiledStore = signalStore(
                                                 };
 
                                                 if (params.targetNode) {
-                                                    const target = params.targetNode;
+                                                    const isSearching =
+                                                        store.searchTerm().length >=
+                                                        MIN_SEARCH_LENGTH;
+                                                    const currentSearchResults =
+                                                        store.searchResults();
+                                                    const cloned =
+                                                        isSearching && currentSearchResults
+                                                            ? structuredClone(currentSearchResults)
+                                                            : structuredClone(store.folders());
+                                                    const target =
+                                                        findNodeByKey(cloned, params.key) ??
+                                                        params.targetNode;
+
+                                                    target.loading = false;
                                                     target.leaf =
                                                         folders.length === 0 && params.page === 1;
                                                     target.icon = 'pi pi-folder-open';
@@ -511,25 +630,14 @@ export const HostFolderFiledStore = signalStore(
                                                           ]
                                                         : nextChildren;
 
-                                                    const isSearching =
-                                                        store.searchTerm().length >=
-                                                        MIN_SEARCH_LENGTH;
-                                                    const currentSearchResults =
-                                                        store.searchResults();
-
                                                     if (isSearching && currentSearchResults) {
                                                         patchState(store, {
-                                                            searchResults:
-                                                                structuredClone(
-                                                                    currentSearchResults
-                                                                ),
+                                                            searchResults: cloned,
                                                             nodePagination
                                                         });
                                                     } else {
                                                         patchState(store, {
-                                                            folders: structuredClone(
-                                                                store.folders()
-                                                            ),
+                                                            folders: cloned,
                                                             nodePagination
                                                         });
                                                     }
@@ -579,6 +687,33 @@ export const HostFolderFiledStore = signalStore(
                                                         foldersStatus: ComponentStatus.ERROR,
                                                         nodePagination
                                                     });
+                                                } else if (params.targetNode) {
+                                                    const isSearching =
+                                                        store.searchTerm().length >=
+                                                        MIN_SEARCH_LENGTH;
+                                                    const currentSearchResults =
+                                                        store.searchResults();
+                                                    const cloned =
+                                                        isSearching && currentSearchResults
+                                                            ? structuredClone(currentSearchResults)
+                                                            : structuredClone(store.folders());
+                                                    const node =
+                                                        findNodeByKey(cloned, params.key) ??
+                                                        params.targetNode;
+
+                                                    node.loading = false;
+
+                                                    if (isSearching && currentSearchResults) {
+                                                        patchState(store, {
+                                                            searchResults: cloned,
+                                                            nodePagination
+                                                        });
+                                                    } else {
+                                                        patchState(store, {
+                                                            folders: cloned,
+                                                            nodePagination
+                                                        });
+                                                    }
                                                 } else {
                                                     patchState(store, { nodePagination });
                                                 }
@@ -769,19 +904,77 @@ export const HostFolderFiledStore = signalStore(
                 });
             },
             /**
-             * Updates the local site search term used to filter the Sites list (immediate).
-             */
-            setSiteSearchTerm: (term: string) => {
-                patchState(store, { siteSearchTerm: term });
-            },
-            /**
-             * Debounced site search input handler for filtering the Sites list locally.
+             * Debounced site search input handler that queries the sites API.
              */
             filterSites: rxMethod<string>(
                 pipe(
-                    debounceTime(150),
+                    debounceTime(300),
                     distinctUntilChanged(),
-                    tap((term: string) => patchState(store, { siteSearchTerm: term }))
+                    tap((term: string) =>
+                        patchState(store, {
+                            siteSearchTerm: term,
+                            sitesPagination: {
+                                ...store.sitesPagination(),
+                                loading: true
+                            }
+                        })
+                    ),
+                    switchMap((term) => {
+                        patchState(store, {
+                            sites: [],
+                            sitesLoadedPages: []
+                        });
+
+                        const filter = term.trim() || '*';
+
+                        return dotBrowsingService
+                            .getSitesPage({
+                                filter,
+                                perPage: SITE_PAGE_LIMIT,
+                                page: 1
+                            })
+                            .pipe(
+                                tapResponse({
+                                    next: ({ sites, pagination }) => {
+                                        let pageSites = filterSystemHost(sites, store.isRequired());
+
+                                        if (!term.trim()) {
+                                            const selected = store.selectedSite();
+                                            if (selected) {
+                                                pageSites = prependSite(pageSites, selected);
+                                            }
+                                        }
+
+                                        patchState(store, {
+                                            sites: pageSites,
+                                            sitesStatus: ComponentStatus.LOADED,
+                                            sitesLoadedPages: [1],
+                                            ...(filter === '*'
+                                                ? { sitesCatalogTotal: pagination.totalEntries }
+                                                : {}),
+                                            sitesPagination: {
+                                                page: 1,
+                                                hasMore: sitesHasMore(sites),
+                                                loading: false,
+                                                totalEntries: pagination.totalEntries
+                                            }
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        dotHttpErrorManagerService.handle(error);
+                                        patchState(store, {
+                                            sites: [],
+                                            sitesPagination: {
+                                                page: 1,
+                                                hasMore: false,
+                                                loading: false,
+                                                totalEntries: 0
+                                            }
+                                        });
+                                    }
+                                })
+                            );
+                    })
                 )
             )
         };
@@ -801,74 +994,134 @@ export const HostFolderFiledStore = signalStore(
                         path: path ? normalizeHostFolderBrowsePath(path) : path,
                         isRequired
                     })),
-                    tap(() => patchState(store, { sitesStatus: ComponentStatus.LOADING })),
+                    tap(() =>
+                        patchState(store, {
+                            sitesStatus: ComponentStatus.LOADING,
+                            siteSearchTerm: '',
+                            sites: [],
+                            sitesPagination: {
+                                page: 1,
+                                hasMore: false,
+                                loading: false,
+                                totalEntries: 0
+                            },
+                            sitesCatalogTotal: 0,
+                            sitesLoadedPages: [],
+                            pinnedSiteKey: null
+                        })
+                    ),
                     switchMap(({ path, isRequired }) => {
-                        return dotBrowsingService
-                            .getSitesTreePath({
-                                perPage: PEER_PAGE_LIMIT,
-                                filter: '*',
-                                page: 1
-                            })
-                            .pipe(
-                                map((sites) => {
-                                    if (isRequired) {
-                                        return sites.filter(
-                                            (site) => site.label !== SYSTEM_HOST_NAME
-                                        );
-                                    }
+                        const hostnameFromPath = path ? extractHostnameFromPath(path) : null;
+                        const pinned$ = hostnameFromPath
+                            ? dotBrowsingService.resolveSiteByHostname(
+                                  hostnameFromPath,
+                                  SITE_PAGE_LIMIT
+                              )
+                            : of(null as TreeNodeItem | null);
 
-                                    return sites;
-                                }),
-                                tapResponse({
-                                    next: (sites) =>
-                                        patchState(store, {
+                        return pinned$.pipe(
+                            switchMap((pinnedFromPath) =>
+                                dotBrowsingService
+                                    .getSitesPage({
+                                        filter: '*',
+                                        perPage: SITE_PAGE_LIMIT,
+                                        page: 1
+                                    })
+                                    .pipe(
+                                        map(({ sites, pagination }) => ({
+                                            pinnedFromPath,
                                             sites,
-                                            sitesStatus: ComponentStatus.LOADED,
+                                            pagination,
+                                            path,
                                             isRequired
-                                        }),
-                                    error: (error: HttpErrorResponse) => {
-                                        dotHttpErrorManagerService.handle(error);
-                                        patchState(store, {
-                                            sitesStatus: ComponentStatus.ERROR
-                                        });
-                                    }
-                                }),
-                                map((sites) => ({
-                                    path,
-                                    sites,
-                                    isRequired
-                                }))
-                            );
+                                        })),
+                                        catchError((error: HttpErrorResponse) => {
+                                            dotHttpErrorManagerService.handle(error);
+                                            patchState(store, {
+                                                sitesStatus: ComponentStatus.ERROR
+                                            });
+
+                                            return EMPTY;
+                                        })
+                                    )
+                            )
+                        );
                     }),
-                    switchMap(({ path, sites, isRequired }) => {
+                    switchMap(({ pinnedFromPath, sites, pagination, path, isRequired }) => {
+                        let pageSites = filterSystemHost(sites, isRequired);
+
+                        if (pinnedFromPath) {
+                            pageSites = prependSite(pageSites, pinnedFromPath);
+                        }
+
+                        patchState(store, {
+                            sites: pageSites,
+                            isRequired,
+                            pinnedSiteKey: pinnedFromPath?.key ?? null,
+                            sitesCatalogTotal: pagination.totalEntries,
+                            sitesLoadedPages: [1],
+                            sitesPagination: {
+                                page: 1,
+                                hasMore: sitesHasMore(sites),
+                                loading: false,
+                                totalEntries: pagination.totalEntries
+                            }
+                        });
+
                         if (path) {
-                            return of({ path, sites });
+                            return of({ path, pinnedFromPath });
                         }
 
                         if (isRequired) {
                             return dotBrowsingService.getCurrentSiteAsTreeNodeItem().pipe(
                                 switchMap((currentSite) => {
-                                    const node = sites.find(
-                                        (item) => item.label === currentSite.label
-                                    );
+                                    const updatedSites = store.sites();
+
+                                    if (
+                                        !updatedSites.some((site) => site.key === currentSite.key)
+                                    ) {
+                                        patchState(store, {
+                                            sites: prependSite(updatedSites, currentSite),
+                                            pinnedSiteKey: currentSite.key
+                                        });
+                                    }
 
                                     return of({
-                                        path: node?.label,
-                                        sites
+                                        path: currentSite.label,
+                                        pinnedFromPath: currentSite
                                     });
                                 })
                             );
                         }
 
-                        const node =
-                            sites.find((item) => item.label === SYSTEM_HOST_NAME) ?? sites[0];
+                        const systemOrFirst =
+                            pageSites.find((site) => site.label === SYSTEM_HOST_NAME) ??
+                            pageSites[0];
 
-                        return of({
-                            path: node?.label,
-                            sites
-                        });
+                        if (systemOrFirst) {
+                            return of({
+                                path: systemOrFirst.label,
+                                pinnedFromPath: pinnedFromPath ?? systemOrFirst
+                            });
+                        }
+
+                        return dotBrowsingService.resolveSiteByHostname(SYSTEM_HOST_NAME).pipe(
+                            map((systemSite) => {
+                                if (systemSite) {
+                                    patchState(store, {
+                                        sites: prependSite(store.sites(), systemSite),
+                                        pinnedSiteKey: systemSite.key
+                                    });
+                                }
+
+                                return {
+                                    path: systemSite?.label ?? null,
+                                    pinnedFromPath: pinnedFromPath ?? systemSite
+                                };
+                            })
+                        );
                     }),
-                    switchMap(({ path, sites }) => {
+                    switchMap(({ path, pinnedFromPath }) => {
                         if (!path) {
                             return of({
                                 site: undefined as TreeNodeItem | undefined,
@@ -881,9 +1134,14 @@ export const HostFolderFiledStore = signalStore(
                         const hasPaths = path.includes('/');
 
                         if (!hasPaths) {
-                            const site = sites.find(
-                                (item) => item.data?.hostname === path || item.label === path
-                            );
+                            const site =
+                                pinnedFromPath ??
+                                store
+                                    .sites()
+                                    .find(
+                                        (item) =>
+                                            item.data?.hostname === path || item.label === path
+                                    );
 
                             return of({
                                 site,
@@ -894,9 +1152,14 @@ export const HostFolderFiledStore = signalStore(
                         }
 
                         const [hostname, ...folderSegments] = path.split('/').filter(Boolean);
-                        const site = sites.find(
-                            (item) => item.data?.hostname === hostname || item.label === hostname
-                        );
+                        const site =
+                            pinnedFromPath ??
+                            store
+                                .sites()
+                                .find(
+                                    (item) =>
+                                        item.data?.hostname === hostname || item.label === hostname
+                                );
 
                         if (!site?.data?.id) {
                             return of({
@@ -938,11 +1201,6 @@ export const HostFolderFiledStore = signalStore(
                     }),
                     tap(({ site, node, tree, pagination }) => {
                         if (!site) {
-                            // The preselected value (or default) couldn't be matched to a site
-                            // in the currently loaded list (e.g. an archived/inaccessible site,
-                            // or no sites available at all). Surface this deterministically
-                            // instead of leaving the store looking successfully-but-silently
-                            // uninitialized.
                             patchState(store, {
                                 sitesStatus: ComponentStatus.ERROR
                             });
@@ -953,7 +1211,8 @@ export const HostFolderFiledStore = signalStore(
                         const changes: Partial<HostFolderFiledState> = {
                             selectedSite: site,
                             confirmedNode: node ?? site,
-                            pendingNode: node ?? site
+                            pendingNode: node ?? site,
+                            sitesStatus: ComponentStatus.LOADED
                         };
 
                         if (tree?.folders) {
@@ -1087,7 +1346,77 @@ export const HostFolderFiledStore = signalStore(
                     hostname: site.data.hostname,
                     page: nextPage
                 });
-            }
+            },
+            /**
+             * Loads the next page of sites for infinite scroll in the Sites panel.
+             */
+            loadMoreSites: rxMethod<void>(
+                pipe(
+                    filter(() => {
+                        const pagination = store.sitesPagination();
+                        const nextPage = pagination.page + 1;
+
+                        return (
+                            pagination.hasMore &&
+                            !pagination.loading &&
+                            store.sitesStatus() !== ComponentStatus.LOADING &&
+                            !store.sitesLoadedPages().includes(nextPage)
+                        );
+                    }),
+                    tap(() =>
+                        patchState(store, {
+                            sitesPagination: {
+                                ...store.sitesPagination(),
+                                loading: true
+                            }
+                        })
+                    ),
+                    switchMap(() => {
+                        const filterTerm = store.siteSearchTerm().trim() || '*';
+                        const nextPage = store.sitesPagination().page + 1;
+
+                        return dotBrowsingService
+                            .getSitesPage({
+                                filter: filterTerm,
+                                perPage: SITE_PAGE_LIMIT,
+                                page: nextPage
+                            })
+                            .pipe(
+                                tapResponse({
+                                    next: ({ sites, pagination }) => {
+                                        const pageSites = filterSystemHost(
+                                            sites,
+                                            store.isRequired()
+                                        );
+
+                                        patchState(store, {
+                                            sites: mergeSites(store.sites(), pageSites),
+                                            sitesLoadedPages: [
+                                                ...store.sitesLoadedPages(),
+                                                nextPage
+                                            ],
+                                            sitesPagination: {
+                                                page: nextPage,
+                                                hasMore: sitesHasMore(sites),
+                                                loading: false,
+                                                totalEntries: pagination.totalEntries
+                                            }
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        dotHttpErrorManagerService.handle(error);
+                                        patchState(store, {
+                                            sitesPagination: {
+                                                ...store.sitesPagination(),
+                                                loading: false
+                                            }
+                                        });
+                                    }
+                                })
+                            );
+                    })
+                )
+            )
         };
     })
 );

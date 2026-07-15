@@ -25,6 +25,7 @@ import {
  * store so `loadFolders` / `loadMore` and `buildTreeByPaths` use the same map key.
  */
 export const TREE_ROOT_NODE_KEY = 'root';
+export const SITE_PAGE_LIMIT = 40;
 
 type LevelLoadResult = {
     folders: TreeNodeItem[];
@@ -93,25 +94,69 @@ export class DotBrowsingService {
         perPage?: number;
         page?: number;
     }): Observable<TreeNodeItem[]> {
+        return this.getSitesPage(data).pipe(map(({ sites }) => sites));
+    }
+
+    /**
+     * Retrieves a paginated page of sites as TreeNodeItems plus pagination metadata.
+     *
+     * @param {Object} data - The parameters for fetching sites
+     * @param {string} data.filter - Filter string to search sites
+     * @param {number} [data.perPage] - Number of items per page
+     * @param {number} [data.page] - Page number to fetch
+     * @returns {Observable<{ sites: TreeNodeItem[]; pagination: DotPagination }>}
+     */
+    getSitesPage(data: {
+        filter: string;
+        perPage?: number;
+        page?: number;
+    }): Observable<{ sites: TreeNodeItem[]; pagination: DotPagination }> {
         const { filter, perPage, page } = data;
 
         return this.#siteService.getSites({ filter, per_page: perPage, page }).pipe(
-            map((data) => {
-                return data.sites.map((site) => ({
-                    key: site.identifier,
-                    label: site.hostname,
-                    data: {
-                        id: site.identifier,
-                        hostname: site.hostname,
-                        path: '',
-                        type: 'site'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
-                    leaf: false
-                }));
-            })
+            map(({ sites, pagination }) => ({
+                sites: sites.map((site) => this.#mapSiteToTreeNodeItem(site)),
+                pagination
+            }))
         );
+    }
+
+    /**
+     * Resolves a single site by exact hostname match using the paginated sites API.
+     * Returns null when no exact match is found.
+     *
+     * @param {string} hostname - Site hostname to resolve
+     * @param {number} [perPage] - Page size for the lookup request
+     * @returns {Observable<TreeNodeItem | null>}
+     */
+    resolveSiteByHostname(
+        hostname: string,
+        perPage: number = SITE_PAGE_LIMIT
+    ): Observable<TreeNodeItem | null> {
+        return this.getSitesPage({ filter: hostname, perPage, page: 1 }).pipe(
+            map(
+                ({ sites }) =>
+                    sites.find(
+                        (site) => site.label === hostname || site.data?.hostname === hostname
+                    ) ?? null
+            )
+        );
+    }
+
+    #mapSiteToTreeNodeItem(site: { identifier: string; hostname: string }): TreeNodeItem {
+        return {
+            key: site.identifier,
+            label: site.hostname,
+            data: {
+                id: site.identifier,
+                hostname: site.hostname,
+                path: '',
+                type: 'site'
+            },
+            expandedIcon: 'pi pi-folder-open',
+            collapsedIcon: 'pi pi-folder',
+            leaf: false
+        };
     }
 
     /**
@@ -269,7 +314,7 @@ export class DotBrowsingService {
 
                     const folderNode = folders.find((item) => item.data?.path === targetPath);
 
-                    if (!folderNode) {
+                    if (!folderNode?.data) {
                         return of({
                             node: ancestorNode,
                             folders
