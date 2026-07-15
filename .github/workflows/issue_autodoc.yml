@@ -1,3 +1,17 @@
+# Automated documentation audit for closed issues.
+#
+# When an issue closes, this workflow decides whether its delivery warrants a
+# documentation change: it runs for Epics and for issues labeled
+# "Doc : Needs Doc" or "Changelog: Needs Doc", and skips sub-tasks of an Epic
+# (the Epic's own closure covers them).
+#
+# For qualifying issues it assembles the issue, its related PRs, and any
+# dotcms-aios vault context into an evaluation prompt, then runs Claude to
+# audit current documentation coverage via dotCMS AI semantic search. Claude
+# produces a report that determines one of three actions: none (no doc change
+# needed), update (revise an existing page), or create (draft a new page).
+# The report is posted as a comment on the issue, and update/create drafts
+# are applied to the dotCMS documentation site through its content API.
 name: Autodoc — Epic Documentation Audit
 
 on:
