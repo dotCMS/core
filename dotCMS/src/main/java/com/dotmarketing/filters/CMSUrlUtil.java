@@ -1,6 +1,7 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -561,15 +562,15 @@ public class CMSUrlUtil {
         // Check if the page is visible by a CMS Anonymous role
         if (!permissionAPI.doesUserHavePermission(permissionable, PERMISSION_READ, user, mode.respectAnonPerms)) {
 
-            if (null == user) {// Not logged in user
+            if (null == user || user.isAnonymousUser()) {// Not logged in / anonymous user
 
                 Logger.debug(this.getClass(),
                         "CHECKING PERMISSION: Page doesn't have anonymous access [" + requestedURIForLogging + "]");
                 Logger.debug(this.getClass(), "401 URI = " + requestedURIForLogging);
                 Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
 
-                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestedURIForLogging);
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "The requested page/file is unauthorized");
+                // Centralized auth/authz split: anonymous -> 401 + REDIRECT_AFTER_LOGIN.
+                SecurityUtils.sendPermissionDenied(user, requestedURIForLogging, request, response);
                 return true;
             } else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
                 .contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
@@ -579,7 +580,8 @@ public class CMSUrlUtil {
                     // go to unauthorized page
                     Logger.warn(this.getClass(),
                             "CHECKING PERMISSION: Page doesn't have any access for this user [" + requestedURIForLogging + "]");
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "The requested page/file is forbidden");
+                    // Centralized auth/authz split: authenticated -> clean 403, no login redirect.
+                    SecurityUtils.sendPermissionDenied(user, requestedURIForLogging, request, response);
                     return true;
                 }
             }
