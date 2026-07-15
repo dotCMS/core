@@ -68,6 +68,54 @@ public class ToolGroupResourceTest {
     }
 
     @Test
+    public void deleteToolGroupFromUser_allowsGettingStartedForNonAdmin() throws Exception {
+        // Symmetric with addToolGroupToUser_allowsGettingStartedForNonAdmin: a non-admin
+        // who can enable the Getting Started page must also be able to dismiss it.
+        when(loggedInUser.isAdmin()).thenReturn(false);
+        when(loggedInUser.getUserId()).thenReturn("non-admin-user");
+        final Role userRole = mock(Role.class);
+        when(loggedInUser.getUserRole()).thenReturn(userRole);
+
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        final Layout gettingStarted = mock(Layout.class);
+        when(layoutAPI.findGettingStartedLayout()).thenReturn(gettingStarted);
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);
+            apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
+
+            final Response result =
+                    resource.deleteToolGroupFromUser(request, response, "GettingStarted", null);
+
+            assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+            verify(roleAPI).removeLayoutFromRole(gettingStarted, userRole);
+        }
+    }
+
+    @Test
+    public void deleteToolGroupFromUser_rejectsNonAdminRemovingGettingStartedFromOtherUser() {
+        // The gettingstarted exemption is self-service only: targeting another userid
+        // still requires admin.
+        when(loggedInUser.isAdmin()).thenReturn(false);
+        when(loggedInUser.getUserId()).thenReturn("non-admin-user");
+
+        assertThrows(DotSecurityException.class,
+                () -> resource.deleteToolGroupFromUser(
+                        request, response, "gettingstarted", "another-user"));
+    }
+
+    @Test
+    public void addToolGroupToUser_rejectsNonAdminAssigningGettingStartedToOtherUser() {
+        when(loggedInUser.isAdmin()).thenReturn(false);
+        when(loggedInUser.getUserId()).thenReturn("non-admin-user");
+
+        assertThrows(DotSecurityException.class,
+                () -> resource.addToolGroupToUser(
+                        request, response, "gettingstarted", "another-user"));
+    }
+
+    @Test
     public void addToolGroupToUser_allowsGettingStartedForNonAdmin() throws Exception {
         when(loggedInUser.isAdmin()).thenReturn(false);
         when(loggedInUser.getUserId()).thenReturn("non-admin-user");

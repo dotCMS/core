@@ -76,7 +76,10 @@ public class ToolGroupResource implements Serializable {
                 .init()
                 .getUser();
 
-        if (!loggedInUser.isAdmin()) {
+        // Non-admins may only toggle the "gettingstarted" onboarding layout, and only
+        // for themselves. Mirrors the guard in addToolGroupToUser so a non-admin who
+        // enabled the Getting Started page can also dismiss it.
+        if (!isSelfServiceGettingStarted(layoutId, userid, loggedInUser) && !loggedInUser.isAdmin()) {
             throw new DotSecurityException(
                     "User does not have permission to remove layouts from users");
         }
@@ -121,7 +124,9 @@ public class ToolGroupResource implements Serializable {
                 .init()
                 .getUser();
 
-        if (!layoutId.equalsIgnoreCase("gettingstarted") && !loggedInUser.isAdmin()) {
+        // Non-admins may only assign the "gettingstarted" onboarding layout, and only
+        // to themselves; assigning to an arbitrary userid still requires admin.
+        if (!isSelfServiceGettingStarted(layoutId, userid, loggedInUser) && !loggedInUser.isAdmin()) {
             throw new DotSecurityException(
                     "User does not have permission to assign layouts");
         }
@@ -181,6 +186,17 @@ public class ToolGroupResource implements Serializable {
                 .roleHasLayout(layout,
                         null == userid ? loggedInUser.getUserRole() : user.getUserRole()))))
                 .build();
+    }
+
+    /**
+     * A non-admin backend user is allowed to add/remove the "gettingstarted" onboarding
+     * layout, but only for their own account. Targeting another user via {@code userid}
+     * still requires admin privileges.
+     */
+    private boolean isSelfServiceGettingStarted(final String layoutId, final String userid,
+            final User loggedInUser) {
+        return "gettingstarted".equalsIgnoreCase(layoutId)
+                && (null == userid || userid.equals(loggedInUser.getUserId()));
     }
 
     private Layout getLayout(final String layoutId) throws DotDataException {
