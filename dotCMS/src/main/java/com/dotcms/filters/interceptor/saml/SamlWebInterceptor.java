@@ -183,8 +183,18 @@ public class SamlWebInterceptor implements WebInterceptor {
                                             + "redirecting to the IdP again.");
                                     SecurityLogger.logInfo(this.getClass(), "SAML auth redirect loop broken for URI: "
                                             + request.getRequestURI());
-                                    // Match the isCommitted() guard used by SecurityUtils.sendPermissionDenied,
-                                    // to avoid IllegalStateException / a double response if already committed.
+                                    // Mirror SecurityUtils.sendPermissionDenied's authenticated-403 path: clear any
+                                    // stale REDIRECT_AFTER_LOGIN so it cannot resurface as an unwanted redirect on the
+                                    // next login. We clear it HERE (not by relying on the JSP 403 branch) because for
+                                    // /api/* destinations custom-error-page.jsp returns early before that branch runs.
+                                    // Cleared inline rather than via sendPermissionDenied because the resolved User is
+                                    // not in scope here and this path must never fall to the 401 branch (which would
+                                    // re-set REDIRECT_AFTER_LOGIN and re-enter the loop).
+                                    final HttpSession loopSession = request.getSession(false);
+                                    if (null != loopSession) {
+                                        loopSession.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+                                    }
+                                    // isCommitted() guard avoids IllegalStateException / a double response.
                                     if (!response.isCommitted()) {
                                         response.sendError(HttpServletResponse.SC_FORBIDDEN);
                                     }

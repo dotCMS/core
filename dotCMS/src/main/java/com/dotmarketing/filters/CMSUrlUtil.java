@@ -1,6 +1,7 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -569,7 +570,7 @@ public class CMSUrlUtil {
                 Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
 
                 // Centralized auth/authz split: anonymous -> 401 + REDIRECT_AFTER_LOGIN.
-                com.dotcms.util.SecurityUtils.sendPermissionDenied(user, requestedURIForLogging, request, response);
+                SecurityUtils.sendPermissionDenied(user, requestedURIForLogging, request, response);
                 return true;
             } else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
                 .contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
@@ -580,7 +581,7 @@ public class CMSUrlUtil {
                     Logger.warn(this.getClass(),
                             "CHECKING PERMISSION: Page doesn't have any access for this user [" + requestedURIForLogging + "]");
                     // Centralized auth/authz split: authenticated -> clean 403, no login redirect.
-                    com.dotcms.util.SecurityUtils.sendPermissionDenied(user, requestedURIForLogging, request, response);
+                    SecurityUtils.sendPermissionDenied(user, requestedURIForLogging, request, response);
                     return true;
                 }
             }

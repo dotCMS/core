@@ -11,6 +11,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.util.WebKeys;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -100,6 +101,10 @@ public class SamlWebInterceptorLoopGuardTest {
 
         assertEquals(Result.SKIP_NO_CHAIN, result);
         verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+        // The authenticated-403 path must clear any stale REDIRECT_AFTER_LOGIN (issue #36541/#32365),
+        // so it can't resurface as an unwanted redirect on the next login — including for /api/* URLs
+        // where the error page returns before its 403 branch would otherwise clear it.
+        verify(session).removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
     }
 
     /**
