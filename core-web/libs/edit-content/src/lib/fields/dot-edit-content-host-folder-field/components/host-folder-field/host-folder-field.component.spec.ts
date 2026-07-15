@@ -1,3 +1,5 @@
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import {
     byTestId,
     createComponentFactory,
@@ -10,9 +12,6 @@ import { Subject, of } from 'rxjs';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-
-import { patchState } from '@ngrx/signals';
-import { unprotected } from '@ngrx/signals/testing';
 
 import { Popover } from 'primeng/popover';
 
