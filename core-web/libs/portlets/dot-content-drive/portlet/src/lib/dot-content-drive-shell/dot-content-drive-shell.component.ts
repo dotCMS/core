@@ -260,15 +260,25 @@ export class DotContentDriveShellComponent implements OnInit {
      * Uses untracked to avoid creating a dependency on path signal
      */
     readonly setPathEffect = effect(() => {
+        // Read both dependencies up front so the guard below doesn't drop `sidebarLoading` as a
+        // dependency (the effect must re-run once the sidebar finishes resolving).
         const selectedNode = this.#store.selectedNode();
+        const sidebarLoading = this.#store.sidebarLoading();
 
-        if (selectedNode) {
-            // Read current path without tracking it to avoid circular dependencies
-            const currentPath = untracked(() => this.#store.path()) ?? '';
+        // Don't sync the path while the sidebar is still resolving its folders. On a cold reload
+        // with a `path` in the URL, `selectedNode` is still the default root node at this point;
+        // syncing from it would clear the restored path back to root and the deep-linked folder
+        // would never open. Once `loadFolders` resolves, it sets `selectedNode` to the matching
+        // node (and flips `sidebarLoading` off), so this effect re-runs and stays in sync.
+        if (sidebarLoading || !selectedNode) {
+            return;
+        }
 
-            if (selectedNode.data.path != currentPath) {
-                this.#store.setPath(selectedNode.data.path);
-            }
+        // Read current path without tracking it to avoid circular dependencies
+        const currentPath = untracked(() => this.#store.path()) ?? '';
+
+        if (selectedNode.data.path != currentPath) {
+            this.#store.setPath(selectedNode.data.path);
         }
     });
 
@@ -325,6 +335,7 @@ export class DotContentDriveShellComponent implements OnInit {
                     path: contentlet.path,
                     hostname: this.#store.currentSite()?.hostname,
                     id: contentlet.identifier,
+                    inode: contentlet.inode,
                     fromTable: true
                 },
                 key: contentlet.identifier,

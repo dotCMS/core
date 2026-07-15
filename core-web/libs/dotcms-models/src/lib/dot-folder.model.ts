@@ -3,12 +3,14 @@
  *
  * @interface DotFolder
  * @property {string} id - Unique identifier for the folder
+ * @property {string} [inode] - The inode of the folder (used by the legacy content editor to pre-select the target folder)
  * @property {string} hostName - The hostname where the folder resides
  * @property {string} path - The path to the folder in the system
  * @property {boolean} addChildrenAllowed - Whether new child folders can be added to this folder
  */
 export interface DotFolder {
     id: string;
+    inode?: string;
     hostName: string;
     path: string;
     addChildrenAllowed: boolean;

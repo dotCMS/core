@@ -299,6 +299,48 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('setPathEffect (cold-load selection)', () => {
+        it('should not clear the URL-restored path while the sidebar is still loading', () => {
+            // Cold load: path restored from the URL, but the tree hasn't resolved yet so
+            // selectedNode is still the default root node (empty path). Syncing here would
+            // clobber the restored path back to root.
+            store.sidebarLoading.mockReturnValue(true);
+            store.selectedNode.mockReturnValue({ data: { path: '' } } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).not.toHaveBeenCalled();
+        });
+
+        it('should sync the path from the resolved node once the sidebar finishes loading', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).toHaveBeenCalledWith('/about-us/');
+        });
+
+        it('should not sync when the resolved node path already matches the current path', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).not.toHaveBeenCalled();
+        });
+    });
+
     describe('DOM', () => {
         it('should have a dot-folder-list-view with items from store', () => {
             spectator.detectChanges();
@@ -1811,7 +1853,8 @@ describe('DotContentDriveShellComponent', () => {
                 ...MOCK_ITEMS[0],
                 type: 'folder',
                 path: '/documents/',
-                identifier: 'folder-123'
+                identifier: 'folder-123',
+                inode: 'folder-inode-123'
             };
 
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
@@ -1829,6 +1872,7 @@ describe('DotContentDriveShellComponent', () => {
                     path: '/documents/',
                     hostname: MOCK_SITES[0].hostname,
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     fromTable: true
                 },
                 key: 'folder-123',
