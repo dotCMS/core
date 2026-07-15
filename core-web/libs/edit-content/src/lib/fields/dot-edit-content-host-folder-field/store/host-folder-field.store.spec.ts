@@ -733,6 +733,7 @@ describe('HostFolderFiledStore', () => {
                 })
             );
             store.selectSite(site);
+            store.openOverlay();
             store.search('match');
             tick(500);
 
@@ -1037,6 +1038,10 @@ describe('HostFolderFiledStore', () => {
     });
 
     describe('Method: search', () => {
+        beforeEach(() => {
+            store.openOverlay();
+        });
+
         it('should ignore terms shorter than the minimum length', fakeAsync(() => {
             const site = TREE_SELECT_SITES_MOCK[0];
             store.selectSite(site);
@@ -1147,6 +1152,46 @@ describe('HostFolderFiledStore', () => {
             expect(store.searchResults()).toBe(null);
         }));
 
+        it('should fetch again when the same term is retyped after closing and reopening the overlay', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const results: TreeNodeItem[] = [
+                {
+                    key: 'match-1',
+                    label: 'demo.dotcms.com/match/',
+                    data: {
+                        id: 'match-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/match/',
+                        type: 'folder'
+                    }
+                }
+            ];
+
+            store.selectSite(site);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: results,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+            service.searchFolders.mockClear();
+
+            store.openOverlay();
+            store.search('match');
+            tick(300);
+
+            expect(service.searchFolders).toHaveBeenCalledTimes(1);
+            expect(store.searchResults()).toEqual(results);
+
+            store.closeOverlay();
+            store.openOverlay();
+            store.search('match');
+            tick(300);
+
+            expect(service.searchFolders).toHaveBeenCalledTimes(2);
+            expect(store.searchResults()).toEqual(results);
+        }));
+
         it('should surface search errors and delegate to DotHttpErrorManagerService', fakeAsync(() => {
             const site = TREE_SELECT_SITES_MOCK[0];
             store.selectSite(site);
@@ -1198,6 +1243,10 @@ describe('HostFolderFiledStore', () => {
     });
 
     describe('Method: loadMoreSearchResults', () => {
+        beforeEach(() => {
+            store.openOverlay();
+        });
+
         it('should append the next page of search results and drop the sentinel once exhausted', fakeAsync(() => {
             const site = TREE_SELECT_SITES_MOCK[0];
             store.selectSite(site);
@@ -1486,6 +1535,7 @@ describe('HostFolderFiledStore', () => {
         });
 
         it('should reset siteSearchTerm when selecting a different site', fakeAsync(() => {
+            store.openOverlay();
             store.filterSites('demo');
             tick(300);
             store.selectSite(TREE_SELECT_SITES_MOCK[1]);
@@ -1534,6 +1584,7 @@ describe('HostFolderFiledStore', () => {
             tick();
 
             mockSitesPage(service, [], 0);
+            store.openOverlay();
             store.filterSites('no-match');
             tick(300);
 
@@ -1549,6 +1600,7 @@ describe('HostFolderFiledStore', () => {
             tick();
 
             mockSitesPage(service, [TREE_SELECT_SITES_MOCK[0]], 1);
+            store.openOverlay();
             store.filterSites('demo');
             tick();
 
@@ -1635,6 +1687,7 @@ describe('HostFolderFiledStore', () => {
             service.searchFolders.mockReturnValue(search$.asObservable());
 
             store.selectSite(site);
+            store.openOverlay();
             store.search('match');
             tick(500);
 
@@ -1703,6 +1756,7 @@ describe('HostFolderFiledStore', () => {
             service.searchFolders.mockReturnValue(of({ folders: [], pagination: mockPagination }));
 
             store.selectSite(site);
+            store.openOverlay();
             store.search('ab');
 
             expect(store.showFolderSearch()).toBe(true);
@@ -1713,6 +1767,7 @@ describe('HostFolderFiledStore', () => {
         beforeEach(() => {
             mockSitesPage(service, TREE_SELECT_SITES_MOCK);
             store.loadSites({ path: null, isRequired: false });
+            store.openOverlay();
         });
 
         it('should keep existing sites during debounce before the search request', fakeAsync(() => {
@@ -1752,6 +1807,28 @@ describe('HostFolderFiledStore', () => {
                 perPage: SITE_PAGE_LIMIT,
                 page: 1
             });
+        }));
+
+        it('should fetch again when the same site search term is retyped after closing and reopening the overlay', fakeAsync(() => {
+            mockSitesPage(service, [TREE_SELECT_SITES_MOCK[0]], 1);
+            service.getSitesPage.mockClear();
+
+            store.openOverlay();
+            store.filterSites('demo');
+            tick(300);
+
+            expect(service.getSitesPage).toHaveBeenCalledTimes(1);
+            expect(store.siteSearchTerm()).toBe('demo');
+            expect(store.filteredSites()).toEqual([TREE_SELECT_SITES_MOCK[0]]);
+
+            store.closeOverlay();
+            store.openOverlay();
+            store.filterSites('demo');
+            tick(300);
+
+            expect(service.getSitesPage).toHaveBeenCalledTimes(2);
+            expect(store.siteSearchTerm()).toBe('demo');
+            expect(store.filteredSites()).toEqual([TREE_SELECT_SITES_MOCK[0]]);
         }));
     });
 

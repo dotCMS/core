@@ -113,6 +113,7 @@ export type HostFolderFiledState = {
     confirmedNode: TreeNodeItem | null;
     pendingNode: TreeNodeItem | null;
     overlayOpen: boolean;
+    queryEpoch: number;
     isRequired: boolean;
     error: string | null;
 };
@@ -136,6 +137,7 @@ export const initialState: HostFolderFiledState = {
     confirmedNode: null,
     pendingNode: null,
     overlayOpen: false,
+    queryEpoch: 0,
     isRequired: false,
     error: null
 };
@@ -735,8 +737,10 @@ export const HostFolderFiledStore = signalStore(
                     tap((term) => patchState(store, { searchTerm: term })),
                     filter((term) => term.length === 0 || term.length >= MIN_SEARCH_LENGTH),
                     debounceTime(300),
-                    distinctUntilChanged(),
-                    switchMap((term) => {
+                    filter(() => store.overlayOpen()),
+                    map((term) => ({ term, epoch: store.queryEpoch() })),
+                    distinctUntilChanged((a, b) => a.term === b.term && a.epoch === b.epoch),
+                    switchMap(({ term }) => {
                         if (!term) {
                             patchState(store, {
                                 searchResults: null,
@@ -900,7 +904,8 @@ export const HostFolderFiledStore = signalStore(
                     searchTerm: '',
                     searchStatus: ComponentStatus.INIT,
                     searchResults: null,
-                    searchPagination: { page: 1, hasMore: false, loading: false }
+                    searchPagination: { page: 1, hasMore: false, loading: false },
+                    queryEpoch: store.queryEpoch() + 1
                 });
             },
             /**
@@ -909,7 +914,10 @@ export const HostFolderFiledStore = signalStore(
             filterSites: rxMethod<string>(
                 pipe(
                     debounceTime(300),
-                    distinctUntilChanged(),
+                    filter(() => store.overlayOpen()),
+                    map((term) => ({ term, epoch: store.queryEpoch() })),
+                    distinctUntilChanged((a, b) => a.term === b.term && a.epoch === b.epoch),
+                    map(({ term }) => term),
                     tap((term: string) =>
                         patchState(store, {
                             siteSearchTerm: term,
@@ -1264,7 +1272,8 @@ export const HostFolderFiledStore = signalStore(
                     searchResults: null,
                     searchStatus: ComponentStatus.INIT,
                     searchPagination: { page: 1, hasMore: false, loading: false },
-                    pendingNode: site
+                    pendingNode: site,
+                    queryEpoch: store.queryEpoch() + 1
                 });
 
                 store.loadFolders({
