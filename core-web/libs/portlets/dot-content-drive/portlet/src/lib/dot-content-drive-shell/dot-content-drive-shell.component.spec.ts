@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -181,7 +181,12 @@ describe('DotContentDriveShellComponent', () => {
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: jest.fn(),
                     setPath: jest.fn(),
-                    setShowAddToBundle: jest.fn()
+                    setShowAddToBundle: jest.fn(),
+                    userSearchableFields: jest.fn().mockReturnValue([]),
+                    userSearchableActive: jest.fn().mockReturnValue([]),
+                    setUserSearchableFields: jest.fn(),
+                    addUserSearchableField: jest.fn(),
+                    clearUserSearchableFilters: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(

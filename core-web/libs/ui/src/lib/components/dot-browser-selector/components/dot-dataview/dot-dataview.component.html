@@ -26,7 +26,7 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="caption">
-        <div class="w-full flex justify-between">
+        <div class="flex w-full justify-between">
             <p-iconField iconPosition="left">
                 <p-inputIcon styleClass="pi pi-search" />
                 <input
@@ -78,10 +78,9 @@
         <tr class="h-12" [pSelectableRow]="content">
             <td class="max-w-8">
                 <div class="dataview-thumbnail">
-                    <dot-contentlet-thumbnail
-                        [iconSize]="'48px'"
+                    <dot-content-thumbnail
                         [contentlet]="content"
-                        [playableVideo]="false"
+                        iconSize="48px"
                         data-testId="contentlet-thumbnail" />
                 </div>
             </td>

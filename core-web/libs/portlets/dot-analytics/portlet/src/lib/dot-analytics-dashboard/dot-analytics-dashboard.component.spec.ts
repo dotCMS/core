@@ -3,7 +3,7 @@ import {
     createRoutingFactory,
     mockProvider,
     SpectatorRouting
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { TestBed } from '@angular/core/testing';

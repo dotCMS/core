@@ -1,6 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
-import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -23,7 +23,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -31,6 +35,7 @@ import {
     DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
+import { isImageFile } from '@dotcms/image-editor';
 import {
     DotAIImagePromptComponent,
     DotBrowserSelectorComponent,
@@ -48,7 +53,11 @@ import {
 } from './../../services/image-editor';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
-import { parseFocalPoint } from './../../utils/focal-point.util';
+import {
+    focalPointFromContentlet,
+    focalPointFromMetadata,
+    parseFocalPoint
+} from './../../utils/focal-point.util';
 import { getUiMessage } from './../../utils/messages';
 import { DotFileFieldPreviewComponent } from './../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/dot-file-field-ui-message.component';
@@ -62,6 +71,9 @@ import {
 } from '../../../../models/dot-edit-content-file.model';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
+
+/** SVGs route the edit action to the source-code editor instead of the raster image editor. */
+const SVG_MIME_TYPE = 'image/svg+xml';
 
 @Component({
     selector: 'dot-file-field',
@@ -80,6 +92,7 @@ import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
         DialogService,
         LegacyDialogImageEditorLauncher,
         LegacyDojoImageEditorLauncher,
+        DotWorkflowActionsFireService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -132,6 +145,11 @@ export class DotFileFieldComponent
      * This service is used to provide AI-related functionalities within the component.
      */
     readonly #dotAiService = inject(DotAiService);
+    /**
+     * Fetches the text content of files whose edit action opens the source-code
+     * editor (SVGs), mirroring the store's editableAsText hydration.
+     */
+    readonly #http = inject(HttpClient);
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
@@ -201,20 +219,27 @@ export class DotFileFieldComponent
     /**
      * Whether the "Edit image" action is available for the current file.
      *
-     * Only Binary fields expose the image editor when enabled, and only when
-     * the previewed file is actually an image. File/Image fields never show it.
+     * Shown when image editing is enabled and the previewed file is an image
+     * (see {@link isImageFile}). Binary fields keep the binary inline and have a
+     * legacy fallback, so they work in any host. Image/File fields reference a
+     * separate dotAsset and are only supported in the new Angular Edit Content —
+     * where the image-editor launcher is provided — never in the legacy Dojo host.
      */
     $canEditImage = computed<boolean>(() => {
         if (!this.$enableImageEditor()) {
             return false;
         }
 
-        // Image editing is only supported for Binary fields, not File or Image fields.
-        if (this.store.inputType() !== INPUT_TYPES.Binary) {
-            return false;
+        // Binary keeps its original, strict gate: the authoritative isImage flag
+        // only. It works in any host via the legacy fallback.
+        if (this.store.inputType() === INPUT_TYPES.Binary) {
+            return !!this.#currentMetadata()?.isImage;
         }
 
-        return !!this.#currentMetadata()?.isImage;
+        // Image/File resolve a separate dotAsset/FileAsset and are only supported
+        // in the new Angular Edit Content, where the image-editor launcher is
+        // provided — never in the legacy Dojo host.
+        return isImageFile(this.#currentMetadata()) && !!this.#imageEditorLauncher;
     });
 
     /**
@@ -384,6 +409,56 @@ export class DotFileFieldComponent
     }
 
     /**
+     * Opens the source-code editor for an SVG with its text content loaded.
+     *
+     * SVG content is not hydrated by the store (only `editableAsText` files are),
+     * so it is fetched lazily here: from the version URL for saved contentlets,
+     * from the reference URL for temp files. Saving re-uploads the edited text,
+     * keeping the asset a vector.
+     *
+     * @param fieldVariable the binary field variable, used to resolve the version
+     * URL for SVGs stored in a custom field (beyond the built-in asset/fileAsset)
+     */
+    #openSvgSourceEditor(uploaded: UploadedFile | null, fieldVariable: string): void {
+        if (!uploaded) {
+            return;
+        }
+
+        const { file } = uploaded;
+
+        if (file.content) {
+            this.showFileEditorDialog(uploaded);
+
+            return;
+        }
+
+        const textUrl =
+            uploaded.source === 'temp'
+                ? file.referenceUrl
+                : file['assetVersion'] ||
+                  file['fileAssetVersion'] ||
+                  file[`${fieldVariable}Version`];
+
+        if (!textUrl) {
+            this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
+
+            return;
+        }
+
+        this.#http
+            .get(textUrl, { responseType: 'text' })
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (content) =>
+                    this.showFileEditorDialog({
+                        ...uploaded,
+                        file: { ...file, content }
+                    } as UploadedFile),
+                error: () => this.store.setUIMessage(getUiMessage('SERVER_ERROR'))
+            });
+    }
+
+    /**
      * Opens the image editor for the current asset and applies the edited result.
      *
      * @memberof DotFileFieldComponent
@@ -395,6 +470,15 @@ export class DotFileFieldComponent
 
         const variable = this.$field().variable;
         const uploaded = this.store.uploadedFile();
+
+        // SVGs are vectors: the raster image editor would silently rasterize them on
+        // save, so the edit action routes to the source-code editor instead, with the
+        // file's text loaded.
+        if (this.#currentMetadata()?.contentType?.toLowerCase() === SVG_MIME_TYPE) {
+            this.#openSvgSourceEditor(uploaded, variable);
+
+            return;
+        }
         const tempId = uploaded?.source === 'temp' ? uploaded.file.id : undefined;
         // For an uploaded/AI-generated contentlet use its own inode; for an
         // unsaved draft that has no uploaded file yet fall back to the parent.
@@ -415,12 +499,16 @@ export class DotFileFieldComponent
 
         if (newLauncher?.isAvailable()) {
             const metadata = this.#currentMetadata();
-            // Seed the editor with the asset's stored focal point (exposed on the binary
-            // metadata as an "x,y" string by DefaultTransformStrategy) so reopening restores
-            // the marker instead of resetting it to centre.
-            const focalPoint = parseFocalPoint(metadata?.focalPoint);
+            // Seed the editor with the asset's stored focal point so reopening restores
+            // the marker instead of resetting it to centre. A referenced dotAsset/FileAsset
+            // exposes it on assetMetaData/fileAssetMetaData; an inline binary temp on metaData.
+            const focalPoint = parseFocalPoint(
+                uploaded?.source === 'contentlet'
+                    ? focalPointFromContentlet(uploaded.file)
+                    : focalPointFromMetadata(metadata)
+            );
 
-            this.#applyEditedImage(
+            this.store.applyEditedImage(
                 newLauncher.open({
                     inode,
                     tempId,
@@ -440,7 +528,7 @@ export class DotFileFieldComponent
             ? this.#legacyDojoImageEditorLauncher
             : this.#legacyDialogImageEditorLauncher;
 
-        this.#applyEditedImage(
+        this.store.applyEditedImage(
             legacyLauncher.open({
                 inode,
                 tempId,
@@ -448,29 +536,6 @@ export class DotFileFieldComponent
                 fieldName: editorVariable
             })
         );
-    }
-
-    /**
-     * Applies the edited image emitted by an image-editor launcher to the preview,
-     * shared by the new Angular editor and the legacy launchers. Ignores a closed
-     * editor (no temp file) and surfaces a server error if the stream fails.
-     *
-     * @param result$ the launcher's close stream, emitting the edited temp file or null
-     */
-    #applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
-        result$
-            .pipe(
-                filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe({
-                next: (tempFile) => {
-                    this.store.applyTempFile(tempFile);
-                },
-                error: () => {
-                    this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
-                }
-            });
     }
 
     /**
@@ -679,7 +744,7 @@ export class DotFileFieldComponent
      * - Subscribes to the dialog's onClose event to handle the uploaded file and update the store with the preview file.
      *
      */
-    showFileEditorDialog() {
+    showFileEditorDialog(uploadedFile: UploadedFile | null = this.store.uploadedFile()) {
         if (this.$isDisabled()) {
             return;
         }
@@ -705,7 +770,7 @@ export class DotFileFieldComponent
             contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             data: {
                 header,
-                uploadedFile: this.store.uploadedFile(),
+                uploadedFile,
                 allowFileNameEdit: true,
                 uploadType: this.store.uploadType(),
                 acceptedFiles: this.store.acceptedFiles()

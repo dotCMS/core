@@ -8,11 +8,14 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.MacroCacheRefresherJob;
 import org.apache.commons.io.FileUtils;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -23,8 +26,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.liferay.util.SystemProperties;
 import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.runtime.RuntimeConstants;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -37,6 +42,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 import static junit.framework.TestCase.assertEquals;
 
@@ -528,6 +534,48 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 html.contains("custom-grid-video"));
         Assert.assertTrue("dotVideo override content missing. HTML: " + html,
                 html.contains("grid-video-title"));
+    }
+
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml()}
+     * Given Scenario: A Story Block field is rendered, then the Velocity resource cache is flushed
+     *   (as happens on "Maintenance -> Flush Cache", a publish, or a deploy) and the field is
+     *   re-rendered. This reproduces the conditions of issue #35984, where #renderContentBlock -
+     *   registered only as a parse-time side effect of #parse("static/storyblock/render.vtl") - was
+     *   not re-primed after a flush, and Velocity emitted the literal macro call as text.
+     * ExpectedResult: (1) render.vtl is part of the velocimacro.library set that
+     *   MacroCacheRefresherJob re-primes after every flush, and (2) neither render emits the literal
+     *   string "#renderContentBlock"; both produce the real heading content.
+     */
+    @Test
+    public void test_render_after_cache_flush_does_not_emit_literal_macro() throws JSONException {
+
+        // Deterministic guard: render.vtl must be in the re-primed velocimacro.library list. This is
+        // read exactly as MacroCacheRefresherJob.refreshSystemMacros() reads it, so if the fix is
+        // reverted this assertion fails.
+        final String[] macroLibraries = Config.getStringArrayProperty(RuntimeConstants.VM_LIBRARY,
+                SystemProperties.getArray(RuntimeConstants.VM_LIBRARY));
+        Assert.assertTrue("render.vtl must be registered as a velocimacro.library so #renderContentBlock "
+                        + "is re-primed after a cache flush (issue #35984). Found: " + Arrays.toString(macroLibraries),
+                Arrays.asList(macroLibraries).contains("static/storyblock/render.vtl"));
+
+        final String htmlBefore = new StoryBlockMap(JSON).toHtml();
+        Assert.assertFalse("Story Block emitted the literal macro call before flush: " + htmlBefore,
+                htmlBefore.contains("#renderContentBlock"));
+        Assert.assertTrue("Expected real heading content before flush: " + htmlBefore,
+                htmlBefore.contains("heading 1"));
+
+        // Simulate "Maintenance -> Flush Cache" / publish / deploy: flush the Velocity resource cache,
+        // then run synchronously what clearCache() submits asynchronously so the assertion is stable.
+        CacheLocator.getVeloctyResourceCache().clearCache();
+        new MacroCacheRefresherJob().refreshSystemMacros();
+
+        final String htmlAfter = new StoryBlockMap(JSON).toHtml();
+        Assert.assertFalse("Story Block emitted the literal #renderContentBlock macro call after a cache "
+                        + "flush (issue #35984): " + htmlAfter,
+                htmlAfter.contains("#renderContentBlock"));
+        Assert.assertTrue("Expected real heading content after flush: " + htmlAfter,
+                htmlAfter.contains("heading 1"));
     }
 
 

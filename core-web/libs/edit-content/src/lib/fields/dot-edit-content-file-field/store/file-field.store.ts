@@ -1,13 +1,15 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { Observable, of, pipe } from 'rxjs';
+import { EMPTY, Observable, of, pipe } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { filter, map, switchMap, tap } from 'rxjs/operators';
 
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 
 import {
@@ -114,6 +116,7 @@ export const FileFieldStore = signalStore(
     })),
     withMethods((store) => {
         const uploadService = inject(DotFileFieldUploadService);
+        const workflowActionsFire = inject(DotWorkflowActionsFireService);
         const http = inject(HttpClient);
 
         /**
@@ -334,6 +337,68 @@ export const FileFieldStore = signalStore(
                 )
             ),
             /**
+             * publishEditedAsset versions the referenced asset (Image/File fields).
+             *
+             * Image/File fields store only an `identifier` referencing a separate
+             * `dotAsset`/`FileAsset` contentlet (the binary lives in its `asset` /
+             * `fileAsset` field). Saving an edit checks in and publishes a NEW version
+             * of that referenced contentlet in its own language, then re-hydrates the
+             * preview. The field value (the identifier) is unchanged, so the reference
+             * is preserved and other content sharing the asset sees the update.
+             *
+             * `switchMap` serializes concurrent saves: a re-triggered edit cancels an
+             * in-flight publish+refresh instead of racing it.
+             * @param tempFile edited image staged as a temp file by the image editor
+             */
+            publishEditedAsset: rxMethod<DotCMSTempFile>(
+                pipe(
+                    switchMap((tempFile) => {
+                        const uploaded = store.uploadedFile();
+
+                        // Only a resolved dotAsset/FileAsset reference can be versioned;
+                        // reaching here without one is unexpected — surface it instead of
+                        // silently discarding the edit.
+                        if (uploaded?.source !== 'contentlet') {
+                            patchState(store, { uiMessage: getUiMessage('SERVER_ERROR') });
+
+                            return EMPTY;
+                        }
+
+                        const { identifier, languageId } = uploaded.file;
+                        // The binary field variable differs by referenced type: `asset`
+                        // for a dotAsset, `fileAsset` for a legacy FileAsset. titleImage
+                        // carries the server-computed field name; default to `asset`.
+                        const fieldVariable = (uploaded.file['titleImage'] as string) || 'asset';
+
+                        patchState(store, { fileStatus: 'uploading' });
+
+                        return workflowActionsFire
+                            .publishContentletByIdentifier<DotCMSContentlet>(
+                                { identifier, [fieldVariable]: tempFile.id },
+                                languageId
+                            )
+                            .pipe(
+                                switchMap(() => uploadService.getContentById(identifier)),
+                                tapResponse({
+                                    next: (file) => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            value: file.identifier,
+                                            uploadedFile: { source: 'contentlet', file }
+                                        });
+                                    },
+                                    error: () => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            uiMessage: getUiMessage('SERVER_ERROR')
+                                        });
+                                    }
+                                })
+                            );
+                    })
+                )
+            ),
+            /**
              * setFileFromContentlet hydrates the preview from a saved contentlet.
              * Used by the binary web component, which receives the contentlet
              * imperatively (no reactive form value to drive {@link getAssetData}).
@@ -423,6 +488,42 @@ export const FileFieldStore = signalStore(
                     })
                 )
             )
+        };
+    }),
+    withMethods((store) => {
+        const destroyRef = inject(DestroyRef);
+
+        return {
+            /**
+             * Consumes an image-editor launcher's close stream and persists the edit.
+             *
+             * Owns the whole apply flow so callers just hand over the launcher stream:
+             * ignores a closed editor (null), routes by input type (Binary applies the
+             * edit inline; Image/File version the referenced dotAsset/FileAsset), and
+             * surfaces a server error if the stream fails. The subscription is torn
+             * down with the store.
+             *
+             * @param result$ the launcher close stream emitting the edited temp file or null
+             */
+            applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
+                result$
+                    .pipe(
+                        filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe({
+                        next: (tempFile) => {
+                            if (store.inputType() === INPUT_TYPES.Binary) {
+                                store.applyTempFile(tempFile);
+                            } else {
+                                store.publishEditedAsset(tempFile);
+                            }
+                        },
+                        error: () => {
+                            patchState(store, { uiMessage: getUiMessage('SERVER_ERROR') });
+                        }
+                    });
+            }
         };
     })
 );

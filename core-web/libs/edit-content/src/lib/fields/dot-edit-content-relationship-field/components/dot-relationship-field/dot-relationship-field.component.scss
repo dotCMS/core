@@ -1,10 +1,18 @@
-.dot-relationship-field-table {
-    border-color: var(--p-inputtext-border-color);
-    transition:
-        border-color var(--p-inputtext-transition-duration),
-        box-shadow var(--p-inputtext-transition-duration);
+:host {
+    .dot-relationship-field-table {
+        border-color: var(--p-inputtext-border-color);
+        transition:
+            border-color var(--p-inputtext-transition-duration),
+            box-shadow var(--p-inputtext-transition-duration);
 
-    &:hover {
-        border-color: var(--p-inputtext-hover-border-color);
+        &:hover {
+            border-color: var(--p-inputtext-hover-border-color);
+        }
+
+        // Allow the scrollable table to scroll horizontally when extra showFields
+        // columns exceed the available width, so no column is clipped or collapsed.
+        ::ng-deep .p-datatable-table-container {
+            overflow-x: auto;
+        }
     }
 }

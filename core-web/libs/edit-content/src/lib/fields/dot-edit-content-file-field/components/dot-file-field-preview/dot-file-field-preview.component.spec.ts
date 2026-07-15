@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpyObject,
     byTestId
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -67,6 +67,15 @@ describe('DotFileFieldPreviewComponent', () => {
             expect(spectator.query(byTestId('download-btn'))).toBeTruthy();
         });
 
+        it('should render the unified thumbnail with the temp file pdf src', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+            ).toBe(TEMP_FILE_MOCK.thumbnailUrl);
+        });
+
         it('should call downloadAsset when click on the download btn', () => {
             const downloadSpy = jest
                 .spyOn(spectator.component, 'downloadAsset')
@@ -80,6 +89,17 @@ describe('DotFileFieldPreviewComponent', () => {
             expect(downloadSpy).toHaveBeenCalledWith(expectedUrl);
         });
 
+        it('should render with fallback metadata when the temp file has none (image editor save)', () => {
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, metadata: undefined }
+            } as unknown);
+            spectator.detectChanges();
+
+            expect(spectator.component).toBeTruthy();
+            expect(spectator.query(byTestId('metadata-title'))).toHaveText(TEMP_FILE_MOCK.fileName);
+        });
+
         it('should not show download button when referenceUrl is missing', () => {
             spectator.setInput('previewFile', {
                 source: 'temp',
@@ -88,6 +108,19 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('download-btn'))).toBeFalsy();
+        });
+
+        it('renders without crashing when the temp file has no metadata', () => {
+            // Regression: the image-editor Save servlet can return a temp file with
+            // `metadata: null`. The file-info dialog header bound `metadata.title`
+            // unguarded and threw "Cannot read properties of null (reading 'title')".
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, image: false, mimeType: 'unknown', metadata: null }
+            } as unknown);
+
+            expect(() => spectator.detectChanges()).not.toThrow();
+            expect(spectator.component).toBeTruthy();
         });
     });
 
@@ -109,9 +142,15 @@ describe('DotFileFieldPreviewComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should be have a dot-contentlet-thumbnail', () => {
+        it('should render the unified thumbnail with the contentlet image src', () => {
             spectator.detectChanges();
-            expect(spectator.query('dot-contentlet-thumbnail')).toBeTruthy();
+
+            const { inode, modDate } = NEW_FILE_MOCK.entity;
+
+            expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+            ).toBe(`/dA/${inode}/asset/500w/50q?r=${modDate}`);
         });
 
         it('should show proper metadata', () => {

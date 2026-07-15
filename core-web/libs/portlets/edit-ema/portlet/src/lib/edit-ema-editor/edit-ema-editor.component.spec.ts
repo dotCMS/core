@@ -1,11 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
+import { patchState } from '@ngrx/signals';
 import {
     SpectatorRouting,
     byTestId,
     createRoutingFactory,
     mockProvider
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, Subject, throwError } from 'rxjs';
 

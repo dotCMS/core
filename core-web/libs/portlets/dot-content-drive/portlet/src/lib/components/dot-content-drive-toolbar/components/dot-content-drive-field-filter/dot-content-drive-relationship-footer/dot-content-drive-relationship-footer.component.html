@@ -1,0 +1,13 @@
+<div class="flex justify-end gap-2">
+    <p-button
+        [label]="'Cancel' | dm"
+        [text]="true"
+        [outlined]="true"
+        severity="primary"
+        (onClick)="cancel()"
+        data-testid="relationship-footer-cancel" />
+    <p-button
+        [label]="'content-drive.field-filter.apply' | dm"
+        (onClick)="apply()"
+        data-testid="relationship-footer-apply" />
+</div>
