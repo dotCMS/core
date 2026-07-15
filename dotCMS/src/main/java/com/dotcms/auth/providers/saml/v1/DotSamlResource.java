@@ -430,6 +430,9 @@ public class DotSamlResource implements Serializable {
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> "/dotAdmin/#/public/logout");
 					RedirectUtil.sendRedirectHTML(httpServletResponse, logoutPath);
+					// The redirect commits the response; return so we don't fall through to the
+					// unconditional DoesNotExistException throw below (which would write a second response).
+					return;
 
 
 				}
@@ -485,6 +488,9 @@ public class DotSamlResource implements Serializable {
 					
 					
 					RedirectUtil.sendRedirectHTML(httpServletResponse, logoutPath);
+					// The redirect commits the response; return so we don't fall through to the
+					// unconditional DoesNotExistException throw below (which would write a second response).
+					return;
 
 				}
 			} finally {
