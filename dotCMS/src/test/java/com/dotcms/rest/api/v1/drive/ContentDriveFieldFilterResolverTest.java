@@ -185,6 +185,24 @@ public class ContentDriveFieldFilterResolverTest {
     }
 
     @Test
+    public void relationshipScalarIdentifierRoutesToDatabase() {
+        final ContentType ct = contentTypeWithAllFields();
+        // A single identifier (not an array), e.g. a one-to-one relationship.
+        final FieldSearchCriteria c = single(ct, "relationshipF", "id1");
+        assertEquals(FilterKind.SCALAR, c.getKind());
+        assertEquals(RoutingBucket.DB, c.getBucket());
+        assertEquals(List.of("id1"), c.getValues());
+    }
+
+    @Test
+    public void tagScalarValueIsAccepted() {
+        final ContentType ct = contentTypeWithAllFields();
+        final FieldSearchCriteria c = single(ct, "tagF", "angular");
+        assertEquals(RoutingBucket.DB, c.getBucket());
+        assertEquals(List.of("angular"), c.getValues());
+    }
+
+    @Test
     public void outOfScopeTypeIsRejected() {
         final ContentType ct = contentTypeWithAllFields();
         assertThrows(BadRequestException.class,

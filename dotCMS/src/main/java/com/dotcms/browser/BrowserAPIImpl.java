@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
@@ -57,9 +58,16 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -1285,9 +1293,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return String.valueOf(criteria.getBooleanValue());
             case RANGE:
                 final String from = UtilMethods.isSet(criteria.getRangeFrom())
-                        ? criteria.getRangeFrom() : "*";
+                        ? normalizeDateBound(criteria.getRangeFrom()) : "*";
                 final String to = UtilMethods.isSet(criteria.getRangeTo())
-                        ? criteria.getRangeTo() : "*";
+                        ? normalizeDateBound(criteria.getRangeTo()) : "*";
                 return from + " TO " + to;
             case MULTI:
                 return String.join(",", criteria.getValues());
@@ -1295,6 +1303,58 @@ public class BrowserAPIImpl implements BrowserAPI {
             default:
                 return criteria.getValues().isEmpty() ? BLANK : criteria.getValues().get(0);
         }
+    }
+
+    /**
+     * ES-accepted date pattern that matches how date fields are indexed
+     * ({@code ESMappingAPIImpl.elasticSearchDateTimeFormatPattern}). The literal {@code T} (no
+     * space) is required so the Lucene range {@code [from TO to]} parses — a space inside the bound
+     * would break query_string parsing.
+     */
+    private static final String ES_QUERY_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
+    /**
+     * Normalizes a date range bound into a format the index accepts. The FE sends ISO-8601 (e.g.
+     * {@code 2011-05-04T13:33:00.000Z}), which is NOT one of the dotCMS ES date formats — the {@code
+     * .SSS} milliseconds and {@code Z} make the range bound unparseable, so the query silently
+     * matches nothing. We parse the value and reformat it to {@code yyyy-MM-dd HH:mm:ss} in the
+     * server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}). Values that
+     * can't be parsed as a date are passed through unchanged (already ES-formatted or open bound).
+     *
+     * @param raw The raw bound value.
+     * @return The normalized bound, or the original value if it isn't a recognizable date.
+     */
+    private String normalizeDateBound(final String raw) {
+        final String value = raw.trim();
+        if (value.isEmpty() || "*".equals(value)) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(value);
+        return null != parsed ? new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed) : value;
+    }
+
+    /**
+     * Best-effort parse of a date bound across the shapes a client may send: ISO-8601 instant
+     * (with offset/{@code Z}), ISO offset date-time, ISO local date-time, ISO date-only, and finally
+     * the dotCMS content date formats. Returns {@code null} when none match.
+     */
+    private Date parseFlexibleDate(final String value) {
+        Date date = Try.of(() -> Date.from(Instant.parse(value))).getOrNull();
+        if (null == date) {
+            date = Try.of(() -> Date.from(OffsetDateTime.parse(value).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDateTime.parse(value).atZone(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDate.parse(value).atStartOfDay(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> DateUtil.convertDate(value)).getOrNull();
+        }
+        return date;
     }
 
     /**

@@ -246,19 +246,31 @@ public class ContentDriveFieldFilterResolver {
                         || field instanceof TimeField
                         || field instanceof DateTimeField;
             case MULTI:
-                return field instanceof MultiSelectField
-                        || field instanceof CheckboxField
-                        || field instanceof TagField
-                        || field instanceof CategoryField
-                        || field instanceof RelationshipField;
+                return isMultiValueField(field);
             case SCALAR:
+                // Scalar (contains/equals) text-like fields, plus the multi-value fields when the
+                // FE sends a single value instead of an array (e.g. a one-to-one relationship or a
+                // single tag/category) — treated as a one-element list downstream.
                 return field instanceof TextField
                         || field instanceof TextAreaField
                         || field instanceof WysiwygField
                         || field instanceof SelectField
-                        || field instanceof RadioField;
+                        || field instanceof RadioField
+                        || isMultiValueField(field);
             default:
                 return false;
         }
+    }
+
+    /**
+     * Fields whose value is conceptually a list of values (terms/names/inodes/identifiers). They
+     * accept either an array or a single value.
+     */
+    private boolean isMultiValueField(final Field field) {
+        return field instanceof MultiSelectField
+                || field instanceof CheckboxField
+                || field instanceof TagField
+                || field instanceof CategoryField
+                || field instanceof RelationshipField;
     }
 }

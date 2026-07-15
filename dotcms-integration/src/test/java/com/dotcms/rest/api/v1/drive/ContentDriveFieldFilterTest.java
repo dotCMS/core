@@ -300,9 +300,11 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
      */
     @Test
     public void testDateRangeFiltersViaIndex() throws DotDataException, DotSecurityException {
+        // ISO-8601 with milliseconds + Z, exactly as the FE sends it (the format that previously
+        // matched nothing until the bound normalization was added).
         final Set<String> inodes = driveInodes(baseRequest()
                 .userSearchable(Map.of(DATE_VAR,
-                        Map.of("from", "2023-01-01", "to", "2025-01-01")))
+                        Map.of("from", "2023-01-01T00:00:00.000Z", "to", "2025-01-01T00:00:00.000Z")))
                 .build());
 
         assertTrue("2024 item must fall within the 2023-2025 range",
@@ -394,6 +396,19 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 inodes.contains(reactWithVue.getInode()));
         assertFalse("unrelated parent must not match",
                 inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * The relationship filter also accepts a single identifier sent as a scalar string (not an
+     * array), e.g. a one-to-one relationship — treated as a one-element list.
+     */
+    @Test
+    public void testRelationshipAcceptsScalarIdentifier() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(relationshipVar, childNews.getIdentifier()))
+                .build());
+        assertTrue(inodes.contains(angularWithTags.getInode()));
+        assertFalse(inodes.contains(reactWithVue.getInode()));
     }
 
     /**
