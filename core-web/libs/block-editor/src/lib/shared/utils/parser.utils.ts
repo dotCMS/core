@@ -1,5 +1,7 @@
 import { Content, JSONContent } from '@tiptap/core';
 
+import { NodeTypes } from './constants.utils';
+
 interface BlockMap {
     [key: string]: boolean;
 }
@@ -36,7 +38,12 @@ const video: BlockMap = {
 // restrictions. `hardBreak` (Shift+Enter line break) must live here so
 // `purifyNodeTree`/`removeInvalidNodes` never strips it when content is
 // re-opened for editing on a restricted field.
-const basicNodes: BlockMap = { paragraph: true, text: true, doc: true, hardBreak: true };
+const basicNodes: BlockMap = {
+    [NodeTypes.PARAGRAPH]: true,
+    [NodeTypes.TEXT]: true,
+    [NodeTypes.DOC]: true,
+    [NodeTypes.HARD_BREAK]: true
+};
 
 const gridContent: BlockMap = {
     gridBlock: true,

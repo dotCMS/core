@@ -60,6 +60,27 @@ describe('parser.utils', () => {
             expect(result[0].content).toHaveLength(3);
             expect(result[0].content[1].type).toBe('hardBreak');
         });
+
+        it('should keep a heading whose composite level key is allowed', () => {
+            const content: JSONContent[] = [
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'title' }] }
+            ];
+
+            const result = purifyNodeTree(content, getBlockMap(['heading2']));
+
+            expect(result).toHaveLength(1);
+            expect(result[0].type).toBe('heading');
+        });
+
+        it('should strip a heading whose level is not in the allowed composite keys', () => {
+            const content: JSONContent[] = [
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'title' }] }
+            ];
+
+            const result = purifyNodeTree(content, getBlockMap(['heading2']));
+
+            expect(result).toHaveLength(0);
+        });
     });
 
     describe('removeInvalidNodes', () => {
@@ -91,6 +112,26 @@ describe('parser.utils', () => {
 
             const hardBreaks = paragraph.content.filter((node) => node.type === 'hardBreak');
             expect(hardBreaks).toHaveLength(2);
+        });
+
+        it('should accept a bare JSONContent array as input (not just a doc node)', () => {
+            const allowedBlocks = ['heading', 'paragraph'];
+            const content: JSONContent[] = [
+                {
+                    type: 'paragraph',
+                    content: [
+                        { type: 'text', text: 'line 1' },
+                        { type: 'hardBreak' },
+                        { type: 'text', text: 'line 2' }
+                    ]
+                }
+            ];
+
+            const result = removeInvalidNodes(content, allowedBlocks);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].type).toBe('paragraph');
+            expect(result[0].content.filter((node) => node.type === 'hardBreak')).toHaveLength(1);
         });
 
         it('should keep paragraph nodes via the basic-node fallback even when not in allowedBlocks', () => {
