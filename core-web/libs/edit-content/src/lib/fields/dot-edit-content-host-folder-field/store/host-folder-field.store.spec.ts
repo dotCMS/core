@@ -100,13 +100,7 @@ describe('HostFolderFiledStore', () => {
                     getSitesPage: jest.fn(() =>
                         of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))
                     ),
-                    resolveSiteByHostname: jest.fn((hostname: string) => {
-                        const site =
-                            TREE_SELECT_SITES_MOCK.find((item) => item.label === hostname) ??
-                            TREE_SELECT_MOCK.find((item) => item.label === hostname);
-
-                        return of(site ?? null);
-                    }),
+                    resolveSiteByHostname: jest.fn(),
                     getCurrentSiteAsTreeNodeItem: jest.fn(),
                     buildTreeByPaths: jest.fn(),
                     searchFolders: jest.fn(() => of({ folders: [], pagination: mockPagination }))
@@ -116,6 +110,7 @@ describe('HostFolderFiledStore', () => {
 
         store = TestBed.inject(HostFolderFiledStore);
         service = TestBed.inject(DotBrowsingService) as SpyObject<DotBrowsingService>;
+        mockResolveSiteByHostname(service);
         httpErrorManager = TestBed.inject(
             DotHttpErrorManagerService
         ) as SpyObject<DotHttpErrorManagerService>;
@@ -375,7 +370,7 @@ describe('HostFolderFiledStore', () => {
         describe('when the resolved site cannot be found', () => {
             it('should surface an error instead of leaving the store silently uninitialized when there are no sites available', fakeAsync(() => {
                 mockSitesPage(service, [], 0);
-                service.resolveSiteByHostname.mockReturnValue(of(null));
+                mockResolveSiteByHostname(service, () => null);
 
                 store.loadSites({ path: null, isRequired: false });
                 tick();
@@ -387,7 +382,7 @@ describe('HostFolderFiledStore', () => {
 
             it('should surface an error instead of leaving the store silently uninitialized when the persisted path resolves to a hostname not present in the sites list (e.g. an archived/inaccessible site)', fakeAsync(() => {
                 mockSitesPage(service, TREE_SELECT_SITES_MOCK);
-                service.resolveSiteByHostname.mockReturnValue(of(null));
+                mockResolveSiteByHostname(service, () => null);
 
                 store.loadSites({ path: 'unknown-site.dotcms.com/level1', isRequired: false });
                 tick();
@@ -1834,7 +1829,7 @@ describe('HostFolderFiledStore', () => {
             const pinnedSite = TREE_SELECT_SITES_MOCK[0];
             const pageSites = [TREE_SELECT_SITES_MOCK[1]];
 
-            service.resolveSiteByHostname.mockReturnValue(of(pinnedSite));
+            mockResolveSiteByHostname(service, () => pinnedSite);
             mockSitesPage(service, pageSites, 100);
 
             store.loadSites({ path: pinnedSite.label, isRequired: false });
