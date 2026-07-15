@@ -49,7 +49,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
@@ -1317,9 +1316,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Normalizes a date range bound into a format the index accepts. The FE sends ISO-8601 (e.g.
      * {@code 2011-05-04T13:33:00.000Z}), which is NOT one of the dotCMS ES date formats — the {@code
      * .SSS} milliseconds and {@code Z} make the range bound unparseable, so the query silently
-     * matches nothing. We parse the value and reformat it to {@code yyyy-MM-dd HH:mm:ss} in the
-     * server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}). Values that
-     * can't be parsed as a date are passed through unchanged (already ES-formatted or open bound).
+     * matches nothing. We parse the value and reformat it to {@link #ES_QUERY_DATE_PATTERN}
+     * ({@code yyyy-MM-dd'T'HH:mm:ss}, literal {@code T} — a space would break Lucene range parsing)
+     * in the server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}).
+     * Values that can't be parsed as a date are passed through unchanged (already ES-formatted or
+     * open bound).
      *
      * @param raw The raw bound value.
      * @return The normalized bound, or the original value if it isn't a recognizable date.
@@ -1334,9 +1335,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Best-effort parse of a date bound across the shapes a client may send: ISO-8601 instant
-     * (with offset/{@code Z}), ISO offset date-time, ISO local date-time, ISO date-only, and finally
-     * the dotCMS content date formats. Returns {@code null} when none match.
+     * Best-effort parse of a date bound across the ISO-8601 shapes the client sends: instant (with
+     * offset/{@code Z}), offset date-time, local date-time, and date-only. Naive (zone-less) inputs
+     * are resolved in the JVM default zone, the same zone the reformat and indexing use, so the
+     * boundary stays consistent. Returns {@code null} when none match (the raw value is then passed
+     * through unchanged).
      */
     private Date parseFlexibleDate(final String value) {
         Date date = Try.of(() -> Date.from(Instant.parse(value))).getOrNull();
@@ -1350,9 +1353,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (null == date) {
             date = Try.of(() -> Date.from(
                     LocalDate.parse(value).atStartOfDay(ZoneId.systemDefault()).toInstant())).getOrNull();
-        }
-        if (null == date) {
-            date = Try.of(() -> DateUtil.convertDate(value)).getOrNull();
         }
         return date;
     }
