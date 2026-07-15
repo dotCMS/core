@@ -31,6 +31,8 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
   final int status = response.getStatus();
   final String title = LanguageUtil.get(pageContext, status + "-page-title");
   final String body = LanguageUtil.get(pageContext, status + "-body1");
+  // Extra HTML rendered below the body (e.g. the Access Denied sign-out link on a 403).
+  String accessDeniedExtraHtml = "";
   try {
     final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
     final boolean isAPICall = pageContext.getErrorData().getRequestURI().startsWith("/api/");
@@ -91,6 +93,30 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
         }
       request.getRequestDispatcher("/dotCMS/login").forward(request, response);
       }
+    } else if (status == 403) {
+      // Access Denied: the user is authenticated but not authorized for this resource.
+      // Clear any stale redirect intent and offer a sign-out
+      // link so the user can terminate the SSO session and retry with a different account.
+      session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+
+      String logoutUrl = "/dotCMS/logout";
+      String logoutLabel = LanguageUtil.get(pageContext, "Logout");
+      try {
+        final com.dotcms.saml.DotSamlProxyFactory samlProxy = com.dotcms.saml.DotSamlProxyFactory.getInstance();
+        if (null != site && samlProxy.isAnyHostConfiguredAsSAML()) {
+          final com.dotcms.saml.IdentityProviderConfiguration idpConfig =
+              samlProxy.identityProviderConfigurationFactory().findIdentityProviderConfigurationById(site.getIdentifier());
+          if (null != idpConfig && idpConfig.isEnabled()) {
+            // dotCMS performs SLO against whichever IdP the host is configured for (Entra ID, Okta, ...).
+            logoutUrl = "/api/v1/dotsaml/logout/" + site.getIdentifier();
+            logoutLabel = LanguageUtil.get(pageContext, "403-logout-sso");
+          }
+        }
+      } catch (Exception e) {
+        Logger.debug(this.getClass(), "Unable to resolve SAML logout link for 403 page: " + e.getMessage());
+      }
+
+      accessDeniedExtraHtml = "<p><a href=\"" + logoutUrl + "\">" + logoutLabel + "</a></p>";
     } else if (status == 404) {
       ClickstreamFactory.add404Request(request, response, site);
     } else if (status == 500) {
@@ -148,6 +174,8 @@ h1 {
       <h1><%= title %></h1>
 
       <p><%= body %></p>
+
+      <%= accessDeniedExtraHtml %>
 
     </div>
   </div>
