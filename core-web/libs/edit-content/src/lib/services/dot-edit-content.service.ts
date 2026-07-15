@@ -163,15 +163,21 @@ export class DotEditContentService {
     }
 
     /**
-     * Builds a hierarchical tree structure based on the provided path.
-     * Splits the path into segments and creates a nested tree structure
-     * by making multiple API calls for each path segment.
+     * Builds a hierarchical tree structure for a preselected folder path using the
+     * paginated `/folder/search` endpoint so each node gets a correct `leaf` from
+     * `hasChildren`.
      *
-     * @param {string} path - The full path to build the tree from (e.g., 'hostname/folder1/folder2')
-     * @returns {Observable<CustomTreeNode>} Observable that emits a CustomTreeNode containing the complete tree structure and the target node
+     * @param {string} siteId - Site identifier for folder search scoping
+     * @param {string} hostname - Hostname used to build folder labels/paths
+     * @param {string} folderPath - Folder path within the site (e.g. `/level1/level2/`)
+     * @returns {Observable<CustomTreeNode>} Observable that emits the resolved tree and target node
      */
-    buildTreeByPaths(path: string): Observable<CustomTreeNode> {
-        return this.#dotBrowsingService.buildTreeByPaths(path);
+    buildTreeByPaths(
+        siteId: string,
+        hostname: string,
+        folderPath: string
+    ): Observable<CustomTreeNode> {
+        return this.#dotBrowsingService.buildTreeByPaths(siteId, hostname, folderPath);
     }
 
     /**
