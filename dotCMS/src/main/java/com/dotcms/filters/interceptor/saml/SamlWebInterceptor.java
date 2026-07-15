@@ -162,6 +162,24 @@ public class SamlWebInterceptor implements WebInterceptor {
                             // if the auto login couldn't log in the user, then send it to the IdP login page (if it is not already logged in).
                             if (null == session || !autoLoginResult.isAutoLogin() || this.samlWebUtils.isNotLogged(request)) {
 
+                                // Loop-guard: if auto-login actually resolved a SAML user (isAutoLogin)
+                                // yet the request is STILL not logged in for this destination, re-authenticating
+                                // will resolve the very same user and produce the same result — that is
+                                // an infinite IdP redirect loop (e.g. a front-end-only SAML user sent
+                                // to a back-end URL like /dotAdmin). Break it
+                                // with a clean 403 instead of bouncing to the IdP again.
+                                if (autoLoginResult.isAutoLogin() && this.samlWebUtils.isNotLogged(request)) {
+
+                                    Logger.warn(this, ()-> "SAML auth redirect loop detected for URI '"
+                                            + request.getRequestURI() + "': the user is authenticated but not "
+                                            + "authorized for this destination. Returning 403 instead of "
+                                            + "redirecting to the IdP again.");
+                                    SecurityLogger.logInfo(this.getClass(), "SAML auth redirect loop broken for URI: "
+                                            + request.getRequestURI());
+                                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                                    return Result.SKIP_NO_CHAIN;
+                                }
+
                                 Logger.debug(this, ()-> "User is not log in, doing SAML Authentication request");
                                 this.doAuthentication(request, response, session, identityProviderConfiguration, host.getIdentifier());
                                 return Result.SKIP_NO_CHAIN;

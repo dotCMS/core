@@ -60,8 +60,12 @@ public class SpeedyAssetServlet extends HttpServlet {
                     webResource, request, response);
             Logger.debug(ShortyServlet.class, () -> "User: " + user);
         } catch (SecurityException e) {
+            // Authentication (not authorization) failed here: no valid user could be resolved,
+            // so treat as anonymous and require login. Authorization on the asset itself is
+            // enforced downstream by BinaryExporterServlet (the /contentAsset forward below),
+            // which uses the same centralized auth/authz split.
             Logger.debug(SpeedyAssetServlet.class, e,  () -> "Error getting user and authenticating");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            com.dotcms.util.SecurityUtils.sendPermissionDenied(null, request.getRequestURI(), request, response);
             return;
         }
 
