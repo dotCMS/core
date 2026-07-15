@@ -168,6 +168,13 @@ public class SamlWebInterceptor implements WebInterceptor {
                                 // an infinite IdP redirect loop (e.g. a front-end-only SAML user sent
                                 // to a back-end URL like /dotAdmin). Break it
                                 // with a clean 403 instead of bouncing to the IdP again.
+                                //
+                                // Note: this is self-healing for a transient auto-login failure (e.g. a
+                                // one-off doCookieLogin error rather than a genuine realm mismatch). getUser()
+                                // consumes (removes) the SAML_USER_ID from the session, so isAutoLogin can only
+                                // be true for the single request following an IdP round-trip: a transient failure
+                                // yields one 403, and the next request has no SAML_USER_ID (isAutoLogin=false) and
+                                // re-runs a full IdP authentication. So a temporary glitch cannot lock the user out.
                                 if (autoLoginResult.isAutoLogin() && this.samlWebUtils.isNotLogged(request)) {
 
                                     Logger.warn(this, ()-> "SAML auth redirect loop detected for URI '"
@@ -176,7 +183,11 @@ public class SamlWebInterceptor implements WebInterceptor {
                                             + "redirecting to the IdP again.");
                                     SecurityLogger.logInfo(this.getClass(), "SAML auth redirect loop broken for URI: "
                                             + request.getRequestURI());
-                                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                                    // Match the isCommitted() guard used by SecurityUtils.sendPermissionDenied,
+                                    // to avoid IllegalStateException / a double response if already committed.
+                                    if (!response.isCommitted()) {
+                                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                                    }
                                     return Result.SKIP_NO_CHAIN;
                                 }
 
