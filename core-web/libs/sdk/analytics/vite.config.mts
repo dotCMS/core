@@ -1,21 +1,12 @@
 /// <reference types='vitest' />
 import react from '@vitejs/plugin-react';
-import fs from 'fs';
 import * as path from 'path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-// Plugin simple para copiar README.md
-const copyReadme = {
-    name: 'copy-readme',
-    writeBundle() {
-        fs.copyFileSync(
-            path.resolve(__dirname, 'README.md'),
-            path.resolve(__dirname, '../../../dist/libs/sdk/analytics/README.md')
-        );
-    }
-};
+const distDir = path.resolve(__dirname, '../../../dist/libs/sdk/analytics');
 
 export default defineConfig({
     root: __dirname,
@@ -34,8 +25,13 @@ export default defineConfig({
             root: path.resolve(__dirname, '../../../'),
             projects: ['tsconfig.base.json']
         }),
+        viteStaticCopy({
+            targets: [
+                { src: '*.md', dest: '.' },
+                { src: 'package.json', dest: '.' }
+            ]
+        }),
         dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') }),
-        copyReadme,
         // Ensure the React entry is tagged as a Client Component in the emitted bundle
         {
             name: 'preserve-use-client-react-entry',
@@ -56,7 +52,7 @@ export default defineConfig({
     build: {
         // Explicitly resolve outDir to prevent output from going to external dist folders
         // This ensures reproducible builds regardless of current working directory
-        outDir: path.resolve(__dirname, '../../../dist/libs/sdk/analytics'),
+        outDir: distDir,
         emptyOutDir: true,
         reportCompressedSize: true,
         commonjsOptions: {
