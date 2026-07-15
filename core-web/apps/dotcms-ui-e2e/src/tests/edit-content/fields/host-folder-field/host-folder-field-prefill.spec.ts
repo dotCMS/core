@@ -7,7 +7,7 @@ import { expect, test } from '../../../../fixtures/host-folder.fixture';
 /**
  * Journey 2: Folder Context Pre-fill from Query Params (Issue #34588 Regression)
  */
-test.describe('Folder Context Pre-fill (#34588)', () => {
+test.describe('Folder Context Pre-fill', () => {
     test.describe.configure({ mode: 'serial' });
 
     let contentTypeVariable: string;
@@ -75,6 +75,7 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         await field.expectLabelContains(folderName);
 
         await field.openOverlay();
+        await field.searchFolders(alternateFolderName);
         await field.selectFolderFlow(alternateFolderName);
 
         await field.expectLabelContains(alternateFolderName);

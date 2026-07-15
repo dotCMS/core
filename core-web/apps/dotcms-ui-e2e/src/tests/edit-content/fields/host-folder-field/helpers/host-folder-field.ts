@@ -287,11 +287,6 @@ export class HostFolderField {
         await responsePromise;
     }
 
-    /** @deprecated Use searchFolders */
-    async filterTree(text: string) {
-        return this.searchFolders(text);
-    }
-
     async copyPath() {
         await this.copyButton.click();
     }
