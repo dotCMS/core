@@ -80,6 +80,19 @@ export class DotCategoriesService {
     }
 
     /**
+     * Retrieves a single category by its inode or key. The endpoint resolves by inode first, then
+     * key, so a caller holding a persisted category inode (e.g. restored from a URL) can look up
+     * its display name. GET /api/v1/categories/{idOrKey}.
+     * @param idOrKey - Category inode or key.
+     * @returns Observable with the resolved category.
+     */
+    getCategory(idOrKey: string): Observable<DotCategory> {
+        return this.#http
+            .get<DotCMSAPIResponse<DotCategory>>(`/api/v1/categories/${idOrKey}`)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
      * Creates a new category.
      * @param form - The category form data.
      * @returns Observable with the created category.

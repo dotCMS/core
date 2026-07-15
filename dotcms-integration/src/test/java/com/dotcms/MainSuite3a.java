@@ -1,12 +1,14 @@
 package com.dotcms;
 
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
+import com.dotcms.ai.util.ContentToStringUtilTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.publisher.business.PublisherQueueJobTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
@@ -67,6 +69,7 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         ContentDriveWorkflowFilterTest.class,
         AppsAPIImplTest.class,
@@ -89,6 +92,7 @@ import org.junit.runners.Suite;
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
         PublisherQueueJobTest.class,
+        ContentToStringUtilTest.class,
 })
 
 public class MainSuite3a {

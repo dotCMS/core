@@ -80,10 +80,13 @@
                         class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         @if (!isFolder) {
-                            <dot-contentlet-thumbnail
-                                [fieldVariable]="item?.contentType"
-                                [iconSize]="'36px'"
+                            <!-- No fieldVariable: rows are the assets themselves, so the mapper
+                                 resolves through titleImage / the default /dA path. Passing the
+                                 contentType here (legacy quirk) 404s the /contentAsset-based
+                                 types (SVG, PDF) — that endpoint needs the real field variable. -->
+                            <dot-content-thumbnail
                                 [contentlet]="item"
+                                iconSize="36px"
                                 data-testId="contentlet-thumbnail"
                                 [attr.data-table-id]="item.identifier" />
                         } @else {

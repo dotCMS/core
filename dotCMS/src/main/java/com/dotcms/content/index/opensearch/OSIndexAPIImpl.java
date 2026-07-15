@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -89,6 +90,23 @@ public class OSIndexAPIImpl implements IndexAPI {
     private OSClientProvider clientProvider;
 
     /**
+     * Seam over the JVM-terminating exit used by the Phase 3 abort branch of the startup
+     * connection gate. Defaults to the real {@link com.dotcms.shutdown.SystemExitManager}, which
+     * calls {@code Runtime.halt()} and has no test guard. Tests override this via
+     * {@link #setExitHandler(ExitHandler)} so the Phase 3 abort contract can be asserted without
+     * killing the test JVM (issue #36244 follow-up).
+     */
+    private ExitHandler exitHandler = com.dotcms.shutdown.SystemExitManager::immediateExit;
+
+    /**
+     * Functional seam for {@link com.dotcms.shutdown.SystemExitManager#immediateExit(int, String)}.
+     */
+    @FunctionalInterface
+    interface ExitHandler {
+        void exit(int exitCode, String reason);
+    }
+
+    /**
      * No-arg constructor required by CDI for proxy creation.
      * The {@code clientProvider} dependency is injected via field injection after construction.
      */
@@ -101,6 +119,14 @@ public class OSIndexAPIImpl implements IndexAPI {
      */
     OSIndexAPIImpl(OSClientProvider clientProvider) {
         this.clientProvider = clientProvider;
+    }
+
+    /**
+     * Package-private test seam: replaces the JVM-terminating exit so the Phase 3 abort branch of
+     * {@link #waitUtilIndexReady()} can be observed in tests instead of halting the JVM.
+     */
+    void setExitHandler(final ExitHandler exitHandler) {
+        this.exitHandler = exitHandler;
     }
 
     // =========================================================================
@@ -573,20 +599,21 @@ public class OSIndexAPIImpl implements IndexAPI {
     private boolean handleConnectionExhausted(final int attempts, final Exception lastError) {
         final MigrationPhase phase = MigrationPhase.current();
         final String cause = lastError != null ? lastError.getMessage() : "unknown";
+        final ConnectionFailureKind kind = classifyConnectionError(lastError);
         final String detail = "OpenSearch is not reachable after " + attempts + " attempt(s)."
                 + " phase=" + phase.name()
                 + ", endpoints=" + resolveEndpointsForLogging()
-                + ", cause=" + cause;
+                + ", likelyCause=" + kind.name() + " (" + kind.remediation() + ")"
+                + ", error=" + cause;
 
         if (phase.isMigrationComplete()) {
             // Phase 3: OS is primary and ES is decommissioned — no fallback is possible.
             Logger.fatal(this.getClass(), detail
                     + " — OS is the primary store in " + phase.name() + "; cannot fall back to ES."
-                    + " Verify OS_ENDPOINTS, OS_PROTOCOL/OS_TLS_ENABLED (scheme must match the"
-                    + " server), and credentials, then restart dotCMS.");
-            com.dotcms.shutdown.SystemExitManager.immediateExit(1,
-                    "OpenSearch connection failed in PHASE_3_OPENSEARCH_ONLY");
-            return false; // unreachable — immediateExit terminates the JVM
+                    + " Fix the connection per the likely cause above, then restart dotCMS.");
+            exitHandler.exit(1, "OpenSearch connection failed in PHASE_3_OPENSEARCH_ONLY: "
+                    + kind.name());
+            return false; // unreachable in production — immediateExit terminates the JVM
         }
 
         // Phase 1 / 2 (shadow): ES still holds the authoritative state. Fall back to ES-only
@@ -594,7 +621,8 @@ public class OSIndexAPIImpl implements IndexAPI {
         Logger.error(this.getClass(), detail
                 + " — OS is a shadow store in " + phase.name() + "; falling back to ES-only"
                 + " (resetting FEATURE_FLAG_OPEN_SEARCH_PHASE to 0 via haltMigration)."
-                + " Fix OS connectivity and re-enable the migration phase when ready.");
+                + " Fix OS connectivity per the likely cause above and re-enable the migration"
+                + " phase when ready.");
         IndexConfigHelper.haltMigration();
         return false;
     }
@@ -614,6 +642,87 @@ public class OSIndexAPIImpl implements IndexAPI {
         final String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
         final int    port     = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
         return protocol + "://" + hostname + ":" + port;
+    }
+
+    /**
+     * Likely root cause of an OpenSearch connection failure, inferred from the exception chain,
+     * so the fatal (Phase 3) / fallback (Phase 1-2) message can name the actual problem and its fix
+     * instead of only echoing a raw transport message (issue #36244 follow-up: error classification
+     * hardening). Motivated by a TLS-scheme mismatch (an {@code http://} client against an
+     * {@code https}-only OS 3.x port) that surfaced only as an opaque {@code ConnectionClosedException}.
+     */
+    enum ConnectionFailureKind {
+        TLS_SCHEME_MISMATCH("TLS/scheme mismatch — the client scheme likely does not match the"
+                + " server (e.g. http:// against an https-only OS port, or https:// against a"
+                + " plaintext port). Align OS_PROTOCOL / OS_TLS_ENABLED with the server's scheme"
+                + " and check the server certificate."),
+        AUTH_FORBIDDEN("authentication/authorization rejected (HTTP 401/403) — verify the OS"
+                + " credentials and that the user has the required cluster permissions."),
+        UNREACHABLE("cluster unreachable (connection refused / timed out / unknown host) — verify"
+                + " OS_ENDPOINTS host:port and that OpenSearch is running and network-reachable."),
+        UNKNOWN("cause could not be classified — inspect the underlying error and stack trace.");
+
+        private final String remediation;
+
+        ConnectionFailureKind(final String remediation) {
+            this.remediation = remediation;
+        }
+
+        String remediation() {
+            return remediation;
+        }
+    }
+
+    /**
+     * Classifies an OpenSearch connection failure by walking the exception chain and matching on
+     * exception type (simple name) and message text. Simple-name / message matching is used
+     * deliberately so this stays free of any compile dependency on transport-layer types (e.g.
+     * Apache HttpClient's {@code ConnectionClosedException}) and remains unit-testable with plain
+     * synthetic exception chains.
+     *
+     * <p>Order matters: TLS/scheme is checked first (its symptoms — closed connection, SSL/plaintext
+     * — otherwise look like a generic unreachable), then auth (401/403), then unreachable.</p>
+     *
+     * @param error the last connection error observed, or {@code null}
+     * @return the inferred {@link ConnectionFailureKind}; never {@code null}
+     */
+    static ConnectionFailureKind classifyConnectionError(final Throwable error) {
+        for (Throwable t = error; t != null; t = t.getCause()) {
+            final String type = t.getClass().getName().toLowerCase(Locale.ROOT);
+            final String msg  = t.getMessage() == null
+                    ? "" : t.getMessage().toLowerCase(Locale.ROOT);
+
+            // TLS / scheme mismatch: SSL handshake errors, or a connection closed with no response
+            // (the classic symptom of speaking http:// to an https-only port).
+            if (type.contains("sslexception")
+                    || type.contains("sslhandshake")
+                    || type.contains("connectionclosedexception")
+                    || msg.contains("unrecognized ssl message")
+                    || msg.contains("plaintext")
+                    || msg.contains("ssl")
+                    || msg.contains("certificat") // certificate / certification path (PKIX)
+                    || msg.contains("pkix")
+                    || msg.contains("connection closed")) {
+                return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
+            }
+            // Authentication / authorization.
+            if (msg.contains("401") || msg.contains("403")
+                    || msg.contains("unauthorized") || msg.contains("forbidden")) {
+                return ConnectionFailureKind.AUTH_FORBIDDEN;
+            }
+            // Host/port unreachable.
+            if (type.contains("connectexception")
+                    || type.contains("unknownhostexception")
+                    || type.contains("sockettimeoutexception")
+                    || type.contains("nohttpresponseexception")
+                    || msg.contains("connection refused")
+                    || msg.contains("timed out")
+                    || msg.contains("timeout")
+                    || msg.contains("unknown host")) {
+                return ConnectionFailureKind.UNREACHABLE;
+            }
+        }
+        return ConnectionFailureKind.UNKNOWN;
     }
 
 

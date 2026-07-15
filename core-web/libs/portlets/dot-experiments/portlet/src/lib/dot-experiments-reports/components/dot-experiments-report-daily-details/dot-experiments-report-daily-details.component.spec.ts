@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 

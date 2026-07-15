@@ -79,7 +79,7 @@ public interface ContentletIndexAPI {
      * rebuilt (a reindex slot), so that no path — REST, legacy AJAX, or {@code clear} — can wipe the
      * only index dotCMS serves reads from (issue #35640, TC-018). The protected set is collected
      * phase-aware, unioning the ES and OS stores in the dual-write phases. Bypassable via the
-     * {@code FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE} feature flag.
+     * {@code ALLOW_ACTIVE_INDEX_DELETE} config property.
      *
      * @param indexName the index being targeted (bare or {@code .os}-tagged, with or without the
      *                  cluster prefix — normalized internally)

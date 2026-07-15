@@ -63,16 +63,6 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
 
-    /**
-     * When {@code true}, bypasses the guard that blocks deletion of an active
-     * (working/live) or building (reindex) index. Off by default: deleting an in-use
-     * index leaves the site with nothing to serve reads from or reindex into. Intended
-     * only for emergency/scripted maintenance.
-     *
-     * @see com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl#delete(String)
-     */
-    String FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE = "FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE";
-
     String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
 
     String FEATURE_FLAG_REPORT_ISSUE_ENABLED = "FEATURE_FLAG_REPORT_ISSUE_ENABLED";

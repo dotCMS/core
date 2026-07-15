@@ -1549,7 +1549,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             throws DotSecurityException, DotDataException, IOException {
 
         //Creates content type
-        final ContentType type = createTestContentType("selfRelatedType", "selfRelatedType");
+        final ContentType type = createTestContentType("selfRelatedType", "selfRelatedType" + new Date().getTime());
         final Structure structure = new StructureTransformer(type).asStructure();
 
         try {
@@ -1610,8 +1610,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
             final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
             final Structure childStructure = new StructureTransformer(childContentType).asStructure();
 
@@ -1693,8 +1693,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
 
         try {
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder
                     .builder(RelationshipField.class).name("testRelationship")
@@ -1753,8 +1753,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1825,8 +1825,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1897,8 +1897,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1971,7 +1971,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
 
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
 
             field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -2029,7 +2029,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
 
         try {
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
 
             //child field
             field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")

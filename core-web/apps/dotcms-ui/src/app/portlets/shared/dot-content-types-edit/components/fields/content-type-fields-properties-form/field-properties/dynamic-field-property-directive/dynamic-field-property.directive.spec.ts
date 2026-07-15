@@ -3,7 +3,7 @@ import {
     mockProvider,
     SpectatorDirective,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 
 import { Component, ViewContainerRef } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
