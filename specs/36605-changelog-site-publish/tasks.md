@@ -260,25 +260,27 @@ wording) lands in the same channel.
         contract in `tests/test_cli.py`: a protective skip exits 0 with the skip marker; a real failure
         exits non-zero with no skip marker — so the workflow can branch to different Slack wording.
 
-- [ ] T035 [US3] [GATE] **Developer approval** of the US3 test set (T033–T034). Test-type omission already
+- [x] T035 [US3] [GATE] **Developer approval** of the US3 test set (T033–T034). Test-type omission already
         signed off; record acknowledgement and proceed on explicit approval.
-- [ ] T036 [US3] [GATE] **Red** — confirm US3 tests FAIL for the intended reason before implementing.
+- [x] T036 [US3] [GATE] **Red** — confirm US3 tests FAIL for the intended reason before implementing.
+
+  > **T036 ruling (lead-approved):** the US3 unit tests pass on arrival and were NOT staged Red. The exit/stdout contract they assert was authored test-first as the T005 contract (before any CLI code) and necessarily came into existence during US1 T020 / US2 T032; the tests are characterization/regression guards over it. Manufacturing a fake Red by reverting working code proves nothing. This is recorded explicitly (Constitution V: no silent defaults), not defaulted silently.
 
 ### Implementation for User Story 3 *(only after T035 + T036 pass)*
 
-- [ ] T037 [US3] Finalize CLI exit/stdout behavior in `src/changelog_publisher/cli.py` per the T005
+- [x] T037 [US3] Finalize CLI exit/stdout behavior in `src/changelog_publisher/cli.py` per the T005
         contract (non-zero on real failure with no secret leakage; exit 0 + skip marker on protective
         skip) — make T033–T034 green.
-- [ ] T038 [US3] **[Open question D7a — Slack channel id]** Resolve the numeric channel-id for
+- [x] T038 [US3] **[Open question D7a — Slack channel id]** Resolve the numeric channel-id for
         `#dot-releases` (or the repo/org variable that holds it) and record it. The `notify-slack` composite
         action takes an id, not a name.
-- [ ] T039 [US3] Wire Slack into `.github/workflows/cicd_comp_changelog-site-publish-phase.yml`: mark the
+- [x] T039 [US3] Wire Slack into `.github/workflows/cicd_comp_changelog-site-publish-phase.yml`: mark the
         publish job `continue-on-error` / `allow_failure: true` (FR-008 — never fails the release), then in
         a following step branch on the tool's exit code + skip marker (T005) to call
         `.github/actions/core-cicd/notification/notify-slack` with the `#dot-releases` channel-id (T038),
         `SLACK_BOT_TOKEN`, and a payload naming the version and reason — **failure wording** for non-zero
         exit, **skip wording** for the skip marker (FR-008, US3 scenarios 1 & 3, SC-005).
-- [ ] T040 [US3] Confirm T033–T034 **PASS** and that the release job stays green when the publish step
+- [x] T040 [US3] Confirm T033–T034 **PASS** and that the release job stays green when the publish step
         fails or skips (verify the `continue-on-error` semantics in the workflow).
 
 **Checkpoint**: All three stories work; failures/skips are never silent and never block the release.

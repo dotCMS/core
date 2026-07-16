@@ -278,6 +278,7 @@ jobs:
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       DOTCMS_DEVSITE_TOKEN: ${{ secrets.DOTCMS_DEVSITE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
   # Finalize - standard finalization phase (required for phase pattern)

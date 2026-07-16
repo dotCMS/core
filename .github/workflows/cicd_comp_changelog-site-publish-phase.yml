@@ -45,6 +45,11 @@ on:
         required: false
         type: boolean
         default: false
+      slack_channel_id:
+        description: 'Slack channel id for failure/skip notices. Defaults to #dot-releases.'
+        required: false
+        type: string
+        default: 'CE1TBQU00'  # #dot-releases (public). Pass an override to post elsewhere.
     secrets:
       ANTHROPIC_API_KEY:
         required: true
@@ -52,6 +57,9 @@ on:
       DOTCMS_DEVSITE_TOKEN:
         required: true
         description: 'Service-account bearer token for the corpsites-headless backend'
+      SLACK_BOT_TOKEN:
+        required: true
+        description: 'Slack bot token for #dot-releases failure/skip notifications'
       CI_MACHINE_TOKEN:
         required: false
         description: 'GitHub token for release/PR reads (falls back to github.token)'
@@ -150,10 +158,14 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Publish to site
+        id: publish
         working-directory: .github/actions/core-cicd/changelog-publisher
         env:
           # Read once by the tool; never echoed to logs / GITHUB_OUTPUT / step summary.
           DOTCMS_DEVSITE_TOKEN: ${{ secrets.DOTCMS_DEVSITE_TOKEN }}
+          # Service-account modUser id for human-edit protection (FR-011). --force is never
+          # passed here — override is a manual operator re-run only.
+          DOTCMS_DEVSITE_SERVICE_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_SERVICE_ACCOUNT }}
           DOCKER_TAGS: ${{ inputs.docker_tags }}
         run: |
           # Pick the primary dotcms/dotcms image reference from the built tags.
@@ -165,9 +177,53 @@ jobs:
           done
           [ -n "$DOCKER_IMAGE" ] || DOCKER_IMAGE="dotcms/dotcms:${RELEASE_VERSION}"
 
-          uv run changelog-publisher publish \
+          # Capture the tool's exit code + stdout so the Slack steps can branch on the
+          # T005 contract (0 = success/skip via ::changelog-skip:: marker; non-zero = failure).
+          # This step itself always exits 0 so the branch steps run and the release is never
+          # blocked (FR-008); the job is also allow_failure as belt-and-suspenders.
+          set +e
+          OUTPUT=$(uv run changelog-publisher publish \
             --version "$RELEASE_VERSION" \
             --notes-file /tmp/site-release-notes.md \
             --docker-image "$DOCKER_IMAGE" \
             --released-date "$(date -u +%F)" \
-            --apply
+            --apply 2>&1)
+          RC=$?
+          set -e
+          echo "$OUTPUT"
+
+          if echo "$OUTPUT" | grep -q '::changelog-skip::'; then
+            REASON=$(echo "$OUTPUT" | grep -o '::changelog-skip::.*' | head -1 | sed 's/.*reason=//')
+            echo "result=skip" >> "$GITHUB_OUTPUT"
+            echo "reason=${REASON}" >> "$GITHUB_OUTPUT"
+          elif [ "$RC" -ne 0 ]; then
+            echo "result=failure" >> "$GITHUB_OUTPUT"
+            echo "reason=publisher exited ${RC}" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=success" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Slack branch (FR-008, US3): failure and protective-skip post DIFFERENT wording to
+      # #dot-releases; success posts nothing. The release is unaffected either way.
+      - name: Notify Slack on failure
+        if: steps.publish.outputs.result == 'failure'
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :rotating_light: *Changelog site publish FAILED* for `${{ inputs.release_version }}`
+            (${{ steps.publish.outputs.reason }}). The GitHub release is published and
+            unaffected. Re-run to retry:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Notify Slack on skip
+        if: steps.publish.outputs.result == 'skip'
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :warning: *Changelog site publish SKIPPED* for `${{ inputs.release_version }}` —
+            ${{ steps.publish.outputs.reason }}. The existing entry was left untouched;
+            overwriting requires a manual `--force` re-run.
