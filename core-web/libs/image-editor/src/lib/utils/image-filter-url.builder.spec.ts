@@ -1,11 +1,19 @@
-import { buildFilterChain, buildPreviewUrl, cleanUrl, toHsb } from './image-filter-url.builder';
+import {
+    buildFilterChain,
+    buildPreviewUrl,
+    buildSaveUrl,
+    cleanUrl,
+    toHsb
+} from './image-filter-url.builder';
 
 import {
     AdjustState,
+    AppliedFilter,
     CompressionMode,
     CropState,
     FileInfoState,
     ImageEditorAssetContext,
+    NormalizedPoint,
     TransformState
 } from '../models/image-editor.models';
 
@@ -180,22 +188,24 @@ describe('image-filter-url.builder', () => {
         });
     });
 
-    describe('buildFilterChain - resize removes crop', () => {
-        it('drops the Crop filter when resizing', () => {
+    describe('buildFilterChain - resize and crop coexist (legacy parity)', () => {
+        it('keeps the Crop after the Resize when explicit output dimensions are set', () => {
             const result = chain({
                 transform: { outputWidth: 600 },
                 crop: { active: true, x: 0, y: 0, w: 100, h: 100 }
             });
-            expect(result).toEqual([{ name: 'Resize', args: '/resize_w/600' }]);
-            expect(result.some((f) => f.name === 'Crop')).toBe(false);
+            // Crop is drawn on the scaled preview, so it runs after the resize.
+            expect(result.map((f) => f.name)).toEqual(['Resize', 'Crop']);
         });
 
-        it('treats a non-100 scale as resizing and drops crop', () => {
+        it('keeps the Crop after a non-100 scale resize', () => {
             const result = chain({
                 transform: { scale: 50 },
                 crop: { active: true, x: 0, y: 0, w: 100, h: 100 }
             });
-            expect(result.some((f) => f.name === 'Crop')).toBe(false);
+            expect(result.map((f) => f.name)).toEqual(['Resize', 'Crop']);
+            // The crop coords stay in the scaled space (they are emitted verbatim).
+            expect(result[1].args).toBe('/crop_w/100/crop_h/100/crop_x/0/crop_y/0');
         });
 
         it('builds a Resize filter from scale% × the natural size', () => {
@@ -317,6 +327,86 @@ describe('image-filter-url.builder', () => {
             const ctx = { ...baseContext, originalUrl: '/contentAsset//image//abc123/fileAsset' };
             const url = buildPreviewUrl(ctx, [], 5);
             expect(url).toBe('/contentAsset/image/abc123/fileAsset?test=5');
+        });
+    });
+
+    describe('buildSaveUrl', () => {
+        const center: NormalizedPoint = { x: 0.5, y: 0.5 };
+
+        it('appends the save flags to the base url for an empty chain and centered focal', () => {
+            const url = buildSaveUrl(baseContext, [], center, center, 'fileAsset');
+            expect(url).toBe(
+                '/contentAsset/image/abc123/fileAsset?binaryFieldId=fileAsset&_imageToolSaveFile=true'
+            );
+        });
+
+        it('keeps the filter segment and adds no overwrite when only filters are applied', () => {
+            const filters = chain({ adjust: { grayscale: true } });
+            const url = buildSaveUrl(baseContext, filters, center, center, 'fileAsset');
+            expect(url).toBe(
+                '/contentAsset/image/abc123/fileAsset/filter/Grayscale/grayscale/1' +
+                    '?binaryFieldId=fileAsset&_imageToolSaveFile=true'
+            );
+            expect(url).not.toContain('overwrite');
+            expect(url).not.toContain('FocalPoint');
+        });
+
+        it('does not inject a FocalPoint filter for an untouched centered focal point', () => {
+            const url = buildSaveUrl(baseContext, [], center, center, 'fileAsset');
+            expect(url).not.toContain('FocalPoint');
+            expect(url).not.toContain('overwrite');
+        });
+
+        it('injects a FocalPoint filter and overwrite flag when the focal point moved from centre', () => {
+            const url = buildSaveUrl(baseContext, [], { x: 0.25, y: 0.75 }, center, 'fileAsset');
+            expect(url).toBe(
+                '/contentAsset/image/abc123/fileAsset/filter/FocalPoint/fp/0.25,0.75' +
+                    '?binaryFieldId=fileAsset&_imageToolSaveFile=true&overwrite=true'
+            );
+        });
+
+        it('re-stages an untouched non-centre focal point so it is preserved on save', () => {
+            const seeded: NormalizedPoint = { x: 0.3, y: 0.7 };
+            const url = buildSaveUrl(baseContext, [], seeded, seeded, 'fileAsset');
+            expect(url).toContain('/filter/FocalPoint/fp/0.3,0.7');
+            expect(url).toContain('&overwrite=true');
+        });
+
+        it('sends the focal point when recentring a previously-set focal point', () => {
+            // Opened at (0.3,0.7), dragged back to centre: must still send so the server overwrites.
+            const url = buildSaveUrl(baseContext, [], center, { x: 0.3, y: 0.7 }, 'fileAsset');
+            expect(url).toContain('/filter/FocalPoint/fp/0.5,0.5');
+            expect(url).toContain('&overwrite=true');
+        });
+
+        it('treats a sub-epsilon nudge back to the seeded centre as unchanged (no focal entry)', () => {
+            const nudged: NormalizedPoint = { x: 0.5 + 1e-6, y: 0.5 - 1e-6 };
+            const url = buildSaveUrl(baseContext, [], nudged, center, 'fileAsset');
+            expect(url).not.toContain('FocalPoint');
+            expect(url).not.toContain('overwrite');
+        });
+
+        it('appends FocalPoint to an existing chain as a single comma-joined filter segment', () => {
+            const filters: AppliedFilter[] = chain({
+                crop: { active: true, x: 0, y: 0, w: 100, h: 50 }
+            });
+            const url = buildSaveUrl(baseContext, filters, { x: 0.1, y: 0.2 }, center, 'fileAsset');
+            expect(url).toContain(
+                '/filter/Crop,FocalPoint/crop_w/100/crop_h/50/crop_x/0/crop_y/0/fp/0.1,0.2'
+            );
+            expect(url).toContain('&overwrite=true');
+        });
+
+        it('includes the binaryFieldId in the query', () => {
+            const url = buildSaveUrl(baseContext, [], center, center, 'myImage');
+            expect(url).toContain('binaryFieldId=myImage');
+        });
+
+        it('URL-encodes the binaryFieldId so special characters cannot inject query params', () => {
+            const url = buildSaveUrl(baseContext, [], center, center, 'a&b=c');
+            // The raw `&`/`=` must be percent-encoded, not leak into the query string.
+            expect(url).toContain('binaryFieldId=a%26b%3Dc');
+            expect(url).not.toContain('binaryFieldId=a&b=c');
         });
     });
 });

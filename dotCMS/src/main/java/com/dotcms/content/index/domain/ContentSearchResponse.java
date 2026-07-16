@@ -1,9 +1,11 @@
 package com.dotcms.content.index.domain;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /**
@@ -37,18 +39,33 @@ import javax.annotation.Nullable;
  *                        sub-aggregations and {@code top_hits} preserved); Velocity resolves
  *                        {@code $results.aggregations.<name>} through this map
  */
+// The Velocity-only aliases {@code aggregations}, {@code tookInMillis} and {@code suggest} are
+// suppressed for Jackson at the CLASS level (not with method-level {@code @JsonIgnore} on the
+// getters) on purpose. Each is redundant on the neutral Jackson wire (the tree is serialized as
+// {@code aggregationTree}, timing as {@code tookMillis}, and suggestions are wire-omitted), but a
+// method-level {@code @JsonIgnore} would ALSO hide them from the reflection-based
+// {@code com.dotmarketing.util.json.JSONObject} bean constructor that {@code JSONTool.generate(Object)}
+// uses — it honours {@code @JsonIgnore}. That reflection path is exactly what
+// {@code $json.generate($response)} templates walk, so a method-level ignore silently drops the data
+// there (issue #36435 — originally only {@code aggregations} was reported, {@code tookInMillis} and
+// {@code suggest} shared the same latent regression). A class-level {@code @JsonIgnoreProperties} is
+// read by Jackson but NOT by the vendored JSONObject, so it keeps the wire shape unchanged while
+// leaving the {@code getX()} aliases visible to Velocity's json tool.
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"aggregations", "tookInMillis", "suggest"})
 public record ContentSearchResponse(
         SearchHits hits,
         @Nullable String scrollId,
         long tookMillis,
-        Map<String, Aggregation> aggregationTree) {
+        Map<String, Aggregation> aggregationTree,
+        Map<String, Object> suggest) {
 
     /**
-     * Canonical constructor. {@code aggregationTree} defaults to an empty map when {@code null}
-     * (mirrors the previous Immutables collection default).
+     * Canonical constructor. {@code aggregationTree} and {@code suggest} default to an empty map when
+     * {@code null} (mirrors the previous Immutables collection defaults).
      */
     public ContentSearchResponse {
         aggregationTree = aggregationTree == null ? Collections.emptyMap() : aggregationTree;
+        suggest = suggest == null ? Collections.emptyMap() : suggest;
     }
 
     /**
@@ -57,6 +74,69 @@ public record ContentSearchResponse(
      */
     public Map<String, List<AggregationBucket>> aggregations() {
         return flatten(aggregationTree());
+    }
+
+    // -------------------------------------------------------------------------
+    // Backward-compat accessors (Velocity)
+    // -------------------------------------------------------------------------
+    // {@code $dotcontent.raw(...)} hands this record straight to VTL. Velocity's property syntax
+    // ({@code $r.hits}) only resolves {@code getX()}/{@code isX()}, not the bare record accessors
+    // ({@code hits()}), so legacy templates would silently get {@code null}. These aliases restore
+    // that access WITHOUT changing the JSON wire shape:
+    //  - getHits()/getScrollId() return the same values as the record components, so Jackson merges
+    //    them into the existing "hits"/"scrollId" fields (no new key, no duplicate).
+    //  - getTookInMillis()/getAggregations()/getSuggest() are Velocity-only and must NOT add a field
+    //    to the neutral JSON; that suppression lives in the class-level @JsonIgnoreProperties above
+    //    (Jackson-only) rather than a method-level @JsonIgnore, so they stay visible to the
+    //    reflection-based $json.generate() path (issue #36435).
+
+    /** Velocity/back-compat alias for {@link #hits()}; serializes as the same {@code hits} field. */
+    public SearchHits getHits() {
+        return hits;
+    }
+
+    /** Velocity/back-compat alias for {@link #scrollId()}; serializes as the same {@code scrollId} field. */
+    public String getScrollId() {
+        return scrollId;
+    }
+
+    /**
+     * Velocity/back-compat alias mirroring Elasticsearch {@code SearchResponse.getTookInMillis()}.
+     * Deliberately NOT annotated {@code @JsonIgnore}: it must stay visible to the reflection-based
+     * {@code $json.generate($response)} path (issue #36435). The neutral Jackson JSON is kept
+     * unchanged (timing is serialized only as {@code tookMillis}) by the class-level
+     * {@code @JsonIgnoreProperties("tookInMillis")}.
+     */
+    public long getTookInMillis() {
+        return tookMillis;
+    }
+
+    /**
+     * Velocity/back-compat alias exposing the aggregation tree as {@code $r.aggregations}, matching
+     * {@code ContentSearchResults#getAggregations()} so {@code $dotcontent.raw(...)} and
+     * {@code $dotcontent.search(...)} templates walk aggregations the same way.
+     *
+     * <p>Deliberately NOT annotated {@code @JsonIgnore}: this accessor must stay visible to the
+     * reflection-based {@code com.dotmarketing.util.json.JSONObject} bean constructor behind
+     * {@code JSONTool.generate(Object)}, so {@code $json.generate($response).aggregations...} templates
+     * keep working (issue #36435). The neutral Jackson JSON is kept unchanged (the tree is serialized
+     * only as {@code aggregationTree}) by the class-level {@code @JsonIgnoreProperties("aggregations")}
+     * instead — Jackson honours it, the vendored JSONObject does not.</p>
+     */
+    public Map<String, Aggregation> getAggregations() {
+        return aggregationTree;
+    }
+
+    /**
+     * Velocity/back-compat alias for {@link #suggest()}, exposing search suggestions as
+     * {@code $r.suggest}. Deliberately NOT annotated {@code @JsonIgnore}: it must stay visible to the
+     * reflection-based {@code $json.generate($response)} path (issue #36435). The neutral JSON shape of
+     * {@code /api/es/raw} is unchanged (suggestions are wire-omitted) via the class-level
+     * {@code @JsonIgnoreProperties("suggest")}; the ES-wire {@code suggest} block is emitted only by the
+     * {@code /api/es/search} legacy adapter.
+     */
+    public Map<String, Object> getSuggest() {
+        return suggest;
     }
 
     public static Builder builder() {
@@ -101,7 +181,47 @@ public record ContentSearchResponse(
                 .scrollId(esResponse.getScrollId())
                 .tookMillis(esResponse.getTook() != null ? esResponse.getTook().getMillis() : 0L)
                 .aggregationTree(Aggregation.from(esResponse.getAggregations()))
+                .suggest(suggestFrom(esResponse.getSuggest()))
                 .build();
+    }
+
+    /**
+     * Converts an Elasticsearch {@code Suggest} into a vendor-neutral {@code Map<String, Object>}
+     * mirroring the ES suggest JSON shape: {@code { <suggesterName>: [ { text, offset, length,
+     * options: [ { text, score } ] } ] } }. Vendor imports are confined to this factory (like the
+     * other {@code from(...)} methods). Returns an empty map when there are no suggestions.
+     */
+    @SuppressWarnings("rawtypes")
+    private static Map<String, Object> suggestFrom(
+            final org.elasticsearch.search.suggest.Suggest esSuggest) {
+        if (esSuggest == null) {
+            return Collections.emptyMap();
+        }
+        final Map<String, Object> result = new LinkedHashMap<>();
+        for (final org.elasticsearch.search.suggest.Suggest.Suggestion suggestion : esSuggest) {
+            final List<Map<String, Object>> entries = new ArrayList<>();
+            for (final Object entryObj : suggestion.getEntries()) {
+                final org.elasticsearch.search.suggest.Suggest.Suggestion.Entry entry =
+                        (org.elasticsearch.search.suggest.Suggest.Suggestion.Entry) entryObj;
+                final List<Map<String, Object>> options = new ArrayList<>();
+                for (final Object optionObj : entry.getOptions()) {
+                    final org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option option =
+                            (org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option) optionObj;
+                    final Map<String, Object> opt = new LinkedHashMap<>();
+                    opt.put("text", option.getText() != null ? option.getText().string() : null);
+                    opt.put("score", option.getScore());
+                    options.add(opt);
+                }
+                final Map<String, Object> entryMap = new LinkedHashMap<>();
+                entryMap.put("text", entry.getText() != null ? entry.getText().string() : null);
+                entryMap.put("offset", entry.getOffset());
+                entryMap.put("length", entry.getLength());
+                entryMap.put("options", options);
+                entries.add(entryMap);
+            }
+            result.put(suggestion.getName(), entries);
+        }
+        return result;
     }
 
     // -------------------------------------------------------------------------
@@ -118,7 +238,85 @@ public record ContentSearchResponse(
                 .scrollId(osResponse.scrollId())
                 .tookMillis(osResponse.took())
                 .aggregationTree(Aggregation.fromOS(osResponse.aggregations()))
+                .suggest(suggestFrom(osResponse.suggest()))
                 .build();
+    }
+
+    /**
+     * Converts the OpenSearch suggest map into the same vendor-neutral shape as the ES
+     * {@link #suggestFrom(org.elasticsearch.search.suggest.Suggest)} overload:
+     * {@code { <suggesterName>: [ { text, offset, length, options: [ { text, score } ] } ] } }.
+     * Handles the term / phrase / completion union variants. Vendor imports are confined to this
+     * factory. Returns an empty map when there are no suggestions.
+     */
+    private static Map<String, Object> suggestFrom(
+            final Map<String, ? extends List<? extends
+                    org.opensearch.client.opensearch.core.search.Suggest<?>>> osSuggest) {
+        if (osSuggest == null || osSuggest.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final Map<String, Object> result = new LinkedHashMap<>();
+        for (final Map.Entry<String, ? extends List<? extends
+                org.opensearch.client.opensearch.core.search.Suggest<?>>> entry : osSuggest.entrySet()) {
+            final List<Map<String, Object>> entries = new ArrayList<>();
+            for (final org.opensearch.client.opensearch.core.search.Suggest<?> suggest : entry.getValue()) {
+                final Map<String, Object> entryMap = osSuggestEntry(suggest);
+                if (entryMap != null) {
+                    entries.add(entryMap);
+                }
+            }
+            result.put(entry.getKey(), entries);
+        }
+        return result;
+    }
+
+    /**
+     * Maps one OpenSearch {@code Suggest} union (term/phrase/completion) to the neutral entry shape.
+     * The three variants share the {@code text}/{@code offset}/{@code length} metadata (all inherited
+     * from {@code SuggestBase}) and differ only in their option element type, so the common shaping is
+     * factored into {@link #suggestEntry(org.opensearch.client.opensearch.core.search.SuggestBase,
+     * List, Function)}.
+     */
+    private static Map<String, Object> osSuggestEntry(
+            final org.opensearch.client.opensearch.core.search.Suggest<?> suggest) {
+        if (suggest.isTerm()) {
+            final org.opensearch.client.opensearch.core.search.TermSuggest s = suggest.term();
+            return suggestEntry(s, s.options(), o -> suggestOption(o.text(), o.score()));
+        } else if (suggest.isPhrase()) {
+            final org.opensearch.client.opensearch.core.search.PhraseSuggest s = suggest.phrase();
+            return suggestEntry(s, s.options(), o -> suggestOption(o.text(), o.score()));
+        } else if (suggest.isCompletion()) {
+            final org.opensearch.client.opensearch.core.search.CompletionSuggest<?> s = suggest.completion();
+            return suggestEntry(s, s.options(), o -> suggestOption(o.text(), o.score()));
+        }
+        return null;
+    }
+
+    /**
+     * Builds a neutral suggest entry from the shared {@code SuggestBase} metadata plus the variant's
+     * options, mapped to the neutral {@code {text, score}} shape by {@code optionMapper}.
+     */
+    private static <O> Map<String, Object> suggestEntry(
+            final org.opensearch.client.opensearch.core.search.SuggestBase base,
+            final List<O> opts,
+            final Function<O, Map<String, Object>> optionMapper) {
+        final Map<String, Object> entryMap = new LinkedHashMap<>();
+        entryMap.put("text", base.text());
+        entryMap.put("offset", base.offset());
+        entryMap.put("length", base.length());
+        final List<Map<String, Object>> options = new ArrayList<>();
+        for (final O o : opts) {
+            options.add(optionMapper.apply(o));
+        }
+        entryMap.put("options", options);
+        return entryMap;
+    }
+
+    private static Map<String, Object> suggestOption(final String text, final double score) {
+        final Map<String, Object> option = new LinkedHashMap<>();
+        option.put("text", text);
+        option.put("score", score);
+        return option;
     }
 
     /**
@@ -132,6 +330,7 @@ public record ContentSearchResponse(
         private String scrollId;
         private long tookMillis;
         private Map<String, Aggregation> aggregationTree = Collections.emptyMap();
+        private Map<String, Object> suggest = Collections.emptyMap();
 
         public Builder hits(final SearchHits hits) {
             this.hits = hits;
@@ -153,8 +352,13 @@ public record ContentSearchResponse(
             return this;
         }
 
+        public Builder suggest(final Map<String, Object> suggest) {
+            this.suggest = suggest;
+            return this;
+        }
+
         public ContentSearchResponse build() {
-            return new ContentSearchResponse(hits, scrollId, tookMillis, aggregationTree);
+            return new ContentSearchResponse(hits, scrollId, tookMillis, aggregationTree, suggest);
         }
     }
 }

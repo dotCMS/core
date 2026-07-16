@@ -1,3 +1,129 @@
+// STYLE EXCEPTION — dot-edit-content-file-field
+// Project standard: prefer Tailwind utilities in templates.
+// This feature is the documented exception: it ships as a legacy web component
+// (dotcms-binary-field-builder) without Tailwind in its bundle. Use plain SCSS/BEM
+// here so styles are always embedded with the component in both Angular and Dojo.
+
+.dot-form-file-editor__form {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+// Header bar: spans the dialog edge-to-edge with the image editor's exact spacing
+// — `px-4 py-3` (0.75rem 1rem) and a `border-gray-200` bottom divider.
+.dot-form-file-editor__header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+// Matches the image editor title: `m-0 text-lg font-semibold`.
+.dot-form-file-editor__title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.dot-form-file-editor__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    // Material Symbols default to 24px; scale down to match the small icon buttons.
+    .material-symbols-outlined {
+        font-size: 1.125rem;
+    }
+}
+
+// Scrollable body between the fixed header and footer bars; owns the content padding
+// the dialog no longer provides (contentStyle padding is 0).
+.dot-form-file-editor__body {
+    display: flex;
+    width: 100%;
+    flex: 1 1 0%;
+    min-height: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.dot-form-file-editor__name-field {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dot-form-file-editor__error-slot {
+    display: flex;
+    min-height: 1.5rem;
+    justify-content: flex-start;
+}
+
+.dot-form-file-editor__editor-section {
+    display: flex;
+    width: 100%;
+    flex: 1 1 0%;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dot-form-file-editor__editor {
+    position: relative;
+    display: block;
+    min-height: 20rem;
+    width: 100%;
+    flex: 1 1 0%;
+    overflow: auto;
+    border-radius: 0.375rem;
+    border: 1px solid #9ca3af;
+}
+
+.dot-form-file-editor__editor--disabled {
+    background-color: #e5e7eb;
+    opacity: 0.5;
+}
+
+// Red outline shown when the content has real (Error-severity) syntax errors that
+// block saving. Uses PrimeNG's invalid-field border token so it matches `p-invalid`
+// and adapts to dark mode; the hex fallback (Lara `red.400`) is what renders in the
+// legacy Dojo bundle, where the theme CSS variables aren't injected.
+.dot-form-file-editor__editor--error {
+    border-color: var(--p-form-field-invalid-border-color, #f87171);
+}
+
+.dot-form-file-editor__mime-type {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.dot-form-file-editor__mime-type--hidden {
+    visibility: hidden;
+}
+
+// Footer bar: mirrors the image editor footer — `px-4 py-3` (0.75rem 1rem),
+// a `border-gray-200` top divider and `flex items-center justify-end gap-2`.
+.dot-form-file-editor__actions {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
 // Monaco editor internals – cannot be styled with Tailwind (third-party DOM)
 :host ::ng-deep {
     .editor-container {

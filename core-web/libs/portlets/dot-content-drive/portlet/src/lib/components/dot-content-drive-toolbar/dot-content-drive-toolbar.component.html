@@ -10,14 +10,16 @@
             <dot-content-drive-search-input data-testid="search-input" class="col-span-2" />
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
-                <p-button
-                    [label]="'content-drive.upload' | dm"
-                    icon="pi pi-upload"
-                    [outlined]="true"
-                    data-testid="upload-asset-button"
-                    (click)="$upload.emit()" />
-
                 @if ($displayButton()) {
+                    <p-button
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        [label]="'content-drive.upload' | dm"
+                        icon="pi pi-upload"
+                        [outlined]="true"
+                        data-testid="upload-asset-button"
+                        (click)="$upload.emit()" />
+
                     <p-button
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
@@ -42,6 +44,15 @@
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
+
+            @for (field of $activeFieldFilters(); track field.variable) {
+                <dot-content-drive-field-filter
+                    animate.enter="field-filter-enter"
+                    animate.leave="field-filter-leave"
+                    [field]="field" />
+            }
+
+            <dot-content-drive-field-filter-menu data-testid="field-filter-menu" />
 
             @if ($hasFilters()) {
                 <p-button

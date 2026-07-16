@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 

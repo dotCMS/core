@@ -1,11 +1,11 @@
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import {
     createServiceFactory,
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
-import { unprotected } from '@ngrx/signals/testing';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';

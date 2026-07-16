@@ -9,6 +9,7 @@
         "build": {
             "executor": "@angular/build:application",
             "outputs": ["{options.outputPath.base}"],
+            "defaultConfiguration": "production",
             "options": {
                 "baseHref": "./",
                 "outputPath": {
@@ -88,11 +89,11 @@
                         }
                     ]
                 }
-            },
-            "defaultConfiguration": "production"
+            }
         },
         "serve": {
             "executor": "@angular/build:dev-server",
+            "continuous": true,
             "options": {
                 "buildTarget": "dotcms-block-editor:build:development"
             },
@@ -103,18 +104,13 @@
                 "development": {
                     "buildTarget": "dotcms-block-editor:build:development"
                 }
-            },
-            "continuous": true
+            }
         },
         "extract-i18n": {
             "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcms-block-editor:build"
             }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
         },
         "test": {
             "executor": "@angular/build:karma",

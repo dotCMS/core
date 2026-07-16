@@ -43,12 +43,6 @@ To run the unit tests for the components, run:
 npm test
 ```
 
-To publish Storybook to Github Pages at https://dotcms.github.io/dotcms-webcomponents :
-
-```bash
-npm run deploy-storybook
-```
-
 Need help? Check out our docs [here](https://stenciljs.com/docs/my-first-component).
 
 ## Naming Components

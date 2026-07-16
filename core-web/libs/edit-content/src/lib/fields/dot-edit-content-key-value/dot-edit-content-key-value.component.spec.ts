@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { createHostFactory, SpectatorHost } from '@openng/spectator';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -214,6 +214,22 @@ describe('DotEditContentKeyValueComponent', () => {
                 { key: 'key2', value: 'value2' },
                 { key: 'key3', value: 'value3' }
             ]);
+        });
+
+        it('should not split string values into individual characters', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue('[object Object]' as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
+        });
+
+        it('should not split array values into individual entries', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue(['key1', 'key2'] as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
         });
     });
 

@@ -31,7 +31,8 @@ export const ALL_FOLDER: DotFolderTreeNodeItem = {
         type: 'folder',
         path: '',
         hostname: '',
-        id: ''
+        id: '',
+        inode: ''
     },
     leaf: false,
     expanded: true

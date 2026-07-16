@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -361,6 +362,129 @@ public class CategoryAPITest extends IntegrationTestBase {
             }
         }
 
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: An existing child category is saved again with a different parent than the
+     *                 one it currently belongs to (re-parenting), as done by PUT /api/v1/categories.
+     * Expected Result: The category is detached from its original parent and attached to the new
+     *                  one. See issue #33989.
+     */
+    @Test
+    public void reParentExistingCategory() throws Exception {
+
+        final long time = new Date().getTime();
+
+        Category originalParent = null;
+        Category newParent = null;
+        Category child = null;
+
+        try {
+            originalParent = new Category();
+            originalParent.setCategoryName("Original Parent " + time);
+            originalParent.setKey("original-parent-" + time);
+            originalParent.setCategoryVelocityVarName("originalParent" + time);
+            categoryAPI.save(null, originalParent, user, false);
+
+            newParent = new Category();
+            newParent.setCategoryName("New Parent " + time);
+            newParent.setKey("new-parent-" + time);
+            newParent.setCategoryVelocityVarName("newParent" + time);
+            categoryAPI.save(null, newParent, user, false);
+
+            child = new Category();
+            child.setCategoryName("Child " + time);
+            child.setKey("child-" + time);
+            child.setCategoryVelocityVarName("child" + time);
+            categoryAPI.save(originalParent, child, user, false);
+
+            // Precondition: the child sits under the original parent.
+            List<Category> parents = categoryAPI.getParents(child, user, false);
+            assertEquals(1, parents.size());
+            assertEquals(originalParent.getInode(), parents.get(0).getInode());
+
+            // Re-parent: save the existing child passing the new parent.
+            categoryAPI.save(newParent, child, user, false);
+
+            // The child is now under the new parent only.
+            parents = categoryAPI.getParents(child, user, false);
+            assertEquals(1, parents.size());
+            assertEquals(newParent.getInode(), parents.get(0).getInode());
+            assertNotEquals(originalParent.getInode(), parents.get(0).getInode());
+
+            // The original parent no longer lists the child; the new parent does.
+            final Category originalParentRef = originalParent;
+            final Category childRef = child;
+            final Category newParentRef = newParent;
+            assertTrue(categoryAPI.getChildren(originalParentRef, user, false).stream()
+                    .noneMatch(c -> c.getInode().equals(childRef.getInode())));
+            assertTrue(categoryAPI.getChildren(newParentRef, user, false).stream()
+                    .anyMatch(c -> c.getInode().equals(childRef.getInode())));
+        } finally {
+            if (UtilMethods.isSet(child)) {
+                categoryAPI.delete(child, user, false);
+            }
+            if (UtilMethods.isSet(originalParent)) {
+                categoryAPI.delete(originalParent, user, false);
+            }
+            if (UtilMethods.isSet(newParent)) {
+                categoryAPI.delete(newParent, user, false);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: An existing category is re-parented under itself and under one of its own
+     *                 descendants — moves that would make the category tree cyclic.
+     * Expected Result: Both moves are rejected with an {@link IllegalArgumentException} and the tree
+     *                  is left untouched, so tree traversals cannot loop forever. See issue #33989.
+     */
+    @Test
+    public void reParentRejectsCycles() throws Exception {
+
+        final long time = new Date().getTime();
+
+        Category grandParent = null;
+        Category child = null;
+
+        try {
+            grandParent = new Category();
+            grandParent.setCategoryName("Cycle GrandParent " + time);
+            grandParent.setKey("cycle-grandparent-" + time);
+            grandParent.setCategoryVelocityVarName("cycleGrandParent" + time);
+            categoryAPI.save(null, grandParent, user, false);
+
+            child = new Category();
+            child.setCategoryName("Cycle Child " + time);
+            child.setKey("cycle-child-" + time);
+            child.setCategoryVelocityVarName("cycleChild" + time);
+            categoryAPI.save(grandParent, child, user, false);
+
+            // Moving the grandparent under its own descendant (child) would create a cycle.
+            final Category grandParentRef = grandParent;
+            final Category childRef = child;
+            assertThrows(IllegalArgumentException.class,
+                    () -> categoryAPI.save(childRef, grandParentRef, user, false));
+
+            // Moving a category under itself would create a cycle.
+            assertThrows(IllegalArgumentException.class,
+                    () -> categoryAPI.save(grandParentRef, grandParentRef, user, false));
+
+            // The original hierarchy is intact: grandParent has no parent, child still under it.
+            assertTrue(categoryAPI.getParents(grandParentRef, user, false).isEmpty());
+            final List<Category> childParents = categoryAPI.getParents(childRef, user, false);
+            assertEquals(1, childParents.size());
+            assertEquals(grandParentRef.getInode(), childParents.get(0).getInode());
+        } finally {
+            if (UtilMethods.isSet(child)) {
+                categoryAPI.delete(child, user, false);
+            }
+            if (UtilMethods.isSet(grandParent)) {
+                categoryAPI.delete(grandParent, user, false);
+            }
+        }
     }
 
     /**

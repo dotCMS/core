@@ -10,7 +10,11 @@ import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from '
 import { AUTO_PREVIEW_RETRY_LIMIT } from '../../image-editor.constants';
 import { ImageEditorState } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
-import { buildFilterChain, buildPreviewUrl } from '../../utils/image-filter-url.builder';
+import {
+    buildFilterChain,
+    buildPreviewUrl,
+    focalPointsEqual
+} from '../../utils/image-filter-url.builder';
 import { imageEditorLifecycleEvents } from '../image-editor.events';
 
 /**
@@ -102,8 +106,15 @@ export function withPreview() {
                 previewUrl: computed(() =>
                     buildPreviewUrl(store.assetContext(), appliedFilters(), store.cacheBust())
                 ),
-                /** Whether any edit produces a non-empty filter chain. */
-                isDirty: computed(() => appliedFilters().length > 0),
+                /**
+                 * Whether the editor has unsaved changes: any preview filter, or a
+                 * focal point moved away from the one the asset was opened with.
+                 */
+                isDirty: computed(
+                    () =>
+                        appliedFilters().length > 0 ||
+                        !focalPointsEqual(store.focalPoint(), store.seededFocalPoint())
+                ),
                 /** Whether the editor is mid-flight loading a preview. */
                 isBusy: computed(() => store.previewStatus() === 'loading')
             };

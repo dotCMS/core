@@ -73,6 +73,18 @@
 </button>
 <button
     type="button"
+    [attr.aria-pressed]="state.isUnderline()"
+    [attr.aria-label]="'dot.block.editor.toolbar.underline' | dm"
+    [pTooltip]="'dot.block.editor.toolbar.underline' | dm"
+    [tooltipPosition]="TOOLTIP_POSITION"
+    [tooltipOptions]="overlayTooltipOptions()"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
+    [class]="btnClass(state.isUnderline())"
+    (click)="toggleUnderline()">
+    <span aria-hidden="true" class="material-symbols-outlined">format_underlined</span>
+</button>
+<button
+    type="button"
     [attr.aria-pressed]="state.isStrike()"
     [attr.aria-label]="'dot.block.editor.toolbar.strikethrough' | dm"
     [pTooltip]="'dot.block.editor.toolbar.strikethrough' | dm"
@@ -369,7 +381,7 @@
             [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
             [showDelay]="TOOLTIP_SHOW_DELAY"
-            [class]="btnClass(state.isLink() || popovers.isOpen('link'))"
+            [class]="btnClass(state.isLink() || state.isImageLinked() || popovers.isOpen('link'))"
             (mousedown)="openLinkDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">link</span>
         </button>

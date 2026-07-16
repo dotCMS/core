@@ -282,7 +282,14 @@ public class RoleAjax {
 	public void removeUsersFromRole(String[] userIds, String roleId) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		//Validate if this logged in user has the required permissions to access the roles portlet
-		validateRolesPortletPermissions(getLoggedInUser());
+		final User callerForRemove = getLoggedInUser();
+		validateRolesPortletPermissions(callerForRemove);
+		if (!callerForRemove.isAdmin()) {
+			SecurityLogger.logInfo(getClass(),
+					"Unauthorized attempt to remove role by user " + callerForRemove.getUserId());
+			throw new DotSecurityException(
+					"User does not have permission to remove roles from users");
+		}
 
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -310,7 +317,14 @@ public class RoleAjax {
 	public Map<String, Object> addUserToRole(String userId, String roleId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 
 		//Validate if this logged in user has the required permissions to access the roles portlet
-		validateRolesPortletPermissions(getLoggedInUser());
+		final User caller = getLoggedInUser();
+		validateRolesPortletPermissions(caller);
+		if (!caller.isAdmin()) {
+			SecurityLogger.logInfo(getClass(),
+					"Unauthorized attempt to assign role by user " + caller.getUserId());
+			throw new DotSecurityException(
+					"User does not have permission to assign roles to users");
+		}
 
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();

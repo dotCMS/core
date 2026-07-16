@@ -127,6 +127,7 @@ export class DotEditContentSidebarActivitiesComponent {
      * because the effect first fires while the tab panel is still hidden
      * (display:none) and any scroll on a 0-height element is a no-op.
      */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #scrollEffect = effect(() => {
         const items = this.activityItems();
         const isActive = this.$isActive();
@@ -225,9 +226,13 @@ export class DotEditContentSidebarActivitiesComponent {
 
         // Check for empty comment and mark as touched to trigger validation
         if (!comment) {
-            this.commentControl.setErrors({ required: true });
+            // Mark dirty/touched BEFORE setErrors: dot-field-validation-message
+            // recomputes its visibility synchronously off the setErrors()
+            // statusChanges emission, so dirty/touched must already be true by
+            // then or its `dirty` check fails and the message never renders.
             this.commentControl.markAsDirty();
             this.commentControl.markAsTouched();
+            this.commentControl.setErrors({ required: true });
 
             return;
         }

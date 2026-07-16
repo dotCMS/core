@@ -1,4 +1,4 @@
-import { createHttpFactory, mockProvider, SpectatorHttp, SpyObject } from '@ngneat/spectator/jest';
+import { createHttpFactory, mockProvider, SpectatorHttp, SpyObject } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotContentletService, DotUploadFileService, DotUploadService } from '@dotcms/data-access';

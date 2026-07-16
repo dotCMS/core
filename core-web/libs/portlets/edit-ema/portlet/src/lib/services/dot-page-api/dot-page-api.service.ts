@@ -9,7 +9,7 @@ import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPagination, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
-import { PERSONA_KEY } from '../../shared/consts';
+import { DEFAULT_PAGE_DEPTH, PERSONA_KEY } from '../../shared/consts';
 import {
     DotPageAssetParams,
     SavePagePayload,
@@ -68,8 +68,12 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     get(queryParams: DotPageAssetParams): Observable<DotCMSPageAsset> {
-        const { clientHost, ...params } = queryParams;
+        const { clientHost, depth, ...rest } = queryParams;
         const pageType = clientHost ? 'json' : 'render';
+        // The backend skips relationship expansion entirely when `depth` is
+        // absent from the request (as opposed to falling back to a default),
+        // so we must always send a value — see DEFAULT_PAGE_DEPTH.
+        const params = { ...rest, depth: depth ?? DEFAULT_PAGE_DEPTH };
         const pageURL = getFullPageURL({ url: params.url, params });
 
         return this.http

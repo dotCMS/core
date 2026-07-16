@@ -1,6 +1,6 @@
 import { describe } from '@jest/globals';
 import { MonacoEditorLoaderService, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -37,7 +37,6 @@ import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
 import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -184,8 +183,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ]
     },
     [FIELD_TYPES.BINARY]: {
-        component: DotBinaryFieldWrapperComponent,
+        component: DotEditContentFileFieldComponent,
         providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            },
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -201,8 +204,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             {
                 contentlet: BINARY_FIELD_CONTENTLET
             }
-        ],
-        outsideFormControl: true
+        ]
     },
     [FIELD_TYPES.JSON]: {
         component: DotEditContentJsonFieldComponent,

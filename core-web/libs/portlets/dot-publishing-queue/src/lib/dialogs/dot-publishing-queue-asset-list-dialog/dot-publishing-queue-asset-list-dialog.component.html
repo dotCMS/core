@@ -1,0 +1,110 @@
+<div class="flex flex-col gap-4" data-testid="pq-asset-list-dialog">
+    @if ($showAssetSearch()) {
+        <!-- mt-1 reserves room for the focus ring; without it the ring clips
+             against the dialog header when the input gets keyboard focus. -->
+        <div class="mt-1 flex justify-end" data-testid="pq-asset-list-search-bar">
+            <p-iconField iconPosition="left">
+                <p-inputIcon styleClass="pi pi-search" />
+                <input
+                    pInputText
+                    type="text"
+                    size="small"
+                    [ngModel]="$assetSearch()"
+                    (ngModelChange)="onSearch($event)"
+                    [placeholder]="'publishing-queue.detail.search-assets' | dm"
+                    [attr.aria-label]="'publishing-queue.detail.search-assets' | dm"
+                    data-testid="pq-asset-list-search"
+                    class="w-56" />
+            </p-iconField>
+        </div>
+    }
+
+    <div
+        class="flex h-96 flex-col overflow-hidden rounded-md border border-surface-200"
+        data-testid="pq-asset-list-shell">
+        <p-table
+            [value]="$filteredAssets()"
+            [loading]="store.assetListStatus() === 'loading'"
+            [rowHover]="true"
+            [scrollable]="true"
+            scrollHeight="flex"
+            data-testid="pq-asset-list-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>{{ 'publishing-queue.column.name' | dm }}</th>
+                    <th>{{ 'publishing-queue.column.type' | dm }}</th>
+                    @if (allowRemove) {
+                        <th class="w-12"></th>
+                    }
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="loadingbody">
+                @for (_ of assetSkeletonRows; track $index) {
+                    <tr data-testid="pq-asset-list-skeleton">
+                        <td><p-skeleton height="1rem" width="80%" /></td>
+                        <td><p-skeleton height="1rem" width="50%" /></td>
+                        @if (allowRemove) {
+                            <td><p-skeleton height="1rem" width="1rem" /></td>
+                        }
+                    </tr>
+                }
+            </ng-template>
+
+            <ng-template pTemplate="body" let-asset>
+                <tr
+                    class="group"
+                    [class.cursor-pointer]="!!editUrlFor(asset)"
+                    (click)="onAssetRowClick(asset)"
+                    data-testid="pq-asset-list-row">
+                    <td data-testid="pq-asset-name">{{ asset.title }}</td>
+                    <td data-testid="pq-asset-type">
+                        <p-tag severity="secondary" [rounded]="false" [value]="asset.type" />
+                    </td>
+                    @if (allowRemove) {
+                        <td class="text-right" (click)="$event.stopPropagation()">
+                            <p-button
+                                icon="pi pi-trash"
+                                severity="danger"
+                                [text]="true"
+                                [rounded]="true"
+                                size="small"
+                                styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                [pTooltip]="'publishing-queue.asset-list.remove' | dm"
+                                tooltipPosition="left"
+                                [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
+                                (onClick)="onRemoveAsset(asset)"
+                                data-testid="pq-asset-remove-btn" />
+                        </td>
+                    }
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+                <tr class="hover:bg-transparent!">
+                    <td
+                        [attr.colspan]="allowRemove ? 3 : 2"
+                        class="text-color-secondary p-6 text-center">
+                        @if ($hasNoMatches()) {
+                            <span data-testid="pq-asset-list-no-matches">
+                                {{ 'publishing-queue.detail.assets-no-matches' | dm }}
+                            </span>
+                        } @else {
+                            <span data-testid="pq-asset-list-empty">
+                                {{ 'publishing-queue.asset-list.empty' | dm }}
+                            </span>
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <div class="flex justify-end">
+        <p-button
+            [label]="'publishing-queue.close' | dm"
+            (onClick)="closeDialog()"
+            data-testid="pq-asset-list-close-btn" />
+    </div>
+</div>
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

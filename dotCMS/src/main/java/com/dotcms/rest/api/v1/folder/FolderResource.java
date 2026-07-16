@@ -516,7 +516,7 @@ public class FolderResource implements Serializable {
 
     /**
      * Unified folder search. Searches folders within a site by optional name fil @param httpServletResponse The current instance of the {@link HttpServletResponse}.
-     * @param name                optional case-insensitive partial match on folder name (min 3 chars if provided)
+     * @param name                optional case-insensitive partial match on folder name (min 2 chars if provided)
      * @param path                path scope; defaults to {@code /} (site root)
      * @param recursive           {@code true} = all descendants (default); {@code false} = direct children only
      * @param siteId              site identifier (required)
@@ -539,14 +539,14 @@ public class FolderResource implements Serializable {
                     description = "Paginated list of matching folders",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
-            @ApiResponse(responseCode = "400", description = "'siteId' is required; 'name' must be at least 3 characters if provided"),
+            @ApiResponse(responseCode = "400", description = "'siteId' is required; 'name' must be at least 2 characters if provided"),
             @ApiResponse(responseCode = "401", description = "User is not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public final ResponseEntityPaginatedDataView searchFolders(
             @Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @Parameter(description = "Optional case-insensitive partial match on folder name (minimum 3 characters when provided)")
+            @Parameter(description = "Optional case-insensitive partial match on folder name (minimum 2 characters when provided)")
             @QueryParam("name") final String name,
             @Parameter(description = "Path scope for the search. Defaults to '/' (site root).")
             @DefaultValue("/") @QueryParam(PATH_PARAM) final String path,
@@ -568,8 +568,8 @@ public class FolderResource implements Serializable {
         if (!UtilMethods.isSet(siteId)) {
             throw new BadRequestException("'siteId' query parameter is required");
         }
-        if (UtilMethods.isSet(name) && name.length() < 3) {
-            throw new BadRequestException("'name' must be at least 3 characters long");
+        if (UtilMethods.isSet(name) && name.length() < 2) {
+            throw new BadRequestException("'name' must be at least 2 characters long");
         }
 
         final User user = new WebResource.InitBuilder(webResource)

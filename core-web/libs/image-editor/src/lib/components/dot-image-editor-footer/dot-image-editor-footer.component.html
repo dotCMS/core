@@ -16,4 +16,11 @@
             <i class="material-symbols-outlined text-[1.25rem]">download</i>
         </ng-template>
     </p-button>
+
+    <p-button
+        [label]="'edit.content.image-editor.footer.save' | dm"
+        [attr.aria-label]="'edit.content.image-editor.footer.save.aria' | dm"
+        [loading]="store.isBusy() || store.saveStatus() === 'saving'"
+        (onClick)="onSave()"
+        data-testid="image-editor-save-btn" />
 </div>

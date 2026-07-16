@@ -277,7 +277,9 @@ export class PageClient extends BaseApiClient {
                     query: completeQuery,
                     variables: requestVariables
                 },
-                errors: response.errors?.length ? response.errors : undefined,
+                // Always return an array (never `undefined`) so the response stays JSON-serializable
+                // for consumers like Next.js Pages Router (getServerSideProps/getStaticProps throw on undefined).
+                errors: response.errors?.length ? response.errors : [],
                 ...(styleEditorSchemas?.length && { styleEditorSchemas })
             };
         } catch (error) {

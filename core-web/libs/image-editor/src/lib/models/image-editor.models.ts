@@ -30,6 +30,9 @@ export interface ImageRect {
 /** Loading lifecycle of the preview image. */
 export type PreviewStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
+/** Lifecycle of the Save (temp-file) request. */
+export type SaveStatus = 'idle' | 'saving' | 'error';
+
 /** Logical category an applied edit belongs to, used for grouping and labels. */
 export type FilterCategory =
     | 'adjust'
@@ -51,6 +54,9 @@ export type FilterName =
     | 'Jpeg'
     | 'WebP'
     | 'Quality'
+    // Focal point is injected into the chain only when saving (never in the preview
+    // URL); the registry key resolves case-insensitively to `focalpoint`.
+    | 'FocalPoint'
     // libvips-only modern format (AV1); registered lowercase as `avif`.
     | 'avif';
 
@@ -187,6 +193,11 @@ export interface ImageEditorOpenParams {
     byInode?: boolean;
     fileName?: string;
     mimeType?: string;
+    /**
+     * Normalized 0..1 focal point already stored on the asset, used to seed the
+     * editor so an existing focal point is preserved on Save unless the user moves it.
+     */
+    focalPoint?: NormalizedPoint;
 }
 
 /**
@@ -226,17 +237,26 @@ export interface ImageEditorState {
     zoom: ZoomState;
     /**
      * Normalized 0..1 focal point held as editor state only. It is NOT a filter slice
-     * (it never enters the preview filter chain nor the edit history) and is NOT
-     * persisted on its own — it would be committed alongside the other edits during
-     * the (separate) Save flow. See {@link withFocalPoint}.
+     * (it never enters the preview filter chain nor the edit history); it is folded
+     * into the chain only when saving and committed alongside the other edits. See
+     * {@link withFocalPoint} and {@link withSave}.
      */
     focalPoint: NormalizedPoint;
+    /**
+     * The focal point the asset was opened with, used as the dirty/save baseline so a
+     * move-and-back is detected as pristine.
+     */
+    seededFocalPoint: NormalizedPoint;
     /** Tool currently selected on the canvas. */
     activeTool: ActiveTool;
     /** Loading lifecycle of the preview image. */
     previewStatus: PreviewStatus;
     /** Consecutive silent retries of the current failing preview (reset on success). */
     previewRetries: number;
+    /** Lifecycle of the Save (temp-file) request. */
+    saveStatus: SaveStatus;
+    /** Last Save error message surfaced to the user, or `null`. */
+    saveError: string | null;
     /** Last error message surfaced to the user, or `null`. */
     error: string | null;
     /** Ordered undo/redo history of applied edits. */

@@ -89,7 +89,7 @@ When editing ANY code, improve incrementally:
 ## Tech Stack
 
 - **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
-- **Frontend**: Angular 19+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
+- **Frontend**: Angular 21+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
 ## Documentation (Load On-Demand)

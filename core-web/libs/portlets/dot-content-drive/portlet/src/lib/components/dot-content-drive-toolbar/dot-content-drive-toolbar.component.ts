@@ -16,10 +16,13 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
+import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
+import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
@@ -106,7 +109,9 @@ interface ToolbarAnimationState {
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
         DotContentDriveWorkflowActionsComponent,
-        DotContentDriveWorkflowFilterComponent
+        DotContentDriveWorkflowFilterComponent,
+        DotContentDriveFieldFilterComponent,
+        DotContentDriveFieldFilterMenuComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -130,6 +135,38 @@ interface ToolbarAnimationState {
             .toolbar-leave {
                 opacity: 0;
                 transition: opacity 100ms ease-in;
+            }
+            .field-filter-enter {
+                overflow: hidden;
+                animation: field-filter-in 180ms ease-out;
+            }
+            @keyframes field-filter-in {
+                from {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
+                to {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+            }
+            .field-filter-leave {
+                overflow: hidden;
+                animation: field-filter-out 150ms ease-in forwards;
+            }
+            @keyframes field-filter-out {
+                from {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+                to {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
             }
         `
     ]
@@ -182,6 +219,22 @@ export class DotContentDriveToolbarComponent {
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
 
+    /**
+     * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`
+     * in add order). Each variable is resolved to its field metadata, so chips render only once the
+     * content type's fields have loaded — which also covers URL restore.
+     */
+    readonly $activeFieldFilters = computed(() => {
+        const fieldByVariable = new Map(
+            this.#store.userSearchableFields().map((field) => [field.variable, field])
+        );
+
+        return this.#store
+            .userSearchableActive()
+            .map((variable) => fieldByVariable.get(variable))
+            .filter((field): field is DotCMSContentTypeField => field !== undefined);
+    });
+
     onClearAll(): void {
         this.#store.clearFilters();
     }
@@ -195,7 +248,12 @@ export class DotContentDriveToolbarComponent {
     });
 
     /**
-     * Convenience computed signals for template readability
+     * Convenience computed signals for template readability.
+     *
+     * `$displayButton` gates the creation actions (Upload + "Add New"): both are hidden while a
+     * selection is active so they don't compete with the workflow/bulk actions. This keeps the
+     * Upload button from offering an upload in a selection context, where the target folder would
+     * be ambiguous.
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);

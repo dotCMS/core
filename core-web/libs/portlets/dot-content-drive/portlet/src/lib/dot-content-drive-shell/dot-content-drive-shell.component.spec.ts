@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -26,7 +26,6 @@ import {
     DotLanguagesService,
     DotFolderService,
     DotUploadFileService,
-    DotLocalstorageService,
     DotMessageService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
@@ -49,7 +48,6 @@ import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
-    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
     WARNING_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
@@ -75,7 +73,6 @@ describe('DotContentDriveShellComponent', () => {
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
-    let localStorageService: SpyObject<DotLocalstorageService>;
     let messageService: SpyObject<MessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
@@ -181,7 +178,12 @@ describe('DotContentDriveShellComponent', () => {
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: jest.fn(),
                     setPath: jest.fn(),
-                    setShowAddToBundle: jest.fn()
+                    setShowAddToBundle: jest.fn(),
+                    userSearchableFields: jest.fn().mockReturnValue([]),
+                    userSearchableActive: jest.fn().mockReturnValue([]),
+                    setUserSearchableFields: jest.fn(),
+                    addUserSearchableField: jest.fn(),
+                    clearUserSearchableFilters: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -219,17 +221,12 @@ describe('DotContentDriveShellComponent', () => {
                     messageObserver: of({}),
                     clearObserver: of({})
                 }),
-                mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
-                mockProvider(DotLocalstorageService, {
-                    getItem: jest.fn().mockReturnValue(undefined),
-                    setItem: jest.fn()
-                })
+                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
         router = spectator.inject(Router);
         location = spectator.inject(Location);
-        localStorageService = spectator.inject(DotLocalstorageService);
         messageService = spectator.inject(MessageService);
         uploadService = spectator.inject(DotUploadFileService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
@@ -291,6 +288,48 @@ describe('DotContentDriveShellComponent', () => {
                 },
                 queryParamsHandling: 'merge'
             });
+        });
+    });
+
+    describe('setPathEffect (cold-load selection)', () => {
+        it('should not clear the URL-restored path while the sidebar is still loading', () => {
+            // Cold load: path restored from the URL, but the tree hasn't resolved yet so
+            // selectedNode is still the default root node (empty path). Syncing here would
+            // clobber the restored path back to root.
+            store.sidebarLoading.mockReturnValue(true);
+            store.selectedNode.mockReturnValue({ data: { path: '' } } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).not.toHaveBeenCalled();
+        });
+
+        it('should sync the path from the resolved node once the sidebar finishes loading', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).toHaveBeenCalledWith('/about-us/');
+        });
+
+        it('should not sync when the resolved node path already matches the current path', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).not.toHaveBeenCalled();
         });
     });
 
@@ -602,14 +641,11 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageContent).toBeTruthy();
         });
 
-        it('should set $showMessage to false when close button is clicked', () => {
+        it('should always render the banner (no dismiss control)', () => {
             spectator.detectChanges();
 
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(false);
+            expect(spectator.query('[data-testid="message"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="close-message"]')).toBeNull();
         });
 
         it('should have a learn more link', () => {
@@ -617,33 +653,6 @@ describe('DotContentDriveShellComponent', () => {
 
             const learnMoreLink = spectator.query('[data-testid="learn-more-link"]');
             expect(learnMoreLink).toBeTruthy();
-        });
-
-        it('should return true if the hide message banner key is not set', () => {
-            localStorageService.getItem.mockReturnValue(undefined);
-            spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(true);
-        });
-
-        it('should return false if the hide message banner key is set', () => {
-            localStorageService.getItem.mockReturnValue('true');
-            spectator.detectComponentChanges();
-
-            expect(spectator.component.$showMessage()).toBe(false);
-        });
-
-        it('should call the localStorage service to set the hide message banner key', () => {
-            spectator.detectChanges();
-
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(localStorageService.setItem).toHaveBeenCalledWith(
-                HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
-                true
-            );
         });
     });
 
@@ -954,6 +963,39 @@ describe('DotContentDriveShellComponent', () => {
                 hostFolder: TARGET_FOLDER_DATA.id,
                 indexPolicy: 'WAIT_FOR'
             });
+        });
+
+        it('should consume the file before resetting the input (live FileList)', () => {
+            // Regression: `input.files` is a LIVE FileList, so clearing `input.value` empties it.
+            // The component must consume the files BEFORE resetting the input; resetting first
+            // drops the selection and the upload silently no-ops (the real Chrome bug).
+            // jsdom doesn't model this, so we mock it faithfully: `.files` is one stable object
+            // that is emptied when `.value` is cleared.
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            const liveFiles: File[] = [file];
+            Object.defineProperty(fileInput, 'files', {
+                get: () => liveFiles as unknown as FileList,
+                configurable: true
+            });
+            Object.defineProperty(fileInput, 'value', {
+                get: () => (liveFiles.length ? 'C:\\fakepath\\test.png' : ''),
+                set: () => {
+                    liveFiles.length = 0; // clearing the input empties the live FileList
+                },
+                configurable: true
+            });
+
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
+            expect(fileInput.value).toBe(''); // still reset afterwards
         });
 
         it('should not upload when the file picker is dismissed without files', () => {
@@ -1773,7 +1815,8 @@ describe('DotContentDriveShellComponent', () => {
                 ...MOCK_ITEMS[0],
                 type: 'folder',
                 path: '/documents/',
-                identifier: 'folder-123'
+                identifier: 'folder-123',
+                inode: 'folder-inode-123'
             };
 
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
@@ -1791,6 +1834,7 @@ describe('DotContentDriveShellComponent', () => {
                     path: '/documents/',
                     hostname: MOCK_SITES[0].hostname,
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     fromTable: true
                 },
                 key: 'folder-123',

@@ -1,4 +1,5 @@
 import {
+    DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotFolder,
@@ -146,6 +147,25 @@ export interface DotContentDriveState extends DotContentDriveInit {
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
     pages: DotContentDrivePage[];
+    /**
+     * Eligible searchable fields of the currently-selected single content type. Populated by the
+     * field-filter menu after fetching the content type; empty when 0 or >1 content types are
+     * selected. Used to render field-filter chips and to reshape the `us.*` filter values into the
+     * `userSearchable` payload.
+     */
+    userSearchableFields: DotCMSContentTypeField[];
+    /**
+     * Field variables the user has added as chips, in add order. Kept separate from `filters` so
+     * adding an (empty) chip doesn't mutate the search request and re-trigger a reload; a `us.*`
+     * entry only lands in `filters` once the chip has a value.
+     */
+    userSearchableActive: string[];
+    /**
+     * Whether the field metadata for the active content type has been resolved (even to an empty
+     * set). Distinguishes "not fetched yet" from "fetched, none eligible" so a cold URL restore can
+     * hold the first search until fields load, instead of firing one that drops the `us.*` values.
+     */
+    userSearchableFieldsLoaded: boolean;
 }
 
 /**

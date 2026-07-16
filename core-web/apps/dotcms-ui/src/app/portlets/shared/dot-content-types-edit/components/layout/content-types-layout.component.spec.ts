@@ -64,7 +64,7 @@ import { IframeOverlayService } from '../../../../../view/components/_common/ifr
 import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
-import { FieldDragDropService, FieldService } from '../fields/service';
+import { FieldDragDropService } from '../fields/service';
 import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 
 @Component({
@@ -180,7 +180,6 @@ describe('ContentTypesLayoutComponent', () => {
                 DotCurrentUserService,
                 DotEventsService,
                 DotAddToMenuService,
-                FieldService,
                 {
                     provide: DotIframeService,
                     useValue: {
