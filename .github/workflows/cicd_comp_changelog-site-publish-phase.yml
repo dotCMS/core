@@ -147,8 +147,9 @@ jobs:
 
       - name: Verify generated notes
         run: |
-          if [ ! -f /tmp/site-release-notes.md ]; then
-            echo "Error: Claude did not generate /tmp/site-release-notes.md"
+          # -s (non-empty), not -f: an empty file would publish an empty releaseNotes.
+          if [ ! -s /tmp/site-release-notes.md ]; then
+            echo "Error: Claude did not generate a non-empty /tmp/site-release-notes.md"
             ls -la /tmp/*.md 2>/dev/null || echo "No .md files in /tmp/"
             exit 1
           fi
@@ -168,11 +169,14 @@ jobs:
           DOTCMS_DEVSITE_SERVICE_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_SERVICE_ACCOUNT }}
           DOCKER_TAGS: ${{ inputs.docker_tags }}
         run: |
-          # Pick the primary dotcms/dotcms image reference from the built tags.
+          # Pick the sha-tagged dotcms/dotcms image (version_sha form, e.g.
+          # dotcms/dotcms:26.07.10-01_84b0486). The `_` in the glob excludes the floating
+          # `:latest` tag (which deploy-docker emits without a sha). Assumes deploy-docker
+          # emits the sha-tagged ref; if only the sha-less tag exists we fall back to it.
           DOCKER_IMAGE=""
           for tag in $DOCKER_TAGS; do
             case "$tag" in
-              dotcms/dotcms:*) DOCKER_IMAGE="$tag"; break;;
+              dotcms/dotcms:*_*) DOCKER_IMAGE="$tag"; break;;
             esac
           done
           [ -n "$DOCKER_IMAGE" ] || DOCKER_IMAGE="dotcms/dotcms:${RELEASE_VERSION}"
@@ -227,3 +231,22 @@ jobs:
             :warning: *Changelog site publish SKIPPED* for `${{ inputs.release_version }}` —
             ${{ steps.publish.outputs.reason }}. The existing entry was left untouched;
             overwriting requires a manual `--force` re-run.
+
+      # Catch-all (SC-005): the two steps above only fire when the publisher step ran and set
+      # an output. A failure in any EARLIER step (npm ci, tsc, gather-release-data, Claude
+      # generation, verify-notes) would skip them, and allow_failure would keep the run green
+      # — no entry AND no notification. This posts a generic failure notice for those cases so
+      # a pre-publisher failure is never silent. `failure()` here excludes the handled
+      # success/skip results (the publisher step exits 0, so the job isn't in a failure state
+      # for those).
+      - name: Notify Slack on pre-publisher failure
+        if: failure()
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :rotating_light: *changelog-site-publish failed before the publisher step* for
+            `${{ inputs.release_version }}` (generation or setup error). No changelog entry was
+            published. The GitHub release is unaffected. See run:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

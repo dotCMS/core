@@ -55,8 +55,9 @@ def cmd_publish(args: argparse.Namespace) -> int:
             force=args.force,
             apply=args.apply,
         )
-    except (requests.RequestException, AmbiguousMatchError) as exc:
+    except (requests.RequestException, AmbiguousMatchError, RuntimeError) as exc:
         # Concise, token-free failure (the token lives in the session header, not the URL/body).
+        # RuntimeError covers a missing DOTCMS_DEVSITE_TOKEN — a clean one-line error, no traceback.
         log.error("publish failed for %s: %s", args.version, exc)
         return 1
 

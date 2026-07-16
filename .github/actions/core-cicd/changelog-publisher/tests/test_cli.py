@@ -187,3 +187,18 @@ def test_protective_skip_exits_zero_with_marker(tmp_path, monkeypatch, capsys):
     assert rc == 0
     out, _ = capsys.readouterr()
     assert "::changelog-skip::26.07.10-01" in out
+
+
+@responses_lib.activate
+def test_missing_token_exits_one_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
+    """A missing DOTCMS_DEVSITE_TOKEN -> rc 1 with a clean one-line error, not a traceback."""
+    monkeypatch.delenv("DOTCMS_DEVSITE_TOKEN", raising=False)
+
+    with caplog.at_level("ERROR"):
+        rc = main(_argv(tmp_path, "26.07.10-01", "--apply"))
+
+    assert rc == 1
+    out, err = capsys.readouterr()
+    assert "Traceback" not in out and "Traceback" not in err
+    assert any("DOTCMS_DEVSITE_TOKEN" in r.message for r in caplog.records)
+    assert len(responses_lib.calls) == 0  # failed before any network call
