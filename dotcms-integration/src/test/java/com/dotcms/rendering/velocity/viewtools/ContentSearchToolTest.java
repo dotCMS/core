@@ -283,6 +283,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             """;
 
     /**
+     * A field-sorted {@code $estool.search(...)} whose per-hit {@code sort} values the template reads
+     * via {@code $hit.sortValues} (property → {@code getSortValues()}) and
+     * {@code $hit.getSortValues().get(0)}. Guards the Velocity-facing side of
+     * <a href="https://github.com/dotCMS/core/issues/36581">#36581</a>: the neutral {@link SearchHit}
+     * now carries the sort values and exposes them under a bean-style {@code get}-accessor, so VTL
+     * templates that read the per-hit sort value (e.g. the {@code moddate} sort key, or a
+     * {@code _geo_distance} distance) resolve it instead of silently getting {@code null}.
+     */
+    private static final String SEARCH_SORT_VTL = """
+            #set($esQuery = '{"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}},"sort":[{"moddate":"desc"}]}')
+            #set($results = $estool.search($esQuery))
+            #foreach($hit in $results.hits.hits)
+              hit id: $!{hit.id}
+              sortValues: $!{hit.sortValues}
+              firstSort: $!{hit.getSortValues().get(0)}
+            #end
+            """;
+
+    /**
      * Locks the same non-aggregation accessor surface for {@code $estool.raw(...)} —
      * {@link ContentSearchResponse}. Because {@code raw()} returns a <i>record</i>, its top-level
      * accessors need explicit method syntax ({@code $results.tookMillis()}, {@code $results.hits()},
@@ -633,6 +652,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         assertTrue("search() hit sourceAsMap ($hit.sourceAsMap -> getSourceAsMap()) must render the "
                         + "_source (identifier/inode) map",
                 output.contains("inode"));
+    }
+
+    /**
+     * Velocity-facing regression for <a href="https://github.com/dotCMS/core/issues/36581">#36581</a>:
+     * a field-sorted {@code $estool.search(...)} must expose the per-hit sort value in VTL. Asserts
+     * {@code $hit.sortValues} renders a non-empty array and {@code $hit.getSortValues().get(0)} renders
+     * the sort key (the {@code moddate} epoch here) — proving the neutral {@link SearchHit} both carries
+     * the value and exposes it under a bean {@code get}-accessor that Velocity resolves.
+     */
+    @Test
+    public void searchVtl_rendersPerHitSortValues() throws Exception {
+        final String output = VelocityUtil.eval(SEARCH_SORT_VTL, velocityContext());
+        Logger.info(this, "\n===== search sort VTL output =====\n" + output + "\n================================");
+
+        assertTrue("a field-sorted search() must expose a non-empty per-hit sort array via "
+                        + "$hit.sortValues (getSortValues())",
+                Pattern.compile("sortValues:\\s*\\[[^\\]]+\\]").matcher(output).find());
+        assertTrue("$hit.getSortValues().get(0) must render the moddate sort key as a number",
+                Pattern.compile("firstSort:\\s*\\d+").matcher(output).find());
     }
 
     /**

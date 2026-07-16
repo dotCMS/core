@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -395,4 +396,29 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("folderCursor")
     @Value.Default
     default int folderCursor() { return 0; }
+
+    /**
+     * Per-field value filters, keyed by field variable name.
+     * <p>
+     * Additive to {@link #filters()} (the global keyword search) — this map filters by
+     * content-type-specific field values. The value type is inferred from the field definition and
+     * the JSON value shape:
+     * </p>
+     * <ul>
+     *   <li><code>string</code> — Text/Textarea/WYSIWYG (contains) or Select/Radio (equals)</li>
+     *   <li><code>{ "from": …, "to": … }</code> — Date/Time/Date-Time range</li>
+     *   <li><code>array of strings</code> — Multi-Select/Checkbox terms, Tag names, Category inodes</li>
+     *   <li><code>boolean</code> — Checkbox (boolean)</li>
+     * </ul>
+     * <p>
+     * All entries combine with AND. Resolving field types requires exactly one content type in
+     * {@link #contentTypes()}; unknown or non-searchable keys yield a 400. Defaults to empty (no
+     * field filtering).
+     * </p>
+     *
+     * @return map of field variable name to raw filter value, defaults to an empty map
+     */
+    @JsonProperty("userSearchable")
+    @Value.Default
+    default Map<String, Object> userSearchable() { return Map.of(); }
 }

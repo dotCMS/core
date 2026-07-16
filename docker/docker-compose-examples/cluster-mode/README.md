@@ -23,7 +23,7 @@ The license pack must contain at least two licenses (one for each node in the cl
 3. A custom starter can be set through this line (uncomment and change the starter url accordingly):
 
 ```
-#"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260629/starter-20260629.zip'
+#"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260630/starter-20260630.zip'
 ```
 
 #### Deploying nodes:

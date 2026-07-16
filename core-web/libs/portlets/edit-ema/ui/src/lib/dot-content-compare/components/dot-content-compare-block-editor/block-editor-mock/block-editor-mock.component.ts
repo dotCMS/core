@@ -11,6 +11,13 @@ import {
 import { Editor, JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
+/**
+ * Mirrors the **new** block editor ({@link DotCMSEditorComponent}) for compare-view tests:
+ * content set via `[value]` is applied with `emitUpdate: false`, so it dispatches a TipTap
+ * `transaction` but never emits `valueChange`. `valueChange` fires only on real user edits
+ * (`update`). The compare component must rely on the `transaction` — not `valueChange` — to
+ * populate the diff on load (issue #36550).
+ */
 @Component({
     selector: 'dot-block-editor',
     imports: [],
@@ -30,9 +37,6 @@ export class BlockEditorMockComponent implements OnInit {
         editor.on('create', () => {
             if (this.value) {
                 editor.commands.setContent(this.value, { emitUpdate: false });
-                setTimeout(() => {
-                    this.valueChange.emit(editor.getJSON());
-                }, 0);
             }
         });
 
