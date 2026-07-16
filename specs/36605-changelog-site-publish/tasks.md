@@ -153,43 +153,45 @@ changelog entry appears with correct version/date/docker-tag/formatted notes and
         anchors like `{#Fixes-<version>}`, per-item `[#NNNNN](github-url)` links, a short prose intro, and
         **no emoji** (FR-002, FR-010, SC-004).
 
-- [ ] T015 [US1] [GATE] **Developer approval** — present the US1 test set (T010–T014) for review. The
+  > **Ground-truth deviation (approved by lead):** live corpsites entries (verified 26.06.30-01 / 26.06.02-01) use a prose intro, `### Section {#Anchor-<version>}` headings, and double-bracket **issue** links `[[#N](https://github.com/dotCMS/core/issues/N)]` — not the `[#N](.../pull/N)` wording above. The tool/template follow the live format so published entries are visually indistinguishable from hand-authored ones (SC-004).
+
+- [x] T015 [US1] [GATE] **Developer approval** — present the US1 test set (T010–T014) for review. The
         JUnit/Postman/Karate/e2e omission is already signed off (see the header block); record that
         acknowledgement here and proceed on explicit approval of the unit + golden-file coverage. Do not
         continue without an explicit decision.
-- [ ] T016 [US1] [GATE] **Red** — run the approved tests and confirm they **FAIL for the intended reason**
+- [x] T016 [US1] [GATE] **Red** — run the approved tests and confirm they **FAIL for the intended reason**
         (missing implementation, not import/collection errors). Record the failing output. Do NOT write
         implementation until Red is confirmed.
 
 ### Implementation for User Story 1 *(only after T015 + T016 pass)*
 
-- [ ] T017 [P] [US1] Implement `src/changelog_publisher/version.py`: current-track CalVer validation
+- [x] T017 [P] [US1] Implement `src/changelog_publisher/version.py`: current-track CalVer validation
         (`^[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$`), rejecting `_lts_` and CLI forms — make T012 green.
-- [ ] T018 [US1] Implement `_search` in `src/changelog_publisher/client.py` (query build, `limit: 2`,
+- [x] T018 [US1] Implement `_search` in `src/changelog_publisher/client.py` (query build, `limit: 2`,
         parse `entity.jsonObjectView.contentlets`, return 0/1/>1 with identifier + `modUserName` when
         present) — make T010 green.
-- [ ] T019 [US1] Implement the **create + fire-Publish** path in `src/changelog_publisher/publisher.py`:
+- [x] T019 [US1] Implement the **create + fire-Publish** path in `src/changelog_publisher/publisher.py`:
         build the contentlet payload with the confirmed field values (T004) and the always-present
         `disabledWYSIWYG: ["releaseNotes"]`, fire the System Workflow Publish action, no `identifier` on
         create — make T011 green. (Update-in-place is deferred to US2.)
-- [ ] T020 [US1] Implement `src/changelog_publisher/cli.py` `publish` subcommand: args `--version`,
+- [x] T020 [US1] Implement `src/changelog_publisher/cli.py` `publish` subcommand: args `--version`,
         `--notes-file`, `--docker-image`, `--released-date`, dry-run default + `--apply`; wire
         version-validation → search → create-publish — make T013 green.
-- [ ] T021 [P] [US1] Add `.github/scripts/gather-release-data/prompt-template-site.md`: the site editorial
+- [x] T021 [P] [US1] Add `.github/scripts/gather-release-data/prompt-template-site.md`: the site editorial
         format (headings + anchors, `[#N](url)` links, prose intro, no emoji) distinct from the GitHub
         `prompt-template.md` — make T014 green.
-- [ ] T022 [US1] Create the reusable phase `.github/workflows/cicd_comp_changelog-site-publish-phase.yml`:
+- [x] T022 [US1] Create the reusable phase `.github/workflows/cicd_comp_changelog-site-publish-phase.yml`:
         (a) run `gather-release-data` → JSON, (b) run `claude-code-action` against `prompt-template-site.md`
         to write `/tmp/site-release-notes.md` — resolve **open question D2a** here (recommended: a second
         lightweight `claude-code-action` step, leaving the existing GitHub-notes step untouched and the site
         path independently retryable; record the choice in a workflow comment), (c) `uv run
         changelog-publisher publish ... --apply` with `DOTCMS_DEVSITE_TOKEN` passed as job env (read once,
         never echoed to `GITHUB_OUTPUT`/step summary). Slack wiring is added in US3 (T033).
-- [ ] T023 [US1] Edit `.github/workflows/cicd_6-release.yml`: add a `changelog-site-publish` job after
+- [x] T023 [US1] Edit `.github/workflows/cicd_6-release.yml`: add a `changelog-site-publish` job after
         `release-notes`, gated on `needs.release-prepare.outputs.is_latest == 'true' && github.repository
         == 'dotcms/core'` (the deliberate FR-007 current-track filter, reused not reinvented), calling the
         new phase. Additive only — no rewrite of existing phases.
-- [ ] T024 [US1] Confirm T010–T014 now **PASS**; refactor for clarity; verify no token/payload is logged.
+- [x] T024 [US1] Confirm T010–T014 now **PASS**; refactor for clarity; verify no token/payload is logged.
 
 **Checkpoint**: A release with no pre-existing entry publishes a correctly-formatted, live changelog entry
 automatically. US1 is independently testable (create + publish happy path + wiring).

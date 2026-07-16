@@ -258,6 +258,28 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
+  # Changelog Site Publish - deliver the changelog entry to dev.dotcms.com/docs/changelogs.
+  # Runs after release-notes, current-track GA only (reusing release-prepare's is_latest —
+  # the same deliberate CLI/LTS exclusion the promote-latest job uses, not reinvented here).
+  # Non-blocking (allow_failure: true) so a changelog publish failure never fails the
+  # software release (FR-008). Additive: existing phases are untouched.
+  changelog-site-publish:
+    name: Changelog Site Publish
+    needs: [ release-prepare, deployment, release-notes ]
+    if: >-
+      needs.release-prepare.outputs.is_latest == 'true'
+      && github.repository == 'dotcms/core'
+    uses: ./.github/workflows/cicd_comp_changelog-site-publish-phase.yml
+    with:
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      release_version: ${{ needs.release-prepare.outputs.release_version }}
+      docker_tags: ${{ needs.deployment.outputs.docker_tags }}
+      allow_failure: true
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DOTCMS_DEVSITE_TOKEN: ${{ secrets.DOTCMS_DEVSITE_TOKEN }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
   # Finalize - standard finalization phase (required for phase pattern)
   finalize:
     name: Finalize

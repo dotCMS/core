@@ -1,0 +1,173 @@
+#
+# Changelog Site Publish Phase (Reusable Component)
+#
+# Generates SITE-format release notes and publishes them to the public changelog on
+# dev.dotcms.com by upserting a Dotcmsbuilds contentlet on the corpsites-headless backend
+# and firing the System Workflow Publish action (goes live with no approval step).
+#
+# Called by the release pipeline (cicd_6-release.yml) after release-notes, gated on
+# release-prepare's is_latest (current-track GA only). Runs non-blocking (allow_failure) so
+# a changelog hiccup never fails the software release (FR-008).
+#
+# --- D2a decision (one Claude call vs two) -------------------------------------------------
+# The GitHub release notes (cicd_comp_ai-release-notes-phase.yml -> /tmp/release-notes.md)
+# and the SITE notes (this phase -> /tmp/site-release-notes.md) are produced by TWO separate
+# claude-code-action calls against TWO templates, NOT one combined call. Rationale: it leaves
+# the existing GitHub-notes phase completely untouched, keeps the site path independently
+# retriable (a site failure never re-touches the GitHub release), and each template stays
+# single-purpose. Both derive from the same deterministic gather-release-data JSON, so the
+# two calls cannot drift on the underlying facts (the spec's drift-prevention strategy).
+#
+
+name: Changelog Site Publish Phase
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v26.07.10-01)'
+        required: true
+        type: string
+      release_version:
+        description: 'Release version / minor field, no v prefix (e.g., 26.07.10-01)'
+        required: true
+        type: string
+      docker_tags:
+        description: 'Space-separated docker image tags produced by the deployment phase'
+        required: true
+        type: string
+      previous_tag:
+        description: 'Previous release tag for diff range. If omitted, auto-detected.'
+        required: false
+        type: string
+      allow_failure:
+        description: 'If true, job failures are non-blocking (used by release pipeline). Defaults to false.'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+        description: 'Anthropic API key for Claude'
+      DOTCMS_DEVSITE_TOKEN:
+        required: true
+        description: 'Service-account bearer token for the corpsites-headless backend'
+      CI_MACHINE_TOKEN:
+        required: false
+        description: 'GitHub token for release/PR reads (falls back to github.token)'
+
+jobs:
+  publish-site-changelog:
+    name: Publish Site Changelog
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    continue-on-error: ${{ inputs.allow_failure }}
+    permissions:
+      contents: read       # checkout + gh release reads
+      pull-requests: read  # Octokit pulls.get for PR details in gather-release-data
+      id-token: write      # Required by claude-code-action for OIDC
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      RELEASE_VERSION: ${{ inputs.release_version }}
+      PREVIOUS_TAG: ${{ inputs.previous_tag }}
+      REPO: ${{ github.repository }}
+    # Defense-in-depth: skip non-standard releases (CLI, LTS). The primary gate is the
+    # is_latest guard on the calling job in cicd_6-release.yml.
+    if: >-
+      !contains(inputs.release_tag, 'dotcms-cli-')
+      && !contains(inputs.release_tag, '_lts_')
+      && startsWith(inputs.release_tag, 'v')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install script dependencies
+        working-directory: .github/scripts/gather-release-data
+        run: npm ci
+
+      - name: Build TypeScript
+        working-directory: .github/scripts/gather-release-data
+        run: npx tsc
+
+      - name: Gather release data
+        working-directory: .github/scripts/gather-release-data
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+        run: |
+          if [ -n "$PREVIOUS_TAG" ]; then
+            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" --from-tag "$PREVIOUS_TAG" \
+              > /tmp/release-data.json 2>/tmp/gather-stderr.log
+          else
+            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" \
+              > /tmp/release-data.json 2>/tmp/gather-stderr.log
+          fi
+          cat /tmp/gather-stderr.log
+          if ! jq empty /tmp/release-data.json 2>/dev/null; then
+            echo "Error: gather-release-data output is not valid JSON"
+            cat /tmp/release-data.json
+            exit 1
+          fi
+
+      - name: Assemble prompt
+        run: |
+          cat .github/scripts/gather-release-data/prompt-template-site.md > /tmp/site-prompt.md
+          printf '\n---\n\n## Release Data (JSON)\n\n```json\n' >> /tmp/site-prompt.md
+          cat /tmp/release-data.json >> /tmp/site-prompt.md
+          printf '\n```\n' >> /tmp/site-prompt.md
+
+          # Pass prompt via env file with a random delimiter so PR body content cannot
+          # terminate the heredoc early (same guard as the GitHub-notes phase).
+          DELIM="PROMPT_$(openssl rand -hex 16)"
+          {
+            echo "PROMPT_CONTENT<<${DELIM}"
+            cat /tmp/site-prompt.md
+            echo "${DELIM}"
+          } >> "$GITHUB_ENV"
+
+      - name: Generate site notes with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ env.PROMPT_CONTENT }}
+          claude_args: "--allowedTools Write --max-turns 3"
+
+      - name: Verify generated notes
+        run: |
+          if [ ! -f /tmp/site-release-notes.md ]; then
+            echo "Error: Claude did not generate /tmp/site-release-notes.md"
+            ls -la /tmp/*.md 2>/dev/null || echo "No .md files in /tmp/"
+            exit 1
+          fi
+          echo "Generated site notes ($(wc -l < /tmp/site-release-notes.md) lines)."
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Publish to site
+        working-directory: .github/actions/core-cicd/changelog-publisher
+        env:
+          # Read once by the tool; never echoed to logs / GITHUB_OUTPUT / step summary.
+          DOTCMS_DEVSITE_TOKEN: ${{ secrets.DOTCMS_DEVSITE_TOKEN }}
+          DOCKER_TAGS: ${{ inputs.docker_tags }}
+        run: |
+          # Pick the primary dotcms/dotcms image reference from the built tags.
+          DOCKER_IMAGE=""
+          for tag in $DOCKER_TAGS; do
+            case "$tag" in
+              dotcms/dotcms:*) DOCKER_IMAGE="$tag"; break;;
+            esac
+          done
+          [ -n "$DOCKER_IMAGE" ] || DOCKER_IMAGE="dotcms/dotcms:${RELEASE_VERSION}"
+
+          uv run changelog-publisher publish \
+            --version "$RELEASE_VERSION" \
+            --notes-file /tmp/site-release-notes.md \
+            --docker-image "$DOCKER_IMAGE" \
+            --released-date "$(date -u +%F)" \
+            --apply
