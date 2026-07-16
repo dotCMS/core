@@ -2,8 +2,6 @@ import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
-export const HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY = 'content-drive-hide-message-banner';
-
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: DotSite = {
     aliases: '',
