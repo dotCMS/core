@@ -159,12 +159,15 @@ describe('DotContentDriveFieldFilterComponent', () => {
         });
 
         it('should clear the value (keep the chip) when the chip is removed', () => {
+            jest.useFakeTimers();
             spectator.setInput('field', field({ variable: 'body' }));
             spectator.detectChanges();
 
             spectator.triggerEventHandler('dot-chip-filter', 'removed', undefined);
+            jest.advanceTimersByTime(DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
+            jest.useRealTimers();
         });
     });
 
@@ -266,6 +269,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
         });
 
         it('should store the selected contentlet identifiers on close', () => {
+            jest.useFakeTimers();
             const onClose = new Subject<DotCMSContentlet[]>();
             dialogService.open.mockReturnValue({ onClose } as never);
             spectator.setInput('field', relationshipField());
@@ -275,8 +279,10 @@ describe('DotContentDriveFieldFilterComponent', () => {
             onClose.next([
                 { identifier: 'id-1', inode: 'inode-1', title: 'First' } as DotCMSContentlet
             ]);
+            jest.advanceTimersByTime(DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.author': 'id-1' });
+            jest.useRealTimers();
         });
     });
 });

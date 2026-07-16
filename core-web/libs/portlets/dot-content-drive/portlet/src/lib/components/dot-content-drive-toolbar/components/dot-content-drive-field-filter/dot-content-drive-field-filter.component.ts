@@ -149,8 +149,12 @@ export class DotContentDriveFieldFilterComponent {
      */
     protected readonly $popoverOpen = signal(false);
 
-    /** Debounced free-text input so we don't fire a search per keystroke. */
-    readonly #textInput$ = new Subject<string>();
+    /**
+     * Debounces the store write so rapid field changes (typing, toggling options, spinning the
+     * time) don't fire a search per change. The local value updates immediately; only the store
+     * patch (which triggers the search) is debounced.
+     */
+    readonly #patch$ = new Subject<string>();
 
     /** Filter-bag key for this field (`us.<variable>`). */
     protected readonly $key = computed(() => `${USER_SEARCHABLE_PREFIX}${this.$field().variable}`);
@@ -456,9 +460,9 @@ export class DotContentDriveFieldFilterComponent {
     );
 
     constructor() {
-        this.#textInput$
+        this.#patch$
             .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed())
-            .subscribe((value) => this.#patch(value));
+            .subscribe((raw) => this.#store.patchFilters({ [this.$key()]: raw }));
 
         // Resolve the related contentlet for a stored identifier we don't hold yet (cold URL
         // restore). Caching it fills the chip title and lets the picker preselect it by inode.
@@ -545,7 +549,7 @@ export class DotContentDriveFieldFilterComponent {
 
     protected onTextInput(value: string): void {
         this.$textValue.set(value ?? '');
-        this.#textInput$.next(value ?? '');
+        this.#patch(value ?? '');
     }
 
     /**
@@ -747,8 +751,10 @@ export class DotContentDriveFieldFilterComponent {
     }
 
     #patch(raw: string): void {
+        // Update the local value immediately (chip summary / control reflect it now); debounce the
+        // store write so rapid changes don't fire a search per change.
         this.$rawValue.set(raw);
-        this.#store.patchFilters({ [this.$key()]: raw });
+        this.#patch$.next(raw);
     }
 
     /** Seconds since midnight — compares time-only values without the arbitrary date component. */

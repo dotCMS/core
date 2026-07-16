@@ -159,7 +159,9 @@
                         for timeOnly, so a single control can't express a time span. Any time can be
                         picked for either bound, and either can be left empty (open-ended range).
                     -->
-                    <div class="flex flex-col items-center p-3" data-testid="field-filter-time">
+                    <div
+                        class="flex flex-col items-center px-3 pt-2"
+                        data-testid="field-filter-time">
                         <div class="flex items-start justify-center gap-6">
                             <div class="flex flex-col items-center gap-1">
                                 <label class="text-xs font-semibold text-slate-500">
@@ -192,7 +194,7 @@
                             </div>
                         </div>
                         @if ($timeRangeInvalid()) {
-                            <small class="mt-2 text-red-500" data-testid="field-filter-time-error">
+                            <small class="pb-1 text-red-500" data-testid="field-filter-time-error">
                                 {{ 'content-drive.field-filter.time.invalid-range' | dm }}
                             </small>
                         }
