@@ -370,6 +370,14 @@ export class DotContentDriveFieldFilterComponent {
         return to ? new Date(to) : null;
     });
 
+    /** True when both time bounds are set and `from` is after `to` — drives the inline error. */
+    protected readonly $timeRangeInvalid = computed(() => {
+        const from = this.$timeFrom();
+        const to = this.$timeTo();
+
+        return !!from && !!to && this.#timeOfDay(from) > this.#timeOfDay(to);
+    });
+
     protected readonly $isBinary = computed(() => this.$control() === 'binary-checkbox');
 
     /** Relationship is picked in a full dialog, so the chip opens it instead of a popover. */
@@ -650,12 +658,20 @@ export class DotContentDriveFieldFilterComponent {
         this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
     }
 
-    /** Updates one bound of a time-only range (from/to) independently and re-serializes. */
+    /**
+     * Updates one bound of a time-only range (from/to) independently. The bound signals keep the
+     * user's input regardless of validity; the filter is only re-applied when the range is valid
+     * (from ≤ to), so an inverted range shows the inline error instead of filtering wrongly.
+     */
     protected onTimeBoundChange(value: Date | null, bound: 'from' | 'to'): void {
         if (bound === 'from') {
             this.$timeFrom.set(value);
         } else {
             this.$timeTo.set(value);
+        }
+
+        if (this.$timeRangeInvalid()) {
+            return;
         }
 
         const from = this.$timeFrom();
@@ -679,6 +695,11 @@ export class DotContentDriveFieldFilterComponent {
     #patch(raw: string): void {
         this.$rawValue.set(raw);
         this.#store.patchFilters({ [this.$key()]: raw });
+    }
+
+    /** Seconds since midnight — compares time-only values without the arbitrary date component. */
+    #timeOfDay(date: Date): number {
+        return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
     }
 
     #formatDate(iso: string): string {

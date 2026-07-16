@@ -182,6 +182,11 @@
                                 [attr.aria-label]="$title() + ' ' + ('To' | dm)"
                                 data-testid="field-filter-time-to" />
                         </div>
+                        @if ($timeRangeInvalid()) {
+                            <small class="text-red-500" data-testid="field-filter-time-error">
+                                {{ 'content-drive.field-filter.time.invalid-range' | dm }}
+                            </small>
+                        }
                     </div>
                 } @else {
                     <p-datePicker

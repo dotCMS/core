@@ -174,9 +174,35 @@ describe('DotContentDriveFieldFilterComponent', () => {
             openPopover();
 
             // Two independent pickers, not a single range control (PrimeNG has no timeOnly range).
-            expect(spectator.query(byTestId('field-filter-time-from'), { root: true })).toBeTruthy();
+            expect(
+                spectator.query(byTestId('field-filter-time-from'), { root: true })
+            ).toBeTruthy();
             expect(spectator.query(byTestId('field-filter-time-to'), { root: true })).toBeTruthy();
             expect(spectator.query(byTestId('field-filter-date'), { root: true })).toBeNull();
+        });
+
+        it('should show an inline error for an inverted (from after to) range', () => {
+            store.getFilterValue.mockReturnValue(
+                '2024-01-01T17:00:00.000Z,2024-01-01T09:00:00.000Z'
+            );
+            spectator.setInput('field', field({ fieldType: 'Time' }));
+            spectator.detectChanges();
+            openPopover();
+
+            expect(
+                spectator.query(byTestId('field-filter-time-error'), { root: true })
+            ).toBeTruthy();
+        });
+
+        it('should not show the error for a valid (from before to) range', () => {
+            store.getFilterValue.mockReturnValue(
+                '2024-01-01T09:00:00.000Z,2024-01-01T17:00:00.000Z'
+            );
+            spectator.setInput('field', field({ fieldType: 'Time' }));
+            spectator.detectChanges();
+            openPopover();
+
+            expect(spectator.query(byTestId('field-filter-time-error'), { root: true })).toBeNull();
         });
     });
 
