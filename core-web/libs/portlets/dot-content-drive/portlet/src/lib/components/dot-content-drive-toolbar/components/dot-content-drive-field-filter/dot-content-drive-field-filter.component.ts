@@ -137,6 +137,14 @@ export class DotContentDriveFieldFilterComponent {
     protected readonly datePickerPt = {
         panel: { class: '!border-0 !rounded-none !shadow-none' }
     };
+    /**
+     * Time pickers additionally trim the panel/time-picker padding so the spinner sits tight to its
+     * From/To label above and the validation message below (the inline chrome is otherwise roomy).
+     */
+    protected readonly timePickerPt = {
+        panel: { class: '!border-0 !rounded-none !shadow-none !p-0' },
+        timePicker: { class: '!p-0' }
+    };
 
     /** The content-type field this chip filters on. */
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });

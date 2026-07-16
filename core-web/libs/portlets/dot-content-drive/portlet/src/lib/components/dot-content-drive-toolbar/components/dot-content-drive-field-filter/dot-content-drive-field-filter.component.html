@@ -173,7 +173,7 @@
                                     [ngModel]="$timeFrom()"
                                     (ngModelChange)="onTimeBoundChange($event, 'from')"
                                     [ngModelOptions]="{ standalone: true }"
-                                    [pt]="datePickerPt"
+                                    [pt]="timePickerPt"
                                     [attr.aria-label]="$title() + ' ' + ('from' | dm)"
                                     data-testid="field-filter-time-from" />
                             </div>
@@ -188,7 +188,7 @@
                                     [ngModel]="$timeTo()"
                                     (ngModelChange)="onTimeBoundChange($event, 'to')"
                                     [ngModelOptions]="{ standalone: true }"
-                                    [pt]="datePickerPt"
+                                    [pt]="timePickerPt"
                                     [attr.aria-label]="$title() + ' ' + ('To' | dm)"
                                     data-testid="field-filter-time-to" />
                             </div>
@@ -230,7 +230,7 @@
                                     [ngModel]="$timeFrom()"
                                     (ngModelChange)="onDateTimeTimeChange($event, 'from')"
                                     [ngModelOptions]="{ standalone: true }"
-                                    [pt]="datePickerPt"
+                                    [pt]="timePickerPt"
                                     [attr.aria-label]="$title() + ' ' + ('from' | dm)"
                                     data-testid="field-filter-datetime-from-time" />
                             </div>
@@ -245,7 +245,7 @@
                                     [ngModel]="$timeTo()"
                                     (ngModelChange)="onDateTimeTimeChange($event, 'to')"
                                     [ngModelOptions]="{ standalone: true }"
-                                    [pt]="datePickerPt"
+                                    [pt]="timePickerPt"
                                     [attr.aria-label]="$title() + ' ' + ('To' | dm)"
                                     data-testid="field-filter-datetime-to-time" />
                             </div>
