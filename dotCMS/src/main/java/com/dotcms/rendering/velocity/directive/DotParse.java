@@ -14,6 +14,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -42,6 +43,16 @@ public class DotParse extends DotDirective {
 
     private final static String RENDER = "render";
     private static final long serialVersionUID = 1L;
+
+    /**
+     * One-shot context flag that suppresses the EDIT_MODE edit-control icon for a single
+     * {@code #dotParse} include. When present (set to {@code true}) the icon for the very next
+     * resolved file asset is skipped and the flag is immediately removed, so nested {@code #dotParse}
+     * calls within the included template keep emitting their own icons. Used by the page render to
+     * include the theme {@code template.vtl} shell without injecting a stray {@code vtl-file} control
+     * before the document root.
+     */
+    static final String DONT_SHOW_THEME_TEMPLATE_ICON = "dontShowThemeTemplateIcon";
 
     private final String hostIndicator = "//";
     private final String EDIT_ICON =
@@ -141,9 +152,15 @@ public class DotParse extends DotDirective {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
-            final String inode =
-                            params.mode.showLive ? contentletVersionInfo.get().getLiveInode()
+            // Prefer live inode in LIVE mode; fall back to working when no live version exists so
+            // that a never-published file-asset (e.g. a theme template.vtl in the starter) still
+            // renders rather than silently disappearing (which is the same behaviour as the legacy
+            // #parse directive that served the working file from disk unconditionally).
+            String inode = params.mode.showLive ? contentletVersionInfo.get().getLiveInode()
                                     : contentletVersionInfo.get().getWorkingInode();
+            if (!UtilMethods.isSet(inode) && params.mode.showLive) {
+                inode = contentletVersionInfo.get().getWorkingInode();
+            }
 
             // We found the resource but not the version we are looking for
             if (!UtilMethods.isSet(inode)) {
@@ -159,8 +176,16 @@ public class DotParse extends DotDirective {
             
             
 
+            // One-shot suppression: the page render sets this flag for the theme template.vtl shell
+            // so it is not wrapped in an edit-control icon. Consume it here so nested #dotParse calls
+            // (html_head/header/footer) inside the theme still emit their own icons as before.
+            final boolean dontShowThemeTemplateIcon = Boolean.TRUE.equals(context.get(DONT_SHOW_THEME_TEMPLATE_ICON));
+            if (dontShowThemeTemplateIcon) {
+                context.remove(DONT_SHOW_THEME_TEMPLATE_ICON);
+            }
+
             // add the edit control if we have run through a page render
-            if (!context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode && context.containsKey("dotPageContent")) {
+            if (!dontShowThemeTemplateIcon && !context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode && context.containsKey("dotPageContent")) {
                 final String editIcon = String.format(EDIT_ICON, contentlet.getInode(), idAndField._1.getAssetName(),
                                 APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
                                                 user),
@@ -243,7 +268,7 @@ public class DotParse extends DotDirective {
 
         tokens.nextToken();
         final String inodeOrIdentifier = tokens.nextToken();
-        final String fieldVar = tokens.hasMoreTokens() ? tokens.nextToken() : DotAssetContentType.ASSET_FIELD_VAR;
+        final String explicitFieldVar = tokens.hasMoreTokens() ? tokens.nextToken() : null;
         final Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
         if (shortOpt.isEmpty()) {
@@ -260,6 +285,11 @@ public class DotParse extends DotDirective {
         if (conOpt.isEmpty()) {
             return Optional.empty();
         }
+
+        final String defaultFieldVar = conOpt.get().getContentType() instanceof FileAssetContentType
+                        ? FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR
+                        : DotAssetContentType.ASSET_FIELD_VAR;
+        final String fieldVar = (explicitFieldVar != null) ? explicitFieldVar : defaultFieldVar;
 
         final Identifier identifier = APILocator.getIdentifierAPI().find(conOpt.get().getIdentifier());
         return Optional.of(Tuple.of(identifier, fieldVar));

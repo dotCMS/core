@@ -7,13 +7,14 @@
     [disabled]="disabled()"
     [icon]="icon()"
     [rounded]="true"
-    data-testid="dot-action-button"></p-button>
+    data-testid="dot-action-button" />
 
 @if (label()) {
     <p
         data-testid="dot-action-button-label"
         class="mt-1 text-center text-xs text-gray-700 font-medium"
-        [ngClass]="{ 'text-gray-400 cursor-not-allowed': disabled() }">
+        [class.text-gray-400]="disabled()"
+        [class.cursor-not-allowed]="disabled()">
         {{ label() }}
     </p>
 }

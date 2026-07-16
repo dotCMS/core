@@ -1,6 +1,5 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -51,7 +50,6 @@ import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-sele
     templateUrl: './dot-push-publish-form.component.html',
     styleUrls: ['./dot-push-publish-form.component.scss'],
     imports: [
-        CommonModule,
         AutoFocusModule,
         FormsModule,
         DatePickerModule,

@@ -1,5 +1,5 @@
 import { expect, describe, it } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -11,7 +11,7 @@ import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { EditEmaPersonaSelectorComponent } from './edit-ema-persona-selector.component';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../../../shared/consts';
 
 export const CUSTOM_PERSONA: DotCMSViewAsPersona = {

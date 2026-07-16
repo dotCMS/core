@@ -1,3 +1,20 @@
+<<<<<<< HEAD
+=======
+# Automated documentation audit for closed issues.
+#
+# When an issue closes, this workflow decides whether its delivery warrants a
+# documentation change: it runs for Epics and for issues labeled
+# "Doc : Needs Doc" or "Changelog: Needs Doc", and skips sub-tasks of an Epic
+# (the Epic's own closure covers them).
+#
+# For qualifying issues it assembles the issue, its related PRs, and any
+# dotcms-aios vault context into an evaluation prompt, then runs Claude to
+# audit current documentation coverage via dotCMS AI semantic search. Claude
+# produces a report that determines one of three actions: none (no doc change
+# needed), update (revise an existing page), or create (draft a new page).
+# The report is posted as a comment on the issue, and update/create drafts
+# are applied to the dotCMS documentation site through its content API.
+>>>>>>> refs/remotes/upstream-core/main
 name: Autodoc — Epic Documentation Audit
 
 on:
@@ -8,7 +25,11 @@ jobs:
   preflight:
     name: Determine whether to run
     if: |
+<<<<<<< HEAD
       contains(github.event.issue.labels.*.name, 'Epic') ||
+=======
+      github.event.issue.type.name == 'Epic' ||
+>>>>>>> refs/remotes/upstream-core/main
       contains(github.event.issue.labels.*.name, 'Doc : Needs Doc') ||
       contains(github.event.issue.labels.*.name, 'Changelog: Needs Doc')
     runs-on: ubuntu-latest
@@ -24,21 +45,36 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
+<<<<<<< HEAD
           HAS_EPIC: ${{ contains(github.event.issue.labels.*.name, 'Epic') }}
         run: |
           if [ "$HAS_EPIC" = "true" ]; then
             echo "Issue #$ISSUE_NUMBER has Epic label — proceeding unconditionally."
+=======
+          HAS_EPIC: ${{ github.event.issue.type.name == 'Epic' }}
+        run: |
+          if [ "$HAS_EPIC" = "true" ]; then
+            echo "Issue #$ISSUE_NUMBER has Epic type — proceeding unconditionally."
+>>>>>>> refs/remotes/upstream-core/main
             echo "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
+<<<<<<< HEAD
           PARENT_LABELS=$(gh api graphql \
+=======
+          PARENT_TYPE=$(gh api graphql \
+>>>>>>> refs/remotes/upstream-core/main
             -f query='
               query($owner: String!, $repo: String!, $number: Int!) {
                 repository(owner: $owner, name: $repo) {
                   issue(number: $number) {
                     parent {
+<<<<<<< HEAD
                       labels(first: 20) { nodes { name } }
+=======
+                      issueType { name }
+>>>>>>> refs/remotes/upstream-core/main
                     }
                   }
                 }
@@ -47,9 +83,15 @@ jobs:
             -f owner="${REPO%/*}" \
             -f repo="${REPO#*/}" \
             -F number="$ISSUE_NUMBER" \
+<<<<<<< HEAD
             --jq '(.data.repository.issue.parent.labels.nodes // []) | .[].name')
 
           if echo "$PARENT_LABELS" | grep -qx "Epic"; then
+=======
+            --jq '.data.repository.issue.parent.issueType.name // ""')
+
+          if [ "$PARENT_TYPE" = "Epic" ]; then
+>>>>>>> refs/remotes/upstream-core/main
             echo "Issue #$ISSUE_NUMBER is a sub-task of an Epic — skipping; Epic closure will handle docs."
             echo "should_run=false" >> "$GITHUB_OUTPUT"
           else
@@ -65,6 +107,10 @@ jobs:
     permissions:
       issues: write
       contents: read
+<<<<<<< HEAD
+=======
+      id-token: write
+>>>>>>> refs/remotes/upstream-core/main
 
     env:
       EPIC_NUMBER: ${{ github.event.issue.number }}
@@ -85,6 +131,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dotCMS/dotcms-aios
+<<<<<<< HEAD
           token: ${{ secrets.AUTODOC_AIOS_CI }}
           path: dotcms-aios
 
@@ -92,6 +139,17 @@ jobs:
         # Version is unpinned intentionally — claude-code updates frequently and
         # the package is published by Anthropic. Pin if supply-chain policy requires it.
         run: npm install -g @anthropic-ai/claude-code
+=======
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          path: dotcms-aios
+
+      - name: Configure AWS credentials (Bedrock)
+        if: vars.BEDROCK_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.BEDROCK_ROLE_ARN }}
+          aws-region: ${{ vars.BEDROCK_AWS_REGION || 'us-east-1' }}
+>>>>>>> refs/remotes/upstream-core/main
 
       - name: Write prompt
         run: |
@@ -294,15 +352,53 @@ jobs:
           PYEOF
           python3 /tmp/ctx.py
 
+<<<<<<< HEAD
       - name: Run Claude
         run: claude --print --allowedTools Bash,Write < /tmp/eval_context.md
 
       - name: Post comment, apply to dotCMS, commit report
+=======
+      - name: Load eval context
+        id: eval_context
+        run: |
+          {
+            echo 'content<<__AUTODOC_EOF__'
+            cat /tmp/eval_context.md
+            echo '__AUTODOC_EOF__'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Compose Claude args
+        id: claude_args
+        env:
+          BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID }}
+        run: |
+          ARGS="--allowedTools Bash,Write"
+          if [ -n "$BEDROCK_MODEL_ID" ]; then
+            ARGS="--model $BEDROCK_MODEL_ID $ARGS"
+          fi
+          echo "value=$ARGS" >> "$GITHUB_OUTPUT"
+
+      - name: Run Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          use_bedrock: ${{ vars.BEDROCK_ROLE_ARN != '' && 'true' || 'false' }}
+          prompt: ${{ steps.eval_context.outputs.content }}
+          claude_args: ${{ steps.claude_args.outputs.value }}
+          use_sticky_comment: 'false'
+          track_progress: 'false'
+
+      - name: Post report comment
+>>>>>>> refs/remotes/upstream-core/main
         run: |
           REPORT="/tmp/Epic-${EPIC_NUMBER}_burlap.md"
 
           if [ ! -f "$REPORT" ]; then
             echo "No report at $REPORT — skipping finalize."
+<<<<<<< HEAD
+=======
+            echo "ACTION=none" >> "$GITHUB_ENV"
+>>>>>>> refs/remotes/upstream-core/main
             exit 0
           fi
 
@@ -336,6 +432,7 @@ jobs:
             gh issue comment "$EPIC_NUMBER" --repo "$REPO" --body-file /tmp/comment_body.md
           fi
 
+<<<<<<< HEAD
           # Parse action and urlTitle from the machine-readable meta block.
           # All fields use sub() to preserve the full value after the key prefix.
           ACTION=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^action:/{print $2; exit}' "$REPORT")
@@ -359,6 +456,41 @@ jobs:
             if echo "$IDENTIFIER" | grep -qE '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$' && [ -n "$IDENTIFIER" ]; then
               export REPORT IDENTIFIER
               python3 << 'PYEOF'
+=======
+          # Parse action and urlTitle from the machine-readable meta block and export
+          # for the downstream apply steps.
+          ACTION=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^action:/{print $2; exit}' "$REPORT")
+          URL_TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^urlTitle:/{sub(/^urlTitle:[[:space:]]*/,"");print;exit}' "$REPORT")
+          echo "ACTION=${ACTION:-none}" >> "$GITHUB_ENV"
+          echo "URL_TITLE=$URL_TITLE"   >> "$GITHUB_ENV"
+
+      - name: Apply doc update to dotCMS
+        if: env.ACTION == 'update'
+        run: |
+          REPORT="/tmp/Epic-${EPIC_NUMBER}_burlap.md"
+
+          # Validate urlTitle is a URL slug before interpolating into the JSON query.
+          # Non-slug chars (quotes, backslashes) would break the shell-built JSON payload.
+          if ! echo "$URL_TITLE" | grep -qE '^[a-z0-9][a-z0-9-]*[a-z0-9]$'; then
+            echo "urlTitle '${URL_TITLE}' is not a valid slug — skipping."
+            exit 0
+          fi
+
+          IDENTIFIER=$(curl -s --fail-with-body -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":{\"query_string\":{\"query\":\"+contentType:DotcmsDocumentation +DotcmsDocumentation.urlTitle:\\\"$URL_TITLE\\\"\"}},\"size\":1}" \
+            | jq -r '(.esresponse[0].hits.hits[0]._source.identifier) // empty')
+
+          # Verify the identifier is UUID-shaped before placing it in a URL.
+          if ! echo "$IDENTIFIER" | grep -qE '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'; then
+            echo "No valid contentlet found for urlTitle '${URL_TITLE}' — skipping."
+            exit 0
+          fi
+
+          export REPORT IDENTIFIER
+          python3 << 'PYEOF'
+>>>>>>> refs/remotes/upstream-core/main
           import json, os
           report = open(os.environ['REPORT']).read()
           marker = '<!-- BEGIN_DOC_DRAFT -->'
@@ -369,6 +501,7 @@ jobs:
               'disabledWYSIWYG': ['documentation']}}
           json.dump(payload, open('/tmp/payload.json', 'w'))
           PYEOF
+<<<<<<< HEAD
               curl -s --fail-with-body -X PUT \
                 "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/EDIT?identifier=$IDENTIFIER" \
                 -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
@@ -382,6 +515,31 @@ jobs:
             SEO=$(awk   '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^seoDescription:/{sub(/^seoDescription:[[:space:]]*/,"");print;exit}' "$REPORT")
             export REPORT URL_TITLE TITLE TAGS SEO
             python3 << 'PYEOF'
+=======
+
+          curl -s --fail-with-body -X PUT \
+            "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/EDIT?identifier=$IDENTIFIER" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+            -H "Content-Type: application/json" \
+            --data @/tmp/payload.json
+
+      - name: Apply doc create to dotCMS
+        if: env.ACTION == 'create'
+        run: |
+          REPORT="/tmp/Epic-${EPIC_NUMBER}_burlap.md"
+
+          # Validate urlTitle is a URL slug before interpolating into the JSON query.
+          if ! echo "$URL_TITLE" | grep -qE '^[a-z0-9][a-z0-9-]*[a-z0-9]$'; then
+            echo "urlTitle '${URL_TITLE}' is not a valid slug — skipping."
+            exit 0
+          fi
+
+          TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^title:/{sub(/^title:[[:space:]]*/,"");print;exit}' "$REPORT")
+          TAGS=$(awk  '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^tags:/{sub(/^tags:[[:space:]]*/,"");print;exit}'  "$REPORT")
+          SEO=$(awk   '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^seoDescription:/{sub(/^seoDescription:[[:space:]]*/,"");print;exit}' "$REPORT")
+          export REPORT URL_TITLE TITLE TAGS SEO
+          python3 << 'PYEOF'
+>>>>>>> refs/remotes/upstream-core/main
           import json, os
           report = open(os.environ['REPORT']).read()
           marker = '<!-- BEGIN_DOC_DRAFT -->'
@@ -399,10 +557,19 @@ jobs:
               payload['contentlet']['navFolder'] = sf
           json.dump(payload, open('/tmp/payload.json', 'w'))
           PYEOF
+<<<<<<< HEAD
             curl -s --fail-with-body -X PUT \
               "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/NEW" \
               -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
               -H "Content-Type: application/json" \
               --data @/tmp/payload.json
           fi
+=======
+
+          curl -s --fail-with-body -X PUT \
+            "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/NEW" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+            -H "Content-Type: application/json" \
+            --data @/tmp/payload.json
+>>>>>>> refs/remotes/upstream-core/main
 

@@ -6,11 +6,21 @@ import { AngularFormBridge } from './angular-form-bridge';
 // Mock Angular dependencies
 const mockFormGroup = {
     get: jest.fn(),
-    setValue: jest.fn()
+    setValue: jest.fn(),
+    events: {
+        subscribe: jest.fn(() => {
+            return { unsubscribe: jest.fn() };
+        })
+    }
 };
 
 const mockFormControl = {
     value: '',
+    valid: true,
+    invalid: false,
+    touched: false,
+    dirty: false,
+    errors: null as Record<string, unknown> | null,
     setValue: jest.fn(),
     markAsTouched: jest.fn(),
     markAsDirty: jest.fn(),
@@ -26,6 +36,16 @@ const mockFormControl = {
             };
         }),
         _callback: null as ((value: string) => void) | null
+    },
+    events: {
+        subscribe: jest.fn((callback) => {
+            mockFormControl.events._callback = callback;
+
+            return {
+                unsubscribe: jest.fn()
+            };
+        }),
+        _callback: null as ((event: unknown) => void) | null
     }
 };
 
@@ -58,6 +78,7 @@ describe('AngularFormBridge', () => {
         AngularFormBridge.resetInstance();
         mockFormGroup.get.mockReturnValue(mockFormControl);
         mockFormControl.valueChanges._callback = null;
+        mockFormControl.events._callback = null;
         mockDialogRef.onClose._callback = null;
         bridge = AngularFormBridge.getInstance(
             mockFormGroup as any,
@@ -282,9 +303,11 @@ describe('AngularFormBridge', () => {
             expect(instance1).toBe(instance2);
         });
 
-        it('should warn when getInstance is called with different parameters', () => {
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-            const differentFormGroup = { get: jest.fn() } as any;
+        it('should reset and return a new instance when getInstance is called with a different FormGroup', () => {
+            const differentFormGroup = {
+                get: jest.fn(),
+                events: { subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })) }
+            } as any;
 
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
@@ -297,14 +320,36 @@ describe('AngularFormBridge', () => {
                 mockDialogService as any
             );
 
-            expect(instance1).toBe(instance2);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    'AngularFormBridge: Attempted to get instance with different form or zone'
-                )
+            // A fresh instance is created so it binds to the new FormGroup's controls
+            // and validation state from the previous form (e.g. touched controls after
+            // a Save) cannot leak across navigations.
+            expect(instance1).not.toBe(instance2);
+        });
+
+        it('should call forceDestroy on the old instance when FormGroup changes (cleans up subscriptions)', () => {
+            const unsubscribeSpy = jest.fn();
+            mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
+
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            instance1.onChangeField('testField', () => {});
+
+            // Simulate form recreation with a new FormGroup
+            const differentFormGroup = {
+                get: jest.fn(),
+                events: { subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })) }
+            } as any;
+            AngularFormBridge.getInstance(
+                differentFormGroup,
+                mockNgZone as any,
+                mockDialogService as any
             );
 
-            consoleSpy.mockRestore();
+            // forceDestroy on the old instance must have unsubscribed all field subscriptions
+            expect(unsubscribeSpy).toHaveBeenCalled();
         });
 
         it('should reset instance when resetInstance is called', () => {
@@ -350,7 +395,7 @@ describe('AngularFormBridge', () => {
             expect(instance).toBeInstanceOf(AngularFormBridge);
         });
 
-        it('should reset instance in destroy method', () => {
+        it('should reset instance in destroy method when refCount reaches zero', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
                 mockNgZone as any,
@@ -365,17 +410,92 @@ describe('AngularFormBridge', () => {
             );
             expect(instance1).not.toBe(instance2);
         });
+
+        it('should NOT destroy singleton when other consumers still hold a reference', () => {
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            const instance2 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+
+            expect(instance1).toBe(instance2);
+
+            // First consumer releases — singleton must survive
+            instance1.destroy();
+
+            const instance3 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            expect(instance3).toBe(instance1);
+        });
+
+        it('should destroy singleton only after all consumers release', () => {
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            // Second consumer
+            AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+
+            instance1.destroy(); // refCount 2 → 1
+            instance1.destroy(); // refCount 1 → 0, now truly destroyed
+
+            const fresh = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            expect(fresh).not.toBe(instance1);
+        });
+
+        it('should keep subscriptions alive when one of two consumers calls destroy', () => {
+            const unsubscribeSpy = jest.fn();
+            mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
+
+            // Two consumers
+            const bridge1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+
+            bridge1.onChangeField('testField', () => {});
+            bridge1.destroy(); // one consumer releases, but refCount still > 0
+
+            expect(unsubscribeSpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('getField', () => {
-        it('should return FormFieldAPI object', () => {
+        it('should return FormFieldAPI object with all methods', () => {
             const fieldAPI = bridge.getField('testField');
             expect(fieldAPI).toBeDefined();
             expect(typeof fieldAPI.getValue).toBe('function');
             expect(typeof fieldAPI.setValue).toBe('function');
             expect(typeof fieldAPI.onChange).toBe('function');
+            expect(typeof fieldAPI.getValidationState).toBe('function');
+            expect(typeof fieldAPI.onValidationChange).toBe('function');
             expect(typeof fieldAPI.enable).toBe('function');
             expect(typeof fieldAPI.disable).toBe('function');
+            expect(typeof fieldAPI.show).toBe('function');
+            expect(typeof fieldAPI.hide).toBe('function');
         });
 
         it('should get value using getValue', () => {
@@ -399,14 +519,150 @@ describe('AngularFormBridge', () => {
         it('should subscribe to changes using onChange', () => {
             const callback = jest.fn();
             const fieldAPI = bridge.getField('testField');
-            fieldAPI.onChange(callback);
+            const unsubscribe = fieldAPI.onChange(callback);
 
             expect(mockFormControl.valueChanges.subscribe).toHaveBeenCalled();
+            expect(typeof unsubscribe).toBe('function');
 
             if (mockFormControl.valueChanges._callback) {
                 mockFormControl.valueChanges._callback('changed value');
                 expect(callback).toHaveBeenCalledWith('changed value');
             }
+        });
+
+        describe('validation state', () => {
+            beforeEach(() => {
+                mockFormControl.valid = true;
+                mockFormControl.invalid = false;
+                mockFormControl.touched = false;
+                mockFormControl.dirty = false;
+                mockFormControl.errors = null;
+                mockFormControl.events._callback = null;
+            });
+
+            it('should return current validation snapshot via getValidationState', () => {
+                mockFormControl.valid = false;
+                mockFormControl.invalid = true;
+                mockFormControl.touched = true;
+                mockFormControl.dirty = true;
+                mockFormControl.errors = { required: true };
+
+                const state = bridge.getField('testField').getValidationState();
+
+                expect(state).toEqual({
+                    valid: false,
+                    invalid: true,
+                    touched: true,
+                    dirty: true,
+                    errors: { required: true }
+                });
+            });
+
+            it('should return a neutral validation state when control is missing', () => {
+                mockFormGroup.get.mockReturnValue(null);
+
+                const state = bridge.getField('missingField').getValidationState();
+
+                // Matches DojoFormBridge so VTL templates that read `state.valid`
+                // get the same answer in both editors when the control is unknown.
+                expect(state).toEqual({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+            });
+
+            it('should fire onValidationChange callback with initial state and on control events', () => {
+                const callback = jest.fn();
+                const fieldAPI = bridge.getField('testField');
+                const unsubscribe = fieldAPI.onValidationChange(callback);
+
+                expect(mockFormControl.events.subscribe).toHaveBeenCalled();
+                expect(typeof unsubscribe).toBe('function');
+
+                // Initial emit when the control is found on subscribe
+                expect(callback).toHaveBeenCalledTimes(1);
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+
+                mockFormControl.invalid = true;
+                mockFormControl.touched = true;
+                mockFormControl.errors = { required: true };
+                mockFormControl.events._callback?.({});
+
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: true,
+                    touched: true,
+                    dirty: false,
+                    errors: { required: true }
+                });
+            });
+
+            it('should re-attach to the control when it is registered after onValidationChange is called', () => {
+                // Simulate the race condition: the control is not yet in the form when subscribe runs.
+                mockFormGroup.get.mockReturnValueOnce(null);
+                const formSubscribe = mockFormGroup.events.subscribe as jest.Mock;
+                let reconcileOnFormEvent: (() => void) | null = null;
+                formSubscribe.mockImplementationOnce((cb: () => void) => {
+                    reconcileOnFormEvent = cb;
+                    return { unsubscribe: jest.fn() };
+                });
+
+                const callback = jest.fn();
+                bridge.getField('testField').onValidationChange(callback);
+
+                // No initial emit because the control was missing.
+                expect(callback).not.toHaveBeenCalled();
+
+                // The control now appears in the form (e.g. after the FormGroup registers it).
+                mockFormGroup.get.mockReturnValue(mockFormControl);
+                reconcileOnFormEvent?.();
+
+                // Initial state of the now-registered control is emitted exactly once.
+                expect(callback).toHaveBeenCalledTimes(1);
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+            });
+
+            it('should not emit when control is missing on subscribe', () => {
+                mockFormGroup.get.mockReturnValue(null);
+                const callback = jest.fn();
+                const unsubscribe = bridge.getField('missingField').onValidationChange(callback);
+
+                expect(callback).not.toHaveBeenCalled();
+                expect(typeof unsubscribe).toBe('function');
+                expect(() => unsubscribe()).not.toThrow();
+            });
+
+            it('should unsubscribe from events when the returned function is called', () => {
+                const controlUnsubscribeSpy = jest.fn();
+                const formUnsubscribeSpy = jest.fn();
+                mockFormControl.events.subscribe.mockReturnValueOnce({
+                    unsubscribe: controlUnsubscribeSpy
+                });
+                (mockFormGroup.events.subscribe as jest.Mock).mockReturnValueOnce({
+                    unsubscribe: formUnsubscribeSpy
+                });
+
+                const unsubscribe = bridge.getField('testField').onValidationChange(jest.fn());
+                unsubscribe();
+
+                expect(controlUnsubscribeSpy).toHaveBeenCalled();
+                expect(formUnsubscribeSpy).toHaveBeenCalled();
+            });
         });
 
         it('should enable field using enable', () => {
@@ -447,6 +703,148 @@ describe('AngularFormBridge', () => {
             const fieldAPI = bridge.getField('testField');
             fieldAPI.disable();
             expect(zoneRunSpy).toHaveBeenCalled();
+        });
+
+        describe('show/hide', () => {
+            beforeEach(() => {
+                AngularFormBridge.resetInstance();
+                bridge = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any
+                );
+            });
+
+            it('should call onFieldVisibilityChange with true when show is called', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+
+                const fieldAPI = bridgeWithCallback.getField('myField');
+                fieldAPI.show();
+
+                expect(onFieldVisibilityChange).toHaveBeenCalledWith('myField', true);
+            });
+
+            it('should call onFieldVisibilityChange with false when hide is called', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+
+                const fieldAPI = bridgeWithCallback.getField('myField');
+                fieldAPI.hide();
+
+                expect(onFieldVisibilityChange).toHaveBeenCalledWith('myField', false);
+            });
+
+            it('should not throw when show is called without callback', () => {
+                const fieldAPI = bridge.getField('testField');
+                expect(() => fieldAPI.show()).not.toThrow();
+            });
+
+            it('should not throw when hide is called without callback', () => {
+                const fieldAPI = bridge.getField('testField');
+                expect(() => fieldAPI.hide()).not.toThrow();
+            });
+
+            it('should warn once when show is called without callback', () => {
+                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const fieldAPI = bridge.getField('testField');
+
+                fieldAPI.show();
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    expect.stringContaining(
+                        "show() called on field 'testField' but no onFieldVisibilityChange callback is configured"
+                    )
+                );
+
+                consoleSpy.mockClear();
+                fieldAPI.show();
+                expect(consoleSpy).not.toHaveBeenCalled();
+
+                consoleSpy.mockRestore();
+            });
+
+            it('should warn once when hide is called without callback', () => {
+                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const fieldAPI = bridge.getField('testField');
+
+                fieldAPI.hide();
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    expect.stringContaining(
+                        "hide() called on field 'testField' but no onFieldVisibilityChange callback is configured"
+                    )
+                );
+
+                consoleSpy.mockClear();
+                fieldAPI.hide();
+                expect(consoleSpy).not.toHaveBeenCalled();
+
+                consoleSpy.mockRestore();
+            });
+
+            it('should not warn when callback is provided', () => {
+                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+
+                const fieldAPI = bridgeWithCallback.getField('testField');
+                fieldAPI.show();
+                fieldAPI.hide();
+
+                expect(consoleSpy).not.toHaveBeenCalled();
+                consoleSpy.mockRestore();
+            });
+
+            it('should run show inside NgZone', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+
+                const fieldAPI = bridgeWithCallback.getField('testField');
+                fieldAPI.show();
+
+                expect(zoneRunSpy).toHaveBeenCalled();
+            });
+
+            it('should run hide inside NgZone', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+
+                const fieldAPI = bridgeWithCallback.getField('testField');
+                fieldAPI.hide();
+
+                expect(zoneRunSpy).toHaveBeenCalled();
+            });
         });
     });
 

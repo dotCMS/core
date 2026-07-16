@@ -113,6 +113,7 @@ async function main(): Promise<void> {
 
   process.stderr.write(`Found ${totalCommits} commits in range.\n`);
 
+<<<<<<< HEAD
   if (commits.length < totalCommits) {
     process.stderr.write(
       `Warning: GitHub capped the commit response at ${commits.length} of ${totalCommits} total. ` +
@@ -120,6 +121,8 @@ async function main(): Promise<void> {
     );
   }
 
+=======
+>>>>>>> refs/remotes/upstream-core/main
   if (totalCommits === 0) {
     const emptyResult: ReleaseData = {
       repo: args.repo,

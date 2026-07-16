@@ -103,15 +103,6 @@
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
-    @case (fieldTypes.BINARY) {
-        @defer (on immediate) {
-            <dot-binary-field-wrapper
-                [contentlet]="contentlet"
-                [field]="field"
-                ($valueUpdated)="onBinaryFieldValueUpdated($event)"
-                [attr.data-testId]="'field-' + field.variable" />
-        }
-    }
     @case (fieldTypes.CUSTOM_FIELD) {
         @defer (on immediate) {
             <dot-edit-content-custom-field
@@ -162,11 +153,21 @@
                 [field]="field" />
         }
     }
+    @case (fieldTypes.BINARY) {
+        @defer (on immediate) {
+            <dot-edit-content-file-field
+                [contentlet]="contentlet"
+                [field]="field"
+                (valueUpdated)="onBinaryFieldValueUpdated($event)"
+                [attr.data-testId]="'field-' + field.variable" />
+        }
+    }
     @case (fieldTypes.FILE) {
         @defer (on immediate) {
             <dot-edit-content-file-field
                 [contentlet]="contentlet"
                 [attr.data-testId]="'field-' + field.variable"
+                (valueUpdated)="onBinaryFieldValueUpdated($event)"
                 [field]="field" />
         }
     }
@@ -175,6 +176,7 @@
             <dot-edit-content-file-field
                 [contentlet]="contentlet"
                 [attr.data-testId]="'field-' + field.variable"
+                (valueUpdated)="onBinaryFieldValueUpdated($event)"
                 [field]="field" />
         }
     }

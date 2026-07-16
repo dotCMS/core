@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { Observable, of as observableOf, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -10,13 +10,13 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
-import { CoreWebService, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
     DotPushPublishData,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 
@@ -77,7 +77,6 @@ describe('DotPushPublishDialogComponent', () => {
             provideHttpClientTesting(),
             { provide: PushPublishService, useValue: pushPublishServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotPushPublishDialogService
         ],
         overrideComponents: [
@@ -88,8 +87,7 @@ describe('DotPushPublishDialogComponent', () => {
                     add: {
                         imports: [TestDotPushPublishFormComponent],
                         providers: [
-                            { provide: PushPublishService, useValue: pushPublishServiceMock },
-                            { provide: CoreWebService, useClass: CoreWebServiceMock }
+                            { provide: PushPublishService, useValue: pushPublishServiceMock }
                         ]
                     }
                 }

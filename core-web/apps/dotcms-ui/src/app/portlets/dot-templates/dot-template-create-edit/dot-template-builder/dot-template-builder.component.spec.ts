@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Subject } from 'rxjs';
 
@@ -215,13 +215,87 @@ describe('DotTemplateBuilderComponent', () => {
 
             expect(reloadSpy).toHaveBeenCalledTimes(1);
             expect(dotRouterService.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
-            expect(updateSpy).toHaveBeenCalledWith(updated);
+            // updateTemplate is intentionally NOT emitted on every change — that previously
+            // caused a synchronous echo back into the designer's [layout] input and crashed
+            // updateOldRows when state had stale y values after a row removal.
+            expect(updateSpy).not.toHaveBeenCalled();
 
             tick(AUTOSAVE_DEBOUNCE_TIME - 1);
             expect(saveSpy).not.toHaveBeenCalled();
 
             tick(1);
             expect(saveSpy).toHaveBeenCalledWith(updated);
+        }));
+
+        // Regression guard: a row removal in the designer fires templateChange twice in
+        // quick succession (once from `removeRow`, once from `moveRow` after gridstack
+        // auto-compacts). If updateTemplate were emitted synchronously on either, the
+        // parent store's `working` signal would update and echo the layout straight back
+        // into the designer's `[layout]` input, triggering `updateOldRows` mid-cycle while
+        // state still had y gaps — producing corrupt rows / column reorders / duplicates.
+        //
+        // Two assertions matter and they're complementary:
+        //   (1) `updateTemplate.emit` is never called synchronously — the wrapper contract.
+        //   (2) The lib's `[layout]` input reference does not change across the rapid
+        //       templateChange emissions in the same tick — the actual bug shape. A future
+        //       refactor that re-introduces the echo via an indirect path (e.g. moving
+        //       update logic into the parent's (templateChange) handler) would still pass
+        //       assertion (1) but fail (2), which is the one that actually keeps the
+        //       designer's state-merging path quiet during the rapid emissions.
+        it('should never echo templateChange synchronously back to parent (regression)', fakeAsync(() => {
+            const item = createDesignItem({ identifier: 'id-1' });
+            spectator.setInput('item', item);
+
+            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.detectChanges();
+
+            const builderDe = spectator.debugElement.query(By.css('dotcms-template-builder-lib'));
+            const layoutBefore = builderDe.componentInstance.layout;
+
+            const afterRemoveRow = createDesignItem({
+                identifier: 'id-1',
+                layout: { body: { rows: [{ stale: 'y=2' } as any] } }
+            });
+            const afterMoveRow = createDesignItem({
+                identifier: 'id-1',
+                layout: { body: { rows: [{ compact: 'y=1' } as any] } }
+            });
+
+            // First emission — state immediately after removeRow (y gap present).
+            spectator.triggerEventHandler(
+                'dotcms-template-builder-lib',
+                'templateChange',
+                afterRemoveRow
+            );
+            spectator.detectChanges();
+            // (2) The lib's [layout] input MUST NOT have been replaced by an echo.
+            expect(builderDe.componentInstance.layout).toBe(layoutBefore);
+
+            // Second emission — state after moveRow auto-compaction. Fires synchronously
+            // in the same tick as the first because moveRow runs inside the rows.changes
+            // subscriber during CD.
+            spectator.triggerEventHandler(
+                'dotcms-template-builder-lib',
+                'templateChange',
+                afterMoveRow
+            );
+            spectator.detectChanges();
+            // (2) Still the same reference after the second emission.
+            expect(builderDe.componentInstance.layout).toBe(layoutBefore);
+
+            // (1) Wrapper contract — no synchronous emit from either templateChange.
+            expect(updateSpy).not.toHaveBeenCalled();
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.component.lastTemplate).toBe(afterMoveRow);
+
+            // After debounce, exactly one save with the LATEST item — proving the dual
+            // emission collapses to a single backend round-trip with consistent state.
+            tick(AUTOSAVE_DEBOUNCE_TIME);
+            expect(saveSpy).toHaveBeenCalledTimes(1);
+            expect(saveSpy).toHaveBeenCalledWith(afterMoveRow);
+            expect(updateSpy).not.toHaveBeenCalled();
         }));
     });
 

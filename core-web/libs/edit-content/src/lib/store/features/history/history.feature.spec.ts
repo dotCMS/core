@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { of, Subject, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -22,11 +22,14 @@ import {
     DotCMSResponse,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
+import { createFakeLanguage } from '@dotcms/utils-testing';
 
 import {
     withHistory,
     DEFAULT_VERSIONS_PER_PAGE,
-    DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE
+    DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE,
+    DEFAULT_LOCALE_ISO_KEY,
+    HISTORY_SIDEBAR_TAB_INDEX
 } from './history.feature';
 
 import {
@@ -428,7 +431,11 @@ describe('HistoryFeature', () => {
                     limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE
                 }
             );
-            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+            // Store sorts push publish history by pushDate descending
+            const expectedSorted = [...mockPushPublishHistoryResponse.entity].sort(
+                (a, b) => b.pushDate - a.pushDate
+            );
+            expect(store.pushPublishHistory()).toEqual(expectedSorted);
             expect(store.pushPublishHistoryPagination()).toEqual(
                 mockPushPublishHistoryResponse.pagination
             );
@@ -450,10 +457,13 @@ describe('HistoryFeature', () => {
             store.loadPushPublishHistory({ identifier: 'test-identifier', page: 2 });
             tick();
 
-            expect(store.pushPublishHistory()).toEqual([
+            // Store sorts accumulated push publish history by pushDate descending
+            const accumulated = [
                 mockPushPublishHistoryItem,
                 ...mockPushPublishHistoryResponsePage2.entity
-            ]);
+            ];
+            const expectedSorted = [...accumulated].sort((a, b) => b.pushDate - a.pushDate);
+            expect(store.pushPublishHistory()).toEqual(expectedSorted);
         }));
 
         it('should handle errors and update error state', fakeAsync(() => {
@@ -606,8 +616,7 @@ describe('HistoryFeature', () => {
             expect(confirmCall.rejectLabel).toBe('Cancel');
         });
 
-        it('should handle COMPARE action', () => {
-            // Currently a no-op with TODO comment
+        it('should handle COMPARE action without throwing', () => {
             expect(() => {
                 store.handleHistoryAction(mockAction(DotHistoryTimelineItemActionType.COMPARE));
             }).not.toThrow();
@@ -646,6 +655,88 @@ describe('HistoryFeature', () => {
                 mockContentletVersion.inode
             );
         }));
+
+        describe('VIEW action while in compare view', () => {
+            const previousCompareContent = {
+                ...mockContentlet,
+                inode: 'previous-compare-inode',
+                title: 'Previous Compare'
+            };
+
+            beforeEach(() => {
+                patchState(store, {
+                    compareContentlet: previousCompareContent,
+                    historicalVersionInode: 'previous-compare-inode',
+                    uiState: { ...store.uiState(), view: 'compare' }
+                });
+            });
+
+            it('should update the compared version and stay in compare view when clicking another version', fakeAsync(() => {
+                const clickedContent = {
+                    ...mockContentlet,
+                    inode: 'clicked-inode',
+                    title: 'Clicked Version'
+                };
+                dotContentletService.getContentletByInode.mockReturnValue(of(clickedContent));
+
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, inode: 'clicked-inode', working: false }
+                });
+                tick();
+
+                expect(dotContentletService.getContentletByInode).toHaveBeenCalledWith(
+                    'clicked-inode'
+                );
+                expect(store.uiState().view).toBe('compare');
+                expect(store.compareContentlet()).toEqual(clickedContent);
+                // The current-version side stays fixed (no full-viewport navigation)
+                expect(store.contentlet()).toEqual(mockContentlet);
+            }));
+
+            it('should mark the newly compared version as active in the version list', fakeAsync(() => {
+                const clickedContent = { ...mockContentlet, inode: 'clicked-inode' };
+                dotContentletService.getContentletByInode.mockReturnValue(of(clickedContent));
+
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, inode: 'clicked-inode', working: false }
+                });
+                tick();
+
+                expect(store.historicalVersionInode()).toBe('clicked-inode');
+            }));
+
+            it('should exit compare view when clicking the working version', () => {
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, working: true }
+                });
+
+                expect(store.uiState().view).toBe('form');
+                expect(store.compareContentlet()).toBeNull();
+                expect(store.historicalVersionInode()).toBeNull();
+            });
+
+            it('should keep loading versions full-viewport when not in compare view', fakeAsync(() => {
+                patchState(store, {
+                    compareContentlet: null,
+                    uiState: { ...store.uiState(), view: 'form' }
+                });
+                const clickedContent = { ...mockContentlet, inode: 'clicked-inode' };
+                dotContentletService.getContentletByInode.mockReturnValue(of(clickedContent));
+
+                store.handleHistoryAction({
+                    type: DotHistoryTimelineItemActionType.VIEW,
+                    item: { ...mockContentletVersion, inode: 'clicked-inode', working: false }
+                });
+                tick();
+
+                expect(store.uiState().view).toBe('form');
+                expect(store.contentlet()).toEqual(clickedContent);
+                expect(store.isViewingHistoricalVersion()).toBe(true);
+            }));
+        });
     });
 
     describe('resetVersions', () => {
@@ -867,7 +958,11 @@ describe('HistoryFeature', () => {
                 'new-identifier-123',
                 { offset: 1, limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE }
             );
-            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+            // Store sorts push publish history by pushDate descending
+            const expectedSortedHistory = [...mockPushPublishHistoryResponse.entity].sort(
+                (a, b) => b.pushDate - a.pushDate
+            );
+            expect(store.pushPublishHistory()).toEqual(expectedSortedHistory);
         }));
 
         it('should automatically load versions when contentlet languageId changes', fakeAsync(() => {
@@ -888,7 +983,7 @@ describe('HistoryFeature', () => {
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
         }));
 
-        it('should clear versions and push publish history before loading new ones', fakeAsync(() => {
+        it('should replace versions and push publish history when the contentlet changes', fakeAsync(() => {
             // Setup initial data
             store.updateVersions([mockContentletVersion]);
             store.updatePushPublishHistory([mockPushPublishHistoryItem]);
@@ -907,7 +1002,128 @@ describe('HistoryFeature', () => {
 
             // Both datasets should be cleared and then reloaded
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
-            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+            // Store sorts push publish history by pushDate descending
+            const expectedSortedAfterClear = [...mockPushPublishHistoryResponse.entity].sort(
+                (a, b) => b.pushDate - a.pushDate
+            );
+            expect(store.pushPublishHistory()).toEqual(expectedSortedAfterClear);
+        }));
+
+        it('should not reload anything when only the version inode changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            store.updateContentlet({ ...mockContentlet, inode: 'another-version-inode' });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+        }));
+
+        it('should reload versions but not push publish history when only the language changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            store.updateContentlet({ ...mockContentlet, languageId: 2 });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                mockContentlet.identifier,
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                2
+            );
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+        }));
+
+        it('should discard compare and historical state when the locale changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            patchState(store, {
+                compareContentlet: { ...mockContentlet, inode: 'compare-inode' },
+                historicalVersionInode: 'compare-inode',
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: false
+            });
+
+            store.updateContentlet({ ...mockContentlet, languageId: 2 });
+            spectator.flushEffects();
+            tick();
+
+            expect(store.compareContentlet()).toBeNull();
+            expect(store.historicalVersionInode()).toBeNull();
+            expect(store.originalContentlet()).toBeNull();
+            expect(store.isViewingHistoricalVersion()).toBe(false);
+        }));
+
+        it('should exit compare view when leaving the History sidebar tab', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            patchState(store, {
+                compareContentlet: { ...mockContentlet, inode: 'compare-inode' },
+                historicalVersionInode: 'compare-inode',
+                uiState: {
+                    ...store.uiState(),
+                    view: 'compare',
+                    activeSidebarTab: HISTORY_SIDEBAR_TAB_INDEX
+                }
+            });
+            spectator.flushEffects();
+
+            patchState(store, {
+                uiState: { ...store.uiState(), activeSidebarTab: 0 }
+            });
+            spectator.flushEffects();
+
+            expect(store.uiState().view).toBe('form');
+            expect(store.compareContentlet()).toBeNull();
+            expect(store.historicalVersionInode()).toBeNull();
+        }));
+
+        it('should keep compare view while switching within the History sidebar tab', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            const compareContent = { ...mockContentlet, inode: 'compare-inode' };
+            patchState(store, {
+                compareContentlet: compareContent,
+                uiState: {
+                    ...store.uiState(),
+                    view: 'compare',
+                    activeSidebarTab: HISTORY_SIDEBAR_TAB_INDEX
+                }
+            });
+            spectator.flushEffects();
+
+            expect(store.uiState().view).toBe('compare');
+            expect(store.compareContentlet()).toEqual(compareContent);
+        }));
+
+        it('should keep compare and historical state when only the version inode changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            const compareContent = { ...mockContentlet, inode: 'compare-inode' };
+            patchState(store, {
+                compareContentlet: compareContent,
+                historicalVersionInode: 'compare-inode',
+                originalContentlet: mockContentlet
+            });
+
+            store.updateContentlet({ ...mockContentlet, inode: 'another-version-inode' });
+            spectator.flushEffects();
+            tick();
+
+            expect(store.compareContentlet()).toEqual(compareContent);
+            expect(store.historicalVersionInode()).toBe('compare-inode');
+            expect(store.originalContentlet()).toEqual(mockContentlet);
         }));
 
         it('should not load data if contentlet has no identifier', fakeAsync(() => {
@@ -989,7 +1205,7 @@ describe('HistoryFeature', () => {
 
         it('should handle restore errors', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Restore failed', status: 500 });
-            dotVersionableService.bringBack.mockReturnValue(throwError(error));
+            dotVersionableService.bringBack.mockReturnValue(throwError(() => error));
 
             store.restoreVersion('test-inode');
             tick();
@@ -1048,7 +1264,7 @@ describe('HistoryFeature', () => {
 
         it('should handle load errors and show error message', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Load failed', status: 500 });
-            dotContentletService.getContentletByInode.mockReturnValue(throwError(error));
+            dotContentletService.getContentletByInode.mockReturnValue(throwError(() => error));
 
             store.loadVersionContent('historical-inode');
             tick();
@@ -1105,7 +1321,7 @@ describe('HistoryFeature', () => {
             expect(confirmCall.header).toBe('Restore Version');
             expect(confirmCall.acceptLabel).toBe('Restore');
             expect(confirmCall.rejectLabel).toBe('Cancel');
-            expect(confirmCall.icon).toBe('pi pi-exclamation-triangle text-warning-yellow');
+            expect(confirmCall.icon).toBeUndefined();
             expect(confirmCall.acceptIcon).toBe('hidden');
             expect(confirmCall.rejectIcon).toBe('hidden');
             expect(confirmCall.rejectButtonStyleClass).toBe('p-button-outlined');
@@ -1217,5 +1433,209 @@ describe('HistoryFeature', () => {
             expect(store.contentlet()).toEqual(historicalContent2);
             expect(store.historicalVersionInode()).toBe('historical-2');
         }));
+
+        it('should clear compareContentlet when loading a preview version', fakeAsync(() => {
+            const compareContent = { ...mockContentlet, inode: 'compare-inode', title: 'Compare' };
+            const previewContent = { ...mockContentlet, inode: 'preview-inode', title: 'Preview' };
+
+            // Set up compare state
+            patchState(store, { compareContentlet: compareContent });
+            expect(store.compareContentlet()).toEqual(compareContent);
+
+            // Trigger preview — should clear compare
+            dotContentletService.getContentletByInode.mockReturnValue(of(previewContent));
+            store.loadVersionContent('preview-inode');
+            tick();
+
+            expect(store.compareContentlet()).toBeNull();
+            expect(store.isViewingHistoricalVersion()).toBe(true);
+        }));
+    });
+
+    describe('Compare Version State Management', () => {
+        it('should set compareContentlet and switch view to compare on COMPARE action', fakeAsync(() => {
+            const compareContent = { ...mockContentlet, inode: 'compare-inode', title: 'Compare' };
+            store.updateContentlet(mockContentlet);
+
+            dotContentletService.getContentletByInode.mockReturnValue(of(compareContent));
+            store.handleHistoryAction({
+                type: DotHistoryTimelineItemActionType.COMPARE,
+                item: { ...mockContentletVersion, inode: 'compare-inode' }
+            });
+            tick();
+
+            expect(store.compareContentlet()).toEqual(compareContent);
+            expect(store.uiState().view).toBe('compare');
+            expect(store.isViewingHistoricalVersion()).toBe(false);
+        }));
+
+        it('should clear isViewingHistoricalVersion when entering compare mode', fakeAsync(() => {
+            const compareContent = { ...mockContentlet, inode: 'compare-inode', title: 'Compare' };
+
+            patchState(store, { isViewingHistoricalVersion: true });
+
+            dotContentletService.getContentletByInode.mockReturnValue(of(compareContent));
+            store.handleHistoryAction({
+                type: DotHistoryTimelineItemActionType.COMPARE,
+                item: { ...mockContentletVersion, inode: 'compare-inode' }
+            });
+            tick();
+
+            expect(store.isViewingHistoricalVersion()).toBe(false);
+            expect(store.compareContentlet()).toEqual(compareContent);
+        }));
+
+        it('should clear compareContentlet and switch view to form on exitCompareView', () => {
+            const compareContent = { ...mockContentlet, inode: 'compare-inode', title: 'Compare' };
+
+            patchState(store, {
+                compareContentlet: compareContent,
+                uiState: { ...store.uiState(), view: 'compare' }
+            });
+
+            store.exitCompareView();
+
+            expect(store.compareContentlet()).toBeNull();
+            expect(store.uiState().view).toBe('form');
+        });
+    });
+
+    describe('loadingVersionInode', () => {
+        it('should expose the inode while a version is being fetched and clear it on success', fakeAsync(() => {
+            const response$ = new Subject<DotCMSContentlet>();
+            dotContentletService.getContentletByInode.mockReturnValue(response$);
+
+            store.loadVersionContent('loading-inode');
+
+            expect(store.loadingVersionInode()).toBe('loading-inode');
+
+            response$.next({ ...mockContentlet, inode: 'loading-inode' });
+            response$.complete();
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+        }));
+
+        it('should track the inode while updating the comparison and clear it on success', fakeAsync(() => {
+            const response$ = new Subject<DotCMSContentlet>();
+            dotContentletService.getContentletByInode.mockReturnValue(response$);
+
+            store.handleHistoryAction({
+                type: DotHistoryTimelineItemActionType.COMPARE,
+                item: { ...mockContentletVersion, inode: 'compare-loading-inode' }
+            });
+
+            expect(store.loadingVersionInode()).toBe('compare-loading-inode');
+
+            response$.next({ ...mockContentlet, inode: 'compare-loading-inode' });
+            response$.complete();
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+        }));
+
+        it('should clear the loading inode when the fetch fails', fakeAsync(() => {
+            dotContentletService.getContentletByInode.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.loadVersionContent('loading-inode');
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+        }));
+
+        it('should keep the current compare state when updating the comparison fails', fakeAsync(() => {
+            const currentCompare = { ...mockContentlet, inode: 'current-compare-inode' };
+            patchState(store, {
+                compareContentlet: currentCompare,
+                uiState: { ...store.uiState(), view: 'compare' }
+            });
+
+            dotContentletService.getContentletByInode.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.handleHistoryAction({
+                type: DotHistoryTimelineItemActionType.COMPARE,
+                item: { ...mockContentletVersion, inode: 'failing-inode' }
+            });
+            tick();
+
+            expect(store.loadingVersionInode()).toBeNull();
+            expect(store.compareContentlet()).toEqual(currentCompare);
+            expect(store.uiState().view).toBe('compare');
+        }));
+    });
+
+    describe('compareData', () => {
+        const compareContent = { ...mockContentlet, inode: 'compare-inode', title: 'Compare' };
+
+        beforeEach(() => {
+            patchState(store, { compareContentlet: compareContent });
+        });
+
+        it('should build the language key from languageCode and countryCode for a non-default locale', () => {
+            patchState(store, {
+                currentLocale: createFakeLanguage({
+                    id: 2,
+                    language: 'Spanish',
+                    languageCode: 'es',
+                    countryCode: 'ES'
+                })
+            });
+
+            expect(store.compareData()).toEqual({
+                inode: 'compare-inode',
+                identifier: mockContentlet.identifier,
+                language: 'es-es'
+            });
+        });
+
+        it('should use only the languageCode when the locale has no country code', () => {
+            patchState(store, {
+                currentLocale: createFakeLanguage({
+                    id: 3,
+                    language: 'Italian',
+                    languageCode: 'it',
+                    countryCode: ''
+                })
+            });
+
+            expect(store.compareData().language).toBe('it');
+        });
+
+        it('should normalize a mixed-case isoCode to lowercase when present', () => {
+            patchState(store, {
+                currentLocale: createFakeLanguage({
+                    id: 2,
+                    language: 'Spanish',
+                    languageCode: 'es',
+                    countryCode: 'ES',
+                    isoCode: 'ES-es'
+                })
+            });
+
+            expect(store.compareData().language).toBe('es-es');
+        });
+
+        it('should fall back to the default locale key when there is no current locale', () => {
+            patchState(store, { currentLocale: null });
+
+            expect(store.compareData().language).toBe(DEFAULT_LOCALE_ISO_KEY);
+        });
+
+        it('should keep resolving en-us for the default en-US locale (regression)', () => {
+            patchState(store, {
+                currentLocale: createFakeLanguage({
+                    id: 1,
+                    language: 'English',
+                    languageCode: 'en',
+                    countryCode: 'US'
+                })
+            });
+
+            expect(store.compareData().language).toBe('en-us');
+        });
     });
 });

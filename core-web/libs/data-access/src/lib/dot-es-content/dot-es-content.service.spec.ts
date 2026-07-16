@@ -1,8 +1,6 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotESContentService, ESOrderDirection } from './dot-es-content.service';
 
@@ -20,11 +18,7 @@ describe('DotESContentService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotESContentService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotESContentService]
         });
         injector = getTestBed();
         dotESContentService = injector.inject(DotESContentService);
@@ -38,9 +32,12 @@ describe('DotESContentService', () => {
 
         const req = httpMock.expectOne('/api/content/_search');
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(
-            '{"query":"+contentType: blog   ","sort":"modDate DESC","limit":40,"offset":"0"}'
-        );
+        expect(req.request.body).toEqual({
+            query: '+contentType: blog   ',
+            sort: 'modDate DESC',
+            limit: 40,
+            offset: '0'
+        });
         req.flush({ entity: responseData });
     });
 
@@ -61,9 +58,12 @@ describe('DotESContentService', () => {
 
         const req = httpMock.expectOne('/api/content/_search');
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(
-            '{"query":"+contentType: blog   +languageId : 2   +title : test*  ","sort":"name ASC","limit":5,"offset":"10"}'
-        );
+        expect(req.request.body).toEqual({
+            query: '+contentType: blog   +languageId : 2   +title : test*  ',
+            sort: 'name ASC',
+            limit: 5,
+            offset: '10'
+        });
         req.flush({ entity: responseData });
     });
 
@@ -79,14 +79,12 @@ describe('DotESContentService', () => {
 
         const req = httpMock.expectOne('/api/content/_search');
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(
-            JSON.stringify({
-                query: "+contentType: blog   +title : 'test one'*  ",
-                sort: 'modDate DESC',
-                limit: 40,
-                offset: '0'
-            })
-        );
+        expect(req.request.body).toEqual({
+            query: "+contentType: blog   +title : 'test one'*  ",
+            sort: 'modDate DESC',
+            limit: 40,
+            offset: '0'
+        });
         req.flush({ entity: responseData });
     });
 

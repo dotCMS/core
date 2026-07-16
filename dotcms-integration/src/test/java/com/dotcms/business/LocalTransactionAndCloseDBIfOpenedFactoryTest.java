@@ -2,6 +2,7 @@ package com.dotcms.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.bytebuddy.ExternalTransactionAdvice;
+import com.dotcms.business.interceptor.ExternalTransactionHandler;
 import com.dotcms.test.ExternalTransactionalTester;
 import com.dotcms.test.ReadOnlyTester;
 import com.dotcms.test.TransactionalTester;
@@ -374,18 +375,15 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
     // have to test in this way b/c the ExternalTransaction annotation does not work on
     private void testExternalTransactionAnnotation (final String originalConn) throws Throwable {
 
-        final ExternalTransactionAdvice externalTransactionAdvice = new ExternalTransactionAdvice();
-        ExternalTransactionAdvice.TransactionInfo transactionInfo = null;
+        ExternalTransactionHandler.ExternalTransactionState state = null;
 
         try {
-
-            transactionInfo = externalTransactionAdvice.enter("testExternalTransactionAnnotation");
+            state = ExternalTransactionAdvice.enter("testExternalTransactionAnnotation");
             String newConn = DbConnectionFactory.getConnection().toString();
 
             Assert.assertNotEquals("The outside conn should be diff to the inside conn on external transaction", originalConn, newConn);
         } finally {
-
-            externalTransactionAdvice.exit(transactionInfo,  null);
+            ExternalTransactionAdvice.exit(state, null);
         }
 
     }

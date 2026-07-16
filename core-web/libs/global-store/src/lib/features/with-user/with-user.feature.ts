@@ -3,11 +3,13 @@ import { patchState, signalStoreFeature, withHooks, withMethods, withState } fro
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
-import { inject } from '@angular/core';
+import { DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { switchMap } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators';
 
 import { DotCurrentUserService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotCurrentUser } from '@dotcms/dotcms-models';
 
 /**
@@ -75,14 +77,42 @@ export function withUser() {
                 )
             )
         })),
-        withHooks({
+        withHooks((store) => ({
             /**
-             * Automatically loads the current user when the feature is initialized.
+             * Reactively (re)loads the current user from the authentication state.
+             *
+             * Why not a one-shot load here:
+             * The GlobalStore is instantiated at app bootstrap (`provideAppInitializer`),
+             * before the session cookie is valid (e.g. while on the login page). A one-shot
+             * load in `onInit` would therefore fire pre-auth, fail, and never retry — and
+             * because login navigates via the SPA router (no full page reload), the user
+             * would stay `null` until a manual refresh.
+             *
+             * Instead we react to `loginService.auth$`: `startWith(loginService.auth)` seeds
+             * the stream with the current auth (already-established session, e.g. lazy store
+             * init after login), then `auth$` delivers future logins. On a hard refresh the
+             * emission comes once the AuthGuard resolves auth via `loadAuth()` → `setAuth()`
+             * (the store subscribes at bootstrap, before the guard runs); on login it comes
+             * from `setAuth()`. We key on `user.userId` and `distinctUntilChanged()` so
+             * re-emissions that don't change the user (e.g. login-as, which only sets
+             * `loginAsUser`) don't trigger a redundant reload.
              */
-            onInit(store) {
-                // Auto-load current user on feature initialization
-                store.loadLoggedUser();
+            onInit() {
+                const loginService = inject(LoginService);
+                const destroyRef = inject(DestroyRef);
+                loginService.auth$
+                    .pipe(
+                        startWith(loginService.auth),
+                        map((auth) => auth?.user?.userId ?? null),
+                        filter((userId): userId is string => !!userId),
+                        distinctUntilChanged(),
+                        // Tie the subscription to the store's lifecycle so it is torn down if
+                        // the store is ever destroyed (e.g. if this feature is reused in a
+                        // non-root, scoped store). Harmless for the current root singleton.
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe(() => store.loadLoggedUser());
             }
-        })
+        }))
     );
 }

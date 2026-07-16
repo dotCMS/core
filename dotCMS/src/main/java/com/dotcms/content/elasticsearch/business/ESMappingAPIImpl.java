@@ -1,27 +1,18 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
-import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.COMMA;
-import static com.liferay.util.StringPool.PERIOD;
-
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexMappingRestOperations;
+import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.PhaseRouter;
+import com.dotcms.content.index.opensearch.MappingOperationsOS;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
+import com.dotcms.content.model.annotation.IndexRouter;
+import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.KeyValueField;
@@ -46,6 +37,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -73,6 +65,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -81,6 +74,9 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -90,10 +86,11 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -102,18 +99,20 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.indices.GetFieldMappingsRequest;
-import org.elasticsearch.client.indices.GetFieldMappingsResponse;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
+
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
+import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.PERIOD;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -121,9 +120,11 @@ import org.elasticsearch.common.xcontent.XContentType;
  * @author root
  * @since Mar 22nd, 2012
  */
+@IndexRouter(access = {IndexAccess.READ, IndexAccess.WRITE})
+@IndexLibraryIndependent
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
-    //This property basically tells the Metadata-API whether or not we should generate metadata upon reindexing a piece of content
+    //This property basically tells the Metadata-API whether we should generate metadata upon reindexing a piece of content
 	public static final String WRITE_METADATA_ON_REINDEX = "write.metadata.on.reindex";
 
 	//If you want to skip indexing metadata dotraw fields set this prop to false
@@ -147,7 +148,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	};
 
 	// if you want to limit the size of the field `metadata.content`
-	// it can be accomplished by setting this property to the number of chars desired
+	// it can be achieved by setting this property to the number of chars desired
 	// by default it'll attempt to include the whole thing returned by the FileMetadataAPI
 	public static final String INDEX_METADATA_CONTENT_LENGTH = "index.metadata.content.length";
 
@@ -155,26 +156,39 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final String DOTRAW = "_dotraw";
 	public static final String NO_METADATA = "NO_METADATA";
 
-	static ObjectMapper mapper = null;
+	private static final ObjectMapper mapper = createMapper();
 
-	private UserAPI userAPI;
-	private FolderAPI folderAPI;
-    private IdentifierAPI identifierAPI;
-	private VersionableAPI versionableAPI;
-	private PermissionAPI permissionAPI;
-	private ContentletAPI contentletAPI;
-	private FileMetadataAPI fileMetadataAPI;
-	private HostAPI hostAPI;
-	private FieldAPI fieldAPI;
-	private IndexAPI esIndexAPI;
-	private RelationshipAPI relationshipAPI;
-	private TagAPI tagAPI;
-	private CategoryAPI categoryAPI;
-	private RoleAPI roleAPI;
+	private static ObjectMapper createMapper() {
+		final ObjectMapper m = new ObjectMapper();
+		m.setDateFormat(new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+		return m;
+	}
+
+	private final UserAPI userAPI;
+	private final FolderAPI folderAPI;
+    private final IdentifierAPI identifierAPI;
+	private final VersionableAPI versionableAPI;
+	private final PermissionAPI permissionAPI;
+	private final ContentletAPI contentletAPI;
+	private final FileMetadataAPI fileMetadataAPI;
+	private final HostAPI hostAPI;
+	private final FieldAPI fieldAPI;
+	private final RelationshipAPI relationshipAPI;
+	private final TagAPI tagAPI;
+	private final CategoryAPI categoryAPI;
+	private final RoleAPI roleAPI;
 	//These two are set as suppliers cuz their instantiation during initialization require of a company to exist.
     //By doing this they will get instantiated once the company users roles haven been settled. After the starter is loaded.
-	private Supplier<ContentTypeAPI> contentTypeAPI;
-	private Supplier<WorkflowAPI> workflowAPI;
+	private final Supplier<ContentTypeAPI> contentTypeAPI;
+	private final Supplier<WorkflowAPI> workflowAPI;
+
+    // ---- Vendor-specific REST delegates ----
+    /** ES implementation — receives writes in phases 0, 1, 2; reads in phases 0, 1. */
+    private final IndexMappingRestOperations esOps;
+    /** OS implementation — receives writes in phases 1, 2, 3; reads in phases 2, 3. */
+    private final IndexMappingRestOperations osOps;
+    /** Routes all REST mapping operations to the correct provider(s) based on migration phase. */
+    private final PhaseRouter<IndexMappingRestOperations> router;
 
 	@VisibleForTesting
 	public ESMappingAPIImpl(
@@ -187,13 +201,37 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final FileMetadataAPI fileMetadataAPI,
 			final HostAPI hostAPI,
 			final FieldAPI fieldAPI,
-			final IndexAPI esIndexAPI,
 			final RelationshipAPI relationshipAPI,
 			final TagAPI tagAPI,
 			final CategoryAPI categoryAPI,
 			final RoleAPI roleAPI,
 			final Supplier<ContentTypeAPI> contentTypeAPI,
 			final Supplier<WorkflowAPI> workflowAPI) {
+		this(userAPI, folderAPI, identifierAPI, versionableAPI, permissionAPI, contentletAPI,
+				fileMetadataAPI, hostAPI, fieldAPI, relationshipAPI, tagAPI, categoryAPI, roleAPI,
+				contentTypeAPI, workflowAPI,
+				new MappingOperationsES(),
+				CDIUtils.getBeanThrows(MappingOperationsOS.class));
+	}
+
+	private ESMappingAPIImpl(
+			final UserAPI userAPI,
+			final FolderAPI folderAPI,
+			final IdentifierAPI identifierAPI,
+			final VersionableAPI versionableAPI,
+			final PermissionAPI permissionAPI,
+			final ContentletAPI contentletAPI,
+			final FileMetadataAPI fileMetadataAPI,
+			final HostAPI hostAPI,
+			final FieldAPI fieldAPI,
+			final RelationshipAPI relationshipAPI,
+			final TagAPI tagAPI,
+			final CategoryAPI categoryAPI,
+			final RoleAPI roleAPI,
+			final Supplier<ContentTypeAPI> contentTypeAPI,
+			final Supplier<WorkflowAPI> workflowAPI,
+			final IndexMappingRestOperations esOps,
+			final IndexMappingRestOperations osOps) {
 		this.userAPI = userAPI;
 		this.folderAPI = folderAPI;
 		this.identifierAPI = identifierAPI;
@@ -203,23 +241,48 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		this.fileMetadataAPI = fileMetadataAPI;
 		this.hostAPI = hostAPI;
 		this.fieldAPI = fieldAPI;
-		this.esIndexAPI = esIndexAPI;
 		this.relationshipAPI = relationshipAPI;
 		this.tagAPI = tagAPI;
 		this.categoryAPI = categoryAPI;
 		this.roleAPI = roleAPI;
 		this.contentTypeAPI = contentTypeAPI;
 		this.workflowAPI = workflowAPI;
+		this.esOps = esOps;
+		this.osOps = osOps;
+		this.router = new PhaseRouter<>(esOps, osOps);
+	}
 
-		if (mapper == null) {
-			synchronized (this.getClass().getName()) {
-				if (mapper == null) {
-					mapper = new ObjectMapper();
-					ThreadSafeSimpleDateFormat df = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-					mapper.setDateFormat(df);
-				}
-			}
-		}
+	/**
+	 * Creates an {@link ESMappingAPIImpl} that always routes REST mapping operations
+	 * ({@code putMapping}, {@code getMapping}, {@code getFieldMappingAsMap}) through the provided
+	 * {@code osOps} delegate, regardless of the current migration phase.
+	 *
+	 * <p>Intended exclusively for integration tests that target a live OpenSearch container.
+	 * All other dependencies are resolved from {@link APILocator}.</p>
+	 *
+	 * @param osOps the OpenSearch {@link IndexMappingRestOperations} to use for both delegates
+	 * @return a fully-wired {@link ESMappingAPIImpl} forced to route to OpenSearch
+	 */
+	@VisibleForTesting
+	public static ESMappingAPIImpl usingOS(final IndexMappingRestOperations osOps) {
+		return new ESMappingAPIImpl(
+				APILocator.getUserAPI(),
+				APILocator.getFolderAPI(),
+				APILocator.getIdentifierAPI(),
+				APILocator.getVersionableAPI(),
+				APILocator.getPermissionAPI(),
+				APILocator.getContentletAPI(),
+				APILocator.getFileMetadataAPI(),
+				APILocator.getHostAPI(),
+				APILocator.getFieldAPI(),
+				APILocator.getRelationshipAPI(),
+				APILocator.getTagAPI(),
+				APILocator.getCategoryAPI(),
+				APILocator.getRoleAPI(),
+				Lazy.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())),
+				Lazy.of(APILocator::getWorkflowAPI),
+				osOps,
+				osOps);
 	}
 
 	public ESMappingAPIImpl() {
@@ -227,81 +290,147 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			APILocator.getIdentifierAPI(), APILocator.getVersionableAPI(),
 			APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
 			APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
-			APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+			APILocator.getFieldAPI(),
 			APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
 			APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
 			//Use memoized Suppliers to avoid re-instantiating the API on every call
 			Lazy.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())),
-			Lazy.of(APILocator::getWorkflowAPI));
+			Lazy.of(APILocator::getWorkflowAPI)
+        );
 	}
 
     /**
-     * This method takes a mapping string and puts it in a collection of
-     * indexes
-     * @param indexes
-     * @param mapping
-     * @return
-     * @throws ElasticsearchException
-     * @throws IOException
+     * Accessor for the ES mapping operations — exposed for testing.
+     * @return ES mapping operations delegate
      */
-    public boolean putMapping(final List<String> indexes, final String mapping)
-            throws ElasticsearchException, IOException {
-
-        final PutMappingRequest request = new PutMappingRequest(
-                indexes.stream().map(indexName -> esIndexAPI
-                        .getNameWithClusterIDPrefix(indexName)).toArray(String[]::new));
-        request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        request.source(mapping, XContentType.JSON);
-
-        final AcknowledgedResponse putMappingResponse = RestHighLevelClientProvider.getInstance()
-                .getClient().indices()
-                .putMapping(request, RequestOptions.DEFAULT);
-
-        return putMappingResponse.isAcknowledged();
+    public IndexMappingRestOperations esOps() {
+        return esOps;
     }
 
     /**
-     * This method takes a mapping string and puts it in the specified index
-     * @param indexName
-     * @param mapping
-     * @return
-     * @throws ElasticsearchException
-     * @throws IOException
+     * Accessor for the OS mapping operations — exposed for testing.
+     * @return OS mapping operations delegate
      */
-    public boolean putMapping(final String indexName, final String mapping)
-            throws ElasticsearchException, IOException {
+    public IndexMappingRestOperations osOps() {
+        return osOps;
+    }
 
+    // -------------------------------------------------------------------------
+    // REST mapping operations — phase-aware via PhaseRouter<IndexMappingRestOperations>
+    //
+    // putMapping is a WRITE: fans out to all write providers in dual-write phases
+    //   (both ES and OS must receive the mapping for schema consistency).
+    //   Returns AND of all results — all providers must succeed.
+    //   Note: PhaseRouter has no writeBooleanChecked, so fan-out is manual here.
+    //
+    // putMapping(List, String, IndexTag) — targeted (tag-dispatch) overload.
+    //   Routes to the single provider identified by the IndexTag parameter. Used when
+    //   index names differ between ES and OS (migration catchup scenario) and the caller
+    //   already knows which backend owns the index.
+    //
+    // getMapping / getFieldMappingAsMap are READs: routed to the single read provider
+    // via router.readChecked().
+    // -------------------------------------------------------------------------
+    /**
+     * Phase-dispatch overload: fans out the mapping to all write providers active in the current
+     * migration phase (ES only in Phase 0, both ES and OS in Phases 1–2, OS only in Phase 3).
+     *
+     * <p>Returns the logical AND of all provider results — {@code true} only when every active
+     * provider acknowledges the mapping. Use {@link #putMapping(List, String, IndexTag)} when the
+     * caller already knows which backend owns the index (e.g. migration catchup with divergent
+     * index names).</p>
+     *
+     * @param indexes plain (untagged) index names
+     * @param mapping mapping JSON payload
+     * @return {@code true} if all active providers acknowledged the mapping
+     */
+    @Override
+    public boolean putMapping(final List<String> indexes, final String mapping) throws IOException {
+        // Manual fan-out: AND of all write-provider results.
+        boolean result = true;
+        for (final String index : indexes) {
+            // Phase-dispatch: fan-out to all write providers for the current phase.
+            for (final IndexMappingRestOperations ops : router.writeProviders()) {
+                result &= ops.putMapping(CollectionsUtils.list(index), mapping);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Targeted overload: applies the mapping to the provider identified by {@code tag} only,
+     * regardless of the current migration phase.
+     *
+     * <p>Use this when the caller already knows which backend owns the index (e.g. during a
+     * catchup mapping operation for a single provider). For the normal phase-dispatch path use
+     * {@link #putMapping(List, String)}.</p>
+     *
+     * @param indexes plain (untagged) index names
+     * @param mapping mapping JSON payload
+     * @param tag     the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     */
+    public boolean putMapping(final List<String> indexes, final String mapping, final IndexTag tag)
+            throws IOException {
+        final IndexMappingRestOperations ops =
+                tag == IndexTag.OS ? router.osImpl() : router.esImpl();
+        boolean result = true;
+        for (final String index : indexes) {
+            result &= ops.putMapping(CollectionsUtils.list(index), mapping);
+        }
+        return result;
+    }
+
+    /**
+     * Convenience overload: applies the mapping to a single index via the phase-dispatch path.
+     * Delegates to {@link #putMapping(List, String)}.
+     *
+     * @param indexName plain (untagged) index name
+     * @param mapping   mapping JSON payload
+     * @return {@code true} if all active providers acknowledged the mapping
+     */
+    @Override
+    public boolean putMapping(final String indexName, final String mapping) throws IOException {
         return putMapping(CollectionsUtils.list(indexName), mapping);
     }
 
+    /**
+     * Returns the full mapping JSON for the given index, read from the provider that is currently
+     * active for reads according to the migration phase (ES in Phases 0–1, OS in Phases 2–3).
+     *
+     * @param index physical or logical index name
+     * @return mapping JSON string as returned by the active read provider
+     */
+    @Override
+    public String getMapping(final String index) throws IOException {
+        try {
+            return router.readChecked(impl -> impl.getMapping(index));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
+        }
+    }
 
-	/**
-	 * Gets the mapping params for an index and type
-	 * @param index
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	public  String getMapping(final String index) throws ElasticsearchException, IOException{
-
-		final GetMappingsRequest request = new GetMappingsRequest();
-		request.indices(index);
-
-		final GetMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
-				.indices().getMapping(request, RequestOptions.DEFAULT);
-
-		return getMappingResponse.mappings().get(index).source().string();
-	}
-
-	public Map<String, Object> getFieldMappingAsMap(final String index, final String fieldName) throws IOException {
-	    final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
-	    request.indices(index).fields(fieldName);
-        final GetFieldMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
-                .indices().getFieldMapping(request, RequestOptions.DEFAULT);
-
-        return getMappingResponse.mappings().get(index).get(fieldName) != null ? getMappingResponse
-                .mappings().get(index).get(fieldName).sourceAsMap() : Collections
-                .emptyMap();
+    /**
+     * Returns the field-level mapping for {@code fieldName} in the given index, read from the
+     * provider that is currently active for reads according to the migration phase.
+     *
+     * <p>Returns an empty map when the field is not present in the index mapping.</p>
+     *
+     * @param index     physical or logical index name
+     * @param fieldName the field whose mapping is requested
+     * @return field mapping as a {@code Map<String, Object>}, or an empty map if not found
+     */
+    @Override
+    public Map<String, Object> getFieldMappingAsMap(final String index,
+            final String fieldName) throws IOException {
+        try {
+            return router.readChecked(impl -> impl.getFieldMappingAsMap(index, fieldName));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
+        }
     }
 
 	@SuppressWarnings("unchecked")
@@ -1108,72 +1237,86 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return mapper.writeValueAsString(map);
 	}
 
+	/**
+	 * Returns the identifiers of the contentlets whose search index documents became stale
+	 * because of changes to the given contentlet's relationships — i.e., the contents that must
+	 * be re-indexed along with it.
+	 *
+	 * <p>The method compares the relationships referencing this contentlet in the search index
+	 * (the state previous to the current save) against the rows in the {@code tree} table (the
+	 * just-saved state). The symmetric difference of both sets — relationships that were removed
+	 * plus relationships that were added — is the complete set of stale documents: only PARENT
+	 * documents store relationship references (see
+	 * {@link #loadRelationshipFields(Contentlet, Map, StringWriter)}), so contents whose
+	 * relationship to this contentlet did not change never need re-indexing.</p>
+	 *
+	 * @param contentlet The {@link Contentlet} being re-indexed
+	 * @return Identifiers of the related contents that must be re-indexed along with it
+	 */
 	@CloseDBIfOpened
 	public List<String> dependenciesLeftToReindex(final Contentlet contentlet) throws DotStateException, DotDataException, DotSecurityException {
 		final List<String> dependenciesToReindex = new ArrayList<>();
-
-
 		final String relatedSQL = "select tree.* from tree where child = ? order by tree_order";
 		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
 		db.addParam(contentlet.getIdentifier());
 
 		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
-
-		if(relatedContentlets.size()>0) {
+		if (!relatedContentlets.isEmpty()) {
 
 			final List<Relationship> relationships = relationshipAPI
 					.byContentType(contentlet.getContentType());
 
-			for(final Relationship relationship : relationships) {
+			for (final Relationship relationship : relationships) {
+				// Both sides are collected into Sets of identifiers: the index holds one
+				// document per language/variant of the same identifier, and only deduped
+				// collections make the disjunction below a true symmetric difference
+				final Collection<String> oldRelatedIds = new LinkedHashSet<>();
+				final Collection<String> newRelatedIds = new LinkedHashSet<>();
 
-				final List<Contentlet> oldDocs;
-				final List<String> oldRelatedIds = new ArrayList<>();
-				final List<String> newRelatedIds = new ArrayList<>();
-
-                oldDocs = contentletAPI.getRelatedContent(contentlet, relationship,
-                        userAPI.getSystemUser(), false);
-
-                if(oldDocs.size() > 0) {
-					for(Contentlet oldDoc : oldDocs) {
-						oldRelatedIds.add(oldDoc.getIdentifier());
-					}
+				final String relatedQuery = "+" + relationship.getRelationTypeValue()
+						+ ":" + contentlet.getIdentifier();
+				List<ContentletSearch> oldSearchResults = contentletAPI.searchIndex(
+						relatedQuery, ESContentletAPIImpl.MAX_LIMIT, 0, null,
+						userAPI.getSystemUser(), false);
+				if (oldSearchResults instanceof PaginatedArrayList
+						&& ((PaginatedArrayList<?>) oldSearchResults).getTotalResults()
+								> oldSearchResults.size()) {
+					// More documents reference this contentlet than a single search page can
+					// return; a limit above MAX_LIMIT makes searchIndex switch to a scroll
+					// search that returns them all
+					Logger.warn(this, () -> "More than " + ESContentletAPIImpl.MAX_LIMIT
+							+ " index documents reference '" + contentlet.getIdentifier()
+							+ "' through '" + relationship.getRelationTypeValue()
+							+ "'. Falling back to a scroll search");
+					oldSearchResults = contentletAPI.searchIndex(relatedQuery,
+							ESContentletAPIImpl.MAX_LIMIT + 1, 0, null,
+							userAPI.getSystemUser(), false);
+				}
+				for (final ContentletSearch result : oldSearchResults) {
+					oldRelatedIds.add(result.getIdentifier());
 				}
 
-				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
-						.equals(relationship.getRelationTypeValue())).forEach(
-						entry -> replaceExistingRelatedContent(entry, contentlet,
-								oldRelatedIds, newRelatedIds));
+				relatedContentlets.stream()
+						.filter(map -> map.get(ESMappingConstants.RELATION_TYPE).equals(relationship.getRelationTypeValue()))
+						.forEach(entry -> {
+							final String childId = entry.get(ESMappingConstants.CHILD);
+							final String parentId = entry.get(ESMappingConstants.PARENT);
+							newRelatedIds.add(contentlet.getIdentifier().equalsIgnoreCase(childId)
+									? parentId
+									: childId);
+						});
 
-				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
-				//re-indexation and the list of new dependencies no re-indexed yet
+				// The symmetric difference of both Sets is the actual dependency delta: the
+				// contents that lost the relationship (their index document still references
+				// this contentlet) plus the ones that just gained it (not indexed yet).
+				// Contents whose relationship did NOT change are excluded — re-indexing them
+				// on every save is what made saves with heavily related content so expensive
 				dependenciesToReindex.addAll(
 						CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
 			}
 		}
 		return dependenciesToReindex;
-	}
-
-	/**
-	 *
-	 * @param relatedEntry
-	 * @param con
-	 * @param oldRelatedIds
-	 * @param newRelatedIds
-	 */
-	private void replaceExistingRelatedContent(final Map<String, String> relatedEntry,
-			final Contentlet con, final List<String> oldRelatedIds,
-			final List<String> newRelatedIds) {
-
-		final String childId = relatedEntry.get(ESMappingConstants.CHILD);
-		final String parentId = relatedEntry.get(ESMappingConstants.PARENT);
-		if (con.getIdentifier().equalsIgnoreCase(childId)) {
-			newRelatedIds.add(parentId);
-			oldRelatedIds.remove(parentId);
-		} else {
-			newRelatedIds.add(childId);
-			oldRelatedIds.remove(childId);
-		}
 	}
 
     /**

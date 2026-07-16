@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 name: Claude AI Rollback Safety Check + Doc Object Generation
 
 on:
   pull_request:
     types: [opened, synchronize, closed]
+=======
+name: Claude AI Rollback Safety Check
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+>>>>>>> refs/remotes/upstream-core/main
 
 jobs:
   # Security gate: Check if user is dotCMS organization member
@@ -16,7 +24,13 @@ jobs:
   security-check:
     runs-on: ubuntu-latest
     permissions:
+<<<<<<< HEAD
       contents: read
+=======
+      contents: read           # Allow repository checkout
+      # Note: Organization membership checking uses fine-grained token
+      # so no additional GITHUB_TOKEN permissions needed for that API
+>>>>>>> refs/remotes/upstream-core/main
     outputs:
       authorized: ${{ steps.membership-check.outputs.is_member }}
     steps:
@@ -47,12 +61,18 @@ jobs:
   # Preflight: clear stale AI rollback labels so each push is re-evaluated from scratch,
   # and skip the whole AI evaluation when the PR author has already classified the change
   # via a "Human: ..." label (skip cascades to claude-rollback-safety-check via needs/success()).
+<<<<<<< HEAD
   # Only runs pre-merge (opened/synchronize) — not on PR close.
+=======
+>>>>>>> refs/remotes/upstream-core/main
   preflight-clear-stale-labels:
     name: Clear stale AI rollback labels
     needs: security-check
     if: |
+<<<<<<< HEAD
       github.event.action != 'closed' &&
+=======
+>>>>>>> refs/remotes/upstream-core/main
       needs.security-check.outputs.authorized == 'true' &&
       !contains(github.event.pull_request.labels.*.name, 'Human: Safe To Rollback') &&
       !contains(github.event.pull_request.labels.*.name, 'Human: Not Safe To Rollback')
@@ -73,6 +93,7 @@ jobs:
             gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$label" || true
           done
 
+<<<<<<< HEAD
   # Combined analysis — runs on every PR push (pre-merge only).
   # Single diff comprehension pass produces two outputs:
   #   1. Doc-object draft  →  posted as a collapsible PR comment (extracted post-merge)
@@ -87,11 +108,22 @@ jobs:
     if: |
       github.event.action != 'closed' &&
       needs.security-check.outputs.authorized == 'true'
+=======
+  # Rollback safety analysis — runs on every PR push
+  claude-rollback-safety-check:
+    needs: [security-check, preflight-clear-stale-labels]
+    # Cancel in-progress check when a new push arrives — always analyze latest state
+    concurrency:
+      group: claude-rollback-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    if: needs.security-check.outputs.authorized == 'true'
+>>>>>>> refs/remotes/upstream-core/main
     permissions:
       contents: write
       id-token: write
       pull-requests: write
       issues: write
+<<<<<<< HEAD
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.1.0
     with:
       trigger_mode: automatic
@@ -176,6 +208,29 @@ jobs:
 
         STEP 9a — If the changes match one or more unsafe categories, post this comment:
           gh pr comment ${{ github.event.pull_request.number }} --body "..."
+=======
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
+    with:
+      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      trigger_mode: automatic
+      prompt: |
+        You are a dotCMS rollback-safety analyst. Determine whether the changes in this PR are safe to roll back to the previous release.
+
+        STEP 1 — Read the rollback-unsafe categories reference:
+          cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md
+
+        STEP 2 — Get the full PR diff:
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+        STEP 3 — Analyze the diff against EVERY category in the reference document.
+          Focus on: database migrations (runonce tasks), Elasticsearch mapping changes,
+          data model changes, API contract changes, and any structural storage changes.
+          Ignore pure UI, test-only, or documentation changes unless they touch an unsafe category.
+
+        STEP 4a — If the changes match one or more unsafe categories, post this comment on the PR
+        using: gh pr comment ${{ github.event.pull_request.number }} --body "..."
+>>>>>>> refs/remotes/upstream-core/main
 
           Format:
           Pull Request Unsafe to Rollback!!!
@@ -187,6 +242,7 @@ jobs:
 
           If multiple categories match, repeat the block for each one.
 
+<<<<<<< HEAD
           Then add the label:
           gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Not Safe To Rollback"
 
@@ -309,3 +365,16 @@ jobs:
           git notes --ref=refs/notes/doc-objects add -F /tmp/doc-object.md "$MERGE_SHA"
           git push origin refs/notes/doc-objects
           echo "✅ Doc object attached to $MERGE_SHA and pushed to refs/notes/doc-objects"
+=======
+          Then add the label: gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Not Safe To Rollback"
+
+        STEP 4b — If the changes do NOT match any unsafe category:
+          Only add the label: gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Safe To Rollback"
+          No comment needed.
+
+        Be specific: quote actual file names and code lines, not generic descriptions.
+      claude_args: '--allowedTools "Bash(git diff*),Bash(git log*),Bash(cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: false
+>>>>>>> refs/remotes/upstream-core/main

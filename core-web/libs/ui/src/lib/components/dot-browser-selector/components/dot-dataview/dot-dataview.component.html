@@ -10,9 +10,9 @@
     [rows]="rowsPerPage"
     selectionMode="single"
     dataKey="identifier"
-    [(selection)]="$selectedProduct"
-    (onRowSelect)="onRowSelect.emit($event.data)"
+    [(selection)]="$selectedContent"
     [globalFilterFields]="['title', 'modUserName']"
+    (onRowSelect)="onRowSelect.emit($event.data)"
     styleClass="flex flex-col h-full justify-between">
     <ng-template pTemplate="emptymessage">
         <tr>
@@ -26,7 +26,7 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="caption">
-        <div class="flex">
+        <div class="flex w-full justify-between">
             <p-iconField iconPosition="left">
                 <p-inputIcon styleClass="pi pi-search" />
                 <input
@@ -36,7 +36,29 @@
                     [placeholder]="'dot.file.field.dialog.select.existing.file.table.search' | dm"
                     (input)="datatable.filterGlobal(searchInput.value, 'contains')" />
             </p-iconField>
+
+            <input
+                #fileInput
+                data-testid="file-input"
+                type="file"
+                [attr.accept]="$accept()"
+                class="hidden"
+                (change)="onFileSelected($event)" />
+            <p-button
+                data-testid="upload-btn"
+                [rounded]="true"
+                variant="outlined"
+                [disabled]="$uploadDisabled()"
+                [label]="'dot.file.field.dialog.select.existing.file.actions.upload' | dm"
+                (click)="fileInput.click()" />
         </div>
+        @if (errorMessage && data.length > 0) {
+            <p-message
+                data-testid="upload-error-message"
+                severity="error"
+                styleClass="w-full mt-2"
+                [text]="errorMessage | dm" />
+        }
     </ng-template>
     <ng-template pTemplate="header">
         <tr class="file-selector__table_header">
@@ -56,10 +78,9 @@
         <tr class="h-12" [pSelectableRow]="content">
             <td class="max-w-8">
                 <div class="dataview-thumbnail">
-                    <dot-contentlet-thumbnail
-                        [iconSize]="'48px'"
+                    <dot-content-thumbnail
                         [contentlet]="content"
-                        [playableVideo]="false"
+                        iconSize="48px"
                         data-testId="contentlet-thumbnail" />
                 </div>
             </td>

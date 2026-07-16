@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
 import {
     FormArray,
@@ -51,7 +51,6 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         InplaceModule,
         SharedModule,
@@ -66,7 +65,8 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
         DotApiLinkComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
-        ButtonModule
+        ButtonModule,
+        AsyncPipe
     ],
     providers: [DotContainerPropertiesStore, DotContainersService]
 })

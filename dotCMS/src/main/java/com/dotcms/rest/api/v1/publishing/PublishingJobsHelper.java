@@ -7,6 +7,7 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublishAuditUtil;
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -17,7 +18,9 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -31,6 +34,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -159,12 +163,46 @@ public class PublishingJobsHelper {
                 .bundleName(bundle != null ? bundle.getName() : null)
                 .status(auditStatus.getStatus())
                 .filterName(resolveFilterName(bundle))
+                .filterKey(bundle != null ? bundle.getFilterKey() : null)
                 .assetCount(auditStatus.getTotalNumberOfAssets())
                 .assetPreview(buildAssetPreviews(history))
                 .environmentCount(countEnvironments(history))
                 .createDate(toInstant(auditStatus.getCreateDate()))
                 .statusUpdated(toInstant(auditStatus.getStatusUpdated()))
                 .numTries(history != null ? history.getNumTries() : 0)
+                .build();
+    }
+
+    /**
+     * Transforms a synthesized "scheduled" bundle row (from
+     * {@link PublisherAPI#getScheduledBundleIds(int, int, String)}) into a PublishingJobView with
+     * {@link Status#SCHEDULED}. These bundles have no audit row yet, so the asset/environment counts
+     * and dates come from the queue/bundle tables rather than the audit history pojo — which is why
+     * they cannot flow through {@link #toPublishingJobView(PublishAuditStatus)}.
+     *
+     * @param row a scheduled bundle row map (see the DAO method for its keys)
+     * @return a PublishingJobView in SCHEDULED status
+     */
+    public PublishingJobView toScheduledJobView(final Map<String, Object> row) {
+        final String filterKey = Objects.toString(row.get("filter_key"), null);
+        final Instant scheduledDate = toInstant(DateUtil.asDate(row.get("publish_date")));
+        final Instant enteredDate = toInstant(DateUtil.asDate(row.get("entered_date")));
+
+        return PublishingJobView.builder()
+                .bundleId(Objects.toString(row.get("bundle_id"), null))
+                .bundleName(Objects.toString(row.get("bundle_name"), null))
+                .status(Status.SCHEDULED)
+                .filterName(resolveFilterNameByKey(filterKey))
+                .filterKey(filterKey)
+                .assetCount(NumberUtil.asInt(row.get("asset_count")))
+                // No audit history exists yet, so there is no per-asset preview to build.
+                .assetPreview(List.of())
+                .environmentCount(NumberUtil.asInt(row.get("environment_count")))
+                // createDate = when it entered the queue; the future run time goes in scheduledPublishDate.
+                .createDate(enteredDate != null ? enteredDate : scheduledDate)
+                .statusUpdated(null)
+                .numTries(0)
+                .scheduledPublishDate(scheduledDate)
                 .build();
     }
 
@@ -257,15 +295,23 @@ public class PublishingJobsHelper {
      * Resolves the human-readable filter name from a bundle's filter key.
      */
     private String resolveFilterName(final Bundle bundle) {
-        if (bundle == null || !UtilMethods.isSet(bundle.getFilterKey())) {
+        return bundle == null ? null : resolveFilterNameByKey(bundle.getFilterKey());
+    }
+
+    /**
+     * Resolves the human-readable filter name from a filter key, falling back to the key itself
+     * when no descriptor matches. Returns null for an unset key.
+     */
+    private String resolveFilterNameByKey(final String filterKey) {
+        if (!UtilMethods.isSet(filterKey)) {
             return null;
         }
         try {
-            final FilterDescriptor filter = publisherAPI.getFilterDescriptorByKey(bundle.getFilterKey());
-            return filter != null ? filter.getTitle() : bundle.getFilterKey();
+            final FilterDescriptor filter = publisherAPI.getFilterDescriptorByKey(filterKey);
+            return filter != null ? filter.getTitle() : filterKey;
         } catch (Exception e) {
-            Logger.debug(this, "Unable to resolve filter: " + bundle.getFilterKey(), e);
-            return bundle.getFilterKey();
+            Logger.debug(this, "Unable to resolve filter: " + filterKey, e);
+            return filterKey;
         }
     }
 
@@ -362,11 +408,119 @@ public class PublishingJobsHelper {
                 .bundleName(bundle != null ? bundle.getName() : null)
                 .status(auditStatus.getStatus())
                 .filterName(resolveFilterName(bundle))
+                .filterKey(bundle != null ? bundle.getFilterKey() : null)
                 .assetCount(auditStatus.getTotalNumberOfAssets())
                 .environments(buildEnvironmentDetails(history))
                 .timestamps(buildTimestamps(auditStatus, history))
                 .numTries(history != null ? history.getNumTries() : 0)
                 .build();
+    }
+
+    /**
+     * Builds a detail view for a SCHEDULED bundle — one that has been pushed with a future
+     * publish date but has no audit row yet. Returns {@code null} when {@code bundleId} is not a
+     * scheduled job (no bundle, or no pending queue rows with a publish date — e.g. a draft),
+     * so the caller can fall through to a 404.
+     *
+     * <p>Since nothing has been attempted yet, the configured target environments/endpoints are
+     * listed with a null per-endpoint status, and timestamps carry only the queue-entry time plus
+     * {@link AbstractPublishingJobDetailView#scheduledPublishDate()}.</p>
+     *
+     * @param bundleId the bundle identifier
+     * @return a SCHEDULED detail view, or null if the bundle is not a scheduled job
+     */
+    public PublishingJobDetailView toScheduledJobDetailView(final String bundleId) {
+        final Bundle bundle = getBundleSafely(bundleId);
+        if (bundle == null) {
+            return null;
+        }
+        // Mirror the list query's criterion: only queue rows with a publish_date count as scheduled
+        // (this excludes unpushed drafts, whose queue rows have a null publish_date).
+        final List<PublishQueueElement> scheduledElements = getQueueElementsSafely(bundleId).stream()
+                .filter(element -> element.getPublishDate() != null)
+                .collect(Collectors.toList());
+        if (scheduledElements.isEmpty()) {
+            return null;
+        }
+
+        final Instant scheduledDate = toInstant(scheduledElements.get(0).getPublishDate());
+        final Instant enteredDate = scheduledElements.stream()
+                .map(PublishQueueElement::getEnteredDate)
+                .filter(java.util.Objects::nonNull)
+                .min(Date::compareTo)
+                .map(Date::toInstant)
+                .orElse(scheduledDate);
+
+        return PublishingJobDetailView.builder()
+                .bundleId(bundleId)
+                .bundleName(bundle.getName())
+                .status(Status.SCHEDULED)
+                .filterName(resolveFilterName(bundle))
+                .filterKey(bundle.getFilterKey())
+                .assetCount(scheduledElements.size())
+                .environments(buildConfiguredEnvironmentDetails(bundleId))
+                .timestamps(TimestampsView.builder()
+                        .createDate(enteredDate)
+                        .build())
+                .numTries(0)
+                .scheduledPublishDate(scheduledDate)
+                .build();
+    }
+
+    /**
+     * Lists the bundle's configured target environments and their endpoints with a null per-endpoint
+     * status (nothing has been attempted yet for a scheduled bundle).
+     */
+    private List<EnvironmentDetailView> buildConfiguredEnvironmentDetails(final String bundleId) {
+        final List<EnvironmentDetailView> environments = new ArrayList<>();
+        try {
+            for (final Environment environment : environmentAPI.findEnvironmentsByBundleId(bundleId)) {
+                final List<EndpointDetailView> endpoints =
+                        publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId()).stream()
+                                .map(this::buildPendingEndpointDetailView)
+                                .collect(Collectors.toList());
+                environments.add(EnvironmentDetailView.builder()
+                        .id(environment.getId())
+                        .name(environment.getName() != null ? environment.getName() : environment.getId())
+                        .endpoints(endpoints)
+                        .build());
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "Unable to build environments for scheduled bundle: " + bundleId, e);
+        }
+        return environments;
+    }
+
+    /**
+     * Builds an endpoint detail view for a not-yet-attempted (scheduled) endpoint: connection
+     * metadata only, with a null status and no message/stack trace.
+     */
+    private EndpointDetailView buildPendingEndpointDetailView(final PublishingEndPoint endpoint) {
+        return EndpointDetailView.builder()
+                .id(endpoint.getId())
+                .serverName(endpoint.getServerName() != null ? endpoint.getServerName().toString() : endpoint.getId())
+                .address(endpoint.getAddress() != null ? endpoint.getAddress() : "")
+                .port(endpoint.getPort() != null ? endpoint.getPort() : "")
+                .protocol(endpoint.getProtocol() != null ? endpoint.getProtocol() : "")
+                .status(null)
+                .statusMessage(null)
+                .stackTrace(null)
+                .build();
+    }
+
+    /**
+     * Safely retrieves the queue elements for a bundle, returning an empty list on error.
+     */
+    private List<PublishQueueElement> getQueueElementsSafely(final String bundleId) {
+        try {
+            // The queue/audit API (com.dotcms.publisher.business.PublisherAPI), distinct from the
+            // filter-lookup publisherAPI field (com.dotcms.publishing.PublisherAPI) used above.
+            return com.dotcms.publisher.business.PublisherAPI.getInstance()
+                    .getQueueElementsByBundleId(bundleId);
+        } catch (Exception e) {
+            Logger.debug(this, "Unable to get queue elements for bundle: " + bundleId, e);
+            return List.of();
+        }
     }
 
     /**

@@ -1,9 +1,10 @@
-import tippy, { Instance } from 'tippy.js';
+import tippy, { Instance, Props as TippyProps } from 'tippy.js';
 
 import { Directive, ElementRef, OnDestroy, OnInit, inject, input } from '@angular/core';
 
 import { Editor, isNodeSelection, posToDOMRect } from '@tiptap/core';
-import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
+
+import { getEditorElement } from '../shared/utils';
 
 @Directive({
     selector: 'dot-editor-modal[editor], [dotEditorModal][editor]',
@@ -11,12 +12,16 @@ import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 })
 export class EditorModalDirective implements OnInit, OnDestroy {
     readonly editor = input.required<Editor>();
-    readonly tippyOptions = input<BubbleMenuPluginProps['tippyOptions']>({});
+    // v3 dropped `tippyOptions` from BubbleMenuPluginProps; type against tippy directly.
+    readonly tippyOptions = input<Partial<TippyProps>>({});
 
     private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
     private tippy: Instance;
 
     private editorElement: HTMLElement;
+
+    /** Stable reference so {@link ngOnDestroy} can actually remove the listener it registered. */
+    private readonly hideOnEditorMousedown = () => this.hide();
 
     private readonly PROPER_MODIFIERS = {
         modifiers: [
@@ -35,14 +40,14 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        const { element: editorElement } = this.editor().options;
-        const editorIsAttached = !!editorElement.parentElement;
+        const editorElement = getEditorElement(this.editor());
+        const editorIsAttached = !!editorElement?.parentElement;
 
-        if (!editorIsAttached) {
+        if (!editorElement || !editorIsAttached) {
             return;
         }
 
-        this.editorElement = editorElement as HTMLElement;
+        this.editorElement = editorElement;
         this.tippy = tippy(editorElement, {
             duration: 0,
             content: this.elRef.nativeElement,
@@ -51,16 +56,19 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             placement: 'bottom-start',
             popperOptions: this.PROPER_MODIFIERS,
             hideOnClick: 'toggle',
+            // Append to body so the popover escapes the editor's `overflow-auto` scroll
+            // container (and the surrounding field card), which otherwise clips it (#35908).
+            appendTo: () => document.body,
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions()
-        });
+        }) as Instance;
 
-        editorElement.addEventListener('mousedown', () => this.hide());
+        editorElement.addEventListener('mousedown', this.hideOnEditorMousedown);
     }
 
     ngOnDestroy(): void {
         this.tippy?.destroy();
-        this.editorElement.removeEventListener('mousedown', () => this.hide());
+        this.editorElement?.removeEventListener('mousedown', this.hideOnEditorMousedown);
     }
 
     show() {
@@ -83,8 +91,10 @@ export class EditorModalDirective implements OnInit, OnDestroy {
         if (isNodeSelection(state.selection)) {
             const node = this.getNodeElement(view, from);
             if (node) {
-                // If the node has a bubble menu, return its bounding client rect
-                const bubbleMenu = document.querySelector('[tiptapbubblemenu]');
+                // Scope to THIS editor's bubble menu — a global query returns the first instance (#35908).
+                const bubbleMenu = this.elRef.nativeElement
+                    .closest('dot-bubble-menu')
+                    ?.querySelector('[tiptapbubblemenu]');
 
                 if (bubbleMenu) {
                     return bubbleMenu.getBoundingClientRect();

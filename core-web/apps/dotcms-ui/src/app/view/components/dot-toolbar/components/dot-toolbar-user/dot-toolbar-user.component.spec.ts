@@ -3,20 +3,30 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotMessageService, DotUiColorsService } from '@dotcms/data-access';
-import { CoreWebService, LoggerService, LoginService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
+import { filter, take } from 'rxjs/operators';
+
+import {
+    DotGlobalMessageService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotPropertiesService,
+    DotUiColorsService
+} from '@dotcms/data-access';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
+import { DotReportIssueService } from '../../../../../api/services/dot-report-issue.service';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
@@ -31,6 +41,8 @@ describe('DotToolbarUserComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: LOCATION_TOKEN,
                     useValue: {
@@ -46,16 +58,26 @@ describe('DotToolbarUserComponent', () => {
                 },
                 { provide: LoggerService, useValue: { error: jest.fn() } },
                 { provide: DotMessageService, useValue: { get: (key: string) => key } },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotGlobalMessageService, useValue: { success: jest.fn() } },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: { handle: jest.fn(() => of({})) }
+                },
+                {
+                    provide: DotReportIssueService,
+                    useValue: { reportIssue: jest.fn(() => of('')) }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKey: jest.fn(() => of('true')),
+                        getFeatureFlag: jest.fn(() => of(true))
+                    }
+                },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotToolbarUserStore
             ],
-            imports: [
-                BrowserAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule,
-                DotToolbarUserComponent
-            ]
+            imports: [BrowserAnimationsModule, RouterTestingModule, DotToolbarUserComponent]
         });
 
         fixture = TestBed.createComponent(DotToolbarUserComponent);
@@ -225,4 +247,62 @@ describe('DotToolbarUserComponent', () => {
 
         expect(de.query(By.css('[data-testId="dot-mask"]'))).toBeNull();
     });
+
+    it('should open the report issue dialog from the menu item command', fakeAsync(() => {
+        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+            callback({
+                user: {
+                    emailAddress: 'admin@dotcms.com',
+                    name: 'Admin User',
+                    fullName: 'Admin User'
+                },
+                loginAsUser: null,
+                isLoginAs: false
+            } as any);
+        });
+
+        fixture.detectChanges();
+
+        let reportIssueCommand: (() => void) | undefined;
+
+        // filter skips the startWith(false) emission where the item is absent.
+        fixture.componentInstance.vm$
+            .pipe(
+                filter((vm) =>
+                    vm.items.some((item) => item.id === 'dot-toolbar-user-link-report-issue')
+                ),
+                take(1)
+            )
+            .subscribe((vm) => {
+                reportIssueCommand = vm.items.find(
+                    (item) => item.id === 'dot-toolbar-user-link-report-issue'
+                )?.command as (() => void) | undefined;
+            });
+
+        tick();
+        reportIssueCommand?.();
+        fixture.detectChanges();
+
+        expect(fixture.componentInstance.$showReportIssue()).toBe(true);
+    }));
+
+    it('should hide the report issue menu item when the feature flag is disabled', fakeAsync(() => {
+        const dotPropertiesService = TestBed.inject(DotPropertiesService);
+        (dotPropertiesService.getFeatureFlag as jest.Mock).mockReturnValue(of(false));
+
+        // Rebuild the component so the new mock value is what vm$ sees.
+        fixture = TestBed.createComponent(DotToolbarUserComponent);
+        fixture.detectChanges();
+
+        let reportIssueItem: { id?: string } | undefined;
+        fixture.componentInstance.vm$.pipe(take(1)).subscribe((vm) => {
+            reportIssueItem = vm.items.find(
+                (item) => item.id === 'dot-toolbar-user-link-report-issue'
+            );
+        });
+
+        tick();
+
+        expect(reportIssueItem).toBeUndefined();
+    }));
 });

@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output, forwardRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -30,11 +31,11 @@ import {
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotSystemConfig } from '@dotcms/dotcms-models';
+import { SiteService } from '@dotcms/dotcms-js';
+import { DotSite, DotSystemConfig } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotFormDialogComponent, DotMessagePipe, DotApiLinkComponent } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     DotCurrentUserServiceMock,
     MockDotMessageService,
     MockDotRouterService,
@@ -195,6 +196,12 @@ describe('DotTemplateCreateEditComponent', () => {
     let store: DotTemplateStore;
     let templateStoreValue: TemplateStoreValueType;
     const siteServiceMock = new SiteServiceMock();
+    const switchSiteSubject = new Subject<DotSite>();
+
+    const globalStoreMock = {
+        switchSiteEvent$: () => switchSiteSubject.asObservable(),
+        addNewBreadcrumb: jest.fn()
+    };
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -206,14 +213,14 @@ describe('DotTemplateCreateEditComponent', () => {
                 BrowserAnimationsModule,
                 DotFormDialogComponent,
                 DotTemplatePropsComponent,
-                ButtonModule,
-                HttpClientTestingModule
+                ButtonModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotHttpErrorManagerService,
                 DialogService,
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotEventsService,
                     useValue: {
@@ -300,7 +307,8 @@ describe('DotTemplateCreateEditComponent', () => {
                     }
                 },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
-                { provide: DotRouterService, useClass: MockDotRouterService }
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: GlobalStore, useValue: globalStoreMock }
             ]
         })
             .overrideComponent(DotTemplateCreateEditComponent, {
@@ -710,7 +718,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 it('should go to listing if page site changes', () => {
                     fixture.detectChanges(); // Initialize component and subscriptions
-                    siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
+                    switchSiteSubject.next(mockSites[1] as unknown as DotSite); // switching the site
                     expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
                 });
             });

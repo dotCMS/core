@@ -1,13 +1,14 @@
-<p-toolbar>
+<p-toolbar [pt]="{ root: { style: { background: 'var(--surface-0)' } } }">
     <ng-template pTemplate="start">
         <dot-crumbtrail class="ml-4 w-full" />
     </ng-template>
     <ng-template pTemplate="end">
-        <div class="flex gap-1 items-center">
+        <div class="flex items-center gap-1">
             <div class="px-2">
                 <dot-site
                     [value]="$currentSite()?.identifier"
                     [placeholder]="'Select a site'"
+                    [showSystemHost]="false"
                     class="w-64"
                     (onChange)="siteChange($event)"
                     (onShow)="iframeOverlayService.show()"

@@ -357,7 +357,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.CI_MACHINE_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/dotCMS/plugin-seeds/dispatches \
+            https://api.github.com/repos/dotcms-community/plugin-examples/dispatches \
             -d "{\"event_type\": \"on-plugins-release\", \"client_payload\": {\"release_version\": \"$release_version\"}}" \
             -w "\n%{http_code}" \
             -s)

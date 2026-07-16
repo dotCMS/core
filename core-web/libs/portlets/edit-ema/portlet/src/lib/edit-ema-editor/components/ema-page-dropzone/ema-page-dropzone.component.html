@@ -1,4 +1,4 @@
-@for (container of containers; track $index) {
+@for (container of containers(); track $index) {
     <div
         (dragover)="onDragover($event)"
         [ngStyle]="container | dotPosition"
@@ -20,12 +20,12 @@
         <ng-container
             *ngTemplateOutlet="
                 errorTemplate;
-                context: { error: container | dotError: dragItem, container: container }
+                context: { error: container | dotError: dragItem(), container: container }
             " />
     </div>
 }
 
-@if (containers.length > 0) {
+@if (containers().length > 0) {
     <div [ngStyle]="pointerPosition" class="pointer"></div>
 }
 

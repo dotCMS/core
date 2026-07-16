@@ -1,7 +1,7 @@
-<div class="w-full col-span-3 row-start-1">
+<div class="col-span-3 row-start-1 w-full">
     @if ($showMessage()) {
         <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
-            <div class="flex items-center justify-between gap-2 w-full">
+            <div class="flex w-full items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <i class="pi pi-info-circle"></i>
                     <span data-testid="message-content">
@@ -30,22 +30,22 @@
     }
 </div>
 
-<dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />
+<dot-content-drive-toolbar (upload)="onUpload()" data-testid="toolbar" />
 
 <div
-    class="flex flex-col justify-center items-center font-semibold overflow-hidden transition-all duration-300 ease-in-out border-r border-gray-300 col-start-1 row-start-2 row-span-2"
+    class="col-start-1 row-span-2 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
     [class]="$treeExpanded() ? 'w-66' : 'w-0'"
     data-testid="tree-selector">
     <dot-content-drive-sidebar
         data-testid="sidebar"
-        (uploadFiles)="resolveFilesUpload($event)"
+        (uploadFiles)="onRequestUpload($event)"
         (moveItems)="onMoveItems($event)" />
 </div>
 
 <dot-content-drive-dropzone
     data-testid="dropzone"
-    (uploadFiles)="resolveFilesUpload($event)"
-    class="overflow-auto col-start-2 row-start-3">
+    (uploadFiles)="onRequestUpload($event)"
+    class="col-start-2 row-start-3 overflow-auto">
     <dot-folder-list-view
         [items]="$items()"
         [loading]="$loading()"
@@ -87,25 +87,41 @@
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
 <div
-    class="flex flex-col justify-center items-center font-semibold w-0 col-start-3 row-start-2 row-span-2"></div>
+    class="col-start-3 row-span-2 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
 <p-dialog
-    [visible]="!!$dialog?.()"
-    [header]="$dialog?.()?.header"
+    [visible]="$dialogVisible()"
+    [header]="$activeDialog()?.header"
     [draggable]="false"
     [resizable]="false"
     [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
     appendTo="body"
     data-testId="dialog"
-    [pt]="{ content: { class: 'w-[43.75rem] pt-0 p-4' } }"
-    (visibleChange)="onHideDialog()">
-    @switch ($dialog?.()?.type) {
+    [pt]="{ content: { class: $dialogContentClass() } }"
+    (visibleChange)="onVisibleChange($event)"
+    (onHide)="onDialogHidden()">
+    @switch ($activeDialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <dot-content-drive-dialog-folder
                 data-testId="dialog-folder"
-                [folder]="$dialog?.()?.payload" />
+                [folder]="$folderPayload()" />
         }
-        @default {
-            <div>Default dialog</div>
+        @case (DIALOG_TYPE.CONTENT_TYPE_SELECTOR) {
+            @if ($contentTypeSelectorListType(); as listType) {
+                <dot-content-drive-dialog-content-type-selector
+                    data-testId="dialog-content-type-selector"
+                    [listType]="listType" />
+            }
+        }
+        @case (DIALOG_TYPE.UPLOAD_SELECTOR) {
+            @if ($uploadSelectorPayload(); as payload) {
+                <dot-content-drive-dialog-upload-selector
+                    data-testId="dialog-upload-selector"
+                    [targetFolder]="payload.targetFolder"
+                    [files]="payload.files"
+                    (selectUploadType)="onUploadTypeSelected($event)" />
+            }
         }
     }
 </p-dialog>

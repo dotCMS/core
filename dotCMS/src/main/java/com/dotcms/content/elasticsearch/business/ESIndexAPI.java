@@ -1,13 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexHelper.SNAPSHOT_PREFIX;
-import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
-import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -21,7 +20,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
@@ -100,8 +98,6 @@ public class ESIndexAPI implements IndexAPI {
 
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
-    private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "path.repo";
 
@@ -111,17 +107,9 @@ public class ESIndexAPI implements IndexAPI {
 	final private Lazy<ContentletIndexAPI> iapi;
 	final private ESIndexHelper esIndexHelper;
 
-	final private Lazy<String> clusterPrefix;
-
-    @VisibleForTesting
-    ESIndexAPI(Lazy<String> clusterPrefix) {
+    public ESIndexAPI() {
         this.iapi = Lazy.of(ContentletIndexAPIImpl::new);
         this.esIndexHelper = ESIndexHelper.getInstance();
-        this.clusterPrefix = clusterPrefix;
-    }
-     
-    public ESIndexAPI() {
-        this(Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + "."));
     }
 
     private class IndexSortByDate implements Comparator<String> {
@@ -143,7 +131,7 @@ public class ESIndexAPI implements IndexAPI {
 
 	@SuppressWarnings("unchecked")
 	public Map<String, com.dotcms.content.index.domain.IndexStats> getIndicesStats() {
-        final Request request = new Request("GET", "/" + clusterPrefix.get() + "*/_stats");
+        final Request request = new Request("GET", "/" + getClusterPrefix() + "*/_stats");
 		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
 		final Map<String, com.dotcms.content.index.domain.IndexStats> indexStatsMap = new HashMap<>();
@@ -334,7 +322,8 @@ public class ESIndexAPI implements IndexAPI {
 	}
 
 	private String getIndexTimestamp(final String indexName) {
-		return Try.of(()->indexName.substring(indexName.lastIndexOf("_") + 1)).getOrNull();
+		final String base = IndexTag.strip(indexName); // strip .os suffix if present
+		return Try.of(() -> base.substring(base.lastIndexOf("_") + 1)).getOrNull();
 	}
 
 
@@ -359,7 +348,7 @@ public class ESIndexAPI implements IndexAPI {
 	 */
 	// TODO replace with high level client
 	public boolean isIndexClosed(String index) {
-		return getClosedIndexes().contains(getNameWithClusterIDPrefix(index));
+		return getClosedIndexes().contains(index);
 	}
 
 	/**
@@ -688,17 +677,13 @@ public class ESIndexAPI implements IndexAPI {
      * @return List of indices names sorted by creation date
      */
     public List<String> getIndices(final boolean expandToOpenIndices, final boolean expandToClosedIndices) {
-		final List<String> indexes = new ArrayList<>();
-		indexes.addAll(
-			this.getIndices(
-				expandToOpenIndices,
-				expandToClosedIndices,
-				IndexType.WORKING.getPattern(),
-					IndexType.LIVE.getPattern()
-			)
-		);
 
-		return indexes;
+        return new ArrayList<>(this.getIndices(
+                expandToOpenIndices,
+                expandToClosedIndices,
+                IndexType.WORKING.getPattern(),
+                IndexType.LIVE.getPattern()
+        ));
     }
 
 
@@ -773,13 +758,6 @@ public class ESIndexAPI implements IndexAPI {
 
 		return indexes;
 	}
-
-	boolean hasClusterPrefix(final String indexName) {
-	    
-	    return indexName!=null && indexName.startsWith(clusterPrefix.get());
-	    
-
-    }
 
 	public List<String> getClosedIndexes() {
 
@@ -861,17 +839,6 @@ public class ESIndexAPI implements IndexAPI {
 		}
 	}
 
-	
-    /**
-     * Given an alias or index name, this method will return the full name including the cluster id,
-     * using this format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>
-     * @param name Index name or alias
-     * @return Index name or alias with the cluster id prefix
-     */
-    public String getNameWithClusterIDPrefix(final String name) {
-        return hasClusterPrefix(name) ? name
-                : clusterPrefix.get() + name;
-    }
 
     /**
 	 * Restores snapshot validating that such snapshot name exists on the

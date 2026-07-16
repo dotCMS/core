@@ -92,9 +92,6 @@ on:
       publish-npm-cli:
         default: false
         type: boolean
-      publish-npm-sdk-libs:
-        default: false
-        type: boolean
       java-version:
         description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
         required: false
@@ -313,10 +310,10 @@ jobs:
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          pull: true
           build_args: |
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
-            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
           artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
           extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}
@@ -333,6 +330,7 @@ jobs:
           artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
           artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-run-id: ${{ inputs.artifact-run-id }}
 
       # Publish CLI to NPM (if required)
       # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
@@ -344,14 +342,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           cli-artifact-run-id: ${{ github.run_id }}
-
-      - name: SDKs Publish
-        id: sdks_publish
-        if: inputs.publish-npm-sdk-libs
-        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
 
       # Send Slack notification for Docker image deployment (if repository is 'dotcms/core')
       - name: Slack Notification (Docker image announcement)
@@ -378,14 +368,3 @@ jobs:
             > `npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
-      # Send Slack notification for SDK publication (if required)
-      - name: Slack Notification (SDK announcement)
-        if: success() && steps.sdks_publish.outputs.published == 'true'
-        uses: ./.github/actions/core-cicd/notification/notify-slack
-        with:
-          channel-id: "log-sdk-libs"
-          payload: |
-            > :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!
-            >
-            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

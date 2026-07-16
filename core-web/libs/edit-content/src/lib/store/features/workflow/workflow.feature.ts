@@ -51,6 +51,17 @@ export function withWorkflow() {
             isLoadingWorkflow: computed(() => store.workflow().status === ComponentStatus.LOADING),
 
             /**
+             * Computed property that determines if the allowed workflow actions are being
+             * re-fetched (e.g. after a lock/unlock toggle), so the UI can disable them while
+             * the stale list is refreshed.
+             *
+             * @returns {boolean} True while updateCurrentContentActions is in flight
+             */
+            isLoadingActions: computed(
+                () => store.actionsStatus().status === ComponentStatus.LOADING
+            ),
+
+            /**
              * Gets the workflow scheme for the currently selected scheme ID
              *
              * @returns {DotCMSWorkflow | undefined} The workflow scheme if found, undefined otherwise
@@ -261,23 +272,15 @@ export function withWorkflow() {
                                         isReset,
                                         workflowStatus
                                     }) => {
-                                        // Only navigate if NOT in dialog mode and the inode has changed
-                                        const isDialogMode = store.isDialogMode();
-                                        if (
-                                            !isDialogMode &&
-                                            contentlet.inode !== currentContentlet?.inode
-                                        ) {
-                                            router.navigate(['/content', contentlet.inode], {
-                                                replaceUrl: true,
-                                                queryParamsHandling: 'preserve'
-                                            });
-                                        }
-
                                         const parsedCurrentActions =
                                             parseCurrentActions(currentContentActions);
 
                                         const { step } = workflowStatus;
 
+                                        // Patch state BEFORE navigating so `workflowActionSuccess`
+                                        // is set when the route guard runs canDeactivate. The
+                                        // guard treats a post-save navigation as a free pass —
+                                        // the user's changes have already been committed.
                                         if (isReset) {
                                             patchState(store, {
                                                 contentlet,
@@ -301,6 +304,18 @@ export function withWorkflow() {
                                                 currentStep: step,
                                                 error: null,
                                                 workflowActionSuccess: contentlet
+                                            });
+                                        }
+
+                                        // Only navigate if NOT in dialog mode and the inode has changed
+                                        const isDialogMode = store.isDialogMode();
+                                        if (
+                                            !isDialogMode &&
+                                            contentlet.inode !== currentContentlet?.inode
+                                        ) {
+                                            router.navigate(['/content', contentlet.inode], {
+                                                replaceUrl: true,
+                                                queryParamsHandling: 'preserve'
                                             });
                                         }
 
@@ -340,6 +355,13 @@ export function withWorkflow() {
                                 return [];
                             }
 
+                            patchState(store, {
+                                actionsStatus: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null
+                                }
+                            });
+
                             return workflowActionService
                                 .getByInode(contentlet.inode, DotRenderMode.EDITING)
                                 .pipe(
@@ -349,11 +371,21 @@ export function withWorkflow() {
                                                 parseCurrentActions(actions);
 
                                             patchState(store, {
-                                                currentContentActions: parsedCurrentActions
+                                                currentContentActions: parsedCurrentActions,
+                                                actionsStatus: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                }
                                             });
                                         },
                                         error: (error: HttpErrorResponse) => {
                                             dotHttpErrorManagerService.handle(error);
+                                            patchState(store, {
+                                                actionsStatus: {
+                                                    status: ComponentStatus.ERROR,
+                                                    error: error.message
+                                                }
+                                            });
                                         }
                                     })
                                 );

@@ -15,6 +15,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     createAnimationState,
@@ -71,118 +72,13 @@ export interface SparklineDataset {
  */
 @Component({
     selector: 'dot-analytics-sparkline',
-    imports: [ChartModule, UIChart, SkeletonModule],
+    imports: [ChartModule, UIChart, SkeletonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
-        @if ($isLoading()) {
-            <div class="sparkline-skeleton">
-                <p-skeleton width="100%" height="100%" />
-            </div>
-        } @else if ($isEmpty()) {
-            <div class="sparkline-empty">
-                <div class="sparkline-empty__line"></div>
-            </div>
-        } @else {
-            <div class="sparkline-container">
-                <p-chart
-                    type="line"
-                    [data]="$chartData()"
-                    [options]="$chartOptions()"
-                    height="100%"
-                    [plugins]="chartPlugins" />
-                @if ($hoverInfo(); as info) {
-                    <div
-                        class="sparkline-tooltip"
-                        [class.sparkline-tooltip--left]="info.alignLeft"
-                        [style.left.px]="info.left"
-                        [style.top.px]="info.top">
-                        <div class="sparkline-tooltip__date">{{ info.date }}</div>
-                        @for (item of info.items; track item.label) {
-                            <div class="sparkline-tooltip__row">
-                                <span
-                                    class="sparkline-tooltip__dot"
-                                    [style.background]="item.color"></span>
-                                <span>{{ item.label }}: {{ item.value }}</span>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-        }
-    `,
-    styles: `
-        :host {
-            display: block;
-            width: 100%;
-            height: var(--sparkline-height, 6rem);
-        }
-
-        .sparkline-skeleton {
-            width: 100%;
-            height: 100%;
-
-            ::ng-deep .p-skeleton {
-                border-radius: 0.5rem;
-            }
-        }
-
-        .sparkline-empty {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-        }
-
-        .sparkline-empty__line {
-            width: 100%;
-            border-top: 2px dashed var(--p-gray-300, #d1d5db);
-        }
-
-        .sparkline-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: visible;
-        }
-
-        .sparkline-tooltip {
-            position: absolute;
-            z-index: 10;
-            transform: translateY(-50%);
-            background: rgba(30, 30, 30, 0.92);
-            color: white;
-            border-radius: 6px;
-            padding: 5px 8px;
-            font-size: 0.625rem;
-            line-height: 1.4;
-            white-space: nowrap;
-            pointer-events: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .sparkline-tooltip--left {
-            transform: translate(-100%, -50%);
-        }
-
-        .sparkline-tooltip__row {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .sparkline-tooltip__date {
-            opacity: 0.7;
-            margin-bottom: 2px;
-        }
-
-        .sparkline-tooltip__dot {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-    `
+    templateUrl: './dot-analytics-sparkline.component.html',
+    styleUrl: './dot-analytics-sparkline.component.scss',
+    host: {
+        class: 'flex w-full flex-col'
+    }
 })
 export class DotAnalyticsSparklineComponent {
     readonly #ngZone = inject(NgZone);
@@ -233,6 +129,20 @@ export class DotAnalyticsSparklineComponent {
     protected readonly $isLoading = computed(() => {
         const status = this.$status();
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Legend items derived from datasets (label, color, dashed) */
+    protected readonly $legendItems = computed(() => {
+        const datasets = this.$datasets();
+        if (!datasets?.length) return [];
+
+        return datasets
+            .filter((ds) => !!ds.label)
+            .map((ds) => ({
+                label: ds.label ?? '',
+                color: ds.color ?? this.$color(),
+                dashed: ds.dashed ?? false
+            }));
     });
 
     /** Whether there is no data to display */

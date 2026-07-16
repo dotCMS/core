@@ -1,12 +1,13 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, inject, input, output, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { Drawer, DrawerModule } from 'primeng/drawer';
 
 import { map, take } from 'rxjs/operators';
 
@@ -17,9 +18,11 @@ import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { DotCMSInlineEditingPayload } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -39,6 +42,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
     imports: [
         FormsModule,
+        DotCMSEditorComponent,
         BlockEditorModule,
         DrawerModule,
         DotMessagePipe,
@@ -51,29 +55,33 @@ export class DotBlockEditorSidebarComponent {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
+
+    /**
+     * Resolves the `FEATURE_FLAG_NEW_BLOCK_EDITOR` flag — `undefined` while the HTTP request
+     * is in flight, then `true` / `false` once it returns. Per the project-wide rule, a missing
+     * flag resolves to `true` (`getFeatureFlag`), so the new editor renders unless the flag is
+     * explicitly `false`. The template's truthy check still keeps the legacy editor in-flight.
+     */
+    readonly isNewBlockEditorEnabled = toSignal(
+        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR)
+    );
+
+    readonly drawerRef = viewChild<Drawer>('drawerRef');
+
+    variantName = input<string>(DEFAULT_VARIANT_ID);
 
     protected readonly contentlet = signal<BlockEditorData>(null);
     protected readonly value = signal<JSONContent>(null);
     protected readonly loading = signal<boolean>(false);
 
-    /**
-     * Emit when the editor changes are saved
-     *
-     * @memberof DotBlockEditorSidebarComponent
-     */
     onSaved = output();
-
-    /**
-     * Emit when the sidebar is closed
-     *
-     * @memberof DotBlockEditorSidebarComponent
-     */
     onClose = output();
 
     /**
      * Open the sidebar with the block editor content
      *
-     * @param {InlineEditorData} { fieldName, contentType, inode, language, blockEditorContent }
+     * @param {DotCMSInlineEditingPayload} payload
      * @memberof DotBlockEditorSidebarComponent
      */
     open({ inode, content, language, fieldName, contentType }: DotCMSInlineEditingPayload): void {
@@ -89,27 +97,28 @@ export class DotBlockEditorSidebarComponent {
             error: (err) => console.error('Error getting contentlet ', err)
         });
     }
+
     /**
-     * Remove the contentlet data and close the sidebar
+     * Close the drawer using PrimeNG's close method to properly
+     * run the leave animation and remove the overlay mask.
      *
-     * @protected
+     * @param {Event} event
      * @memberof DotBlockEditorSidebarComponent
      */
-    close() {
-        this.resetState();
-        this.onClose.emit();
+    closeCallback(event: Event): void {
+        this.drawerRef()?.close(event);
     }
 
     /**
-     * Reset the state of the sidebar
+     * Handle the drawer's onHide event — clean up state after the close animation completes.
      *
-     * @protected
      * @memberof DotBlockEditorSidebarComponent
      */
-    protected resetState(): void {
+    onDrawerHide(): void {
         this.value.set(null);
         this.loading.set(false);
         this.contentlet.set(null);
+        this.onClose.emit();
     }
 
     /**
@@ -124,34 +133,26 @@ export class DotBlockEditorSidebarComponent {
             .saveContentlet({
                 inode,
                 indexPolicy: 'WAIT_FOR',
+                variantName: this.variantName(),
                 [fieldName]: JSON.stringify(this.value())
             })
             .pipe(take(1))
-            .subscribe(
-                () => {
+            .subscribe({
+                next: () => {
                     this.onSaved.emit();
-                    this.close();
+                    this.closeCallback(new Event('close'));
                 },
-                ({ error }: HttpErrorResponse) => {
+                error: ({ error }: HttpErrorResponse) => {
                     this.#dotAlertConfirmService.alert({
-                        accept: () => this.close(),
+                        accept: () => this.closeCallback(new Event('close')),
                         header: this.#dotMessageService.get('error'),
                         message:
                             error?.message || this.#dotMessageService.get('editpage.inline.error')
                     });
-                },
-                () => this.close()
-            );
+                }
+            });
     }
 
-    /**
-     * Get the field that belongs to the editor content
-     *
-     * @private
-     * @param {DOMStringMap} { fieldName, contentType }
-     * @return {*}  {Observable<DotCMSContentTypeField>}
-     * @memberof DotBlockEditorSidebarComponent
-     */
     #getEditorField({ fieldName, contentType }: DOMStringMap): Observable<DotCMSContentTypeField> {
         return this.#dotContentTypeService
             .getContentType(contentType)

@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.InitDataObject;

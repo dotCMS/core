@@ -162,6 +162,31 @@ gh run list --workflow=cicd_2-merge-queue.yml --limit 10
    - Detection: Deployment step failures
    - Action: Verify environment configuration in GitHub secrets
 
+**Deployment Step Behavior (CRITICAL for diagnosis)**:
+
+The deployment job (`cicd_comp_deployment-phase.yml`) has multiple steps with different
+failure semantics. Not every error in the logs causes the job to fail:
+
+| Step | `continue-on-error` | Fails job? | Artifact source |
+|---|---|---|---|
+| Build/Push Docker Image | no | YES | `inputs.artifact-run-id` (correct) |
+| Build/Push Docker Dev Image | no | YES | `inputs.artifact-run-id` (correct) |
+| CLI Deploy (deploy-jfrog) | **yes** | **NO** | `inputs.artifact-run-id` — but NOT forwarded by caller, defaults to `github.run_id` |
+| CLI Publish (deploy-cli-npm) | no | YES | `github.run_id` (CLI artifacts always from same run) |
+| SDKs Publish (deploy-javascript-sdk) | no | YES | N/A — runs its own Maven build from checkout |
+
+**Diagnostic trap**: When `artifact-run-id` differs from `github.run_id` (build reuse),
+the CLI Deploy step fails with `Artifact not found for name: maven-repo` — but because
+it has `continue-on-error: true`, this error is **visible in logs but does NOT fail the job**.
+If the job still fails, the real cause is a later step. Always check which step actually
+killed the job before concluding.
+
+**Artifact-run-id propagation chain**:
+When Trunk Build is skipped (reused from a prior merge queue run), the trunk workflow
+passes `artifact-run-id: <prior-run-id>` to the deployment phase. Steps that correctly
+forward this retrieve artifacts from the right place. Steps that default to `github.run_id`
+will fail because the current run has no build artifacts.
+
 **Important Notes**:
 - Tests are NOT re-run (assumes merge queue validation)
 - Test failures here indicate artifact corruption or environment issues

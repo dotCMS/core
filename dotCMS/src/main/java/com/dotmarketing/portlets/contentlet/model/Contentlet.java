@@ -372,39 +372,46 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private String buildName()
 			throws DotContentletStateException {
 
+		String binaryValue = null;
 		// if already set previously
 		String returnValue = (String) this.map.get(Contentlet.DOT_NAME_KEY);
 		if(isSet(returnValue)){
 			return returnValue;
 		}
 
-		// look for listed, text and binary fields
-		final List<Field> fields = FieldsCache.getFieldsByStructureInode(this.getStructureInode());
-		String binaryValue       = null;
+		//For hosts, the name is obtained from the "hostName" field
+		if (this.isHost()){
+			returnValue = this.map.get(Host.HOST_NAME_KEY).toString();
+		} else{
+			// look for listed, text and binary fields
+			final List<Field> fields = FieldsCache.getFieldsByStructureInode(this.getStructureInode());
 
-		for (final Field field : fields) {
+			for (final Field field : fields) {
 
-			try {
+				try {
 
-				if(field.isListed()  && this.map.get(field.getVelocityVarName())!=null) {
+					if(field.isListed()  && this.map.get(field.getVelocityVarName())!=null) {
 
-					if (APILocator.getContentletAPI().isFieldTypeString(field)) {
-						returnValue = this.map.get(field.getVelocityVarName()).toString();
-						break; // found one
+						if (APILocator.getContentletAPI().isFieldTypeString(field)) {
+							returnValue = this.map.get(field.getVelocityVarName()).toString();
+							break; // found one
+						}
+
+						// if it is a binary — use the in-memory value's name only: getBinary()
+						// stats the filesystem, and a hung stat on network-backed storage here
+						// froze the whole reindex pipeline (issue #36498)
+						if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
+							final Object rawBinary = this.map.get(field.getVelocityVarName());
+							if (rawBinary instanceof File) {
+								binaryValue = ((File) rawBinary).getName();
+							}
+						}
 					}
-
-					// if it is a binary
-					if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
-					    final File binaryFile = this.getBinary(field.getVelocityVarName());
-					    if (null != binaryFile) {
-                            binaryValue = binaryFile.getName();
-                        }
-					}
+				} catch(Exception e){
+					Logger.warn(this.getClass(),
+							"unable to get field value " + field.getVelocityVarName()
+									+ " . Content inode: " + this.getInode() + ". Reason: " + e, e);
 				}
-			} catch(Exception e){
-                Logger.warn(this.getClass(),
-                        "unable to get field value " + field.getVelocityVarName()
-                                + " . Content inode: " + this.getInode() + ". Reason: " + e, e);
 			}
 		}
 
@@ -438,8 +445,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
 						final String dotAssetName     = this.getStringProperty(transientNameKey);
 						String assetName              = dotAssetName;
-						if (!isSet(dotAssetName) && null != this.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
-							assetName = this.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
+						// use the in-memory value's name only — getBinary() stats the
+						// filesystem, a hang risk on network-backed storage (issue #36498)
+						final Object rawAsset = this.map.get(DotAssetContentType.ASSET_FIELD_VAR);
+						if (!isSet(dotAssetName) && rawAsset instanceof File) {
+							assetName = ((File) rawAsset).getName();
 							this.setStringProperty(transientNameKey, assetName);
 						}
 
@@ -1196,7 +1206,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
-		File f = (File) map.get(velocityVarName);
+		final Object rawValue = map.get(velocityVarName);
+		File f = (rawValue instanceof File) ? (File) rawValue : null;
 		if((f==null || !f.exists()) ){
 			f=null;
 			map.remove(velocityVarName);
@@ -1533,6 +1544,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String fieldVarName = foundTagInode.getFieldVarName();
 
 						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
+						// INVARIANT (issue #35861): this containsKey guard is what lets a tag clear stick. When a tag field is
+						// cleared, ESContentletAPIImpl.clearOrNullifyProperty stores an empty string ("") rather than null so the
+						// key stays in the map; that blocks the re-hydration below from resurrecting the prior version's tags.
+						// Do not relax this guard (e.g. to also re-hydrate when the value is blank) without revisiting that fix.
 						if (!map.containsKey(fieldVarName)) {
 							StringBuilder contentletTagsBuilder = new StringBuilder();
 

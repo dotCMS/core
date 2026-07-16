@@ -5,10 +5,10 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.quartz.SchedulerException;
 
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
@@ -36,7 +36,7 @@ public interface SiteSearchAPI {
 
 	void deactivateIndex(String indexName) throws DotDataException, IOException;
 
-	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException;
+	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws DotSearchException, IOException;
 
 	boolean setAlias(String indexName, final String alias);
 
@@ -79,4 +79,15 @@ public interface SiteSearchAPI {
     List<String> listClosedIndices();
 
 	public void deleteOldSiteSearchIndices();
+
+	/**
+	 * Deletes a single site-search index by name from every engine that holds it (ES and, during a
+	 * migration, its OpenSearch counterpart), mirroring the operator's single-index view. The
+	 * active (default) site-search index cannot be deleted — deactivate it first.
+	 *
+	 * @param indexName the site-search index name (must be a {@code sitesearch_*} name)
+	 * @throws DotDataException if the name is not a site-search index or the delete fails
+	 * @throws IOException      on an index-engine error
+	 */
+	void deleteIndex(String indexName) throws DotDataException, IOException;
 }

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -8,33 +7,36 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     AnalyticsChartColors,
-    DotAnalyticsDashboardStore
+    DotAnalyticsDashboardStore,
+    getComparisonLabel,
+    PieChartEntry,
+    toEngagementBreakdownPieEntries,
+    toEngagementBreakdownPieScheme
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
+import { DotAnalyticsBarEngagementChartComponent } from '../../../shared/components/dot-analytics-bar-engagement-chart/dot-analytics-bar-engagement-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import {
     DotAnalyticsSparklineComponent,
     SparklineDataset
 } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
-import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 
 /**
  * DotAnalyticsEngagementReportComponent displays the engagement dashboard.
- * It includes the engagement rate, trend chart, and platforms table.
+ * It includes KPIs, breakdown doughnut, browser/device/language stacked engagement charts.
  * Each block (KPIs, breakdown, platforms) has independent loading and error state.
  */
 @Component({
     selector: 'dot-analytics-engagement-report',
     imports: [
-        CommonModule,
         ButtonModule,
         DialogModule,
         DotMessagePipe,
-        DotAnalyticsChartComponent,
+        DotAnalyticsPieChartComponent,
         DotAnalyticsMetricComponent,
-        DotAnalyticsPlatformsTableComponent,
+        DotAnalyticsBarEngagementChartComponent,
         DotAnalyticsSparklineComponent
     ],
     templateUrl: './dot-analytics-engagement-report.component.html',
@@ -47,10 +49,18 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
 export default class DotAnalyticsEngagementReportComponent {
     /** Analytics dashboard store providing engagement data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
+
     readonly #messageService = inject(DotMessageService);
 
     /** Controls visibility of the "How it's calculated" dialog */
     readonly $showCalculationDialog = signal(false);
+
+    /** Comparison label derived from the current time range (e.g., "from previous 7 days") */
+    readonly $comparisonLabel = computed(() => {
+        const { key, args } = getComparisonLabel(this.store.timeRange());
+
+        return this.#messageService.get(key, ...args);
+    });
 
     /** KPIs slice: data and status for the metric cards */
     readonly $kpis = computed(() => this.store.engagementKpis().data);
@@ -62,6 +72,16 @@ export default class DotAnalyticsEngagementReportComponent {
     readonly $breakdown = computed(() => this.store.engagementBreakdown().data);
     readonly $breakdownStatus = computed(
         () => this.store.engagementBreakdown().status ?? ComponentStatus.INIT
+    );
+
+    /** D3 pie entries derived from engagement breakdown ChartData */
+    readonly $breakdownPieResults = computed<PieChartEntry[]>(() =>
+        toEngagementBreakdownPieEntries(this.store.engagementBreakdown().data)
+    );
+
+    /** Matches Chart.js doughnut colors when present */
+    readonly $breakdownPieScheme = computed(() =>
+        toEngagementBreakdownPieScheme(this.store.engagementBreakdown().data)
     );
 
     /** Platforms slice: device/browser/language and status */
@@ -77,9 +97,7 @@ export default class DotAnalyticsEngagementReportComponent {
 
         const current: SparklineDataset = {
             data: slice.current,
-            label:
-                this.#messageService.get('analytics.engagement.sparkline.period-current') ??
-                'This period',
+            label: 'analytics.engagement.sparkline.period-current',
             color: AnalyticsChartColors.primary.line,
             dashed: false
         };
@@ -90,11 +108,9 @@ export default class DotAnalyticsEngagementReportComponent {
                 slice.previous.length >= len ? slice.previous.slice(0, len) : slice.previous;
             const previous: SparklineDataset = {
                 data: previousData,
-                label:
-                    this.#messageService.get('analytics.engagement.sparkline.period-previous') ??
-                    'Previous period',
+                label: 'analytics.engagement.sparkline.period-previous',
                 color: AnalyticsChartColors.neutralDark.line,
-                dashed: false,
+                dashed: true,
                 borderWidth: 1,
                 fillOpacity: 0.35
             };

@@ -72,6 +72,7 @@ const GRAPHQL_RESPONSE_MOCK = {
         viewAs: {
             mode: 'LIVE'
         },
+        numberContents: 5,
         runningExperimentId: '123',
         vanityUrl: {
             action: 200,
@@ -146,6 +147,7 @@ const MOCK_PAGE_ENTITY = {
     viewAs: {
         mode: 'LIVE'
     },
+    numberContents: 5,
     site: {
         hostName: 'demo.dotcms.com'
     },
@@ -271,5 +273,47 @@ describe('GraphQL Parser', () => {
             customField: 'custom value',
             someOtherField: 'some other value by relationship'
         });
+    });
+
+    // Regression: https://github.com/dotCMS/core/issues/36108
+    // GraphQL returns styleEditorSchemas: null outside EDIT_MODE. It must be OMITTED from the page
+    // entity (not set to `undefined`), otherwise the page response is not JSON-serializable and
+    // breaks Next.js Pages Router serialization (getServerSideProps/getStaticProps).
+    it('omits styleEditorSchemas (no undefined value) when GraphQL returns null', () => {
+        const graphqlResponse = {
+            page: {
+                title: 'no-edit-mode',
+                url: '/no-edit-mode',
+                identifier: 'id',
+                styleEditorSchemas: null,
+                containers: []
+            }
+        };
+
+        const pageEntity = graphqlToPageEntity(
+            graphqlResponse.page as unknown as DotCMSGraphQLPage
+        );
+
+        expect(pageEntity?.page).not.toHaveProperty('styleEditorSchemas');
+        expect(JSON.parse(JSON.stringify(pageEntity?.page))).toEqual(pageEntity?.page);
+    });
+
+    it('keeps styleEditorSchemas when GraphQL returns a value', () => {
+        const schemas = [{ name: 'schema-a' }];
+        const graphqlResponse = {
+            page: {
+                title: 'edit-mode',
+                url: '/edit-mode',
+                identifier: 'id',
+                styleEditorSchemas: schemas,
+                containers: []
+            }
+        };
+
+        const pageEntity = graphqlToPageEntity(
+            graphqlResponse.page as unknown as DotCMSGraphQLPage
+        );
+
+        expect(pageEntity?.page.styleEditorSchemas).toEqual(schemas);
     });
 });

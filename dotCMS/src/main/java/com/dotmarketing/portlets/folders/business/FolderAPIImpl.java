@@ -13,6 +13,8 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
@@ -48,9 +50,11 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -81,6 +85,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -154,6 +159,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return findFolderByPath(path,host,user, respectFrontEndPermissions);
 	}
 
+	@Override
 	@WrapInTransaction
 	public boolean renameFolder(final Folder folder, final String newName,
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
@@ -165,22 +171,53 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId() : BLANK) + " does not have permission to edit folder " + folder.getPath());
 		}
 
+		// Sanitize user-supplied name before logging to prevent log injection via \r or \n.
+		final String safeNewName = newName.replaceAll("[\\r\\n]", " ");
+		final String safePath = folder.getPath() == null ? null : folder.getPath().replaceAll("[\\r\\n]", " ");
 		try {
 			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
-			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-			Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
-			return renamed;
+
+			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
+			// NOTE: the factory mutates the passed-in folder: setName(newName) and setModDate()
+			// are updated in place. The identifier and inode are unchanged — the folder retains
+			// its original identity across renames. refreshContentUnderFolder uses the updated
+			// folder name to target the correct new path for the ES reindex.
+			//
+			// Queue async ES reindex. DotReindexStateException is caught here so a transient
+			// reindex-queue failure does not roll back an otherwise successful rename.
+			// DotDataException (DB-layer) is intentionally NOT caught: if the DB itself fails
+			// (e.g. the dist_reindex_journal INSERT fails), the rename transaction should roll back.
+			try {
+				contentletAPI.refreshContentUnderFolder(folder);
+			} catch (final DotReindexStateException e) {
+				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder '"
+						+ safePath + "' to '" + safeNewName + "': " + e.getMessage());
+			}
+
+			if (renamed) {
+				systemEventsAPI.pushAsync(SystemEventType.UPDATE_FOLDER,
+						new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
+								new ExcludeOwnerVerifierBean(user.getUserId(),
+										PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+			}
+  
+      return renamed;
+
 		} catch (InvalidFolderNameException e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
-					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
-					+ newName + ". Error: " + e.getMessage());
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safeNewName + ". Error: " + e.getMessage());
+			throw e;
+		} catch (DotSecurityException e) {
+			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safeNewName + ". Error: " + e.getMessage());
 			throw e;
 		} catch (Exception e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
-					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
-					+ newName + ". Error: " + e.getMessage());
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safeNewName + ". Error: " + e.getMessage());
 			throw new DotDataException(e.getMessage(),e);
 		}
 	}
@@ -342,10 +379,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
-		folderFactory.copy(folderToCopy, newParentFolder);
-
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map<String, Object> sourceFields = toEventFields(folderToCopy);
+		final Folder newFolder = folderFactory.copy(folderToCopy, newParentFolder);
+		emitFolderEventOnCommit(SystemEventType.COPY_FOLDER, sourceFields, toEventFields(newFolder), user);
 	}
 
 	@WrapInTransaction
@@ -362,10 +398,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		validateFolderName(folderToCopy);
-		folderFactory.copy(folderToCopy, newParentHost);
-
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map<String, Object> sourceFields = toEventFields(folderToCopy);
+		final Folder newFolder = folderFactory.copy(folderToCopy, newParentHost);
+		emitFolderEventOnCommit(SystemEventType.COPY_FOLDER, sourceFields, toEventFields(newFolder), user);
 	}
 
 	@CloseDBIfOpened
@@ -644,13 +679,29 @@ public class FolderAPIImpl implements FolderAPI  {
 		final boolean isNew = folder.getInode() == null;
 		//if the folder was renamed, we will need to create a new identifier
 		if (!folder.getName().equalsIgnoreCase(existingID.getAssetName())){
-			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
+			if (!folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions)) {
+				throw new DotDataException("Could not rename folder '" + existingID.getAssetName()
+						+ "' to '" + folder.getName() + "': a folder with that name already exists.");
+			}
+			// Queue async ES reindex so content under the renamed folder is re-indexed at the new
+			// path. folderFactory.renameFolder() mutates folder.setName(newName), so
+			// folder.getPath() already returns the new path when this runs.
+			// DotReindexStateException is caught to avoid rolling back the save on a transient
+			// reindex-queue failure.
+			try {
+				contentletAPI.refreshContentUnderFolder(folder);
+			} catch (final DotReindexStateException e) {
+				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder via save(): "
+						+ e.getMessage());
+			}
 		} else{
 			folder.setModDate(new Date());
 			folderFactory.save(folder);
 		}
 
-        // remove folder and parent from navigation cache
+        // Nav cache: folderFactory.renameFolder() already evicts the renamed folder and its
+        // sub-tree. The two calls below are redundant for the rename path but are kept for the
+        // non-rename (else) branch where the factory does not evict nav cache.
 		if (!isNew) {
 			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 			CacheLocator.getNavToolCache()
@@ -753,6 +804,78 @@ public class FolderAPIImpl implements FolderAPI  {
 	@CloseDBIfOpened
 	public List<Folder> findFoldersByHost(Host host, User user, boolean respectFrontendRoles) {
 		return folderFactory.findFoldersByHost(host);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public PaginatedArrayList<FolderSearchView> searchFolders(final FolderSearchParams params)
+			throws DotDataException, DotSecurityException {
+
+		// 1. Load all matching folders (no LIMIT — pagination happens in Java so that
+		//    permission filtering does not produce short pages for limited users).
+		final var all = folderFactory.searchFolders(params);
+
+		// 2. Batch READ filter — one SQL round-trip for the entire collection.
+		final var filtered = permissionAPI.filterCollection(
+				all, PermissionAPI.PERMISSION_READ, params.user(), params.respectFrontendRoles());
+
+		// 3. Java pagination — applied after permission filtering for correctness.
+		final int total = filtered.size();
+		final int from  = Math.min(params.offset(), total);
+		final int to    = params.limit() < 0 ? total : Math.min(params.offset() + params.limit(), total);
+		final var page  = filtered.subList(from, to);
+
+		// 4. Batch CAN_ADD_CHILDREN check — only on the page (≤ perPage items).
+		final Set<String> canAddIds = permissionAPI.filterCollection(
+				page, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, params.user(), params.respectFrontendRoles())
+				.stream().map(Permissionable::getPermissionId).collect(Collectors.toSet());
+
+		// 5. Determine which folders have permission-visible children.
+		final Set<String> parentPathsWithVisibleChildren =
+				findParentPathsWithVisibleChildren(page, params);
+
+		// 6. Map to views.
+		final var views = page.stream()
+				.map(folder -> {
+					final var fullPath   = folder.getPath();
+					final var parentPath = fullPath.substring(0, fullPath.length() - folder.getName().length() - 1);
+					return new FolderSearchView(
+							folder.getIdentifier(), folder.getInode(), folder.getName(),
+							parentPath, canAddIds.contains(folder.getPermissionId()),
+							parentPathsWithVisibleChildren.contains(folder.getPath()));
+				})
+				.toList();
+
+		final var result = new PaginatedArrayList<FolderSearchView>();
+		result.setTotalResults(total);
+		result.addAll(views);
+		return result;
+	}
+
+	/**
+	 * Returns the set of folder paths (e.g. {@code "/content/blog/"}) from {@code page} that have
+	 * at least one direct child folder readable by the requesting user. Two SQL round-trips: one to
+	 * fetch all children in bulk, one batch permission check on the result.
+	 */
+	private Set<String> findParentPathsWithVisibleChildren(
+			final List<Folder> page, final FolderSearchParams params) throws DotDataException, DotSecurityException {
+
+		final Set<String> pagePaths = page.stream().map(Folder::getPath).collect(Collectors.toSet());
+		final List<Folder> allChildren = folderFactory.findDirectChildFolders(params.siteId(), pagePaths);
+
+		if (allChildren.isEmpty()) {
+			return Set.of();
+		}
+
+		return permissionAPI
+				.filterCollection(allChildren, PermissionAPI.PERMISSION_READ,
+						params.user(), params.respectFrontendRoles())
+				.stream()
+				.map(child -> {
+					final var childPath = child.getPath();
+					return childPath.substring(0, childPath.length() - child.getName().length() - 1);
+				})
+				.collect(Collectors.toSet());
 	}
 
 	@CloseDBIfOpened
@@ -863,12 +986,19 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
-		boolean move = folderFactory.move(folderToMove, newParentFolder);
+		// Snapshot source fields BEFORE folderFactory.move() — the source folder's
+		// DB row is deleted as part of the move, after which lazy lookups on the
+		// in-memory Folder (e.g. getPath() falling back to IdentifierAPI.find) would
+		// silently produce nulls in the event payload.
+		final Map<String, Object> sourceFields = toEventFields(folderToMove);
+		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		if (newFolder.isPresent()) {
+			emitFolderEventOnCommit(SystemEventType.MOVE_FOLDER,
+					sourceFields, toEventFields(newFolder.get()), user);
+		}
 
-		return move;
+		return newFolder.isPresent();
 	}
 
 	@WrapInTransaction
@@ -887,11 +1017,17 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
 
-		final boolean move = folderFactory.move(folderToMove, newParentHost);
+		// Snapshot source fields BEFORE folderFactory.move() — see comment in the
+		// Folder→Folder overload for why this matters.
+		final Map<String, Object> sourceFields = toEventFields(folderToMove);
+		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentHost);
 
-		HibernateUtil.addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
+		if (newFolder.isPresent()) {
+			emitFolderEventOnCommit(SystemEventType.MOVE_FOLDER,
+					sourceFields, toEventFields(newFolder.get()), user);
+		}
 
-		return move;
+		return newFolder.isPresent();
 	}
 
 	@Override
@@ -987,11 +1123,41 @@ public class FolderAPIImpl implements FolderAPI  {
 		});
 	}
 
-	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user)
-			throws DotDataException, DotSecurityException {
+	private void emitFolderEventOnCommit(final SystemEventType type,
+										 final Map<String, Object> sourceFields,
+										 final Map<String, Object> targetFields,
+										 final User user) throws DotHibernateException {
+		final Map<String, Object> payload = buildSourceTargetPayload(sourceFields, targetFields);
+		HibernateUtil.addCommitListener(Sneaky.sneaked(() ->
+				this.systemEventsAPI.pushAsync(type, new Payload(payload, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(user.getUserId(),
+								PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)))), 1000);
+	}
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+	private static Map<String, Object> buildSourceTargetPayload(final Map<String, Object> sourceFields,
+																final Map<String, Object> targetFields) {
+		// PermissionVerifier wraps payload.getData() in a Contentlet and reads
+		// "identifier" to resolve the Permissionable. Folder.getPermissionId() returns
+		// the inode, so the top-level "identifier" must hold the inode value rather
+		// than the folder's actual identifier. We deliberately overwrite the entry
+		// copied from sourceFields here — in modern dotCMS folder.identifier ==
+		// folder.inode so the values match today, but this guards the verifier path
+		// against any future divergence.
+		final Map<String, Object> payload = new HashMap<>(sourceFields);
+		payload.put("identifier", sourceFields.get("inode")); // intentional overwrite
+		payload.put("source", sourceFields);
+		payload.put("target", targetFields);
+		return payload;
+	}
+
+	private static Map<String, Object> toEventFields(final Folder folder) {
+		final Map<String, Object> fields = new HashMap<>();
+		fields.put("identifier", folder.getIdentifier());
+		fields.put("inode", folder.getInode());
+		fields.put("path", folder.getPath());
+		fields.put("name", folder.getName());
+		fields.put("hostId", folder.getHostId());
+		return fields;
 	}
 
 
@@ -1221,15 +1387,17 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			try {
 
-				final String name = contentlet instanceof  IFileAsset?
-						IFileAsset.class.cast(contentlet).getFileName(): (String)contentlet.getMap().get("fileName");
+				final String name = contentlet instanceof IFileAsset ifa
+						? ifa.getFileName()
+						: (String) contentlet.getMap().get("fileName");
 
 				if (null != childNameFilter && !childNameFilter.test(name)) {
 					return;
 				}
 
-				final String fileAssetFolderParentId = contentlet instanceof  IFileAsset?
-						IFileAsset.class.cast(contentlet).getParent(): (String)contentlet.getMap().get(Contentlet.FOLDER_KEY);
+				final String fileAssetFolderParentId = contentlet instanceof IFileAsset ifa
+						? ifa.getParent()
+						: (String) contentlet.getMap().get(Contentlet.FOLDER_KEY);
 
 				final Folder childFolder = this.find(fileAssetFolderParentId, APILocator.systemUser(), false);
 				if (null != childFolder && this.isChildFolder(childFolder, parentFolder)) {
@@ -1291,7 +1459,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			map.put("entries", entry.get("total"));
 			return map;
 
-		}).collect(Collectors.toList());
+		}).toList();
 	}
 
 	@CloseDBIfOpened

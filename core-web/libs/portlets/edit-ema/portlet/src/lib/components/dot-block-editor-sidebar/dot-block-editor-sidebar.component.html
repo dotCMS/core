@@ -1,23 +1,35 @@
 <p-drawer
+    #drawerRef
     [blockScroll]="true"
     [closeOnEscape]="false"
     [dismissible]="false"
     [closable]="false"
     [visible]="!!contentlet()"
+    (onHide)="onDrawerHide()"
     data-testId="sidebar"
     position="right">
     <div class="container" (keydown.escape)="$event.stopPropagation()" data-testId="dot-container">
         @if (contentlet(); as contentlet) {
-            <dot-block-editor
-                [field]="contentlet.field"
-                [value]="contentlet.content"
-                [languageId]="contentlet.language"
-                (valueChange)="value.set($event)"
-                data-testId="dot-block-editor" />
+            @if (isNewBlockEditorEnabled()) {
+                <dot-block-editor
+                    [field]="contentlet.field"
+                    [value]="contentlet.content"
+                    [languageId]="contentlet.language"
+                    (valueChange)="value.set($event)"
+                    data-testId="dot-block-editor" />
+            } @else {
+                <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
+                <dot-old-block-editor
+                    [field]="contentlet.field"
+                    [value]="contentlet.content"
+                    [languageId]="contentlet.language"
+                    (valueChange)="value.set($event)"
+                    data-testId="dot-block-editor" />
+            }
         }
         <footer>
             <p-button
-                (click)="close()"
+                (click)="closeCallback($event)"
                 [label]="'Cancel' | dm"
                 [disabled]="loading()"
                 [outlined]="true"

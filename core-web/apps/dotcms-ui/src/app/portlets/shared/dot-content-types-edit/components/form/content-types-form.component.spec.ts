@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -17,7 +15,6 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
@@ -26,7 +23,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotSiteComponent } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     DotWorkflowServiceMock,
@@ -162,7 +158,6 @@ describe('ContentTypesFormComponent', () => {
             },
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotWorkflowsActionsService),
@@ -307,7 +302,6 @@ describe('ContentTypesFormComponent', () => {
         expect(spectator.component.canSave).toBe(false); // revert the change button disabled set it to false
     });
 
-    // eslint-disable-next-line max-len
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', async () => {
         spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,

@@ -1,13 +1,12 @@
 import { from as observableFrom, EMPTY, Subject, Observable } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, catchError, map } from 'rxjs/operators';
 
 import {
     ApiRoot,
-    CoreWebService,
     UNKNOWN_RESPONSE_ERROR,
     CwError,
     SERVER_RESPONSE_ERROR,
@@ -35,7 +34,7 @@ interface ActionResponseJson {
 
 @Injectable()
 export class ActionService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
     private _typeName = 'Action';
@@ -78,30 +77,26 @@ export class ActionService {
             path = `${path}${childPath}`;
         }
 
-        return this.coreWebService
-            .request<ActionJson>({
-                url: path
-            })
-            .pipe(
-                catchError((err: HttpResponse<unknown>) => {
-                    if (err && err.status === HttpCode.NOT_FOUND) {
-                        this.loggerService.error(
-                            'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
-                            path
-                        );
-                    } else if (err) {
-                        this.loggerService.debug(
-                            'Could not retrieve' + this._typeName + ': Response status code: ',
-                            err.status,
-                            'error:',
-                            err,
-                            path
-                        );
-                    }
+        return this.http.get<ActionJson>(path).pipe(
+            catchError((err: HttpErrorResponse) => {
+                if (err && err.status === HttpCode.NOT_FOUND) {
+                    this.loggerService.error(
+                        'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
+                        path
+                    );
+                } else if (err) {
+                    this.loggerService.debug(
+                        'Could not retrieve' + this._typeName + ': Response status code: ',
+                        err.status,
+                        'error:',
+                        err,
+                        path
+                    );
+                }
 
-                    return EMPTY;
-                })
-            ) as Observable<ActionJson>;
+                return EMPTY;
+            })
+        );
     }
 
     allAsArray(
@@ -156,19 +151,13 @@ and should provide the info needed to make the user aware of the fix.`);
         json.owningRule = ruleId;
         const path = this._getPath(ruleId);
 
-        const add = this.coreWebService
-            .request<ActionResponseJson>({
-                method: 'POST',
-                body: json,
-                url: path
-            })
-            .pipe(
-                map((res: ActionResponseJson) => {
-                    model.key = res.id;
+        const add = this.http.post<ActionResponseJson>(path, json).pipe(
+            map((res: ActionResponseJson) => {
+                model.key = res.id;
 
-                    return model;
-                })
-            );
+                return model;
+            })
+        );
 
         return add.pipe(catchError(this._catchRequestError('add')));
     }
@@ -185,33 +174,22 @@ and should provide the info needed to make the user aware of the fix.`);
         } else {
             const json = ActionService.toJson(model);
             json.owningRule = ruleId;
-            const save = this.coreWebService
-                .request<unknown>({
-                    method: 'PUT',
-                    body: json,
-                    url: this._getPath(ruleId, model.key)
+            const save = this.http.put<unknown>(this._getPath(ruleId, model.key), json).pipe(
+                map(() => {
+                    return model;
                 })
-                .pipe(
-                    map(() => {
-                        return model;
-                    })
-                );
+            );
 
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
 
     remove(ruleId: string, model: ActionModel): Observable<ActionModel> {
-        const remove = this.coreWebService
-            .request<unknown>({
-                method: 'DELETE',
-                url: this._getPath(ruleId, model.key)
+        const remove = this.http.delete<unknown>(this._getPath(ruleId, model.key)).pipe(
+            map(() => {
+                return model;
             })
-            .pipe(
-                map(() => {
-                    return model;
-                })
-            );
+        );
 
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
@@ -227,11 +205,11 @@ and should provide the info needed to make the user aware of the fix.`);
 
     private _catchRequestError(
         _operation: string
-    ): (response: HttpResponse<{ error?: string }>) => Observable<never> {
-        return (response: HttpResponse<{ error?: string }>): Observable<never> => {
+    ): (response: HttpErrorResponse) => Observable<never> {
+        return (response: HttpErrorResponse): Observable<never> => {
             if (response) {
                 if (response.status === HttpCode.SERVER_ERROR) {
-                    const bodyStr = JSON.stringify(response.body || '');
+                    const bodyStr = JSON.stringify(response.error || '');
                     if (bodyStr.indexOf('ECONNREFUSED') >= 0) {
                         throw new CwError(
                             NETWORK_CONNECTION_ERROR,
@@ -258,7 +236,7 @@ and should provide the info needed to make the user aware of the fix.`);
                     );
 
                     this._error.next(
-                        response.body?.error?.replace('dotcms.api.error.forbidden: ', '') || ''
+                        response.error?.error?.replace('dotcms.api.error.forbidden: ', '') || ''
                     );
 
                     throw new CwError(

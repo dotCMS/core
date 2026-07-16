@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -33,7 +33,6 @@ import {
 @Component({
     selector: 'dot-experiments-configuration-traffic-allocation-add',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
@@ -41,7 +40,8 @@ import {
         DrawerModule,
         ButtonModule,
         SliderModule,
-        InputTextModule
+        InputTextModule,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-traffic-allocation-add.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

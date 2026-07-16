@@ -121,8 +121,8 @@ public class MetricStatsCollector {
             final Collection<MetricType> collectors = allCollectors
                     .stream()
                     .filter(metric -> {
-                        // Apply name filter if provided
-                        if (!metricNameSet.isEmpty() && !metricNameSet.contains(metric.getName())) {
+                        // Apply name filter if provided (uses qualified name for uniqueness)
+                        if (!metricNameSet.isEmpty() && !metricNameSet.contains(metric.getQualifiedName())) {
                             return false;
                         }
                         // Apply profile filter
@@ -144,7 +144,7 @@ public class MetricStatsCollector {
                     final Callable<Optional<MetricValue>> task = () -> {
                         try {
                             return cacheManager.get(
-                                metricType.getName(),
+                                metricType.getQualifiedName(),
                                 () -> {
                                     // Supplier called = cache miss
                                     flags[2] = true;
@@ -155,7 +155,7 @@ public class MetricStatsCollector {
                                         return result;
                                     } catch (final DotDataException e) {
                                         timingData[0] = System.currentTimeMillis() - computationStart;
-                                        Logger.error(this, "Error getting metric value for " + metricType.getName(), e);
+                                        Logger.error(this, "Error getting metric value for " + metricType.getQualifiedName(), e);
                                         return Optional.empty();
                                     }
                                 }
@@ -173,7 +173,7 @@ public class MetricStatsCollector {
                                             String.format("MetricType '%s' (%s) left a DB connection open on the "
                                                 + "telemetry thread. This connection will be closed defensively. "
                                                 + "The metric should manage its own connection lifecycle.",
-                                                metricType.getName(), metricType.getClass().getSimpleName()));
+                                                metricType.getQualifiedName(), metricType.getClass().getSimpleName()));
                                 }
                                 DbConnectionFactory.closeSilently();
                             }
@@ -213,14 +213,14 @@ public class MetricStatsCollector {
                         errors.add(new MetricCalculationError(metricType.getMetric(),
                                 String.format("Timeout after %dms", timeoutConfig.getMetricTimeoutMillis())));
                         Logger.warn(this, String.format("Metric '%s' timed out after %dms",
-                                metricType.getName(), timeoutConfig.getMetricTimeoutMillis()));
+                                metricType.getQualifiedName(), timeoutConfig.getMetricTimeoutMillis()));
                     }
 
                 } catch (final Throwable e) {
                     // Other errors during metric collection
                     errors.add(new MetricCalculationError(metricType.getMetric(), e.getMessage()));
                     Logger.debug(MetricStatsCollector.class, () ->
-                            "Error while calculating Metric " + metricType.getName() + ": " + e.getMessage());
+                            "Error while calculating Metric " + metricType.getQualifiedName() + ": " + e.getMessage());
                 } finally {
                     // Record timing regardless of outcome
                     final long duration = System.currentTimeMillis() - startTime;
@@ -232,7 +232,7 @@ public class MetricStatsCollector {
                     final boolean slow = completed && duration > timeoutConfig.getSlowThresholdMillis();
 
                     final MetricTiming timing = new MetricTiming(
-                            metricType.getName(),
+                            metricType.getQualifiedName(),
                             duration,
                             cacheHit,
                             computationMs,
@@ -245,11 +245,11 @@ public class MetricStatsCollector {
                     if (slow) {
                         Logger.warn(this, String.format(
                                 "Slow metric detected: '%s' took %dms (threshold: %dms)%s",
-                                metricType.getName(), duration, timeoutConfig.getSlowThresholdMillis(),
+                                metricType.getQualifiedName(), duration, timeoutConfig.getSlowThresholdMillis(),
                                 cacheHit ? " [cache hit]" : " [cache miss]"));
                     }
 
-                    final String metricName = metricType.getName();
+                    final String metricName = metricType.getQualifiedName();
                     final long finalDuration = duration;
                     final boolean finalTimedOut = timedOut;
                     final boolean finalSlow = slow;

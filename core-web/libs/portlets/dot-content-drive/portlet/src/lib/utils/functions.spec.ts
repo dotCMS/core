@@ -8,61 +8,36 @@ import {
     DotContentDriveItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { createFakeSite } from '@dotcms/utils-testing';
+import {
+    createFakeCheckboxField,
+    createFakeDateField,
+    createFakeSelectField,
+    createFakeTagField,
+    createFakeTextField
+} from '@dotcms/utils-testing';
 
 import {
     decodeFilters,
     encodeFilters,
     decodeByFilterKey,
-    buildContentDriveQuery,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
-    escapeLuceneSpecialChars,
-    isFolder
+    isFolder,
+    parseWorkflowToken,
+    workflowEntryToToken,
+    parseWorkflowFilter,
+    isDateFieldFilterType,
+    isMultiValueFieldFilterType,
+    isBinaryCheckboxField,
+    parseUserSearchableValue,
+    serializeUserSearchableValue,
+    buildUserSearchablePayload,
+    getUserSearchableActive
 } from './functions';
 
-import { SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
-    describe('escapeLuceneSpecialChars', () => {
-        it('should escape dash character', () => {
-            const result = escapeLuceneSpecialChars('profile-test');
-            expect(result).toBe('profile\\-test');
-        });
-
-        it('should escape plus character', () => {
-            const result = escapeLuceneSpecialChars('test+value');
-            expect(result).toBe('test\\+value');
-        });
-
-        it('should escape multiple special characters', () => {
-            const result = escapeLuceneSpecialChars('test+value-name');
-            expect(result).toBe('test\\+value\\-name');
-        });
-
-        it('should escape all Lucene special characters', () => {
-            const result = escapeLuceneSpecialChars('+-&|!(){}[]^"~*?:\\/');
-            expect(result).toBe('\\+\\-\\&\\|\\!\\(\\)\\{\\}\\[\\]\\^\\"\\~\\*\\?\\:\\\\\\/');
-        });
-
-        it('should not modify text without special characters', () => {
-            const result = escapeLuceneSpecialChars('normaltext');
-            expect(result).toBe('normaltext');
-        });
-
-        it('should handle empty string', () => {
-            const result = escapeLuceneSpecialChars('');
-            expect(result).toBe('');
-        });
-
-        it('should handle text with spaces and special characters', () => {
-            const result = escapeLuceneSpecialChars('profile- cool.jpg');
-            // Note: period (.) is not a special Lucene character, so it doesn't get escaped
-            expect(result).toBe('profile\\- cool.jpg');
-        });
-    });
-
     describe('decodeFilters', () => {
         it('should return an empty object when input is empty string', () => {
             const result = decodeFilters('');
@@ -281,6 +256,74 @@ describe('Utility Functions', () => {
 
             expect(titleResult).toEqual('');
         });
+
+        it('should decode workflow tokens, preserving the scheme:step colon', () => {
+            // Each token is `schemeId` or `schemeId:stepId`; only commas separate tokens.
+            const result = decodeByFilterKey.workflow('schemeA:stepX,schemeB,schemeC:stepY');
+            expect(result).toEqual(['schemeA:stepX', 'schemeB', 'schemeC:stepY']);
+        });
+    });
+
+    describe('workflow token (de)serialization', () => {
+        describe('parseWorkflowToken', () => {
+            it('should parse a scheme-only token', () => {
+                expect(parseWorkflowToken('schemeA')).toEqual({ scheme: 'schemeA' });
+            });
+
+            it('should parse a scheme:step token', () => {
+                expect(parseWorkflowToken('schemeA:stepX')).toEqual({
+                    scheme: 'schemeA',
+                    step: 'stepX'
+                });
+            });
+
+            it('should split on the FIRST colon only, preserving colons inside the step id', () => {
+                expect(parseWorkflowToken('scheme:step:with:colons')).toEqual({
+                    scheme: 'scheme',
+                    step: 'step:with:colons'
+                });
+            });
+
+            it('should treat an empty token as an empty scheme with no step', () => {
+                expect(parseWorkflowToken('')).toEqual({ scheme: '' });
+            });
+
+            it('should treat a leading separator as an empty scheme with a step', () => {
+                expect(parseWorkflowToken(':stepX')).toEqual({ scheme: '', step: 'stepX' });
+            });
+        });
+
+        describe('workflowEntryToToken', () => {
+            it('should serialize a scheme-only entry to the bare scheme id', () => {
+                expect(workflowEntryToToken({ scheme: 'schemeA' })).toBe('schemeA');
+            });
+
+            it('should serialize a scheme+step entry as scheme:step', () => {
+                expect(workflowEntryToToken({ scheme: 'schemeA', step: 'stepX' })).toBe(
+                    'schemeA:stepX'
+                );
+            });
+
+            it('should be the inverse of parseWorkflowToken (round-trip)', () => {
+                ['schemeA', 'schemeA:stepX', 'scheme:step:with:colons'].forEach((token) => {
+                    expect(workflowEntryToToken(parseWorkflowToken(token))).toBe(token);
+                });
+            });
+        });
+
+        describe('parseWorkflowFilter', () => {
+            it('should map a list of tokens to entries', () => {
+                expect(parseWorkflowFilter(['schemeA:stepX', 'schemeB'])).toEqual([
+                    { scheme: 'schemeA', step: 'stepX' },
+                    { scheme: 'schemeB' }
+                ]);
+            });
+
+            it('should default to an empty array when called with no tokens', () => {
+                expect(parseWorkflowFilter()).toEqual([]);
+                expect(parseWorkflowFilter([])).toEqual([]);
+            });
+        });
     });
 
     describe('encode and decode together', () => {
@@ -296,420 +339,17 @@ describe('Utility Functions', () => {
 
             expect(decoded).toEqual(original);
         });
-    });
 
-    describe('buildContentDriveQuery', () => {
-        const mockSite = createFakeSite({
-            aliases: '',
-            archived: false,
-            categoryId: '',
-            contentTypeId: '',
-            default: false,
-            dotAsset: false,
-            fileAsset: false,
-            folder: '/',
-            form: false,
-            host: 'test-site.com',
-            hostThumbnail: null,
-            hostname: 'test-site.com',
-            htmlpage: false,
-            identifier: 'test-site-123',
-            indexPolicyDependencies: '',
-            inode: 'test-inode',
-            keyValue: false,
-            languageId: 1,
-            languageVariable: false,
-            live: true,
-            locked: false,
-            lowIndexPriority: false,
-            modDate: 1234567890,
-            modUser: 'test-user',
-            name: 'Test Site',
-            new: false,
-            owner: 'admin',
-            parent: false,
-            permissionId: 'permission-123',
-            permissionType: 'INDIVIDUAL',
-            persona: false,
-            sortOrder: 0,
-            structureInode: 'structure-123',
-            systemHost: false,
-            tagStorage: 'SCHEMA',
-            title: 'Test Site',
-            titleImage: null,
-            type: 'HOST',
-            vanityUrl: false,
-            variantId: '',
-            versionId: 'version-123',
-            working: true
-        });
-
-        it('should build basic query with site and default filters', () => {
-            const result = buildContentDriveQuery({
-                currentSite: mockSite
-            });
-
-            // Should include base query, site filter, and default working/variant filters
-            expect(result).toContain(
-                '+systemType:false -contentType:forms -contentType:Host +deleted:false'
-            );
-            expect(result).toContain(
-                `+(conhost:${mockSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-            );
-        });
-
-        it('should add path filter when path is provided', () => {
-            const testPath = '/test/path';
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                path: testPath
-            });
-
-            expect(result).toContain(`parentPath:${testPath}`);
-        });
-
-        it('should not add path filter when path is undefined', () => {
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                path: undefined
-            });
-
-            expect(result).not.toContain('parentPath:');
-        });
-
-        it('should handle single value filters correctly', () => {
-            const filters: DotContentDriveFilters = {
-                status: 'published',
-                language: 'en'
+        it('should round-trip a workflow filter with pinned-step (scheme:step) tokens', () => {
+            const original: DotContentDriveFilters = {
+                workflow: ['schemeA:stepX', 'schemeB']
             };
 
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
+            const encoded = encodeFilters(original);
+            const decoded = decodeFilters(encoded);
 
-            expect(result).toContain('status:published');
-            expect(result).toContain('language:en');
-        });
-
-        it('should handle multiselect filters with single value', () => {
-            const filters: DotContentDriveFilters = {
-                contentType: ['Blog']
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            expect(result).toContain('+contentType:Blog');
-        });
-
-        it('should handle multiselect filters with multiple values', () => {
-            const filters: DotContentDriveFilters = {
-                contentType: ['Blog', 'News', 'Article']
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            expect(result).toContain('+contentType:(Blog OR News OR Article)');
-        });
-
-        it('should handle baseType multiselect filters correctly', () => {
-            const filters: DotContentDriveFilters = {
-                baseType: ['1', '2']
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            expect(result).toContain('+baseType:(1 OR 2)');
-        });
-
-        it('should handle title filter with special search logic', () => {
-            const filters: DotContentDriveFilters = {
-                title: 'test search'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            // Should include catchall search
-            expect(result).toContain('+catchall:*test search*');
-            // Should include title_dotraw search with boost
-            expect(result).toContain('title_dotraw:*test search*^5');
-            // Should include exact title search with higher boost (uses single quotes)
-            expect(result).toContain(`title:'test search'^15`);
-            // Should include individual word searches
-            expect(result).toContain('title:test^5');
-            expect(result).toContain('title:search^5');
-        });
-
-        it('should handle title filter with single word', () => {
-            const filters: DotContentDriveFilters = {
-                title: 'blog'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            expect(result).toContain('+catchall:*blog*');
-            expect(result).toContain('title_dotraw:*blog*^5');
-            expect(result).toContain("title:'blog'^15");
-            expect(result).toContain('title:blog^5');
-        });
-
-        it('should filter out empty words in title search', () => {
-            const filters: DotContentDriveFilters = {
-                title: 'test  search   with   spaces'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            // Should include individual words but not empty strings
-            expect(result).toContain('title:test^5');
-            expect(result).toContain('title:search^5');
-            expect(result).toContain('title:with^5');
-            expect(result).toContain('title:spaces^5');
-        });
-
-        it('should ignore filters with undefined values', () => {
-            const filters: DotContentDriveFilters = {
-                contentType: ['Blog'],
-                status: undefined,
-                language: 'en'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            expect(result).toContain('+contentType:Blog');
-            expect(result).toContain('language:en');
-            expect(result).not.toContain('status:');
-        });
-
-        it('should handle mixed filter types correctly', () => {
-            const filters: DotContentDriveFilters = {
-                contentType: ['Blog', 'News'],
-                baseType: ['1'],
-                title: 'search term',
-                status: 'published',
-                language: 'en'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                path: '/content',
-                filters
-            });
-
-            // Should include all filter types
-            expect(result).toContain('parentPath:/content');
-            expect(result).toContain('+contentType:(Blog OR News)');
-            expect(result).toContain('+baseType:1');
-            expect(result).toContain('+catchall:*search term*');
-            expect(result).toContain('status:published');
-            expect(result).toContain('language:en');
-        });
-
-        it('should handle empty filters object', () => {
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters: {}
-            });
-
-            // Should only include base query and site filters
-            expect(result).toContain(
-                '+systemType:false -contentType:forms -contentType:Host +deleted:false'
-            );
-            expect(result).toContain(
-                `+(conhost:${mockSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-            );
-        });
-
-        it('should handle filters with empty arrays', () => {
-            const filters: DotContentDriveFilters = {
-                contentType: [],
-                baseType: []
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            // Empty arrays should result in empty OR chains
-            expect(result).toContain('+contentType:');
-            expect(result).toContain('+baseType:');
-        });
-
-        it('should work with SYSTEM_HOST as current site', () => {
-            const result = buildContentDriveQuery({
-                currentSite: SYSTEM_HOST
-            });
-
-            // When current site is SYSTEM_HOST, it should use simple conhost filter without OR clause
-            expect(result).toContain(
-                `+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`
-            );
-            // Should NOT include the OR clause when site is SYSTEM_HOST
-            expect(result).not.toContain(
-                `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier})`
-            );
-        });
-
-        it('should differentiate between SYSTEM_HOST and regular site in query', () => {
-            const systemHostResult = buildContentDriveQuery({
-                currentSite: SYSTEM_HOST
-            });
-
-            const regularSiteResult = buildContentDriveQuery({
-                currentSite: mockSite
-            });
-
-            // SYSTEM_HOST should use simple filter
-            expect(systemHostResult).toContain(
-                `+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`
-            );
-            expect(systemHostResult).not.toContain('OR conhost:');
-
-            // Regular site should use OR clause to include both site and SYSTEM_HOST
-            expect(regularSiteResult).toContain(
-                `+(conhost:${mockSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-            );
-        });
-
-        it('should handle complex real-world scenario', () => {
-            const filters: DotContentDriveFilters = {
-                contentType: ['Blog', 'NewsArticle'],
-                baseType: ['1', '2'],
-                title: 'dotCMS content management',
-                status: 'published',
-                languageId: ['1']
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                path: '/site/content/blog',
-                filters
-            });
-
-            // Verify all components are present
-            expect(result).toContain('parentPath:/site/content/blog');
-            expect(result).toContain('+contentType:(Blog OR NewsArticle)');
-            expect(result).toContain('+baseType:(1 OR 2)');
-            expect(result).toContain('+catchall:*dotCMS content management*');
-            expect(result).toContain('title:dotCMS^5');
-            expect(result).toContain('title:content^5');
-            expect(result).toContain('title:management^5');
-            expect(result).toContain('status:published');
-            expect(result).toContain('languageId:1');
-        });
-
-        it('should handle title search with special characters (dash)', () => {
-            const filters: DotContentDriveFilters = {
-                title: 'profile-'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            // Should use escaped value for title_dotraw (preserves special chars)
-            expect(result).toContain('title_dotraw:*profile\\-*');
-            // Should also search catchall with escaped value
-            expect(result).toContain('catchall:*profile\\-*');
-            // Should NOT include individual word searches for special char only searches
-            expect(result).not.toContain('title:profile^5');
-        });
-
-        it('should handle title search with special characters (plus)', () => {
-            const filters: DotContentDriveFilters = {
-                title: 'A+B'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            // Should escape the plus sign
-            expect(result).toContain('title_dotraw:*A\\+B*');
-            expect(result).toContain('catchall:*A\\+B*');
-        });
-
-        it('should handle title search with special characters and words', () => {
-            const filters: DotContentDriveFilters = {
-                title: 'profile- cool'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            // Should use escaped value for title_dotraw (space is not escaped, only the dash)
-            expect(result).toContain('title_dotraw:*profile\\- cool*');
-            // Should also include catchall with escaped value
-            expect(result).toContain('catchall:*profile\\- cool*');
-        });
-
-        it('should handle title search with multiple special characters', () => {
-            const filters: DotContentDriveFilters = {
-                title: 'test+value.name'
-            };
-
-            const result = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters
-            });
-
-            // Should escape special characters (+ is escaped, period is not a Lucene special char)
-            expect(result).toContain('title_dotraw:*test\\+value.name*');
-            expect(result).toContain('catchall:*test\\+value.name*');
-        });
-
-        it('should differentiate between special char search and normal search', () => {
-            const normalFilters: DotContentDriveFilters = {
-                title: 'blog post'
-            };
-            const specialCharFilters: DotContentDriveFilters = {
-                title: 'profile-'
-            };
-
-            const normalResult = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters: normalFilters
-            });
-            const specialCharResult = buildContentDriveQuery({
-                currentSite: mockSite,
-                filters: specialCharFilters
-            });
-
-            // Normal search should use catchall without escaping
-            expect(normalResult).toContain('+catchall:*blog post*');
-            expect(normalResult).toContain('title:blog^5');
-            expect(normalResult).toContain('title:post^5');
-
-            // Special char search should use OR clause with escaped values
-            expect(specialCharResult).toContain('+(title_dotraw:*profile\\-*');
-            expect(specialCharResult).toContain('OR catchall:*profile\\-*');
-            expect(specialCharResult).not.toContain('title:profile^5');
+            expect(encoded).toBe('workflow:schemeA:stepX,schemeB');
+            expect(decoded).toEqual(original);
         });
     });
 
@@ -1136,6 +776,194 @@ describe('Utility Functions', () => {
         it('should return false for null or undefined', () => {
             expect(isFolder(null as unknown as DotContentDriveItem)).toBe(false);
             expect(isFolder(undefined as unknown as DotContentDriveItem)).toBe(false);
+        });
+    });
+});
+
+describe('User-searchable field helpers', () => {
+    describe('decodeFilters - us.* keys', () => {
+        it('should keep a us.* value raw without comma-splitting', () => {
+            const result = decodeFilters('us.publishDate:2024-01-01,2024-12-31');
+
+            expect(result['us.publishDate']).toBe('2024-01-01,2024-12-31');
+        });
+
+        it('should not trim/split even when the raw value has spaces and commas', () => {
+            const result = decodeFilters('us.summary:hello, world');
+
+            expect(result['us.summary']).toBe('hello, world');
+        });
+    });
+
+    describe('getUserSearchableActive', () => {
+        it('should return the field variables of us.* keys, in order, ignoring other filters', () => {
+            expect(
+                getUserSearchableActive({ 'us.title': 'x', baseType: ['1'], 'us.tags': 'a,b' })
+            ).toEqual(['title', 'tags']);
+        });
+
+        it('should return an empty array when there are no us.* keys', () => {
+            expect(getUserSearchableActive({ contentType: ['Blog'] })).toEqual([]);
+        });
+    });
+
+    describe('isDateFieldFilterType', () => {
+        it('should be true for Date, Date-and-Time and Time', () => {
+            expect(isDateFieldFilterType('Date')).toBe(true);
+            expect(isDateFieldFilterType('Date-and-Time')).toBe(true);
+            expect(isDateFieldFilterType('Time')).toBe(true);
+        });
+
+        it('should be false for non-date types', () => {
+            expect(isDateFieldFilterType('Text')).toBe(false);
+            expect(isDateFieldFilterType('Select')).toBe(false);
+        });
+    });
+
+    describe('isMultiValueFieldFilterType', () => {
+        it('should be true for the multi-value types', () => {
+            expect(isMultiValueFieldFilterType('Multi-Select')).toBe(true);
+            expect(isMultiValueFieldFilterType('Checkbox')).toBe(true);
+            expect(isMultiValueFieldFilterType('Tag')).toBe(true);
+            expect(isMultiValueFieldFilterType('Category')).toBe(true);
+        });
+
+        it('should be false for single-value types', () => {
+            expect(isMultiValueFieldFilterType('Text')).toBe(false);
+            expect(isMultiValueFieldFilterType('Select')).toBe(false);
+            expect(isMultiValueFieldFilterType('Radio')).toBe(false);
+            // Relationship is single-value (one related identifier).
+            expect(isMultiValueFieldFilterType('Relationship')).toBe(false);
+        });
+    });
+
+    describe('isBinaryCheckboxField', () => {
+        it('should be true for a single-option checkbox', () => {
+            expect(isBinaryCheckboxField(createFakeCheckboxField({ values: '|true' }))).toBe(true);
+        });
+
+        it('should be false for a multi-option checkbox', () => {
+            expect(isBinaryCheckboxField(createFakeCheckboxField({ values: 'A|a\r\nB|b' }))).toBe(
+                false
+            );
+        });
+
+        it('should be false for non-checkbox fields', () => {
+            expect(isBinaryCheckboxField(createFakeSelectField({ values: 'A|a' }))).toBe(false);
+        });
+    });
+
+    describe('parseUserSearchableValue', () => {
+        it('should return undefined for an empty raw value', () => {
+            expect(parseUserSearchableValue('', 'Text')).toBeUndefined();
+        });
+
+        it('should return the raw string for text/select', () => {
+            expect(parseUserSearchableValue('hello', 'Text')).toBe('hello');
+            expect(parseUserSearchableValue('published', 'Select')).toBe('published');
+        });
+
+        it('should split multi-value types into an array', () => {
+            expect(parseUserSearchableValue('a,b,c', 'Multi-Select')).toEqual(['a', 'b', 'c']);
+        });
+
+        it('should round-trip a multi-value value that contains the separator', () => {
+            // A tag label like "News, Press" must survive serialize → parse intact.
+            const stored = serializeUserSearchableValue(['News, Press', 'cms'], 'Tag');
+
+            expect(stored).not.toContain('News, Press');
+            expect(parseUserSearchableValue(stored, 'Tag')).toEqual(['News, Press', 'cms']);
+        });
+
+        it('should reshape date types into a from/to range', () => {
+            expect(parseUserSearchableValue('2024-01-01,2024-12-31', 'Date')).toEqual({
+                from: '2024-01-01',
+                to: '2024-12-31'
+            });
+        });
+    });
+
+    describe('serializeUserSearchableValue', () => {
+        it('should serialize null/undefined to an empty string', () => {
+            expect(serializeUserSearchableValue(null, 'Text')).toBe('');
+            expect(serializeUserSearchableValue(undefined, 'Text')).toBe('');
+        });
+
+        it('should join a multi-value array with commas', () => {
+            expect(serializeUserSearchableValue(['a', 'b'], 'Multi-Select')).toBe('a,b');
+        });
+
+        it('should serialize a date range to from,to', () => {
+            expect(
+                serializeUserSearchableValue({ from: '2024-01-01', to: '2024-12-31' }, 'Date')
+            ).toBe('2024-01-01,2024-12-31');
+        });
+
+        it('should serialize an empty date range to an empty string', () => {
+            expect(serializeUserSearchableValue({ from: '', to: '' }, 'Date')).toBe('');
+        });
+
+        it('should stringify a single value', () => {
+            expect(serializeUserSearchableValue('published', 'Select')).toBe('published');
+        });
+
+        it('should return an empty string for a non-range value on a Date field', () => {
+            // Mismatched fieldType/value (a string where a range is expected) must not produce a
+            // misleading partial range.
+            expect(serializeUserSearchableValue('not-a-range', 'Date')).toBe('');
+            expect(serializeUserSearchableValue(['a', 'b'], 'Date')).toBe('');
+        });
+    });
+
+    describe('buildUserSearchablePayload', () => {
+        it('should return undefined when there are no us.* entries', () => {
+            const payload = buildUserSearchablePayload({ contentType: ['Blog'] }, []);
+
+            expect(payload).toBeUndefined();
+        });
+
+        it('should reshape each field value by its type', () => {
+            const filters: DotContentDriveFilters = {
+                'us.title': 'review',
+                'us.tags': 'angular,cms',
+                'us.postingDate': '2024-01-01,2024-12-31'
+            };
+            const fields = [
+                createFakeTextField({ variable: 'title' }),
+                createFakeTagField({ variable: 'tags' }),
+                createFakeDateField({ variable: 'postingDate' })
+            ];
+
+            const payload = buildUserSearchablePayload(filters, fields);
+
+            expect(payload).toEqual({
+                title: 'review',
+                tags: ['angular', 'cms'],
+                postingDate: { from: '2024-01-01', to: '2024-12-31' }
+            });
+        });
+
+        it('should emit a boolean for a binary checkbox and always include it', () => {
+            const fields = [createFakeCheckboxField({ variable: 'featured', values: '|true' })];
+
+            expect(buildUserSearchablePayload({ 'us.featured': 'true' }, fields)).toEqual({
+                featured: true
+            });
+            expect(buildUserSearchablePayload({ 'us.featured': 'false' }, fields)).toEqual({
+                featured: false
+            });
+        });
+
+        it('should skip empty non-binary values and fields without loaded metadata', () => {
+            const fields = [createFakeTextField({ variable: 'title' })];
+
+            // us.title is empty, and us.unknown has no field metadata → both skipped.
+            const payload = buildUserSearchablePayload(
+                { 'us.title': '', 'us.unknown': 'x' },
+                fields
+            );
+
+            expect(payload).toBeUndefined();
         });
     });
 });

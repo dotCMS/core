@@ -1,8 +1,17 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+@plugin '@tailwindcss/typography';
+@import './daisyui-theme.css';
 
 :root {
     --experiment-nav-size: 80px;
+    /*
+     * Analytics engagement stacked bars + legend (“not engaged” segment).
+     * Fill aligns with bounced slice: AnalyticsChartColors.neutralDark.line in
+     * @dotcms/portlets/dot-analytics/data-access dot-analytics.constants.ts
+     */
+    --bar-engagement-not-engaged: var(--p-gray-200);
+    --bar-engagement-not-engaged-foreground: var(--p-gray-700);
 }
 
 a {
@@ -21,7 +30,7 @@ a:visited {
     @apply text-primary-800;
 }
 
-/* The .form > div is because the app form is using a div to wrap the fields. */
+/* The .form > div is because the app form uses a div to wrap the fields. */
 .form {
     @apply w-full space-y-5;
 }
@@ -35,10 +44,10 @@ a:visited {
 }
 
 /*
-Since we using space-y-5, we need to hide the empty fields.
-This selector needs work, I don't want to have to specify every single component that don't needs to be hidden.
-TODO: (migration) check all the forms for the "hint" or "error" messages when empty it adds extra space between fields
-*/
+ * With space-y-5, we need to hide empty fields.
+ * This selector needs work; we don't want to specify every single component that shouldn't be hidden.
+ * TODO: (migration) check all forms for "hint" or "error" messages when empty — they add extra space between fields.
+ */
 /* .form
     *:not(
         .p-checkbox-box,
@@ -58,17 +67,17 @@ TODO: (migration) check all the forms for the "hint" or "error" messages when em
     @apply flex flex-col gap-1;
 }
 
-.form .field label {
+.form .field > label {
     @apply text-sm font-medium;
 }
 
-.form .checkbox,
-.form .radio {
-    @apply flex flex-row gap-2 items-center;
+.form .form-checkbox,
+.form .form-radio {
+    @apply flex flex-row items-center gap-2;
 }
 
-.form .checkbox label,
-.form .radio label {
+.form .form-checkbox label,
+.form .form-radio label {
     @apply text-sm font-normal;
 }
 
@@ -78,4 +87,291 @@ TODO: (migration) check all the forms for the "hint" or "error" messages when em
 
 .form .p-field-error {
     @apply text-sm text-red-500;
+}
+
+@theme inline {
+    --color-emerald-50: var(--p-emerald-50);
+    --color-emerald-100: var(--p-emerald-100);
+    --color-emerald-200: var(--p-emerald-200);
+    --color-emerald-300: var(--p-emerald-300);
+    --color-emerald-400: var(--p-emerald-400);
+    --color-emerald-500: var(--p-emerald-500);
+    --color-emerald-600: var(--p-emerald-600);
+    --color-emerald-700: var(--p-emerald-700);
+    --color-emerald-800: var(--p-emerald-800);
+    --color-emerald-900: var(--p-emerald-900);
+    --color-emerald-950: var(--p-emerald-950);
+
+    --color-green-50: var(--p-green-50);
+    --color-green-100: var(--p-green-100);
+    --color-green-200: var(--p-green-200);
+    --color-green-300: var(--p-green-300);
+    --color-green-400: var(--p-green-400);
+    --color-green-500: var(--p-green-500);
+    --color-green-600: var(--p-green-600);
+    --color-green-700: var(--p-green-700);
+    --color-green-800: var(--p-green-800);
+    --color-green-900: var(--p-green-900);
+    --color-green-950: var(--p-green-950);
+
+    --color-lime-50: var(--p-lime-50);
+    --color-lime-100: var(--p-lime-100);
+    --color-lime-200: var(--p-lime-200);
+    --color-lime-300: var(--p-lime-300);
+    --color-lime-400: var(--p-lime-400);
+    --color-lime-500: var(--p-lime-500);
+    --color-lime-600: var(--p-lime-600);
+    --color-lime-700: var(--p-lime-700);
+    --color-lime-800: var(--p-lime-800);
+    --color-lime-900: var(--p-lime-900);
+    --color-lime-950: var(--p-lime-950);
+
+    --color-red-50: var(--p-red-50);
+    --color-red-100: var(--p-red-100);
+    --color-red-200: var(--p-red-200);
+    --color-red-300: var(--p-red-300);
+    --color-red-400: var(--p-red-400);
+    --color-red-500: var(--p-red-500);
+    --color-red-600: var(--p-red-600);
+    --color-red-700: var(--p-red-700);
+    --color-red-800: var(--p-red-800);
+    --color-red-900: var(--p-red-900);
+    --color-red-950: var(--p-red-950);
+
+    --color-orange-50: var(--p-orange-50);
+    --color-orange-100: var(--p-orange-100);
+    --color-orange-200: var(--p-orange-200);
+    --color-orange-300: var(--p-orange-300);
+    --color-orange-400: var(--p-orange-400);
+    --color-orange-500: var(--p-orange-500);
+    --color-orange-600: var(--p-orange-600);
+    --color-orange-700: var(--p-orange-700);
+    --color-orange-800: var(--p-orange-800);
+    --color-orange-900: var(--p-orange-900);
+    --color-orange-950: var(--p-orange-950);
+
+    --color-amber-50: var(--p-amber-50);
+    --color-amber-100: var(--p-amber-100);
+    --color-amber-200: var(--p-amber-200);
+    --color-amber-300: var(--p-amber-300);
+    --color-amber-400: var(--p-amber-400);
+    --color-amber-500: var(--p-amber-500);
+    --color-amber-600: var(--p-amber-600);
+    --color-amber-700: var(--p-amber-700);
+    --color-amber-800: var(--p-amber-800);
+    --color-amber-900: var(--p-amber-900);
+    --color-amber-950: var(--p-amber-950);
+
+    --color-yellow-50: var(--p-yellow-50);
+    --color-yellow-100: var(--p-yellow-100);
+    --color-yellow-200: var(--p-yellow-200);
+    --color-yellow-300: var(--p-yellow-300);
+    --color-yellow-400: var(--p-yellow-400);
+    --color-yellow-500: var(--p-yellow-500);
+    --color-yellow-600: var(--p-yellow-600);
+    --color-yellow-700: var(--p-yellow-700);
+    --color-yellow-800: var(--p-yellow-800);
+    --color-yellow-900: var(--p-yellow-900);
+    --color-yellow-950: var(--p-yellow-950);
+
+    --color-teal-50: var(--p-teal-50);
+    --color-teal-100: var(--p-teal-100);
+    --color-teal-200: var(--p-teal-200);
+    --color-teal-300: var(--p-teal-300);
+    --color-teal-400: var(--p-teal-400);
+    --color-teal-500: var(--p-teal-500);
+    --color-teal-600: var(--p-teal-600);
+    --color-teal-700: var(--p-teal-700);
+    --color-teal-800: var(--p-teal-800);
+    --color-teal-900: var(--p-teal-900);
+    --color-teal-950: var(--p-teal-950);
+
+    --color-cyan-50: var(--p-cyan-50);
+    --color-cyan-100: var(--p-cyan-100);
+    --color-cyan-200: var(--p-cyan-200);
+    --color-cyan-300: var(--p-cyan-300);
+    --color-cyan-400: var(--p-cyan-400);
+    --color-cyan-500: var(--p-cyan-500);
+    --color-cyan-600: var(--p-cyan-600);
+    --color-cyan-700: var(--p-cyan-700);
+    --color-cyan-800: var(--p-cyan-800);
+    --color-cyan-900: var(--p-cyan-900);
+    --color-cyan-950: var(--p-cyan-950);
+
+    --color-sky-50: var(--p-sky-50);
+    --color-sky-100: var(--p-sky-100);
+    --color-sky-200: var(--p-sky-200);
+    --color-sky-300: var(--p-sky-300);
+    --color-sky-400: var(--p-sky-400);
+    --color-sky-500: var(--p-sky-500);
+    --color-sky-600: var(--p-sky-600);
+    --color-sky-700: var(--p-sky-700);
+    --color-sky-800: var(--p-sky-800);
+    --color-sky-900: var(--p-sky-900);
+    --color-sky-950: var(--p-sky-950);
+
+    --color-blue-50: var(--p-blue-50);
+    --color-blue-100: var(--p-blue-100);
+    --color-blue-200: var(--p-blue-200);
+    --color-blue-300: var(--p-blue-300);
+    --color-blue-400: var(--p-blue-400);
+    --color-blue-500: var(--p-blue-500);
+    --color-blue-600: var(--p-blue-600);
+    --color-blue-700: var(--p-blue-700);
+    --color-blue-800: var(--p-blue-800);
+    --color-blue-900: var(--p-blue-900);
+    --color-blue-950: var(--p-blue-950);
+
+    --color-indigo-50: var(--p-indigo-50);
+    --color-indigo-100: var(--p-indigo-100);
+    --color-indigo-200: var(--p-indigo-200);
+    --color-indigo-300: var(--p-indigo-300);
+    --color-indigo-400: var(--p-indigo-400);
+    --color-indigo-500: var(--p-indigo-500);
+    --color-indigo-600: var(--p-indigo-600);
+    --color-indigo-700: var(--p-indigo-700);
+    --color-indigo-800: var(--p-indigo-800);
+    --color-indigo-900: var(--p-indigo-900);
+    --color-indigo-950: var(--p-indigo-950);
+
+    --color-violet-50: var(--p-violet-50);
+    --color-violet-100: var(--p-violet-100);
+    --color-violet-200: var(--p-violet-200);
+    --color-violet-300: var(--p-violet-300);
+    --color-violet-400: var(--p-violet-400);
+    --color-violet-500: var(--p-violet-500);
+    --color-violet-600: var(--p-violet-600);
+    --color-violet-700: var(--p-violet-700);
+    --color-violet-800: var(--p-violet-800);
+    --color-violet-900: var(--p-violet-900);
+    --color-violet-950: var(--p-violet-950);
+
+    --color-purple-50: var(--p-purple-50);
+    --color-purple-100: var(--p-purple-100);
+    --color-purple-200: var(--p-purple-200);
+    --color-purple-300: var(--p-purple-300);
+    --color-purple-400: var(--p-purple-400);
+    --color-purple-500: var(--p-purple-500);
+    --color-purple-600: var(--p-purple-600);
+    --color-purple-700: var(--p-purple-700);
+    --color-purple-800: var(--p-purple-800);
+    --color-purple-900: var(--p-purple-900);
+    --color-purple-950: var(--p-purple-950);
+
+    --color-fuchsia-50: var(--p-fuchsia-50);
+    --color-fuchsia-100: var(--p-fuchsia-100);
+    --color-fuchsia-200: var(--p-fuchsia-200);
+    --color-fuchsia-300: var(--p-fuchsia-300);
+    --color-fuchsia-400: var(--p-fuchsia-400);
+    --color-fuchsia-500: var(--p-fuchsia-500);
+    --color-fuchsia-600: var(--p-fuchsia-600);
+    --color-fuchsia-700: var(--p-fuchsia-700);
+    --color-fuchsia-800: var(--p-fuchsia-800);
+    --color-fuchsia-900: var(--p-fuchsia-900);
+    --color-fuchsia-950: var(--p-fuchsia-950);
+
+    --color-pink-50: var(--p-pink-50);
+    --color-pink-100: var(--p-pink-100);
+    --color-pink-200: var(--p-pink-200);
+    --color-pink-300: var(--p-pink-300);
+    --color-pink-400: var(--p-pink-400);
+    --color-pink-500: var(--p-pink-500);
+    --color-pink-600: var(--p-pink-600);
+    --color-pink-700: var(--p-pink-700);
+    --color-pink-800: var(--p-pink-800);
+    --color-pink-900: var(--p-pink-900);
+    --color-pink-950: var(--p-pink-950);
+
+    --color-rose-50: var(--p-rose-50);
+    --color-rose-100: var(--p-rose-100);
+    --color-rose-200: var(--p-rose-200);
+    --color-rose-300: var(--p-rose-300);
+    --color-rose-400: var(--p-rose-400);
+    --color-rose-500: var(--p-rose-500);
+    --color-rose-600: var(--p-rose-600);
+    --color-rose-700: var(--p-rose-700);
+    --color-rose-800: var(--p-rose-800);
+    --color-rose-900: var(--p-rose-900);
+    --color-rose-950: var(--p-rose-950);
+
+    --color-slate-50: var(--p-slate-50);
+    --color-slate-100: var(--p-slate-100);
+    --color-slate-200: var(--p-slate-200);
+    --color-slate-300: var(--p-slate-300);
+    --color-slate-400: var(--p-slate-400);
+    --color-slate-500: var(--p-slate-500);
+    --color-slate-600: var(--p-slate-600);
+    --color-slate-700: var(--p-slate-700);
+    --color-slate-800: var(--p-slate-800);
+    --color-slate-900: var(--p-slate-900);
+    --color-slate-950: var(--p-slate-950);
+
+    --color-gray-50: var(--p-gray-50);
+    --color-gray-100: var(--p-gray-100);
+    --color-gray-200: var(--p-gray-200);
+    --color-gray-300: var(--p-gray-300);
+    --color-gray-400: var(--p-gray-400);
+    --color-gray-500: var(--p-gray-500);
+    --color-gray-600: var(--p-gray-600);
+    --color-gray-700: var(--p-gray-700);
+    --color-gray-800: var(--p-gray-800);
+    --color-gray-900: var(--p-gray-900);
+    --color-gray-950: var(--p-gray-950);
+
+    --color-zinc-50: var(--p-zinc-50);
+    --color-zinc-100: var(--p-zinc-100);
+    --color-zinc-200: var(--p-zinc-200);
+    --color-zinc-300: var(--p-zinc-300);
+    --color-zinc-400: var(--p-zinc-400);
+    --color-zinc-500: var(--p-zinc-500);
+    --color-zinc-600: var(--p-zinc-600);
+    --color-zinc-700: var(--p-zinc-700);
+    --color-zinc-800: var(--p-zinc-800);
+    --color-zinc-900: var(--p-zinc-900);
+    --color-zinc-950: var(--p-zinc-950);
+
+    --color-neutral-50: var(--p-neutral-50);
+    --color-neutral-100: var(--p-neutral-100);
+    --color-neutral-200: var(--p-neutral-200);
+    --color-neutral-300: var(--p-neutral-300);
+    --color-neutral-400: var(--p-neutral-400);
+    --color-neutral-500: var(--p-neutral-500);
+    --color-neutral-600: var(--p-neutral-600);
+    --color-neutral-700: var(--p-neutral-700);
+    --color-neutral-800: var(--p-neutral-800);
+    --color-neutral-900: var(--p-neutral-900);
+    --color-neutral-950: var(--p-neutral-950);
+
+    --color-stone-50: var(--p-stone-50);
+    --color-stone-100: var(--p-stone-100);
+    --color-stone-200: var(--p-stone-200);
+    --color-stone-300: var(--p-stone-300);
+    --color-stone-400: var(--p-stone-400);
+    --color-stone-500: var(--p-stone-500);
+    --color-stone-600: var(--p-stone-600);
+    --color-stone-700: var(--p-stone-700);
+    --color-stone-800: var(--p-stone-800);
+    --color-stone-900: var(--p-stone-900);
+    --color-stone-950: var(--p-stone-950);
+
+    /*
+     * TEMPORARY: brand `secondary` color.
+     * PrimeNG/Lara has no `secondary` slot and tailwindcss-primeui doesn't expose one,
+     * so we bridge Tailwind's `secondary-*` utilities to the legacy CSS vars that
+     * DotUiColorsService updates at runtime (--color-palette-secondary-*, range 100-900).
+     * 50 and 950 are aliased to 100/900 (those steps don't exist in the runtime palette).
+     * Remove once PrimeNG-managed --p-secondary-* tokens land (issue #35869).
+     */
+    --color-secondary: var(--color-palette-secondary-500);
+    --color-secondary-50: var(--color-palette-secondary-100);
+    --color-secondary-100: var(--color-palette-secondary-100);
+    --color-secondary-200: var(--color-palette-secondary-200);
+    --color-secondary-300: var(--color-palette-secondary-300);
+    --color-secondary-400: var(--color-palette-secondary-400);
+    --color-secondary-500: var(--color-palette-secondary-500);
+    --color-secondary-600: var(--color-palette-secondary-600);
+    --color-secondary-700: var(--color-palette-secondary-700);
+    --color-secondary-800: var(--color-palette-secondary-800);
+    --color-secondary-900: var(--color-palette-secondary-900);
+    --color-secondary-950: var(--color-palette-secondary-900);
 }

@@ -3,7 +3,8 @@
 import { of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -20,22 +21,23 @@ import {
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
+    DotFieldService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     createFakeEvent,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
@@ -48,12 +50,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-
-// eslint-disable-next-line max-len
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -151,11 +150,12 @@ describe('DotContentTypesEditComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 DotIconComponent,
-                HttpClientTestingModule,
                 ButtonModule,
                 DialogModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -173,7 +173,6 @@ describe('DotContentTypesEditComponent', () => {
                     useValue: { data: of(route) }
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -186,8 +185,9 @@ describe('DotContentTypesEditComponent', () => {
                 DotHttpErrorManagerService,
                 DotMenuService,
                 DotEventsService,
-                FieldService,
-                Location
+                DotFieldService,
+                Location,
+                { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } }
             ]
         };
     };
@@ -219,7 +219,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should have dialog opened by default & has css base-type class', () => {
             expect(dialog).not.toBeNull();
-            expect(comp.show).toBeTruthy();
+            expect(comp.show()).toBeTruthy();
         });
 
         it('should set dialog actions set correctly', () => {
@@ -238,7 +238,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should close the dialog when cancel button is clicked', fakeAsync(() => {
             // Open the dialog first
-            comp.show = true;
+            comp.show.set(true);
             fixture.detectChanges();
             tick();
 
@@ -359,7 +359,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should handle error', () => {
                 jest.spyOn(crudService, 'postData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
 
@@ -404,7 +404,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should set savingContentType to false on create error', () => {
                 jest.spyOn(crudService, 'postData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
 
@@ -440,7 +440,7 @@ describe('DotContentTypesEditComponent', () => {
             it('should open form dialog by default in create mode', () => {
                 const dialog = de.query(By.css('p-dialog'));
                 expect(dialog).not.toBeNull();
-                expect(comp.show).toBeTruthy();
+                expect(comp.show()).toBeTruthy();
             });
         });
     });
@@ -496,7 +496,7 @@ describe('DotContentTypesEditComponent', () => {
     };
 
     describe('edit mode', () => {
-        let fieldService: FieldService;
+        let fieldService: DotFieldService;
         let queryParams: Subject<any>;
 
         beforeEach(waitForAsync(() => {
@@ -520,8 +520,8 @@ describe('DotContentTypesEditComponent', () => {
                     { provide: SiteService, useClass: SiteServiceMock },
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                    { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } },
                     ConfirmationService,
                     DotAlertConfirmService,
                     DotContentTypesInfoService,
@@ -530,7 +530,7 @@ describe('DotContentTypesEditComponent', () => {
                     DotHttpErrorManagerService,
                     DotMenuService,
                     DotEventsService,
-                    FieldService,
+                    DotFieldService,
                     Location
                 ]
             });
@@ -539,7 +539,7 @@ describe('DotContentTypesEditComponent', () => {
             comp = fixture.componentInstance;
             de = fixture.debugElement;
 
-            fieldService = de.injector.get(FieldService);
+            fieldService = de.injector.get(DotFieldService);
             crudService = fixture.debugElement.injector.get(DotCrudService);
             location = fixture.debugElement.injector.get(Location);
             dotRouterService = fixture.debugElement.injector.get(DotRouterService);
@@ -563,12 +563,9 @@ describe('DotContentTypesEditComponent', () => {
             expect(dropZone.componentInstance.contentType.name).toBe('name');
         });
 
-        it('should set data, fields and  cache', () => {
+        it('should set data and fields', () => {
             expect(comp.data).toBe(fakeContentType);
             expect(comp.layout).toBe(fakeContentType.layout);
-
-            const dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
-            expect(dotEditContentTypeCacheService.get()).toEqual(fakeContentType);
         });
 
         it('should have dot-content-type-layout', () => {
@@ -590,7 +587,7 @@ describe('DotContentTypesEditComponent', () => {
             clickEditButton();
 
             expect(dialog).not.toBeNull();
-            expect(comp.show).toBeTruthy();
+            expect(comp.show()).toBeTruthy();
         });
 
         it('should send notifications to add rows & tab divider', () => {
@@ -620,6 +617,40 @@ describe('DotContentTypesEditComponent', () => {
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        }));
+
+        it('should close the dialog when cancel button is clicked in edit mode', fakeAsync(() => {
+            clickEditButton();
+            tick();
+            fixture.detectChanges();
+            expect(comp.show()).toBe(true);
+
+            const cancelButton = de.query(By.css('[data-testId="dotDialogCancelAction"]'));
+            expect(cancelButton).toBeTruthy();
+
+            cancelButton.nativeElement.click();
+            fixture.detectChanges();
+            tick();
+
+            // Edit-mode Cancel must flip show() to false (regression fix for #36298);
+            // routing stays on the edit URL — onDialogHide clears the open-config query param
+            // instead of routing back to the portlet list.
+            expect(comp.show()).toBe(false);
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        }));
+
+        it('should mount the form on open and unmount it on dialog hide', fakeAsync(() => {
+            // The "form stays mounted through the close fade" guarantee depends on p-dialog's
+            // post-animation onHide timing, which jsdom doesn't simulate. We assert the unit-
+            // testable invariants: form is mounted while open, unmounted after onDialogHide.
+            clickEditButton();
+            tick();
+            fixture.detectChanges();
+            expect(comp.$renderForm()).toBe(true);
+
+            comp.onDialogHide();
+            fixture.detectChanges();
+            expect(comp.$renderForm()).toBe(false);
         }));
 
         it('should update fields attribute when a field is edit', () => {
@@ -809,7 +840,7 @@ describe('DotContentTypesEditComponent', () => {
 
             jest.spyOn(dotHttpErrorManagerService, 'handle');
             jest.spyOn(fieldService, 'saveFields').mockReturnValue(
-                throwError(mockResponseView(403))
+                throwError(() => mockResponseView(403))
             );
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -839,13 +870,10 @@ describe('DotContentTypesEditComponent', () => {
             };
 
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
-            contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
+            contentTypeFieldsDropZone.componentInstance.removeFields.emit([fieldToRemove]);
 
-            // then: the saveFields method has to be called in FileService ...
-            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith(
-                '1234567890',
-                fieldToRemove
-            );
+            // then: the saveFields method has to be called in FileService with the field ids ...
+            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith('1234567890', ['3']);
             // ...and the comp.data.fields has to be set to the fields return by the service
             expect(comp.layout).toEqual(layout);
         });
@@ -854,7 +882,7 @@ describe('DotContentTypesEditComponent', () => {
             jest.spyOn(dotHttpErrorManagerService, 'handle');
 
             jest.spyOn(fieldService, 'deleteFields').mockReturnValue(
-                throwError(mockResponseView(403))
+                throwError(() => mockResponseView(403))
             );
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -867,7 +895,7 @@ describe('DotContentTypesEditComponent', () => {
             };
 
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
-            contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
+            contentTypeFieldsDropZone.componentInstance.removeFields.emit([fieldToRemove]);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
         });
@@ -934,7 +962,7 @@ describe('DotContentTypesEditComponent', () => {
             it('should handle error', () => {
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
                 jest.spyOn(crudService, 'putData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
@@ -958,13 +986,46 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should set savingContentType to false on update error', () => {
                 jest.spyOn(crudService, 'putData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
                 expect(comp.savingContentType()).toBe(false);
             });
+
+            it('should close the dialog after a successful update', fakeAsync(() => {
+                const response$ = new Subject<DotCMSContentType>();
+                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
+                fixture.detectChanges();
+
+                expect(comp.show()).toBe(true);
+
+                response$.next(fakeContentType);
+                response$.complete();
+                tick();
+                fixture.detectChanges();
+
+                expect(comp.show()).toBe(false);
+            }));
+
+            it('should keep dialog closed after update (no reopen)', fakeAsync(() => {
+                const response$ = new Subject<DotCMSContentType>();
+                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+                jest.spyOn(comp, 'startFormDialog');
+
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
+
+                response$.next(fakeContentType);
+                response$.complete();
+                tick();
+                fixture.detectChanges();
+
+                expect(comp.show()).toBe(false);
+                expect(comp.startFormDialog).not.toHaveBeenCalled();
+            }));
         });
 
         describe('checkAndOpenFormDialog', () => {
@@ -1017,6 +1078,26 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
 
                 expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+            }));
+
+            it('should not reopen dialog when route.data emits again after update', fakeAsync(() => {
+                // Simulate successful update: dialog opens, update fires, dialog closes
+                queryParams.next({ 'open-config': 'true' });
+                tick();
+
+                expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+                expect(comp.show()).toBe(true);
+
+                comp.show.set(false); // simulates show.set(false) from updateContentType
+
+                // Simulate route.data re-emitting (e.g. triggered by onDialogHide navigation)
+                // Since isFirstLoad = false (data was already set on first emission),
+                // checkAndOpenFormDialog should NOT run again
+                queryParams.next({ 'open-config': 'true' });
+                tick();
+
+                expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+                expect(comp.show()).toBe(false);
             }));
         });
     });

@@ -1,6 +1,6 @@
 import { describe } from '@jest/globals';
 import { MonacoEditorLoaderService, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -16,10 +16,12 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import {
+    DotContentTypeService,
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
@@ -27,15 +29,14 @@ import {
     DotSystemConfigService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { GlobalStore } from '@dotcms/store';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
 import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -71,6 +72,8 @@ interface DotEditFieldTestBed {
     imports?: Type<unknown>[];
     providers?: Provider[];
     declarations?: Type<unknown>[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    overrideComponents?: any[];
     props?: { [key: string]: unknown }[]; // ContentField Props, that we need to pass to the component inside
     outsideFormControl?: boolean; //If the component have [formControlName] hardcoded inside this ContentField component
 }
@@ -95,7 +98,17 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.RELATIONSHIP]: {
         component: DotEditContentRelationshipFieldComponent,
-        providers: [mockProvider(DialogService)]
+        providers: [
+            mockProvider(DialogService),
+            mockProvider(DotEditContentStore, {
+                contentType: signal(null),
+                isCopyingLocale: signal(false),
+                currentLocale: signal(undefined)
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
+            })
+        ]
     },
     [FIELD_TYPES.FILE]: {
         component: DotEditContentFileFieldComponent,
@@ -146,6 +159,15 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                 }
             }
         ],
+        overrideComponents: [
+            [
+                DotEditContentBlockEditorComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent] },
+                    add: { imports: [MockComponent(DotCMSEditorComponent)] }
+                }
+            ]
+        ],
         outsideFormControl: true
     },
     [FIELD_TYPES.CUSTOM_FIELD]: {
@@ -161,8 +183,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ]
     },
     [FIELD_TYPES.BINARY]: {
-        component: DotBinaryFieldWrapperComponent,
+        component: DotEditContentFileFieldComponent,
         providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            },
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -178,8 +204,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             {
                 contentlet: BINARY_FIELD_CONTENTLET
             }
-        ],
-        outsideFormControl: true
+        ]
     },
     [FIELD_TYPES.JSON]: {
         component: DotEditContentJsonFieldComponent,
@@ -258,11 +283,14 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         imports: [DotEditContentFieldComponent, ...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
+        overrideComponents: fieldTestBed?.overrideComponents ?? [],
         providers: [
             FormGroupDirective,
             provideHttpClient(),
             provideHttpClientTesting(),
             ...(fieldTestBed?.providers || []),
+            ConfirmationService,
+            mockProvider(DotContentTypeService),
             mockProvider(GlobalStore, {
                 systemConfig: signal({
                     systemTimezone: {
@@ -303,8 +331,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                         cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
                     })
                 )
-            }),
-            mockProvider(CoreWebService)
+            })
         ]
     });
 
@@ -396,7 +423,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -558,7 +584,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -635,7 +660,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -711,7 +735,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -785,7 +808,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),

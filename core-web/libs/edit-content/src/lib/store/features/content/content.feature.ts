@@ -18,7 +18,12 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSBaseTypesContentTypes,
+    DotContentletDepth,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
@@ -85,6 +90,16 @@ export function withContent() {
             tabs: computed(() => transformFormDataFn(store.contentType())),
 
             /**
+             * Computed property that determines if the current content type is an HTML Page.
+             * Single source of truth shared by the form and sidebar components.
+             *
+             * @returns {boolean} True when the content type's base type is HTMLPAGE.
+             */
+            isPage: computed(
+                () => store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+            ),
+
+            /**
              * Computed property that determines if the new content editor feature is enabled.
              *
              * This function retrieves the content type from the store, accesses its metadata,
@@ -148,7 +163,10 @@ export function withContent() {
                 initializeNewContent: rxMethod<string>(
                     pipe(
                         switchMap((contentType) => {
-                            patchState(store, { state: ComponentStatus.LOADING });
+                            patchState(store, {
+                                state: ComponentStatus.LOADING,
+                                hiddenFields: {}
+                            });
 
                             return forkJoin({
                                 contentType:
@@ -170,14 +188,19 @@ export function withContent() {
 
                                         const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
 
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
-                                        globalStore.addNewBreadcrumb({
-                                            label: titleString,
-                                            target: '_self',
-                                            url: `/dotAdmin/#/content/new/${contentType.variable}`
-                                        });
+                                        // Dialog overlays another route context (e.g. UVE); skip title
+                                        // and breadcrumb updates to avoid overwriting the host page title
+                                        // and stacking duplicate trails with the shell breadcrumb.
+                                        if (!store.isDialogMode()) {
+                                            title.setTitle(
+                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            );
+                                            globalStore.addNewBreadcrumb({
+                                                label: titleString,
+                                                target: '_self',
+                                                url: `/dotAdmin/#/content/new/${contentType.variable}`
+                                            });
+                                        }
 
                                         patchState(store, {
                                             contentType,
@@ -186,7 +209,8 @@ export function withContent() {
                                             currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'new',
-                                            error: null
+                                            error: null,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -223,17 +247,20 @@ export function withContent() {
                 initializeExistingContent: rxMethod<{ inode: string; depth: DotContentletDepth }>(
                     pipe(
                         switchMap(({ inode, depth }) => {
-                            patchState(store, { state: ComponentStatus.LOADING });
+                            patchState(store, {
+                                state: ComponentStatus.LOADING,
+                                hiddenFields: {}
+                            });
 
                             return dotEditContentService.getContentById({ id: inode, depth }).pipe(
                                 switchMap((contentlet) => {
                                     const { contentType } = contentlet;
 
                                     return forkJoin({
-                                        contentType:
-                                            dotContentTypeService.getContentTypeWithRender(
-                                                contentType
-                                            ),
+                                        contentType: dotContentTypeService.getContentTypeWithRender(
+                                            contentType,
+                                            inode
+                                        ),
                                         // Allowed actions for this inode
                                         currentContentActions: workflowActionService.getByInode(
                                             inode,
@@ -275,14 +302,20 @@ export function withContent() {
                                             !scheme || !step ? 'reset' : 'existing';
 
                                         const titleString = `${contentlet.title}`;
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
-                                        globalStore.addNewBreadcrumb({
-                                            label: titleString,
-                                            target: '_self',
-                                            url: `/dotAdmin/#/content/${contentlet.inode}`
-                                        });
+
+                                        // Dialog overlays another route context (e.g. UVE); skip title
+                                        // and breadcrumb updates to avoid overwriting the host page title
+                                        // and stacking duplicate trails with the shell breadcrumb.
+                                        if (!store.isDialogMode()) {
+                                            title.setTitle(
+                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            );
+                                            globalStore.addNewBreadcrumb({
+                                                label: titleString,
+                                                target: '_self',
+                                                url: `/dotAdmin/#/content/${contentlet.inode}`
+                                            });
+                                        }
 
                                         patchState(store, {
                                             contentType,
@@ -293,7 +326,8 @@ export function withContent() {
                                             state: ComponentStatus.LOADED,
                                             currentStep: step,
                                             lastTask: task,
-                                            initialContentletState
+                                            initialContentletState,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {

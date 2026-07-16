@@ -1,5 +1,3 @@
-import { consola } from 'consola';
-
 import { DotGraphQLApiResponse, DotHttpClient } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
@@ -44,14 +42,16 @@ const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
 export const buildPageQuery = ({
     page,
     fragments,
-    additionalQueries
+    additionalQueries,
+    verbose = false
 }: {
     page?: string;
     fragments?: string[];
     additionalQueries?: string;
-}) => {
-    if (!page) {
-        consola.warn(
+    verbose?: boolean;
+}): string => {
+    if (!page && verbose) {
+        console.warn(
             "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
         );
     }
@@ -104,6 +104,8 @@ export const buildPageQuery = ({
     runningExperimentId
     lockedBy
     lockedByName
+    numberContents
+    styleEditorSchemas
     urlContentMap {
       _map
     }
@@ -155,10 +157,16 @@ export const buildPageQuery = ({
       body {
         rows {
           styleClass
+          metadata {
+            name
+          }
           columns {
             leftOffset
             styleClass
             width
+            metadata {
+              name
+            }
             left
             containers {
               identifier
@@ -255,6 +263,20 @@ export function mapContentResponse(
         },
         {} as Record<string, unknown>
     );
+}
+
+/**
+ * Returns a shallow copy of the object with every key whose value is `undefined` removed.
+ *
+ * `undefined` is not valid JSON, so keeping such keys breaks consumers that serialize the value
+ * (e.g. Next.js Pages Router `getServerSideProps`/`getStaticProps`). `null` and other falsy values
+ * are preserved since they serialize fine.
+ *
+ * @param {Record<string, unknown>} object - Source object to clean
+ * @returns {Record<string, unknown>} New object without `undefined` values
+ */
+export function removeUndefinedValues(object: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined));
 }
 
 /**

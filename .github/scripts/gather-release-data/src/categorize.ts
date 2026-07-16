@@ -5,7 +5,11 @@
 import { Change, PRDetails, RollbackUnsafe } from './types';
 
 /** Labels that cause a PR to be omitted entirely from the changelog. */
+<<<<<<< HEAD
 const SKIP_LABELS = ['Changelog: Skip'];
+=======
+const SKIP_LABELS = ['Changelog: Skip', 'Doc : Not Needed'];
+>>>>>>> refs/remotes/upstream-core/main
 
 /** Labels indicating the release is not safe to rollback. */
 const ROLLBACK_UNSAFE_LABELS = [
@@ -59,7 +63,13 @@ export function categorize(pr: PRDetails): Change['category'] {
   const title = pr.title.toLowerCase();
   if (title.startsWith('feat')) return 'feature';
   if (title.startsWith('fix')) return 'fix';
+<<<<<<< HEAD
   if (title.startsWith('chore') || title.startsWith('ci(') || title.startsWith('ci:')) return 'infrastructure';
+=======
+  if (title.startsWith('refactor')) return 'infrastructure';
+  if (title.startsWith('chore') || title.startsWith('build') || title.startsWith('ci(') || title.startsWith('ci:')) return 'infrastructure';
+  if (title.startsWith('task')) return 'feature';
+>>>>>>> refs/remotes/upstream-core/main
   if (title.startsWith('deprecat')) return 'deprecation';
 
   // Check for release-machinery commits that should be omitted
@@ -95,8 +105,14 @@ export function processChanges(prDetails: Map<number, PRDetails>): {
   const skipped: number[] = [];
 
   for (const [prNumber, pr] of prDetails) {
+<<<<<<< HEAD
     // Check rollback safety (independent of skip)
     if (isRollbackUnsafe(pr.labels)) {
+=======
+    // Check rollback safety — rollback-unsafe PRs are never skipped
+    const unsafe = isRollbackUnsafe(pr.labels);
+    if (unsafe) {
+>>>>>>> refs/remotes/upstream-core/main
       rollbackUnsafe.push({
         pr: prNumber,
         title: pr.title,
@@ -104,8 +120,13 @@ export function processChanges(prDetails: Map<number, PRDetails>): {
       });
     }
 
+<<<<<<< HEAD
     // Check skip
     if (shouldSkip(pr.labels)) {
+=======
+    // Check skip (rollback-unsafe PRs are immune)
+    if (!unsafe && shouldSkip(pr.labels)) {
+>>>>>>> refs/remotes/upstream-core/main
       skipped.push(prNumber);
       continue;
     }

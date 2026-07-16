@@ -170,12 +170,14 @@ export function parseFromDotObjectToGridStack(
                     x: col.leftOffset - 1,
                     id: uuid(),
                     styleClass: col.styleClass ? col.styleClass.split(' ') : [],
-                    containers: col.containers
+                    containers: col.containers,
+                    metadata: col.metadata
                 };
             })
         },
         id: uuid(),
-        styleClass: row.styleClass ? row.styleClass.split(' ') : []
+        styleClass: row.styleClass ? row.styleClass.split(' ') : [],
+        metadata: row.metadata
     })) as DotGridStackWidget[];
 }
 
@@ -189,19 +191,20 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
     const ordered = clone.sort((a, b) => a.y - b.y);
 
     const rows = ordered.map((row) => {
-        const { x: colWidth, subGridOpts, styleClass: styles } = row;
+        const { x: colWidth, subGridOpts, styleClass: styles, metadata: rowMetadata } = row;
         const { children = [] } = subGridOpts || {};
         const styleClass = styles?.join(' ') || null;
 
         if (!subGridOpts) {
             return {
                 columns: [],
-                styleClass
+                styleClass,
+                metadata: rowMetadata
             };
         }
 
         const columns = children
-            .map(({ x, w, containers = [], styleClass: styles }) => {
+            .map(({ x, w, containers = [], styleClass: styles, metadata: colMetadata }) => {
                 const leftOffset = x + colWidth + 1;
                 const styleClass = styles?.join(' ') || '';
 
@@ -209,14 +212,16 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
                     containers,
                     leftOffset,
                     width: w,
-                    styleClass
+                    styleClass,
+                    metadata: colMetadata
                 };
             })
             .sort(({ leftOffset: a }, { leftOffset: b }) => a - b); // We need to sort by offset so the CSS Grid on Preview Mode works correctly
 
         return {
             columns,
-            styleClass
+            styleClass,
+            metadata: rowMetadata
         };
     });
 

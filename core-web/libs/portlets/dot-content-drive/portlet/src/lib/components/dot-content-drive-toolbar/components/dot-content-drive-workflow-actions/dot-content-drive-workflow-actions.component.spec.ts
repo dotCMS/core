@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -404,7 +404,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             const mockError = new Error('Something went wrong');
 
             jest.spyOn(dotWorkflowActionsFireService, 'fireDefaultAction').mockReturnValue(
-                throwError(mockError)
+                throwError(() => mockError)
             );
 
             const mockItems = [
@@ -437,7 +437,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             const mockError = new Error('Something went wrong');
 
             jest.spyOn(dotWorkflowActionsFireService, 'fireDefaultAction').mockReturnValue(
-                throwError(mockError)
+                throwError(() => mockError)
             );
 
             const mockItems = [

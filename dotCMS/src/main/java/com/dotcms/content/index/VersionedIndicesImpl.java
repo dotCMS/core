@@ -21,31 +21,6 @@ import java.util.Optional;
 public abstract class VersionedIndicesImpl implements VersionedIndices {
 
     /**
-     * The live index name
-     */
-    public abstract Optional<String> live();
-
-    /**
-     * The working index name
-     */
-    public abstract Optional<String> working();
-
-    /**
-     * The reindex live index name
-     */
-    public abstract Optional<String> reindexLive();
-
-    /**
-     * The reindex working index name
-     */
-    public abstract Optional<String> reindexWorking();
-
-    /**
-     * The site search index name
-     */
-    public abstract Optional<String> siteSearch();
-
-    /**
      * The version associated with these indices
      * Default value is OPENSEARCH_3X
      */

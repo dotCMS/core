@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { MockModule } from 'ng-mocks';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -6,38 +6,23 @@ import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import {
-    RequestState,
-    TopPerformanceTableEntity
-} from '@dotcms/portlets/dot-analytics/data-access';
+import { RequestState, TopContentData } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { DotAnalyticsTopPagesTableComponent } from './dot-analytics-top-pages-table.component';
 
 describe('DotAnalyticsTopPagesTableComponent', () => {
     let spectator: Spectator<DotAnalyticsTopPagesTableComponent>;
 
-    const mockTableData: TopPerformanceTableEntity[] = [
-        {
-            'EventSummary.title': 'Home Page',
-            'EventSummary.identifier': '/home',
-            'EventSummary.totalEvents': '1250'
-        },
-        {
-            'EventSummary.title': 'About Us',
-            'EventSummary.identifier': '/about',
-            'EventSummary.totalEvents': '890'
-        },
-        {
-            'EventSummary.title': 'Contact',
-            'EventSummary.identifier': '/contact',
-            'EventSummary.totalEvents': '567'
-        }
+    const mockTableData: TopContentData[] = [
+        { title: 'Home Page', identifier: '/home', totalEvents: 1250 },
+        { title: 'About Us', identifier: '/about', totalEvents: 890 },
+        { title: 'Contact', identifier: '/contact', totalEvents: 567 }
     ];
 
     const createMockTableState = (
-        data: TopPerformanceTableEntity[] | null = mockTableData,
+        data: TopContentData[] | null = mockTableData,
         status: ComponentStatus = ComponentStatus.LOADED
-    ): RequestState<TopPerformanceTableEntity[]> => ({
+    ): RequestState<TopContentData[]> => ({
         data,
         status,
         error: null
@@ -90,12 +75,8 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
 
     describe('Data Handling', () => {
         it('should handle data changes', () => {
-            const newData: TopPerformanceTableEntity[] = [
-                {
-                    'EventSummary.title': 'New Page',
-                    'EventSummary.identifier': '/new',
-                    'EventSummary.totalEvents': '100'
-                }
+            const newData: TopContentData[] = [
+                { title: 'New Page', identifier: '/new', totalEvents: 100 }
             ];
             spectator.setInput('tableState', createMockTableState(newData, ComponentStatus.LOADED));
 

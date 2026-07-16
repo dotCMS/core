@@ -1,4 +1,5 @@
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -117,6 +118,161 @@ describe('DotSelectExistingContentComponent', () => {
             spectator.detectChanges();
 
             expect(store.selectionItems()).toEqual(mockItems);
+        });
+    });
+
+    describe('Select All excludes constrained items', () => {
+        const item1 = createFakeContentlet({ inode: '1', identifier: 'id-1' });
+        const item2 = createFakeContentlet({ inode: '2', identifier: 'id-2' });
+        const item3 = createFakeContentlet({ inode: '3', identifier: 'id-3' });
+
+        const markConstrained = (ids: string[]) => {
+            patchState(store, { constrainedIdentifiers: new Set(ids) });
+        };
+
+        beforeEach(() => {
+            patchState(store, { searchData: [item1, item2, item3] });
+            markConstrained([]);
+            spectator.detectChanges();
+        });
+
+        it('selects only non-constrained items when checked', () => {
+            markConstrained(['id-2']);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier)).toEqual(['id-1', 'id-3']);
+        });
+
+        it('leaves constrained items unselected when Select All is checked', () => {
+            markConstrained(['id-2']);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.some((i) => i.identifier === 'id-2')).toBe(false);
+        });
+
+        it('selects zero items when all rows are constrained', () => {
+            markConstrained(['id-1', 'id-2', 'id-3']);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            expect(spectator.component.$selectionItems()).toEqual([]);
+        });
+
+        it('selects every item when no row is constrained', () => {
+            markConstrained([]);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier).sort()).toEqual(['id-1', 'id-2', 'id-3']);
+        });
+
+        it('clears the visible selection when Select All is unchecked', () => {
+            spectator.component.$selectionItems.set([item1, item2]);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: false
+            });
+
+            expect(spectator.component.$selectionItems()).toEqual([]);
+        });
+
+        it('preserves selections from other pages when Select All is checked', () => {
+            const offPageItem = createFakeContentlet({ inode: '99', identifier: 'id-99' });
+            spectator.component.$selectionItems.set([offPageItem]);
+            spectator.detectChanges();
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier).sort()).toEqual([
+                'id-1',
+                'id-2',
+                'id-3',
+                'id-99'
+            ]);
+        });
+
+        it('preserves selections from other pages when Select All is unchecked', () => {
+            const offPageItem = createFakeContentlet({ inode: '99', identifier: 'id-99' });
+            spectator.component.$selectionItems.set([item1, item2, offPageItem]);
+            spectator.detectChanges();
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: false
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier)).toEqual(['id-99']);
+        });
+
+        it('reports $selectAll as false when no selectable items exist', () => {
+            markConstrained(['id-1', 'id-2', 'id-3']);
+
+            expect(spectator.component.$selectAll()).toBe(false);
+        });
+
+        it('reports $isPartiallySelected when some (not all) selectable items are selected', () => {
+            spectator.component.$selectionItems.set([item1]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isPartiallySelected()).toBe(true);
+            expect(spectator.component.$selectAll()).toBe(false);
+        });
+
+        it('reports $isPartiallySelected false when every selectable item is selected', () => {
+            spectator.component.$selectionItems.set([item1, item2, item3]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isPartiallySelected()).toBe(false);
+        });
+
+        it('reports $selectAll as true when every selectable item is selected', () => {
+            markConstrained(['id-2']);
+            spectator.component.$selectionItems.set([item1, item3]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$selectAll()).toBe(true);
+        });
+
+        it('forces $selectAll to false in selected-view mode to avoid wiping the selection', () => {
+            spectator.component.$selectionItems.set([item1, item2, item3]);
+            patchState(store, { viewMode: 'selected' });
+            spectator.detectChanges();
+
+            expect(store.isSelectedView()).toBe(true);
+            expect(spectator.component.$selectAll()).toBe(false);
         });
     });
 

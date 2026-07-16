@@ -1,4 +1,4 @@
-<p-toolbar class="gap-1 px-3 justify-start border-none!">
+<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
@@ -13,14 +13,20 @@
                 class="w-80" />
         </p-iconField>
 
-        <div class="flex gap-2 ml-auto">
+        <div class="flex items-center gap-2">
+            <p-checkbox
+                inputId="show-global-tags"
+                [binary]="true"
+                [ngModel]="store.showGlobal()"
+                (ngModelChange)="store.setShowGlobal($event)"
+                data-testid="tag-show-global-checkbox" />
+            <label for="show-global-tags" class="cursor-pointer text-sm">
+                {{ 'tags.show.global' | dm }}
+            </label>
+        </div>
+
+        <div class="ml-auto flex gap-2">
             @if (store.selectedTags().length > 0) {
-                <p-button
-                    [label]="store.exportLabelKey() | dm"
-                    icon="pi pi-download"
-                    [outlined]="true"
-                    (onClick)="store.exportSelectedTags()"
-                    data-testid="tag-export-btn" />
                 <p-button
                     [label]="'tags.delete' | dm"
                     icon="pi pi-trash"
@@ -28,10 +34,16 @@
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="tag-delete-btn" />
+                <p-splitButton
+                    [label]="'tags.export' | dm"
+                    icon="pi pi-download"
+                    [outlined]="true"
+                    (onClick)="store.exportSelected()"
+                    [model]="$exportMenuItems()"
+                    data-testid="tag-export-split-btn" />
             }
             <p-splitButton
                 [label]="'add' | dm"
-                icon="pi pi-plus"
                 (onClick)="openCreateDialog()"
                 [model]="addTagMenuItems"
                 data-testid="tag-add-split-btn" />
@@ -40,7 +52,7 @@
 </p-toolbar>
 
 <!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
-<div class="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="tags-table-wrapper">
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="tags-table-wrapper">
     <p-table
         [value]="store.tags()"
         [lazy]="true"
@@ -50,6 +62,7 @@
         [totalRecords]="store.totalRecords()"
         [first]="(store.page() - 1) * store.rows()"
         [rowsPerPageOptions]="[10, 25, 50]"
+        [rowHover]="true"
         [scrollable]="true"
         scrollHeight="flex"
         [pt]="$ptConfig()"
@@ -71,22 +84,22 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-tag>
-            @if (store.status() === 'loading' || !store.tags().length) {
+            @if (store.status() === 'loading') {
                 <tr
                     data-testid="tags-loading-row"
-                    class="cursor-default h-17 hover:bg-transparent!">
+                    class="h-17 cursor-default hover:bg-transparent!">
                     <td [style.width]="'4rem'" class="pl-4">
-                        <span class="flex items-center justify-center h-full">
+                        <span class="flex h-full items-center justify-center">
                             <p-skeleton height="1.5rem" width="2.5rem" />
                         </span>
                     </td>
                     <td>
-                        <span class="flex items-center h-full">
+                        <span class="flex h-full items-center">
                             <p-skeleton height="1.5rem" width="100%" />
                         </span>
                     </td>
                     <td>
-                        <span class="flex items-center h-full">
+                        <span class="flex h-full items-center">
                             <p-skeleton height="1.5rem" width="100%" />
                         </span>
                     </td>
@@ -103,21 +116,19 @@
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
-            <tr class="hover:bg-transparent! h-full">
-                <td colspan="3" class="p-6 text-center h-full border-none">
+            <tr class="h-full hover:bg-transparent!">
+                <td colspan="3" class="h-full border-none p-6 text-center">
                     <div
-                        class="flex flex-col items-center gap-4 max-w-100 mx-auto"
+                        class="mx-auto flex max-w-100 flex-col items-center gap-4"
                         data-testid="tags-empty-state">
-                        <div class="flex items-center justify-center w-20 h-20 rounded-full">
-                            <i
-                                class="pi pi-tags text-[var(--surface-500)] text-6xl!"
-                                aria-hidden="true"></i>
+                        <div class="flex size-20 items-center justify-center rounded-full">
+                            <i class="pi pi-tags text-6xl! text-surface-500" aria-hidden="true"></i>
                         </div>
                         <div class="flex flex-col text-center">
                             <h3 class="m-0 text-lg font-medium text-gray-800">
                                 {{ 'tags.empty.state.title' | dm }}
                             </h3>
-                            <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                            <p class="m-0 text-base leading-6 text-color">
                                 {{ 'tags.empty.state.description' | dm }}
                             </p>
                         </div>
@@ -128,4 +139,4 @@
     </p-table>
 </div>
 
-<p-confirmDialog [draggable]="false" [position]="'center'" />
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

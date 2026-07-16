@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.osgi;
 
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityListView;
+import com.dotcms.rest.ResponseEntitySetStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -407,6 +408,8 @@ public class OSGIResource {
             if (from.renameTo(to)) {
                 final String responseText = String.format("OSGI Bundle  %s Loaded", jarName);
                 Logger.info(this, responseText);
+                OSGIUtil.getInstance().sendBundleDeployedNotification(
+                        new String[]{sanitizedJarName});
                 return new ResponseEntityStringView(responseText);
             }
         }
@@ -599,6 +602,7 @@ public class OSGIResource {
 
         Logger.debug(this, ()->"Restarting the framework");
         OSGIUtil.getInstance().restartOsgiClusterWide();
+        OSGIUtil.getInstance().sendFrameworkRestartNotification();
         return new ResponseEntityStringView("OSGI Framework Restarted");
     }
 
@@ -621,7 +625,14 @@ public class OSGIResource {
     }
     
     /**
-     * This endpoint receives multiples jar files in order to upload to the osgi.
+     * This endpoint receives multiple jar files in order to upload them to the OSGi framework.
+     * <p>
+     * The response returns as soon as the jars are copied and processing is scheduled. If the
+     * uploaded plugins require new exported packages, the OSGi framework is restarted cluster-wide
+     * <strong>asynchronously</strong> after this method returns, so a {@code 200} confirms the upload
+     * was accepted, not that the plugin is live. Callers should react to the {@code OSGI_FRAMEWORK_RESTART}
+     * and {@code OSGI_BUNDLES_LOADED} system events for completion, and {@code OSGI_BUNDLES_UPLOAD_FAILED}
+     * for asynchronous failures.
      *
      * @param request
      * @param response
@@ -635,11 +646,24 @@ public class OSGIResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Operation(summary = "Upload bundles to the OSGI framework",
+            description = "Uploads one or more plugin JARs to the OSGi upload folder and schedules "
+                    + "their processing. A 200 confirms the upload was accepted, NOT that the plugin "
+                    + "is live: if new packages must be exported the OSGi framework is restarted "
+                    + "cluster-wide asynchronously, after this response returns. Restart completion is "
+                    + "signalled by the OSGI_FRAMEWORK_RESTART system event and successful deployment by "
+                    + "the OSGI_BUNDLES_LOADED event; an asynchronous failure is reported via the "
+                    + "OSGI_BUNDLES_UPLOAD_FAILED event and an error notification (check the server logs "
+                    + "for the full stack trace). Clients should react to these events rather than "
+                    + "assume the plugin is active once the 200 is received.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
+                            description = "Bundle upload accepted and scheduled. Any required OSGi "
+                                    + "restart happens asynchronously; watch the OSGI_FRAMEWORK_RESTART / "
+                                    + "OSGI_BUNDLES_LOADED / OSGI_BUNDLES_UPLOAD_FAILED system events for "
+                                    + "the outcome.",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityStringView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySetStringView.class))),
                     @ApiResponse(responseCode = "403", description = "Can not access the upload folder or invalid OSGI Upload request"),
             })
     public final Response uploadBundles(@Context final HttpServletRequest request,
@@ -694,7 +718,7 @@ public class OSGIResource {
         // refresh strategy is running by schedule job
         OSGIUtil.getInstance().checkUploadFolder();
 
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntitySetStringView(
                 files.stream().map(File::getName).collect(Collectors.toSet())))
                 .build();
     }

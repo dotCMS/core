@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
     inject,
     output,
@@ -15,14 +16,18 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContentDriveBaseTypeSelectorComponent } from './components/dot-content-drive-base-type-selector/dot-content-drive-base-type-selector.component';
-import { DotContentDriveContentTypeFieldComponent } from './components/dot-content-drive-content-type-field/dot-content-drive-content-type-field.component';
+import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
+import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
+import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
+import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -31,6 +36,58 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
+
+/**
+ * Base-type options in the "New" menu (all base types except FORM, which is deprecated).
+ * Each maps to a precise palette list type and a Material Symbols icon (rendered via the
+ * menu's custom item template, following the design's icon pattern).
+ */
+const BASE_TYPE_MENU_OPTIONS: {
+    labelKey: string;
+    icon: string;
+    listType: DotUVEPaletteListTypes;
+}[] = [
+    {
+        labelKey: 'content-drive.base-type.content',
+        icon: 'description',
+        listType: DotUVEPaletteListTypes.ALL_CONTENT
+    },
+    {
+        labelKey: 'content-drive.base-type.widget',
+        icon: 'widgets',
+        listType: DotUVEPaletteListTypes.ALL_WIDGET
+    },
+    {
+        labelKey: 'content-drive.base-type.fileasset',
+        icon: 'draft',
+        listType: DotUVEPaletteListTypes.ALL_FILEASSET
+    },
+    {
+        labelKey: 'content-drive.base-type.dotasset',
+        icon: 'deployed_code',
+        listType: DotUVEPaletteListTypes.ALL_DOTASSET
+    },
+    {
+        labelKey: 'content-drive.base-type.persona',
+        icon: 'person',
+        listType: DotUVEPaletteListTypes.ALL_PERSONA
+    },
+    {
+        labelKey: 'content-drive.base-type.vanity_url',
+        icon: 'link',
+        listType: DotUVEPaletteListTypes.ALL_VANITY_URL
+    },
+    {
+        labelKey: 'content-drive.base-type.key_value',
+        icon: 'key',
+        listType: DotUVEPaletteListTypes.ALL_KEY_VALUE
+    },
+    {
+        labelKey: 'content-drive.base-type.htmlpage',
+        icon: 'article',
+        listType: DotUVEPaletteListTypes.ALL_HTMLPAGE
+    }
+];
 
 /**
  * Interface for managing animation states of toolbar elements
@@ -48,11 +105,13 @@ interface ToolbarAnimationState {
         MenuModule,
         DotMessagePipe,
         DotContentDriveTreeTogglerComponent,
-        DotContentDriveBaseTypeSelectorComponent,
-        DotContentDriveContentTypeFieldComponent,
+        DotContentDriveContentTypeFilterComponent,
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
-        DotContentDriveWorkflowActionsComponent
+        DotContentDriveWorkflowActionsComponent,
+        DotContentDriveWorkflowFilterComponent,
+        DotContentDriveFieldFilterComponent,
+        DotContentDriveFieldFilterMenuComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -77,6 +136,38 @@ interface ToolbarAnimationState {
                 opacity: 0;
                 transition: opacity 100ms ease-in;
             }
+            .field-filter-enter {
+                overflow: hidden;
+                animation: field-filter-in 180ms ease-out;
+            }
+            @keyframes field-filter-in {
+                from {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
+                to {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+            }
+            .field-filter-leave {
+                overflow: hidden;
+                animation: field-filter-out 150ms ease-in forwards;
+            }
+            @keyframes field-filter-out {
+                from {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+                to {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
+            }
         `
     ]
 })
@@ -84,28 +175,69 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $addNewDotAsset = output<void>({ alias: 'addNewDotAsset' });
+    $upload = output<void>({ alias: 'upload' });
 
     readonly $items = signal<MenuItem[]>([
         {
+            label: this.#dotMessageService.get('content-drive.add-new.all-content-types'),
+            icon: 'grid_view',
+            command: () => this.#openContentTypeSelector(DotUVEPaletteListTypes.ALL_CONTENT_TYPES)
+        },
+        { separator: true },
+        ...BASE_TYPE_MENU_OPTIONS.map((option) => ({
+            label: this.#dotMessageService.get(option.labelKey),
+            icon: option.icon,
+            command: () => this.#openContentTypeSelector(option.listType)
+        })),
+        { separator: true },
+        {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
+            icon: 'folder',
             command: () => {
                 this.#store.setDialog({
                     type: DIALOG_TYPE.FOLDER,
                     header: this.#dotMessageService.get('content-drive.dialog.folder.header')
                 });
             }
-        },
-        {
-            label: this.#dotMessageService.get('content-drive.add-new.context-menu.asset'),
-            command: () => {
-                this.$addNewDotAsset.emit();
-            }
         }
     ]);
 
+    /**
+     * Opens the content-type selector dialog for the given palette list type.
+     */
+    #openContentTypeSelector(listType: DotUVEPaletteListTypes): void {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.CONTENT_TYPE_SELECTOR,
+            header: this.#dotMessageService.get(
+                'content-drive.dialog.content-type-selector.header'
+            ),
+            payload: { listType }
+        });
+    }
+
     readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
+    readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+
+    /**
+     * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`
+     * in add order). Each variable is resolved to its field metadata, so chips render only once the
+     * content type's fields have loaded — which also covers URL restore.
+     */
+    readonly $activeFieldFilters = computed(() => {
+        const fieldByVariable = new Map(
+            this.#store.userSearchableFields().map((field) => [field.variable, field])
+        );
+
+        return this.#store
+            .userSearchableActive()
+            .map((variable) => fieldByVariable.get(variable))
+            .filter((field): field is DotCMSContentTypeField => field !== undefined);
+    });
+
+    onClearAll(): void {
+        this.#store.clearFilters();
+    }
 
     /**
      * Controls visibility of toolbar elements to prevent overlap during animations
@@ -116,7 +248,12 @@ export class DotContentDriveToolbarComponent {
     });
 
     /**
-     * Convenience computed signals for template readability
+     * Convenience computed signals for template readability.
+     *
+     * `$displayButton` gates the creation actions (Upload + "Add New"): both are hidden while a
+     * selection is active so they don't compete with the workflow/bulk actions. This keeps the
+     * Upload button from offering an upload in a selection context, where the target folder would
+     * be ambiguous.
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
@@ -129,12 +266,19 @@ export class DotContentDriveToolbarComponent {
         minWidth: this.$treeExpanded() ? '0' : undefined
     }));
 
+    /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
+    #animationTimeout: ReturnType<typeof setTimeout> | undefined;
+
     constructor() {
         // Watch for changes in workflow actions state and handle animation sequencing
         effect(() => {
             const shouldShowActions = this.$showWorkflowActions();
             untracked(() => this.#handleAnimationSequence(shouldShowActions));
         });
+
+        // Cancel a pending transition timer if the toolbar is destroyed mid-animation,
+        // so the callback can't mutate a signal on a torn-down component.
+        inject(DestroyRef).onDestroy(() => clearTimeout(this.#animationTimeout));
     }
 
     /**
@@ -158,12 +302,13 @@ export class DotContentDriveToolbarComponent {
      * 3. Show workflow actions (triggers enter animation)
      */
     #transitionToWorkflowActions(): void {
+        clearTimeout(this.#animationTimeout);
         this.$animationState.set({
             addNewButton: false,
             workflowActions: false
         });
 
-        setTimeout(() => {
+        this.#animationTimeout = setTimeout(() => {
             this.$animationState.set({
                 addNewButton: false,
                 workflowActions: true
@@ -178,12 +323,13 @@ export class DotContentDriveToolbarComponent {
      * 3. Show button (triggers enter animation)
      */
     #transitionToAddNewButton(): void {
+        clearTimeout(this.#animationTimeout);
         this.$animationState.set({
             addNewButton: false,
             workflowActions: false
         });
 
-        setTimeout(() => {
+        this.#animationTimeout = setTimeout(() => {
             this.$animationState.set({
                 addNewButton: true,
                 workflowActions: false

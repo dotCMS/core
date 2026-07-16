@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     Component,
     computed,
@@ -89,7 +88,6 @@ type SavePageEventData = {
     templateUrl: './dot-pages.component.html',
     imports: [
         MenuModule,
-        CommonModule,
         RouterOutlet,
         ProgressSpinnerModule,
         DotAddToBundleComponent,

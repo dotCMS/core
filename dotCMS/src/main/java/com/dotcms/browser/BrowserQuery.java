@@ -76,6 +76,12 @@ public class BrowserQuery {
     final Role[] roles;
     final List<String> extensions;
     final List<String> mimeTypes;
+    /** Workflow scheme ids to match by content-type assignment (scheme-only filter entries). */
+    final Set<String> workflowSchemeIds;
+    /** Workflow step ids to match by the contentlet's current task (step-pinned filter entries). */
+    final Set<String> workflowStepIds;
+    /** Per-field value filters (Content Drive only); empty for the legacy Site Browser path. */
+    final List<FieldSearchCriteria> fieldCriteria;
 
     /**
      * Returns the primary language ID for backward compatibility.
@@ -99,6 +105,13 @@ public class BrowserQuery {
         return contentTypeIds;
     }
 
+    /**
+     * Returns the per-field value filters (Content Drive only). Never null.
+     */
+    public List<FieldSearchCriteria> getFieldCriteria() {
+        return fieldCriteria;
+    }
+
     @Override
     public String toString() {
         return "BrowserQuery {user:" + user + ", respectFronEndRoles:" + respectFrontEndRoles +
@@ -115,6 +128,7 @@ public class BrowserQuery {
                 + ", languageIds:" + StringUtils.join(languageIds)
                 + ", baseTypes:" + StringUtils.join(baseTypes)
                 + ", contentTypes:" + StringUtils.join(contentTypeIds)
+                + ", fieldCriteria:" + StringUtils.join(fieldCriteria)
                 + "}";
     }
 
@@ -151,6 +165,9 @@ public class BrowserQuery {
         this.languageIds = Set.copyOf(builder.languageIds);
         this.contentTypeIds = Set.copyOf(builder.contentTypes);
         this.excludedContentTypeIds = Set.copyOf(builder.excludedContentTypes);
+        this.workflowSchemeIds = Set.copyOf(builder.workflowSchemeIds);
+        this.workflowStepIds = Set.copyOf(builder.workflowStepIds);
+        this.fieldCriteria = List.copyOf(builder.fieldCriteria);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder = siteAndFolder._2;
@@ -203,7 +220,11 @@ public class BrowserQuery {
         if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
             final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
                     parentId, siteId);
-            Logger.error(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
+            // Logged at warn rather than error because this is typically a transient
+            // race after a folder copy/move/delete: the client refreshes with a now-stale
+            // parent ID before the corresponding system event reaches it. The thrown
+            // DotRuntimeException still surfaces to the caller so the UI can recover.
+            Logger.warn(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
                                        "System Folder is specified, then set a value for hostIdSystemFolder as well.");
             throw new DotRuntimeException(errorMsg);
         }
@@ -267,6 +288,9 @@ public class BrowserQuery {
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
+        private Set<String> workflowSchemeIds = new LinkedHashSet<>();
+        private Set<String> workflowStepIds = new LinkedHashSet<>();
+        private List<FieldSearchCriteria> fieldCriteria = new ArrayList<>();
         private Builder() {
         }
 
@@ -297,6 +321,9 @@ public class BrowserQuery {
             this.languageIds = new LinkedHashSet<>(browserQuery.languageIds);
             this.contentTypes = new LinkedHashSet<>(browserQuery.contentTypeIds);
             this.excludedContentTypes = new LinkedHashSet<>(browserQuery.excludedContentTypeIds);
+            this.workflowSchemeIds = new LinkedHashSet<>(browserQuery.workflowSchemeIds);
+            this.workflowStepIds = new LinkedHashSet<>(browserQuery.workflowStepIds);
+            this.fieldCriteria = new ArrayList<>(browserQuery.fieldCriteria);
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
@@ -542,6 +569,39 @@ public class BrowserQuery {
             if (UtilMethods.isSet(contentType)) {
                 this.contentTypes.add(contentType);
             }
+            return this;
+        }
+
+        /**
+         * Workflow scheme ids matched by content-type assignment (scheme-only filter
+         * entries) — includes content with no workflow task yet (import/push-publish).
+         */
+        public Builder withWorkflowSchemeIds(@Nonnull Set<String> workflowSchemeIds) {
+            this.workflowSchemeIds.clear();
+            this.workflowSchemeIds.addAll(workflowSchemeIds);
+            return this;
+        }
+
+        /**
+         * Workflow step ids matched by the contentlet's current task (step-pinned
+         * filter entries).
+         */
+        public Builder withWorkflowStepIds(@Nonnull Set<String> workflowStepIds) {
+            this.workflowStepIds.clear();
+            this.workflowStepIds.addAll(workflowStepIds);
+            return this;
+        }
+
+        /**
+         * Per-field value filters for the Content Drive path. Typed so the resolver can route each
+         * criterion deterministically (DB vs index). Not used by the legacy Site Browser.
+         *
+         * @param fieldCriteria the parsed field criteria
+         * @return this
+         */
+        public Builder withFieldCriteria(@Nonnull List<FieldSearchCriteria> fieldCriteria) {
+            this.fieldCriteria.clear();
+            this.fieldCriteria.addAll(fieldCriteria);
             return this;
         }
 

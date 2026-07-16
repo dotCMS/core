@@ -239,17 +239,28 @@ tiptap-editor.editor-disabled ::ng-deep .ProseMirror .add-button {
     font-family: Assistant, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-:host:focus-within {
-    @apply outline-primary-500;
+:host:focus-within .editor-wrapper:not(.editor-wrapper--error) {
+    border-color: var(--p-inputtext-focus-border-color);
+    box-shadow: var(--p-focus-ring-shadow);
 }
 
-:host.editor-disabled:focus-within {
-    @apply outline-surface-300;
+:host.editor-disabled:focus-within .editor-wrapper {
+    border-color: var(--p-inputtext-border-color);
+    box-shadow: none;
 }
 
 .editor-wrapper {
-    @apply block rounded overflow-y-hidden relative outline outline-1 outline-surface-500;
+    @apply block overflow-y-hidden relative;
+    border: 1px solid var(--p-inputtext-border-color);
+    border-radius: var(--p-inputtext-border-radius);
     resize: vertical;
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
+}
+
+:host:not(.editor-disabled) .editor-wrapper:hover:not(.editor-wrapper--error) {
+    border-color: var(--p-inputtext-hover-border-color);
 }
 
 .editor-wrapper--default {
@@ -265,7 +276,7 @@ tiptap-editor.editor-disabled ::ng-deep .ProseMirror .add-button {
 }
 
 .editor-wrapper--error {
-    @apply outline-red-500;
+    border-color: var(--p-inputtext-invalid-border-color);
 }
 
 .dot-drag-handle {
@@ -429,6 +440,14 @@ tiptap-editor::ng-deep .ProseMirror blockquote p:last-child {
     margin-bottom: 0;
 }
 
+tiptap-editor::ng-deep .ProseMirror sup {
+    vertical-align: super;
+}
+
+tiptap-editor::ng-deep .ProseMirror sub {
+    vertical-align: sub;
+}
+
 tiptap-editor::ng-deep .ProseMirror pre {
     font-size: 0.875rem;
     line-height: 1.5;
@@ -448,7 +467,11 @@ tiptap-editor::ng-deep .ProseMirror pre code {
 }
 
 tiptap-editor::ng-deep .ProseMirror img.dot-image {
-    @apply block my-6 p-0 max-h-[300px] max-w-[50%] h-auto rounded;
+    @apply block p-0 max-w-[50%] h-auto rounded max-h-[300px];
+}
+
+tiptap-editor::ng-deep .ProseMirror .has-float img.dot-image {
+    @apply max-h-none max-w-full;
 }
 
 tiptap-editor::ng-deep .ProseMirror .grid-block__column img.dot-image {
@@ -460,16 +483,24 @@ tiptap-editor::ng-deep .ProseMirror img.dot-image:before {
     @apply flex items-center bg-surface-200 rounded border border-surface-500 text-surface-900 h-full p-3 text-center w-full;
 }
 
-tiptap-editor::ng-deep .ProseMirror img.dot-image.dot-node-center {
-    @apply mx-auto my-6;
+tiptap-editor::ng-deep .ProseMirror .dot-node-center img.dot-image {
+    @apply mx-auto;
 }
 
-tiptap-editor::ng-deep .ProseMirror img.dot-image.dot-node-right {
+tiptap-editor::ng-deep .ProseMirror .dot-node-right img.dot-image {
     @apply ml-auto;
 }
 
-tiptap-editor::ng-deep .ProseMirror img.dot-image.dot-node-left {
+tiptap-editor::ng-deep .ProseMirror .dot-node-left img.dot-image {
     @apply mr-auto;
+}
+
+tiptap-editor::ng-deep .ProseMirror .has-float {
+    @apply w-1/2;
+}
+
+tiptap-editor::ng-deep .ProseMirror .has-float img.dot-image {
+    @apply max-w-full;
 }
 
 tiptap-editor::ng-deep .ProseMirror a:has(img.dot-image) {

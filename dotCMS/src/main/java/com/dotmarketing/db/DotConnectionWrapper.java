@@ -357,11 +357,11 @@ public class DotConnectionWrapper implements Connection {
 
   @Override
   public boolean equals(Object obj) {
-    Object conn = obj;
     if (obj instanceof DotConnectionWrapper) {
-      return internalConnection.equals(((DotConnectionWrapper) conn).internalConnection);
+      return internalConnection.equals(((DotConnectionWrapper) obj).internalConnection);
     }
-    return super.equals(obj);
+    // Handle comparison with raw (unwrapped) connections — e.g., from setConnection()
+    return internalConnection.equals(obj);
   }
 
   @Override

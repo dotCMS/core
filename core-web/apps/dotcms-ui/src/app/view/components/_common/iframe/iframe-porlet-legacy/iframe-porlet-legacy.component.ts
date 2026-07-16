@@ -1,14 +1,29 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
-import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
+import {
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    skip,
+    takeUntil,
+    withLatestFrom
+} from 'rxjs/operators';
 
-import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
+import {
+    DotContentTypeService,
+    DotEventsSocket,
+    DotIframeService,
+    DotRouterService
+} from '@dotcms/data-access';
+import { LoggerService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
@@ -20,7 +35,7 @@ import { IframeComponent } from '../iframe-component/iframe.component';
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
     templateUrl: 'iframe-porlet-legacy.component.html',
-    imports: [CommonModule, RouterModule, IframeComponent, DotNotLicenseComponent]
+    imports: [RouterModule, IframeComponent, DotNotLicenseComponent, AsyncPipe]
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);
@@ -30,8 +45,9 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     loggerService = inject(LoggerService);
-    siteService = inject(SiteService);
-    private dotcmsEventsService = inject(DotcmsEventsService);
+    readonly #globalStore = inject(GlobalStore);
+    readonly #siteChange$ = toObservable(this.#globalStore.siteDetails);
+    private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
 
     canAccessPortlet: boolean;
@@ -46,18 +62,24 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 this.reloadIframePortlet(portletId);
             }
         });
-        /**
-         *  skip first - to avoid subscription when page loads due login user subscription:
-         *  https://github.com/dotCMS/core-web/blob/main/projects/dotcms-js/src/lib/core/site.service.ts#L58
-         */
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            if (this.url.getValue() !== '') {
-                this.reloadIframePortlet();
-            }
-        });
+        this.#siteChange$
+            .pipe(
+                skip(1),
+                filter(Boolean),
+                distinctUntilChanged((a, b) => a.identifier === b.identifier),
+                takeUntil(this.destroy$)
+            )
+            .subscribe(() => {
+                if (this.url.getValue() !== '') {
+                    this.reloadIframePortlet();
+                }
+            });
 
         this.route.data
-            .pipe(pluck('canAccessPortlet'), takeUntil(this.destroy$))
+            .pipe(
+                map((x) => x?.canAccessPortlet),
+                takeUntil(this.destroy$)
+            )
             .subscribe((canAccessPortlet: boolean) => {
                 if (canAccessPortlet) {
                     this.setIframeSrc();
@@ -108,7 +130,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
         const queryUrl$ = this.route.queryParams.pipe(
-            pluck('url'),
+            map((x) => x?.url),
             map((url: string) => url)
         );
 
@@ -123,7 +145,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
     private setPortletUrl(): void {
         const portletId$ = this.route.params.pipe(
-            pluck('id'),
+            map((x) => x?.id),
             map((id: string) => id)
         );
 
@@ -165,8 +187,8 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         with the function refreshFakeJax defined in view_contentlets_js_inc.jsp.
      */
     private subscribeToAIGeneration(): void {
-        this.dotcmsEventsService
-            .subscribeTo('AI_CONTENT_PROMPT')
+        this.dotEventsSocket
+            .on<void>('AI_CONTENT_PROMPT')
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
                 this.dotIframeService.run({ name: 'refreshFakeJax' });

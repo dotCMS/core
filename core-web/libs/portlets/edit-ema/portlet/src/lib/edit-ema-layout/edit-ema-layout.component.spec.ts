@@ -1,10 +1,12 @@
 import { expect, describe } from '@jest/globals';
-import { SpyObject } from '@ngneat/spectator';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpyObject } from '@openng/spectator';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,12 +24,15 @@ import {
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,
+    DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
 import {
+    CurrentUserDataMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     MockDotRouterJestService
@@ -36,7 +41,7 @@ import {
 import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
@@ -88,8 +93,10 @@ describe('EditEmaLayoutComponent', () => {
 
     const createComponent = createComponentFactory({
         component: EditEmaLayoutComponent,
-        imports: [HttpClientTestingModule, MockComponent(TemplateBuilderComponent)],
+        imports: [MockComponent(TemplateBuilderComponent)],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             UVEStore,
             DotMessageService,
             DotActionUrlService,
@@ -98,7 +105,6 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotContentTypeService),
-            mockProvider(CoreWebService),
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
@@ -114,6 +120,11 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn(() => of([]))
             }),
+            mockProvider(DotWorkflowActionsFireService),
+            {
+                provide: GlobalStore,
+                useValue: { loggedUser: signal(CurrentUserDataMock) }
+            },
             mockProvider(ConfirmationService),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
             MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
@@ -154,7 +165,7 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        store.loadPageAsset({
+        store.pageLoad({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
@@ -176,7 +187,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
-            const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+            const reloadSpy = jest.spyOn(store, 'pageReload');
 
             templateBuilder.templateChange.emit();
             tick(5000);

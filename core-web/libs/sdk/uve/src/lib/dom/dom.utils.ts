@@ -6,13 +6,14 @@ import {
     EditableContainerData
 } from '@dotcms/types';
 import {
+    DotAnalyticsContentletAttributes,
     DotCMSContainerBound,
     DotCMSContentletBound,
     DotContainerAttributes,
     DotContentletAttributes
 } from '@dotcms/types/internal';
 
-import { END_CLASS, START_CLASS } from '../../internal/constants';
+import { ANALYTICS_ACTIVE_WINDOW_KEY, END_CLASS, START_CLASS } from '../../internal/constants';
 
 /**
  * Calculates the bounding information for each page element within the given containers.
@@ -288,6 +289,45 @@ export function getDotContentletAttributes(
 
 /**
  *
+ * Returns the minimal set of contentlet data attributes required by DotCMS
+ * Analytics (impression & click tracking) to identify a contentlet.
+ *
+ * Used in live mode where the full editor metadata is stripped but Analytics
+ * still needs to resolve the contentlet behind an impression/click.
+ *
+ * @param {DotCMSBasicContentlet} contentlet - The contentlet to get the attributes for
+ * @returns {DotAnalyticsContentletAttributes} The Analytics-required data attributes
+ */
+export function getAnalyticsContentletAttributes(
+    contentlet: DotCMSBasicContentlet
+): DotAnalyticsContentletAttributes {
+    return {
+        'data-dot-identifier': contentlet?.identifier,
+        'data-dot-inode': contentlet?.inode,
+        'data-dot-title': contentlet?.['widgetTitle'] || contentlet?.title,
+        'data-dot-type': contentlet?.contentType,
+        'data-dot-basetype': contentlet?.baseType
+    };
+}
+
+/**
+ *
+ * Checks whether DotCMS Analytics is initialized and active on the page.
+ *
+ * The SDKs use this in live mode to decide whether to keep the minimal
+ * contentlet attributes Analytics depends on.
+ *
+ * @returns {boolean} `true` when analytics is active, otherwise `false`
+ */
+export function isDotAnalyticsActive(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        (window as unknown as Record<string, unknown>)[ANALYTICS_ACTIVE_WINDOW_KEY] === true
+    );
+}
+
+/**
+ *
  *
  * Retrieves container data from a DotCMS page asset using the container reference.
  * This function processes the container information and returns a standardized format
@@ -392,4 +432,68 @@ export function getDotContainerAttributes({
         'data-max-contentlets': maxContentlets.toString(),
         'data-dot-uuid': uuid
     };
+}
+
+/**
+ * Read a contentlet's dataset attributes off a DOM element and return a
+ * normalized contentlet object. Mirrors the shape consumed by the editor's
+ * SET_BOUNDS and CONTENTLET_CLICKED events. Optionally parses the
+ * `dotStyleProperties` JSON when present.
+ */
+export function readContentletDataset(element: HTMLElement) {
+    const dataset = element.dataset ?? {};
+    return {
+        identifier: dataset['dotIdentifier'],
+        title: dataset['dotTitle'],
+        inode: dataset['dotInode'],
+        contentType: dataset['dotType'],
+        baseType: dataset['dotBasetype'],
+        widgetTitle: dataset['dotWidgetTitle'],
+        onNumberOfPages: dataset['dotOnNumberOfPages'],
+        ...(dataset['dotStyleProperties'] && {
+            dotStyleProperties: JSON.parse(dataset['dotStyleProperties'])
+        })
+    };
+}
+
+/**
+ * Returns Zone.js's *unpatched* native `addEventListener` / `removeEventListener`
+ * bound to `target`, falling back to the standard methods when Zone.js is absent.
+ *
+ * UVE reuses a single iframe and rewrites it with `document.open()/write()/close()`
+ * on every in-editor navigation. When Zone.js is loaded inside that iframe it runs
+ * in global-events mode: one native "gateway" listener per (target, eventType)
+ * plus a JS-level task list stored on the target node. `document.open()` tears down
+ * the native gateway on the persistent `window`/`document` nodes, but the task list
+ * survives on them, so Zone sees "already registered" on re-init and skips
+ * re-installing the native gateway — the listener silently goes dead after the
+ * first navigation.
+ *
+ * Hover/click dodge this by binding to `document.documentElement`, a node that
+ * `write()` recreates fresh. `scroll`/`message` (on `window`) and
+ * `DOMContentLoaded` (on `document`) can't: none of them fire on `<html>`, so
+ * there is no fresh node to rebind to. Going through Zone's native (untracked)
+ * methods sidesteps the dedup entirely, so the listener rebinds cleanly after
+ * every rewrite.
+ */
+export function getNativeEventBinder<T extends Window | Document>(
+    target: T
+): Pick<T, 'addEventListener' | 'removeEventListener'> {
+    const zone = (globalThis as { Zone?: { __symbol__?: (name: string) => string } }).Zone;
+    const symbolFor = (name: string): string =>
+        typeof zone?.__symbol__ === 'function' ? zone.__symbol__(name) : `__zone_symbol__${name}`;
+
+    const source = target as unknown as Record<string, unknown>;
+    const base = target as EventTarget;
+    const nativeAdd = source[symbolFor('addEventListener')] as
+        | EventTarget['addEventListener']
+        | undefined;
+    const nativeRemove = source[symbolFor('removeEventListener')] as
+        | EventTarget['removeEventListener']
+        | undefined;
+
+    return {
+        addEventListener: (nativeAdd ?? base.addEventListener).bind(base),
+        removeEventListener: (nativeRemove ?? base.removeEventListener).bind(base)
+    } as Pick<T, 'addEventListener' | 'removeEventListener'>;
 }

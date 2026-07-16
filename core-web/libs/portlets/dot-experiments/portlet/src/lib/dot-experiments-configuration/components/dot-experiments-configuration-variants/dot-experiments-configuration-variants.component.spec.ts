@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -53,7 +53,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = PARENT_RESOLVERS_ACTIVE_ROUTE_DATA;
-LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA.parent.parent.snapshot.data.content.page.canLock = true;
+LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA.parent.snapshot.data.content.page.canLock = true;
 
 const ActivatedRouteMock = {
     snapshot: {

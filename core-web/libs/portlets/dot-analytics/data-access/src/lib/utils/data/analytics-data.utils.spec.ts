@@ -1,9 +1,8 @@
-import { addHours, endOfDay, format, startOfDay } from 'date-fns';
+import { format, parse } from 'date-fns';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
-    aggregateTotalConversions,
     createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
@@ -11,25 +10,31 @@ import {
     extractPageViews,
     extractSessions,
     extractTopPageValue,
+    fillMissingApiDates,
     fillMissingDates,
     getDateRange,
     getPreviousPeriod,
-    transformDeviceBrowsersData,
+    transformBrowserBreakdownToPieChartEntries,
+    transformDeviceBreakdownToPieChartEntries,
     transformPageViewTimeLineData,
-    transformTopPagesTableData
+    transformTopPagesTableData,
+    transformConversionTrendData,
+    transformTrafficVsConversionsData
 } from './analytics-data.utils';
 
 import { AnalyticsChartColors } from '../../constants';
 import { Granularity } from '../../types';
 
 // eslint-disable-next-line no-duplicate-imports
+import type { ConversionTrendEntity } from './analytics-data.utils';
+// eslint-disable-next-line no-duplicate-imports
 import type {
-    PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
+    BrowserBreakdownData,
+    DeviceBreakdownData,
     TablePageData,
+    TopContentData,
     TopPagePerformanceEntity,
-    TopPerformanceTableEntity,
-    TotalConversionsEntity,
+    TotalEventsByDayData,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
@@ -64,7 +69,7 @@ describe('Analytics Data Utils', () => {
         describe('extractPageViews', () => {
             it('should extract page views from valid data', () => {
                 const mockData: TotalPageViewsEntity = {
-                    'EventSummary.totalEvents': '1250'
+                    totalEvents: 1250
                 };
 
                 const result = extractPageViews(mockData);
@@ -76,16 +81,18 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBeNull();
             });
 
-            it('should return null when totalRequest is missing', () => {
-                const mockData: Partial<TotalPageViewsEntity> = {};
+            it('should return null when totalEvents is zero', () => {
+                const mockData: TotalPageViewsEntity = {
+                    totalEvents: 0
+                };
 
-                const result = extractPageViews(mockData as TotalPageViewsEntity);
+                const result = extractPageViews(mockData);
                 expect(result).toBeNull();
             });
 
-            it('should handle string numbers correctly', () => {
+            it('should handle numeric values correctly', () => {
                 const mockData: TotalPageViewsEntity = {
-                    'EventSummary.totalEvents': '5000'
+                    totalEvents: 5000
                 };
 
                 const result = extractPageViews(mockData);
@@ -96,7 +103,7 @@ describe('Analytics Data Utils', () => {
         describe('extractSessions', () => {
             it('should extract sessions from valid data', () => {
                 const mockData: UniqueVisitorsEntity = {
-                    'EventSummary.uniqueVisitors': '342'
+                    uniqueVisitors: 342
                 };
 
                 const result = extractSessions(mockData);
@@ -108,20 +115,22 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBeNull();
             });
 
-            it('should return NaN when totalUsers is missing', () => {
-                const mockData: Partial<UniqueVisitorsEntity> = {};
+            it('should return null when uniqueVisitors is zero', () => {
+                const mockData: UniqueVisitorsEntity = {
+                    uniqueVisitors: 0
+                };
 
                 const result = extractSessions(mockData as UniqueVisitorsEntity);
-                expect(result).toBeNaN();
+                expect(result).toBeNull();
             });
         });
 
         describe('extractTopPageValue', () => {
             it('should extract top page value from valid data', () => {
                 const mockData: TopPagePerformanceEntity = {
-                    'EventSummary.totalEvents': '890',
-                    'EventSummary.title': 'Home Page',
-                    'EventSummary.identifier': '/home'
+                    totalEvents: 890,
+                    title: 'Home Page',
+                    identifier: '/home'
                 };
 
                 const result = extractTopPageValue(mockData);
@@ -133,23 +142,24 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBeNull();
             });
 
-            it('should return NaN when totalRequest is missing', () => {
-                const mockData: Partial<TopPagePerformanceEntity> = {
-                    'EventSummary.title': 'Home Page',
-                    'EventSummary.identifier': '/home'
+            it('should return null when totalEvents is zero', () => {
+                const mockData: TopPagePerformanceEntity = {
+                    totalEvents: 0,
+                    title: 'Home Page',
+                    identifier: '/home'
                 };
 
-                const result = extractTopPageValue(mockData as TopPagePerformanceEntity);
-                expect(result).toBeNaN();
+                const result = extractTopPageValue(mockData);
+                expect(result).toBeNull();
             });
         });
 
         describe('extractPageTitle', () => {
             it('should extract page title from valid data', () => {
                 const mockData: TopPagePerformanceEntity = {
-                    'EventSummary.totalEvents': '100',
-                    'EventSummary.title': 'Home Page',
-                    'EventSummary.identifier': '/home'
+                    totalEvents: 100,
+                    title: 'Home Page',
+                    identifier: '/home'
                 };
 
                 const result = extractPageTitle(mockData);
@@ -161,110 +171,25 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe('analytics.metrics.pageTitle.not-available');
             });
 
-            it('should return default message when pageTitle is missing', () => {
+            it('should return default message when title is missing', () => {
                 const mockData: Partial<TopPagePerformanceEntity> = {
-                    'EventSummary.totalEvents': '100',
-                    'EventSummary.identifier': '/home'
+                    totalEvents: 100,
+                    identifier: '/home'
                 };
 
                 const result = extractPageTitle(mockData as TopPagePerformanceEntity);
                 expect(result).toBe('analytics.metrics.pageTitle.not-available');
             });
 
-            it('should return default message when pageTitle is empty', () => {
+            it('should return default message when title is empty', () => {
                 const mockData: TopPagePerformanceEntity = {
-                    'EventSummary.totalEvents': '100',
-                    'EventSummary.title': '',
-                    'EventSummary.identifier': '/home'
+                    totalEvents: 100,
+                    title: '',
+                    identifier: '/home'
                 };
 
                 const result = extractPageTitle(mockData);
                 expect(result).toBe('analytics.metrics.pageTitle.not-available');
-            });
-        });
-
-        describe('aggregateTotalConversions', () => {
-            it('should sum all totalEvents from multiple entities', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '2'
-                    },
-                    {
-                        'EventSummary.totalEvents': '1'
-                    },
-                    {
-                        'EventSummary.totalEvents': '2'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '5'
-                });
-            });
-
-            it('should return null when array is empty', () => {
-                const result = aggregateTotalConversions([]);
-
-                expect(result).toBeNull();
-            });
-
-            it('should handle single entity', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '10'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '10'
-                });
-            });
-
-            it('should handle entities with missing or zero values', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '5'
-                    },
-                    {
-                        'EventSummary.totalEvents': ''
-                    },
-                    {
-                        'EventSummary.totalEvents': '0'
-                    },
-                    {
-                        'EventSummary.totalEvents': '3'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '8'
-                });
-            });
-
-            it('should handle large numbers correctly', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '1000'
-                    },
-                    {
-                        'EventSummary.totalEvents': '2500'
-                    },
-                    {
-                        'EventSummary.totalEvents': '500'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '4000'
-                });
             });
         });
     });
@@ -272,31 +197,15 @@ describe('Analytics Data Utils', () => {
     describe('Transformation Functions', () => {
         describe('transformTopPagesTableData', () => {
             it('should transform valid table data correctly', () => {
-                const mockData: TopPerformanceTableEntity[] = [
-                    {
-                        'EventSummary.title': 'Home Page',
-                        'EventSummary.identifier': '/home',
-                        'EventSummary.totalEvents': '1250'
-                    },
-                    {
-                        'EventSummary.title': 'About Us',
-                        'EventSummary.identifier': '/about',
-                        'EventSummary.totalEvents': '890'
-                    }
+                const mockData: TopContentData[] = [
+                    { title: 'Home Page', identifier: '/home', totalEvents: 1250 },
+                    { title: 'About Us', identifier: '/about', totalEvents: 890 }
                 ];
 
                 const result = transformTopPagesTableData(mockData);
                 const expected: TablePageData[] = [
-                    {
-                        pageTitle: 'Home Page',
-                        path: '/home',
-                        views: 1250
-                    },
-                    {
-                        pageTitle: 'About Us',
-                        path: '/about',
-                        views: 890
-                    }
+                    { pageTitle: 'Home Page', path: '/home', views: 1250 },
+                    { pageTitle: 'About Us', path: '/about', views: 890 }
                 ];
 
                 expect(result).toEqual(expected);
@@ -308,20 +217,14 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should return empty array when data is not an array', () => {
-                const result = transformTopPagesTableData(
-                    {} as unknown as TopPerformanceTableEntity[]
-                );
+                const result = transformTopPagesTableData({} as unknown as TopContentData[]);
                 expect(result).toEqual([]);
             });
 
             it('should handle missing fields with defaults', () => {
-                const mockData: Partial<TopPerformanceTableEntity>[] = [
-                    {
-                        'EventSummary.totalEvents': '500'
-                    }
-                ];
+                const mockData: Partial<TopContentData>[] = [{ totalEvents: 500 }];
 
-                const result = transformTopPagesTableData(mockData as TopPerformanceTableEntity[]);
+                const result = transformTopPagesTableData(mockData as TopContentData[]);
                 const expected: TablePageData[] = [
                     {
                         pageTitle: 'analytics.table.data.not-available',
@@ -341,17 +244,9 @@ describe('Analytics Data Utils', () => {
 
         describe('transformPageViewTimeLineData', () => {
             it('should transform valid timeline data correctly', () => {
-                const mockData: PageViewTimeLineEntity[] = [
-                    {
-                        'EventSummary.day': '2023-12-01T00:00:00Z',
-                        'EventSummary.day.day': '2023-12-01',
-                        'EventSummary.totalEvents': '100'
-                    },
-                    {
-                        'EventSummary.day': '2023-12-02T00:00:00Z',
-                        'EventSummary.day.day': '2023-12-02',
-                        'EventSummary.totalEvents': '150'
-                    }
+                const mockData: TotalEventsByDayData[] = [
+                    { day: '2023-12-01', totalEvents: 100 },
+                    { day: '2023-12-02', totalEvents: 150 }
                 ];
 
                 const result = transformPageViewTimeLineData(mockData);
@@ -385,408 +280,305 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should sort data by date correctly', () => {
-                const mockData: PageViewTimeLineEntity[] = [
-                    {
-                        'EventSummary.day': '2023-12-03T00:00:00Z',
-                        'EventSummary.day.day': '2023-12-03',
-                        'EventSummary.totalEvents': '200'
-                    },
-                    {
-                        'EventSummary.day': '2023-12-01T00:00:00Z',
-                        'EventSummary.day.day': '2023-12-01',
-                        'EventSummary.totalEvents': '100'
-                    },
-                    {
-                        'EventSummary.day': '2023-12-02T00:00:00Z',
-                        'EventSummary.day.day': '2023-12-02',
-                        'EventSummary.totalEvents': '150'
-                    }
+                const mockData: TotalEventsByDayData[] = [
+                    { day: '2023-12-03', totalEvents: 200 },
+                    { day: '2023-12-01', totalEvents: 100 },
+                    { day: '2023-12-02', totalEvents: 150 }
                 ];
 
                 const result = transformPageViewTimeLineData(mockData);
 
-                // Should be sorted chronologically
                 expect(result.datasets[0].data).toEqual([100, 150, 200]);
             });
 
-            it('should handle missing totalRequest fields', () => {
-                const mockData: Partial<PageViewTimeLineEntity>[] = [
-                    {
-                        'EventSummary.day': '2023-12-01T00:00:00Z',
-                        'EventSummary.day.day': '2023-12-01'
-                    }
-                ];
+            it('should handle zero totalEvents', () => {
+                const mockData: TotalEventsByDayData[] = [{ day: '2023-12-01', totalEvents: 0 }];
 
-                const result = transformPageViewTimeLineData(mockData as PageViewTimeLineEntity[]);
+                const result = transformPageViewTimeLineData(mockData);
 
                 expect(result.datasets[0].data).toEqual([0]);
             });
 
             describe('Date and Time Formatting', () => {
-                it('should format labels as hours when all data is from the same day', () => {
-                    // Use local dates to ensure same day detection works properly
-                    const baseDate = new Date('2023-12-01T12:00:00'); // Local time, midday
-                    const mockData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': new Date(
-                                baseDate.getTime() - 3 * 60 * 60 * 1000
-                            ).toISOString(), // 9 AM
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '100'
-                        },
-                        {
-                            'EventSummary.day': new Date(
-                                baseDate.getTime() + 2 * 60 * 60 * 1000
-                            ).toISOString(), // 2 PM
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '150'
-                        },
-                        {
-                            'EventSummary.day': new Date(
-                                baseDate.getTime() + 6 * 60 * 60 * 1000
-                            ).toISOString(), // 6 PM
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '200'
-                        }
-                    ];
-
-                    const result = transformPageViewTimeLineData(mockData);
-
-                    // Should format as hours (HH:mm format) when all data is from same day
-                    expect(result.labels).toHaveLength(3);
-                    // Check that labels contain time format with HH:mm (24-hour format)
-                    result.labels?.forEach((label) => {
-                        expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
-                    });
-                });
-
                 it('should format labels as short date when data spans multiple days', () => {
-                    const mockData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': '2023-12-01T12:00:00',
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '100'
-                        },
-                        {
-                            'EventSummary.day': '2023-12-02T12:00:00',
-                            'EventSummary.day.day': '2023-12-02',
-                            'EventSummary.totalEvents': '150'
-                        },
-                        {
-                            'EventSummary.day': '2023-12-03T12:00:00',
-                            'EventSummary.day.day': '2023-12-03',
-                            'EventSummary.totalEvents': '200'
-                        }
+                    const mockData: TotalEventsByDayData[] = [
+                        { day: '2023-12-01', totalEvents: 100 },
+                        { day: '2023-12-02', totalEvents: 150 },
+                        { day: '2023-12-03', totalEvents: 200 }
                     ];
 
                     const result = transformPageViewTimeLineData(mockData);
 
-                    // Should format as day + month when data spans multiple days
                     expect(result.labels).toHaveLength(3);
-                    // Check that labels contain date format (MMM dd)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
                         expect(label as string).toMatch(/^[A-Za-z]{3}\s+\d{1,2}$/);
                     });
                 });
 
-                it('should handle same day detection correctly for edge cases', () => {
-                    // Test data with same date but different times - use local time
-                    const baseDate = new Date('2023-12-01T12:00:00');
-
-                    const sameDayData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': startOfDay(baseDate).toISOString(), // startOfDay
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '50'
-                        },
-                        {
-                            'EventSummary.day': endOfDay(baseDate).toISOString(), // endOfDay
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '75'
-                        }
+                it('should format labels as hours when all data is from the same day', () => {
+                    const mockData: TotalEventsByDayData[] = [
+                        { day: '2023-12-01', totalEvents: 100 }
                     ];
 
-                    const result = transformPageViewTimeLineData(sameDayData);
+                    const result = transformPageViewTimeLineData(mockData);
 
-                    // Should still format as hours since it's the same day
-                    expect(result.labels).toHaveLength(2);
-                    result.labels?.forEach((label) => {
-                        expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
-                    });
+                    expect(result.labels).toHaveLength(1);
+                    expect(result.datasets[0].data).toEqual([100]);
                 });
 
-                it('should handle data spanning just two different days', () => {
-                    // Use dates that will definitely be different days even after timezone conversion
-                    const twoDayData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': '2023-12-01T12:00:00.000', // Noon UTC - safe for most timezones
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '100'
-                        },
-                        {
-                            'EventSummary.day': '2023-12-03T12:00:00.000', // Two days later at noon UTC
-                            'EventSummary.day.day': '2023-12-03',
-                            'EventSummary.totalEvents': '120'
-                        }
+                it('should handle data spanning two different days', () => {
+                    const mockData: TotalEventsByDayData[] = [
+                        { day: '2023-12-01', totalEvents: 100 },
+                        { day: '2023-12-03', totalEvents: 120 }
                     ];
 
-                    const result = transformPageViewTimeLineData(twoDayData);
+                    const result = transformPageViewTimeLineData(mockData);
 
-                    // Should format as dates since data spans multiple days in any timezone
                     expect(result.labels).toHaveLength(2);
+                    expect(result.datasets[0].data).toEqual([100, 120]);
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        // Should use date format (MMM dd)
                         expect(label as string).toMatch(/^[A-Za-z]{3}\s+\d{1,2}$/);
                     });
                 });
 
-                it('should maintain chronological order when formatting hours', () => {
-                    const baseDate = startOfDay(new Date('2023-12-01T12:00:00'));
-                    const unorderedSameDayData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': addHours(baseDate, 7).toISOString(), // 7am
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '200'
-                        },
-                        {
-                            'EventSummary.day': addHours(baseDate, 1).toISOString(), // 1am
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '100'
-                        },
-                        {
-                            'EventSummary.day': addHours(baseDate, 13).toISOString(), // 3pm
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '150'
-                        }
+                it('should maintain chronological order', () => {
+                    const mockData: TotalEventsByDayData[] = [
+                        { day: '2023-12-07', totalEvents: 200 },
+                        { day: '2023-12-01', totalEvents: 100 },
+                        { day: '2023-12-04', totalEvents: 150 }
                     ];
 
-                    const result = transformPageViewTimeLineData(unorderedSameDayData);
+                    const result = transformPageViewTimeLineData(mockData);
 
-                    // Should be sorted chronologically: 1am, 7am, 3pm
-                    expect(result.datasets[0].data).toEqual([100, 200, 150]);
+                    expect(result.datasets[0].data).toEqual([100, 150, 200]);
                     expect(result.labels).toHaveLength(3);
+                });
+            });
 
-                    // Verify hour format is used (HH:mm)
-                    result.labels?.forEach((label) => {
-                        expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
-                    });
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
                 });
 
-                it('should convert UTC dates to user local timezone for labels', () => {
-                    // Mock UTC dates in the format that comes from the endpoint (without Z)
-                    // These should be converted to user's local timezone
-                    const mockData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': '2023-12-01T14:00:00.000', // 2 PM UTC (from endpoint format)
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '100'
-                        },
-                        {
-                            'EventSummary.day': '2023-12-01T18:30:00.000', // 6:30 PM UTC (from endpoint format)
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '150'
-                        }
-                    ];
-
-                    const result = transformPageViewTimeLineData(mockData);
-
-                    // The dates should be formatted using user's locale and timezone
-                    // We can't predict the exact output since it depends on user's timezone,
-                    // but we can verify the format is correct for local time
-                    expect(result.labels).toHaveLength(2);
-                    expect(result.datasets[0].data).toEqual([100, 150]);
-
-                    // Check that labels are formatted as local time (HH:mm format)
-                    result.labels?.forEach((label) => {
-                        expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
-                    });
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
                 });
 
-                it('should handle dates across different days in local timezone', () => {
-                    const mockData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': '2023-12-01T22:00:00.000', // 10 PM UTC (endpoint format)
-                            'EventSummary.day.day': '2023-12-01',
-                            'EventSummary.totalEvents': '100'
-                        },
-                        {
-                            'EventSummary.day': '2023-12-02T02:00:00.000', // 2 AM UTC next day (endpoint format)
-                            'EventSummary.day.day': '2023-12-02',
-                            'EventSummary.totalEvents': '150'
-                        }
-                    ];
-
-                    const result = transformPageViewTimeLineData(mockData);
-
-                    expect(result.labels).toHaveLength(2);
-                    expect(result.datasets[0].data).toEqual([100, 150]);
-
-                    // Should have date format since they're different days in local time
-                    result.labels?.forEach((label) => {
-                        expect(typeof label).toBe('string');
-                        // Either time format (HH:mm) or date format (MMM dd) depending on timezone
-                        expect(label as string).toMatch(
-                            /^(\d{1,2}:\d{2})|([A-Za-z]{3}\s+\d{1,2})$/
-                        );
-                    });
-                });
-
-                it('should handle endpoint date format without Z suffix', () => {
-                    // Test with the exact format that comes from the endpoint
-                    const mockData: PageViewTimeLineEntity[] = [
-                        {
-                            'EventSummary.day': '2025-08-05T16:00:00.000', // Endpoint format (no Z)
-                            'EventSummary.day.day': '2025-08-05',
-                            'EventSummary.totalEvents': '100'
-                        },
-                        {
-                            'EventSummary.day': '2025-08-05T17:00:00.000', // Endpoint format (no Z)
-                            'EventSummary.day.day': '2025-08-05',
-                            'EventSummary.totalEvents': '150'
-                        }
-                    ];
-
-                    const result = transformPageViewTimeLineData(mockData);
-
-                    // Should parse correctly and convert to local timezone
-                    expect(result.labels).toHaveLength(2);
-                    expect(result.datasets[0].data).toEqual([100, 150]);
-
-                    // Should format as time (same day) - HH:mm format
-                    result.labels?.forEach((label) => {
-                        expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
-                    });
+                /**
+                 * Node parses `new Date("yyyy-MM-dd")` as UTC; in US timezones that shifts the calendar day
+                 * when formatting. Labels must match local-calendar parse of the API string.
+                 * Use two buckets so labels use day format (MMM dd), not same-day hourly format.
+                 */
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformPageViewTimeLineData([
+                        { day: apiDayPrev, totalEvents: 1 },
+                        { day: apiDay, totalEvents: 7 }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
                 });
             });
         });
 
-        describe('transformDeviceBrowsersData', () => {
-            it('should transform valid device browsers data correctly', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '500'
-                    },
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-                        'request.count': '300'
+        describe('transformConversionTrendData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
                     }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformConversionTrendData([
+                        { day: apiDayPrev, totalEvents: 1 },
+                        { day: apiDay, totalEvents: 7 }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
+        describe('transformTrafficVsConversionsData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformTrafficVsConversionsData([
+                        {
+                            day: apiDayPrev,
+                            uniqueVisitors: 10,
+                            uniqueConvertingVisitors: 1
+                        },
+                        {
+                            day: apiDay,
+                            uniqueVisitors: 20,
+                            uniqueConvertingVisitors: 3
+                        }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
+        describe('transformBrowserBreakdownToPieChartEntries', () => {
+            it('should map pre-aggregated browser totals and sort descending', () => {
+                const mockData: BrowserBreakdownData[] = [
+                    { browser: 'Chrome', total: 700 },
+                    { browser: 'Safari', total: 300 }
                 ];
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformBrowserBreakdownToPieChartEntries(mockData);
 
-                expect(result.labels).toHaveLength(2);
-                expect(result.datasets).toHaveLength(1);
-                expect(result.datasets[0].data).toEqual([500, 300]);
-                expect(result.datasets[0].label).toBe(
-                    'analytics.charts.device-breakdown.dataset-label'
-                );
-                expect(result.datasets[0].backgroundColor).toHaveLength(2);
-            });
-
-            it('should return empty chart data when data is null', () => {
-                const result = transformDeviceBrowsersData(null);
-
-                expect(result.labels).toEqual([]);
-                expect(result.datasets).toHaveLength(1);
-                expect(result.datasets[0].data).toEqual([]);
-                expect(result.datasets[0].backgroundColor).toEqual([]);
-            });
-
-            it('should return empty chart data when data is empty array', () => {
-                const result = transformDeviceBrowsersData([]);
-
-                expect(result.labels).toEqual([]);
-                expect(result.datasets[0].data).toEqual([]);
-            });
-
-            it('should return "No Data" when no valid entries found', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent': 'Some browser',
-                        'request.count': '0'
-                    }
-                ];
-
-                const result = transformDeviceBrowsersData(mockData);
-
-                expect(result.labels).toEqual(['No Data']);
-                expect(result.datasets[0].data).toEqual([1]);
-                expect(result.datasets[0].backgroundColor).toEqual([
-                    AnalyticsChartColors.neutral.line
+                expect(result).toEqual([
+                    { name: 'Chrome', value: 700 },
+                    { name: 'Safari', value: 300 }
                 ]);
             });
 
-            it('should group by browser and device type correctly', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '200'
-                    },
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '300'
-                    }
-                ];
-
-                const result = transformDeviceBrowsersData(mockData);
-
-                // Should combine the two Chrome Desktop entries
-                expect(result.labels).toHaveLength(1);
-                expect(result.labels[0]).toContain('Chrome (Desktop)');
-                expect(result.datasets[0].data).toEqual([500]); // 200 + 300
+            it('should return empty array when data is null or empty', () => {
+                expect(transformBrowserBreakdownToPieChartEntries(null)).toEqual([]);
+                expect(transformBrowserBreakdownToPieChartEntries([])).toEqual([]);
             });
 
-            it('should sort results by usage descending', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-                        'request.count': '100' // Less usage
-                    },
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '500' // More usage
-                    }
+            it('should sort by total descending when input order varies', () => {
+                const mockData: BrowserBreakdownData[] = [
+                    { browser: 'Firefox', total: 100 },
+                    { browser: 'Chrome', total: 300 },
+                    { browser: 'Safari', total: 200 }
                 ];
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformBrowserBreakdownToPieChartEntries(mockData);
 
-                // Chrome Desktop should come first (higher usage)
-                expect(result.labels[0]).toContain('Chrome (Desktop)');
-                expect(result.labels[1]).toContain('Safari (Mobile)');
-                expect(result.datasets[0].data).toEqual([500, 100]);
+                expect(result[0]).toEqual({ name: 'Chrome', value: 300 });
+                expect(result[1]).toEqual({ name: 'Safari', value: 200 });
+                expect(result[2]).toEqual({ name: 'Firefox', value: 100 });
             });
 
-            it('should handle invalid user agents gracefully', () => {
-                const mockData: Partial<PageViewDeviceBrowsersEntity>[] = [
-                    {
-                        'request.userAgent': '',
-                        'request.count': '100'
-                    },
-                    {
-                        'request.count': '200'
-                    }
+            it('should cap results at 10 entries when otherLabel is omitted', () => {
+                const mockData: BrowserBreakdownData[] = Array.from({ length: 15 }, (_, i) => ({
+                    browser: `Browser${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformBrowserBreakdownToPieChartEntries(mockData);
+
+                expect(result).toHaveLength(10);
+                expect(result[0].value).toBe(100);
+                expect(result.every((e) => e.name !== 'Other')).toBe(true);
+            });
+
+            it('should aggregate overflow browsers into Other when otherLabel is set', () => {
+                const mockData: BrowserBreakdownData[] = Array.from({ length: 15 }, (_, i) => ({
+                    browser: `Browser${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformBrowserBreakdownToPieChartEntries(mockData, {
+                    otherLabel: 'Other'
+                });
+
+                expect(result).toHaveLength(10);
+                expect(result[8]).toMatchObject({ name: 'Browser8', value: 92 });
+                expect(result[9]).toEqual({ name: 'Other', value: 531 });
+            });
+
+            it('should not add Other when distinct browsers count equals maxSlices', () => {
+                const mockData: BrowserBreakdownData[] = Array.from({ length: 10 }, (_, i) => ({
+                    browser: `Browser${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformBrowserBreakdownToPieChartEntries(mockData, {
+                    otherLabel: 'Other'
+                });
+
+                expect(result).toHaveLength(10);
+                expect(result.every((e) => e.name !== 'Other')).toBe(true);
+            });
+        });
+
+        describe('transformDeviceBreakdownToPieChartEntries', () => {
+            it('should map pre-aggregated device totals and sort descending', () => {
+                const mockData: DeviceBreakdownData[] = [
+                    { device: 'Desktop', total: 600 },
+                    { device: 'Mobile', total: 300 }
                 ];
 
-                const result = transformDeviceBrowsersData(
-                    mockData as PageViewDeviceBrowsersEntity[]
-                );
+                const result = transformDeviceBreakdownToPieChartEntries(mockData);
 
-                expect(result.labels).toEqual(['No Data']);
-                expect(result.datasets[0].data).toEqual([1]);
+                expect(result).toEqual([
+                    { name: 'Desktop', value: 600 },
+                    { name: 'Mobile', value: 300 }
+                ]);
+            });
+
+            it('should return empty array when data is null or empty', () => {
+                expect(transformDeviceBreakdownToPieChartEntries(null)).toEqual([]);
+                expect(transformDeviceBreakdownToPieChartEntries([])).toEqual([]);
+            });
+
+            it('should sort by total descending', () => {
+                const mockData: DeviceBreakdownData[] = [
+                    { device: 'Mobile', total: 200 },
+                    { device: 'Desktop', total: 700 },
+                    { device: 'Tablet', total: 50 }
+                ];
+
+                const result = transformDeviceBreakdownToPieChartEntries(mockData);
+
+                expect(result[0]).toEqual({ name: 'Desktop', value: 700 });
+                expect(result[1]).toEqual({ name: 'Mobile', value: 200 });
+                expect(result[2]).toEqual({ name: 'Tablet', value: 50 });
+            });
+
+            it('should aggregate overflow devices into Other when otherLabel is set', () => {
+                const mockData: DeviceBreakdownData[] = Array.from({ length: 15 }, (_, i) => ({
+                    device: `Device${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformDeviceBreakdownToPieChartEntries(mockData, {
+                    otherLabel: 'Other'
+                });
+
+                expect(result).toHaveLength(10);
+                expect(result[9]).toEqual({ name: 'Other', value: 531 });
             });
         });
     });
@@ -802,20 +594,21 @@ describe('Analytics Data Utils', () => {
         });
 
         describe('success cases', () => {
-            it('should return last 7 days range correctly', () => {
+            it('should return last 7 complete days ending yesterday', () => {
                 const result = getDateRange('last7days');
                 const [startDate, endDate] = result;
 
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-09 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+                // Today (2024-01-15) is excluded; range is the 7 complete days ending yesterday
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-08 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
             });
 
-            it('should return last 30 days range correctly', () => {
+            it('should return last 30 complete days ending yesterday', () => {
                 const result = getDateRange('last30days');
                 const [startDate, endDate] = result;
 
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-17 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-16 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
             });
 
             it('should handle custom date range array correctly', () => {
@@ -836,6 +629,54 @@ describe('Analytics Data Utils', () => {
         });
     });
 
+    describe('fillMissingApiDates + transformPageViewTimeLineData (relative range regression)', () => {
+        beforeEach(() => {
+            jest.useFakeTimers();
+            // Reproduces the reported bug: today = Jun 10, API returns Jun 03 … Jun 09.
+            jest.setSystemTime(new Date('2026-06-10T12:00:00.000'));
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('keeps the earliest day and does not append today for a last7days range', () => {
+            // Sparse API rows for the 7 complete days ending yesterday (Jun 03 … Jun 09).
+            const apiData: TotalEventsByDayData[] = [
+                { day: '2026-06-03', totalEvents: 993 },
+                { day: '2026-06-04', totalEvents: 1136 },
+                { day: '2026-06-05', totalEvents: 1558 },
+                { day: '2026-06-06', totalEvents: 718 },
+                { day: '2026-06-07', totalEvents: 721 },
+                { day: '2026-06-08', totalEvents: 1107 },
+                { day: '2026-06-09', totalEvents: 2424 }
+            ];
+
+            const filled = fillMissingApiDates(apiData, 'last7days', 'day', (date) => ({
+                day: format(date, 'yyyy-MM-dd'),
+                totalEvents: 0
+            }));
+
+            // Window must match the API data exactly: Jun 03 … Jun 09 — no Jun 10 (today) bucket.
+            expect(filled.map((item) => item.day)).toEqual([
+                '2026-06-03',
+                '2026-06-04',
+                '2026-06-05',
+                '2026-06-06',
+                '2026-06-07',
+                '2026-06-08',
+                '2026-06-09'
+            ]);
+            // Earliest real day is retained with its value (previously dropped).
+            expect(filled[0]).toEqual({ day: '2026-06-03', totalEvents: 993 });
+
+            const chart = transformPageViewTimeLineData(filled);
+            expect(chart.labels?.[0]).toBe('Jun 03');
+            expect(chart.labels?.[chart.labels.length - 1]).toBe('Jun 09');
+            expect(chart.datasets[0].data).toEqual([993, 1136, 1558, 718, 721, 1107, 2424]);
+        });
+    });
+
     describe('getPreviousPeriod', () => {
         it('should return previous period of same length for custom date range', () => {
             const result = getPreviousPeriod(['2026-02-01', '2026-02-06']);
@@ -852,17 +693,17 @@ describe('Analytics Data Utils', () => {
             jest.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
             const result = getPreviousPeriod('last7days');
             jest.useRealTimers();
-            // last7days: Jan 9 - Jan 15 (7 days). Previous: Jan 2 - Jan 8
-            expect(result[0]).toBe('2024-01-02');
-            expect(result[1]).toBe('2024-01-08');
+            // last7days: Jan 8 - Jan 14 (7 complete days ending yesterday). Previous: Jan 1 - Jan 7
+            expect(result[0]).toBe('2024-01-01');
+            expect(result[1]).toBe('2024-01-07');
         });
     });
 
     describe('fillMissingDates', () => {
-        describe('with PageViewTimeLineEntity', () => {
+        describe('with ConversionTrendEntity', () => {
             it('should return empty array when data is null', () => {
                 const result = fillMissingDates(
-                    null as unknown as PageViewTimeLineEntity[],
+                    null as unknown as ConversionTrendEntity[],
                     ['2024-01-01', '2024-01-03'],
                     Granularity.DAY,
                     createEmptyAnalyticsEntity
@@ -873,7 +714,7 @@ describe('Analytics Data Utils', () => {
 
             it('should return empty array when data is not an array', () => {
                 const result = fillMissingDates(
-                    {} as unknown as PageViewTimeLineEntity[],
+                    {} as unknown as ConversionTrendEntity[],
                     ['2024-01-01', '2024-01-03'],
                     Granularity.DAY,
                     createEmptyAnalyticsEntity
@@ -883,7 +724,7 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should fill all dates in range when data is empty', () => {
-                const result = fillMissingDates<PageViewTimeLineEntity>(
+                const result = fillMissingDates<ConversionTrendEntity>(
                     [],
                     ['2024-01-01', '2024-01-03'],
                     Granularity.DAY,
@@ -898,7 +739,7 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should return correct number of entries for date range', () => {
-                const result = fillMissingDates<PageViewTimeLineEntity>(
+                const result = fillMissingDates<ConversionTrendEntity>(
                     [],
                     ['2024-01-01', '2024-01-05'],
                     Granularity.DAY,
@@ -960,7 +801,7 @@ describe('Analytics Data Utils', () => {
 
         describe('createEmptyAnalyticsEntity', () => {
             it('should create entity with correct structure', () => {
-                const result = createEmptyAnalyticsEntity<PageViewTimeLineEntity>(
+                const result = createEmptyAnalyticsEntity<ConversionTrendEntity>(
                     testDate,
                     testDateKey
                 );

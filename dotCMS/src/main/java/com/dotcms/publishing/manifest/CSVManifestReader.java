@@ -41,15 +41,11 @@ public class CSVManifestReader implements ManifestReader{
     }
 
     private void init(final Reader manifestReader){
-        try {
-            final List<String> lines = IOUtils.readLines(manifestReader);
+        final List<String> lines = IOUtils.readLines(manifestReader);
 
-            this.manifestItemsIncluded = getManifestInfos(lines, "INCLUDED");
-            this.manifestItemsExcluded = getManifestInfos(lines, "EXCLUDED");
-            this.metaData = getAllMetaData(lines);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Not valid InputStream manifest: " + e.getMessage(), e);
-        }
+        this.manifestItemsIncluded = getManifestInfos(lines, "INCLUDED");
+        this.manifestItemsExcluded = getManifestInfos(lines, "EXCLUDED");
+        this.metaData = getAllMetaData(lines);
     }
 
     private Map<String, String> getAllMetaData(final List<String> lines) {

@@ -1,0 +1,38 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/chat/completions",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "chatcmpl-test123",
+      "object": "chat.completion",
+      "created": 1713823646,
+      "model": "gpt-4o-mini",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "This is a test response from the mocked AI provider."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 20,
+        "completion_tokens": 15,
+        "total_tokens": 35
+      }
+    }
+  }
+}

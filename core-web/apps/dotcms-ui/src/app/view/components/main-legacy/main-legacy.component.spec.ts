@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator/jest';
+import { mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -33,11 +34,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -45,7 +42,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
@@ -54,7 +51,7 @@ import { DotDownloadBundleDialogService } from '../../../api/services/dot-downlo
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { NotificationsService } from '../../../api/services/notifications-service';
 import { LOCATION_TOKEN } from '../../../providers';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -130,14 +127,14 @@ describe('MainLegacyComponent', () => {
                 // DotContentletEditorModule,
                 DotDownloadBundleDialogComponent,
                 DotWizardComponent,
-                HttpClientTestingModule,
                 MainComponentLegacyComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotMenuService,
                 DotCustomEventHandlerService,
                 DotLicenseService,
@@ -145,9 +142,6 @@ describe('MainLegacyComponent', () => {
                 DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,

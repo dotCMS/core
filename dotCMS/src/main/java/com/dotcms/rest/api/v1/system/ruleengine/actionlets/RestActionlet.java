@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import java.util.Map;
 

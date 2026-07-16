@@ -3,15 +3,16 @@ import {
     createRoutingFactory,
     mockProvider,
     SpectatorRouting
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, UrlSegment } from '@angular/router';
 
 import { MessageModule } from 'primeng/message';
 
 import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotAnalyticsDashboardStore,
     DotAnalyticsService,
@@ -42,7 +43,7 @@ describe('DotAnalyticsDashboardComponent', () => {
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
 
     const defaultLocalStorageMock = {
-        getItem: jest.fn().mockReturnValue(true), // Por defecto, el banner está oculto
+        getItem: jest.fn().mockReturnValue(true),
         setItem: jest.fn()
     };
 
@@ -70,6 +71,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                 provide: DotLocalstorageService,
                 useValue: defaultLocalStorageMock
             },
+            mockProvider(LoginService, { currentUserLanguageId: 'en-US' }),
             mockProvider(Router)
         ]
     });
@@ -84,24 +86,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render pageview report component', () => {
-            const pageviewReport = spectator.query('dot-analytics-pageview-report');
-            expect(pageviewReport).toExist();
-        });
-
-        it('should render line chart component', () => {
-            const timelineChart = spectator.query(byTestId('analytics-timeline-chart'));
-            expect(timelineChart).toExist();
-        });
-
-        it('should render pageview report when pageview tab is active', () => {
-            const pageviewReport = spectator.query('dot-analytics-pageview-report');
-            expect(pageviewReport).toExist();
-        });
-
-        it('should render tab panels for each report type', () => {
-            const tabPanels = spectator.queryAll('p-tabpanel');
-            expect(tabPanels.length).toBe(3);
+        it('should render a router-outlet for nested report routes', () => {
+            const outlet = spectator.query('router-outlet');
+            expect(outlet).toExist();
         });
 
         it('should render filters component', () => {
@@ -125,6 +112,30 @@ describe('DotAnalyticsDashboardComponent', () => {
 
                 expect(spy).toHaveBeenCalled();
             });
+        });
+    });
+
+    describe('Route-derived tab sync', () => {
+        it('should set store currentTab from the active child route path', () => {
+            spectator = createComponent({
+                firstChild: {
+                    snapshot: { url: [new UrlSegment('pageview', {})] }
+                }
+            });
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+
+            expect(store.currentTab()).toBe('pageview');
+        });
+
+        it('should sync conversions when child route is conversions', () => {
+            spectator = createComponent({
+                firstChild: {
+                    snapshot: { url: [new UrlSegment('conversions', {})] }
+                }
+            });
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+
+            expect(store.currentTab()).toBe('conversions');
         });
     });
 
@@ -234,7 +245,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         it('should call addNewBreadcrumb with the default tab on initialization', () => {
             expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
-                expect.objectContaining({ id: 'analytics-pageview', label: 'Pageview' })
+                expect.objectContaining({ id: 'analytics-engagement', label: 'Engagement' })
             );
         });
 
@@ -248,13 +259,13 @@ describe('DotAnalyticsDashboardComponent', () => {
             );
         });
 
-        it('should call addNewBreadcrumb with engagement tab when switched', () => {
+        it('should call addNewBreadcrumb with pageview tab when switched', () => {
             jest.clearAllMocks();
-            store.setCurrentTab('engagement');
+            store.setCurrentTab('pageview');
             TestBed.flushEffects();
 
             expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
-                expect.objectContaining({ id: 'analytics-engagement', label: 'Engagement' })
+                expect.objectContaining({ id: 'analytics-pageview', label: 'Pageview' })
             );
         });
     });

@@ -6,6 +6,7 @@ import {
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
+import { registerStyleEditorSchemas } from '@dotcms/uve/internal';
 
 /**
  * Custom hook to manage the editable state of a DotCMS page.
@@ -103,6 +104,12 @@ export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
 
     useEffect(() => {
         if (!getUVEState()) {
+            // Outside UVE, state only ever comes from props - keep it in sync with
+            // whatever pageResponse the parent re-renders with (e.g. after a client-side
+            // navigation refetches page data), since the initial useState value above is
+            // otherwise frozen after the first render.
+            setUpdatedPageResponse(pageResponse);
+
             return;
         }
 
@@ -121,6 +128,10 @@ export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
         // And wait for the UVE to resolve the page
         if (pageURI) {
             updateNavigation(pageURI);
+        }
+
+        if (pageResponse.styleEditorSchemas?.length) {
+            registerStyleEditorSchemas(pageResponse.styleEditorSchemas);
         }
 
         return () => {

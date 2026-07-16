@@ -1,4 +1,4 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -288,6 +288,74 @@ describe('DotEditContentStore', () => {
             store.initializeAsPortlet();
 
             // Assert - verify the correct service is called
+            expect(
+                spectator.inject(DotContentTypeService).getContentTypeWithRender
+            ).toHaveBeenCalledWith('test-content-type');
+        });
+
+        it('should store folderPath from query params', () => {
+            if (mockActivatedRoute.snapshot) {
+                mockActivatedRoute.snapshot.params = { contentType: 'test-content-type' };
+                mockActivatedRoute.snapshot.queryParams = {
+                    folderPath: 'default/level1/level2/'
+                };
+            }
+
+            const mockContentType: Partial<DotCMSContentType> = {
+                id: 'test-content-type',
+                name: 'Test Type'
+            };
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
+
+            store.initializeAsPortlet();
+
+            expect(store.queryParams()).toEqual({ folderPath: 'default/level1/level2/' });
+        });
+
+        it('should keep default empty queryParams when no query params are present', () => {
+            if (mockActivatedRoute.snapshot) {
+                mockActivatedRoute.snapshot.params = { contentType: 'test-content-type' };
+                mockActivatedRoute.snapshot.queryParams = {};
+            }
+
+            const mockContentType: Partial<DotCMSContentType> = {
+                id: 'test-content-type',
+                name: 'Test Type'
+            };
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
+
+            store.initializeAsPortlet();
+
+            expect(store.queryParams()).toEqual({});
+        });
+
+        it('should set queryParams before calling initializeNewContent', () => {
+            if (mockActivatedRoute.snapshot) {
+                mockActivatedRoute.snapshot.params = { contentType: 'test-content-type' };
+                mockActivatedRoute.snapshot.queryParams = {
+                    folderPath: 'default/folder1/'
+                };
+            }
+
+            const mockContentType: Partial<DotCMSContentType> = {
+                id: 'test-content-type',
+                name: 'Test Type'
+            };
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
+
+            store.initializeAsPortlet();
+
+            // queryParams should be set and content type service should also be called
+            expect(store.queryParams()).toEqual({ folderPath: 'default/folder1/' });
             expect(
                 spectator.inject(DotContentTypeService).getContentTypeWithRender
             ).toHaveBeenCalledWith('test-content-type');

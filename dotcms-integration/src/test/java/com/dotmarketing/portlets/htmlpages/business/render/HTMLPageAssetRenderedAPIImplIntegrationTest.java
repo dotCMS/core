@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.htmlpages.business.render;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -14,6 +16,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -56,6 +59,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageLivePreviewVersionBean;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -71,6 +75,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
@@ -246,18 +251,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final Template template = new TemplateDataGen()
                 .withContainer(container.getIdentifier(), containerUUID)
                 .nextPersisted();
-
-        /*final TemplateLayout templateLayout = new TemplateLayoutDataGen()
-                .withContainer(container, containerUUID)
-                .next();
-
-        final Contentlet theme  = new ThemeDataGen().site(host).nextPersisted();
-        final Template template = new TemplateDataGen()
-                .withContainer(container.getIdentifier())
-                .host(host)
-                .drawedBody(templateLayout)
-                .theme(theme)
-                .nextPersisted();*/
         TemplateDataGen.publish(template, adminUser);
 
         final String pageName = "test-page" + UUIDGenerator.generateUuid().substring(1, 6);
@@ -3081,5 +3074,206 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
             Config.setProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", defaultWidgetToDefaultLanguage);
         }
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: A page is rendered whose template body includes a {@code </body>} closing tag.
+     * When: The page is rendered via {@code getPageRendered()}.
+     * Should: Inject {@code <script src="/ext/uve/dot-uve.js"></script>} immediately before the
+     * {@code </body>} tag in the resulting HTML.
+     */
+    @Test
+    public void shouldInjectUVEScriptBeforeClosingBodyTag()
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        final HttpSession mockSession = mock(HttpSession.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        when(mockRequest.getSession(false)).thenReturn(mockSession);
+        when(mockRequest.getSession(true)).thenReturn(mockSession);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final Host site = sharedHost;
+        final User systemUser = APILocator.systemUser();
+
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .body("<html><body>UVE Test Page</body></html>")
+                .nextPersisted();
+        TemplateDataGen.publish(template, systemUser);
+
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
+        HTMLPageDataGen.publish(page);
+
+        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+
+        final HTMLPageAssetRenderedAPIImpl api = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = api.getPageRendered(
+                mockRequest, mockResponse, systemUser, page.getURI(), PageMode.ADMIN_MODE);
+
+        final String html = ((HTMLPageAssetRendered) pageView).getHtml();
+
+        assertTrue("UVE script tag should be present in rendered HTML", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
+        assertTrue("UVE script tag should appear before </body>",
+                html.indexOf(SDK_EDITOR_SCRIPT_SOURCE) < html.indexOf("</body>"));
+        assertFalse("initDotUVE must NOT be injected when no schema is present", html.contains("initDotUVE"));
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: A page is rendered whose template body does NOT include a {@code </body>} closing tag.
+     * When: The page is rendered via {@code getPageRendered()}.
+     * Should: Append {@code <script src="/ext/uve/dot-uve.js"></script>} at the end of the HTML.
+     */
+    @Test
+    public void shouldAppendUVEScriptWhenNoClosingBodyTag()
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        final HttpSession mockSession = mock(HttpSession.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        when(mockRequest.getSession(false)).thenReturn(mockSession);
+        when(mockRequest.getSession(true)).thenReturn(mockSession);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final Host site = sharedHost;
+        final User systemUser = APILocator.systemUser();
+
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .body("<p>No closing body tag here</p>")
+                .nextPersisted();
+        TemplateDataGen.publish(template, systemUser);
+
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
+        HTMLPageDataGen.publish(page);
+
+        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+
+        final HTMLPageAssetRenderedAPIImpl api = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = api.getPageRendered(
+                mockRequest, mockResponse, systemUser, page.getURI(), PageMode.ADMIN_MODE);
+
+        final String html = ((HTMLPageAssetRendered) pageView).getHtml();
+
+        assertTrue("UVE script tag should be present in rendered HTML", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
+        assertTrue("UVE script tag should be appended at the end when no </body> tag exists",
+                html.endsWith(SDK_EDITOR_SCRIPT_SOURCE));
+        assertFalse("initDotUVE must NOT be injected when no schema is present", html.contains("initDotUVE"));
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: A page is rendered in {@link PageMode#LIVE} mode (public visitor).
+     * When: The page is rendered via {@code getPageRendered()}.
+     * Should: NOT inject the UVE script tag — script injection must only happen for editor modes.
+     */
+    @Test
+    public void shouldNotInjectUVEScriptInLiveMode()
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        final HttpSession mockSession = mock(HttpSession.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        when(mockRequest.getSession(false)).thenReturn(mockSession);
+        when(mockRequest.getSession(true)).thenReturn(mockSession);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final Host site = sharedHost;
+        final User systemUser = APILocator.systemUser();
+
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .body("<html><body>Live Page</body></html>")
+                .nextPersisted();
+        TemplateDataGen.publish(template, systemUser);
+
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
+        HTMLPageDataGen.publish(page);
+
+        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+
+        final HTMLPageAssetRenderedAPIImpl api = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = api.getPageRendered(
+                mockRequest, mockResponse, systemUser, page.getURI(), PageMode.LIVE);
+
+        final String html = ((HTMLPageAssetRendered) pageView).getHtml();
+
+        assertFalse("UVE script tag must NOT be injected in LIVE mode", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered}
+     * Given Scenario: A page has a contentlet whose ContentType has {@code DOT_STYLE_EDITOR_SCHEMA}
+     * in its metadata.
+     * When: The page is rendered in ADMIN_MODE.
+     * Should: Inject the {@code UVE_SCRIPTS_TEMPLATE} containing the {@code initDotUVE()} function
+     * and {@code registerStyleEditorSchemas()} call, instead of the plain SDK script tag.
+     */
+    @Test
+    public void shouldInjectUVEScriptsTemplateWhenContentTypeHasStyleEditorSchema()
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        final HttpSession mockSession = mock(HttpSession.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        when(mockRequest.getSession(false)).thenReturn(mockSession);
+        when(mockRequest.getSession(true)).thenReturn(mockSession);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final Host site = sharedHost;
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        // Create ContentType and add DOT_STYLE_EDITOR_SCHEMA to its metadata
+        ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().velocityVarName("title").next())
+                .nextPersisted();
+
+        final String schema = String.format("{"
+                + "\"contentType\":\"%s\","
+                + "\"sections\":[{"
+                    + "\"title\":\"Layout\","
+                    + "\"fields\":["
+                        + "{\"type\":\"input\",\"label\":\"New Field\",\"id\":\"newField\",\"config\":{\"inputType\":\"text\"}},"
+                        + "{\"type\":\"input\",\"label\":\"New Field\",\"id\":\"newField\",\"config\":{\"inputType\":\"text\"}}"
+                    + "]"
+                + "}]}", contentType.variable());
+
+        contentType = ContentTypeBuilder.builder(contentType)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                .build();
+        contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
+
+        // Create container, template and page
+        final Container container = createAndPublishContainer(site, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, site, container);
+
+        // Create contentlet and add to page
+        final Contentlet contentlet = createContentlet(language, site, contentType);
+        addToPage(container, page, contentlet);
+
+        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+
+        final HTMLPageAssetRenderedAPIImpl api = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = api.getPageRendered(
+                mockRequest, mockResponse, systemUser, page.getURI(), PageMode.ADMIN_MODE);
+
+        final String html = ((HTMLPageAssetRendered) pageView).getHtml();
+
+        assertTrue("initDotUVE function should be injected when schema is present",
+                html.contains("initDotUVE"));
+        assertTrue("registerStyleEditorSchemas should be called with schema data",
+                html.contains("registerStyleEditorSchemas"));
+        assertTrue("ContentType variable should be serialized into the schema JSON",
+                html.contains(contentType.variable()));
+        assertFalse("Plain SDK script tag must NOT be injected when schema template is used",
+                html.contains(SDK_EDITOR_SCRIPT_SOURCE));
     }
 }

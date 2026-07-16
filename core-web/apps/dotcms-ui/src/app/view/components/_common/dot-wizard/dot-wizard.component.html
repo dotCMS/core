@@ -15,7 +15,7 @@
     @if (data?.steps?.length) {
         <div class="dot-wizard__view">
             <div
-                [ngStyle]="{ transform: transform }"
+                [style.transform]="transform"
                 class="dot-wizard__container"
                 (keydown.tab)="handleTab($event)">
                 @for (step of data.steps; track $index) {

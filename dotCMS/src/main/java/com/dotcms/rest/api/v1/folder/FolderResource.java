@@ -1,7 +1,12 @@
 package com.dotcms.rest.api.v1.folder;
 
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.FolderSearchPaginator;
+import com.dotcms.util.pagination.OrderDirection;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -11,6 +16,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -38,11 +44,13 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -58,20 +66,34 @@ import java.util.Map;
 @Tag(name = "Folders", description = "Endpoints for managing folder structure and organization")
 public class FolderResource implements Serializable {
 
+    static final String SITE_ID_PARAM  = "siteId";
+    static final String PATH_PARAM     = "path";
+    static final String RECURSIVE_PARAM = "recursive";
+
     private final WebResource webResource;
     private final FolderHelper folderHelper;
+    private final PaginationUtil folderSearchPaginationUtil;
 
     public FolderResource() {
         this(new WebResource(),
-                FolderHelper.getInstance());
+                FolderHelper.getInstance(),
+                new PaginationUtil(new FolderSearchPaginator()));
     }
 
     @VisibleForTesting
     public FolderResource(final WebResource webResource,
                           final FolderHelper folderHelper) {
+        this(webResource, folderHelper, new PaginationUtil(new FolderSearchPaginator()));
+    }
+
+    @VisibleForTesting
+    public FolderResource(final WebResource webResource,
+                          final FolderHelper folderHelper,
+                          final PaginationUtil folderSearchPaginationUtil) {
 
         this.webResource = webResource;
         this.folderHelper = folderHelper;
+        this.folderSearchPaginationUtil = folderSearchPaginationUtil;
     }
 
     /**
@@ -315,6 +337,8 @@ public class FolderResource implements Serializable {
     }
 
     /**
+     * @deprecated Use {@link FolderResource#searchFolders} (GET /api/v1/folder/search) instead.
+     *
      * This endpoint is to retrieve subfolders of a given path,
      * will also filter these subfolders by the path sent. The subfolders returned will be the ones
      * the user has permissions over.
@@ -363,16 +387,16 @@ public class FolderResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Deprecated(since = "Jun 19th, 26", forRemoval = true)
     @Operation(
             operationId = "findSubFoldersByPath",
-            summary = "Find subfolders by path",
-            description = "Retrieves subfolders of a given path, filtered by the path sent. The path format " +
-                    "supports site-specific search (//siteName/path) or global search (/path). " +
-                    "For example: '//default/folder1/' returns subfolder1, subfolder2 under folder1 in the 'default' site. " +
-                    "'/folder1/s' returns all subfolders starting with 's' under folder1 across all sites."
+            summary = "Find subfolders by path (deprecated)",
+            description = "Retrieves subfolders of a given path, filtered by the path sent. " +
+                    "This endpoint is deprecated — use GET /api/v1/folder/search instead.",
+            deprecated = true
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Subfolders retrieved successfully",
+            @ApiResponse(responseCode = "200", description = "Subfolders retrieved successfully (deprecated endpoint)",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityFolderSearchResultView.class))),
             @ApiResponse(responseCode = "400", description = "Path property must be sent"),
@@ -387,7 +411,11 @@ public class FolderResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON})
     public final Response findSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            final SearchByPathForm searchByPathForm
+            final SearchByPathForm searchByPathForm,
+            @Parameter(description = "Number of results to skip for pagination. Must be >= 0.")
+            @DefaultValue("0") @QueryParam("offset") final int offset,
+            @Parameter(description = "Maximum number of results to return. Default 40. Use -1 for unlimited (capped at " + FolderHelper.SUB_FOLDER_UNLIMITED_SAFETY_CAP + " as a safety limit).")
+            @DefaultValue("40") @QueryParam("limit") final int limit
             ) throws  DotDataException, DotSecurityException   {
 
         final InitDataObject initData =
@@ -402,7 +430,14 @@ public class FolderResource implements Serializable {
 
         if(!UtilMethods.isSet(searchByPathForm) ||
                 UtilMethods.isNotSet(searchByPathForm.getPath())){
-            throw new BadRequestException("Path property must be send");
+            throw new BadRequestException("Path property must be sent");
+        }
+
+        if (offset < 0) {
+            throw new BadRequestException("offset must be >= 0");
+        }
+        if (limit == 0 || limit < -1) {
+            throw new BadRequestException("limit must be > 0, or -1 for unlimited");
         }
 
         String path = searchByPathForm.getPath().toLowerCase();
@@ -426,7 +461,7 @@ public class FolderResource implements Serializable {
 
         folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
 
-        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId, folderPath, user, offset, limit))).build(); // 200
     }
 
     /**
@@ -477,6 +512,121 @@ public class FolderResource implements Serializable {
         return null == folder || !UtilMethods.isSet(folder.getIdentifier())?
                 Response.status(Response.Status.NOT_FOUND).build():
                 Response.ok(new ResponseEntityView(folder)).build(); // 200
+    }
+
+    /**
+     * Unified folder search. Searches folders within a site by optional name fil @param httpServletResponse The current instance of the {@link HttpServletResponse}.
+     * @param name                optional case-insensitive partial match on folder name (min 2 chars if provided)
+     * @param path                path scope; defaults to {@code /} (site root)
+     * @param recursive           {@code true} = all descendants (default); {@code false} = direct children only
+     * @param siteId              site identifier (required)
+     * @param page                1-based page number (default: 1)
+     * @param perPage             results per page (default: 40)
+     * @return paginated list of matching {@link FolderSearchView} objects
+     */
+    @GET
+    @Path("/search")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "searchFolders",
+            summary = "Search folders",
+            description = "Returns folders within a site matching an optional name filter and/or " +
+                    "path scope. Supports recursive depth control, standard pagination, and sorting. " +
+                    "With no 'name' and default path '/' + recursive=true, all site folders are returned.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Paginated list of matching folders",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+            @ApiResponse(responseCode = "400", description = "'siteId' is required; 'name' must be at least 2 characters if provided"),
+            @ApiResponse(responseCode = "401", description = "User is not authenticated"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public final ResponseEntityPaginatedDataView searchFolders(
+            @Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            @Parameter(description = "Optional case-insensitive partial match on folder name (minimum 2 characters when provided)")
+            @QueryParam("name") final String name,
+            @Parameter(description = "Path scope for the search. Defaults to '/' (site root).")
+            @DefaultValue("/") @QueryParam(PATH_PARAM) final String path,
+            @Parameter(description = "false = direct children of 'path' only (default); true = search all descendants")
+            @DefaultValue("false") @QueryParam(RECURSIVE_PARAM) final boolean recursive,
+            @Parameter(description = "Site ID to scope the search (required)")
+            @QueryParam(SITE_ID_PARAM) final String siteId,
+            @Parameter(description = "Column to sort by.",
+                    schema = @Schema(allowableValues = {"name", "mod_date"}, defaultValue = "name"))
+            @DefaultValue("name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @Parameter(description = "Sort direction",
+                    schema = @Schema(allowableValues = {"ASC", "DESC"}, defaultValue = "ASC"))
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Page number (1-based, default 1)")
+            @DefaultValue("1") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of results per page (default 40)")
+            @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
+
+        if (!UtilMethods.isSet(siteId)) {
+            throw new BadRequestException("'siteId' query parameter is required");
+        }
+        if (UtilMethods.isSet(name) && name.length() < 2) {
+            throw new BadRequestException("'name' must be at least 2 characters long");
+        }
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        validateSiteReadAccess(siteId, user);
+
+        final Map<String, Object> extraParams = Map.of(
+                SITE_ID_PARAM, siteId,
+                PATH_PARAM, path,
+                RECURSIVE_PARAM, recursive);
+
+        final OrderDirection orderDirection = switch (direction.toUpperCase()) {
+            case "DESC" -> OrderDirection.DESC;
+            default -> OrderDirection.ASC;
+        };
+
+        final PaginationUtilParams<?, ?> params = new PaginationUtilParams.Builder<>()
+                .withRequest(httpServletRequest)
+                .withResponse(httpServletResponse)
+                .withUser(user)
+                .withFilter(name)   // name is the search filter — may be null
+                .withPage(page)
+                .withPerPage(perPage)
+                .withOrderBy(orderBy)
+                .withDirection(orderDirection)
+                .withExtraParams(extraParams)
+                .build();
+
+        return folderSearchPaginationUtil.getPageView(params);
+    }
+
+    /**
+     * Verifies that the given user has READ permission on the specified site.
+     * Throws {@link DoesNotExistException} if the site is not found,
+     * {@link ForbiddenException} if the user lacks READ access,
+     * and {@link BadRequestException} if the siteId is malformed.
+     */
+    private void validateSiteReadAccess(final String siteId, final User user) {
+        try {
+            final Host site = APILocator.getHostAPI().find(siteId, user, false);
+            if (site == null || !UtilMethods.isSet(site.getIdentifier())) {
+                throw new DoesNotExistException("No site found with id: " + siteId);
+            }
+            if (!APILocator.getPermissionAPI()
+                    .doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false)) {
+                throw new ForbiddenException("User does not have permission to access site: " + siteId);
+            }
+        } catch (final DotSecurityException e) {
+            throw new ForbiddenException(e);
+        } catch (final DotDataException e) {
+            throw new BadRequestException("Invalid siteId: " + siteId);
+        }
     }
 
 }

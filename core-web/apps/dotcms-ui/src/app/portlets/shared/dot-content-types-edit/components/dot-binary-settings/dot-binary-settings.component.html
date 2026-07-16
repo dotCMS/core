@@ -21,9 +21,7 @@
             <div
                 class="flex items-center gap-2 justify-between border border-gray-200 rounded-md p-2">
                 <p [innerHTML]="option.message | dm"></p>
-                <p-toggleswitch
-                    [formControlName]="option.key"
-                    data-testId="setting-switch"></p-toggleswitch>
+                <p-toggleswitch [formControlName]="option.key" data-testId="setting-switch" />
             </div>
         }
     </div>

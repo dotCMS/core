@@ -1,42 +1,32 @@
 package com.dotcms.business.bytebuddy;
 
-import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.util.LogTime;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
+import com.dotcms.business.interceptor.CloseDBIfOpenedHandler;
 import net.bytebuddy.asm.Advice;
-import net.bytebuddy.implementation.bytecode.Throw;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 
 import static com.dotcms.util.AnnotationUtils.getMethodAnnotation;
+
 /**
- * This Advice handles the @{@link CloseDBIfOpened} with AspectJ
+ * ByteBuddy advice for {@link CloseDBIfOpened}. Delegates to {@link CloseDBIfOpenedHandler}
+ * for the actual logic, keeping the implementation DRY with the CDI interceptor.
+ *
  * @author spbolton
  */
 public class CloseDBIfOpenedAdvice {
 
-
     @Advice.OnMethodEnter(inline = false)
     public static boolean enter(final @Advice.Origin Method method) {
-        return !DbConnectionFactory.connectionExists();
+        return CloseDBIfOpenedHandler.onEnter();
     }
 
-
     @Advice.OnMethodExit(inline = false, onThrowable = Throwable.class)
-    public static void exit(final @Advice.Origin Method method, @Advice.Enter boolean isNewConnection
-            ) {
-
-
-        final CloseDBIfOpened closeDB =
-                getMethodAnnotation(method, CloseDBIfOpened.class);
-
-        if (null != closeDB && closeDB.connection()
-                && isNewConnection) {
-
-            DbConnectionFactory.closeSilently();
+    public static void exit(final @Advice.Origin Method method,
+                            @Advice.Enter boolean isNewConnection) {
+        final CloseDBIfOpened closeDB = getMethodAnnotation(method, CloseDBIfOpened.class);
+        if (null != closeDB) {
+            CloseDBIfOpenedHandler.onExit(isNewConnection, closeDB.connection());
         }
     }
 }

@@ -11,6 +11,10 @@
     <packaging>jar</packaging>
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
+        <!-- Preload the byte-buddy agent for this module's tests so CacheSizingUtil can use
+             Instrumentation.getObjectSize(). The path is populated by the dependency-plugin
+             'properties' goal (see build/plugins). Consumed by the shared surefire/failsafe argLine. -->
+        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
@@ -218,10 +222,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -392,6 +392,18 @@
             <artifactId>dot.txtmark</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-tables</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.util-taglib</artifactId>
         </dependency>
@@ -502,6 +514,51 @@
             <!-- Functional programming utilities including Try, Tuple, Option, Either, Collections, etc. -->
             <groupId>io.vavr</groupId>
             <artifactId>vavr</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J OpenAI provider: Chat, Embedding, Image models via OpenAI API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Azure OpenAI provider: Chat, Embedding models via Azure OpenAI Service -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-azure-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Amazon Bedrock provider: Chat and Embedding models via AWS Bedrock Runtime -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-bedrock</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J official OpenAI SDK provider: Image model via gpt-image-1 on Azure (Microsoft Foundry) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai-official</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Anthropic provider: Chat model via the Anthropic Messages API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Google AI Gemini provider: Chat, Embedding models via Google AI Studio (API key auth) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-google-ai-gemini</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Google Vertex AI provider: Chat model via Vertex AI Gemini (ADC auth) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-vertex-ai-gemini</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.android</groupId>
+                    <artifactId>annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
@@ -712,6 +769,10 @@
             <artifactId>aws-java-sdk-s3</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>jmespath-java</artifactId>
         </dependency>
@@ -906,6 +967,11 @@
             <groupId>com.github.gotson</groupId>
             <artifactId>webp-imageio</artifactId>
         </dependency>
+        <!-- libvips bindings (FFM) — alternative image engine; native libvips must be present on host -->
+        <dependency>
+            <groupId>app.photofox.vips-ffm</groupId>
+            <artifactId>vips-ffm-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-batik</artifactId>
@@ -992,17 +1058,22 @@
 
         <!-- Security -->
         <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
 
 
@@ -1556,6 +1627,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <!-- Populate ${net.bytebuddy:byte-buddy-agent:jar} so the test argLine can
+                             preload it via -javaagent (see bytebuddy.agent.argline property). -->
+                        <id>resolve-bytebuddy-agent-path</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
                     <execution>
                         <id>unpack</id>
                         <phase>prepare-package</phase>

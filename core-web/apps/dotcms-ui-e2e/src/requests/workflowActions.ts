@@ -1,6 +1,6 @@
 import { APIRequestContext, expect } from '@playwright/test';
+import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
-import { admin1 } from '../tests/login/credentialsData';
 
 export interface Page {
     identifier: string;
@@ -31,7 +31,7 @@ export async function createPage(request: APIRequestContext, data: CreatePage) {
 
     const responseData = await response.json();
     const results = responseData.entity.results as Page[];
-    expect(results.length).toBe(1);
+    expect(results).toHaveLength(1);
     const key = Object.keys(results[0])[0];
     return results[0][key as keyof Page] as unknown as Page;
 }

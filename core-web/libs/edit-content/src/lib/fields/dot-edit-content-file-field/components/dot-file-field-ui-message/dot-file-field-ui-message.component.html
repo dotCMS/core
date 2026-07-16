@@ -2,10 +2,10 @@
 @let disabled = $disabled();
 
 <div
-    class="flex h-full flex-col items-center justify-center gap-4 p-4"
-    [class.pointer-events-none]="disabled">
+    class="dot-file-field-ui-message__root"
+    [class.dot-file-field-ui-message__root--disabled]="disabled">
     <div
-        class="flex items-center justify-center w-16 h-16 rounded-full p-4"
+        class="dot-file-field-ui-message__icon-wrap"
         [style.color]="
             disabled ? 'var(--field-disabled-color)' : 'var(--color-palette-primary-500)'
         "
@@ -16,9 +16,11 @@
         <i
             [ngClass]="uiMessage?.icon"
             data-testId="ui-message-icon"
-            class="text-2xl! font-bold!"></i>
+            class="dot-file-field-ui-message__icon"></i>
     </div>
-    <div class="text-center leading-snug" [class.text-gray-400]="disabled">
+    <div
+        class="dot-file-field-ui-message__message"
+        [class.dot-file-field-ui-message__message--disabled]="disabled">
         <span
             [innerHTML]="uiMessage?.message | dm: uiMessage?.args"
             data-testId="ui-message-span"></span>

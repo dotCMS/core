@@ -6,8 +6,8 @@ import static com.dotmarketing.business.ModDateTestUtil.updateTemplateModeDate;
 import static com.dotmarketing.business.ModDateTestUtil.updateTemplateVersionDate;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.google.common.base.Strings;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;

@@ -2,7 +2,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotContentDriveItem,
-    SiteEntity,
+    DotSite,
     StructureTypeView
 } from '@dotcms/dotcms-models';
 import { createFakeContentType } from '@dotcms/utils-testing';
@@ -28,7 +28,7 @@ export const MOCK_ROUTE = {
     }
 };
 
-export const MOCK_SITES: SiteEntity[] = [
+export const MOCK_SITES: DotSite[] = [
     {
         aliases: 'demo.com,www.demo.com',
         archived: false,

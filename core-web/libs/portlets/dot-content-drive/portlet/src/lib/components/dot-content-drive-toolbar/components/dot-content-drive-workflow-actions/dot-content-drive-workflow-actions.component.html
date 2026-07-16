@@ -3,7 +3,7 @@
         <p-button
             styleClass="p-button-outlined bg-white"
             [attr.data-testid]="'workflow-action-' + action.id"
-            [ngStyle]="{ display: shouldShowAction(action) ? 'block' : 'none' }"
+            [style.display]="shouldShowAction(action) ? 'block' : 'none'"
             [label]="action.name | dm"
             (click)="onExecuteAction(action)" />
     }

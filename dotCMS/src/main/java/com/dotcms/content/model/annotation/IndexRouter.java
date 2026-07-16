@@ -6,46 +6,54 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to mark classes or methods for search index operations and OpenSearch migration.
- * This annotation provides detailed information about index interaction patterns, supported
- * search engines, and migration readiness.
+ * Marks a class or method as a participant in search-index operations during the ES → OS migration.
  *
- * Usage examples:
- * - @IndexRelation(access = IndexAccess.READ_ONLY, indexEngine = IndexEngine.ELASTICSEARCH)
- * - @IndexRelation(access = IndexAccess.READ_WRITE, indexEngine = IndexEngine.BOTH,
- *                  indexNames = {"content", "structure"})
- * - @IndexRelation(access = IndexAccess.READ_ONLY, indexEngine = IndexEngine.OPENSEARCH,
- *                  migrationReady = true, notes = "Migrated to use OpenSearch REST client")
+ * <p>The {@link #access()} array declares which kinds of operations the annotated element
+ * performs. Use a single value for read-only or write-only classes, and both values for
+ * router/facade classes that handle both paths:</p>
+ *
+ * <pre>
+ * // Read-only consumer (e.g. search query factory)
+ * {@literal @}IndexRouter(access = IndexAccess.READ)
+ *
+ * // Write-only producer (e.g. bulk-index pipeline)
+ * {@literal @}IndexRouter(access = IndexAccess.WRITE)
+ *
+ * // Router/facade — handles reads and writes (e.g. IndexAPIImpl, ContentletIndexAPIImpl)
+ * {@literal @}IndexRouter(access = {IndexAccess.READ, IndexAccess.WRITE})
+ * </pre>
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IndexRouter {
 
     /**
-     * Defines the type of index access this class or method performs.
-     * @return the access type (default: READ_ONLY)
+     * The kinds of index operations performed by the annotated element.
+     *
+     * <p>Use {@code {IndexAccess.READ, IndexAccess.WRITE}} for router/facade classes
+     * that delegate to both ES and OS providers. Use a single value for classes that
+     * only read or only write.</p>
+     *
+     * @return one or more access kinds (default: {@code READ})
      */
-    IndexAccess access() default IndexAccess.READ_ONLY;
+    IndexAccess[] access() default IndexAccess.READ;
 
     /**
      * Optional notes about index usage, migration blockers, or special considerations.
-     * Useful for documenting ES-specific features or migration requirements.
+     *
      * @return descriptive notes (default: empty string)
      */
     String notes() default "";
 
     /**
-     * Enum defining the types of index access operations.
+     * The kind of index access an annotated element performs.
      */
     enum IndexAccess {
-        /** Only performs read operations on the search index */
-        READ_ONLY,
+        /** The element reads from the search index (queries, lookups, health checks). */
+        READ,
 
-        /** Performs both read and write operations on the search index */
-        READ_WRITE,
-
-        /** Only performs write operations on the search index */
-        WRITE_ONLY
+        /** The element writes to the search index (index, delete, bulk, mapping). */
+        WRITE
     }
 
 }

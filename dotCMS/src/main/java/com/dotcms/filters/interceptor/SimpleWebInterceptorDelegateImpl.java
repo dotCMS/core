@@ -1,6 +1,6 @@
 package com.dotcms.filters.interceptor;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.RegEX;
 import org.apache.commons.collections.iterators.ReverseListIterator;
 

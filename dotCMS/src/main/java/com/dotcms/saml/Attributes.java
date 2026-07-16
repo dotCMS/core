@@ -31,7 +31,7 @@ public class Attributes implements Serializable {
 	private final Object roles;
 
 	// Saml object with the NameID.
-	private final Object nameID;
+	private final Serializable nameID;
 
 	// SAML Session Index
 	private final String sessionIndex;
@@ -76,7 +76,7 @@ public class Attributes implements Serializable {
 		return roles;
 	}
 
-	public Object getNameID()
+	public Serializable getNameID()
 	{
 		return nameID;
 	}
@@ -109,7 +109,7 @@ public class Attributes implements Serializable {
 		String firstName = "";
 		boolean addRoles = false;
 		Object roles     = null;
-		Object nameID    = null;
+		Serializable nameID = null;
 		String sessionIndex;
 		Map<String, Object> additionalAttributes;
 
@@ -149,7 +149,7 @@ public class Attributes implements Serializable {
 			return this;
 		}
 
-		public Builder nameID(final Object nameID)
+		public Builder nameID(final Serializable nameID)
 		{
 			this.nameID = nameID;
 			return this;
@@ -187,7 +187,7 @@ public class Attributes implements Serializable {
 			return roles;
 		}
 
-		public Object getNameID()
+		public Serializable getNameID()
 		{
 			return nameID;
 		}

@@ -18,7 +18,11 @@ export const FLATTENED_FIELD_TYPES = [
     FIELD_TYPES.TAG
 ];
 
-export const UNCASTED_FIELD_TYPES = [FIELD_TYPES.BLOCK_EDITOR, FIELD_TYPES.KEY_VALUE];
+export const UNCASTED_FIELD_TYPES = [
+    FIELD_TYPES.BLOCK_EDITOR,
+    FIELD_TYPES.KEY_VALUE,
+    FIELD_TYPES.CATEGORY
+];
 
 export const TAB_FIELD_CLAZZ = 'com.dotcms.contenttype.model.field.ImmutableTabDividerField';
 
@@ -128,7 +132,6 @@ export const DEFAULT_CUSTOM_FIELD_CONFIG: CustomFieldConfig = {
 };
 
 /**
- * Key name for the custom field options in field variables.
- * This is the key that should be used when storing JSON configuration in field variables.
+ * @deprecated Import from '@dotcms/dotcms-models' instead.
  */
-export const CUSTOM_FIELD_OPTIONS_KEY = 'customFieldOptions';
+export { CUSTOM_FIELD_OPTIONS_KEY } from '@dotcms/dotcms-models';

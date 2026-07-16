@@ -1,6 +1,6 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -61,12 +61,12 @@ enum SearchType {
         }
     ],
     imports: [
-        CommonModule,
         FormsModule,
         AutoCompleteModule,
         DotDirectivesModule,
         DotFieldHelperComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        AsyncPipe
     ],
     host: {
         class: 'relative'

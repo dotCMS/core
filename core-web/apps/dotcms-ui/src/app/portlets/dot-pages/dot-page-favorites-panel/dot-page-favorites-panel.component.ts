@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, input, output, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -19,7 +18,6 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     templateUrl: './dot-page-favorites-panel.component.html',
     styleUrls: ['./dot-page-favorites-panel.component.scss'],
     imports: [
-        CommonModule,
         DotMessagePipe,
         DotPagesCardComponent,
         PanelModule,

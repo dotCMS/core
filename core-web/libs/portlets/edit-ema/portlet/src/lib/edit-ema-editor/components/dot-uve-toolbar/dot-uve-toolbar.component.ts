@@ -1,25 +1,22 @@
-import { ClipboardModule } from '@angular/cdk/clipboard';
-import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
-    EventEmitter,
-    inject,
-    Output,
-    viewChild,
     Signal,
-    signal
+    computed,
+    inject,
+    output,
+    signal,
+    viewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { DatePickerModule } from 'primeng/datepicker';
-import { PopoverModule } from 'primeng/popover';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -27,7 +24,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { map } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, DotExperimentStatus, DotLanguage } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -37,24 +34,27 @@ import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/do
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../../../utils';
+import { PageType } from '../../../store/models';
+import {
+    convertLocalTimeToUTC,
+    convertUTCToLocalTime,
+    createFavoritePagesURL
+} from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
-        NgClass,
         FormsModule,
         ReactiveFormsModule,
         ButtonModule,
         DatePickerModule,
         ChipModule,
-        ClipboardModule,
-        PopoverModule,
         ToolbarModule,
         TooltipModule,
         SplitButtonModule,
@@ -77,8 +77,9 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
-    @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
-    @Output() editUrlContentMap = new EventEmitter<DotCMSURLContentMap>();
+    translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
+    editUrlContentMap = output<DotCMSURLContentMap>();
+    deviceSelectorChange = output<DeviceSelectorChange>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -86,29 +87,51 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
+    readonly #router = inject(Router);
 
-    readonly $toolbar = this.#store.$uveToolbar;
+    // Expose enum for template usage
+    readonly UVE_MODE = UVE_MODE;
+
+    // Component builds its own toolbar props locally
+    protected readonly $bookmarksUrl = computed<string>(() => {
+        const params = this.#store.pageParams();
+        const site = this.#store.pageAsset()?.site;
+
+        return createFavoritePagesURL({
+            languageId: Number(params?.language_id),
+            pageURI: params?.url,
+            siteId: site?.identifier
+        });
+    });
+
+    // Use store's pageLanguage instead of redefining it
+    protected readonly $currentLanguage = this.#store.pageLanguage;
+
+    protected readonly $runningExperiment = computed(() => {
+        const experiment = this.#store.pageExperiment?.();
+        const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
+
+        return isExperimentRunning ? experiment : null;
+    });
+
+    readonly $toolbar = computed(() => ({
+        runningExperiment: this.$runningExperiment(),
+        editor: { bookmarksUrl: this.$bookmarksUrl() },
+        currentLanguage: this.$currentLanguage()
+    }));
+
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
-    readonly $isEditMode = this.#store.$isEditMode;
+    readonly $mode = this.#store.viewMode;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $isLiveMode = this.#store.$isLiveMode;
+    readonly $isEditMode = this.#store.$isEditMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
-    readonly $unlockButton = this.#store.$unlockButton;
-    readonly $socialMedia = this.#store.socialMedia;
+    readonly $socialMedia = this.#store.viewSocialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
-    readonly $isPaletteOpen = this.#store.palette.open;
-    readonly $canEditPage = this.#store.$canEditPage;
-
-    /**
-     * Popover passthrough styles for the "Copy URLs" popover.
-     * Keeps the popover compact and prevents long URLs from stretching the overlay.
-     */
-    readonly copyUrlPopoverPt = {
-        root: { class: 'w-full max-w-[25rem]' },
-        content: { class: '!p-3' }
-    };
+    readonly $isPaletteOpen = this.#store.editorPaletteOpen;
+    readonly $canEditPage = this.#store.editorCanEditContent;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -135,52 +158,128 @@ export class DotUveToolbarComponent {
         return isEditMode && this.$urlContentMap();
     });
 
-    readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
-        const params = this.$pageParams();
-        const siteId = this.#store.pageAPIResponse()?.site?.identifier;
-        const host = params.clientHost || window.location.origin;
-        const path = params.url?.replace(/\/index(\.html)?$/, '') || '/';
-
-        return [
-            {
-                label: 'uve.toolbar.page.live.url',
-                value: new URL(path, host).toString()
-            },
-            {
-                label: 'uve.toolbar.page.current.view.url',
-                value: createFullURL(params, siteId)
-            }
-        ];
-    });
-
     readonly $pageInode = computed(() => {
-        return this.#store.pageAPIResponse()?.page.inode;
+        return this.#store.pageAsset()?.page?.inode;
     });
 
-    readonly $actions = this.#store.workflowLoading;
-    readonly $workflowLoding = this.#store.workflowLoading;
-
-    protected defaultDevices = DEFAULT_DEVICES;
     protected $MIN_DATE = signal(this.#getMinDate());
+
+    // Computed properties for presentational children
+    readonly isTraditionalPage = computed(() => this.#store.pageType() === PageType.TRADITIONAL);
+
+    // Build unified device selector state
+    readonly $deviceSelectorState = computed(() => {
+        return {
+            device: this.#store.viewDevice(),
+            socialMedia: this.#store.viewSocialMedia(),
+            orientation: this.#store.viewDeviceOrientation()
+        };
+    });
+
+    // Build complete toggle lock options for presentational component
+    readonly $lockOptions = computed(() => {
+        const storeLockOptions = this.#store.$lockOptions();
+
+        if (!storeLockOptions) {
+            return null;
+        }
+
+        const loading = this.#store.workflowLockIsLoading();
+        const disabled = !storeLockOptions.canLock;
+        const message = storeLockOptions.canLock
+            ? 'editpage.toolbar.page.release.lock.locked.by.user'
+            : 'editpage.locked-by';
+        const args = storeLockOptions.lockedBy ? [storeLockOptions.lockedBy] : [];
+
+        return {
+            ...storeLockOptions,
+            loading,
+            disabled,
+            message,
+            args
+        };
+    });
 
     /**
      * Fetch the page on a given date
-     * @param {Date} publishDate
+     * @param {Date | string | number} publishDate - Date, ISO string, or timestamp (defaults to now)
      * @memberof DotUveToolbarComponent
      */
-    protected fetchPageOnDate(publishDate: Date = new Date()) {
-        const publishDateUTC = convertLocalTimeToUTC(publishDate);
+    protected fetchPageOnDate(publishDate: Date | string | number = new Date()) {
+        let dateObj: Date;
+        const asDate = publishDate as Date;
+        const hasGetTime =
+            typeof publishDate === 'object' &&
+            publishDate !== null &&
+            typeof (asDate as { getTime?: unknown }).getTime === 'function';
+        if (hasGetTime) {
+            const time = (asDate as Date).getTime();
+            dateObj = Number.isFinite(time) ? new Date(time) : new Date();
+        } else if (typeof publishDate === 'number' || typeof publishDate === 'string') {
+            dateObj = new Date(publishDate);
+        } else {
+            dateObj = new Date();
+        }
+        if (Number.isNaN(dateObj.getTime())) {
+            dateObj = new Date();
+        }
+        const publishDateUTC = convertLocalTimeToUTC(dateObj);
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
-        this.#store.loadPageAsset({
-            mode: UVE_MODE.LIVE,
-            publishDate: publishDateUTC
-        });
+        this.#store.pageReload({ publishDate: publishDateUTC });
     }
 
-    protected togglePalette(): void {
-        this.#store.setPaletteOpen(!this.$isPaletteOpen());
+    /**
+     * Handle toggle lock event from presentational DotToggleLockButtonComponent
+     * @param event Lock toggle event with inode and lock states
+     */
+    handleToggleLock(event: {
+        inode: string;
+        isLocked: boolean;
+        isLockedByCurrentUser: boolean;
+        lockedBy?: string;
+    }) {
+        this.#store.workflowToggleLock(
+            event.inode,
+            event.isLocked,
+            event.isLockedByCurrentUser,
+            event.lockedBy
+        );
+    }
+
+    /**
+     * Handle info display action event from presentational DotEmaInfoDisplayComponent
+     * @param optionId The ID of the action option (e.g., 'device', 'socialMedia', 'variant')
+     */
+    handleInfoDisplayAction(optionId: string) {
+        if (optionId === 'device' || optionId === 'socialMedia') {
+            this.#store.viewClearDeviceAndSocialMedia();
+
+            return;
+        }
+
+        // Handle variant action - navigate to experiment configuration
+        const currentExperiment = this.#store.pageExperiment();
+
+        if (currentExperiment) {
+            this.#router.navigate(
+                [
+                    '/edit-page/experiments/',
+                    currentExperiment.pageId,
+                    currentExperiment.id,
+                    'configuration'
+                ],
+                {
+                    queryParams: {
+                        mode: null,
+                        variantName: null,
+                        experimentId: null
+                    },
+                    queryParamsHandling: 'merge'
+                }
+            );
+        }
     }
 
     /**
@@ -189,37 +288,26 @@ export class DotUveToolbarComponent {
      * @param {number} language
      * @memberof DotEmaComponent
      */
-    onLanguageSelected(language: number) {
-        const language_id = language.toString();
+    onLanguageSelected(language: DotLanguage) {
+        const language_id = language.id.toString();
+        const languages = this.#store.pageLanguages();
 
-        const languages = this.#store.languages();
-        const currentLanguage = languages.find((lang) => lang.id === language);
-
-        const languageHasTranslation = languages.find(
-            (lang) => lang.id.toString() === language_id
-        )?.translated;
+        // pageLanguages has the translated flag; fall back to the selector's language object
+        // when this language has never been created for this page (not in pageLanguages yet)
+        const currentLanguage = languages.find((lang) => lang.id === language.id) ?? language;
+        const languageHasTranslation = currentLanguage.translated;
 
         if (!languageHasTranslation) {
             // Show confirmation dialog to create a new translation
-            this.createNewTranslation(currentLanguage, this.#store.pageAPIResponse()?.page);
+            const page = this.#store.pageAsset()?.page;
+            if (page) {
+                this.createNewTranslation(currentLanguage, page);
+            }
 
             return;
         }
 
-        this.#store.loadPageAsset({ language_id });
-    }
-
-    /**
-     * Trigger the copy toasts
-     *
-     * @memberof DotUveToolbarComponent
-     */
-    triggerCopyToast() {
-        this.#messageService.add({
-            severity: 'success',
-            summary: this.#dotMessageService.get('Copied'),
-            life: 3000
-        });
+        this.#store.pageLoad({ language_id });
     }
 
     /**
@@ -233,7 +321,7 @@ export class DotUveToolbarComponent {
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
         if (existPersona) {
-            this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+            this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
 
             return;
         }
@@ -253,7 +341,7 @@ export class DotUveToolbarComponent {
             accept: () => {
                 this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
                     next: () => {
-                        this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+                        this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
                         this.$personaSelector().fetchPersonas();
                     },
                     error: (err: unknown) => {
@@ -299,7 +387,7 @@ export class DotUveToolbarComponent {
                         this.$personaSelector().fetchPersonas();
 
                         if (persona.selected) {
-                            this.#store.loadPageAsset({
+                            this.#store.pageLoad({
                                 [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                             });
                         }
@@ -336,7 +424,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector()?.value.set(this.$toolbar().currentLanguage);
+                this.$languageSelector()?.value.set(this.#store.pageLanguage());
             }
         });
     }

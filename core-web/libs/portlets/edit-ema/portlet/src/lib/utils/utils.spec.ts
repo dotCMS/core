@@ -13,7 +13,6 @@ import {
     sanitizeURL,
     getPersonalization,
     getFullPageURL,
-    SDK_EDITOR_SCRIPT_SOURCE,
     getBaseHrefFromPageURI,
     injectBaseTag,
     isPageLockedByOtherUser,
@@ -27,11 +26,12 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
+    getRequestHostName,
     getOrientation,
-    getWrapperMeasures,
     normalizeQueryParams,
     convertUTCToLocalTime,
-    escapeHtmlAttributeValue
+    escapeHtmlAttributeValue,
+    isSamePageNavigation
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -58,12 +58,6 @@ describe('utils functions', () => {
 
         return withoutCommentsAndCdata.match(/<base\b/gi)?.length ?? 0;
     };
-
-    describe('SDK Editor Script Source', () => {
-        it('should return the correct script source', () => {
-            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/ext/uve/dot-uve.js');
-        });
-    });
 
     describe('base tag helpers', () => {
         it('should build base href from pageURI', () => {
@@ -1178,6 +1172,89 @@ describe('utils functions', () => {
         });
     });
 
+    describe('isSamePageNavigation', () => {
+        describe('same pathname (hash and/or query)', () => {
+            it('should return true for hash-only link on same page', () => {
+                expect(isSamePageNavigation('#sectionA', '/home')).toBe(true);
+            });
+
+            it('should return true for hash-only link matching current path', () => {
+                expect(isSamePageNavigation('/home#faq', '/home')).toBe(true);
+            });
+
+            it('should return true for hash with complex id', () => {
+                expect(isSamePageNavigation('#section-123_complex', '/about')).toBe(true);
+            });
+
+            it('should return true for query-only change on same page', () => {
+                expect(isSamePageNavigation('/home?tab=2', '/home')).toBe(true);
+            });
+
+            it('should return true for multiple query params on same page', () => {
+                expect(
+                    isSamePageNavigation('/search?query=test&sort=date', '/search?query=test')
+                ).toBe(true);
+            });
+
+            it('should return true for query params with special characters', () => {
+                expect(
+                    isSamePageNavigation('/page?filter=%7B%22type%22%3A%22test%22%7D', '/page')
+                ).toBe(true);
+            });
+
+            it('should return true when path matches and only hash vs query differs', () => {
+                expect(isSamePageNavigation('/home#section', '/home?tab=1')).toBe(true);
+            });
+
+            it('should return true when both hash and query are present on the same path', () => {
+                expect(isSamePageNavigation('/home?tab=2#section', '/home')).toBe(true);
+            });
+
+            it('should return true when both hash and query change on the same path', () => {
+                expect(isSamePageNavigation('/page?filter=value#result', '/page')).toBe(true);
+            });
+        });
+
+        describe('different page navigation', () => {
+            it('should return false when navigating to different page', () => {
+                expect(isSamePageNavigation('/other-page', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash', () => {
+                expect(isSamePageNavigation('/other-page#section', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with query', () => {
+                expect(isSamePageNavigation('/other-page?tab=1', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash and query', () => {
+                expect(isSamePageNavigation('/other-page#section?foo=bar', '/home')).toBe(false);
+            });
+        });
+
+        describe('edge cases', () => {
+            it('should handle root path correctly', () => {
+                expect(isSamePageNavigation('/#top', '/')).toBe(true);
+            });
+
+            it('should handle path without trailing slash vs with trailing slash', () => {
+                expect(isSamePageNavigation('/home#section', '/home/')).toBe(false);
+            });
+
+            it('should handle empty strings gracefully', () => {
+                expect(isSamePageNavigation('', '/home')).toBe(false);
+                expect(isSamePageNavigation('/home', '')).toBe(false);
+            });
+
+            it('should handle undefined-like values', () => {
+                expect(isSamePageNavigation('#section', undefined as unknown as string)).toBe(
+                    false
+                );
+            });
+        });
+    });
+
     describe('createFullURL', () => {
         const expectedURL =
             'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&mode=EDIT_MODE&depth=1';
@@ -1216,6 +1293,82 @@ describe('utils functions', () => {
                 '123'
             );
             expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
+        });
+    });
+
+    describe('getRequestHostName', () => {
+        it('should return clientHost when it is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                    clientHost: 'https://headless.example.com'
+                })
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should build the host from page hostname when clientHost is missing', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should extract origin when page hostname is a full URL', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'https://siteb.example.com/path'
+                )
+            ).toBe('https://siteb.example.com');
+        });
+
+        it('should strip path and trailing slash from a bare page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com/foo/'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should prioritize clientHost over page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                        clientHost: 'https://headless.example.com'
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should fallback to window origin when neither clientHost nor page hostname is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                })
+            ).toBe(window.location.origin);
         });
     });
 
@@ -1306,41 +1459,6 @@ describe('utils functions', () => {
             expect(result).toEqual(
                 'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
-        });
-    });
-
-    describe('getWrapperMeasures', () => {
-        it('should return correct measures for landscape orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '1200',
-                cssWidth: '800',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
-            expect(result).toEqual({ width: '1200px', height: '800px' });
-        });
-
-        it('should return correct measures for portrait orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '800',
-                cssWidth: '1200',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
-            expect(result).toEqual({ width: '800px', height: '1200px' });
-        });
-
-        it('should use percentage unit for default inode', () => {
-            const device: DotDevice = {
-                cssHeight: '100',
-                cssWidth: '100',
-                inode: 'default'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device);
-            expect(result).toEqual({ width: '100%', height: '100%' });
         });
     });
 

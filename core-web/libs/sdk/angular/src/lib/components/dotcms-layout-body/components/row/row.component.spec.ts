@@ -1,7 +1,8 @@
 import { expect } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 
 import { DotPageAssetLayoutColumn } from '@dotcms/types';
+import { DOT_SECTION_ID_PREFIX } from '@dotcms/uve/internal';
 
 import { RowComponent } from './row.component';
 
@@ -19,8 +20,20 @@ describe('RowComponent', () => {
                     columns: [],
                     styleClass: 'custom-class',
                     identifier: 1
-                }
+                },
+                sectionIndex: 1
             }
+        });
+    });
+
+    describe('Section ID', () => {
+        it('should set id to dot-section-{sectionIndex} on the container', () => {
+            spectator.setInput({ sectionIndex: 5 });
+            spectator.detectChanges();
+            const rowElement = spectator.query(byTestId('dotcms-row'));
+            const containerElement = rowElement?.parentElement;
+
+            expect(containerElement?.getAttribute('id')).toBe(`${DOT_SECTION_ID_PREFIX}5`);
         });
     });
 

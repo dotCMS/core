@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpectatorHttp,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
@@ -64,7 +64,7 @@ describe('DotEditContentService', () => {
         it('should get tags', () => {
             const NAME = 'test';
             spectator.service.getTags(NAME).subscribe();
-            spectator.expectOne(`${TAGS_API_ENDPOINT}?name=${NAME}`, HttpMethod.GET);
+            spectator.expectOne(`${TAGS_API_ENDPOINT}?filter=${NAME}`, HttpMethod.GET);
         });
 
         it('should get activities for a contentlet', () => {

@@ -26,7 +26,7 @@
                     [options]="filterOptions"
                     id="filterKey"
                     formControlName="filterKey"
-                    appendTo="body"></p-select>
+                    appendTo="body" />
             </div>
         </form>
     }
@@ -40,14 +40,14 @@
                 [disabled]="dialogActions.cancel.disabled"
                 severity="secondary"
                 (click)="dialogActions.cancel.action()"
-                data-testId="dotDialogCancelAction"></p-button>
+                data-testId="dotDialogCancelAction" />
         }
         @if (dialogActions?.accept) {
             <p-button
                 [label]="dialogActions.accept.label"
                 [disabled]="dialogActions.accept.disabled"
                 (click)="dialogActions.accept.action()"
-                data-testId="dotDialogAcceptAction"></p-button>
+                data-testId="dotDialogAcceptAction" />
         }
     </ng-template>
 </p-dialog>

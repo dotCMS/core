@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
+import { defaultIfEmpty, filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
 import {
     DotCMSContentType,
@@ -55,13 +55,23 @@ export class DotContentTypeService {
     }
 
     /**
-     * Get a content type by id or variable name with render mode
+     * Get a content type by id or variable name with render mode.
+     * When an inode is provided, contentlet-specific Velocity variables
+     * ($inode, $identifier, $lang, etc.) will be resolved in custom fields.
      * @param idOrVar content type's id or variable name
+     * @param inode optional contentlet inode for Velocity variable resolution
      * @returns Content Type
      */
-    getContentTypeWithRender(idOrVar: string): Observable<DotCMSContentType> {
+    getContentTypeWithRender(idOrVar: string, inode?: string): Observable<DotCMSContentType> {
+        let params = new HttpParams();
+        if (inode) {
+            params = params.set('inode', inode);
+        }
+
         return this.#httpClient
-            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/render/id/${idOrVar}`)
+            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/render/id/${idOrVar}`, {
+                params
+            })
             .pipe(
                 take(1),
                 map((data) => data.entity)
@@ -148,7 +158,7 @@ export class DotContentTypeService {
     getAllContentTypes(): Observable<StructureTypeView[]> {
         return this.getBaseTypes()
             .pipe(
-                flatMap((structures: StructureTypeView[]) => structures),
+                mergeMap((structures: StructureTypeView[]) => structures),
                 filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
             )
             .pipe(toArray());
@@ -193,14 +203,14 @@ export class DotContentTypeService {
      */
     getUrlById(id: string): Observable<string> {
         return this.getBaseTypes().pipe(
-            flatMap((structures: StructureTypeView[]) => structures),
-            pluck('types'),
-            flatMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
+            mergeMap((structures: StructureTypeView[]) => structures),
+            map((x) => x?.types),
+            mergeMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
             filter(
                 (contentTypeView: ContentTypeView) =>
                     contentTypeView.variable.toLocaleLowerCase() === id
             ),
-            pluck('action')
+            map((x) => x?.action)
         );
     }
 

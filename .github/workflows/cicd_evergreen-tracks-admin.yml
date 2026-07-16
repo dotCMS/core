@@ -1,0 +1,71 @@
+name: evergreen-tracks-admin
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Docker repo to operate on'
+        required: true
+        default: 'dotcms/dotcms'
+      action:
+        description: 'taint | untaint | hold | release-hold'
+        required: true
+        type: choice
+        options: [taint, untaint, hold, release-hold]
+      version:
+        description: 'GA version (for taint/untaint/hold)'
+        required: false
+        default: ''
+      track:
+        description: 'Track (for hold/release-hold): latest|standard|trailing'
+        required: false
+        default: ''
+      force:
+        description: 'Allow holding onto a tainted version'
+        required: false
+        default: 'false'
+      apply:
+        description: 'Actually mutate tags (false = dry-run)'
+        required: true
+        default: 'false'
+
+# Share the registry-mutation lock with the promote workflows so an admin
+# taint/hold can never overlap a promote run on the same tags.
+concurrency:
+  group: evergreen-tracks-registry
+  cancel-in-progress: false
+
+jobs:
+  admin:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Run admin action
+        working-directory: cicd/evergreen-tracks
+        env:
+          # Scope Docker Hub creds to this step only (the CLI's untaint/release-hold
+          # delete calls read them); other steps/actions don't need them.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          REPO: ${{ github.event.inputs.repo }}
+          ACTION: ${{ github.event.inputs.action }}
+          VERSION: ${{ github.event.inputs.version }}
+          TRACK: ${{ github.event.inputs.track }}
+          FORCE: ${{ github.event.inputs.force }}
+          APPLY: ${{ github.event.inputs.apply }}
+        run: |
+          EXTRA=""
+          if [ "$FORCE" = "true" ]; then EXTRA="$EXTRA --force"; fi
+          if [ "$APPLY" = "true" ]; then EXTRA="$EXTRA --apply"; fi
+          uv run evergreen-tracks admin \
+            --repo "$REPO" \
+            --action "$ACTION" \
+            --version "$VERSION" \
+            --track "$TRACK" \
+            $EXTRA

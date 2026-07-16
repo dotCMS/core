@@ -1,3 +1,4 @@
+<router-outlet />
 @if (isEditMode()) {
     <dot-content-type-layout
         (openEditDialog)="startFormDialog()"
@@ -17,13 +18,14 @@
 }
 
 <p-dialog
-    [(visible)]="show"
+    [visible]="show()"
     [header]="templateInfo.header"
     [modal]="true"
     [closable]="dialogCloseable"
     [style]="{ width: '50rem' }"
-    (visibleChange)="onDialogHide()">
-    @if (show) {
+    (visibleChange)="show.set($event)"
+    (onHide)="onDialogHide()">
+    @if ($renderForm()) {
         <dot-content-types-form
             ($valid)="setDialogOkButtonState($event)"
             ($send)="handleFormSubmit($event)"
@@ -37,7 +39,7 @@
                 [disabled]="dialogActions.cancel.disabled"
                 severity="secondary"
                 (click)="dialogActions.cancel.action?.()"
-                data-testId="dotDialogCancelAction"></p-button>
+                data-testId="dotDialogCancelAction" />
         }
         @if (dialogActions?.accept) {
             <p-button
@@ -45,7 +47,7 @@
                 [disabled]="dialogActions.accept.disabled || savingContentType()"
                 [loading]="savingContentType()"
                 (click)="dialogActions.accept.action?.()"
-                data-testId="dotDialogAcceptAction"></p-button>
+                data-testId="dotDialogAcceptAction" />
         }
     </ng-template>
 </p-dialog>

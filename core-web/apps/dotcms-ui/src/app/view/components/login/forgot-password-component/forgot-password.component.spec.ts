@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -120,7 +120,7 @@ describe('ForgotPasswordComponent', () => {
         spectator.detectChanges();
         jest.spyOn(window, 'confirm').mockReturnValue(true);
         jest.spyOn(loginService, 'recoverPassword').mockReturnValue(
-            throwError({ error: { errors: [{ message: 'error message' }] } })
+            throwError(() => ({ error: { errors: [{ message: 'error message' }] } }))
         );
         spectator.component.forgotPasswordForm.setValue({ login: 'test' });
         spectator.detectChanges();

@@ -1,12 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { InfoOptions } from '../../../../../shared/models';
-import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-ema-info-display',
@@ -16,44 +14,25 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmaInfoDisplayComponent {
-    protected readonly uveStore = inject(UVEStore);
-    protected readonly router = inject(Router);
-
+    // Inputs - data down from container
     $options = input<InfoOptions>(undefined, { alias: 'options' });
 
+    // Outputs - events up to container
+    actionClicked = output<string>();
+
     /**
-     * Handle the action based on the options
+     * Handle the action by emitting event to parent container
+     * Parent will handle navigation or store dispatch based on option ID
      *
-     * @protected
-     * @param {InfoOptions} options
+     * @public
      * @memberof DotEmaInfoDisplayComponent
      */
-    protected handleAction() {
-        const optionId = this.$options().id;
+    handleAction() {
+        const optionId = this.$options()?.id;
 
-        if (optionId === 'device' || optionId === 'socialMedia') {
-            this.uveStore.clearDeviceAndSocialMedia();
-
-            return;
+        if (optionId) {
+            // Emit option ID to let parent handle the action
+            this.actionClicked.emit(optionId);
         }
-
-        const currentExperiment = this.uveStore.experiment();
-
-        this.router.navigate(
-            [
-                '/edit-page/experiments/',
-                currentExperiment.pageId,
-                currentExperiment.id,
-                'configuration'
-            ],
-            {
-                queryParams: {
-                    mode: null,
-                    variantName: null,
-                    experimentId: null
-                },
-                queryParamsHandling: 'merge'
-            }
-        );
     }
 }

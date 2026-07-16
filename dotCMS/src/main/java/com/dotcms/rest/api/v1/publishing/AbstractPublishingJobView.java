@@ -32,7 +32,7 @@ public interface AbstractPublishingJobView {
      */
     @Schema(
             description = "Unique bundle identifier",
-            example = "f3d9a4b7-staging-bundle-2026-01-15",
+            example = "01KJWNJM2C67DM56GHBJ4S7B89",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     String bundleId();
@@ -72,6 +72,18 @@ public interface AbstractPublishingJobView {
     )
     @Nullable
     String filterName();
+
+    /**
+     * Publishing filter key used for this bundle.
+     *
+     * @return Filter key or null if not set
+     */
+    @Schema(
+            description = "Publishing filter key identifier (use this for API calls)",
+            example = "ForcePush.yml"
+    )
+    @Nullable
+    String filterKey();
 
     /**
      * Total number of assets in the bundle.
@@ -143,5 +155,21 @@ public interface AbstractPublishingJobView {
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     int numTries();
+
+    /**
+     * Scheduled execution time for bundles in the {@code SCHEDULED} status — the future
+     * {@code publishDate} the bundle was pushed with, before the publisher cron picks it up.
+     * Null for every other status (the bundle is already past the scheduling phase). Distinct
+     * from {@link #createDate()}, which is when the bundle entered the queue.
+     *
+     * @return Scheduled publish date/time, or null when the bundle is not in SCHEDULED status
+     */
+    @Schema(
+            description = "Scheduled execution time (future publishDate) for SCHEDULED bundles; "
+                    + "null for all other statuses",
+            example = "2026-03-15T14:30:00Z"
+    )
+    @Nullable
+    Instant scheduledPublishDate();
 
 }

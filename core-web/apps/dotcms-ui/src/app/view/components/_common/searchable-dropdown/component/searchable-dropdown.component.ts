@@ -1,6 +1,6 @@
 import { fromEvent } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterContentInit,
     AfterViewInit,
@@ -50,14 +50,14 @@ import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
     styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html',
     imports: [
-        CommonModule,
         FormsModule,
         ButtonModule,
         DataViewModule,
         InputTextModule,
         PopoverModule,
         DotIconComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        NgTemplateOutlet
     ]
 })
 export class SearchableDropdownComponent

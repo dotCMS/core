@@ -3,7 +3,7 @@ import { forkJoin, Subject } from 'rxjs';
 import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { map, pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -112,7 +112,10 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 map((environments: DotEnvironment[]) => !!environments.length),
                 take(1)
             ),
-            this.route.data.pipe(pluck('filterBy'), take(1))
+            this.route.data.pipe(
+                map((x) => x?.filterBy),
+                take(1)
+            )
         ).subscribe(([contentTypes, isEnterprise, environments, filterBy]) => {
             const baseTypes: StructureTypeView[] = contentTypes;
 

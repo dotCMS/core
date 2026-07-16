@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
@@ -165,7 +165,7 @@ describe('withFavorites', () => {
 
     it('getFavoritePages() should call httpErrorManagerService.handle(error) and set favoriteState=error when request fails', () => {
         const error = new Error('Favorites failed');
-        dotPageListService.getFavoritePages.mockReturnValueOnce(throwError(error));
+        dotPageListService.getFavoritePages.mockReturnValueOnce(throwError(() => error));
 
         store.getFavoritePages();
 
@@ -202,7 +202,7 @@ describe('withFavorites', () => {
         patchState(store, { favoritePages: current, favoriteState: 'loaded' });
 
         const error = new Error('Single page failed');
-        dotPageListService.getSinglePage.mockReturnValueOnce(throwError(error));
+        dotPageListService.getSinglePage.mockReturnValueOnce(throwError(() => error));
 
         store.updateFavoritePageNode('page-2');
 

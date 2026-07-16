@@ -1,9 +1,10 @@
-import { from as observableFrom, Observable, merge, Subject } from 'rxjs';
+import { Observable, Subject, merge, from as observableFrom } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
-import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
+import { filter, map, mergeMap, reduce, take, takeUntil } from 'rxjs/operators';
 
 import { CwError, HttpCode, LoggerService } from '@dotcms/dotcms-js';
 
@@ -12,28 +13,28 @@ import { BundleService, IPublishEnvironment } from '../../../services/api/bundle
 import { ConditionService } from '../../../services/api/condition/Condition';
 import { ConditionGroupService } from '../../../services/api/condition-group/ConditionGroup';
 import {
-    RuleModel,
-    RuleService,
+    ActionModel,
     ConditionGroupModel,
     ConditionModel,
-    ActionModel
+    RuleModel,
+    RuleService
 } from '../../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
 import {
-    RuleActionEvent,
-    RuleActionActionEvent,
+    ConditionActionEvent,
     ConditionGroupActionEvent,
-    ConditionActionEvent
+    RuleActionActionEvent,
+    RuleActionEvent
 } from '../../../services/models/rule-event.model';
 import { RuleViewService } from '../../../services/ui/dot-view-rule-service';
 import { DotRuleEngineComponent } from '../dot-rule-engine.component';
 
 // Re-export for backward compatibility
 export {
-    RuleActionEvent,
-    RuleActionActionEvent,
+    ConditionActionEvent,
     ConditionGroupActionEvent,
-    ConditionActionEvent
+    RuleActionActionEvent,
+    RuleActionEvent
 } from '../../../services/models/rule-event.model';
 
 /**
@@ -95,11 +96,12 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             });
 
         this._ruleService._errors$.subscribe((res) => {
-            this.ruleViewService.showErrorMessage(
-                res.message,
-                false,
-                res.response.headers.get('error-key')
+            const message = (res.error?.message || res.error?.error || res.message || '').replace(
+                / user-\S+/gi,
+                ''
             );
+            const errorKey = res.headers?.get('error-key') ?? '';
+            this.ruleViewService.showErrorMessage(message, false, errorKey);
             this.loading.set(false);
             this.showRules.set(false);
         });
@@ -712,12 +714,16 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
 
     private _handle403Error(e: CwError): boolean {
         let handled = false;
+        const error = e as unknown as HttpErrorResponse;
         try {
-            if (e && e.response.status === HttpCode.FORBIDDEN) {
-                const errorJson = e.response;
+            if (error && error?.status === HttpCode.FORBIDDEN) {
+                const errorJson = error.error;
+
                 if (errorJson && errorJson.error) {
                     this.ruleViewService.showErrorMessage(
-                        errorJson.error.message.replace('dotcms.api.error.forbidden: ', '')
+                        errorJson.error
+                            .replace('dotcms.api.error.forbidden: ', '')
+                            .replace(/ user-\S+/gi, '')
                     );
                     handled = true;
                 }

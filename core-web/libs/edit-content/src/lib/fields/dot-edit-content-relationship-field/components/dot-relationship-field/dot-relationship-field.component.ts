@@ -4,7 +4,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     forwardRef,
     inject,
@@ -16,46 +15,50 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule, TableRowReorderEvent } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
-import { HeaderComponent } from './../dot-select-existing-content/components/header/header.component';
 import { DotSelectExistingContentComponent } from './../dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './../pagination/pagination.component';
 
-import { DotEditContentDialogComponent } from '../../../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
+import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
+import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 @Component({
     selector: 'dot-relationship-field',
     imports: [
         TableModule,
+        TagModule,
         ButtonModule,
         MenuModule,
         DotMessagePipe,
-        ChipModule,
-        ContentletStatusPipe,
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent,
         LanguagePipe,
-        PaginationComponent,
-        DotMessagePipe
+        PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
+    styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
+        RelationshipFieldStore,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -72,6 +75,12 @@ export class DotRelationshipFieldComponent
      * This store is used to manage the state and actions related to the relationship field.
      */
     readonly store = inject(RelationshipFieldStore);
+
+    /**
+     * DotEditContentStore to access the current content type and check for Host-Folder field.
+     */
+    readonly #editContentStore: InstanceType<typeof DotEditContentStore> =
+        inject(DotEditContentStore);
 
     /**
      * A readonly private field that injects the DotMessageService.
@@ -98,6 +107,14 @@ export class DotRelationshipFieldComponent
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /**
+     * Tracks whether the initial value synchronization has already happened.
+     * Used to avoid marking the control as touched on the first (programmatic)
+     * value sync so a required, empty field does not show its validation error
+     * before the user interacts with it.
+     */
+    #hasSyncedInitialValue = false;
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -156,14 +173,25 @@ export class DotRelationshipFieldComponent
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
 
     /**
-     * Computed signal that holds the field and contentlet.
+     * Computed signal that holds the field, contentlet, and locale context.
+     * When copying a locale (manual translation or populate), passes both the
+     * target language id and the full DotLanguage object so related items can be
+     * resolved to their translated versions and the language column renders correctly.
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
-    $inputs = computed(() => ({
-        field: this.$field(),
-        contentlet: this.$contentlet()
-    }));
+    $inputs = computed(() => {
+        const locale = this.#editContentStore.isCopyingLocale()
+            ? this.#editContentStore.currentLocale()
+            : undefined;
+
+        return {
+            field: this.$field(),
+            contentlet: this.$contentlet(),
+            targetLanguageId: locale?.id,
+            targetLanguage: locale
+        };
+    });
 
     /**
      * Computed signal that holds the total number of columns.
@@ -185,6 +213,11 @@ export class DotRelationshipFieldComponent
 
     /**
      * Initializes the store with the field and contentlet.
+     *
+     * Passes the signal reference (not its value) so that signalMethod creates a
+     * reactive effect — the store re-initializes whenever $inputs changes. This is
+     * required for manual translation, where this component is preserved (not flushed)
+     * and ngOnInit does not run again.
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
@@ -215,15 +248,19 @@ export class DotRelationshipFieldComponent
 
         const contentType = this.store.contentType();
 
-        // Don't open dialog if contentTypeId is null (invalid field data)
-        if (!contentType.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data)
+        if (!contentType?.id) {
             return;
         }
+
+        const hasSiteFolder = this.#hasHostFolderField();
+        const contentlet = this.$contentlet();
 
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
-            closeOnEscape: false,
+            closable: true,
+            closeOnEscape: true,
             draggable: false,
             keepInViewport: true,
             modal: true,
@@ -236,10 +273,25 @@ export class DotRelationshipFieldComponent
             data: {
                 contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode)
+                currentItemsIds: this.store.data().map((item) => item.inode),
+                cardinality: this.$field().relationships?.cardinality,
+                parentContentTypeId: this.$field().contentTypeId,
+                fieldVariable: this.$field().variable,
+                isParentField: this.$field().relationships?.isParentField,
+                currentContentIdentifier: contentlet?.identifier ?? null,
+                contentletContext: {
+                    languageId:
+                        contentlet?.languageId ?? this.#editContentStore.currentLocale()?.id,
+                    ...(hasSiteFolder && {
+                        host: contentlet?.host,
+                        hostName: contentlet?.hostName,
+                        folder: contentlet?.folder,
+                        url: contentlet?.url
+                    })
+                }
             },
+            header: this.#dotMessageService.get('dot.file.relationship.dialog.search.title'),
             templates: {
-                header: HeaderComponent,
                 footer: FooterComponent
             }
         });
@@ -255,25 +307,43 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Reorders the data in the store.
-     * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
+     * Persists row order after a PrimeNG table row reorder.
+     *
+     * Since `[value]` is now bound to a paginated slice (a new array from a computed signal),
+     * PrimeNG mutates that transient slice in-place via `ObjectUtils.reorderArray`, leaving
+     * the full `store.data()` untouched. We translate the slice-local `dragIndex` / `dropIndex`
+     * to global indices using the current pagination offset, then apply the reorder on a copy
+     * of the full data array and persist it back to the store.
      */
     onRowReorder(event: TableRowReorderEvent) {
-        if (this.$isDisabled() || event?.dragIndex == null || event?.dropIndex == null) {
+        const dragIndex = event?.dragIndex;
+        const dropIndex = event?.dropIndex;
+        if (this.$isDisabled() || dragIndex == null || dropIndex == null) {
             return;
         }
 
-        this.store.setData(this.store.data());
+        const offset = this.store.pagination().offset;
+        const globalDragIndex = offset + dragIndex;
+        const globalDropIndex = offset + dropIndex;
+
+        const reorderedData = [...this.store.data()];
+        const [movedItem] = reorderedData.splice(globalDragIndex, 1);
+        reorderedData.splice(globalDropIndex, 0, movedItem);
+
+        this.store.reorderData(reorderedData);
     }
 
     /**
      * Opens the new content dialog for creating content using the Angular editor
      */
-    showCreateNewContentDialog(): void {
+    async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
         if (this.$isDisabled() || !contentType) {
             return;
         }
+
+        const { DotEditContentDialogComponent } =
+            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
 
         const dialogData: EditContentDialogData = {
             mode: 'new',
@@ -281,7 +351,7 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: true // This could be determined based on relationship configuration
+                isParent: this.$field().relationships?.isParentField ?? true
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
@@ -293,6 +363,7 @@ export class DotRelationshipFieldComponent
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
+            closable: true,
             closeOnEscape: true,
             draggable: false,
             keepInViewport: true,
@@ -309,7 +380,11 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Updates the value of the field.
+     * Syncs the formatted relationship value to the form control.
+     *
+     * The control is only marked as touched on user-driven changes (second and
+     * subsequent emissions), never on the initial programmatic sync, so a
+     * required, empty field does not display its validation error on first render.
      *
      * @param value - The value to update.
      */
@@ -319,7 +394,15 @@ export class DotRelationshipFieldComponent
         }
 
         this.onChange(value);
-        this.onTouched();
+
+        // Only mark the control as touched on genuine user-driven changes, not on the
+        // initial value sync — otherwise a required, empty field shows its validation
+        // error as soon as the form renders.
+        if (this.#hasSyncedInitialValue) {
+            this.onTouched();
+        } else {
+            this.#hasSyncedInitialValue = true;
+        }
     });
 
     /**
@@ -331,10 +414,19 @@ export class DotRelationshipFieldComponent
     readonly initialize = signalMethod<{
         field: DotCMSContentTypeField;
         contentlet: DotCMSContentlet;
+        targetLanguageId?: number;
+        targetLanguage?: DotLanguage;
     }>((params) => {
-        this.store.initialize({
-            field: params.field,
-            contentlet: params.contentlet
-        });
+        this.store.initialize(params);
+    });
+
+    /**
+     * Whether the current content type has a Host-Folder field.
+     * Used to determine whether to pre-populate site/folder filters.
+     */
+    readonly #hasHostFolderField = computed(() => {
+        const fields = this.#editContentStore.contentType()?.fields ?? [];
+
+        return fields.some((f) => f.fieldType === FIELD_TYPES.HOST_FOLDER);
     });
 }

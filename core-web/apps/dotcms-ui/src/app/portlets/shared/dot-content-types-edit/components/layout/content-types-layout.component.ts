@@ -1,70 +1,64 @@
-import { Observable } from 'rxjs';
-
-import { AsyncPipe, CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
     OnInit,
+    computed,
     effect,
     inject,
     input,
     output,
+    signal,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabsModule } from 'primeng/tabs';
 
-import { take } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
-import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import {
-    DotApiLinkComponent,
-    DotAutofocusDirective,
-    DotCopyButtonComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { ContentTypesFieldsListComponent } from '../fields/content-types-fields-list';
 import { FieldDragDropService } from '../fields/service';
+import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 
 @Component({
     selector: 'dot-content-type-layout',
     templateUrl: 'content-types-layout.component.html',
+    providers: [DotClipboardUtil],
     imports: [
-        CommonModule,
-        AsyncPipe,
         TabsModule,
         SplitButtonModule,
         ButtonModule,
         InputTextModule,
-        InputTextModule,
-        DotApiLinkComponent,
-        DotCopyButtonComponent,
+        MenuModule,
         DotMessagePipe,
-        DotAutofocusDirective,
-        DotInlineEditComponent,
         DotPortletBoxComponent,
         IframeComponent,
         DotAddToMenuComponent,
-        ContentTypesFieldsListComponent
+        ContentTypesFieldsListComponent,
+        DotStyleEditorBuilderComponent
     ]
 })
 export class ContentTypesLayoutComponent implements OnInit {
-    private dotMessageService = inject(DotMessageService);
-    private dotMenuService = inject(DotMenuService);
-    private fieldDragDropService = inject(FieldDragDropService);
-    private dotEventsService = inject(DotEventsService);
-    private dotCurrentUserService = inject(DotCurrentUserService);
+    #dotMessageService = inject(DotMessageService);
+    #fieldDragDropService = inject(FieldDragDropService);
+    #dotEventsService = inject(DotEventsService);
+    #dotClipboardUtil = inject(DotClipboardUtil);
+    #router = inject(Router);
+    #route = inject(ActivatedRoute);
 
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
     openEditDialog = output<unknown>();
@@ -74,16 +68,52 @@ export class ContentTypesLayoutComponent implements OnInit {
 
     permissionURL: string;
     pushHistoryURL: string;
-    relationshipURL: string;
     contentTypeNameInputSize: number;
-    showPermissionsTab: Observable<boolean>;
+    readonly $showStyleEditorTab = signal<boolean>(
+        this.#route.snapshot.data['featuredFlags']?.[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR] ??
+            false
+    );
+    readonly $showPermissionsTab = signal<boolean>(
+        this.#route.snapshot.data['tabPermissions']?.showPermissionsTab ?? false
+    );
+    readonly $activeTab = signal(this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields');
     addToMenuContentType = false;
 
     actions: MenuItem[];
 
+    /** Context menu items derived from the current content type. */
+    readonly $menuItems = computed<MenuItem[]>(() => {
+        const ct = this.$contentType();
+
+        return [
+            {
+                label: this.#dotMessageService.get('contenttypes.content.add_to_menu'),
+                icon: 'pi pi-plus-circle',
+                command: () => this.addContentInMenu()
+            },
+            {
+                label: this.#dotMessageService.get('contenttypes.content.open.api'),
+                icon: 'pi pi-external-link',
+                command: () => window.open(`/api/v1/contenttype/id/${ct.id}`, '_blank')
+            },
+            {
+                label: this.#dotMessageService.get('contenttypes.content.copy.id'),
+                icon: 'pi pi-copy',
+                command: () => this.#dotClipboardUtil.copy(ct.id)
+            },
+            {
+                label: this.#dotMessageService.get(
+                    'contenttypes.content.copy.variable',
+                    ct.variable
+                ),
+                icon: 'pi pi-copy',
+                command: () => this.#dotClipboardUtil.copy(ct.variable)
+            }
+        ];
+    });
+
     ngOnInit(): void {
-        this.showPermissionsTab = this.dotCurrentUserService.hasAccessToPortlet('permissions');
-        this.fieldDragDropService.setBagOptions();
+        this.#fieldDragDropService.setBagOptions();
         this.loadActions();
     }
 
@@ -91,16 +121,19 @@ export class ContentTypesLayoutComponent implements OnInit {
         effect(() => {
             const ct = this.$contentType();
             if (ct) {
-                this.dotMenuService
-                    .getDotMenuId('content-types-angular')
-                    .pipe(take(1))
-                    .subscribe((id: string) => {
-                        this.relationshipURL = `/c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${ct.id}`;
-                    });
                 this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${ct.id}&popup=true`;
                 this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${ct.id}&popup=true`;
             }
         });
+
+        // Keep $activeTab in sync with browser back/forward navigation.
+        this.#router.events
+            .pipe(
+                filter((e) => e instanceof NavigationEnd),
+                map(() => this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields'),
+                takeUntilDestroyed()
+            )
+            .subscribe((tab) => this.$activeTab.set(tab));
     }
 
     /**
@@ -109,7 +142,7 @@ export class ContentTypesLayoutComponent implements OnInit {
      * @memberof ContentTypesLayoutComponent
      */
     fireAddRowEvent(): void {
-        this.dotEventsService.notify('add-row');
+        this.#dotEventsService.notify('add-row');
     }
 
     /**
@@ -151,18 +184,23 @@ export class ContentTypesLayoutComponent implements OnInit {
         }
     }
 
+    onTabChange(tab: unknown): void {
+        this.$activeTab.set(tab as string);
+        this.#router.navigate([tab as string], { relativeTo: this.#route });
+    }
+
     private loadActions(): void {
         this.actions = [
             {
-                label: this.dotMessageService.get('contenttypes.dropzone.rows.add'),
+                label: this.#dotMessageService.get('contenttypes.dropzone.rows.add'),
                 command: () => {
                     this.fireAddRowEvent();
                 }
             },
             {
-                label: this.dotMessageService.get('contenttypes.dropzone.rows.tab_divider'),
+                label: this.#dotMessageService.get('contenttypes.dropzone.rows.tab_divider'),
                 command: () => {
-                    this.dotEventsService.notify('add-tab-divider');
+                    this.#dotEventsService.notify('add-tab-divider');
                 }
             }
         ];

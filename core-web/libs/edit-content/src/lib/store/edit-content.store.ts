@@ -1,4 +1,4 @@
-import { signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
+import { patchState, signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -19,6 +19,7 @@ import {
 
 import { withActivities } from './features/activities/activities.feature';
 import { withContent, DialogInitializationOptions } from './features/content/content.feature';
+import { withFieldVisibility } from './features/field-visibility/field-visibility.feature';
 import { withForm } from './features/form/form.feature';
 import { withHistory } from './features/history/history.feature';
 import { withInformation } from './features/information/information.feature';
@@ -57,6 +58,7 @@ export interface EditContentState {
         }
     >;
     initialContentletState: DotContentletState;
+    isManualTranslation: boolean;
 
     // Workflow state
     currentSchemeId: string | null;
@@ -64,6 +66,12 @@ export interface EditContentState {
     currentStep: WorkflowStep | null;
     lastTask: WorkflowTask | null;
     workflow: {
+        status: ComponentStatus;
+        error: string | null;
+    };
+    // Status of the allowed-actions re-fetch (updateCurrentContentActions). Lets the UI
+    // disable the workflow actions while the list is being refreshed (e.g. after a lock toggle).
+    actionsStatus: {
         status: ComponentStatus;
         error: string | null;
     };
@@ -84,6 +92,7 @@ export interface EditContentState {
 
     // Lock state
     lockError: string | null;
+    lockStatus: ComponentStatus;
     canLock: boolean;
     lockSwitchLabel: string;
 
@@ -100,6 +109,12 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string;
     };
+    /**
+     * Set by switchLocale (dialog mode) when a translated-locale switch is pending
+     * confirmation. The layout component watches this, shows the unsaved-changes
+     * dialog if needed, then calls confirmPendingLocaleSwitch or cancelPendingLocaleSwitch.
+     */
+    pendingLocaleInode: string | null;
 
     // Activities state
     activities: Activity[];
@@ -137,6 +152,31 @@ export interface EditContentState {
     isViewingHistoricalVersion: boolean;
     historicalVersionInode: string | null;
     originalContentlet: DotCMSContentlet | null;
+    /** Inode of the version currently being fetched (view/compare click), for loading feedback */
+    loadingVersionInode: string | null;
+
+    /**
+     * Map of field variable names currently hidden via the BridgeAPI show()/hide() methods.
+     * A key present with `true` means the field is hidden; absent keys are visible.
+     * Uses Record<string, boolean> instead of Set for JSON serializability
+     * (Redux DevTools, state snapshots, hydration).
+     */
+    hiddenFields: Record<string, boolean>;
+
+    /**
+     * Query params captured from the URL when initializing as a portlet.
+     * Used to pre-fill form fields (e.g., folderPath for Host or Folder).
+     */
+    queryParams: EditContentQueryParams;
+}
+
+/**
+ * Supported query params for the edit-content route.
+ * Add new properties here as more params are needed.
+ */
+export interface EditContentQueryParams {
+    /** Pre-fill path for the Host or Folder field. Format: "hostname/folder1/folder2/" */
+    folderPath?: string;
 }
 
 export const initialRootState: EditContentState = {
@@ -151,6 +191,7 @@ export const initialRootState: EditContentState = {
     compareContentlet: null,
     schemes: {},
     initialContentletState: 'new',
+    isManualTranslation: false,
 
     // Workflow state
     currentSchemeId: null,
@@ -158,6 +199,10 @@ export const initialRootState: EditContentState = {
     currentStep: null,
     lastTask: null,
     workflow: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
+    actionsStatus: {
         status: ComponentStatus.INIT,
         error: null
     },
@@ -172,7 +217,8 @@ export const initialRootState: EditContentState = {
         activeTab: 0,
         isSidebarOpen: true,
         activeSidebarTab: 0,
-        isBetaMessageVisible: true
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
     },
 
     // Information state
@@ -184,6 +230,7 @@ export const initialRootState: EditContentState = {
 
     // Lock state
     lockError: null,
+    lockStatus: ComponentStatus.IDLE,
     canLock: false,
     lockSwitchLabel: 'edit.content.unlocked',
 
@@ -200,6 +247,7 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
+    pendingLocaleInode: null,
 
     // Activities state
     activities: [],
@@ -228,7 +276,14 @@ export const initialRootState: EditContentState = {
     // Historical version viewing state
     isViewingHistoricalVersion: false,
     historicalVersionInode: null,
-    originalContentlet: null
+    originalContentlet: null,
+    loadingVersionInode: null,
+
+    // Field visibility state (controlled by BridgeAPI)
+    hiddenFields: {} as Record<string, boolean>,
+
+    // Query params from URL
+    queryParams: {}
 };
 
 /**
@@ -246,6 +301,7 @@ export const DotEditContentStore = signalStore(
     withInformation(),
     withLock(),
     withForm(),
+    withFieldVisibility(),
     withLocales(),
     withActivities(),
     withHistory(),
@@ -303,6 +359,16 @@ export const DotEditContentStore = signalStore(
 
                 // Use the ActivatedRoute that was injected in the closure
                 const params = activatedRoute.snapshot?.params;
+                const queryParams = activatedRoute.snapshot?.queryParams;
+
+                // Store query params first (synchronous) so they are available
+                // when the async content initialization completes and the form reads them.
+                const supportedQueryParams: EditContentQueryParams = {};
+                if (queryParams?.['folderPath']) {
+                    supportedQueryParams.folderPath = queryParams['folderPath'];
+                }
+
+                patchState(store, { queryParams: supportedQueryParams });
 
                 if (params) {
                     const contentType = params['contentType'];

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -20,7 +20,6 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
     templateUrl: './dot-content-compare-table.component.html',
     styleUrls: ['./dot-content-compare-table.component.scss'],
     imports: [
-        CommonModule,
         FormsModule,
         TableModule,
         SelectModule,
@@ -30,7 +29,8 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
         DotRelativeDatePipe,
         DotDiffPipe,
         DotContentComparePreviewFieldComponent,
-        DotContentCompareBlockEditorComponent
+        DotContentCompareBlockEditorComponent,
+        JsonPipe
     ]
 })
 export class DotContentCompareTableComponent {
@@ -39,6 +39,12 @@ export class DotContentCompareTableComponent {
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
     $showActions = input<boolean>(true, { alias: 'showActions' });
+    /**
+     * When `true`, swap the column order so the PREVIOUS (compare) version
+     * renders on the LEFT and the CURRENT (working) version on the RIGHT.
+     * Default `false` preserves the legacy layout (current LEFT / previous RIGHT).
+     */
+    readonly $reverseColumns = input<boolean>(false, { alias: 'reverseColumns' });
 
     @Output() changeVersion = new EventEmitter<DotCMSContentlet>();
     @Output() changeDiff = new EventEmitter<boolean>();

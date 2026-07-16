@@ -4,15 +4,10 @@ import { render, screen } from '@testing-library/react';
 import { BlockEditorNode } from '@dotcms/types';
 
 import { DotContent } from '../../components/DotCMSBlockEditorRenderer/components/blocks/DotContent';
-import * as hook from '../../hooks/useIsDevMode';
 
 const mockCustomRenderers = {
     KnownContentType: () => <div data-testid="known-content-type">Known Content</div>
 };
-
-jest.mock('../../hooks/useIsDevMode', () => ({
-    useIsDevMode: jest.fn().mockReturnValue(true)
-}));
 
 const mockNode: BlockEditorNode = {
     attrs: {
@@ -24,12 +19,6 @@ const mockNode: BlockEditorNode = {
 };
 
 describe('DotContent Component', () => {
-    let useIsDevModeSpy: jest.SpyInstance<boolean>;
-
-    beforeEach(() => {
-        useIsDevModeSpy = jest.spyOn(hook, 'useIsDevMode');
-    });
-
     it('should show the no data message when there is no data', () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
             /* empty function */
@@ -42,7 +31,9 @@ describe('DotContent Component', () => {
     });
 
     it('should call the UnknownContentType component in dev mode when there is no component', () => {
-        const { container } = render(<DotContent customRenderers={{}} node={mockNode} />);
+        const { container } = render(
+            <DotContent customRenderers={{}} node={mockNode} isDevMode={true} />
+        );
         const unknownContentType = container.querySelector(
             "div[data-testid='no-component-provided']"
         );
@@ -50,11 +41,12 @@ describe('DotContent Component', () => {
     });
 
     it('should show a warning and render nothing when there is no component in production mode', () => {
-        useIsDevModeSpy.mockReturnValue(false);
         const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {
             /* empty function */
         });
-        const { container } = render(<DotContent customRenderers={{}} node={mockNode} />);
+        const { container } = render(
+            <DotContent customRenderers={{}} node={mockNode} isDevMode={false} />
+        );
         expect(consoleWarnSpy).toHaveBeenCalledWith(
             '[DotCMSBlockEditorRenderer]: No matching component found for content type: KnownContentType. Provide a custom renderer for this content type to fix this error.'
         );

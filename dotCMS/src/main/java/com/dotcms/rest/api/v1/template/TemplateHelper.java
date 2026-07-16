@@ -197,7 +197,8 @@ public class TemplateHelper {
 
     private TemplateLayoutRow toTemplateLayoutRow(final TemplateLayoutRowView templateLayoutRowView) {
 
-        return new TemplateLayoutRow(this.toTemplateLayoutColumnList(templateLayoutRowView.getColumns()), templateLayoutRowView.getStyleClass());
+        return new TemplateLayoutRow(this.toTemplateLayoutColumnList(templateLayoutRowView.getColumns()),
+                templateLayoutRowView.getStyleClass(), templateLayoutRowView.getMetadata());
     }
 
     private List<TemplateLayoutColumn> toTemplateLayoutColumnList(final List<TemplateLayoutColumnView> columns) {
@@ -210,7 +211,8 @@ public class TemplateHelper {
         final TemplateLayoutColumn templateLayoutColumn = new TemplateLayoutColumn(templateLayoutColumnView.getContainers(),
                         0,
                         templateLayoutColumnView.getLeftOffset(),
-                        templateLayoutColumnView.getStyleClass());
+                        templateLayoutColumnView.getStyleClass(),
+                        templateLayoutColumnView.getMetadata());
 
         templateLayoutColumn.setWidth(templateLayoutColumnView.getWidth());
         return templateLayoutColumn;
@@ -250,7 +252,8 @@ public class TemplateHelper {
     private TemplateLayoutRowView toTemplateLayoutRowView(final TemplateLayoutRow templateLayoutRow) {
 
         return null != templateLayoutRow? new TemplateLayoutRowView(templateLayoutRow.getStyleClass(),
-                this.toTemplateLayoutColumnViewList(templateLayoutRow.getColumns())):
+                this.toTemplateLayoutColumnViewList(templateLayoutRow.getColumns()),
+                templateLayoutRow.getMetadata()):
                 null;
     }
 
@@ -263,7 +266,8 @@ public class TemplateHelper {
 
         return null != templateLayoutColumn? new TemplateLayoutColumnView(
                 templateLayoutColumn.getContainers(), templateLayoutColumn.getWidth(),
-                templateLayoutColumn.getLeftOffset(), templateLayoutColumn.getStyleClass()):
+                templateLayoutColumn.getLeftOffset(), templateLayoutColumn.getStyleClass(),
+                templateLayoutColumn.getMetadata()):
                 null;
     }
 

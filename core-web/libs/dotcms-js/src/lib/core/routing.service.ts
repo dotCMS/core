@@ -1,9 +1,12 @@
-import { Observable } from 'rxjs';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { CoreWebService } from './core-web.service';
+import { map } from 'rxjs/operators';
+
+import { DotCMSResponse } from '@dotcms/dotcms-models';
+
 import { DotRouterService } from './dot-router.service';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoginService } from './login.service';
@@ -11,7 +14,7 @@ import { LoginService } from './login.service';
 @Injectable()
 export class RoutingService {
     private router = inject(DotRouterService);
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     private _menusChange$: Subject<Menu[]> = new Subject();
     private menus: Menu[];
@@ -27,7 +30,7 @@ export class RoutingService {
         const loginService = inject(LoginService);
         const dotcmsEventsService = inject(DotcmsEventsService);
 
-        this.urlMenus = 'v1/CORE_WEB/menu';
+        this.urlMenus = '/api/v1/CORE_WEB/menu';
         this.portlets = new Map();
 
         loginService.watchUser(this.loadMenus.bind(this));
@@ -130,13 +133,12 @@ export class RoutingService {
     }
 
     private loadMenus(): void {
-        this.coreWebService
-            .requestView({
-                url: this.urlMenus
-            })
+        this.http
+            .get<DotCMSResponse<Menu[]>>(this.urlMenus)
+            .pipe(map((response) => response.entity))
             .subscribe(
-                (response) => {
-                    this.setMenus(response.entity);
+                (menus) => {
+                    this.setMenus(menus);
                 },
                 (error) => this._menusChange$.error(error)
             );

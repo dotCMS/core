@@ -1,46 +1,296 @@
 @let hasError = $hasError();
+@let confirmedNode = store.confirmedNode();
+@let displayPath = store.displayPath();
+@let isDisabled = $isDisabled();
+@let isSearching = store.isSearching();
 
-<p-treeselect
-    (onNodeSelect)="store.chooseNode($event)"
-    (onNodeExpand)="store.loadChildren($event)"
-    [formControl]="pathControl"
-    [class.ng-invalid]="hasError"
-    [class.ng-dirty]="hasError"
-    [filter]="true"
-    [options]="store.tree()"
-    [virtualScroll]="true"
-    [scrollHeight]="'100%'"
-    [virtualScrollItemSize]="50"
-    [virtualScrollOptions]="{
-        autoSize: true,
-        style: {
-            width: '100%',
-            height: '450px',
-            minHeight: '450px'
+<div class="flex w-full items-center gap-2">
+    <button
+        type="button"
+        class="flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 rounded-(--p-inputtext-border-radius) border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
+        [class.ng-invalid]="hasError"
+        [class.ng-dirty]="hasError"
+        [class.border-(--p-inputtext-invalid-border-color)]="hasError"
+        [disabled]="isDisabled"
+        [attr.aria-expanded]="store.overlayOpen()"
+        data-testid="host-folder-trigger"
+        (click)="toggleOverlay($event)">
+        @if (store.triggerIconType() === 'site') {
+            <span class="material-symbols-outlined flex-none text-lg text-surface-500">public</span>
+        } @else {
+            <span class="material-symbols-outlined flex-none text-lg text-surface-500">folder</span>
         }
-    }"
-    filterBy="label"
-    filterMode="lenient"
-    [filterInputAutoFocus]="true"
-    selectionMode="single"
-    placeholder="Select Host/Folder"
-    class="w-full">
-    <ng-template let-node pTemplate="default">
-        <span>{{ node?.label | dotTruncatePath }}</span>
-    </ng-template>
-    <ng-template let-item pTemplate="value">
-        <span>//{{ item?.label }}</span>
-    </ng-template>
-    <ng-template pTemplate="triggericon">
-        <i [class]="store.iconClasses()" class="pi"></i>
-    </ng-template>
-    <ng-template pTemplate="filtericon">
-        <i class="pi pi-search"></i>
-    </ng-template>
-    <ng-template pTemplate="closeicon">
-        <i class="pi pi-times"></i>
-    </ng-template>
-    <ng-template pTemplate="itemtogglericon" let-expanded>
-        <i class="pi" [class.pi-chevron-down]="expanded" [class.pi-chevron-right]="!expanded"></i>
-    </ng-template>
-</p-treeselect>
+
+        <span
+            class="min-w-0 flex-auto truncate text-(--p-inputtext-color)"
+            data-testid="host-folder-trigger-label">
+            @if (store.showTriggerLoading()) {
+                <span data-testid="host-folder-trigger-skeleton">
+                    <p-skeleton width="60%" height="1rem" />
+                </span>
+            } @else {
+                {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+            }
+        </span>
+
+        <i
+            class="pi flex-none text-surface-500"
+            data-testid="host-folder-trigger-icon"
+            [class.pi-spin]="store.showTriggerLoading()"
+            [class.pi-spinner]="store.showTriggerLoading()"
+            [class.pi-chevron-up]="!store.showTriggerLoading() && store.overlayOpen()"
+            [class.pi-chevron-down]="!store.showTriggerLoading() && !store.overlayOpen()"></i>
+    </button>
+
+    <p-button
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        severity="secondary"
+        type="button"
+        data-testid="host-folder-copy"
+        [disabled]="!confirmedNode || isDisabled"
+        [attr.aria-label]="'dot.file.field.host.folder.copy.tooltip' | dm"
+        [pTooltip]="'dot.file.field.host.folder.copy.tooltip' | dm"
+        tooltipPosition="bottom"
+        (onClick)="copyPath()">
+        <ng-template #icon>
+            <span class="material-symbols-outlined text-lg" data-testid="host-folder-copy-icon">
+                {{ $pathCopied() ? 'check' : 'content_copy' }}
+            </span>
+        </ng-template>
+    </p-button>
+</div>
+
+<p-popover
+    (onHide)="store.closeOverlay()"
+    (onShow)="onOverlayShow()"
+    [dismissable]="true"
+    [style]="{ width: $overlayWidth(), minWidth: '40rem' }"
+    appendTo="body"
+    [pt]="popoverPt"
+    data-testid="host-folder-overlay">
+    <div class="flex flex-col overflow-hidden">
+        <div class="flex h-96 min-h-0 w-full">
+            @let filteredSites = store.filteredSites();
+            @let selectedSiteKey = store.selectedSite()?.key;
+            <div
+                class="flex h-full w-64 min-w-0 flex-none flex-col overflow-hidden border-r border-(--p-inputtext-border-color) p-4"
+                data-testid="host-folder-sites">
+                @if (store.showSitesSearch()) {
+                    <p-iconField class="mb-3 w-full shrink-0">
+                        <p-inputIcon class="pi pi-search text-sm text-surface-500" />
+                        <input
+                            pInputText
+                            size="large"
+                            type="text"
+                            class="w-full"
+                            data-testid="host-folder-sites-search-input"
+                            [value]="store.siteSearchTerm()"
+                            [placeholder]="
+                                'dot.file.field.host.folder.sites.search.placeholder' | dm
+                            "
+                            (input)="onSiteSearchInput($event)" />
+                    </p-iconField>
+                } @else {
+                    <span class="block shrink-0 pb-3 text-xs font-semibold text-gray-600 uppercase">
+                        {{ 'dot.file.field.host.folder.sites.label' | dm }}
+                    </span>
+                }
+
+                @if (store.showSitesPanelLoading()) {
+                    <div
+                        class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-surface-500"
+                        data-testid="host-folder-sites-loading">
+                        <i class="pi pi-spin pi-spinner text-2xl text-surface-400"></i>
+                        <span class="text-sm">
+                            {{ 'dot.file.field.host.folder.loading.sites' | dm }}
+                        </span>
+                    </div>
+                } @else if (store.sitesLoadFailed()) {
+                    <span
+                        class="block p-2 text-sm text-red-600"
+                        data-testid="host-folder-sites-error">
+                        {{ 'dot.file.field.host.folder.error.sites' | dm }}
+                    </span>
+                } @else if (filteredSites.length === 0) {
+                    <span
+                        class="block p-2 text-sm text-gray-600"
+                        data-testid="host-folder-sites-empty">
+                        {{ 'dot.file.field.host.folder.empty.sites' | dm }}
+                    </span>
+                } @else {
+                    <p-virtualscroller
+                        class="min-h-0 flex-1"
+                        [pt]="scrollerPt"
+                        [items]="filteredSites"
+                        [itemSize]="42"
+                        [trackBy]="trackBySiteKey"
+                        [lazy]="true"
+                        [appendOnly]="true"
+                        [loading]="store.sitesPagination().loading"
+                        scrollHeight="100%"
+                        (onLazyLoad)="onSitesLazyLoad($event)">
+                        <ng-template pTemplate="item" let-site>
+                            @let isSelectedSite = selectedSiteKey === site.key;
+                            <div class="pb-1.5">
+                                <button
+                                    type="button"
+                                    class="flex w-full max-w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm border-0 p-2 text-left transition-none"
+                                    [class.bg-primary-50]="isSelectedSite"
+                                    [class.font-semibold]="isSelectedSite"
+                                    [class.text-primary-500]="isSelectedSite"
+                                    [class.text-gray-600]="!isSelectedSite"
+                                    [class.hover:bg-gray-100]="!isSelectedSite"
+                                    [pTooltip]="site.label"
+                                    [tooltipDisabled]="site.label.length <= 10"
+                                    tooltipPosition="top"
+                                    [showDelay]="800"
+                                    data-testid="host-folder-site-item"
+                                    (click)="onSiteSelect(site)">
+                                    <span
+                                        class="material-symbols-outlined flex-none text-base"
+                                        [class.text-primary-500]="isSelectedSite"
+                                        [class.text-gray-600]="!isSelectedSite">
+                                        public
+                                    </span>
+                                    <span class="min-w-0 flex-auto truncate">{{ site.label }}</span>
+                                    <i
+                                        class="pi pi-chevron-right flex-none text-sm"
+                                        [class.text-primary-500]="isSelectedSite"
+                                        [class.text-gray-300]="!isSelectedSite"
+                                        data-testid="host-folder-site-chevron"></i>
+                                </button>
+                            </div>
+                        </ng-template>
+                    </p-virtualscroller>
+                }
+            </div>
+
+            <div
+                class="flex h-full min-w-0 flex-auto flex-col gap-2 overflow-hidden p-4"
+                data-testid="host-folder-folders">
+                @if (store.showFolderSearch()) {
+                    <p-iconField class="w-full shrink-0">
+                        <p-inputIcon class="pi pi-search text-sm text-surface-500" />
+                        <input
+                            pInputText
+                            size="large"
+                            type="text"
+                            class="w-full"
+                            data-testid="host-folder-search-input"
+                            [value]="store.searchTerm()"
+                            [placeholder]="'dot.file.field.host.folder.search.placeholder' | dm"
+                            (input)="onSearchInput($event)" />
+                    </p-iconField>
+                }
+
+                @if (store.searchLoadFailed()) {
+                    <span
+                        class="block min-h-0 flex-1 p-4 text-sm text-red-600"
+                        data-testid="host-folder-search-error">
+                        {{ 'dot.file.field.host.folder.error.search' | dm }}
+                    </span>
+                } @else if (store.foldersLoadFailed()) {
+                    <span
+                        class="block min-h-0 flex-1 p-4 text-sm text-red-600"
+                        data-testid="host-folder-folders-error">
+                        {{ 'dot.file.field.host.folder.error.folders' | dm }}
+                    </span>
+                } @else if (store.showFoldersPanelLoading()) {
+                    <div
+                        class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-surface-500"
+                        data-testid="host-folder-folders-loading">
+                        <i class="pi pi-spin pi-spinner text-2xl text-surface-400"></i>
+                        <span class="text-sm">
+                            {{ 'dot.file.field.host.folder.loading.folders' | dm }}
+                        </span>
+                    </div>
+                } @else if (
+                    !store.foldersLoading() &&
+                    !store.searchLoading() &&
+                    store.displayedFolders().length === 0
+                ) {
+                    <div
+                        class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-surface-500"
+                        data-testid="host-folder-folders-empty">
+                        <i class="pi pi-search-minus text-2xl text-surface-400"></i>
+                        <span class="text-sm">
+                            {{
+                                (isSearching
+                                    ? 'dot.file.field.host.folder.empty.folders'
+                                    : 'dot.file.field.host.folder.empty.folders.site'
+                                ) | dm
+                            }}
+                        </span>
+                    </div>
+                } @else {
+                    <p-tree
+                        #folderTree
+                        class="min-h-0 min-w-0 flex-1 overflow-hidden"
+                        [value]="store.displayedFolders()"
+                        [selection]="store.treeSelection()"
+                        [loading]="store.foldersLoading() && store.displayedFolders().length > 0"
+                        selectionMode="single"
+                        scrollHeight="flex"
+                        loadingMode="icon"
+                        [pt]="treePt()"
+                        data-testid="host-folder-tree"
+                        (onNodeSelect)="onFolderSelect($event)"
+                        (onNodeExpand)="onFolderExpand($event)">
+                        <ng-template let-node pTemplate="default">
+                            <span class="flex w-full min-w-0 flex-col gap-1 overflow-hidden">
+                                <span
+                                    class="block w-full min-w-0 truncate"
+                                    [class.font-semibold]="isSearching"
+                                    [class.leading-normal]="isSearching">
+                                    {{ node.label | dotTruncatePath }}
+                                </span>
+                                @if (isSearching && node.data?.path) {
+                                    <span
+                                        class="block w-full min-w-0 truncate text-sm leading-normal text-surface-500"
+                                        data-testid="host-folder-search-result-path">
+                                        {{ formatSearchNodePath(node) }}
+                                    </span>
+                                }
+                            </span>
+                        </ng-template>
+                        <ng-template let-node pTemplate="load-more">
+                            <button
+                                type="button"
+                                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-sm text-primary-500 hover:underline"
+                                data-testid="host-folder-load-more"
+                                (click)="onLoadMoreNode(node, $event)">
+                                <i class="pi pi-plus-circle"></i>
+                                {{ 'dot.file.field.host.folder.action.load.more' | dm }}
+                            </button>
+                        </ng-template>
+                        <ng-template pTemplate="togglericon" let-expanded let-loading="loading">
+                            @if (loading) {
+                                <i class="pi pi-spin pi-spinner text-sm text-surface-400"></i>
+                            } @else {
+                                <i
+                                    class="pi text-sm"
+                                    [class.pi-chevron-down]="expanded"
+                                    [class.pi-chevron-right]="!expanded"></i>
+                            }
+                        </ng-template>
+                    </p-tree>
+                }
+            </div>
+        </div>
+
+        <div
+            class="flex shrink-0 items-center justify-end rounded-b-(--p-popover-border-radius) border-t border-gray-300 bg-gray-50 p-3"
+            data-testid="host-folder-footer">
+            <button
+                type="button"
+                pButton
+                class="p-button-sm"
+                data-testid="host-folder-select"
+                (click)="onSelect()">
+                {{ 'dot.file.field.host.folder.action.select' | dm }}
+            </button>
+        </div>
+    </div>
+</p-popover>

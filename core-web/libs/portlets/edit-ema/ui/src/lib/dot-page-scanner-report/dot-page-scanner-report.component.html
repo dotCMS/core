@@ -1,0 +1,129 @@
+<p-dialog
+    [visible]="$state.visible()"
+    [header]="
+        ($state.reportType() === 'a11y'
+            ? 'page.scanner.a11y.dialog.title'
+            : 'page.scanner.geo.dialog.title'
+        ) | dm
+    "
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [maximizable]="true"
+    [style]="{ height: '90vh', width: '860px' }"
+    [appendTo]="'body'"
+    (onHide)="onDialogHide()"
+    (visibleChange)="onVisibleChange($event)">
+    <div class="p-4 h-full">
+        @switch ($state.status()) {
+            @case ('pending') {
+                <dot-page-scan-loading />
+            }
+            @case ('done') {
+                @if ($state.isPrivateUrlError()) {
+                    @if (!$state.tunnelConsentAccepted()) {
+                        <!-- Consent gate -->
+                        <dot-page-scanner-message
+                            icon="vpn_lock"
+                            [title]="'page.scanner.error.private.url.title' | dm"
+                            [description]="'page.scanner.error.private.url.consent' | dm">
+                            <p class="text-yellow-700 m-0 font-medium">
+                                {{ 'page.scanner.error.private.url.consent.warning' | dm }}
+                            </p>
+                            <p-button
+                                icon="pi pi-check"
+                                [outlined]="true"
+                                [label]="'page.scanner.error.private.url.consent.accept' | dm"
+                                (onClick)="acceptTunnelConsent()" />
+                        </dot-page-scanner-message>
+                    } @else {
+                        <!-- Tunnel instructions -->
+                        <div
+                            class="flex flex-col items-center py-10 gap-6 text-center max-w-lg mx-auto">
+                            <span class="material-symbols-outlined text-6xl! text-gray-400">
+                                vpn_lock
+                            </span>
+                            <p class="font-bold text-xl m-0">
+                                {{ 'page.scanner.error.private.url.title' | dm }}
+                            </p>
+                            <ol class="w-full text-left list-none p-0 m-0 flex flex-col gap-4">
+                                <!-- Step 1: Install -->
+                                <li
+                                    class="bg-gray-50 border border-solid border-gray-200 rounded-xl p-6">
+                                    <p class="m-0 mb-1 font-semibold">
+                                        1. {{ 'page.scanner.error.private.url.step1' | dm }}
+                                    </p>
+                                    <p class="m-0 mb-3 text-gray-600">
+                                        {{
+                                            'page.scanner.error.private.url.step1.description' | dm
+                                        }}
+                                    </p>
+                                    <p class="text-center">
+                                        <a
+                                            href="https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="text-primary! inline-flex items-center gap-1 no-underline font-medium">
+                                            {{ 'page.scanner.error.private.url.step1.docs' | dm }}
+                                            <span class="material-symbols-outlined text-base!">
+                                                open_in_new
+                                            </span>
+                                        </a>
+                                    </p>
+                                </li>
+                                <!-- Step 2: Run tunnel -->
+                                <li
+                                    class="bg-gray-50 border border-solid border-gray-200 rounded-xl p-6">
+                                    <p class="m-0 mb-1 font-semibold">
+                                        2. {{ 'page.scanner.error.private.url.step2' | dm }}
+                                    </p>
+                                    <p class="m-0 mb-3 text-gray-600">
+                                        {{
+                                            'page.scanner.error.private.url.step2.description' | dm
+                                        }}
+                                    </p>
+                                    <pre
+                                        class="m-0 bg-gray-900 text-green-400 rounded-lg p-3 font-mono overflow-x-auto text-sm">
+cloudflared tunnel --url &lt;your-local-url&gt;</pre
+                                    >
+                                </li>
+                                <!-- Step 3: Try again -->
+                                <li
+                                    class="bg-gray-50 border border-solid border-gray-200 rounded-xl p-6">
+                                    <p class="m-0 mb-1 font-semibold">
+                                        3. {{ 'page.scanner.error.private.url.step3' | dm }}
+                                    </p>
+                                    <p class="m-0 text-gray-600">
+                                        {{
+                                            'page.scanner.error.private.url.step3.description' | dm
+                                        }}
+                                    </p>
+                                </li>
+                            </ol>
+                        </div>
+                    }
+                } @else if ($state.isNotConfiguredError()) {
+                    <dot-page-scanner-message
+                        icon="settings"
+                        [title]="'page.scanner.error.not.configured.title' | dm"
+                        [description]="'page.scanner.error.not.configured.description' | dm" />
+                } @else if ($state.isAuthFailedError()) {
+                    <dot-page-scanner-message
+                        icon="key_off"
+                        [title]="'page.scanner.error.auth.failed.title' | dm"
+                        [description]="'page.scanner.error.auth.failed.description' | dm" />
+                } @else if ($state.error()) {
+                    <dot-page-scanner-message
+                        icon="error_outline"
+                        [title]="$state.error()!"
+                        description="" />
+                } @else if ($state.reportType() === 'a11y') {
+                    <dot-page-scanner-a11y-report [a11yData]="$state.a11yData()!" />
+                } @else {
+                    <dot-page-scanner-geo-report [geoData]="$state.geoData()!" />
+                }
+            }
+        }
+    </div>
+</p-dialog>

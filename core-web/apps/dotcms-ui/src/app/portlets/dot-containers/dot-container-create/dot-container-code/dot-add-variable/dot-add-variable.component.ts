@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -16,7 +16,7 @@ import { DotAddVariableState, DotAddVariableStore } from './store/dot-add-variab
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
-    imports: [CommonModule, ButtonModule, DataViewModule, DotMessagePipe],
+    imports: [ButtonModule, DataViewModule, DotMessagePipe, AsyncPipe],
     providers: [DotAddVariableStore, DotFieldsService]
 })
 export class DotAddVariableComponent implements OnInit {

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DotHttpError } from '../client/public';
+import { StyleEditorFormSchema } from '../style-editor/internal';
 
 /**
  * Represents a map of style property keys and their corresponding values
@@ -83,6 +84,7 @@ export interface DotPageAssetLayoutRow {
     id?: string;
     columns: DotPageAssetLayoutColumn[];
     styleClass?: string;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -137,6 +139,7 @@ export interface DotPageAssetLayoutColumn {
     leftOffset: number;
     left: number;
     styleClass?: string;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -558,6 +561,7 @@ export interface DotCMSPage {
     liveInode: string;
     shortyLive: string;
     canSeeRules?: boolean;
+    styleEditorSchemas?: StyleEditorFormSchema[];
 }
 
 /**
@@ -1117,6 +1121,7 @@ export interface DotCMSGraphQLPage {
     statusIcons: string;
     runningExperimentId?: string;
     canSeeRules?: boolean;
+    numberContents?: number;
     // Language information
     conLanguage: {
         id: number;
@@ -1135,6 +1140,7 @@ export interface DotCMSGraphQLPage {
     host: DotCMSSite;
     vanityUrl: DotCMSVanityUrl;
     _map: Record<string, unknown>;
+    styleEditorSchemas?: StyleEditorFormSchema[] | null;
 }
 
 /**
@@ -1161,15 +1167,37 @@ export interface DotCMSPageContainerContentlets {
 }
 
 /**
- * dotCMS's GraphQL API response with a page and content query
+ * Raw GraphQL API response for a dotCMS page query.
+ *
+ * Shape varies by failure mode:
+ * - Success:          { data: { page: DotCMSGraphQLPage, ... }, errors: undefined }
+ * - Page not found:   { data: { page: null }, errors: [{ extensions: { code: 'NOT_FOUND' } }] }
+ * - Bad query:        { data: null, errors: [{ message: '...' }] }
+ * - Partial failure:  { data: { page: DotCMSGraphQLPage, ... }, errors: [...] }
+ *                     (page loaded but secondary content queries failed)
+ *
+ * Always check `errors` even when `data` is present — partial failures surface both.
  */
 export interface DotGraphQLApiResponse {
     data: {
-        page: DotCMSGraphQLPage;
+        page: DotCMSGraphQLPage | null;
         content?: Record<string, unknown>;
-    };
+    } | null;
     errors?: DotCMSGraphQLError[];
 }
+
+/**
+ * Error codes returned by the DotCMS GraphQL API.
+ * - NOT_FOUND: The requested page or resource does not exist (HTTP 404)
+ * - PERMISSION_DENIED: The user lacks permission or is not authenticated (always HTTP 403 — dotCMS does not distinguish 401 vs 403 at the GraphQL layer)
+ * - INVALID_LANGUAGE: The languageId provided is not a valid language (HTTP 400)
+ * - BAD_REQUEST: The GraphQL query itself is malformed or invalid (HTTP 400)
+ */
+export type DotCMSGraphQLErrorCode =
+    | 'NOT_FOUND'
+    | 'PERMISSION_DENIED'
+    | 'INVALID_LANGUAGE'
+    | 'BAD_REQUEST';
 
 /**
  * Represents a GraphQL error
@@ -1177,12 +1205,21 @@ export interface DotGraphQLApiResponse {
  */
 export interface DotCMSGraphQLError {
     message: string;
-    locations: {
+    locations?: {
         line: number;
         column: number;
     }[];
-    extensions: {
-        classification: string;
+    path?: string[];
+    extensions?: {
+        classification?: string;
+        /** Structured error code from DotCMS backend — use this for programmatic error handling */
+        code?: DotCMSGraphQLErrorCode;
+        /** HTTP status hint from backend (e.g. 404, 400) */
+        status?: number;
+        /** The type of resource that was not found, if applicable */
+        resourceType?: string;
+        /** The identifier of the resource that was not found, if applicable */
+        resourceId?: string;
     };
 }
 
@@ -1192,11 +1229,21 @@ export interface DotCMSGraphQLError {
 export interface DotCMSPageResponse {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
+    /**
+     * @deprecated Use `errors` instead. Will be removed in August 2026. Kept for backward compatibility — represents the first GraphQL error when present.
+     */
     error?: DotCMSGraphQLError;
+    /**
+     * GraphQL errors surfaced by the request. Always an array — empty when there are none — so the
+     * response stays JSON-serializable (Next.js Pages Router rejects `undefined` props). Check
+     * `errors.length`, not `errors != null`.
+     */
+    errors: DotCMSGraphQLError[];
     graphql: {
         query: string;
         variables: Record<string, unknown>;
     };
+    styleEditorSchemas?: StyleEditorFormSchema[];
 }
 
 // Pick only the page and content properties to be able to extend these properties, they are optional
@@ -1231,6 +1278,8 @@ export type DotCMSClientPageGetResponse<T extends DotCMSExtendedPageResponse> = 
  * Wraps HTTP errors and adds page-specific context including GraphQL information
  */
 export class DotErrorPage extends Error {
+    public readonly status: number;
+    public readonly code: DotCMSGraphQLErrorCode | 'UNKNOWN';
     public readonly httpError?: DotHttpError;
     public readonly graphql?: {
         query: string;
@@ -1239,11 +1288,15 @@ export class DotErrorPage extends Error {
 
     constructor(
         message: string,
+        status = 500,
+        code: DotCMSGraphQLErrorCode | 'UNKNOWN' = 'UNKNOWN',
         httpError?: DotHttpError,
         graphql?: { query: string; variables: Record<string, unknown> }
     ) {
         super(message);
         this.name = 'DotCMSPageError';
+        this.status = status;
+        this.code = code;
         this.httpError = httpError;
         this.graphql = graphql;
 
@@ -1258,6 +1311,8 @@ export class DotErrorPage extends Error {
         return {
             name: this.name,
             message: this.message,
+            status: this.status,
+            code: this.code,
             httpError: this.httpError?.toJSON(),
             graphql: this.graphql,
             stack: this.stack

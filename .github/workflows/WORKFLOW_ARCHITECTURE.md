@@ -727,13 +727,13 @@ Navigate to: https://github.com/dotCMS/core/actions → **"-6 Release Process"**
 
 ### Optional Configurations
 
-| Option | Default | Purpose |
-|--------|---------|---------|
-| **Deploy Artifact** | ✅ Enabled | Deploy to Artifactory (repo.dotcms.com)<br/>**Required for successful release** |
-| **Update Plugins** | ✅ Enabled | Triggers plugin-seeds repo update<br/>**Note**: Currently requires manual execution at [plugin-seeds/release-target.yml](https://github.com/dotCMS/plugin-seeds/actions/workflows/release-target.yml) |
-| **Upload Javadocs** | ✅ Enabled | Generate and upload to S3 static bucket<br/>Creates HTML documentation bundle |
-| **Update GitHub Labels** | ✅ Enabled | Replaces "Next Release" with "Release vX.X.X"<br/>Enables filtering issues by release |
-| **Notify Slack** | ✅ Enabled | Posts announcement to general channel<br/>Can disable for testing |
+| Option | Default | Purpose                                                                                                                                                                                                                                   |
+|--------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Deploy Artifact** | ✅ Enabled | Deploy to Artifactory (repo.dotcms.com)<br/>**Required for successful release**                                                                                                                                                           |
+| **Update Plugins** | ✅ Enabled | Triggers plugin-examples repo update<br/>**Note**: Currently requires manual execution at [dotcms-community/plugin-examples/release-target.yml](https://github.com/dotcms-community/plugin-examples/actions/workflows/release-target.yml) |
+| **Upload Javadocs** | ✅ Enabled | Generate and upload to S3 static bucket<br/>Creates HTML documentation bundle                                                                                                                                                             |
+| **Update GitHub Labels** | ✅ Enabled | Replaces "Next Release" with "Release vX.X.X"<br/>Enables filtering issues by release                                                                                                                                                     |
+| **Notify Slack** | ✅ Enabled | Posts announcement to general channel<br/>Can disable for testing                                                                                                                                                                         |
 
 ### Process Overview
 
@@ -1055,4 +1055,3 @@ Our CI/CD architecture delivers significant benefits over traditional monolithic
 **Last Updated**: December 2024  
 **Maintained By**: dotCMS DevOps Team  
 **Questions?** Contact #guild-dev-pipeline on Slack
-

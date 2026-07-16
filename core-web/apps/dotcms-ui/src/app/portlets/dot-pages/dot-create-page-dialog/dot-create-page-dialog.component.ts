@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -17,12 +16,10 @@ import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-create-page-dialog',
     imports: [
-        CommonModule,
         DotAutofocusDirective,
         DotMessagePipe,
         InputTextModule,
         ReactiveFormsModule,
-        DotMessagePipe,
         DialogModule,
         IconFieldModule,
         InputIconModule

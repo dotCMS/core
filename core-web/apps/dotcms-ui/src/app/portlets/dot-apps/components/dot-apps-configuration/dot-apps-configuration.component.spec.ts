@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
@@ -22,13 +20,8 @@ import {
     DotRouterService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import {
-    CoreWebServiceMock,
-    MockDotMessageService,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
@@ -142,7 +135,6 @@ describe('DotAppsConfigurationComponent', () => {
                         provide: DotRouterService,
                         useClass: MockDotRouterService
                     },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
                     DotAppsConfigurationResolver,
                     PaginatorService,
                     DotAlertConfirmService,

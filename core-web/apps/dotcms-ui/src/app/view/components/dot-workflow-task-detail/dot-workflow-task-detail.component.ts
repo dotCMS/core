@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
@@ -17,7 +17,7 @@ import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog
 @Component({
     selector: 'dot-workflow-task-detail',
     templateUrl: './dot-workflow-task-detail.component.html',
-    imports: [CommonModule, DotIframeDialogComponent]
+    imports: [DotIframeDialogComponent, AsyncPipe]
 })
 export class DotWorkflowTaskDetailComponent implements OnInit {
     private dotWorkflowTaskDetailService = inject(DotWorkflowTaskDetailService);

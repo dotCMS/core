@@ -1,6 +1,6 @@
 import { Observable, Subject, fromEvent } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, inject } from '@angular/core';
 import {
     FormsModule,
@@ -36,7 +36,6 @@ import { DotTemplateItem } from '../store/dot-template.store';
     styleUrls: ['./dot-template-props.component.scss'],
     providers: [DotTempFileUploadService],
     imports: [
-        CommonModule,
         DotFieldValidationMessageComponent,
         ButtonModule,
         FocusTrapModule,
@@ -47,7 +46,8 @@ import { DotTemplateItem } from '../store/dot-template.store';
         DotMessagePipe,
         DotTemplateThumbnailFieldComponent,
         DotThemeComponent,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        AsyncPipe
     ]
 })
 export class DotTemplatePropsComponent implements OnInit, OnDestroy {

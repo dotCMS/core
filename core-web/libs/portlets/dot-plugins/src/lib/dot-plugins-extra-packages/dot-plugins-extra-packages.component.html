@@ -1,0 +1,78 @@
+<div class="flex flex-col h-full gap-4">
+    <p class="m-0">{{ 'plugins.extra-packages.instructions' | dm }}</p>
+
+    <div class="flex items-center gap-2">
+        <p-iconfield iconPosition="left" class="flex-1">
+            <p-inputicon class="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                class="w-full"
+                [placeholder]="'plugins.extra-packages.search.placeholder' | dm"
+                [ngModel]="searchQuery()"
+                (ngModelChange)="onSearchChange($event)"
+                data-testid="plugins-extra-packages-search" />
+        </p-iconfield>
+
+        @if (searchQuery()) {
+            <span
+                class="text-sm text-color-secondary whitespace-nowrap"
+                data-testid="plugins-extra-packages-search-count">
+                @if (matchCount() === 0) {
+                    {{ 'plugins.extra-packages.search.no-match' | dm }}
+                } @else {
+                    {{ currentMatchIndex() + 1 }} / {{ matchCount() }}
+                }
+            </span>
+            <p-button
+                icon="pi pi-chevron-up"
+                [rounded]="true"
+                [text]="true"
+                size="small"
+                [disabled]="matchCount() === 0"
+                (onClick)="prevMatch()"
+                data-testid="plugins-extra-packages-search-prev"
+                [attr.aria-label]="'plugins.extra-packages.search.prev' | dm" />
+            <p-button
+                icon="pi pi-chevron-down"
+                [rounded]="true"
+                [text]="true"
+                size="small"
+                [disabled]="matchCount() === 0"
+                (onClick)="nextMatch()"
+                data-testid="plugins-extra-packages-search-next"
+                [attr.aria-label]="'plugins.extra-packages.search.next' | dm" />
+        }
+    </div>
+
+    <textarea
+        #packagesTextarea
+        pTextarea
+        [ngModel]="extraPackages()"
+        (ngModelChange)="extraPackages.set($event)"
+        class="w-full flex-1 min-h-0 resize-none"
+        data-testid="plugins-extra-packages-textarea"
+        [attr.aria-label]="'plugins.extra-packages.title' | dm"></textarea>
+
+    <div class="flex items-center justify-end gap-2">
+        <p-button
+            [label]="'plugins.cancel' | dm"
+            [text]="true"
+            (onClick)="close()"
+            data-testid="plugins-extra-packages-cancel-btn" />
+        <p-button
+            [label]="'plugins.extra-packages.reset' | dm"
+            severity="secondary"
+            [outlined]="true"
+            [loading]="resetting()"
+            (onClick)="confirmReset()"
+            data-testid="plugins-extra-packages-reset-btn" />
+        <p-button
+            [label]="'plugins.save' | dm"
+            [loading]="saving()"
+            (onClick)="save()"
+            data-testid="plugins-extra-packages-save-btn" />
+    </div>
+</div>
+
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />

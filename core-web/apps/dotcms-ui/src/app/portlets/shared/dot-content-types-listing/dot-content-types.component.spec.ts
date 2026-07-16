@@ -3,7 +3,8 @@
 
 import { Observable, throwError as observableThrowError, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -27,7 +28,6 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotPushPublishDialogService,
     HttpCode,
     LoggerService,
@@ -36,7 +36,6 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
     MockPushPublishService
@@ -188,11 +187,12 @@ describe('DotContentTypesPortletComponent', () => {
                 BrowserAnimationsModule,
                 DotListingDataTableComponent,
                 ReactiveFormsModule,
-                HttpClientTestingModule,
                 MockDotPortletBaseComponent,
                 MockDotAddToMenuComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypesInfoService,
                 DotCrudService,
                 DotAlertConfirmService,
@@ -202,7 +202,6 @@ describe('DotContentTypesPortletComponent', () => {
                 ConfirmationService,
                 LoggerService,
                 StringUtils,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },

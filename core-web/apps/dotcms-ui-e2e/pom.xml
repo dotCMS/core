@@ -18,8 +18,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <license.use>true</license.use>
         <skip.npm.install>false</skip.npm.install>
-        <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
-        <playwright.install.cmd>exec playwright install --with-deps chromium</playwright.install.cmd>
+        <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
+        <playwright.install.cmd>exec sh -c 'sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libasound2t64 &gt;/dev/null 2&gt;&amp;1 || true; pnpm exec playwright install chromium'</playwright.install.cmd>
         <e2e.test.skip>true</e2e.test.skip>
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>../../</e2e.frontend.dir>
@@ -42,60 +42,66 @@
 
     <build>
         <plugins>
+            <!-- dotcms-ui-e2e reuses core-web's node_modules (workingDirectory=../../)
+                 and uses pnpm, matching core-web. -->
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <executable>${node.install.dir}/pnpm</executable>
+                    <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                    <environmentVariables>
+                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                    </environmentVariables>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>install</id>
+                        <id>pnpm-install</id>
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>exec</goal>
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                             <skip>${skip.npm.install}</skip>
-                            <arguments>${yarn.install.cmd}</arguments>
+                            <commandlineArgs>${pnpm.install.args}</commandlineArgs>
                         </configuration>
                     </execution>
                     <execution>
                         <id>install-playwright</id>
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>exec</goal>
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                             <skip>${e2e.test.skip}</skip>
-                            <arguments>${playwright.install.cmd}</arguments>
+                            <commandlineArgs>${playwright.install.cmd}</commandlineArgs>
                         </configuration>
                     </execution>
                     <execution>
                         <id>run node script</id>
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>exec</goal>
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
-                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                             <skip>${e2e.test.skip}</skip>
-                            <arguments>${e2e.test.cmd}</arguments>
+                            <commandlineArgs>exec ${e2e.test.cmd}</commandlineArgs>
                             <environmentVariables>
                                 <CI>true</CI>
                                 <CURRENT_ENV>${e2e.test.env}</CURRENT_ENV>
+                                <PATH>${node.install.dir}:${env.PATH}</PATH>
                             </environmentVariables>
                         </configuration>
                     </execution>
                     <execution>
                         <id>run post node script</id>
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>exec</goal>
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
-                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                             <skip>${e2e.test.skip}</skip>
-                            <arguments>${e2e.post.test.cmd}</arguments>
+                            <commandlineArgs>${e2e.post.test.cmd}</commandlineArgs>
                         </configuration>
                     </execution>
                 </executions>
@@ -151,6 +157,7 @@
                                 <env>
                                     <CATALINA_OPTS>-XX:+PrintFlagsFinal</CATALINA_OPTS>
                                     <DB_MAX_TOTAL>15</DB_MAX_TOTAL>
+                                    <DB_MAX_WAIT>120000</DB_MAX_WAIT>
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>

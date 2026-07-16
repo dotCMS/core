@@ -95,16 +95,18 @@ public class DashboardMetricsProvider {
             
             // Use a list that stores both the metric and its annotation for efficient sorting
             final List<MetricWithAnnotation> dashboardMetricsWithAnnotation = new ArrayList<>();
-            
+            int annotatedCount = 0;
+
             // Iterate through Bean objects to check annotations on actual classes
             for (Bean<?> bean : allBeans) {
                 final Class<?> beanClass = bean.getBeanClass();
-                
+
                 // Check if the bean class has @DashboardMetric annotation
                 // bean.getBeanClass() returns the actual class, not the proxy
                 if (beanClass.isAnnotationPresent(DashboardMetric.class)) {
+                    annotatedCount++;
                     final DashboardMetric annotation = beanClass.getAnnotation(DashboardMetric.class);
-                    
+
                     // Validate: All metrics must have @MetricsProfile annotation
                     if (!beanClass.isAnnotationPresent(MetricsProfile.class)) {
                         Logger.error(this, String.format(
@@ -113,25 +115,32 @@ public class DashboardMetricsProvider {
                             "Please add @MetricsProfile annotation to the metric class.",
                             beanClass.getName()));
                     }
-                    
-                    // Get the actual bean instance from CDI
-                    final MetricType metric = (MetricType) beanManager.getReference(
-                            bean, MetricType.class, beanManager.createCreationalContext(bean));
-                    
-                    // Apply profile filter
-                    if (ProfileFilter.matches(metric, activeProfile)) {
-                        dashboardMetricsWithAnnotation.add(new MetricWithAnnotation(metric, annotation));
-                        Logger.debug(this, () -> String.format("Found dashboard metric: %s (category: %s, priority: %d)",
-                                beanClass.getName(), annotation.category(), annotation.priority()));
-                    } else {
-                        Logger.debug(this, () -> String.format("Excluding dashboard metric %s (does not match profile %s)",
-                                beanClass.getName(), activeProfile));
+
+                    // Get the actual bean instance from CDI, releasing the CreationalContext
+                    // after use. For @ApplicationScoped beans the container owns the lifecycle,
+                    // but releasing avoids leaking dependent objects created during resolution.
+                    final javax.enterprise.context.spi.CreationalContext<?> ctx = beanManager.createCreationalContext(bean);
+                    try {
+                        final MetricType metric = (MetricType) beanManager.getReference(bean, MetricType.class, ctx);
+
+                        // Apply profile filter
+                        if (ProfileFilter.matches(metric, activeProfile)) {
+                            dashboardMetricsWithAnnotation.add(new MetricWithAnnotation(metric, annotation));
+                            Logger.debug(this, () -> String.format("Found dashboard metric: %s (category: %s, priority: %d)",
+                                    beanClass.getName(), annotation.category(), annotation.priority()));
+                        } else {
+                            Logger.debug(this, () -> String.format("Excluding dashboard metric %s (does not match profile %s)",
+                                    beanClass.getName(), activeProfile));
+                        }
+                    } finally {
+                        ctx.release();
                     }
                 }
             }
 
+            final int finalAnnotatedCount = annotatedCount;
             Logger.debug(this, () -> String.format("CDI discovered %d total MetricType beans, %d annotated with @DashboardMetric, %d match profile %s",
-                    allBeans.size(), dashboardMetricsWithAnnotation.size(), dashboardMetricsWithAnnotation.size(), activeProfile));
+                    allBeans.size(), finalAnnotatedCount, dashboardMetricsWithAnnotation.size(), activeProfile));
             
             // Sort by priority (from @DashboardMetric annotation)
             dashboardMetricsWithAnnotation.sort(Comparator.comparingInt(m -> m.annotation.priority()));
@@ -235,14 +244,14 @@ public class DashboardMetricsProvider {
     }
     
     /**
-     * Finds a dashboard metric by its {@link MetricType#getName()} value.
-     * 
-     * @param metricName the metric name to find
+     * Finds a dashboard metric by its qualified name ({@code FEATURE_NAME}).
+     *
+     * @param qualifiedName the qualified metric name to find (e.g., "CONTENTLETS_COUNT")
      * @return the metric if found, null otherwise
      */
-    public MetricType getDashboardMetricByName(final String metricName) {
+    public MetricType getDashboardMetricByName(final String qualifiedName) {
         return getDashboardMetrics().stream()
-                .filter(metric -> metricName.equals(metric.getName()))
+                .filter(metric -> qualifiedName.equals(metric.getQualifiedName()))
                 .findFirst()
                 .orElse(null);
     }

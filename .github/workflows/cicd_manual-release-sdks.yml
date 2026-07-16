@@ -1,11 +1,23 @@
-name: 'Manual SDK Release'
+# DEPRECATED — retired by ADR-0019 (date-lockstep SDK versioning):
+#   platform-adrs/decisions/0019-sdk-cms-date-lockstep-versioning.md
+#
+# SDK publishing no longer has an independent version or a manual trigger. Every dotCMS
+# release now automatically publishes the matching @dotcms/* SDK packages at the release's
+# exact version — see cicd_release-sdk.yml (triggered by `release: created`, same pattern
+# already used by cicd_release-cli.yml for @dotcms/dotcli).
+#
+# This workflow is kept disabled (rather than deleted outright) for a clean revert path,
+# per the ADR's "confirm before deleting" guidance. It intentionally fails immediately so
+# it can never accidentally publish an off-version/independent-SemVer SDK release.
+
+name: 'Manual SDK Release (DEPRECATED)'
 
 on:
   workflow_dispatch:
     inputs:
       version-type:
-        description: 'Version increment type'
-        required: true
+        description: 'DEPRECATED — this workflow no longer publishes. See cicd_release-sdk.yml.'
+        required: false
         type: choice
         options:
           - 'patch'
@@ -14,72 +26,18 @@ on:
           - 'custom'
         default: 'patch'
       custom-version:
-        description: 'Custom version (e.g., 1.3.4, 2.1.0) - only used when version-type is "custom"'
+        description: 'DEPRECATED — unused.'
         required: false
         type: string
         default: ''
-      ref:
-        description: 'Branch to build from'
-        required: false
-        type: string
-        default: 'main'
 
 jobs:
-  release-sdks:
-    name: 'Release SDK Packages'
-    runs-on: ubuntu-latest
-    
+  deprecated:
+    name: 'Deprecated — see cicd_release-sdk.yml'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      - name: 'Checkout repository'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 'Validate inputs'
+      - name: 'Fail with pointer to the new SDK release mechanism'
         run: |
-          echo "::group::Input validation"
-          echo "Version type: ${{ inputs.version-type }}"
-          echo "Custom version: ${{ inputs.custom-version }}"
-          echo "Branch: ${{ inputs.ref }}"
-          
-          # Validate that custom-version is provided when version-type is custom
-          if [ "${{ inputs.version-type }}" = "custom" ]; then
-            if [ -z "${{ inputs.custom-version }}" ]; then
-              echo "::error::Custom version must be provided when version-type is 'custom'"
-              echo "Please provide a valid semantic version (e.g., 1.3.4, 2.0.0, 1.2.1)"
-              exit 1
-            fi
-            
-            # Basic semver validation
-            if [[ ! "${{ inputs.custom-version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "::error::Invalid custom version format: '${{ inputs.custom-version }}'"
-              echo "Version must follow semantic versioning format: major.minor.patch (e.g., 1.3.4)"
-              exit 1
-            fi
-            
-            echo "✅ Custom version '${{ inputs.custom-version }}' is valid"
-          fi
-          echo "::endgroup::"
-
-      - name: 'Deploy JavaScript SDK'
-        id: deploy-javascript-sdk
-        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
-        with:
-          ref: ${{ inputs.ref }}
-          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
-          npm-package-tag: 'latest'
-          version-type: ${{ inputs.version-type }}
-          custom-version: ${{ inputs.custom-version }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 'Display results'
-        if: always()
-        run: |
-          echo "::group::Release Summary"
-          echo "Version type used: ${{ steps.deploy-javascript-sdk.outputs.version-type-used || inputs.version-type }}"
-          echo "Published to latest: ${{ steps.deploy-javascript-sdk.outputs.published-latest || 'unknown' }}"
-          echo "Published to next: ${{ steps.deploy-javascript-sdk.outputs.published-next || 'unknown' }}"
-          echo "NPM package version: ${{ steps.deploy-javascript-sdk.outputs.npm-package-version || 'unknown' }}"
-          echo "Next version: ${{ steps.deploy-javascript-sdk.outputs.npm-package-version-next || 'unknown' }}"
-          echo "::endgroup::"
+          echo "::error::This workflow is deprecated (ADR-0019). SDK packages are no longer released independently."
+          echo "::error::Cutting a dotCMS release (cicd_6-release.yml) now automatically publishes the matching SDK packages via cicd_release-sdk.yml."
+          exit 1

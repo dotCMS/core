@@ -24,12 +24,13 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -409,7 +410,16 @@ public class ESSiteSearchPublisher extends Publisher {
                     res.setLanguage(((Contentlet) page).getLanguageId());
                     // map contains [fileSize, content, author, title, keywords,
                     // description, contentType, contentEncoding]
-                    res.setTitle(page.getTitle());
+                    // When SITE_SEARCH_USE_HTML_TITLE=true, prefer the rendered <title> from Tika
+                    // metadata (same source as legacy StaticHTMLPageBundler behavior and URLMap
+                    // pages), falling back to page.getTitle() only when absent.
+                    // Default is false to preserve current behavior.
+                    if (Config.getBooleanProperty("SITE_SEARCH_USE_HTML_TITLE", false)
+                            && UtilMethods.isSet((String) map.get("title"))) {
+                        res.setTitle((String) map.get("title"));
+                    } else {
+                        res.setTitle(page.getTitle());
+                    }
 
                     res.setContentLength(htmlFile.length());
                     res.setMimeType((String)map.get("contentType"));

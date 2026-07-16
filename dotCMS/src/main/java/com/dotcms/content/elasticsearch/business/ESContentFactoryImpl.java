@@ -130,7 +130,7 @@ import org.apache.commons.lang.StringUtils;
 
 @IndexLibraryIndependent
 @IndexRouter(
-        access = IndexAccess.READ_ONLY
+        access = {IndexAccess.READ}
 )
 public class ESContentFactoryImpl implements ContentletFactory {
 
@@ -853,7 +853,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != cachedContentlet.getContentType() && cachedContentlet.getContentType().hasStoryBlockFields()) {
+        final ContentType contentType = cachedContentlet.getContentType();
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != contentType && contentType.hasStoryBlockFields()) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
@@ -2092,7 +2093,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	    SearchHits hits = indexSearch(query, limit, offset, sortBy);
 	    List<String> inodes=new ArrayList<>();
 	    for(SearchHit h : hits){
-            inodes.add(Try.of(()->h.sourceAsMap().get("inode").toString()).getOrNull());
+            inodes.add(Try.of(()->h.getSourceAsMap().get("inode").toString()).getOrNull());
         }
 	    return findContentlets(inodes);
 	}

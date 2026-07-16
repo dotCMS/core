@@ -5,7 +5,7 @@
             background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #faf5ff 100%);
             position: relative;
         ">
-        <div class="max-w-[77.42rem] mx-auto px-5 py-8">
+        <div class="mx-auto max-w-[77.42rem] px-5 py-8">
             <p-button
                 link
                 icon="pi pi-refresh"
@@ -13,37 +13,37 @@
                 iconPos="left"
                 icon="pi pi-refresh"
                 class="button-link absolute top-5 right-5"
-                (click)="resetUserProfile()"></p-button>
+                (click)="resetUserProfile()" />
 
-            <div class="col-12 dot-starter-header mt-4">
+            <div class="dot-starter-header col-12 mt-4">
                 <div>
-                    <h3 class="p-0 m-0 text-2xl">Create Your First dotCMS Content Experience</h3>
+                    <h3 class="m-0 p-0 text-2xl">Create Your First dotCMS Content Experience</h3>
                     <p
                         [innerHTML]="'starter.description' | dm: [user.username]"
-                        class="mt-6 ml-2 mb-4"></p>
+                        class="mt-6 mb-4 ml-2"></p>
                 </div>
             </div>
 
-            <div class="flex gap-3 mb-12">
+            <div class="mb-12 flex gap-3">
                 @if (user.showCreateDataModelLink) {
                     <a
-                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        class="flex flex-1 flex-col rounded-md border-b border-gray-300 bg-white p-6 no-underline shadow-lg transition-colors duration-150 hover:bg-(--primary-100)"
                         style="text-decoration: none"
                         data-testId="starter.main.link.data.model"
                         routerLink="/content-types-angular/create/content">
-                        <div class="self-center mb-4">
+                        <div class="mb-4 self-center">
                             <span
-                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                class="inline-flex size-16 items-center justify-center text-5xl font-bold text-(--primary-500)">
                                 1
                             </span>
                         </div>
-                        <div class="self-center grow text-center">
+                        <div class="grow self-center text-center">
                             <h4
-                                class="text-black text-base font-semibold m-0 mb-2"
+                                class="m-0 mb-2 text-base font-semibold text-black"
                                 style="text-decoration: none">
                                 {{ 'starter.main.link.data.model.title' | dm }}
                             </h4>
-                            <p class="text-gray-700 m-0 text-sm">
+                            <p class="m-0 text-sm text-gray-700">
                                 {{ 'starter.main.link.data.model.description' | dm }}
                             </p>
                         </div>
@@ -51,23 +51,23 @@
                 }
                 @if (user.showCreateContentLink) {
                     <a
-                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        class="flex flex-1 flex-col rounded-md border-b border-gray-300 bg-white p-6 no-underline shadow-lg transition-colors duration-150 hover:bg-(--primary-100)"
                         style="text-decoration: none"
                         data-testId="starter.main.link.content"
                         routerLink="/c/content/new/webPageContent">
-                        <div class="self-center mb-4">
+                        <div class="mb-4 self-center">
                             <span
-                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                class="inline-flex size-16 items-center justify-center text-5xl font-bold text-(--primary-500)">
                                 2
                             </span>
                         </div>
-                        <div class="self-center grow text-center">
+                        <div class="grow self-center text-center">
                             <h4
-                                class="text-black text-base font-semibold m-0 mb-2"
+                                class="m-0 mb-2 text-base font-semibold text-black"
                                 style="text-decoration: none">
                                 {{ 'starter.main.link.add.content.title' | dm }}
                             </h4>
-                            <p class="text-gray-700 m-0 text-sm">
+                            <p class="m-0 text-sm text-gray-700">
                                 {{ 'starter.main.link.add.content.description' | dm }}
                             </p>
                         </div>
@@ -75,23 +75,23 @@
                 }
                 @if (user.showCreateTemplateLink) {
                     <a
-                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        class="flex flex-1 flex-col rounded-md border-b border-gray-300 bg-white p-6 no-underline shadow-lg transition-colors duration-150 hover:bg-(--primary-100)"
                         style="text-decoration: none"
                         data-testId="starter.main.link.design.layout"
                         routerLink="/templates/new/designer">
-                        <div class="self-center mb-4">
+                        <div class="mb-4 self-center">
                             <span
-                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                class="inline-flex size-16 items-center justify-center text-5xl font-bold text-(--primary-500)">
                                 3
                             </span>
                         </div>
-                        <div class="self-center grow text-center">
+                        <div class="grow self-center text-center">
                             <h4
-                                class="text-black text-base font-semibold m-0 mb-2"
+                                class="m-0 mb-2 text-base font-semibold text-black"
                                 style="text-decoration: none">
                                 {{ 'starter.main.link.design.layout.title' | dm }}
                             </h4>
-                            <p class="text-gray-700 m-0 text-sm">
+                            <p class="m-0 text-sm text-gray-700">
                                 {{ 'starter.main.link.design.layout.description' | dm }}
                             </p>
                         </div>
@@ -99,23 +99,23 @@
                 }
                 @if (user.showCreatePageLink) {
                     <a
-                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        class="flex flex-1 flex-col rounded-md border-b border-gray-300 bg-white p-6 no-underline shadow-lg transition-colors duration-150 hover:bg-(--primary-100)"
                         style="text-decoration: none"
                         data-testId="starter.main.link.create.page"
                         routerLink="/c/content/new/htmlpageasset">
-                        <div class="self-center mb-4">
+                        <div class="mb-4 self-center">
                             <span
-                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                class="inline-flex size-16 items-center justify-center text-5xl font-bold text-(--primary-500)">
                                 4
                             </span>
                         </div>
-                        <div class="self-center grow text-center">
+                        <div class="grow self-center text-center">
                             <h4
-                                class="text-black text-base font-semibold m-0 mb-2"
+                                class="m-0 mb-2 text-base font-semibold text-black"
                                 style="text-decoration: none">
                                 {{ 'starter.main.link.create.page.title' | dm }}
                             </h4>
-                            <p class="text-gray-700 m-0 text-sm">
+                            <p class="m-0 text-sm text-gray-700">
                                 {{ 'starter.main.link.create.page.description' | dm }}
                             </p>
                         </div>
@@ -125,25 +125,25 @@
 
             <div class="mb-8">
                 <h5
-                    class="text-base font-semibold m-0 border-b border-gray-300 pb-3 mb-6"
+                    class="m-0 mb-6 border-b border-gray-300 pb-3 text-base font-semibold"
                     data-testId="dot-side-title">
                     {{ 'starter.side.title' | dm }}
                 </h5>
-                <div class="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                <div class="grid gap-x-8 gap-y-6 md:grid-cols-2">
                     @for (api of apiAndServices; track api.dataTestId) {
                         <a
-                            class="block no-underline decoration-none mb-8"
+                            class="decoration-none mb-8 block no-underline"
                             style="text-decoration: none"
                             [href]="api.link"
                             [attr.data-testId]="api.dataTestId"
                             target="_blank"
                             rel="noopener">
                             <h4
-                                class="text-primary-500 text-base font-bold m-0 no-underline mb-2"
+                                class="m-0 mb-2 text-base font-bold text-primary-500 no-underline"
                                 style="text-decoration: none">
                                 {{ api.title | dm }}
                             </h4>
-                            <p class="text-gray-700 m-0">
+                            <p class="m-0 text-gray-700">
                                 {{ api.description | dm }}
                             </p>
                         </a>
@@ -153,30 +153,28 @@
 
             <div>
                 <h3
-                    class="text-base font-semibold m-0 border-b border-gray-300 pb-3 mb-6"
+                    class="m-0 mb-6 border-b border-gray-300 pb-3 text-base font-semibold"
                     data-test="dot-resources-title">
                     {{ 'starter.side.resources.title' | dm }}
                 </h3>
-                <div class="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     @for (resource of resources; track resource.dataTestId) {
                         <a
                             [href]="resource.link"
                             [attr.data-testId]="resource.dataTestId"
                             target="_blank"
                             rel="noopener"
-                            class="bg-white border-b border-gray-300 shadow-md grid grid-cols-[min-content_1fr] grid-rows-2 h-full overflow-hidden transition-colors duration-150 rounded-md gap-x-3 p-4 hover:bg-(--primary-100) no-underline"
+                            class="grid h-full grid-cols-[min-content_1fr] grid-rows-2 gap-x-3 overflow-hidden rounded-md border-b border-gray-300 bg-white p-4 no-underline shadow-md transition-colors duration-150 hover:bg-(--primary-100)"
                             style="text-decoration: none">
                             <i
-                                [class]="
-                                    `${resource.icon} text-(--primary-500) text-xl row-start-1 col-start-1 flex justify-center self-center`
-                                "></i>
+                                [class]="`${resource.icon} col-start-1 row-start-1 flex justify-center self-center text-xl text-(--primary-500)`"></i>
                             <h4
-                                class="text-black text-base font-semibold m-0 row-start-1 col-start-2 justify-start self-center"
+                                class="col-start-2 row-start-1 m-0 justify-start self-center text-base font-semibold text-black"
                                 style="text-decoration: none">
                                 {{ resource.title | dm }}
                             </h4>
 
-                            <p class="text-gray-700 m-0 text-sm row-start-2 col-start-2">
+                            <p class="col-start-2 row-start-2 m-0 text-sm text-gray-700">
                                 {{ resource.description | dm }}
                             </p>
                         </a>

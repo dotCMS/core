@@ -12,6 +12,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -410,10 +411,10 @@ public class ContentUtils {
 	                List<Contentlet> conts=pull(query, limit, sort, user, tmDate);
 	                ret = new ArrayList<>(conts.size());
 	                for(Contentlet cm : conts) {
-	                    ContentletSearch cs=new ContentletSearch();
-	                    cs.setInode((String)cm.get("inode"));
-	                    cs.setIdentifier((String)cm.get("identifier"));
-	                    ret.add(cs);
+	                    ret.add(ImmutableContentletSearch.builder()
+	                            .inode((String) cm.get("inode"))
+	                            .identifier((String) cm.get("identifier"))
+	                            .build());
 	                }   
 	            }
 	            else {
@@ -826,6 +827,23 @@ public class ContentUtils {
 	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode,
 										final long languageId, final int depth, final HttpServletRequest  request,
 										final HttpServletResponse response) {
+		addRelationships(contentlet, user, mode, languageId, depth, request, response, false);
+	}
+
+	/**
+	 * Adds the relationships to the contentlet based on depth argument.
+	 * <p>
+	 * When {@code languageFallback} is {@code true}, top-level relationship fields are listed
+	 * language-agnostically — one entry per related identifier, preferring the version in
+	 * {@code languageId} and falling back to any available version when none exists (issue #35862).
+	 * This is used only by the content editor read path ({@code ContentResource.getContent}); page
+	 * render and other callers pass {@code false} and keep the existing per-language filtering.
+	 *
+	 * @param languageFallback whether to list related content regardless of language version availability
+	 */
+	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode,
+										final long languageId, final int depth, final HttpServletRequest  request,
+										final HttpServletResponse response, final boolean languageFallback) {
 
 		if (depth >= 0 && depth <= 3) {
 
@@ -834,7 +852,7 @@ public class ContentUtils {
 				final JSONObject jsonWithRelationShips = ContentHelper.getInstance().addRelationshipsToJSON(request, response,
 						request.getParameter("render"), user, depth, mode.respectAnonPerms, contentlet,
 						new JSONObject(), null, languageId, mode.showLive, false,
-						true);
+						true, languageFallback);
 
 				final HashMap<String,Object> relationshipsMap = DotObjectMapperProvider.getInstance()
 						.getDefaultObjectMapper().readValue(jsonWithRelationShips.toString(), HashMap.class);

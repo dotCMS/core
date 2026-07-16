@@ -19,7 +19,7 @@ export interface FiltersState {
  */
 const initialFiltersState: FiltersState = {
     timeRange: TIME_RANGE_OPTIONS.last7days,
-    currentTab: DASHBOARD_TABS.pageview
+    currentTab: DASHBOARD_TABS.engagement
 };
 
 /**

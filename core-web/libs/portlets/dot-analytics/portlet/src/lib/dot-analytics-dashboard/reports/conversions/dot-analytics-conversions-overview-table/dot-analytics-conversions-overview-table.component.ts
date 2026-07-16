@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -6,7 +6,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { ConversionsOverviewEntity } from '@dotcms/portlets/dot-analytics/data-access';
+import { ConversionOverviewData } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
@@ -20,13 +20,13 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
 @Component({
     selector: 'dot-analytics-conversions-overview-table',
     imports: [
-        CommonModule,
         SkeletonModule,
         TableModule,
         TagModule,
         DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DecimalPipe
     ],
     templateUrl: './dot-analytics-conversions-overview-table.component.html',
     styleUrl: './dot-analytics-conversions-overview-table.component.scss',
@@ -34,7 +34,7 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
 })
 export default class DotAnalyticsConversionsOverviewTableComponent {
     /** Conversions overview rows to display in the table */
-    readonly $data = input.required<ConversionsOverviewEntity[]>({ alias: 'data' });
+    readonly $data = input.required<ConversionOverviewData[]>({ alias: 'data' });
     /** Component status controlling loading, error, and empty states */
     readonly $status = input.required<ComponentStatus>({ alias: 'status' });
 

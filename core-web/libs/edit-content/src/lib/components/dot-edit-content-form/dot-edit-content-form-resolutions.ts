@@ -5,7 +5,11 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
+import { EditContentQueryParams } from '../../store/edit-content.store';
+import {
+    getSingleSelectableFieldOptions,
+    parseCalendarTimestamp
+} from '../../utils/functions.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
@@ -13,11 +17,14 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  *
  * @param {Object} contentlet - The contentlet object.
  * @param {Object} field - The field object.
+ * @param {EditContentQueryParams} queryParams - Optional query params from the URL.
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
     contentlet: DotCMSContentlet,
-    field: DotCMSContentTypeField
+    field: DotCMSContentTypeField,
+    queryParams?: EditContentQueryParams,
+    isManualTranslation?: boolean
 ) => T;
 
 /**
@@ -34,8 +41,17 @@ const emptyResolutionFn: FnResolutionValue<string> = () => '';
  * @param {Object} field - The field object.
  * @returns {*} The resolved value for the field.
  */
-const defaultResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
-    contentlet ? (contentlet[field.variable] ?? field.defaultValue) : field.defaultValue;
+const defaultResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (contentlet) {
+        return contentlet[field.variable] ?? field.defaultValue;
+    }
+    return isManualTranslation ? null : field.defaultValue;
+};
 
 /**
  * A function that provides a default resolution value for a contentlet field.
@@ -44,10 +60,17 @@ const defaultResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
  * @param {Object} field - The field object.
  * @returns {*} The resolved value for the field.
  */
-const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
-    const value = contentlet
-        ? (contentlet[field.variable] ?? field.defaultValue)
-        : field.defaultValue;
+const textFieldResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (!contentlet) {
+        return isManualTranslation ? null : field.defaultValue;
+    }
+
+    const value = contentlet[field.variable] ?? field.defaultValue;
 
     const shouldRemoveLeadingSlash =
         contentlet?.baseType === 'HTMLPAGE' &&
@@ -70,10 +93,11 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
  * @param field - The field object containing the default value
  * @returns The resolved host folder path or the field's default value
  */
-const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
-    // Early return if contentlet is invalid or missing required properties
+// isManualTranslation not needed: null contentlet already falls back to queryParams / field.defaultValue.
+const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field, queryParams) => {
+    // For new content, prefer folderPath from query params over field default
     if (!contentlet?.hostName || !contentlet?.url) {
-        return field?.defaultValue || '';
+        return queryParams?.folderPath || field?.defaultValue || '';
     }
 
     const { hostName, url, baseType } = contentlet;
@@ -117,14 +141,21 @@ const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
  * @param {Object} field - The field object.
  * @returns {*} The resolved value for the field.
  */
-const categoryResolutionFn: FnResolutionValue<string[] | string> = (contentlet, field) => {
+const categoryResolutionFn: FnResolutionValue<string[] | string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
     const values = contentlet?.[field.variable];
 
     if (Array.isArray(values)) {
+        // isManualTranslation is not checked here: manual translation always passes
+        // contentlet=null, so the array branch is never reached in that path.
         return values.map((item) => Object.keys(item)[0]);
     }
 
-    return field.defaultValue ?? [];
+    return isManualTranslation ? [] : (field.defaultValue ?? []);
 };
 
 /**
@@ -143,55 +174,19 @@ const dateResolutionFn: FnResolutionValue<number | null> = (contentlet, field) =
     }
 
     const value = contentlet[field.variable];
+    const timestamp = parseCalendarTimestamp(value);
 
-    // If field doesn't exist in contentlet or is explicitly null/undefined/empty
-    if (value === null || value === undefined || value === '') {
-        return null;
-    }
-
-    // Backend should always return number timestamps
-    if (typeof value === 'number') {
-        // Validate it's a reasonable timestamp (not NaN or invalid)
-        return isNaN(value) || !isFinite(value) ? null : value;
-    }
-
-    // Handle edge cases where backend might return string timestamps
-    if (typeof value === 'string') {
-        const numericValue = Number(value);
-        if (!isNaN(numericValue) && isFinite(numericValue)) {
-            return numericValue;
-        }
-
-        console.warn(`Calendar field received unexpected string value from backend:`, {
+    // Preserve diagnostics: backend should always return numeric timestamps, so a
+    // non-empty value that fails to parse signals an unexpected payload worth logging.
+    if (timestamp == null && value != null && value !== '') {
+        console.warn('Calendar field received unexpected value from backend:', {
             fieldVariable: field.variable,
-            value: value,
+            value,
             type: typeof value
         });
-        return null;
     }
 
-    // Handle unexpected Date objects (shouldn't happen from backend)
-    if (value instanceof Date) {
-        const timestamp = value.getTime();
-        if (!isNaN(timestamp)) {
-            console.warn(`Calendar field received Date object instead of timestamp from backend:`, {
-                fieldVariable: field.variable,
-                value: value,
-                convertedTimestamp: timestamp
-            });
-            return timestamp;
-        }
-        return null;
-    }
-
-    // Log unexpected value types
-    console.error(`Calendar field received unexpected value type from backend:`, {
-        fieldVariable: field.variable,
-        value: value,
-        type: typeof value
-    });
-
-    return null;
+    return timestamp ?? null;
 };
 
 /**
@@ -210,7 +205,42 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
     return relationship.map((item) => item.identifier).join(',');
 };
 
-const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
+/**
+ * Resolution function for block editor fields.
+ * The API may return block editor content as a JSON string when copying/translating.
+ * This function parses the string to an object so the block editor component receives structured data.
+ */
+const blockEditorResolutionFn: FnResolutionValue<string | Record<string, unknown>> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (!contentlet) {
+        return isManualTranslation ? null : field.defaultValue;
+    }
+
+    const value = contentlet[field.variable] ?? field.defaultValue;
+
+    if (typeof value === 'string' && value.trim().startsWith('{')) {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return value;
+        }
+    }
+
+    return value;
+};
+
+const selectResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (!contentlet && isManualTranslation) return null;
+
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
@@ -229,12 +259,12 @@ const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
  */
 export const resolutionValue: Record<
     FIELD_TYPES,
-    FnResolutionValue<string | string[] | Date | number | null>
+    FnResolutionValue<string | string[] | Date | number | Record<string, unknown> | null>
 > = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
-    [FIELD_TYPES.BLOCK_EDITOR]: defaultResolutionFn,
+    [FIELD_TYPES.BLOCK_EDITOR]: blockEditorResolutionFn,
     [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,

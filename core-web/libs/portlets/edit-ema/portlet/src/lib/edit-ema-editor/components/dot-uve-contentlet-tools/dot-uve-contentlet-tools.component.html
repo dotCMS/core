@@ -1,75 +1,157 @@
-@let context = contentContext();
-@let dragItem = dragPayload();
-@let isEmpty = isContainerEmpty();
+<!-- Hover Overlay: outline + content-type label, no fill, plus the same action
+     toolbar shown on selection so users get the familiar quick-access UI on
+     hover. The bounds box itself stays pointer-events: none so wheel/clicks
+     pass through to the iframe; the toolbar and add buttons opt back in via
+     CSS. The SDK's CONTENTLET_CLICKED event still drives selection. -->
+@if (showHoverOverlay()) {
+    @let hoverContext = contentContext();
+    @let hoverDragItem = hoverDragPayload();
+    @let hoverIsEmpty = isContainerEmpty();
 
-<div [ngStyle]="boundsStyles()" class="bounds" data-testId="bounds">
-    <p-button
-        (click)="setPositionFlag('before'); menu.toggle($event)"
-        class="add-button-top"
-        data-testId="add-top-button"
-        icon="pi pi-plus" />
-    @if (!isEmpty) {
+    <div [ngStyle]="hoverBoundsStyles()" class="bounds hover" data-testId="bounds-hover">
+        @let hoveredContentType = contentletArea()?.payload?.contentlet?.contentType;
+        @if (hoveredContentType) {
+            <span class="hover-label" data-testId="bounds-hover-label">
+                {{
+                    hoveredContentType === TEMP_EMPTY_CONTENTLET_TYPE
+                        ? ('uve.no-content-type' | dm)
+                        : hoveredContentType
+                }}
+            </span>
+        }
+
         <p-button
-            (click)="setPositionFlag('after'); menu.toggle($event)"
-            class="add-button-bottom"
-            data-testId="add-bottom-button"
+            (click)="setPositionFlag('before'); menuHover.toggle($event)"
+            class="add-button-top"
+            [style.top.px]="hoverTopClipOffset()"
+            [style.transform]="hoverTopClipOffset() ? 'translate(-50%, 0)' : null"
+            data-testId="hover-add-top-button"
             icon="pi pi-plus" />
-    }
+        @if (!hoverIsEmpty) {
+            <p-button
+                (click)="setPositionFlag('after'); menuHover.toggle($event)"
+                class="add-button-bottom"
+                [style.bottom.px]="hoverBottomClipOffset()"
+                [style.transform]="hoverBottomClipOffset() ? 'translate(-50%, 0)' : null"
+                data-testId="hover-add-bottom-button"
+                icon="pi pi-plus" />
+        }
 
-    @if (!isEmpty) {
-        <div class="actions" data-testId="actions">
-            @if (hasVtlFiles()) {
+        @if (!hoverIsEmpty) {
+            <!-- Drag button: anchored to the left-center of the border,
+                 outside `.actions` so it's visible at every container
+                 size (drag is the one action that has no menu equivalent). -->
+            <div
+                class="drag-button pointer-events-[all] absolute z-1 flex rounded-md border border-solid border-gray-300 bg-white"
+                [style.top.px]="hoverDragButtonTopOffset()">
                 <p-button
-                    (click)="menuVTL.toggle($event)"
-                    data-testId="edit-vtl-button"
-                    [rounded]="true"
-                    [raised]="true"
-                    icon="pi pi-code" />
-                <p-menu
-                    [model]="vtlMenuItems()"
+                    [attr.data-item]="hoverDragItem | json"
+                    [attr.data-use-custom-drag-image]="useCustomDragImage"
+                    data-type="contentlet"
+                    draggable="true"
+                    data-testId="hover-drag-button"
+                    [pTooltip]="'uve.tooltip.move' | dm"
+                    tooltipPosition="bottom"
+                    [text]="true"
+                    icon="pi pi-arrows-alt" />
+            </div>
+
+            <!-- Full actions row: rendered when the contentlet is wide
+                 enough. Hidden by container query below 600px. -->
+            <div
+                class="actions actions-full pointer-events-[all] absolute top-0 right-2 z-1 flex transform-[translate(0,-50%)] justify-end gap-1 rounded-md border border-solid border-gray-300 bg-white"
+                [style.top.px]="hoverTopClipOffset()"
+                [style.transform]="hoverTopClipOffset() ? 'translate(0, 0)' : null"
+                data-testId="hover-actions">
+                @if (hasVtlFiles()) {
+                    <p-button
+                        (click)="menuHoverVTL.toggle($event)"
+                        data-testId="hover-edit-vtl-button"
+                        [pTooltip]="'uve.tooltip.edit.vtl' | dm"
+                        tooltipPosition="bottom"
+                        [text]="true"
+                        icon="pi pi-code" />
+                    <p-menu
+                        [model]="vtlMenuItems()"
+                        [popup]="true"
+                        #menuHoverVTL
+                        appendTo="body"
+                        data-testId="hover-menu-vtl" />
+                }
+                <p-button
+                    (click)="promoteHoverToSelected(); openQuickEdit.emit()"
+                    data-testId="hover-quick-edit-button"
+                    [pTooltip]="'uve.tooltip.edit.quick' | dm"
+                    tooltipPosition="bottom"
+                    [text]="true"
+                    icon="pi pi-bolt" />
+                @if (showStyleEditorOption()) {
+                    <p-button
+                        (click)="promoteHoverToSelected(); selectContent.emit(hoverContext)"
+                        data-testId="hover-palette-button"
+                        [pTooltip]="'uve.tooltip.edit.style' | dm"
+                        tooltipPosition="bottom"
+                        [text]="true"
+                        icon="pi pi-palette" />
+                }
+                <p-button
+                    (click)="openFullEditor.emit(hoverContext)"
+                    data-testId="hover-edit-button"
+                    [pTooltip]="'uve.tooltip.edit.full' | dm"
+                    tooltipPosition="bottom"
+                    [text]="true"
+                    icon="pi pi-pencil" />
+                <p-button
+                    (click)="deleteContent.emit(hoverContext)"
+                    [disabled]="!allowContentDelete()"
+                    [pTooltip]="deleteButtonTooltip() ?? '' | dm"
+                    tooltipPosition="bottom"
+                    [escape]="false"
+                    data-testId="hover-delete-button"
+                    [text]="true"
+                    icon="pi pi-times" />
+            </div>
+
+            <!-- Collapsed actions: a single ellipsis button that opens
+                 a menu with the same actions. Hidden by container query
+                 above 600px. VTL files appear as a nested submenu. -->
+            <div
+                class="actions actions-collapsed pointer-events-[all] absolute top-0 right-2 z-1 flex transform-[translate(0,-50%)] rounded-md border border-solid border-gray-300 bg-white"
+                [style.top.px]="hoverTopClipOffset()"
+                [style.transform]="hoverTopClipOffset() ? 'translate(0, 0)' : null"
+                data-testId="hover-actions-collapsed">
+                <p-button
+                    (click)="menuHoverActions.toggle($event)"
+                    data-testId="hover-actions-collapsed-button"
+                    [text]="true"
+                    icon="pi pi-ellipsis-v" />
+                <p-tieredMenu
+                    [model]="actionsMenuItems()"
                     [popup]="true"
-                    #menuVTL
+                    #menuHoverActions
                     appendTo="body"
-                    data-testId="menu-vtl" />
-            }
-            <p-button
-                [attr.data-item]="dragItem | json"
-                [attr.data-use-custom-drag-image]="useCustomDragImage"
-                data-type="contentlet"
-                draggable="true"
-                data-testId="drag-button"
-                [rounded]="true"
-                [raised]="true"
-                icon="pi pi-arrows-alt" />
-            <p-button
-                (click)="deleteContent.emit(context)"
-                [disabled]="!allowContentDelete()"
-                [pTooltip]="deleteButtonTooltip() | dm"
-                tooltipPosition="bottom"
-                [escape]="false"
-                data-testId="delete-button"
-                [rounded]="true"
-                [raised]="true"
-                styleClass="delete"
-                icon="pi pi-times" />
+                    data-testId="hover-menu-actions" />
+            </div>
+        }
+        <p-menu
+            [model]="menuItems()"
+            [popup]="true"
+            #menuHover
+            appendTo="body"
+            data-testId="hover-menu-add" />
+    </div>
+}
 
-            <p-button
-                (click)="editContent.emit(context)"
-                data-testId="edit-button"
-                [rounded]="true"
-                [raised]="true"
-                icon="pi pi-pencil" />
-
-            @if (showStyleEditorOption()) {
-                <p-button
-                    (click)="setSelectedContent()"
-                    data-testId="palette-button"
-                    [rounded]="true"
-                    [raised]="true"
-                    icon="pi pi-palette" />
-            }
-        </div>
-    }
-
-    <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
-</div>
+<!-- Selected Overlay: persistent border so the user can see what's selected
+     while the side panel is open. Tools live exclusively on the hover
+     overlay; this overlay never shows actions or add buttons. -->
+@if (showSelectedOverlay()) {
+    <div [ngStyle]="selectedBoundsStyles()" class="bounds selected" data-testId="bounds-selected">
+        @let selectedContentType = selected()?.payload?.contentlet?.contentType;
+        @if (selectedContentType) {
+            <span class="hover-label" data-testId="bounds-selected-label">
+                {{ selectedContentType }}
+            </span>
+        }
+    </div>
+}

@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { MockModule } from 'ng-mocks';
 
 import { ChartModule, UIChart } from 'primeng/chart';
@@ -98,33 +98,34 @@ describe('DotAnalyticsChartComponent', () => {
     });
 
     describe('Chart Title Input', () => {
-        it('should display title above the card when provided', () => {
+        it('should display title in the card caption when provided', () => {
             spectator.setInput('title', 'analytics.chart.title');
             spectator.detectChanges();
 
-            const title = spectator.query('[data-testid="chart-title"]');
+            const card = spectator.query('[data-testid="analytics-chart"]');
+            const title = card?.querySelector('.p-card-title');
             expect(title).toExist();
-            expect(title.tagName).toBe('H3');
+            expect(title?.textContent?.trim()).toBe('Translated message');
         });
 
         it('should not display title when not provided', () => {
             spectator.setInput('title', '');
             spectator.detectChanges();
 
-            const title = spectator.query('[data-testid="chart-title"]');
+            const card = spectator.query('[data-testid="analytics-chart"]');
+            const title = card?.querySelector('.p-card-title');
             expect(title).not.toExist();
         });
 
-        it('should render title outside the p-card element', () => {
+        it('should render title inside the p-card element', () => {
             spectator.setInput('title', 'analytics.chart.title');
             spectator.detectChanges();
 
-            const title = spectator.query('[data-testid="chart-title"]');
             const card = spectator.query('[data-testid="analytics-chart"]');
+            const title = card?.querySelector('.p-card-title');
 
             expect(title).toExist();
-            expect(card).toExist();
-            expect(card.contains(title)).toBe(false);
+            expect(card?.contains(title)).toBe(true);
         });
     });
 

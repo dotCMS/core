@@ -51,6 +51,9 @@ export interface RequestState<T = unknown> {
     error: string | null;
 }
 
+/** Format hint for metric display and animation */
+export type MetricFormat = 'number' | 'time' | 'percentage';
+
 /**
  * Metric data structure for dashboard components
  * Used to display analytics metrics with consistent format
@@ -58,6 +61,7 @@ export interface RequestState<T = unknown> {
 export interface MetricData {
     name: string;
     value: number | string | null;
+    format?: MetricFormat;
     subtitle: string;
     icon: string;
     status: ComponentStatus;

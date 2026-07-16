@@ -6,7 +6,7 @@
     (mousedown)="preventLostEditorSelection($event)"
     (click)="closePopups()"
     [editor]="editor()"
-    [tippyOptions]="tippyOptions"
+    [options]="bubbleOptions"
     [updateDelay]="250">
     @if (showImageMenu()) {
         <p-button text size="small" (onClick)="toggleImageModal($event)">
@@ -16,23 +16,43 @@
         <p-button
             text
             size="small"
-            (onClick)="editor().chain().focus().setTextAlign('left').run()"
-            [class.is-active]="editor().isActive({ textAlign: 'left' })">
+            (onClick)="setImageTextAlign('left')"
+            [class.is-active]="imageTextAlign() === 'left'">
             <i class="pi pi-align-left"></i>
         </p-button>
         <p-button
             text
             size="small"
-            (onClick)="editor().chain().focus().setTextAlign('center').run()"
-            [class.is-active]="editor().isActive({ textAlign: 'center' })">
+            (onClick)="setImageTextAlign('center')"
+            [class.is-active]="imageTextAlign() === 'center'">
             <i class="pi pi-align-center"></i>
         </p-button>
         <p-button
             text
             size="small"
-            (onClick)="editor().chain().focus().setTextAlign('right').run()"
-            [class.is-active]="editor().isActive({ textAlign: 'right' })">
+            (onClick)="setImageTextAlign('right')"
+            [class.is-active]="imageTextAlign() === 'right'">
             <i class="pi pi-align-right"></i>
+        </p-button>
+
+        <div class="divider"></div>
+        <p-button
+            text
+            size="small"
+            title="{{ 'block-editor.bubble-menu.image.wrap-left' | dm }}"
+            (onClick)="setImageTextWrap('left')"
+            [class.is-active]="imageTextWrap() === 'left'">
+            <i class="pi pi-image" style="margin-right: -4px"></i>
+            <i class="pi pi-align-right"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            title="{{ 'block-editor.bubble-menu.image.wrap-right' | dm }}"
+            (onClick)="setImageTextWrap('right')"
+            [class.is-active]="imageTextWrap() === 'right'">
+            <i class="pi pi-align-left"></i>
+            <i class="pi pi-image" style="margin-left: -4px"></i>
         </p-button>
 
         <div class="divider"></div>
@@ -56,7 +76,7 @@
             (onChange)="runConvertToCommand($event.value)"
             optionLabel="name"
             scrollHeight="300px"
-            appendTo="body"></p-select>
+            appendTo="body" />
         <div class="divider"></div>
         <p-button
             text
@@ -89,16 +109,16 @@
         <p-button
             text
             size="small"
-            (onClick)="editor().chain().focus().toggleSuperscript().run()"
+            (onClick)="toggleSuperscript()"
             [class.is-active]="editor().isActive('superscript')">
-            <span class="material-icons bubble-menu-icon">superscript</span>
+            <span class="material-symbols-outlined bubble-menu-icon">superscript</span>
         </p-button>
         <p-button
             text
             size="small"
-            (onClick)="editor().chain().focus().toggleSubscript().run()"
+            (onClick)="toggleSubscript()"
             [class.is-active]="editor().isActive('subscript')">
-            <span class="material-icons bubble-menu-icon">subscript</span>
+            <span class="material-symbols-outlined bubble-menu-icon">subscript</span>
         </p-button>
         <div class="divider"></div>
         <p-button

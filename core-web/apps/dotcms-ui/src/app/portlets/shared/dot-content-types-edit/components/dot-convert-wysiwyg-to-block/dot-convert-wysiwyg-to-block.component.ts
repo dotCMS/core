@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -14,7 +13,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     host: {
         class: 'mt-6 block border border-gray-300 p-4 rounded-sm'
     },
-    imports: [CommonModule, FormsModule, ButtonModule, CheckboxModule, DotMessagePipe]
+    imports: [FormsModule, ButtonModule, CheckboxModule, DotMessagePipe]
 })
 export class DotConvertWysiwygToBlockComponent {
     readonly $currentFieldType = input({ alias: 'currentFieldType' });

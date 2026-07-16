@@ -143,9 +143,12 @@ public class CMSFilter implements Filter {
             countPageVisit(request);
             countSiteVisit(request, response);
             final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString(uri);
+
             Logger.debug(this.getClass(), "CMSFilter uriWithoutQueryString = " + uriWithoutQueryString);
-            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
-                    uriWithoutQueryString);
+            final String pageUri = uriWithoutQueryString.endsWith("/")
+                    ? uriWithoutQueryString.substring(0, uriWithoutQueryString.length() - 1)
+                    : uriWithoutQueryString;
+            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, pageUri);
             final String queryStringFromUri = this.urlUtil.getQueryStringFromUri(uri);
             Logger.debug(this.getClass(), "CMSFilter queryStringFromUri = " + queryStringFromUri);
             queryString = (null == queryString) ? queryStringFromUri : queryString;

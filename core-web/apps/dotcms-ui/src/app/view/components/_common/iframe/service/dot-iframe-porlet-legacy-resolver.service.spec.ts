@@ -30,9 +30,9 @@ import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resol
 
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 
-const route: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', ['toString']);
+const route: any = { queryParams: {} };
 
-const state: any = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+const state: any = { url: '' };
 
 route.queryParams = {};
 

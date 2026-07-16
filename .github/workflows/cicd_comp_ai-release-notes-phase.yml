@@ -4,6 +4,7 @@
 # Generates release notes using AI and updates the GitHub release description.
 # Called by the release pipeline (cicd_6-release.yml) or the backfill workflow.
 #
+<<<<<<< HEAD
 # Flow:
 # 1. Validate the release tag exists
 # 2. Run TypeScript data-gathering script → structured JSON
@@ -19,6 +20,8 @@
 # - Non-blocking: does not affect release success/failure
 # - Always overwrites: re-running is safe and produces consistent results
 #
+=======
+>>>>>>> refs/remotes/upstream-core/main
 
 name: AI Release Notes Phase
 
@@ -33,6 +36,14 @@ on:
         description: 'Previous release tag for diff range. If omitted, auto-detected from GitHub releases API.'
         required: false
         type: string
+<<<<<<< HEAD
+=======
+      allow_failure:
+        description: 'If true, job failures are non-blocking (used by release pipeline). Defaults to false.'
+        required: false
+        type: boolean
+        default: false
+>>>>>>> refs/remotes/upstream-core/main
     secrets:
       ANTHROPIC_API_KEY:
         required: true
@@ -44,6 +55,7 @@ on:
 jobs:
   generate-notes:
     name: Generate Release Notes
+<<<<<<< HEAD
     runs-on: ubuntu-24.04
     continue-on-error: true
     permissions:
@@ -51,6 +63,14 @@ jobs:
       pull-requests: read  # Octokit pulls.get for PR details
     # All run: blocks reference these via $RELEASE_TAG / $REPO instead of
     # direct ${{ }} interpolation to prevent shell injection from crafted tags.
+=======
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    continue-on-error: ${{ inputs.allow_failure }}
+    permissions:
+      contents: write      # gh release view + gh release edit
+      pull-requests: read  # Octokit pulls.get for PR details
+      id-token: write      # Required by claude-code-action for OIDC
+>>>>>>> refs/remotes/upstream-core/main
     env:
       RELEASE_TAG: ${{ inputs.release_tag }}
       PREVIOUS_TAG: ${{ inputs.previous_tag }}
@@ -81,7 +101,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
+<<<<<<< HEAD
           node-version: '20'
+=======
+          node-version: '22'
+>>>>>>> refs/remotes/upstream-core/main
 
       - name: Install script dependencies
         working-directory: .github/scripts/gather-release-data
@@ -130,20 +154,43 @@ jobs:
           echo "- **Skipped**: ${SKIPPED}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Assemble prompt
+<<<<<<< HEAD
         run: |
+=======
+        id: prompt
+        run: |
+          # Build the full prompt: template + JSON data
+>>>>>>> refs/remotes/upstream-core/main
           cat .github/scripts/gather-release-data/prompt-template.md > /tmp/claude-prompt.md
           printf '\n---\n\n## Release Data (JSON)\n\n```json\n' >> /tmp/claude-prompt.md
           cat /tmp/release-data.json >> /tmp/claude-prompt.md
           printf '\n```\n' >> /tmp/claude-prompt.md
 
+<<<<<<< HEAD
+=======
+          # Pass prompt content via environment file to avoid shell escaping issues.
+          # Use a random delimiter to prevent PR body content from terminating the heredoc early.
+          DELIM="PROMPT_$(openssl rand -hex 16)"
+          {
+            echo "PROMPT_CONTENT<<${DELIM}"
+            cat /tmp/claude-prompt.md
+            echo "${DELIM}"
+          } >> "$GITHUB_ENV"
+
+>>>>>>> refs/remotes/upstream-core/main
       - name: Generate release notes with Claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+<<<<<<< HEAD
           prompt_file: /tmp/claude-prompt.md
           allowed_tools: "Write"
           max_turns: 3
           timeout_minutes: 10
+=======
+          prompt: ${{ env.PROMPT_CONTENT }}
+          claude_args: "--allowedTools Write --max-turns 3"
+>>>>>>> refs/remotes/upstream-core/main
 
       - name: Update release description
         env:

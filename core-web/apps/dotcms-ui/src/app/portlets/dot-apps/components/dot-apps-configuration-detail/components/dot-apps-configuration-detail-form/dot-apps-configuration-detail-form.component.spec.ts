@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { MarkdownComponent } from 'ngx-markdown';
 
@@ -17,6 +17,34 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
 import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
+
+const headingSecret = {
+    dynamic: false,
+    name: 'sectionHeader',
+    hidden: false,
+    hint: '',
+    label: 'Server-Rendered Pages Configuration',
+    required: false,
+    type: 'HEADING',
+    value: '',
+    hasEnvVar: false,
+    envShow: false,
+    hasEnvVarValue: false
+};
+
+const infoSecret = {
+    dynamic: false,
+    name: 'infoBox',
+    hidden: false,
+    hint: 'These settings apply ONLY to pages rendered by dotCMS servers.',
+    label: '',
+    required: false,
+    type: 'INFO',
+    value: '',
+    hasEnvVar: false,
+    envShow: false,
+    hasEnvVarValue: false
+};
 
 const secrets = [
     {
@@ -313,6 +341,42 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             expect(spyDataOutput).toHaveBeenCalledTimes(3);
             expect(spyValidOutput).toHaveBeenCalledTimes(3);
+        });
+
+        it('should render HEADING field as section header with label text', () => {
+            const spectatorWithHeading = createComponent({
+                props: { formFields: [headingSecret, ...secrets] } as unknown
+            });
+            spectatorWithHeading.detectChanges();
+
+            const header = spectatorWithHeading.query('[data-testid="sectionHeader"]');
+            expect(header).toBeTruthy();
+            expect(header.classList).toContain('dot-apps-configuration-detail__section-header');
+            expect(header.querySelector('h3').textContent.trim()).toBe(headingSecret.label);
+        });
+
+        it('should render INFO field as info box with hint text', () => {
+            const spectatorWithInfo = createComponent({
+                props: { formFields: [infoSecret, ...secrets] } as unknown
+            });
+            spectatorWithInfo.detectChanges();
+
+            const infoBox = spectatorWithInfo.query('[data-testid="infoBox"]');
+            expect(infoBox).toBeTruthy();
+            expect(infoBox.classList).toContain('dot-apps-configuration-detail__info-box');
+            expect(infoBox.querySelector('markdown')).toBeTruthy();
+        });
+
+        it('should not add HEADING or INFO fields to the form group', () => {
+            const spectatorWithExtra = createComponent({
+                props: {
+                    formFields: [headingSecret, infoSecret, ...secrets]
+                } as unknown
+            });
+            spectatorWithExtra.detectChanges();
+
+            expect(spectatorWithExtra.component.myFormGroup.contains('sectionHeader')).toBe(false);
+            expect(spectatorWithExtra.component.myFormGroup.contains('infoBox')).toBe(false);
         });
 
         it('should emit form state disabled when required field empty', () => {

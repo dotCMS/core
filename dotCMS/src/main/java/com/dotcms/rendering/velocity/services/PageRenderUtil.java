@@ -14,7 +14,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.VariantAPI;
@@ -293,6 +293,26 @@ public class PageRenderUtil implements Serializable {
                     final Contentlet nonHydratedContentlet = getContentletByVariantFallback(currentVariantId, personalizedContentlet, timeMachineDate);
 
                     if (nonHydratedContentlet == null) {
+                        continue;
+                    }
+
+                    // Archived (deleted) content keeps its working version, so a showLive=false
+                    // lookup (EDIT/PREVIEW modes) still resolves it. Skip it in every mode so that
+                    // archived content never renders on the page, consistent with LIVE-mode behavior.
+                    // isArchived() declares DotSecurityException, but VersionableAPI.isDeleted() does
+                    // not throw it via this path (it is declared for forward-compatibility). Should a
+                    // DotSecurityException ever surface, it is a genuine access-control failure and
+                    // must NOT be swallowed as "probably archived" -- so it is intentionally left
+                    // uncaught and propagates to the caller.
+                    try {
+                        if (nonHydratedContentlet.isArchived()) {
+                            Logger.debug(this, () -> "Skipping archived contentlet: "
+                                    + nonHydratedContentlet.getIdentifier());
+                            continue;
+                        }
+                    } catch (final DotStateException | DotDataException e) {
+                        Logger.warn(this, "Could not determine archived state for contentlet '"
+                                + nonHydratedContentlet.getIdentifier() + "'; skipping it", e);
                         continue;
                     }
 
@@ -747,26 +767,12 @@ public class PageRenderUtil implements Serializable {
                     contentletIdentifier, mode.showLive, languageId,
                     user, true, variantName);
 
-            if (contentletOpt.isPresent()) {
-                return contentletOpt.get();
-            }
-
-            // If not found with language fallback, try to find in any language with the specified variant
-            // This allows pages to show content from other languages when the content type allows fallback
-            // but the content doesn't exist in the page's language or default language
-            try {
-                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
-                        contentletIdentifier, variantName);
-
-                // Check if this content type allows language fallback
-                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
-                    return anyLanguageContentlet;
-                }
-            } catch (Exception e) {
-                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
-            }
-
-            return null;
+            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, the contract is: show the
+            // requested-language version, or fall back to the default language. If the contentlet
+            // has no version in either, it must be excluded from this page render.
+            // This logic covers the scenario presented in the
+            // [DEFECT] Page API not respecting DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE #34290
+            return contentletOpt.orElse(null);
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control

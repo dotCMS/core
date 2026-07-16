@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -7,7 +7,7 @@ import { TableModule } from 'primeng/table';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     RequestState,
-    TopPerformanceTableEntity,
+    TopContentData,
     transformTopPagesTableData
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -33,12 +33,12 @@ const SKELETON_WIDTH_MAP = {
 @Component({
     selector: 'dot-analytics-top-pages-table',
     imports: [
-        CommonModule,
         SkeletonModule,
         TableModule,
         DotMessagePipe,
         DotAnalyticsEmptyStateComponent,
-        DotAnalyticsStateMessageComponent
+        DotAnalyticsStateMessageComponent,
+        DecimalPipe
     ],
     templateUrl: './dot-analytics-top-pages-table.component.html',
     styleUrls: ['./dot-analytics-top-pages-table.component.scss'],
@@ -46,7 +46,7 @@ const SKELETON_WIDTH_MAP = {
 })
 export class DotAnalyticsTopPagesTableComponent {
     /** Complete table state from analytics store */
-    readonly $tableState = input.required<RequestState<TopPerformanceTableEntity[]>>({
+    readonly $tableState = input.required<RequestState<TopContentData[]>>({
         alias: 'tableState'
     });
 

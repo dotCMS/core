@@ -1,11 +1,11 @@
-#!/usr/bin/env node
-
 import cfonts from 'cfonts';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { execa } from 'execa';
+import fs from 'fs-extra';
 import ora, { Ora } from 'ora';
-import { Result, Ok, Err } from 'ts-results';
+
+import path from 'path';
 
 import { DotCMSApi } from './api';
 import {
@@ -31,6 +31,7 @@ import {
     moveDockerComposeBack,
     moveDockerComposeOneLevelUp
 } from './git';
+import { type Result, Ok, Err } from './result';
 import {
     checkDockerAvailability,
     checkPortsAvailability,
@@ -61,7 +62,7 @@ import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 const program = new Command();
 
 program
-    .name('dotcms-create-app')
+    .name('create-dotcms-app')
     .description('dotCMS CLI for creating applications')
     .version('0.1.0-beta');
 
@@ -79,6 +80,12 @@ program
     .option('-u, --username <username>', 'DotCMS instance username (skip in case of local)')
     .option('-p, --password <password>', 'DotCMS instance password (skip in case of local)')
 
+    // local options
+    .option(
+        '--starter <url>',
+        'Custom starter URL for the local dotCMS Docker instance (sets CUSTOM_STARTER_URL)'
+    )
+
     .action(async (projectName: string, options: DotCmsCliOptions) => {
         // welcome cli
         printWelcomeScreen();
@@ -86,17 +93,23 @@ program
         try {
             // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
             const validatedFramework = validateAndNormalizeFramework(options.framework);
+            validateUrl(options.starter);
             validateUrl(options.url);
             validateConflictingParameters(options);
             validateProjectName(projectName); // Validate CLI flag if provided
+            const starterOnlyMode = Boolean(options.starter);
+            // `--starter` only applies to local Docker mode, so treat it as an implicit local selection.
+            const isLocalModeRequested = options.local === true || starterOnlyMode;
+            // `--url` implies cloud mode — skip the interactive prompt when it's provided.
+            const isCloudExplicit = Boolean(options.url) && !isLocalModeRequested;
 
             // Get project name from CLI or prompt (prompt has built-in validation)
             const projectNameFinal = projectName ?? (await askProjectName());
             const directoryInput = options.directory ?? (await askDirectory());
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
-            const selectedFramework = validatedFramework ?? (await askFramework());
-            const isCloudInstanceSelected =
-                options.local === undefined ? await askCloudOrLocalInstance() : !options.local;
+            const isCloudInstanceSelected = isLocalModeRequested
+                ? false
+                : isCloudExplicit || (await askCloudOrLocalInstance());
 
             if (isCloudInstanceSelected) {
                 const urlInput = options.url ?? (await askDotcmsCloudUrl());
@@ -107,7 +120,7 @@ program
                 const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
                 const emaConfigApiURL =
                     getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
-                const demoSiteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_DEMO_SITE;
+                const siteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_SITE_API;
                 const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
 
                 const spinner = ora(`⏳ Connecting to dotCMS...`).start();
@@ -180,20 +193,21 @@ program
                     process.exit(1);
                 }
 
-                const demoSite = await DotCMSApi.getDemoSiteIdentifier({
-                    siteName: 'demo.dotcms.com',
+                const defaultSite = await DotCMSApi.getDefaultSite({
                     authenticationToken: dotcmsToken.val,
-                    url: demoSiteApiURL
+                    url: siteApiURL
                 });
 
-                if (!demoSite.ok) {
-                    spinner.fail('Failed to get demo site identifier from Dotcms.');
+                if (!defaultSite.ok) {
+                    spinner.fail('Failed to get default site identifier from Dotcms.');
                     process.exit(1);
                 } else {
                     spinner.succeed(
-                        `Retrieved site: Demo Site (${demoSite.val.entity.identifier})`
+                        `Retrieved default site (${defaultSite.val.entity.identifier})`
                     );
                 }
+
+                const selectedFramework = validatedFramework ?? (await askFramework());
 
                 const setUpUVE = await DotCMSApi.setupUVEConfig({
                     payload: {
@@ -204,7 +218,7 @@ program
                             )
                         }
                     },
-                    siteId: demoSite.val.entity.identifier,
+                    siteId: defaultSite.val.entity.identifier,
                     authenticationToken: dotcmsToken.val,
                     url: emaConfigApiURL
                 });
@@ -222,7 +236,7 @@ program
                     host: urlDotcmsInstance,
                     relativePath,
                     token: dotcmsToken.val,
-                    siteId: demoSite.val.entity.identifier,
+                    siteId: defaultSite.val.entity.identifier,
                     selectedFramework: selectedFramework
                 });
                 return; // Successful completion - exit code 0
@@ -262,7 +276,10 @@ program
 
             // STEP 4 — Run docker-compose
             spinner.start('Starting dotCMS containers...');
-            const ran = await runDockerCompose({ directory: finalDirectory });
+            const ran = await runDockerCompose({
+                directory: finalDirectory,
+                starterUrl: options.starter
+            });
             if (!ran.ok) {
                 spinner.fail('Failed to start Docker containers');
                 const errorMessage = ran.val instanceof Error ? ran.val.message : String(ran.val);
@@ -299,6 +316,18 @@ program
             spinner.succeed('dotCMS is running locally at http://localhost:8082');
             spinner.succeed('Default credentials: admin@dotcms.com / admin');
 
+            if (starterOnlyMode) {
+                console.log(chalk.white(`✅ Project setup complete!`));
+                console.log(
+                    chalk.gray(
+                        'Skipped frontend scaffolding and dotCMS UVE setup because --starter was provided.'
+                    )
+                );
+                return;
+            }
+
+            const selectedFramework = validatedFramework ?? (await askFramework());
+
             const dotcmsToken = await DotCMSApi.getAuthToken({
                 payload: {
                     user: DOTCMS_USER.username,
@@ -314,15 +343,14 @@ program
                 spinner.succeed('Generated API authentication token');
             }
 
-            const demoSite = await DotCMSApi.getDemoSiteIdentifier({
-                siteName: 'demo.dotcms.com',
+            const defaultSite = await DotCMSApi.getDefaultSite({
                 authenticationToken: dotcmsToken.val
             });
-            if (!demoSite.ok) {
-                spinner.fail('Failed to get demo site identifier from Dotcms.');
+            if (!defaultSite.ok) {
+                spinner.fail('Failed to get default site identifier from Dotcms.');
                 process.exit(1);
             } else {
-                spinner.succeed(`Retrieved site: Demo Site (${demoSite.val.entity.identifier})`);
+                spinner.succeed(`Retrieved default site (${defaultSite.val.entity.identifier})`);
             }
 
             const setUpUVE = await DotCMSApi.setupUVEConfig({
@@ -334,7 +362,7 @@ program
                         )
                     }
                 },
-                siteId: demoSite.val.entity.identifier,
+                siteId: defaultSite.val.entity.identifier,
                 authenticationToken: dotcmsToken.val
             });
 
@@ -354,7 +382,7 @@ program
                 host: 'http://localhost:8082',
                 relativePath,
                 token: dotcmsToken.val,
-                siteId: demoSite.val.entity.identifier,
+                siteId: defaultSite.val.entity.identifier,
                 selectedFramework: selectedFramework
             });
         } catch (error) {
@@ -423,14 +451,22 @@ async function downloadTheDockerCompose({
 }
 
 async function runDockerCompose({
-    directory
+    directory,
+    starterUrl
 }: {
     directory: string;
+    starterUrl?: string;
 }): Promise<Result<void, Error>> {
     try {
         // console.log(chalk.cyan("🐳 Starting Docker containers... (This might take some time)"));
 
-        await execa('docker', ['compose', 'up', '-d'], { cwd: directory });
+        if (starterUrl) {
+            await updateDockerComposeStarterUrl({ directory, starterUrl });
+        }
+
+        const env = starterUrl ? { ...process.env, CUSTOM_STARTER_URL: starterUrl } : process.env;
+
+        await execa('docker', ['compose', 'up', '-d'], { cwd: directory, env });
         await execa('docker', ['ps'], { cwd: directory });
 
         // console.log(chalk.green("✔ Docker containers started successfully!\n"));
@@ -439,6 +475,29 @@ async function runDockerCompose({
     } catch (err) {
         return Err(err as Error);
     }
+}
+
+async function updateDockerComposeStarterUrl({
+    directory,
+    starterUrl
+}: {
+    directory: string;
+    starterUrl: string;
+}): Promise<void> {
+    const composePath = path.join(directory, 'docker-compose.yml');
+    const composeContents = await fs.readFile(composePath, 'utf-8');
+    const updatedContents = composeContents.replace(
+        /^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m,
+        `$1"${starterUrl}"`
+    );
+
+    if (updatedContents === composeContents) {
+        throw new Error(
+            'CUSTOM_STARTER_URL entry not found in docker-compose.yml. Unable to apply --starter value.'
+        );
+    }
+
+    await fs.writeFile(composePath, updatedContents);
 }
 
 async function isDotcmsRunning(url?: string, retries = 60): Promise<Result<boolean, string>> {

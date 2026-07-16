@@ -27,9 +27,7 @@
     </ng-template>
 
     <ng-template #rows let-row>
-        <div
-            [ngClass]="{ 'font-bold': row.isWinner }"
-            class="col-span-2 flex items-center flex-wrap gap-1">
+        <div [class.font-bold]="row.isWinner" class="col-span-2 flex items-center flex-wrap gap-1">
             @if (row.isWinner) {
                 <svg
                     class="h-5 min-w-[20px] fill-green-600"
@@ -42,32 +40,32 @@
             <span>{{ row.name }}</span>
         </div>
         <div
-            [ngClass]="{ 'font-bold': row.isWinner }"
+            [class.font-bold]="row.isWinner"
             class="col-span-1 flex flex-wrap items-center justify-end">
             {{ row.conversions }}
         </div>
         <div
-            [ngClass]="{ 'font-bold': row.isWinner }"
+            [class.font-bold]="row.isWinner"
             class="col-span-1 flex flex-wrap items-center justify-end">
             {{ row.sessions }}
         </div>
         <div
-            [ngClass]="{ 'font-bold': row.isWinner }"
+            [class.font-bold]="row.isWinner"
             class="col-span-2 flex flex-wrap items-center justify-end">
             {{ row.conversionRate }}
         </div>
         <div
-            [ngClass]="{ 'font-bold': row.isWinner }"
+            [class.font-bold]="row.isWinner"
             class="col-span-2 flex flex-wrap items-center justify-end">
             {{ row.probabilityToBeBest }}
         </div>
         <div
-            [ngClass]="{ 'font-bold': row.isWinner }"
+            [class.font-bold]="row.isWinner"
             class="col-span-2 flex flex-wrap items-center justify-end">
             {{ row.conversionRateRange }}
         </div>
         <div
-            [ngClass]="{ 'font-bold': row.isWinner }"
+            [class.font-bold]="row.isWinner"
             class="col-span-2 flex flex-wrap items-center justify-end">
             @if (!$promotedVariantId() && row.id !== defaultVariantId) {
                 <p-button

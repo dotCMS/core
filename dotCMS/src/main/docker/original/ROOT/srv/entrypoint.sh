@@ -14,9 +14,11 @@ if [ $exit_status -eq 13 ]; then
     exit 0;
 fi
 
+source /srv/15-detect-fips-and-set-ssl-engine.sh
 source /srv/20-copy-overriden-files.sh
 source /srv/25-generate-dev-ssl-cert.sh
 source /srv/30-override-config-props.sh
+source /srv/35-set-logging-defaults.sh
 source /srv/40-custom-starter-zip.sh
 source /srv/50-load-dump-sql.sh
 

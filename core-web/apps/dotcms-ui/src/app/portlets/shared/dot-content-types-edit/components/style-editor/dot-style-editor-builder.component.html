@@ -1,0 +1,95 @@
+<div class="h-full flex flex-col">
+    <!-- Scrollable content -->
+    <div class="flex-1 min-h-0 overflow-y-auto p-6 [scrollbar-gutter:stable]">
+        <div class="max-w-3xl mx-auto">
+            <!-- Header -->
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 m-0">
+                    {{ 'style.editor.form.builder.header' | dm }}
+                </h2>
+                <p class="text-sm text-gray-500 mt-1 mb-0">
+                    {{ 'style.editor.form.builder.subtitle' | dm }}
+                </p>
+            </div>
+
+            <!-- Sections list -->
+            <div class="flex flex-col gap-4">
+                @for (section of $sections(); track section.uid; let i = $index) {
+                    <dot-style-editor-section
+                        [section]="section"
+                        [isFirst]="i === 0"
+                        [isLast]="i === $sections().length - 1"
+                        [showErrors]="$saveAttempted()"
+                        [duplicateIdentifiers]="$duplicateIdentifiers()"
+                        (moveUp)="moveSectionUp(i)"
+                        (moveDown)="moveSectionDown(i)"
+                        (delete)="requestRemoveSection(i)"
+                        (titleChange)="updateSectionTitle(i, $event)"
+                        (addField)="addField(i)"
+                        (removeField)="requestRemoveField(i, $event)"
+                        (moveFieldUp)="moveFieldUp(i, $event)"
+                        (moveFieldDown)="moveFieldDown(i, $event)"
+                        (fieldChange)="updateField(i, $event)" />
+                }
+            </div>
+
+            <!-- Add New Section button -->
+            <div class="mt-4">
+                <p-button
+                    data-testid="add-section-btn"
+                    [text]="true"
+                    icon="pi pi-plus"
+                    [label]="'style.editor.form.builder.add.section' | dm"
+                    styleClass="w-full border-2 border-dashed border-gray-300 rounded-[16px] justify-center bg-white py-6 hover:border-gray-400"
+                    (onClick)="addSection()"
+                    [pTooltip]="'style.editor.form.builder.add.section.tooltip' | dm"
+                    tooltipPosition="top" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom action bar -->
+    <div
+        class="shrink-0 border-t border-gray-200 bg-white flex items-center justify-end gap-4 px-6 py-3">
+        @if ($isDirty()) {
+            <p-button
+                data-testid="cancel-btn"
+                [text]="true"
+                [label]="'style.editor.form.builder.cancel' | dm"
+                (onClick)="requestCancel()"
+                severity="secondary"
+                size="small" />
+        }
+        <p-button
+            data-testid="save-btn"
+            [label]="'style.editor.form.builder.save' | dm"
+            [loading]="$saving()"
+            (onClick)="save()" />
+    </div>
+</div>
+
+<!-- Shared confirmation dialog -->
+<p-dialog
+    [visible]="$confirmState() !== null"
+    [header]="$confirmState()?.header ?? ''"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '36rem' }"
+    (onHide)="closeConfirm()">
+    <p class="text-sm text-gray-600 m-0">{{ $confirmState()?.message }}</p>
+    <ng-template pTemplate="footer">
+        <div class="flex items-center justify-end gap-2">
+            @for (action of $confirmState()?.actions; track $index) {
+                <p-button
+                    [label]="action.label"
+                    [text]="action.text"
+                    [outlined]="action.outlined"
+                    [severity]="action.severity"
+                    (onClick)="action.callback()" />
+            }
+        </div>
+    </ng-template>
+</p-dialog>

@@ -3,9 +3,9 @@ import { DOMSerializer } from 'prosemirror-model';
 
 import { Component, computed, input, signal, viewChild } from '@angular/core';
 
-import type { ContextMenuPassThroughOptions } from 'primeng/types/contextmenu';
 import { ContextMenu } from 'primeng/contextmenu';
 import { Ripple } from 'primeng/ripple';
+import type { ContextMenuPassThroughOptions } from 'primeng/types/contextmenu';
 
 import { Editor } from '@tiptap/core';
 

@@ -13,8 +13,7 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService, DotEventsService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { MockDotMessageService, CoreWebServiceMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
@@ -118,10 +117,6 @@ describe('DotTemplateAdvancedComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
                 },
                 DotEventsService,
                 provideHttpClient(),

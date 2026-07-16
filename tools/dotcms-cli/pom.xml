@@ -24,11 +24,19 @@
     <quarkus.platform.version>3.6.0</quarkus.platform.version>
     <jreleaser-plugin.version>1.8.0</jreleaser-plugin.version>
     <google.findbugs.version>3.0.2</google.findbugs.version>
+<<<<<<< HEAD
       <!-- Use dedicated CLI compiler release property for Quarkus/GraalVM compatibility
            This isolates CLI from global maven.compiler.release overrides -->
       <maven.compiler.release>${dotcms.cli.compiler.release}</maven.compiler.release>
       <maven.compiler.source>${dotcms.cli.compiler.release}</maven.compiler.source>
       <maven.compiler.target>${dotcms.cli.compiler.release}</maven.compiler.target>
+=======
+      <maven.compiler.release>11</maven.compiler.release>
+      <maven.compiler.source>11</maven.compiler.source>
+      <maven.compiler.target>11</maven.compiler.target>
+      <!-- Pinned to Java 11 for portability; preview features cannot be enabled at release 11. -->
+      <maven.compiler.enablePreview>false</maven.compiler.enablePreview>
+>>>>>>> refs/remotes/upstream-core/main
 
   </properties>
 

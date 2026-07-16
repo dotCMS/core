@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -6,7 +6,7 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent } from 'primeng/fileupload';
 
-import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -38,7 +38,7 @@ describe('DotTagsImportComponent', () => {
     const mockFile = new File(['tag1,SYSTEM_HOST'], 'test.csv', { type: 'text/csv' });
 
     const IMPORT_RESPONSE = {
-        entity: { totalRows: 10, successCount: 10, failureCount: 0 }
+        entity: { totalRows: 10, successCount: 10, failureCount: 0, success: true }
     };
 
     const createComponent = createComponentFactory({
@@ -49,7 +49,6 @@ describe('DotTagsImportComponent', () => {
             mockProvider(DotTagsService, {
                 importTags: jest.fn().mockReturnValue(of(IMPORT_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
@@ -77,10 +76,6 @@ describe('DotTagsImportComponent', () => {
         it('should have importing as false', () => {
             expect(component.importing()).toBe(false);
         });
-
-        it('should have null result initially', () => {
-            expect(component.result()).toBeNull();
-        });
     });
 
     describe('onFileSelect', () => {
@@ -95,29 +90,13 @@ describe('DotTagsImportComponent', () => {
 
             expect(component.selectedFile()).toBeNull();
         });
-
-        it('should clear result when new file selected', () => {
-            // First, do a successful import to set a result
-            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
-            component.importFile();
-            expect(component.result()).toEqual(IMPORT_RESPONSE.entity);
-
-            // Select a new file and verify result is cleared
-            const newFile = new File(['tag2,SYSTEM_HOST'], 'test2.csv', { type: 'text/csv' });
-            component.onFileSelect({ files: [newFile] } as FileSelectEvent);
-            expect(component.result()).toBeNull();
-            expect(component.selectedFile()).toBe(newFile);
-        });
     });
 
     describe('onFileClear', () => {
-        it('should clear file and result', () => {
+        it('should clear selected file', () => {
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
-            component.importFile();
-
             component.onFileClear();
             expect(component.selectedFile()).toBeNull();
-            expect(component.result()).toBeNull();
         });
     });
 
@@ -129,73 +108,53 @@ describe('DotTagsImportComponent', () => {
             expect(tagsService.importTags).not.toHaveBeenCalled();
         });
 
-        it('should import file successfully', () => {
+        it('should close dialog with result entity after successful import', () => {
+            const ref = spectator.inject(DynamicDialogRef);
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(component.result()).toEqual({
-                totalRows: 10,
-                successCount: 10,
-                failureCount: 0
-            });
+            expect(ref.close).toHaveBeenCalledWith(IMPORT_RESPONSE.entity);
             expect(component.importing()).toBe(false);
         });
 
-        it('should handle import error', () => {
+        it('should show inline error and keep dialog open on HTTP error', () => {
             const tagsService = spectator.inject(DotTagsService);
-            const httpErrorManager = spectator.inject(DotHttpErrorManagerService);
+            const ref = spectator.inject(DynamicDialogRef);
 
             (tagsService.importTags as jest.Mock).mockReturnValue(
-                throwError(() => new Error('fail'))
+                throwError(() => ({ error: { message: 'Import failed' } }))
             );
 
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(component.errorMessage()).toBe('Import failed');
             expect(component.importing()).toBe(false);
-            expect(component.result()).toBeNull();
+            expect(ref.close).not.toHaveBeenCalled();
+        });
+
+        it('should show inline error and keep dialog open when API returns success:false', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            const ref = spectator.inject(DynamicDialogRef);
+
+            (tagsService.importTags as jest.Mock).mockReturnValue(
+                of({ entity: { totalRows: 5, successCount: 0, failureCount: 5, success: false } })
+            );
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            expect(component.errorMessage()).toBeTruthy();
+            expect(component.importing()).toBe(false);
+            expect(ref.close).not.toHaveBeenCalled();
         });
     });
 
     describe('close', () => {
-        it('should close with true when imported', () => {
+        it('should close with null when cancelled', () => {
             const ref = spectator.inject(DynamicDialogRef);
-            component.close(true);
-            expect(ref.close).toHaveBeenCalledWith(true);
-        });
-
-        it('should close with false when cancelled', () => {
-            const ref = spectator.inject(DynamicDialogRef);
-            component.close(false);
-            expect(ref.close).toHaveBeenCalledWith(false);
-        });
-    });
-
-    describe('resultMessage', () => {
-        it('should return empty string when no result', () => {
-            expect(component.resultMessage()).toBe('');
-        });
-
-        it('should return success message key when no failures', () => {
-            const tagsService = spectator.inject(DotTagsService);
-            (tagsService.importTags as jest.Mock).mockReturnValue(of(IMPORT_RESPONSE));
-
-            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
-            component.importFile();
-            expect(component.resultMessage()).toBe('tags.import.success');
-        });
-
-        it('should return partial success message when there are failures', () => {
-            const tagsService = spectator.inject(DotTagsService);
-            (tagsService.importTags as jest.Mock).mockReturnValue(
-                of({ entity: { totalRows: 10, successCount: 7, failureCount: 3 } })
-            );
-
-            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
-            component.importFile();
-            expect(component.resultMessage()).toContain('tags.import.partial-success');
-            expect(component.resultMessage()).toContain('tags.import.failures');
+            component.close();
+            expect(ref.close).toHaveBeenCalledWith(null);
         });
     });
 
@@ -212,6 +171,22 @@ describe('DotTagsImportComponent', () => {
             component.selectedFile.set(mockFile);
             spectator.detectChanges();
             expect(innerButton!.disabled).toBe(false);
+        });
+
+        it('should render Cancel button', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('tag-import-cancel-btn'))).toBeTruthy();
+        });
+
+        it('should disable Cancel button while importing', () => {
+            spectator.detectChanges();
+            const cancelBtnHost = spectator.query(byTestId('tag-import-cancel-btn'));
+            const cancelBtn = cancelBtnHost?.querySelector('button');
+            expect(cancelBtn?.disabled).toBe(false);
+
+            component.importing.set(true);
+            spectator.detectChanges();
+            expect(cancelBtn?.disabled).toBe(true);
         });
     });
 

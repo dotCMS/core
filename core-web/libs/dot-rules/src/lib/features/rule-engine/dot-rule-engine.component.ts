@@ -12,16 +12,16 @@ import { take } from 'rxjs/operators';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 
 import { IPublishEnvironment } from '../../services/api/bundle/bundle-service';
-import { RuleModel, RULE_CREATE } from '../../services/api/rule/Rule';
+import { RULE_CREATE, RuleModel } from '../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
 import { I18nService } from '../../services/i18n/i18n.service';
 import {
     ConditionActionEvent,
+    ConditionGroupActionEvent,
     RuleActionActionEvent,
-    RuleActionEvent,
-    ConditionGroupActionEvent
+    RuleActionEvent
 } from '../../services/models/rule-event.model';
-import { RuleViewService, DotRuleMessage } from '../../services/ui/dot-view-rule-service';
+import { DotRuleMessage, RuleViewService } from '../../services/ui/dot-view-rule-service';
 import { RuleFilter } from '../../services/utils/filter.util';
 import { DotRuleComponent } from '../rule/dot-rule.component';
 

@@ -162,6 +162,7 @@ export async function fetchPRDetails(
           pull_number: prNumber,
         });
 
+<<<<<<< HEAD
         const labels = data.labels.map((l) =>
           typeof l === 'string' ? l : l.name || ''
         );
@@ -170,6 +171,14 @@ export async function fetchPRDetails(
 
         // Truncate body to first ~500 chars for context (avoids oversized JSON)
         const body = (data.body || '').slice(0, 500);
+=======
+        const labels = data.labels.map((l) => l.name || '');
+
+        const linkedIssues = extractLinkedIssues(data.body || '');
+
+        // Safety cap at 50K chars to guard against extreme outliers
+        const body = (data.body || '').slice(0, 50_000);
+>>>>>>> refs/remotes/upstream-core/main
 
         return {
           number: prNumber,
@@ -203,8 +212,14 @@ export async function fetchPRDetails(
   }
 
   if (fetchErrors.length > 0) {
+<<<<<<< HEAD
     throw new Error(
       `Failed to fetch ${fetchErrors.length} PR(s): ${fetchErrors.map((n) => `#${n}`).join(', ')}`
+=======
+    process.stderr.write(
+      `Warning: Could not fetch ${fetchErrors.length} PR(s): ${fetchErrors.map((n) => `#${n}`).join(', ')}. ` +
+        `These PRs will be missing from the release notes.\n`
+>>>>>>> refs/remotes/upstream-core/main
     );
   }
 

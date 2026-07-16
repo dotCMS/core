@@ -1,4 +1,5 @@
 set positional-arguments := true
+import? 'justfile.local'
 home_dir := env_var('HOME')
 # Introduction and Setup
 # If homebrew is not installed, run the following command:
@@ -29,6 +30,10 @@ build:
 
 # Builds the project without tests and disables Maven build cache
 build-no-cache:
+    rm -rf ./core-web/.nx/
+    rm -rf ./core-web/.angular/
+    rm -rf ./core-web/node_modules/
+    rm -rf ./installs/node
     ./mvnw -DskipTests clean install -Dmaven.build.cache.enabled=false
 
 # Builds the project without running tests, skip using docker or creating image
@@ -94,6 +99,26 @@ dev-run-debug-suspend port="8082":
 dev-start-on-port port="8082":
     ./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port={{ port }}
 
+# Starts the backend with fixed ports (8080 HTTP, 8443 HTTPS, 8090 management) for agentic/CI use
+dev-run-fixed:
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090
+
+# Polls /dotmgt/readyz until dotCMS is ready or 20 retries (100s) expire
+dev-wait-ready:
+    curl --retry 20 --retry-delay 5 --retry-connrefused \
+        -f http://localhost:8090/dotmgt/readyz
+
+# Starts the Angular dev server on port 4200 in the background; logs to /tmp/angular-dev.log
+serve-frontend:
+    cd core-web && yarn nx serve dotcms-ui --port 4200 > /tmp/angular-dev.log 2>&1 & echo $! > /tmp/angular-dev-server.pid
+
+# Stops the Angular dev server started by serve-frontend
+stop-frontend:
+    kill $(cat /tmp/angular-dev-server.pid) && rm /tmp/angular-dev-server.pid
+
 # Stops the development Docker container
 dev-stop:
     ./mvnw -pl :dotcms-core -Pdocker-stop
@@ -145,6 +170,11 @@ test-integration:
 # Runs only the open-search integration tests
 test-integration-open-search:
    ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true
+
+# Runs integration tests under an ES->OS migration phase (two separate clusters: ES + OS 3.x).
+# Usage: just test-integration-phase [PHASE] [TEST]   e.g. `just test-integration-phase 3 ContentletIndexAPIImplTest`
+test-integration-phase phase='3' test='':
+   ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.phase={{phase}} {{ if test == '' { '' } else { '-Dit.test=' + test } }}
 
 # Suspends execution for debugging integration tests
 test-integration-debug-suspend:

@@ -1114,4 +1114,52 @@ public class FileMetadataAPITest {
         assertTrue("Metadata map must be empty as no attributes were generated", ((Map<String, Object>) metadataMap).isEmpty());
     }
 
+    /**
+     * <b>Method to test:</b> {@link FileMetadataAPI#generateContentletMetadata(Contentlet)} <br>
+     * <b>Given scenario:</b> Metadata already exists for a file asset, then the underlying binary
+     * becomes unreachable on disk (deleted here; a hung network mount in production, see issue
+     * #36498) <br>
+     * <b>Expected Result:</b> The persisted metadata is read and returned as-is. Metadata is only
+     * (re)written when it is missing, empty or unreadable — the binary must not be needed on the
+     * happy path, which is what this proves: regeneration is impossible without the file.
+     */
+    @Test
+    public void Test_Generate_Metadata_Reads_Existing_Without_Touching_Binary() throws Exception {
+        prepareIfNecessary();
+
+        final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        // first pass makes sure the metadata is persisted in storage
+        final ContentletMetadata firstPass = fileMetadataAPI
+                .generateContentletMetadata(fileAssetContent);
+        final Metadata stored = firstPass.getBasicMetadataMap().get(FILE_ASSET);
+        assertNotNull(stored);
+        assertFalse(stored.getMap().isEmpty());
+
+        // make regeneration impossible: remove the binary and evict the memory cache so the
+        // metadata can only come from a storage read
+        final File binary = (File) fileAssetContent.get(FILE_ASSET);
+        assertTrue(binary.exists());
+        assertTrue(binary.delete());
+        CacheLocator.getMetadataCache()
+                .removeMetadata(fileAssetContent.getInode() + ":" + FILE_ASSET);
+
+        // ╔════════════════════════╗
+        // ║  Executing Assertions  ║
+        // ╚════════════════════════╝
+        final ContentletMetadata secondPass = fileMetadataAPI
+                .generateContentletMetadata(fileAssetContent);
+        final Metadata reRead = secondPass.getBasicMetadataMap().get(FILE_ASSET);
+        assertNotNull("metadata must be served from storage even though the binary is gone",
+                reRead);
+        assertEquals("existing metadata must be returned as-is, not regenerated",
+                stored.getMap().get(BasicMetadataFields.SHA256_META_KEY.key()),
+                reRead.getMap().get(BasicMetadataFields.SHA256_META_KEY.key()));
+        assertNotNull("full metadata must also be served from storage",
+                secondPass.getFullMetadataMap().get(FILE_ASSET));
+    }
+
 }

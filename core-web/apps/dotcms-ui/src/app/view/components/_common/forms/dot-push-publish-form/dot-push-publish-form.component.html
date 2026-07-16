@@ -23,7 +23,7 @@
                 id="filterKey"
                 pAutoFocus
                 formControlName="filterKey"
-                appendTo="body"></p-select>
+                appendTo="body" />
         </div>
         <div class="flex flex-col gap-1">
             <div class="flex gap-2">
@@ -41,12 +41,12 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-datePicker>
+                        showTime="true" />
                     <dot-field-validation-message
                         [field]="form.get('publishDate')"
                         message="{{
                             'contenttypes.content.push_publish.publish_date_errormsg' | dm
-                        }}"></dot-field-validation-message>
+                        }}" />
                 </div>
                 <div class="field flex-1">
                     <label dotFieldRequired for="expireDate">
@@ -61,12 +61,12 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-datePicker>
+                        showTime="true" />
                     <dot-field-validation-message
                         [field]="form.get('expireDate')"
                         message="{{
                             'contenttypes.content.push_publish.expire_date_errormsg' | dm
-                        }}"></dot-field-validation-message>
+                        }}" />
                 </div>
             </div>
             <p class="text-sm text-gray-500">
@@ -87,7 +87,7 @@
                 data-testid="timeZoneSelect"
                 formControlName="timezoneId"
                 filterBy="label"
-                appendTo="body"></p-select>
+                appendTo="body" />
         </div>
         <div class="field">
             <label dotFieldRequired for="environment">
@@ -103,4 +103,4 @@
         </div>
     </form>
 }
-<div [ngClass]="{ hidden: !eventData.customCode }" class="custom-code" #customCode></div>
+<div [class.hidden]="!eventData.customCode" class="custom-code" #customCode></div>

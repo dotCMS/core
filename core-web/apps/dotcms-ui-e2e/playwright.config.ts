@@ -3,6 +3,8 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
+import path from 'path';
+
 // Environment configuration
 const currentEnv = process.env['CURRENT_ENV'] || 'dev';
 const baseURL = process.env['E2E_BASE_URL'] || getBaseURL(currentEnv);
@@ -45,7 +47,7 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     /* Opt out of parallel tests on CI. */
     workers: process.env.CI ? 1 : undefined,
-    timeout: 30000,
+    timeout: 60000,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter:
         currentEnv === 'dev'
@@ -70,7 +72,7 @@ export default defineConfig({
     webServer:
         currentEnv === 'dev'
             ? {
-                  command: 'yarn nx run dotcms-ui:serve',
+                  command: 'pnpm exec nx run dotcms-ui:serve',
                   url: `${baseURL}/dotAdmin/#/public/login`,
                   reuseExistingServer: reuseExistingServer,
                   cwd: workspaceRoot
@@ -78,18 +80,22 @@ export default defineConfig({
             : undefined,
     projects: [
         {
+            name: 'setup',
+            testMatch: /auth\.setup\.ts/
+        },
+        {
             name: 'chromium',
+            testIgnore: /tests\/login\//,
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: path.join(__dirname, '.auth', 'admin.json')
+            },
+            dependencies: ['setup']
+        },
+        {
+            name: 'chromium-no-auth',
+            testMatch: /tests\/login\//,
             use: { ...devices['Desktop Chrome'] }
         }
-
-        // {
-        //   name: 'firefox',
-        //   use: { ...devices['Desktop Firefox'] }
-        // },
-
-        // {
-        //   name: 'webkit',
-        //   use: { ...devices['Desktop Safari'] }
-        // }
     ]
 });

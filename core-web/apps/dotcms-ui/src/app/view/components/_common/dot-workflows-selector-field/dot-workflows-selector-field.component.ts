@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, forwardRef, inject, OnInit } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -21,7 +21,7 @@ import { DotMessagePipe } from '@dotcms/ui';
             useExisting: forwardRef(() => DotWorkflowsSelectorFieldComponent)
         }
     ],
-    imports: [CommonModule, FormsModule, MultiSelectModule, DotMessagePipe]
+    imports: [FormsModule, MultiSelectModule, DotMessagePipe, AsyncPipe]
 })
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
     private dotWorkflowService = inject(DotWorkflowService);

@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -32,11 +31,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     StringUtils,
@@ -52,7 +47,7 @@ import { DotContentletsComponent } from './dot-contentlets.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -72,7 +67,7 @@ describe('DotContentletsComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentletsComponent,
         detectChanges: false,
-        imports: [DotEditContentletComponent, RouterTestingModule, HttpClientTestingModule],
+        imports: [DotEditContentletComponent, RouterTestingModule],
         componentProviders: [
             { provide: DotContentletEditorService, useValue: mockContentletEditorService }
         ],
@@ -93,23 +88,15 @@ describe('DotContentletsComponent', () => {
             { provide: LoginService, useClass: LoginServiceMock },
             DotWorkflowEventHandlerService,
             PushPublishService,
-            {
-                provide: CoreWebService,
-                useValue: {
-                    request: jest.fn().mockReturnValue(of({})),
-                    requestView: jest.fn().mockReturnValue(of({ entity: {} }))
-                }
-            },
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotRouterService, useClass: MockDotRouterService },
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             ApiRoot,
             DotFormatDateService,
             UserModel,
             StringUtils,
-            DotcmsEventsService,
             LoggerService,
-            DotEventsSocket,
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
             DotCurrentUserService,
             DotMessageDisplayService,

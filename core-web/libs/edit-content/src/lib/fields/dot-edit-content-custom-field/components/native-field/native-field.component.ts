@@ -26,6 +26,8 @@ import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models'
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 
+import { DotEditContentStore } from '../../../../store/edit-content.store';
+
 /**
  * Renders custom fields using the native web components approach.
  * Supports both inline and modal display modes based on field configuration.
@@ -34,7 +36,6 @@ import { WINDOW } from '@dotcms/utils';
 @Component({
     selector: 'dot-native-field',
     template: '<div #container></div>',
-    styleUrls: ['./native-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
@@ -58,6 +59,11 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      * as those are required functionality for custom fields.
      */
     #domSanitizer = inject(DomSanitizer);
+    /**
+     * The edit-content store, used to propagate field visibility changes
+     * from the BridgeAPI (show/hide) into Angular state.
+     */
+    readonly #store = inject(DotEditContentStore);
     /**
      * The field to render.
      */
@@ -83,7 +89,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
     /**
      * The form bridge to communicate with the custom field.
      */
-    #formBridge: FormBridge = null;
+    #formBridge: FormBridge | null = null;
     /**
      * The zone to run the code in.
      */
@@ -124,7 +130,10 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
             type: 'angular',
             form,
             zone: this.#zone,
-            dialogService: this.#dialogService
+            dialogService: this.#dialogService,
+            onFieldVisibilityChange: (fieldVariable, visible) => {
+                this.#store.setFieldVisibility(fieldVariable, visible);
+            }
         });
 
         this.#window['DotCustomFieldApi'] = this.#formBridge;

@@ -99,6 +99,14 @@ inputs:
   artifact-suffix:
     description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Dash prefix added automatically for Maven artifacts. Computed from java-version if not provided.'
     required: false
+  docker-io-username:
+    description: 'Docker Hub username for authenticated pulls (avoids rate limiting)'
+    required: false
+    default: ''
+  docker-io-token:
+    description: 'Docker Hub token for authenticated pulls (avoids rate limiting)'
+    required: false
+    default: ''
 runs:
   using: 'composite'
   steps:
@@ -176,28 +184,51 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: installs
-        key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+        # hash nodejs-parent/pom.xml so the pnpm-era layout (install-node-and-npm
+        # + corepack shim) is not mixed with the yarn-era layout from cached
+        # builds of the previous toolchain.
+        key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
-    - name: Get yarn cache directory path
-      id: yarn-info
+    - name: Verify pnpm version is in sync between package.json and nodejs-parent/pom.xml
       if: ${{ inputs.requires-node == 'true' }}
       shell: bash
       run: |
-        echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-        echo "version=$(yarn -v)" >> $GITHUB_OUTPUT
-      
+        set -euo pipefail
+        pkg_json_pm=$(jq -r '.packageManager' core-web/package.json)
+        pkg_json_version="${pkg_json_pm#pnpm@}"
+        pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
+        if [ "$pkg_json_version" != "$pom_version" ]; then
+          echo "::error::pnpm version mismatch: core-web/package.json=$pkg_json_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value while the pnpm store cache key uses the package.json value." >&2
+          exit 1
+        fi
+        echo "pnpm version in sync: $pom_version"
 
-    - id: restore-cache-yarn
-      name: Restore Yarn Cache
+    - name: Set up pnpm
+      if: ${{ inputs.requires-node == 'true' }}
+      uses: pnpm/action-setup@v4
+      with:
+        package_json_file: core-web/package.json
+        run_install: false
+
+    - name: Get pnpm store directory path
+      id: pnpm-info
+      if: ${{ inputs.requires-node == 'true' }}
+      shell: bash
+      run: |
+        echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        echo "version=$(pnpm -v)" >> $GITHUB_OUTPUT
+
+    - id: restore-cache-pnpm
+      name: Restore pnpm Store Cache
       if: ${{ inputs.requires-node == 'true' }}
       uses: actions/cache/restore@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}-${{ hashFiles('core-web/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}
-          ${{ runner.os }}-yarn-
-          
+          ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}
+          ${{ runner.os }}-pnpm-
+
 
     - id: cache-sonar
       name: Cache SonarQube Packages
@@ -239,6 +270,13 @@ runs:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
         name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
+
+    - name: Docker Hub Login
+      if: ${{ inputs.docker-io-username != '' && inputs.docker-io-token != '' }}
+      uses: docker/login-action@v3.0.0
+      with:
+        username: ${{ inputs.docker-io-username }}
+        password: ${{ inputs.docker-io-token }}
 
     - id: run-maven-build
       name: Run Maven Build
@@ -379,13 +417,13 @@ runs:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
 
-    - id: save-cache-yarn
-      name: Save Yarn Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-yarn.outputs.cache-hit != 'true' }}
+    - id: save-cache-pnpm
+      name: Save pnpm Store Cache
+      if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ steps.restore-cache-yarn.outputs.cache-primary-key }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ steps.restore-cache-pnpm.outputs.cache-primary-key }}
 
     - id: save-cache-sonar
       name: Save SonarQube Cache

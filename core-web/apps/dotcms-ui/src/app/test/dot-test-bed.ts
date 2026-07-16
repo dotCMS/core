@@ -1,7 +1,8 @@
 import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { LOCALE_ID, Type } from '@angular/core';
 import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -24,12 +25,7 @@ import {
 import {
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     StringUtils,
@@ -84,13 +80,6 @@ export class MockGlobalStore {
     };
 }
 
-export const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
-
 /**
  * DOTTestBed its deprecated
  * @deprecated This class is deprecated
@@ -102,13 +91,13 @@ export class DOTTestBed {
             CommonModule,
             FormsModule,
             ReactiveFormsModule,
-            DotSafeHtmlPipe,
-            HttpClientTestingModule
+            DotSafeHtmlPipe
         ],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             { provide: LOCALE_ID, useValue: {} },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             {
                 /* A service that provides a way to navigate between pages. */
                 provide:
@@ -126,10 +115,7 @@ export class DOTTestBed {
             DotHttpErrorManagerService,
             DotIframeService,
             DotMessageService,
-            DotEventsSocket,
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotcmsConfigService,
-            DotcmsEventsService,
             DotFormatDateService,
             LoggerService,
             StringUtils,

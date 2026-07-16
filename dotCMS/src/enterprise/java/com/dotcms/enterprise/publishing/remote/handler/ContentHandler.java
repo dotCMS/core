@@ -35,7 +35,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
@@ -1278,7 +1278,9 @@ public class ContentHandler implements IHandler {
 	    	final Host site = APILocator.getHostAPI().find(content.getIdentifier(), APILocator.getUserAPI().getSystemUser(), !RESPECT_FRONTEND_ROLES);
 	    	if(null != site && UtilMethods.isSet(site.getInode())){
 	    		APILocator.getHostAPI().archive(site,user,!RESPECT_FRONTEND_ROLES);
-	    		APILocator.getHostAPI().delete(site, user, !RESPECT_FRONTEND_ROLES);
+	    		if (!isPushedContentArchived) {
+	    			APILocator.getHostAPI().delete(site, user, !RESPECT_FRONTEND_ROLES);
+	    		}
 	    	}
 	    }else{
 			// if the content is not live, then we don't need to unpublish it

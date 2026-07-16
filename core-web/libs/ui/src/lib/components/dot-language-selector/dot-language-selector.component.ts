@@ -1,6 +1,5 @@
 import { signalState, patchState } from '@ngrx/signals';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -50,7 +49,7 @@ interface DotLanguageSelectorState {
 
 @Component({
     selector: 'dot-language-selector',
-    imports: [CommonModule, FormsModule, SelectModule],
+    imports: [FormsModule, SelectModule],
     templateUrl: './dot-language-selector.component.html',
     styles: [
         `

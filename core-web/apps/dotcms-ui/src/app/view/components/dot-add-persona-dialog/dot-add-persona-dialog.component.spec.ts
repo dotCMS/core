@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -186,7 +186,7 @@ describe('DotAddPersonaDialogComponent', () => {
                 jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).mockReturnValue(throwError(fake500Response));
+                ).mockReturnValue(throwError(() => fake500Response));
 
                 submitForm();
 

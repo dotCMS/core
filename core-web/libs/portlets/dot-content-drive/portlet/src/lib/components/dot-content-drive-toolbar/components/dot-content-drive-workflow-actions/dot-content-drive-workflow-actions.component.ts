@@ -1,4 +1,3 @@
-import { NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -24,7 +23,7 @@ import {
 
 @Component({
     selector: 'dot-content-drive-workflow-actions',
-    imports: [ButtonModule, DotMessagePipe, NgStyle, ConfirmDialogModule],
+    imports: [ButtonModule, DotMessagePipe, ConfirmDialogModule],
     providers: [
         DotWorkflowActionsFireService,
         ConfirmationService,

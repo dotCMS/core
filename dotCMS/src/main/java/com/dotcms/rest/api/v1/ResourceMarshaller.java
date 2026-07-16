@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 

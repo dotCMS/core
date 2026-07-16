@@ -1,18 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import {
-    Component,
-    DebugElement,
-    EventEmitter,
-    Injectable,
-    Input,
-    Output,
-    Renderer2
-} from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component, DebugElement, input, output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -22,7 +13,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DialogModule } from 'primeng/dialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -30,25 +21,23 @@ import { TooltipModule } from 'primeng/tooltip';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFieldService,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
-import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotDialogActions,
-    DotFieldVariable
+    DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     fieldsBrokenWithColumns,
@@ -59,12 +48,9 @@ import {
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
 import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
-import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
-import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { ContentTypeFieldsAddRowComponent } from '../content-type-fields-add-row/content-type-fields-add-row.component';
-import { DotContentTypeFieldsVariablesComponent } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
+import { DotEditFieldDialogResult } from '../dot-edit-field-dialog';
 import { FieldPropertyService } from '../service/field-properties.service';
-import { FieldService } from '../service/field.service';
 import { FieldDragDropService } from '../service/index';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
@@ -82,31 +68,9 @@ const fakeContentType: DotCMSContentType = {
     template: ''
 })
 class TestContentTypeFieldsRowComponent {
-    @Input()
-    fieldRow: DotCMSContentTypeLayoutRow;
-    @Output()
-    editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    @Output()
-    removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-}
-
-@Component({
-    selector: 'dot-content-type-fields-properties-form',
-    template: ''
-})
-class TestContentTypeFieldsPropertiesFormComponent {
-    @Output()
-    saveField: EventEmitter<any> = new EventEmitter();
-    @Input()
-    formFieldData: DotCMSContentTypeField;
-    @Input()
-    contentType: DotCMSContentType;
-
-    public destroy(): void {
-        return;
-
-        return;
-    }
+    fieldRow = input<DotCMSContentTypeLayoutRow>();
+    editField = output<DotCMSContentTypeField>();
+    removeField = output<DotCMSContentTypeField>();
 }
 
 @Component({
@@ -114,13 +78,9 @@ class TestContentTypeFieldsPropertiesFormComponent {
     template: ''
 })
 class TestDotContentTypeFieldsTabComponent {
-    @Input()
-    fieldTab: DotCMSContentTypeLayoutRow;
-
-    @Output()
-    editTab: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    @Output()
-    removeTab: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
+    fieldTab = input<DotCMSContentTypeLayoutRow>();
+    editTab = output<DotCMSContentTypeField>();
+    removeTab = output<DotCMSContentTypeLayoutRow>();
 }
 
 @Component({
@@ -128,25 +88,23 @@ class TestDotContentTypeFieldsTabComponent {
     template: ''
 })
 class TestDotLoadingIndicatorComponent {
-    @Input()
-    fullscreen: boolean;
+    fullscreen = input<boolean>();
 }
 
-@Injectable()
 class TestFieldDragDropService {
-    _fieldDropFromSource: Subject<any> = new Subject();
-    _fieldDropFromTarget: Subject<any> = new Subject();
-    _fieldRowDropFromTarget: Subject<any> = new Subject();
+    _fieldDropFromSource = new Subject<unknown>();
+    _fieldDropFromTarget = new Subject<unknown>();
+    _fieldRowDropFromTarget = new Subject<unknown>();
 
-    get fieldDropFromSource$(): Observable<any> {
+    get fieldDropFromSource$(): Observable<unknown> {
         return this._fieldDropFromSource.asObservable();
     }
 
-    get fieldDropFromTarget$(): Observable<any> {
+    get fieldDropFromTarget$(): Observable<unknown> {
         return this._fieldDropFromTarget.asObservable();
     }
 
-    get fieldRowDropFromTarget$(): Observable<any> {
+    get fieldRowDropFromTarget$(): Observable<unknown> {
         return this._fieldRowDropFromTarget.asObservable();
     }
 
@@ -155,7 +113,6 @@ class TestFieldDragDropService {
     }
 }
 
-@Injectable()
 class TestDotLoadingIndicatorService {
     show(): void {
         return;
@@ -166,7 +123,7 @@ class TestDotLoadingIndicatorService {
     }
 }
 
-function becomeNewField(field) {
+function becomeNewField(field: Partial<DotCMSContentTypeField>) {
     delete field.id;
     delete field.sortOrder;
 }
@@ -187,6 +144,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     let dragDropService: TestFieldDragDropService;
+    let dialogOnClose: Subject<DotEditFieldDialogResult>;
+    const dialogServiceMock = { open: jest.fn() };
 
     beforeEach(waitForAsync(() => {
         // Mock matchMedia for PrimeNG components
@@ -205,12 +164,15 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         });
 
         dragDropService = new TestFieldDragDropService();
+        dialogOnClose = new Subject<DotEditFieldDialogResult>();
+        dialogServiceMock.open.mockReset();
+        dialogServiceMock.open.mockReturnValue({
+            onClose: dialogOnClose.asObservable()
+        } as DynamicDialogRef);
 
         TestBed.configureTestingModule({
             declarations: [ContentTypeFieldsDropZoneComponent],
             imports: [
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -218,27 +180,25 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     }
                 ]),
                 BrowserAnimationsModule,
-                HttpClientTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
                 DotMessagePipe,
                 TabsModule,
                 TooltipModule,
                 ButtonModule,
-                DialogModule,
                 DragulaModule,
                 TestDotLoadingIndicatorComponent,
                 TestContentTypeFieldsRowComponent,
-                TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 ContentTypeFieldsAddRowComponent,
-                DotContentTypeFieldsVariablesComponent,
                 DotIconComponent,
                 DotActionButtonComponent,
                 TableModule,
                 CheckboxModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: Router, useValue: mockRouter },
                 { provide: FieldDragDropService, useValue: dragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -247,17 +207,18 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     provide: DotLoadingIndicatorService,
                     useValue: dotLoadingIndicatorServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotEventsSocket,
                 LoginService,
                 DotFormatDateService,
-                FieldService,
+                DotFieldService,
                 FieldPropertyService,
                 DragulaService,
                 DotEventsService,
                 { provide: DotMessageDisplayService, useValue: {} },
-                { provide: DotHttpErrorManagerService, useValue: {} }
+                { provide: DotHttpErrorManagerService, useValue: {} },
+                { provide: DialogService, useValue: dialogServiceMock }
             ]
+        }).overrideComponent(ContentTypeFieldsDropZoneComponent, {
+            set: { providers: [{ provide: DialogService, useValue: dialogServiceMock }] }
         });
 
         fixture = TestBed.createComponent(ContentTypeFieldsDropZoneComponent);
@@ -266,10 +227,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const originalDetectChanges = fixture.detectChanges.bind(fixture);
         fixture.detectChanges = () => originalDetectChanges(false);
     }));
-
-    it('should have propertiesForm', () => {
-        expect(comp.$propertiesForm()).not.toBeUndefined();
-    });
 
     it('should have fieldsContainer', () => {
         const fieldsContainer = de.query(By.css('[dragula="fields-row-bag"]'));
@@ -281,48 +238,22 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect('fields-row-bag').toEqual(fieldsContainer.attributes['dragula']);
     });
 
-    it('should set Save button disable on load', () => {
-        fixture.detectChanges();
-        expect(comp.dialogActions.accept.disabled).toBeTruthy();
-    });
-
-    it('should have a dialog', () => {
-        const dialog = de.query(By.css('p-dialog'));
-        expect(dialog).not.toBeNull();
-    });
-
-    it('should pass contentType', () => {
+    it('should reset values when close dialog', () => {
         fixture.componentRef.setInput('contentType', fakeContentType);
-        comp.displayDialog = true;
-        fixture.detectChanges();
-        const contentTypeFieldsPropertyForm = de.query(
-            By.css('dot-content-type-fields-properties-form')
-        );
-        expect(contentTypeFieldsPropertyForm.componentInstance.contentType.name).toBe(
-            'ContentTypeName'
-        );
-    });
-
-    it('should reset values when close dialog', async () => {
-        const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        comp.fieldRows = [fieldRow];
-
-        comp.displayDialog = true;
-        comp.activeTab = 1;
-        jest.spyOn(comp, 'setDialogOkButtonState');
-
         fixture.detectChanges();
 
-        comp.handleDialogVisibleChange(false);
+        // Open the dialog through the add-tab-divider path
+        comp.fieldRows = [];
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+        dotEventsService.notify('add-tab-divider', null);
 
-        await fixture.whenStable();
+        expect(dialogServiceMock.open).toHaveBeenCalled();
+        expect(comp.currentField).not.toBeNull();
 
-        expect(comp.displayDialog).toBe(false);
-        expect(comp.hideButtons).toBe(false);
-        expect(comp.currentField).toBe(null);
-        expect(comp.activeTab).toBe(0);
-        expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
-        expect(comp.setDialogOkButtonState).toHaveBeenCalledTimes(1);
+        // Dismiss the dialog with no result -> cleanup runs
+        dialogOnClose.next(undefined);
+
+        expect(comp.currentField).toBeNull();
     });
 
     it('should emit removeFields event', () => {
@@ -406,11 +337,104 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fixture.detectChanges();
         dotEventsService.notify('add-tab-divider', null);
 
-        fixture.detectChanges();
+        expect(comp.fieldRows.length).toBe(1);
 
-        comp.handleDialogVisibleChange(false);
+        // Dismiss the dialog with no result -> the divider row is removed
+        dialogOnClose.next(undefined);
 
         expect(comp.fieldRows.length).toBe(0);
+    });
+
+    it('should open the edit dialog when editFieldHandler is called', () => {
+        fixture.componentRef.setInput('contentType', fakeContentType);
+        const field = {
+            ...dotcmsContentTypeFieldBasicMock,
+            clazz: DotCMSClazzes.TEXT,
+            id: 'field-id',
+            name: 'nameField'
+        };
+        const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
+        fieldRow.columns[0].fields = [field];
+        comp.fieldRows = [fieldRow];
+        fixture.detectChanges();
+
+        comp.editFieldHandler(field);
+
+        expect(dialogServiceMock.open).toHaveBeenCalledTimes(1);
+        const config = dialogServiceMock.open.mock.calls[0][1];
+        expect(config.closable).toBe(true);
+        expect(config.closeOnEscape).toBe(true);
+        expect(config.data.currentField).toBe(comp.currentField);
+        expect(config.data.currentFieldType).toBe(comp.currentFieldType);
+        expect(config.data.contentType).toEqual(fakeContentType);
+    });
+
+    it('should emit editField when dialog closes with a saved field with id', () => {
+        fixture.componentRef.setInput('contentType', fakeContentType);
+        const field = {
+            ...dotcmsContentTypeFieldBasicMock,
+            clazz: DotCMSClazzes.TEXT,
+            id: 'field-id',
+            name: 'nameField'
+        };
+        const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
+        fieldRow.columns[0].fields = [field];
+        comp.fieldRows = [fieldRow];
+        fixture.detectChanges();
+
+        jest.spyOn(comp.editField, 'emit');
+
+        comp.editFieldHandler(field);
+
+        const savedField = { ...field, indexed: true };
+        dialogOnClose.next({ kind: 'saved', field: savedField });
+
+        expect(comp.editField.emit).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'field-id', indexed: true })
+        );
+    });
+
+    it('should emit saveFields when dialog closes with a saved field without id', () => {
+        fixture.componentRef.setInput('contentType', fakeContentType);
+        comp.fieldRows = [];
+
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+        fixture.detectChanges();
+        dotEventsService.notify('add-tab-divider', null);
+
+        jest.spyOn(comp.saveFields, 'emit');
+
+        const dividerField = comp.fieldRows[0].divider;
+        dialogOnClose.next({ kind: 'saved', field: dividerField });
+
+        expect(comp.saveFields.emit).toHaveBeenCalledWith(comp.fieldRows);
+    });
+
+    it('should emit editField when dialog closes with convert-to-block', () => {
+        fixture.componentRef.setInput('contentType', fakeContentType);
+        const field = {
+            ...dotcmsContentTypeFieldBasicMock,
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+            id: 'wysiwyg-id',
+            name: 'WYSIWYG'
+        };
+        const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
+        fieldRow.columns[0].fields = [field];
+        comp.fieldRows = [fieldRow];
+        fixture.detectChanges();
+
+        jest.spyOn(comp.editField, 'emit');
+
+        comp.editFieldHandler(field);
+
+        const blockField = {
+            ...field,
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+            fieldType: 'Story-Block'
+        };
+        dialogOnClose.next({ kind: 'convert-to-block', field: blockField });
+
+        expect(comp.editField.emit).toHaveBeenCalledWith(blockField);
     });
 
     afterEach(() => {
@@ -429,10 +453,6 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
     loading: boolean;
-
-    constructor() {
-        return;
-    }
 }
 
 // TODO: Upgrade tests to use FieldDragDropService (without mocking) and mocking DragulaService
@@ -448,19 +468,6 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     contentTypeId: '12b'
 };
 
-@Component({
-    selector: 'dot-block-editor-settings',
-    template: ''
-})
-class TestDotBlockEditorSettingsComponent {
-    @Output() $changeControls = new EventEmitter<DotDialogActions>();
-    @Output() $valid = new EventEmitter<boolean>();
-    @Output() $save = new EventEmitter<DotFieldVariable[]>();
-
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
-}
-
 describe('Load fields and drag and drop', () => {
     const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService =
         new TestDotLoadingIndicatorService();
@@ -469,7 +476,6 @@ describe('Load fields and drag and drop', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let scrollIntoViewSpy;
 
     const mockRouter = {
         navigate: jest.fn()
@@ -482,6 +488,8 @@ describe('Load fields and drag and drop', () => {
     });
 
     let testFieldDragDropService: TestFieldDragDropService;
+    let dialogOnClose: Subject<DotEditFieldDialogResult>;
+    const dialogServiceMock = { open: jest.fn() };
 
     beforeEach(waitForAsync(() => {
         Object.defineProperty(window, 'matchMedia', {
@@ -499,17 +507,18 @@ describe('Load fields and drag and drop', () => {
         });
 
         testFieldDragDropService = new TestFieldDragDropService();
+        dialogOnClose = new Subject<DotEditFieldDialogResult>();
+        dialogServiceMock.open.mockReset();
+        dialogServiceMock.open.mockReturnValue({
+            onClose: dialogOnClose.asObservable()
+        } as DynamicDialogRef);
 
         TestBed.configureTestingModule({
             declarations: [ContentTypeFieldsDropZoneComponent, TestHostComponent],
             imports: [
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
                 TestContentTypeFieldsRowComponent,
-                TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 TestDotLoadingIndicatorComponent,
-                TestDotBlockEditorSettingsComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -517,7 +526,6 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                DotContentTypeFieldsVariablesComponent,
                 FormsModule,
                 CheckboxModule,
                 ReactiveFormsModule,
@@ -527,8 +535,6 @@ describe('Load fields and drag and drop', () => {
                 ButtonModule,
                 TableModule,
                 ContentTypeFieldsAddRowComponent,
-                DialogModule,
-                HttpClientTestingModule,
                 DotMessagePipe,
                 TabsModule
             ],
@@ -536,7 +542,7 @@ describe('Load fields and drag and drop', () => {
                 DragulaService,
                 FieldPropertyService,
                 {
-                    provide: FieldService,
+                    provide: DotFieldService,
                     useValue: {
                         loadFieldTypes() {
                             return of([
@@ -568,7 +574,6 @@ describe('Load fields and drag and drop', () => {
                 },
                 DotFormatDateService,
                 LoginService,
-                DotEventsSocket,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: FieldDragDropService, useValue: testFieldDragDropService },
                 { provide: Router, useValue: mockRouter },
@@ -577,9 +582,11 @@ describe('Load fields and drag and drop', () => {
                     useValue: dotLoadingIndicatorServiceMock
                 },
                 { provide: DotHttpErrorManagerService, useValue: {} },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotEventsService
+                DotEventsService,
+                { provide: DialogService, useValue: dialogServiceMock }
             ]
+        }).overrideComponent(ContentTypeFieldsDropZoneComponent, {
+            set: { providers: [{ provide: DialogService, useValue: dialogServiceMock }] }
         });
 
         fixture = TestBed.createComponent(TestHostComponent);
@@ -590,14 +597,6 @@ describe('Load fields and drag and drop', () => {
         comp = de.componentInstance;
         const originalDetectChanges = fixture.detectChanges.bind(fixture);
         fixture.detectChanges = () => originalDetectChanges(false);
-        const rendered = de.injector.get(Renderer2);
-        scrollIntoViewSpy = jest.fn();
-
-        jest.spyOn(rendered, 'selectRootElement').mockImplementation(() => {
-            return {
-                scrollIntoView: scrollIntoViewSpy
-            };
-        });
 
         fakeFields = [
             {
@@ -735,7 +734,7 @@ describe('Load fields and drag and drop', () => {
         const fieldsContainer = de.query(By.css('[dragula="fields-row-bag"]'));
         const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
         fieldRows[0].componentInstance.editField.emit(field);
-        expect<any>(spy).toHaveBeenCalledWith(field);
+        expect(spy).toHaveBeenCalledWith(field);
     });
 
     it('should save all updated fields', fakeAsync(() => {
@@ -759,7 +758,6 @@ describe('Load fields and drag and drop', () => {
 
         expect(comp.currentField).toEqual(updatedField);
 
-        comp.displayDialog = false;
         comp.saveFieldsHandler(fieldUpdated);
 
         expect(comp.editField.emit).toHaveBeenCalledWith(
@@ -813,11 +811,11 @@ describe('Load fields and drag and drop', () => {
         // - 1 because one Mock Fields has not columns
         expect(fakeFields.length - 1).toEqual(fieldRows.length);
 
-        expect(2).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);
-        expect(1).toEqual(fieldRows[0].componentInstance.fieldRow.columns[0].fields.length);
+        expect(2).toEqual(fieldRows[0].componentInstance.fieldRow()?.columns.length);
+        expect(1).toEqual(fieldRows[0].componentInstance.fieldRow()?.columns[0].fields.length);
 
-        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns.length);
-        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns[0].fields.length);
+        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow()?.columns.length);
+        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow()?.columns[0].fields.length);
     });
 
     it('should set dropped field if a drop event happen from source', () => {
@@ -879,7 +877,7 @@ describe('Load fields and drag and drop', () => {
         });
     });
 
-    it('should not display Edit Dialog when drag & drop event happens', (done) => {
+    it('should not open Edit Dialog when drag & drop event happens', (done) => {
         fixture.detectChanges();
 
         const fieldMoved = [
@@ -889,7 +887,7 @@ describe('Load fields and drag and drop', () => {
         ];
 
         comp.saveFields.subscribe(() => {
-            expect(comp.displayDialog).toBe(false);
+            expect(dialogServiceMock.open).not.toHaveBeenCalled();
             done();
         });
 
@@ -932,267 +930,22 @@ describe('Load fields and drag and drop', () => {
         const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
         fieldRows[0].componentInstance.removeField.emit(field);
 
-        expect<any>(spy).toHaveBeenCalledWith(field);
+        expect(spy).toHaveBeenCalledWith(field);
     });
 
-    it('should disable field variable tab', () => {
-        comp.currentField = {
-            ...dotcmsContentTypeFieldBasicMock
-        };
-        comp.displayDialog = true;
+    it('should open the dialog when a drop event happens from source', () => {
         fixture.detectChanges();
-
-        const variablesTabDisabled = !comp.currentField?.id;
-        expect(variablesTabDisabled).toBe(true);
-    });
-
-    it('should NOT disable field variable tab', () => {
-        comp.currentField = {
-            ...dotcmsContentTypeFieldBasicMock,
-            id: '123'
-        };
-        comp.displayDialog = true;
-        fixture.detectChanges();
-        const variablesTabDisabled = !comp.currentField?.id;
-        expect(variablesTabDisabled).toBe(false);
-    });
-
-    it('should change the dialogActions', () => {
-        const newDialogActions = {
-            accept: {
-                action: () => {
-                    /* */
-                },
-                label: 'Save',
-                disabled: true
-            },
-            cancel: {
-                label: 'Cancel'
+        const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];
+        testFieldDragDropService._fieldDropFromSource.next({
+            item: fieldToEdit,
+            target: {
+                columnId: '8',
+                model: [fieldToEdit]
             }
-        };
-        comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
-    });
-
-    it('should restore the default dialogActions on Overview Tab', async () => {
-        fixture.detectChanges();
-        const newDialogActions = {
-            accept: {
-                action: () => {
-                    /* */
-                },
-                label: 'Save',
-                disabled: true
-            },
-            cancel: {
-                label: 'Cancel'
-            }
-        };
-
-        // Changes Dialog Actions
-        comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
-
-        // Change to Overview Tab
-        comp.handleTabChange(0);
-        expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
-    });
-
-    it('should restore the default dialogActions on Overview Tab', async () => {
-        fixture.detectChanges();
-        const newDialogActions = {
-            accept: {
-                action: () => {
-                    /* */
-                },
-                label: 'Save',
-                disabled: true
-            },
-            cancel: {
-                label: 'Cancel'
-            }
-        };
-
-        // Changes Dialog Actions
-        comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
-
-        // Change to Overview Tab
-        comp.handleTabChange(0);
-        expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
-    });
-
-    describe('Edit Field Dialog', () => {
-        describe('WYSIWYG field', () => {
-            let fieldBox;
-            const field = {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
-                name: 'WYSIWYG',
-                id: '3'
-            };
-
-            beforeEach(() => {
-                fixture.detectChanges();
-
-                fieldBox = de.query(By.css('dot-content-type-fields-row'));
-                fieldBox.componentInstance.editField.emit(field);
-
-                fixture.detectChanges();
-            });
-            it('should show info box and scrollTo on click', () => {
-                const fieldPropertyService = de.injector.get(FieldPropertyService);
-                const wysiwygField = fakeFields[0].columns[0].fields[0];
-                comp.currentField = wysiwygField;
-                comp.currentFieldType = fieldPropertyService.getFieldType(wysiwygField.clazz);
-
-                comp.scrollTo();
-
-                expect(scrollIntoViewSpy).toHaveBeenCalledWith({
-                    behavior: 'smooth',
-                    block: 'start',
-                    inline: 'nearest'
-                });
-            });
-
-            it('should show convert to block box and trigger convert', () => {
-                jest.spyOn(comp.editField, 'emit');
-
-                const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
-
-                convertBox.triggerEventHandler('$convert', {});
-
-                expect(comp.editField.emit).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        contentTypeId: '3b',
-                        fieldType: 'Story-Block',
-                        id: '3',
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-                    })
-                );
-            });
         });
 
-        describe('BLOCK EDITOR field', () => {
-            let fieldBoxComponent;
-            let BLOCK_EDITOR_SETTINGS: DebugElement;
-            let blockEditorComponent: TestDotBlockEditorSettingsComponent;
-
-            beforeEach(() => {
-                fixture.detectChanges();
-                fieldBoxComponent = de.query(By.css('dot-content-type-fields-row'))
-                    .componentInstance as TestContentTypeFieldsRowComponent;
-                fieldBoxComponent.editField.emit(BLOCK_EDITOR_FIELD);
-                fixture.detectChanges();
-
-                BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
-                blockEditorComponent = BLOCK_EDITOR_SETTINGS.componentInstance;
-            });
-
-            it('should create dot-block-editor-settings', () => {
-                const panels = de.queryAll(By.css('p-tabpanel'));
-                expect(BLOCK_EDITOR_SETTINGS).toBeTruthy();
-                expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD);
-                expect(panels.length).toBe(3);
-            });
-
-            it('should emit changeControls and update dialogActions', () => {
-                const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
-                const blockEditorComponent =
-                    BLOCK_EDITOR_SETTINGS.componentInstance as TestDotBlockEditorSettingsComponent;
-                const newDialogActions = {
-                    accept: {
-                        action: () => {
-                            /* */
-                        },
-                        label: 'Save',
-                        disabled: true
-                    },
-                    cancel: {
-                        label: 'Cancel'
-                    }
-                };
-                blockEditorComponent.$changeControls.emit(newDialogActions);
-                fixture.detectChanges();
-                expect(comp.dialogActions.accept.label).toBe('Save');
-                expect(comp.dialogActions.accept.disabled).toBe(true);
-                expect(comp.dialogActions.cancel.label).toBe('Cancel');
-            });
-
-            it('should close dialog on save', () => {
-                blockEditorComponent.$save.emit([]);
-                fixture.detectChanges();
-                expect(comp.displayDialog).toBe(false);
-                expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
-                expect(comp.activeTab).toBe(comp.OVERVIEW_TAB_INDEX);
-            });
-        });
-
-        it('should not create dot-block-editor-settings', () => {
-            fixture.detectChanges();
-            const fieldBoxComponent = de.query(By.css('dot-content-type-fields-row'))
-                .componentInstance as TestContentTypeFieldsRowComponent;
-            fieldBoxComponent.editField.emit({
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
-                name: 'WYSIWYG',
-                id: '3'
-            } as DotCMSContentTypeField);
-            fixture.detectChanges();
-
-            const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
-            expect(BLOCK_EDITOR_SETTINGS).not.toBeTruthy();
-        });
-
-        it('should show block editor info message when create a WYSIWYG', () => {
-            fixture.detectChanges();
-
-            // Trigger create a field
-            testFieldDragDropService._fieldDropFromSource.next({
-                item: {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
-                }
-            });
-
-            fixture.detectChanges();
-
-            expect(comp.currentFieldType?.clazz).toBe(
-                'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
-            );
-            expect(comp.displayDialog).toBe(true);
-        });
-
-        it('should display dialog if a drop event happen from source', () => {
-            fixture.detectChanges();
-            const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];
-            testFieldDragDropService._fieldDropFromSource.next({
-                item: fieldToEdit,
-                target: {
-                    columnId: '8',
-                    model: [fieldToEdit]
-                }
-            });
-
-            fixture.detectChanges();
-
-            expect(comp.displayDialog).toBe(true);
-            const dialog = de.query(By.css('p-dialog'));
-            expect(dialog).not.toBeNull();
-        });
-
-        it('should set hideButtons to true when change to variable tab', () => {
-            fixture.detectChanges();
-            const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];
-            testFieldDragDropService._fieldDropFromSource.next({
-                item: fieldToEdit,
-                target: {
-                    columnId: '8',
-                    model: [fieldToEdit]
-                }
-            });
-
-            fixture.detectChanges();
-            comp.handleTabChange(1);
-            expect(comp.hideButtons).toEqual(true);
-        });
+        expect(dialogServiceMock.open).toHaveBeenCalledTimes(1);
+        expect(comp.currentField).toBe(fieldToEdit);
     });
 
     describe('DotLoadingIndicator', () => {
@@ -1201,7 +954,7 @@ describe('Load fields and drag and drop', () => {
 
             const dotLoadingIndicator = de.query(By.css('dot-loading-indicator'));
             expect(dotLoadingIndicator).not.toBeNull();
-            expect(dotLoadingIndicator.componentInstance.fullscreen).toBe(true);
+            expect(dotLoadingIndicator.componentInstance.fullscreen()).toBe(true);
         });
 
         it('Should show dot-loading-indicator when loading is set to true', fakeAsync(() => {

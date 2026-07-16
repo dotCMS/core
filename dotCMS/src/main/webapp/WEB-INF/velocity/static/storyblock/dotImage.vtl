@@ -1,16 +1,27 @@
-<div#if($item.attrs.textAlign) style="text-align: $item.attrs.textAlign;"#end>
+#set($allowedAligns = ["left", "center", "right", "justify"])
+
+#if($item.attrs.textWrap == "left")
+    #set($figureStyle = "float: left; width: 50%; margin: 0 1rem 1rem 0;")
+#elseif($item.attrs.textWrap == "right")
+    #set($figureStyle = "float: right; width: 50%; margin: 0 0 1rem 1rem;")
+#elseif($allowedAligns.contains($item.attrs.textAlign))
+    #set($figureStyle = "text-align: $item.attrs.textAlign;")
+#end
+
+<figure#if($figureStyle) style="$figureStyle"#end>
 
     #if ($!item.attrs.href != "null")
     <a href="$!item.attrs.href">
     #end
-        <img
-            src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
-            alt="#if($!item.attrs.alt && $!item.attrs.alt != "null")$!item.attrs.alt#{else}$!item.attrs.data.title#end"
-            title="#if($!item.attrs.title && $!item.attrs.title != "null")$!item.attrs.title#{else}$!item.attrs.data.title#end"
-        />
+
+    <img
+        src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
+        alt="#if($!item.attrs.alt && $!item.attrs.alt != "null")$!item.attrs.alt#{else}$!item.attrs.data.title#end"
+        title="#if($!item.attrs.title && $!item.attrs.title != "null")$!item.attrs.title#{else}$!item.attrs.data.title#end"
+    />
+
     #if ($!item.attrs.href != "null")
     </a>
     #end
 
-</div>
-
+</figure>

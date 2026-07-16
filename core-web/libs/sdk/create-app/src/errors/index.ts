@@ -30,8 +30,8 @@ export class FailedToSetUpUVEConfig extends Error {
     }
 }
 
-export class FailedToGetDemoSiteIdentifierError extends Error {
+export class FailedToGetDefaultSiteError extends Error {
     constructor() {
-        super(`Failed to get demo site identifier from DotCMS.`);
+        super(`Failed to get default site identifier from DotCMS.`);
     }
 }

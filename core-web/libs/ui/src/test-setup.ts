@@ -36,8 +36,12 @@ Object.defineProperty(window, 'localStorage', { value: mock() });
 Object.defineProperty(window, 'sessionStorage', { value: mock() });
 Object.defineProperty(window, 'getComputedStyle', {
     value: () => ({
-        getPropertyValue: (prop: string) => '',
-        setProperty: (propertyName: string, value: string) => {}
+        getPropertyValue: () => '',
+        setProperty: () => {},
+        transitionDelay: '0s',
+        transitionDuration: '0s',
+        animationDelay: '0s',
+        animationDuration: '0s'
     })
 });
 
@@ -47,6 +51,11 @@ Object.defineProperty(document.body.style, 'transform', {
         configurable: true
     })
 });
+
+// structuredClone is not exposed by the happy-dom sandbox — polyfill for tests
+if (typeof globalThis.structuredClone === 'undefined') {
+    globalThis.structuredClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+}
 
 // PrimeNG mocks
 (global as any).ResizeObserver = class ResizeObserver {

@@ -21,7 +21,7 @@ import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.c
     standalone: false,
     template: `
         <form [formGroup]="group">
-            <dot-layout-properties-item formControlName="header"></dot-layout-properties-item>
+            <dot-layout-properties-item formControlName="header" />
         </form>
     `
 })

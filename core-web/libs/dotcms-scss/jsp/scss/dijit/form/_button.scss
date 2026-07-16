@@ -36,6 +36,20 @@
     margin: 0;
 }
 
+// Dojo's hccss.js false-positively detects high-contrast mode in Firefox,
+// adding `dj_a11y` to <body> and applying `border: black outset medium !important`
+// to .dijitButtonNode. Override here to keep the dotCMS custom theme intact.
+.dj_a11y {
+    .dijitButtonNode {
+        border: none !important;
+        padding: 0 $spacing-3 !important;
+    }
+
+    .dijitArrowButton {
+        padding: 0 !important;
+    }
+}
+
 .dijit {
     &Button {
         @include btn(
@@ -46,6 +60,7 @@
         );
 
         &Node {
+            appearance: none;
             border: none;
             font-size: $font-size-md;
         }

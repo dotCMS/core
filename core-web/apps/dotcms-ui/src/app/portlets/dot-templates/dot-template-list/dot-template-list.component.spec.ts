@@ -4,7 +4,8 @@
 import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -28,11 +29,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -44,17 +41,18 @@ import {
     DotContentState,
     DotMessageSeverity,
     DotMessageType,
+    DotSite,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     createFakeEvent,
     DotFormatDateServiceMock,
     MockDotMessageService,
@@ -100,7 +98,6 @@ afterAll(() => {
 });
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 
@@ -452,6 +449,10 @@ describe('DotTemplateListComponent', () => {
 
     const dialogRefClose = new Subject();
     const siteServiceMock = new SiteServiceMock();
+    const switchSiteSubject = new Subject<DotSite>();
+    const globalStoreMock = {
+        switchSiteEvent$: () => switchSiteSubject.asObservable()
+    };
 
     beforeEach(async () => {
         // Create spies for services that will be injected
@@ -482,13 +483,13 @@ describe('DotTemplateListComponent', () => {
 
         await TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotRouterService,
                     useValue: dotRouterServiceSpy
@@ -501,8 +502,6 @@ describe('DotTemplateListComponent', () => {
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 DotMessageDisplayService,
                 { provide: DialogService, useValue: dialogServiceSpy },
@@ -516,7 +515,8 @@ describe('DotTemplateListComponent', () => {
                 {
                     provide: PushPublishService,
                     useValue: { getEnvironments: jest.fn().mockReturnValue(of([])) }
-                }
+                },
+                { provide: GlobalStore, useValue: globalStoreMock }
             ],
             imports: [
                 DotTemplateListComponent,
@@ -530,8 +530,7 @@ describe('DotTemplateListComponent', () => {
                 DotActionButtonComponent,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
-                DotContentletStatusChipComponent,
-                HttpClientTestingModule,
+                DotContentletStatusBadgeComponent,
                 DynamicDialogModule,
                 BrowserAnimationsModule
             ],
@@ -558,7 +557,6 @@ describe('DotTemplateListComponent', () => {
         dotRouterService = dotRouterServiceSpy;
         dialogService = dialogServiceSpy;
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
-        void TestBed.inject(CoreWebService);
         dotSiteBrowserService = dotSiteBrowserServiceSpy;
     });
 
@@ -603,9 +601,8 @@ describe('DotTemplateListComponent', () => {
 
         it('should reload portlet only when the site change', () => {
             fixture.detectChanges(); // Initialize component and subscriptions
-            siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
+            switchSiteSubject.next(mockSites[1] as unknown as DotSite); // switching the site
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
@@ -717,13 +714,15 @@ describe('DotTemplateListComponent', () => {
                 hasLiveVersion: true
             };
 
-            const statusChips = fixture.debugElement.queryAll(By.css('dot-contentlet-status-chip'));
+            const statusChips = fixture.debugElement.queryAll(
+                By.css('dot-contentlet-status-badge')
+            );
             expect(statusChips.length).toBeGreaterThan(0);
             const chipForLocked = statusChips[1];
             expect(chipForLocked).toBeTruthy();
 
             const chipComponent =
-                chipForLocked.componentInstance as DotContentletStatusChipComponent;
+                chipForLocked.componentInstance as DotContentletStatusBadgeComponent;
             expect(chipComponent.state()).toEqual(state);
         }));
 

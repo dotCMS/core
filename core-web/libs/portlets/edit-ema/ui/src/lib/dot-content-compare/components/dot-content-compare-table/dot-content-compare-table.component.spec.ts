@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@openng/spectator';
 import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -29,7 +29,7 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
     standalone: false,
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'
+        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff" />'
 })
 class TestHostComponent {
     @Input() data: DotContentCompareTableData;
@@ -342,6 +342,10 @@ describe('DotContentCompareTableComponent', () => {
         it('should show dropdown', () => {
             const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
+        });
+        it('should show data.compare as the initially selected version in the dropdown', () => {
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
+            expect(dropdown.value).toEqual(dotContentCompareTableDataMock.compare);
         });
         it('should show selectButton', () => {
             const select: SelectButton = de.query(

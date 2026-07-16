@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import {
     AbstractControl,
@@ -38,7 +38,6 @@ import {
 @Component({
     selector: 'dot-experiments-configuration-traffic-split-add',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
@@ -47,7 +46,8 @@ import {
         ButtonModule,
         RadioButtonModule,
         InputNumberModule,
-        FormsModule
+        FormsModule,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-traffic-split-add.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

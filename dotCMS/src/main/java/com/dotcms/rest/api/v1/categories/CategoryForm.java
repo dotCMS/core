@@ -21,7 +21,7 @@ public class CategoryForm extends Validated {
     private String key;
     @NotNull
     private String categoryName;
-    private boolean active;
+    private Boolean active;
     private int sortOrder;
     private String categoryVelocityVarName;
 
@@ -67,7 +67,21 @@ public class CategoryForm extends Validated {
         return categoryName;
     }
 
+    /**
+     * Effective active flag. When {@code active} is omitted from the JSON payload the value
+     * defaults to {@code true}, matching the {@link com.dotmarketing.portlets.categories.model.Category}
+     * model default and the create-path behavior (issue #35501).
+     */
     public boolean isActive() {
+        return active == null || active;
+    }
+
+    /**
+     * Raw active flag exactly as supplied in the payload, or {@code null} when the field was
+     * omitted. Used by the update path to distinguish "not sent" from an explicit value so it
+     * does not silently flip {@code active} on a PUT that omits the field (issue #35501).
+     */
+    public Boolean activeProvided() {
         return active;
     }
 
@@ -96,7 +110,7 @@ public class CategoryForm extends Validated {
         @JsonProperty
         private String categoryName;
         @JsonProperty
-        private boolean active;
+        private Boolean active;
         @JsonProperty
         private int sortOrder;
         @JsonProperty
@@ -138,7 +152,7 @@ public class CategoryForm extends Validated {
             return this;
         }
 
-        public Builder setActive(final boolean active) {
+        public Builder setActive(final Boolean active) {
             this.active = active;
             return this;
         }

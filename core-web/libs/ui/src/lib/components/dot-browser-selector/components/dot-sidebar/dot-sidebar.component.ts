@@ -1,9 +1,7 @@
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     computed,
-    inject,
     input,
     model,
     output,
@@ -25,11 +23,6 @@ import { SYSTEM_HOST_ID } from '../../store/browser.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSideBarComponent {
-    /**
-     * A readonly private field that holds an instance of ChangeDetectorRef.
-     * This is used to detect and respond to changes in the component's data-bound properties.
-     */
-    readonly #cd = inject(ChangeDetectorRef);
     /**
      * An observable that emits an array of TreeNode objects representing the folders.
      *
@@ -83,8 +76,7 @@ export class DotSideBarComponent {
      */
     $state = computed(() => {
         const folders = this.$folders();
-
-        const selectedFile = folders.find((f) => f.data.identifier === SYSTEM_HOST_ID);
+        const selectedFile = folders.find((f) => f.data.id === SYSTEM_HOST_ID);
 
         return {
             folders,
@@ -92,14 +84,6 @@ export class DotSideBarComponent {
         };
     });
 
-    /**
-     * Triggers change detection manually.
-     * This method is used to ensure that the view is updated when the model changes.
-     * It calls the `detectChanges` method on the ChangeDetectorRef instance.
-     */
-    detectChanges() {
-        this.#cd.detectChanges();
-    }
     /**
      * Generates a random percentage string between 75% and 100%.
      *

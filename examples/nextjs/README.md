@@ -52,7 +52,6 @@ The example above is a Next.js front end for the [dotCMS demo site](https://demo
     - [Understanding the Structure](#understanding-the-structure)
     - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
     - [How to Render Your Page](#how-to-render-your-page)
-    - [Style Editor](#style-editor)
 - [Conclusion](#conclusion)
 - [Learn More](#learn-more)
 
@@ -93,6 +92,7 @@ This example uses the following npm packages from dotCMS:
 | [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/)   | UI Components     | React components and hooks for rendering dotCMS content |
 | [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve)        | Visual Editing    | Universal Visual Editor integration                     |
 | [@dotcms/types](https://www.npmjs.com/package/@dotcms/types)    | Type Safety       | TypeScript type definitions for dotCMS                  |
+| [@dotcms/experiments](https://www.npmjs.com/package/@dotcms/experiments) | A/B Testing | A/B testing capabilities (included; not used in `Page.tsx` rendering) |
 
 ## Setup Guide
 
@@ -234,39 +234,60 @@ The integration between dotCMS and Next.js works by:
 
 ```bash
 src/
-├── app/                       # App Router components (Server-Side Rendered pages)
-│   ├── [[...slug]]/           # Dynamic routing
-│   │   └── page.js            # Rendering rules for the specified route
+├── app/                       # App Router pages (Server-Side Rendered, .tsx)
+│   ├── [[...slug]]/           # Dynamic catch-all routing
+│   │   └── page.tsx           # Rendering rules for the specified route
 │   ├── blog/                  # Blog pages
 │   │   ├── post/[[...slug]]   # Further dynamic routing
-│   │   │        └── page.js   # Rendering rules for the specified route
-│   │   └── page.js            # Rendering for `blog/` root page
-│   ├── layout.js              # Root layout
-│   └── ...
+│   │   │        └── page.tsx  # Rendering rules for the specified route
+│   │   └── page.tsx           # Rendering for `blog/` root page
+│   ├── layout.tsx             # Root layout
+│   ├── not-found.tsx          # 404 page
+│   └── globals.css            # Global styles
 ├── components/
-│   └── content-type/          # Components for rendering dotCMS Content Types
-├── hooks/                     # Custom React hooks
-├── pages/                     # Client-side page templates (can use React hooks)
-└── utils/                     # Utility functions
-    ├── dotCMSClient.js        # dotCMS API client initialization
-    └── ...
+│   ├── content-types/         # One component per dotCMS Content Type
+│   │   ├── index.ts           # Content Type → React component mapping (pageComponents)
+│   │   └── *.tsx              # Individual Content Type components
+│   ├── editor/                # UVE editor buttons (EditButton, ReorderMenuButton)
+│   ├── header/ footer/ forms/ # Site chrome
+│   └── *.tsx                  # error, ErrorLayout, BlogCard, DestinationListing, ...
+├── config/
+│   └── dotcms.config.ts       # Typed, centralized environment access
+├── hooks/                     # Custom React hooks (useIsEditMode, useDebounce)
+├── lib/
+│   └── dotCMSClient.ts        # dotCMS API client initialization
+├── types/
+│   └── content.ts             # Shared TypeScript interfaces (Blog, Destination, ...)
+├── utils/                     # Utility functions
+│   ├── getDotCMSPage.ts       # Cached page fetch (page + GraphQL content)
+│   ├── pageResponse.ts        # Typed guards (isPageError, getPageContent, ...)
+│   ├── queries.ts             # GraphQL query strings
+│   └── imageLoader.ts         # Custom Next.js image loader
+└── views/                     # Client-side page templates (can use React hooks)
+    ├── Page.tsx
+    ├── DetailPage.tsx
+    └── BlogListingPage.tsx
 ```
 
 ### Understanding the Structure
 
-This project uses Next.js with App Router for server-side rendering, but with some important architectural decisions:
+This project is written in **TypeScript** (strict mode, with the `@/*` path alias configured in `tsconfig.json`) and uses Next.js with App Router for server-side rendering, with some important architectural decisions:
 
 1. **App Router (src/app/)**: Contains all server-side rendered pages and routes. These components don't use React hooks directly due to Next.js 13+ restrictions. Learn more about the App Router [here](https://nextjs.org/docs/app).
 
 2. **Components (src/components/)**:
-    - The `content-type/` folder contains React components that render dotCMS content.
+    - The `content-types/` folder contains React components that render dotCMS content.
     - In dotCMS, a "Content Type" is like a data model (e.g., "Product", "BlogPost"), while a "Contentlet" is an actual content instance.
     - For each Content Type in dotCMS, you need a corresponding React component to render it.
     - For example, if you have a `MyCustomContent` content type in dotCMS, you would create a matching component in this folder to render it.
 
-3. **Pages (src/pages/)**: Contains client-side page templates that can use React hooks. Since Next.js App Router components can't directly use hooks, these components handle client-side logic.
+3. **Views (src/views/)**: Contains client-side page templates (`Page.tsx`, `DetailPage.tsx`, `BlogListingPage.tsx`) that can use React hooks. Since Next.js App Router components can't directly use hooks, these components handle client-side logic.
 
-4. **Utils (src/utils/)**: Contains utility functions, most importantly the `dotCMSClient.js` which initializes the connection to your dotCMS instance.
+4. **Config (src/config/)**: The `dotcms.config.ts` module provides typed, centralized access to the dotCMS environment variables, so every other module reads configuration from one place instead of touching `process.env` directly.
+
+5. **Lib (src/lib/)**: Contains the `dotCMSClient.ts`, which initializes the connection to your dotCMS instance.
+
+6. **Types (src/types/)**: Shared TypeScript interfaces (`Blog`, `Destination`, `NavItem`, `ContentTypeProps`, and more) used across the app for type-safe content rendering.
 
 ### How the Content is Fetched from dotCMS
 
@@ -274,37 +295,58 @@ Content in this integration is fetched using the `@dotcms/client` package, which
 
 The process works as follows:
 
-1. First, we create a configured client instance in `src/utils/dotCMSClient.js`
-2. This client uses the environment variables to connect to your dotCMS instance
+1. First, we create a configured client instance in `src/lib/dotCMSClient.ts`
+2. This client reads its configuration from `src/config/dotcms.config.ts`, which centralizes typed access to the environment variables
 3. When a page is requested, we use this client to fetch the page data along with its content
 4. All API requests are managed through this central client for consistency
 
 Here's how the client is configured:
 
-```js
+```ts
 import { createDotCMSClient } from "@dotcms/client";
 
+import {
+    dotCMSAuthToken,
+    dotCMSHost,
+    dotCMSSiteId,
+} from "@/config/dotcms.config";
+
 export const dotCMSClient = createDotCMSClient({
-    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
-    siteId: process.env.NEXT_PUBLIC_DOTCMS_SITE_ID,
+    dotcmsUrl: dotCMSHost,
+    authToken: dotCMSAuthToken,
+    siteId: dotCMSSiteId,
+    logLevel: process.env.NODE_ENV === "development" ? "verbose" : "default",
     requestOptions: {
+        // UVE needs fresh data so in-context edits are reflected immediately.
         cache: "no-cache",
     },
 });
 ```
 
-And here's a typical page fetching function:
+And here's a typical page fetching function. It is wrapped in React's `cache()` so multiple callers within a single request (e.g. `generateMetadata` and the page body) share one network round-trip, and it requests extra GraphQL content alongside the page. On failure it returns `{ error }` so callers can branch without `try/catch` — use the guards in `@/utils/pageResponse` to narrow the result:
 
-```js
-export const getDotCMSPage = async (path, searchParams) => {
+```ts
+import { cache } from "react";
+
+import { dotCMSClient } from "@/lib/dotCMSClient";
+import type { PageExtraContent } from "@/types/content";
+import { blogQuery, destinationQuery, navigationQuery } from "@/utils/queries";
+
+export const getDotCMSPage = cache(async (path: string) => {
     try {
-        return await dotCMSClient.page.get(path, searchParams);
-    } catch (e) {
-        console.error("ERROR FETCHING PAGE: ", e.message);
-        return null;
+        return await dotCMSClient.page.get<{ content: PageExtraContent }>(path, {
+            graphql: {
+                content: {
+                    blogs: blogQuery,
+                    destinations: destinationQuery,
+                    navigation: navigationQuery,
+                },
+            },
+        });
+    } catch (error) {
+        return { error };
     }
-};
+});
 ```
 
 Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/).
@@ -339,7 +381,7 @@ When a page is rendered:
 
 Here's how this looks in code:
 
-```js
+```tsx
 "use client";
 
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
@@ -351,7 +393,11 @@ const pageComponents = {
     dotCMSBlogPost: BlogPostComponent,
 };
 
-export function MyPage({ page }) {
+interface MyPageProps {
+    page: Parameters<typeof useEditableDotCMSPage>[0];
+}
+
+export function MyPage({ page }: MyPageProps) {
     const { pageAsset, content } = useEditableDotCMSPage(page);
 
     return (
@@ -380,7 +426,7 @@ One of the key concepts in this integration is mapping dotCMS Content Types to R
 2. Each value is a React component that will be used to render that specific Content Type
 3. When content is rendered, the contentlet data from dotCMS is passed as props to your component
 
-```js
+```ts
 // Example of mapping dotCMS Content Types to React components
 const pageComponents = {
     // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
@@ -399,16 +445,22 @@ const pageComponents = {
 
 Example of a component receiving contentlet data:
 
-```jsx
-// The props passed to this component will be the contentlet data from dotCMS
-function ProductComponent(props) {
-    // Access fields defined in the DotCMSProduct Content Type
-    const { title, price, description, image } = props;
+```tsx
+// The props passed to this component are the contentlet data from dotCMS.
+// Declare an interface so each field is typed.
+interface ProductProps {
+    title?: string;
+    price?: number;
+    description?: string;
+    image?: { url: string };
+}
 
+function ProductComponent({ title, price, description, image }: ProductProps) {
+    // Access fields defined in the DotCMSProduct Content Type
     return (
         <div className="product">
             <h2>{title}</h2>
-            <img src={image.url} alt={title} />
+            {image && <img src={image.url} alt={title} />}
             <p className="price">${price}</p>
             <p>{description}</p>
         </div>
@@ -426,127 +478,15 @@ This mapping should be passed to the `DotCMSLayoutBody` component as shown in th
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
 - [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/) - Complete reference for the React components library
 
-### Style Editor
+## Analytics & Experiments (headless)
 
-The Style Editor enables content editors to customize component appearance (typography, colors, layouts, etc.) directly in the Universal Visual Editor without code changes. Style properties are defined by developers and made editable through style editor schemas.
+This example focuses on content types, UVE, and general dotCMS + Next.js patterns. It does **not** integrate `@dotcms/experiments` in `Page.tsx` by design.
 
-#### Defining a Style Editor Schema
+For a minimal, copy-paste reference of **Content Analytics** and **A/B Experiments** in Next.js App Router (with the safe `withExperiments` pattern), see:
 
-Create a schema file (e.g., `src/utils/styleEditorSchemas.js`) that defines editable style properties for your content types:
-
-```js
-import { defineStyleEditorSchema, styleEditorField } from "@dotcms/uve";
-
-export const BANNER_SCHEMA = defineStyleEditorSchema({
-    contentType: 'Banner', // Must match your dotCMS Content Type
-    sections: [
-        {
-            title: 'Typography',
-            fields: [
-                styleEditorField.dropdown({
-                    id: 'title-size',
-                    label: 'Title Size',
-                    options: [
-                        { label: 'Small', value: 'text-4xl' },
-                        { label: 'Medium', value: 'text-5xl' },
-                        { label: 'Large', value: 'text-6xl' },
-                    ]
-                }),
-                styleEditorField.checkboxGroup({
-                    id: 'title-style',
-                    label: 'Title Style',
-                    options: [
-                        { label: 'Bold', key: 'bold' },
-                        { label: 'Italic', key: 'italic' },
-                    ]
-                }),
-            ]
-        },
-        {
-            title: 'Layout',
-            fields: [
-                styleEditorField.radio({
-                    id: 'text-alignment',
-                    label: 'Text Alignment',
-                    options: [
-                        { label: 'Left', value: 'left' },
-                        { label: 'Center', value: 'center' },
-                        { label: 'Right', value: 'right' },
-                    ]
-                }),
-            ]
-        },
-    ]
-});
-```
-
-#### Field Types
-
-The Style Editor supports four field types:
-
-- **`styleEditorField.input()`** - Text or number input for custom values
-- **`styleEditorField.dropdown()`** - Dropdown with predefined options
-- **`styleEditorField.radio()`** - Radio buttons for single selection (supports images)
-- **`styleEditorField.checkboxGroup()`** - Multiple checkboxes (returns object with boolean values)
-
-#### Registering Schemas
-
-Register your schemas in your page component using the `useStyleEditorSchemas` hook:
-
-```js
-"use client";
-
-import { useStyleEditorSchemas } from "@dotcms/react";
-import { BANNER_SCHEMA, ACTIVITY_SCHEMA } from "@/utils/styleEditorSchemas";
-
-export function Page({ pageContent }) {
-    // Register schemas - makes them available in UVE edit mode
-    useStyleEditorSchemas([BANNER_SCHEMA, ACTIVITY_SCHEMA]);
-
-    return (
-        // Your page content
-    );
-}
-```
-
-#### Using Style Properties in Components
-
-Style properties are automatically passed to your contentlet components via the `dotStyleProperties` prop. Access them with defaults:
-
-```js
-function Banner({ title, caption, dotStyleProperties }) {
-    // Extract style properties with defaults
-    const titleSize = dotStyleProperties?.["title-size"] || "text-6xl";
-    const titleStyle = dotStyleProperties?.["title-style"] || {};
-    const textAlignment = dotStyleProperties?.["text-alignment"] || "center";
-
-    // Build dynamic classes
-    const titleClasses = [
-        titleSize,
-        titleStyle.bold ? "font-bold" : "font-normal",
-        titleStyle.italic ? "italic" : "",
-    ].filter(Boolean).join(" ");
-
-    return (
-        <div className={`text-${textAlignment}`}>
-            <h2 className={titleClasses}>{title}</h2>
-            <p>{caption}</p>
-        </div>
-    );
-}
-```
-
-**Value Types:**
-- **Input/Dropdown/Radio**: Returns a string (the selected value)
-- **Checkbox Group**: Returns an object with boolean values (e.g., `{ bold: true, italic: false }`)
-
-**Best Practices:**
-- Always provide default values when accessing style properties
-- Use meaningful field IDs that match your styling logic
-- Group related fields into logical sections
-- The `contentType` in your schema must exactly match your dotCMS Content Type variable name
-
-For complete Style Editor documentation, see the [@dotcms/uve Style Editor guide](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/uve/README.md#style-editor).
+- [`examples/nextjs-analytics-experiments`](../nextjs-analytics-experiments) — canonical headless analytics + experiments example
+- [Experiments SDK README](../../core-web/libs/sdk/experiments/README.md)
+- [Analytics SDK README](../../core-web/libs/sdk/analytics/README.md)
 
 ## Conclusion
 

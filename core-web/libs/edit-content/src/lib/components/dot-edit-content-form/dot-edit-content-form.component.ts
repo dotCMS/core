@@ -1,8 +1,9 @@
-import { Subscription } from 'rxjs';
+import { race, Subscription, timer } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
+    ApplicationRef,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -12,13 +13,14 @@ import {
     effect,
     inject,
     OnInit,
-    output
+    output,
+    signal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
-    FormsModule,
     ReactiveFormsModule,
     ValidatorFn,
     Validators
@@ -28,9 +30,8 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
-import { ToggleSwitchChangeEvent, ToggleSwitchModule } from 'primeng/toggleswitch';
 
-import { take } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
 import {
     DotMessageService,
@@ -38,14 +39,17 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
+    DotContentState,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
+import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
@@ -56,6 +60,7 @@ import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
+    generatePageEditUrl,
     generatePreviewUrl,
     getFinalCastedValue,
     isFilteredType,
@@ -77,7 +82,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  * - Custom field type handling (calendar fields, flattened fields)
  * - Workflow action integration with push publish support
  * - Form validation (required fields, regex patterns)
- * - Content locking mechanism
+ * - Command bar with status, preview and overflow actions
  * - Preview functionality for content types
  * - Tab-based field organization
  *
@@ -89,18 +94,19 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
+    styleUrl: './dot-edit-content-form.component.scss',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
         TabsModule,
-        DotWorkflowActionsComponent,
+        DotContentletStatusBadgeComponent,
         TabViewInsertDirective,
         DotMessagePipe,
-        ToggleSwitchModule,
-        FormsModule,
-        MessageModule
+        DotRelativeDatePipe,
+        DotEditContentCommandBarActionsComponent,
+        MessageModule,
+        NgTemplateOutlet
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -125,6 +131,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #document = inject(DOCUMENT);
+    readonly #appRef = inject(ApplicationRef);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -151,13 +158,41 @@ export class DotEditContentFormComponent implements OnInit {
     /**
      * Computed property that determines if the preview link should be shown.
      *
+     * Shown for existing content that is either an HTML page or has a URL map.
+     *
      * @memberof DotEditContentFormComponent
      */
     $showPreviewLink = computed(() => {
         const contentlet = this.$store.contentlet();
 
-        return contentlet?.baseType === 'CONTENT' && !!contentlet.URL_MAP_FOR_CONTENT;
+        return (
+            !this.$store.isNew() &&
+            (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
+                !!contentlet?.URL_MAP_FOR_CONTENT)
+        );
     });
+
+    /**
+     * Computed property that returns true when the contentlet has at least one page reference.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $hasReferences = computed(() => {
+        const relatedContent = this.$store.information.relatedContent();
+
+        return !!relatedContent && relatedContent !== '0';
+    });
+
+    /**
+     * Publish state passed to the shared status badge in the command bar. A brand-new
+     * contentlet has no state yet, so it resolves to `null` and the badge renders the
+     * translated "New" label; otherwise the current contentlet drives the badge.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $statusState = computed<DotContentState | null>(() =>
+        this.$store.isNew() ? null : this.$store.contentlet()
+    );
 
     /**
      * FormGroup instance that contains the form controls for the fields in the content type
@@ -167,6 +202,9 @@ export class DotEditContentFormComponent implements OnInit {
      */
     form!: FormGroup;
 
+    protected readonly $shouldRenderFields = signal(true);
+    protected readonly $shouldRenderPreservedFields = signal(true);
+
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
      *
@@ -174,6 +212,16 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     private formValueSubscription?: Subscription;
+
+    /**
+     * Tracks the last contentlet version used to build the form. The effect that
+     * reinitializes the form compares this against the current contentlet's
+     * identifier|inode|modDate so that state-only updates (e.g. lock/unlock)
+     * don't discard in-flight field state.
+     */
+    #lastContentletRevisionKey: string | null = null;
+
+    #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     /**
      * Computed property that determines if the content type has only one tab.
@@ -191,28 +239,28 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Context for the append template passed to TabViewInsertDirective.
-     * Required for embedded view to access component variables.
+     * Required for embedded view to access component variables. A computed (not a getter) so
+     * the object reference is memoized and only changes when its signal dependencies change —
+     * otherwise every change-detection cycle would produce a new object and re-render the
+     * embedded view.
      */
-    get $appendContext() {
+    $appendContext = computed(() => {
         const currentLocale = this.$store.currentLocale();
+
         return {
             $store: this.$store,
             showSidebar: this.$store.isSidebarOpen(),
-            canLock: this.$store.canLock(),
-            isContentLocked: this.$store.isContentLocked(),
-            lockSwitchLabel: this.$store.lockSwitchLabel(),
-            actions: this.$store.getActions(),
             $showPreviewLink: this.$showPreviewLink,
-            showWorkflowActions: this.$store.showWorkflowActions(),
+            $isPage: this.$store.isPage,
+            $hasReferences: this.$hasReferences,
             contentlet: this.$store.contentlet(),
             contentType: this.$store.contentType(),
             currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
             currentIdentifier: this.$store.currentIdentifier(),
-            onContentLockChange: (e: ToggleSwitchChangeEvent) => this.onContentLockChange(e),
-            showPreview: () => this.showPreview(),
-            fireWorkflowAction: (e: DotWorkflowActionParams) => this.fireWorkflowAction(e)
+            $statusState: this.$statusState,
+            showPreview: () => this.showPreview()
         };
-    }
+    });
 
     changeDetectorRef = inject(ChangeDetectorRef);
 
@@ -223,8 +271,13 @@ export class DotEditContentFormComponent implements OnInit {
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
+            const contentlet = this.$store.contentlet();
+            if (contentlet) {
+                this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+            }
             this.initializeForm();
             this.initializeFormListener();
+            this.#scheduleMarkPristineAfterInit();
         }
     }
 
@@ -241,27 +294,49 @@ export class DotEditContentFormComponent implements OnInit {
 
             // Only reinitialize if we have both contentlet and tabs, and form exists
             if (contentlet && tabs.length > 0 && this.form) {
+                const revisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+
+                // Skip rebuild when only lock/volatile state changed — rebuilding the
+                // form here races with async child components (e.g. category field)
+                // and can wipe the user's current selection.
+                if (revisionKey === this.#lastContentletRevisionKey) {
+                    return;
+                }
+
+                this.#lastContentletRevisionKey = revisionKey;
                 this.initializeForm();
                 this.initializeFormListener();
+                this.#scheduleMarkPristineAfterInit();
             }
         });
 
         /**
-         * Effect that enables or disables the form based on the loading state and historical view.
+         * Effect that enables or disables the form based on the loading state.
+         *
+         * `isViewingHistoricalVersion` was intentionally dropped from the condition for now;
+         * it will be restored once all fields support a disabled state (see the TODO below).
+         *
+         * `contentlet()` is read with `untracked` as a mere existence guard, so the effect is
+         * driven only by `isLoading`: a lock/unlock that replaces the contentlet reference
+         * without changing any field must not re-run it. The enable/disable is also kept
+         * idempotent (toggle only when the current state differs) and uses `{ emitEvent: false }`,
+         * because a redundant `form.enable()` makes async field CVAs (e.g. the date field)
+         * re-emit their value and wrongly mark the form dirty, triggering the unsaved-changes
+         * guard on a plain lock toggle (#35754).
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
             // const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
-            const contentlet = this.$store.contentlet();
+            const hasContentlet = untracked(() => !!this.$store.contentlet());
 
             // Only apply state changes if form exists
-            if (this.form && contentlet) {
+            if (this.form && hasContentlet) {
                 // TODO: put back isViewingHistoricalVersion in the
                 // condition after all fields have disabled state
-                if (isLoading) {
-                    this.form.disable();
-                } else {
-                    this.form.enable();
+                if (isLoading && this.form.enabled) {
+                    this.form.disable({ emitEvent: false });
+                } else if (!isLoading && this.form.disabled) {
+                    this.form.enable({ emitEvent: false });
                 }
             }
         });
@@ -271,15 +346,77 @@ export class DotEditContentFormComponent implements OnInit {
          *
          * This effect listens for changes in the `isCopyingLocale` state from the store.
          * If `isCopyingLocale` is true, it initializes the form and sets up the form listener.
+         * For manual translation, field components are destroyed and recreated so that
+         * components with internal state (binary, date, relationship) start fresh with empty values.
+         *
+         * All work inside the `isCopyingLocale` branch runs inside `untracked` so that
+         * `isManualTranslation` and other reads do not become reactive dependencies of this
+         * effect — only `isCopyingLocale` should drive re-execution.
          */
         effect(() => {
             const isCopyingLocale = this.$store.isCopyingLocale();
+            if (!isCopyingLocale) {
+                return;
+            }
 
-            if (isCopyingLocale) {
+            untracked(() => {
+                const isManualTranslation = this.$store.isManualTranslation();
+
+                // Capture values for preserved fields before form reinit so they survive
+                // the new FormGroup (contentlet is null in manual translation).
+                const preserved = isManualTranslation ? this.#capturePreservedFields() : null;
+
                 this.initializeForm();
                 this.initializeFormListener();
-            }
+                this.#scheduleMarkPristineAfterInit();
+
+                if (preserved) {
+                    this.#restorePreservedFields(preserved);
+                }
+
+                // Keep the revision key in sync so the main reinit effect
+                // doesn't rebuild the form again for the same contentlet.
+                const contentlet = this.$store.contentlet();
+                if (contentlet) {
+                    this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                }
+
+                if (isManualTranslation) {
+                    // Only flush non-preserved fields so HOST_FOLDER and RELATIONSHIP
+                    // components stay alive and keep their internal state.
+                    this.#flushNonPreservedFieldsForRerender();
+                } else {
+                    // Populate: flush everything so binary component visual state resets.
+                    this.#flushFieldsForRerender();
+                }
+            });
         });
+
+        this.#destroyRef.onDestroy(() => clearTimeout(this.#flushTimeoutId));
+    }
+
+    /**
+     * Marks the form pristine once the app finishes its initial async work.
+     *
+     * Async ControlValueAccessors — most notably the Block Editor — call
+     * their registered `onChange` callback during their own initialization
+     * cycle (`writeValue` → editor `create` event → `setEditorContent` →
+     * `ngModelChange` → `onChange?.(...)`). Angular Forms treats that as a
+     * user edit and marks the corresponding control dirty, which would
+     * trigger the unsaved-changes guard / `beforeunload` prompt the moment
+     * the user opens a contentlet, before they have touched anything.
+     *
+     * Wait for `ApplicationRef.isStable` (with a 500 ms safety fallback in
+     * case the app has already settled) and reset the form to pristine.
+     * Real user interactions happen well after this window — they will
+     * re-mark the form dirty as expected.
+     */
+    #scheduleMarkPristineAfterInit(): void {
+        race(this.#appRef.isStable.pipe(filter(Boolean)), timer(500))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                this.form?.markAsPristine();
+            });
     }
 
     /**
@@ -455,7 +592,12 @@ export class DotEditContentFormComponent implements OnInit {
                     return [key, fieldValue];
                 }
 
+                if (field.fieldType === FIELD_TYPES.CATEGORY) {
+                    return [key, Array.isArray(fieldValue) ? fieldValue : []];
+                }
+
                 const processedValue = processFieldValue(fieldValue, field);
+
                 return [key, processedValue ?? ''];
             })
         );
@@ -503,7 +645,11 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns {AbstractControl} The configured form control
      */
     private createFormControl(field: DotCMSContentTypeField) {
-        const initialValue = this.getInitialFieldValue(field, this.$store.contentlet());
+        const initialValue = this.getInitialFieldValue({
+            field,
+            contentlet: this.$store.contentlet(),
+            isManualTranslation: this.$store.isManualTranslation()
+        });
         const validators = this.getFieldValidators(field);
 
         return this.#fb.control({ value: initialValue, disabled: field.readOnly }, { validators });
@@ -523,10 +669,15 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {DotCMSContentlet | null} contentlet - The contentlet containing field values
      * @returns {unknown} The resolved and cast field value
      */
-    private getInitialFieldValue(
-        field: DotCMSContentTypeField,
-        contentlet: DotCMSContentlet | null
-    ): unknown {
+    private getInitialFieldValue({
+        field,
+        contentlet,
+        isManualTranslation = false
+    }: {
+        field: DotCMSContentTypeField;
+        contentlet: DotCMSContentlet | null;
+        isManualTranslation?: boolean;
+    }): unknown {
         const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
         if (!resolutionFn) {
             console.warn(`No resolution function found for field type: ${field.fieldType}`);
@@ -534,7 +685,8 @@ export class DotEditContentFormComponent implements OnInit {
             return null;
         }
 
-        const value = resolutionFn(contentlet, field);
+        const queryParams = this.$store.queryParams();
+        const value = resolutionFn(contentlet, field, queryParams, isManualTranslation);
 
         return getFinalCastedValue(value, field) ?? null;
     }
@@ -596,14 +748,24 @@ export class DotEditContentFormComponent implements OnInit {
     /**
      * Opens the content preview in a new browser tab.
      *
-     * Generates a preview URL based on the current contentlet's URL_MAP_FOR_CONTENT
-     * and opens it in a new tab. Logs a warning if the URL cannot be generated.
+     * For HTML pages the edit-page URL is generated from the contentlet's `url`,
+     * otherwise the preview URL is generated from `URL_MAP_FOR_CONTENT`.
+     * Opens the resulting URL in a new tab. Logs a warning if the URL cannot be generated.
      *
      * @memberof DotEditContentFormComponent
      */
     showPreview(): void {
         const contentlet = this.$store.contentlet();
-        const realUrl = generatePreviewUrl(contentlet);
+        // Guard against a contentlet cleared by a concurrent state change between the button
+        // rendering and the click — the URL generators dereference the contentlet directly.
+        if (!contentlet) {
+            return;
+        }
+
+        const realUrl =
+            contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+                ? generatePageEditUrl(contentlet)
+                : generatePreviewUrl(contentlet);
 
         if (!realUrl) {
             console.warn(
@@ -634,19 +796,6 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Handles the content lock toggle.
-     *
-     * This method is triggered when the user toggles the content lock switch.
-     * It updates the content lock state in the store based on the switch value.
-     *
-     * @param {ToggleSwitchChangeEvent} event - The switch change event containing the new checked state
-     * @memberof DotEditContentFormComponent
-     */
-    onContentLockChange(event: ToggleSwitchChangeEvent) {
-        event.checked ? this.$store.lockContent() : this.$store.unlockContent();
-    }
-
-    /**
      * Handles changes to the disabledWYSIWYG attribute from field components.
      *
      * This method is triggered when any field component (WYSIWYG or textarea) changes
@@ -663,6 +812,77 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form && this.form.get('disabledWYSIWYG')) {
             this.form.get('disabledWYSIWYG')?.setValue(disabledWYSIWYG, { emitEvent: true });
         }
+    }
+
+    /**
+     * Field types whose values and component state are preserved during manual translation.
+     * Add to this list to protect additional fields from being cleared on locale copy.
+     */
+    readonly #preservedFieldTypesOnManualTranslation: FIELD_TYPES[] = [
+        FIELD_TYPES.HOST_FOLDER,
+        FIELD_TYPES.RELATIONSHIP
+    ];
+
+    /**
+     * Returns true if the field type should survive a manual-translation reinit.
+     * Used in the template to skip the flush for these fields.
+     */
+    isPreservedField(fieldType: string): boolean {
+        return this.#preservedFieldTypesOnManualTranslation.includes(fieldType as FIELD_TYPES);
+    }
+
+    /**
+     * Captures the current FormControl values for preserved fields before form reinit.
+     */
+    #capturePreservedFields(): Record<string, unknown> {
+        return (this.$store.contentType()?.fields ?? [])
+            .filter((f) =>
+                this.#preservedFieldTypesOnManualTranslation.includes(f.fieldType as FIELD_TYPES)
+            )
+            .reduce(
+                (acc, f) => {
+                    const value = this.form?.get(f.variable)?.value;
+                    if (value != null) {
+                        acc[f.variable] = value;
+                    }
+
+                    return acc;
+                },
+                {} as Record<string, unknown>
+            );
+    }
+
+    /**
+     * Restores previously captured field values into the rebuilt form without triggering value-change events.
+     */
+    #restorePreservedFields(preserved: Record<string, unknown>): void {
+        for (const [variable, value] of Object.entries(preserved)) {
+            this.form.get(variable)?.setValue(value, { emitEvent: false });
+        }
+    }
+
+    /**
+     * Flushes only non-preserved field components. Used for manual translation so that
+     * HOST_FOLDER and RELATIONSHIP components stay alive and keep their internal state.
+     */
+    #flushNonPreservedFieldsForRerender(): void {
+        clearTimeout(this.#flushTimeoutId);
+        this.$shouldRenderFields.set(false);
+        this.#flushTimeoutId = setTimeout(() => this.$shouldRenderFields.set(true));
+    }
+
+    /**
+     * Flushes ALL field components including preserved ones. Used for populate so that
+     * the binary component's visual state resets completely.
+     */
+    #flushFieldsForRerender(): void {
+        clearTimeout(this.#flushTimeoutId);
+        this.$shouldRenderFields.set(false);
+        this.$shouldRenderPreservedFields.set(false);
+        this.#flushTimeoutId = setTimeout(() => {
+            this.$shouldRenderFields.set(true);
+            this.$shouldRenderPreservedFields.set(true);
+        });
     }
 
     /**

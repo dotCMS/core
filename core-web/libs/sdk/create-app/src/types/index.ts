@@ -29,7 +29,7 @@ export interface UVEConfigResponse {
     entity: 'Ok';
 }
 
-export interface DemoSiteResponse {
+export interface DefaultSiteResponse {
     entity: {
         addThis: string;
         aliases: string;
@@ -70,6 +70,9 @@ export type DotCmsCliOptions = {
     url?: string;
     username?: string;
     password?: string;
+
+    // local-only
+    starter?: string;
 };
 
 export interface FinalStepsOptions {

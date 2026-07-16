@@ -1,0 +1,21 @@
+{
+    "name": "portlets-dot-velocity-playground-portlet",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-velocity-playground/src",
+    "prefix": "dot",
+    "projectType": "library",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:velocity-playground"],
+    "targets": {
+        "test": {
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
+            }
+        }
+    }
+}

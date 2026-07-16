@@ -3,21 +3,19 @@ import {
     createServiceFactory,
     mockProvider,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotEnvironment } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
@@ -38,18 +36,15 @@ describe('DotLocalesListStore', () => {
     let spectator: SpectatorService<DotLocalesListStore>;
     let languageService: SpyObject<DotLanguagesService>;
     let messageService: SpyObject<MessageService>;
-    let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     const storeService = createServiceFactory({
         service: DotLocalesListStore,
         providers: [
             mockProvider(DotLanguagesService),
-            mockProvider(DialogService),
             mockProvider(ConfirmationService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotPushPublishDialogService),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -62,7 +57,6 @@ describe('DotLocalesListStore', () => {
         spectator = storeService();
         languageService = spectator.inject(DotLanguagesService);
         messageService = spectator.inject(MessageService);
-        dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
         dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
 
         languageService.get.mockReturnValue(of([...mockLocales]));
@@ -102,44 +96,8 @@ describe('DotLocalesListStore', () => {
         expect(messageService.add).toHaveBeenCalled();
     });
 
-    it('should open the push publish dialog', () => {
-        jest.spyOn(dotPushPublishDialogService, 'open');
-
-        spectator.service.vm$.subscribe((viewModel) => {
-            const pushPublishMenuItem = viewModel.locales[0].actions[1].menuItem;
-            pushPublishMenuItem.command();
-
-            expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
-                assetIdentifier: mockLocales[0].id.toString(),
-                title: 'Push Publish'
-            });
-        });
-    });
-
-    it('should set the local actions correctly', (done) => {
-        spectator.service.vm$.subscribe((viewModel) => {
-            const defaultLocaleActions = viewModel.locales[0].actions.filter((action) =>
-                action?.shouldShow ? action.shouldShow() : true
-            );
-            const notDefaultLocaleActions = viewModel.locales[1].actions.filter((action) =>
-                action?.shouldShow ? action.shouldShow() : true
-            );
-
-            expect(defaultLocaleActions.length).toEqual(2);
-            expect(defaultLocaleActions[0].menuItem.label).toBe('Edit Locale');
-            expect(defaultLocaleActions[1].menuItem.label).toBe('Push Publish');
-
-            expect(notDefaultLocaleActions.length).toEqual(4);
-            expect(notDefaultLocaleActions[0].menuItem.label).toBe('Edit Locale');
-            expect(notDefaultLocaleActions[1].menuItem.label).toBe('Push Publish');
-            expect(notDefaultLocaleActions[2].menuItem.label).toBe('Set as default');
-            expect(notDefaultLocaleActions[3].menuItem.label).toBe('Delete');
-            done();
-        });
-    });
-
     it('should handle errors correctly', () => {
-        languageService.delete.mockReturnValue(throwError('test'));
+        languageService.delete.mockReturnValue(throwError(() => 'test'));
 
         spectator.service.deleteLocale(1);
 

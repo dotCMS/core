@@ -6,7 +6,10 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.experiments.business.ExperimentFilter;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.variant.model.Variant;
+import com.google.common.collect.Lists;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.TransformerLocator;
@@ -19,6 +22,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -445,6 +449,21 @@ public class ExportStarterUtil {
 
             contentAsJson = RulesImportExportUtil.getInstance().exportToJson();
             starterFiles.add(new FileEntry("RuleImportExportObject" + JSON_FILE_EXT, contentAsJson));
+
+            // Variants are persisted via DotConnect (not Hibernate) so they are not part of the
+            // table set. Export all rows -- including archived ones and DEFAULT -- so experiment
+            // variants survive the round-trip.
+            final List<Variant> variants = TransformerLocator.createVariantTransformer(
+                    dc.setSQL("select * from variant").loadObjectResults()).asList();
+            contentAsJson = defaultObjectMapper.writeValueAsString(variants);
+            starterFiles.add(new FileEntry("Variant" + JSON_FILE_EXT, contentAsJson));
+
+            // Experiments are also persisted via DotConnect (not Hibernate). An empty filter lists
+            // every experiment regardless of page or status.
+            final List<Experiment> experiments = FactoryLocator.getExperimentsFactory()
+                    .list(ExperimentFilter.builder().build());
+            contentAsJson = defaultObjectMapper.writeValueAsString(experiments);
+            starterFiles.add(new FileEntry("Experiment" + JSON_FILE_EXT, contentAsJson));
 
             Logger.debug(this, String.format("Additional exportable entries added = %d", starterFiles.size()));
             Logger.debug(this, "Additional exportable JSON files have been generated successfully!");

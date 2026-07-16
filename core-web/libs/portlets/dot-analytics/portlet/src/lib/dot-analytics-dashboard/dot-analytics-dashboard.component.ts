@@ -1,24 +1,31 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal, Type } from '@angular/core';
+import { filter, startWith } from 'rxjs';
+
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    ActivatedRoute,
+    NavigationEnd,
+    Router,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet
+} from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
 import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
+import type { TabListPassThrough } from 'primeng/types/tabs';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
     DASHBOARD_TAB_LIST,
-    DASHBOARD_TABS,
-    DashboardTab,
     DotAnalyticsDashboardStore,
     isValidTab,
     TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import DotAnalyticsConversionsReportComponent from './reports/conversions/dot-analytics-conversions-report/dot-analytics-conversions-report.component';
-import DotAnalyticsEngagementReportComponent from './reports/engagement/dot-analytics-engagement-report/dot-analytics-engagement-report.component';
-import DotAnalyticsPageviewReportComponent from './reports/pageview/dot-analytics-pageview-report/dot-analytics-pageview-report.component';
 import { DotAnalyticsFiltersComponent } from './shared/components/dot-analytics-filters/dot-analytics-filters.component';
 
 const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-banner';
@@ -26,12 +33,15 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
 @Component({
     selector: 'dot-analytics-dashboard',
     imports: [
-        CommonModule,
+        RouterOutlet,
+        RouterLink,
+        RouterLinkActive,
         ButtonModule,
         MessageModule,
         TabsModule,
         DotAnalyticsFiltersComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DividerModule
     ],
     providers: [DotAnalyticsDashboardStore],
     templateUrl: './dot-analytics-dashboard.component.html',
@@ -46,6 +56,24 @@ export default class DotAnalyticsDashboardComponent {
     /** Analytics dashboard store providing data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #localStorageService = inject(DotLocalstorageService);
+    readonly #route = inject(ActivatedRoute);
+    readonly #router = inject(Router);
+
+    constructor() {
+        this.#router.events
+            .pipe(
+                filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+                startWith(null),
+                takeUntilDestroyed()
+            )
+            .subscribe(() => {
+                const childPath = this.#route.firstChild?.snapshot?.url?.[0]?.path;
+
+                if (childPath && isValidTab(childPath)) {
+                    this.store.setCurrentTab(childPath);
+                }
+            });
+    }
 
     /** Controls visibility of the top informational message banner */
     readonly $showMessage = signal<boolean>(
@@ -54,10 +82,17 @@ export default class DotAnalyticsDashboardComponent {
 
     readonly tabs = DASHBOARD_TAB_LIST;
 
-    readonly tabComponents: Record<DashboardTab, Type<unknown>> = {
-        [DASHBOARD_TABS.pageview]: DotAnalyticsPageviewReportComponent,
-        [DASHBOARD_TABS.conversions]: DotAnalyticsConversionsReportComponent,
-        [DASHBOARD_TABS.engagement]: DotAnalyticsEngagementReportComponent
+    /**
+     * Aligns the active ink bar with the toolbar bottom edge (single baseline with outer border-b)
+     * and avoids duplicate / top-edge active styling from the theme.
+     */
+    readonly tabListPt: TabListPassThrough = {
+        root: { class: '!border-0 !shadow-none !bg-transparent' },
+        content: { class: '!border-0' },
+        tabList: { class: '!border-0 !border-b-0 items-end' },
+        activeBar: {
+            class: '!h-0 !min-h-0 !max-h-0 !bg-transparent !opacity-0 !pointer-events-none'
+        }
     };
 
     /**
@@ -66,16 +101,6 @@ export default class DotAnalyticsDashboardComponent {
     onCloseMessage(): void {
         this.$showMessage.set(false);
         this.#localStorageService.setItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY, true);
-    }
-
-    /**
-     * Handles tab change event from p-tabs.
-     * Updates the store and URL query param.
-     */
-    onTabChange(tabId: string | number | undefined): void {
-        if (tabId !== undefined && isValidTab(String(tabId))) {
-            this.store.setCurrentTabAndNavigate(tabId as DashboardTab);
-        }
     }
 
     /**

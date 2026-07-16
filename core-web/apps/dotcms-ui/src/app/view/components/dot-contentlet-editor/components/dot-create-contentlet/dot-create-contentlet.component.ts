@@ -1,12 +1,13 @@
 import { merge, Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { filter, pluck } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
+import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -22,7 +23,7 @@ import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-con
     selector: 'dot-create-contentlet',
     templateUrl: './dot-create-contentlet.component.html',
     styleUrls: ['./dot-create-contentlet.component.scss'],
-    imports: [CommonModule, DotContentletWrapperComponent]
+    imports: [DotContentletWrapperComponent, AsyncPipe]
 })
 export class DotCreateContentletComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);
@@ -38,7 +39,7 @@ export class DotCreateContentletComponent implements OnInit {
     ngOnInit() {
         this.url$ = merge(
             this.dotContentletEditorService.createUrl$,
-            this.route.data.pipe(pluck('url'))
+            this.route.data.pipe(map((x) => x?.url))
         ).pipe(
             filter((url: string) => {
                 return url !== undefined;
@@ -52,8 +53,27 @@ export class DotCreateContentletComponent implements OnInit {
      * @memberof DotCreateContentletComponent
      */
     onClose(event: unknown): void {
+        // Assumes the legacy create editor is always routed under `/c/content/new/` (the path
+        // DotContentDriveNavigationService.createContent navigates to). If that prefix ever
+        // changes, the Content Drive back-navigation below is skipped and we fall back to the
+        // content listing — keep the two in sync.
         if (this.dotRouterService.currentSavedURL.includes('/c/content/new/')) {
-            this.dotRouterService.goToContent();
+            // If opened from Content Drive, the URL carries CD_-prefixed params (filters/path).
+            // Return there with the filters preserved — same behavior as editing a contentlet
+            // (DotContentletWrapperComponent.onClose). Otherwise fall back to the content listing.
+            // Parse the query string directly — avoids depending on window.location (SSR/tests).
+            const searchParams = new URLSearchParams(
+                this.dotRouterService.currentPortlet.url?.split('?')[1] ?? ''
+            );
+            const contentDriveParams = mapParamsFromEditContentlet(searchParams);
+
+            if (Object.keys(contentDriveParams).length) {
+                this.dotRouterService.gotoPortlet('content-drive', {
+                    queryParams: contentDriveParams
+                });
+            } else {
+                this.dotRouterService.goToContent();
+            }
         }
 
         if (this.dotRouterService.currentSavedURL.includes('/pages/new/')) {

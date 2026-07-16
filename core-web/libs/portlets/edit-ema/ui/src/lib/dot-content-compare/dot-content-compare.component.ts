@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
@@ -14,7 +14,7 @@ import { DotContentCompareState, DotContentCompareStore } from './store/dot-cont
     templateUrl: './dot-content-compare.component.html',
     styleUrls: ['./dot-content-compare.component.scss'],
     providers: [DotContentCompareStore],
-    imports: [CommonModule, DotContentCompareTableComponent]
+    imports: [DotContentCompareTableComponent, AsyncPipe]
 })
 export class DotContentCompareComponent {
     store = inject(DotContentCompareStore);
@@ -28,6 +28,12 @@ export class DotContentCompareComponent {
         }
     }
     $showActions = input<boolean>(true, { alias: 'showActions' });
+    /**
+     * Forwards to `dot-content-compare-table`'s `reverseColumns` input.
+     * When `true`, the previous (compare) version renders on the LEFT and
+     * the current (working) version on the RIGHT.
+     */
+    readonly $reverseColumns = input<boolean>(false, { alias: 'reverseColumns' });
     @Output() shutdown = new EventEmitter<boolean>();
     @Output() letMeBringBack = new EventEmitter<{ name: string; args: string[] }>();
     vm$: Observable<DotContentCompareState> = this.store.vm$;

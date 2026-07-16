@@ -1,11 +1,11 @@
 import { from as observableFrom, EMPTY, Subject, Observable } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 
-import { ApiRoot, HttpCode, CoreWebService, LoggerService } from '@dotcms/dotcms-js';
+import { ApiRoot, HttpCode, LoggerService } from '@dotcms/dotcms-js';
 
 import { ConditionGroupModel, IConditionGroup } from '../rule/Rule';
 
@@ -22,7 +22,7 @@ interface ConditionGroupResponseJson {
 
 @Injectable()
 export class ConditionGroupService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
     public get error(): Observable<string> {
@@ -61,35 +61,31 @@ export class ConditionGroupService {
     }
 
     makeRequest(path: string): Observable<IConditionGroup> {
-        return this.coreWebService
-            .request<IConditionGroup>({
-                url: path
+        return this.http.get<IConditionGroup>(path).pipe(
+            map((res: IConditionGroup) => {
+                this.loggerService.info('ConditionGroupService', 'makeRequest-Response', res);
+
+                return res;
+            }),
+            catchError((err: HttpErrorResponse) => {
+                if (err && err.status === HttpCode.NOT_FOUND) {
+                    this.loggerService.error(
+                        'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
+                        path
+                    );
+                } else if (err) {
+                    this.loggerService.info(
+                        'Could not retrieve' + this._typeName + ': Response status code: ',
+                        err.status,
+                        'error:',
+                        err,
+                        path
+                    );
+                }
+
+                return EMPTY;
             })
-            .pipe(
-                map((res: IConditionGroup) => {
-                    this.loggerService.info('ConditionGroupService', 'makeRequest-Response', res);
-
-                    return res;
-                }),
-                catchError((err: HttpResponse<unknown>) => {
-                    if (err && err.status === HttpCode.NOT_FOUND) {
-                        this.loggerService.error(
-                            'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
-                            path
-                        );
-                    } else if (err) {
-                        this.loggerService.info(
-                            'Could not retrieve' + this._typeName + ': Response status code: ',
-                            err.status,
-                            'error:',
-                            err,
-                            path
-                        );
-                    }
-
-                    return EMPTY;
-                })
-            ) as Observable<IConditionGroup>;
+        );
     }
 
     all(ruleKey: string, keys: string[]): Observable<ConditionGroupModel> {
@@ -141,19 +137,13 @@ export class ConditionGroupService {
         const json = ConditionGroupService.toJson(model);
         const path = this._getPath(ruleId);
 
-        const add = this.coreWebService
-            .request<ConditionGroupResponseJson>({
-                method: 'POST',
-                body: json,
-                url: path
-            })
-            .pipe(
-                map((res: ConditionGroupResponseJson) => {
-                    model.key = res.id;
+        const add = this.http.post<ConditionGroupResponseJson>(path, json).pipe(
+            map((res: ConditionGroupResponseJson) => {
+                model.key = res.id;
 
-                    return model;
-                })
-            );
+                return model;
+            })
+        );
 
         return add.pipe(catchError(this._catchRequestError('add')));
     }
@@ -172,33 +162,22 @@ export class ConditionGroupService {
             return this.createConditionGroup(ruleId, model);
         } else {
             const json = ConditionGroupService.toJson(model);
-            const save = this.coreWebService
-                .request({
-                    method: 'PUT',
-                    body: json,
-                    url: this._getPath(ruleId, model.key)
+            const save = this.http.put<unknown>(this._getPath(ruleId, model.key), json).pipe(
+                map(() => {
+                    return model;
                 })
-                .pipe(
-                    map(() => {
-                        return model;
-                    })
-                );
+            );
 
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
 
     remove(ruleId: string, model: ConditionGroupModel): Observable<ConditionGroupModel> {
-        const remove = this.coreWebService
-            .request({
-                method: 'DELETE',
-                url: this._getPath(ruleId, model.key)
+        const remove = this.http.delete<unknown>(this._getPath(ruleId, model.key)).pipe(
+            map(() => {
+                return model;
             })
-            .pipe(
-                map(() => {
-                    return model;
-                })
-            );
+        );
 
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
@@ -212,10 +191,8 @@ export class ConditionGroupService {
         return p;
     }
 
-    private _catchRequestError(
-        operation: string
-    ): (err: HttpResponse<{ error?: string }>) => Observable<never> {
-        return (err: HttpResponse<{ error?: string }>) => {
+    private _catchRequestError(operation: string): (err: HttpErrorResponse) => Observable<never> {
+        return (err: HttpErrorResponse) => {
             if (err && err.status === HttpCode.NOT_FOUND) {
                 this.loggerService.info('Could not ' + operation + ' Condition: URL not valid.');
             } else if (err) {
@@ -228,7 +205,7 @@ export class ConditionGroupService {
                 );
             }
 
-            this._error.next(err.body?.error?.replace('dotcms.api.error.forbidden: ', '') || '');
+            this._error.next(err.error?.error?.replace('dotcms.api.error.forbidden: ', '') || '');
 
             return EMPTY;
         };

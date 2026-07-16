@@ -14,11 +14,7 @@ import { TabsModule } from 'primeng/tabs';
 import { TextareaModule } from 'primeng/textarea';
 
 import {
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     SiteService,
@@ -28,13 +24,6 @@ import { DotIconComponent, DotSpinnerComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 import { DotCDNStore } from './dotcdn.component.store';
-
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
 
 @NgModule({
     declarations: [AppComponent],
@@ -56,14 +45,10 @@ const dotEventSocketURLFactory = () => {
         ReactiveFormsModule
     ],
     providers: [
-        CoreWebService,
         LoggerService,
         StringUtils,
         SiteService,
         LoginService,
-        DotEventsSocket,
-        DotcmsEventsService,
-        { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
         DotcmsConfigService,
         DotCDNStore
     ],

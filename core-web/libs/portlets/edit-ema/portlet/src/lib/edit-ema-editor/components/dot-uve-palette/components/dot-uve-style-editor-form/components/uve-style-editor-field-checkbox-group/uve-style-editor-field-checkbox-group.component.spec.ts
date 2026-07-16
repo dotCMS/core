@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
+import { SpectatorHost, createHostFactory } from '@openng/spectator';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -70,7 +70,7 @@ describe('UveStyleEditorFieldCheckboxGroupComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field-label');
+            const label = spectator.query('.field label');
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Text Decoration');
         });

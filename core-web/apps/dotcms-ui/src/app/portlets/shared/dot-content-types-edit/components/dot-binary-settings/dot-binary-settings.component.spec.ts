@@ -4,7 +4,7 @@ import {
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -136,7 +136,7 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should handler error if save properties failed', () => {
-            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError({}));
+            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError(() => ({})));
             jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
             jest.spyOn(component.$save, 'emit');
 

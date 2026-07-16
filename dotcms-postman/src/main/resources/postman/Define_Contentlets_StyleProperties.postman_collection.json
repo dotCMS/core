@@ -199,6 +199,7 @@
                   "    pm.expect(entity[0]).to.not.be.null;",
                   "    pm.expect(entity[0].id).to.not.be.null;",
                   "    pm.collectionVariables.set(\"contentTypeId\", entity[0].id);",
+                  "    pm.collectionVariables.set(\"contentTypeName\", entity[0].name);",
                   "    pm.collectionVariables.set(\"contentTypeVarName\", entity[0].variable);",
                   "});"
                 ],
@@ -2429,6 +2430,1166 @@
         }
       ],
       "description": "### Defining Contentlet Styles:\n\nTest the Contentlet Style definition in the `testPageStyles_1`.\n\n- Save Contentlets with Basic Styles\n    \n    - `Contentlet 1` with basic Style Properties\n        \n    - `Contentlet 2` without Styles\n        \n- Save Contentlet with Complex Styles\n    \n    - `Contentlet 1` with deep object definition Style Properties\n        \n- BadRequest trying to set Styles for a contentlet that does not exists, should fail.\n    \n- Save Styles for the same Contentlet but in different Containers, each of them does not affect the other one.\n    \n    - `Contentlet 1` saved with \"width = 100px\" style value in the `SYSTEM_CONTAINER`\n        \n    - `Contentlet 1` saved with \"color = \"#FF0000\" style in the custom Container `Styles_Container`"
+    },
+    {
+      "name": "Traditional Style Editor",
+      "item": [
+        {
+          "name": "Save Content Type Schema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const SCHEMA = {",
+                  "    \"contentType\": contentTypeName,",
+                  "    \"sections\": [",
+                  "        {",
+                  "            \"title\": \"Layout\",",
+                  "            \"fields\": [",
+                  "                {",
+                  "                    \"type\": \"input\",",
+                  "                    \"label\": \"New Field\",",
+                  "                    \"id\": \"newField\",",
+                  "                    \"config\": {",
+                  "                        \"inputType\": \"text\"",
+                  "                    }",
+                  "                },",
+                  "                {",
+                  "                    \"type\": \"input\",",
+                  "                    \"label\": \"New Field\",",
+                  "                    \"id\": \"newField\",",
+                  "                    \"config\": {",
+                  "                        \"inputType\": \"text\"",
+                  "                    }",
+                  "                }",
+                  "            ]",
+                  "        }",
+                  "    ]",
+                  "};",
+                  "",
+                  "pm.collectionVariables.set(\"styleSchema\", JSON.stringify(SCHEMA));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}/metadata",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}",
+                "metadata"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Build Content Type Schema without metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "pm.expect(entity).to.not.be.null;",
+                  "",
+                  "pm.test(\"remove metadata from the content type\", function () {",
+                  "    const { metadata, ...contentTypeInfo } = entity;",
+                  "    pm.expect(contentTypeInfo).to.not.have.property(\"metadata\");",
+                  "    ",
+                  "    pm.collectionVariables.set(\"contentTypeInfo\", JSON.stringify(contentTypeInfo));",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Content Type Schema preserves metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    pm.expect(entity).to.have.property(\"metadata\");",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).to.eql(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{{contentTypeInfo}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Content Type metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    pm.expect(entity).to.have.property(\"metadata\");",
+                  "    pm.expect(entity.metadata).to.eql({});",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+                  "const jsonContentTypeInfo = JSON.parse(contentTypeInfo);",
+                  "",
+                  "// Crear una copia con metadata en null",
+                  "const contentTypeInfoEmptyMetadata = { ...jsonContentTypeInfo, metadata: null };",
+                  "",
+                  "pm.collectionVariables.set(",
+                  "  \"contentTypeInfoEmptyMetadata\", JSON.stringify(contentTypeInfoEmptyMetadata)",
+                  ");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{{contentTypeInfoEmptyMetadata}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Content Type Schema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const SCHEMA = {",
+                  "    \"contentType\": contentTypeName,",
+                  "    \"sections\": [",
+                  "        {",
+                  "            \"title\": \"Layout\",",
+                  "            \"fields\": [",
+                  "                {",
+                  "                    \"type\": \"input\",",
+                  "                    \"label\": \"New Field\",",
+                  "                    \"id\": \"newField\",",
+                  "                    \"config\": {",
+                  "                        \"inputType\": \"text\"",
+                  "                    }",
+                  "                },",
+                  "                {",
+                  "                    \"type\": \"input\",",
+                  "                    \"label\": \"New Field\",",
+                  "                    \"id\": \"newField\",",
+                  "                    \"config\": {",
+                  "                        \"inputType\": \"text\"",
+                  "                    }",
+                  "                }",
+                  "            ]",
+                  "        }",
+                  "    ]",
+                  "};",
+                  "",
+                  "pm.collectionVariables.set(\"styleSchema\", JSON.stringify(SCHEMA));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}/metadata",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}",
+                "metadata"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Contentlet_1 & Contentlet_2 in FirstPage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"First entry is created\", function () {",
+                  "    const contentlet = json.entity.find(item => item.contentletId === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "});",
+                  "",
+                  "pm.test(\"Second entry is created\", function () {",
+                  "    const contentlet = json.entity.find(item => item.contentletId === contentlet2);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\",\n            \"{{Contentlet_2}}\"\n        ]\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Add Content into the Page: Container and Contentlets."
+          },
+          "response": []
+        },
+        {
+          "name": "Save Basic Content Styles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "// ============================",
+                  "// Validate SYSTEM_CONTAINER styles",
+                  "// ============================",
+                  "",
+                  "const entity = json.entity;",
+                  "",
+                  "pm.test(\"Contentlet_1 has width styleProperties\", function () {",
+                  "    const contentlet1Response = entity.filter(item => item.contentletId === contentlet1)[0];",
+                  "    pm.expect(contentlet1Response.dotStyleProperties.width).to.eql(\"100px\");",
+                  "    ",
+                  "});",
+                  "",
+                  "pm.test(\"Contentlet_2 has color styleProperties\", function () {",
+                  "    const contentlet2Response = entity.filter(item => item.contentletId === contentlet2)[0];",
+                  "    pm.expect(contentlet2Response.dotStyleProperties.color).to.eql(\"#FF0000\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"{{Contentlet_1}}\": {\n            \"width\": \"100px\"\n        },\n        \"{{Contentlet_2}}\": {\n            \"color\": \"#FF0000\"\n        }\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/styles",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "styles"
+              ]
+            },
+            "description": "Test when users make a request sending the style properties for some contentlets.  \nThis will save the style properties for the specified contentlets, in case style properties are empty the contentlet style properties will erased."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Rendered data-dot-style-properties",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "// filter by container",
+                  "const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "",
+                  "pm.test(\"Validate Contentlet_1 has styleProperties\", function () {",
+                  "    // filter by Contentlet_1",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    pm.expect(contentlet.dotStyleProperties.width).to.eql(\"100px\");",
+                  "});",
+                  "",
+                  "pm.test(\"Validate Contentlet_2 has styleProperties\", function () {",
+                  "    // filter by Contentlet_2",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet2);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    pm.expect(contentlet.dotStyleProperties.color).to.eql(\"#FF0000\");",
+                  "});",
+                  "",
+                  "// Get container rendered HTML",
+                  "const containerRendered = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
+                  "// Load the HTML ",
+                  "const $ = cheerio.load(containerRendered);",
+                  "",
+                  "// Create an object to store the results",
+                  "let contentletStyles = {};",
+                  "",
+                  "// Find all divs that are \"contentlets\" and loop through them",
+                  "$('div[data-dot-object=\"contentlet\"]').each((index, element) => {",
+                  "    // Get the title to use as a key (e.g., \"Contentlet 1\")",
+                  "    const contentletId = $(element).attr('data-dot-identifier');",
+                  "    ",
+                  "    // Get the raw style string",
+                  "    const rawStyles = $(element).attr('data-dot-style-properties');",
+                  "",
+                  "    if (rawStyles) {",
+                  "        // Parse the JSON and store it mapped to the title",
+                  "        contentletStyles[contentletId] = JSON.parse(rawStyles);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Contentlet 1 rendered should have 100px width\", function () {",
+                  "    pm.expect(contentletStyles[contentlet1].width).to.eql(\"100px\");",
+                  "});",
+                  "",
+                  "pm.test(\"Contentlet 2 rendered should have red color\", function () {",
+                  "    pm.expect(contentletStyles[contentlet2].color).to.eql(\"#FF0000\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{firstPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Content Type Schema Within Script",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const entity = pm.response.json().entity;",
+                  "const pageRendered = entity.page.rendered;",
+                  "",
+                  "pm.test(\"Validate page.rendered has the SCHEMA script\", function () {",
+                  "    // Regular expression to find the script that contains 'initDotUVE'",
+                  "    const scriptRegex = /<script>[\\s\\S]*?initDotUVE[\\s\\S]*?<\\/script>/;",
+                  "",
+                  "    // Search for the SCHEMA script in the response HTML",
+                  "    const schemaScript = pageRendered.match(scriptRegex)[0];",
+                  "    pm.expect(schemaScript).to.exist;",
+                  "    pm.expect(schemaScript).to.include(\"dotUVE.registerStyleEditorSchemas\");",
+                  "});",
+                  "",
+                  "// We have 2 contentlets rendered in the page, but both have the same Content Type so we expect only one SCHEMA",
+                  "pm.test(\"Validate SCHEMA is not duplicated in registerStyleEditorSchemas\", function () {",
+                  "    // Regular expression to find the script that contains 'initDotUVE'",
+                  "    const schemaRegex = /dotUVE\\.registerStyleEditorSchemas\\(\\[/g;",
+                  "",
+                  "    // Gets all schemas pased to the registerStyleEditorSchemas",
+                  "    const schemas = pageRendered.match(schemaRegex);",
+                  "    pm.expect(schemas).to.exist;",
+                  "    pm.expect(schemas.length).to.equal(1, `Expected 1 schema but found ${schemas.length}`);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate page.rendered has the UVE script\", function () {",
+                  "    // Regular expression to find the script that contains 'initDotUVE'",
+                  "    const scriptRegex = /<script.*?src=\"\\/ext\\/uve\\/dot-uve\\.js\".*?><\\/script>/;",
+                  "",
+                  "    // Search for the script in the response HTML",
+                  "    const uveScript = pageRendered.match(scriptRegex)[0];",
+                  "    pm.expect(uveScript).to.exist;",
+                  "    pm.expect(uveScript).to.include('src=\\\"/ext/uve/dot-uve.js\\\"');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{firstPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Content Type 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Store first content type ID\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.not.be.null;",
+                  "    pm.expect(entity[0]).to.not.be.null;",
+                  "    pm.expect(entity[0].id).to.not.be.null;",
+                  "    pm.collectionVariables.set(\"contentTypeId_2\", entity[0].id);",
+                  "    pm.collectionVariables.set(\"contentTypeName_2\", entity[0].name);",
+                  "    pm.collectionVariables.set(\"contentTypeVarName_2\", entity[0].variable);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Styles_2_ContentType_{{$timestamp}}\",\n    \"description\": \"Second content type for page tests\",\n    \"host\": \"{{hostname}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Content Type Schema 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
+                  "",
+                  "const SCHEMA = {",
+                  "    \"contentType\": contentTypeName,",
+                  "    \"sections\": [",
+                  "        {",
+                  "            \"title\": \"Typography\",",
+                  "            \"fields\": [",
+                  "                {",
+                  "                    \"type\": \"dropdown\",",
+                  "                    \"label\": \"Font size\",",
+                  "                    \"id\": \"fontSize\",",
+                  "                    \"config\": {",
+                  "                        \"options\": [",
+                  "                            {",
+                  "                                \"label\": \"Text XL\",",
+                  "                                \"value\": \"text-xl\"",
+                  "                            },",
+                  "                            {",
+                  "                                \"label\": \"Text SM\",",
+                  "                                \"value\": \"text-sm\"",
+                  "                            }",
+                  "                        ]",
+                  "                    }",
+                  "                }",
+                  "            ]",
+                  "        }",
+                  "    ]",
+                  "};",
+                  "",
+                  "pm.collectionVariables.set(\"styleSchema_2\", JSON.stringify(SCHEMA));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema_2}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId_2}}/metadata",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId_2}}",
+                "metadata"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Contentlet 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Test Rich Text created successfully\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.errors.length).to.eql(0);",
+                  "    pm.collectionVariables.set(\"Contentlet_3\", json.entity.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeVarName_2}}\",\n        \"title\": \"Contentlet 3\",\n        \"hostfolder\": \"{{hostname}}\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ],
+              "query": [
+                {
+                  "key": "indexPolicy",
+                  "value": "WAIT_FOR"
+                }
+              ]
+            },
+            "description": "Creates test data"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Contentlet_1 & Contentlet_3 in FirstPage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet3 = pm.collectionVariables.get(\"Contentlet_3\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"First entry is created\", function () {",
+                  "    const contentlet = json.entity.find(item => item.contentletId === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "});",
+                  "",
+                  "pm.test(\"Second entry is created\", function () {",
+                  "    const contentlet = json.entity.find(item => item.contentletId === contentlet3);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\",\n            \"{{Contentlet_3}}\"\n        ]\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Add Content into the Page: Container and Contentlets."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Schema per Content Type Within Script",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeName1 = pm.collectionVariables.get(\"contentTypeName\");",
+                  "const contentTypeName2 = pm.collectionVariables.get(\"contentTypeName_2\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "const pageRendered = entity.page.rendered;",
+                  "",
+                  "pm.test(\"Validate page.rendered has the SCHEMA script\", function () {",
+                  "    // Regular expression to find the script that contains 'initDotUVE'",
+                  "    const scriptRegex = /<script>[\\s\\S]*?initDotUVE[\\s\\S]*?<\\/script>/;",
+                  "",
+                  "    // Search for the SCHEMA script in the response HTML",
+                  "    const schemaScript = pageRendered.match(scriptRegex)[0];",
+                  "    pm.expect(schemaScript).to.exist;",
+                  "    pm.expect(schemaScript).to.include(\"dotUVE.registerStyleEditorSchemas\");",
+                  "});",
+                  "",
+                  "// We have 2 contentlets of different Content Types in the page, so we expect 2 distinct SCHEMAs",
+                  "pm.test(\"Validate 2 distinct schemas are present in registerStyleEditorSchemas\", function () {",
+                  "    // Regular expression to find all contentType entries in the registerStyleEditorSchemas call",
+                  "    const contentTypeRegex = /\"contentType\":\"(.*?)\"/g;",
+                  "",
+                  "    // Gets all schemas passed to the registerStyleEditorSchemas",
+                  "    const schemas = pageRendered.match(contentTypeRegex);",
+                  "    ",
+                  "    pm.expect(schemas).to.exist;",
+                  "    pm.expect(schemas.length).to.equal(2, `Expected 2 schemas but found ${schemas.length}`);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{firstPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Content of the Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet3 = pm.collectionVariables.get(\"Contentlet_3\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.empty;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": []\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Add Content into the Page: Container and Contentlets."
+          },
+          "response": []
+        }
+      ],
+      "description": "## Traditional Style Editor\n\nThis folder covers the end-to-end workflow for creating and managing content types SCHEMAS, and associating contentlets with pages using the traditional style editor approach.\n\n- Build and Save Contetn Type Schema\n    \n- Save content in a Page using the same Cotent Type\n    \n- Check `registerStyleEditorSchemas` only has 1 Content Type Schema.\n    \n- Create a new Content Type and it's schema; use it in a new Contentlet\n    \n- Save content in a Page with two different Content Types\n    \n- Check `registerStyleEditorSchemas` has 2 Content Type Schemas.\n    \n\nAlso covers that Traditional Style properties are applied at the page level and verified through rendered output, allowing developers to validate that `data-dot-style-properties` are correctly reflected in the page response.\n\n- Validates that `data-dot-style-properties` is present only for Contentlets that have Style properties defined."
     }
   ],
   "auth": {
@@ -2547,6 +3708,42 @@
     },
     {
       "key": "secondPageUrl",
+      "value": ""
+    },
+    {
+      "key": "contentTypeId_2",
+      "value": ""
+    },
+    {
+      "key": "contentTypeVarName_2",
+      "value": ""
+    },
+    {
+      "key": "Contentlet_3",
+      "value": ""
+    },
+    {
+      "key": "contentTypeName",
+      "value": ""
+    },
+    {
+      "key": "contentTypeName_2",
+      "value": ""
+    },
+    {
+      "key": "styleSchema",
+      "value": ""
+    },
+    {
+      "key": "styleSchema_2",
+      "value": ""
+    },
+    {
+      "key": "contentTypeInfo",
+      "value": ""
+    },
+    {
+      "key": "contentTypeInfoEmptyMetadata",
       "value": ""
     }
   ]

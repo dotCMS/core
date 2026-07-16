@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.hostvariable.bussiness;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;

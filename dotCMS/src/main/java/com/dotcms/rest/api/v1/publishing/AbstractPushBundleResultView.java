@@ -29,7 +29,7 @@ public interface AbstractPushBundleResultView {
      */
     @Schema(
             description = "Bundle identifier",
-            example = "550e8400-e29b-41d4-a716-446655440000",
+            example = "01KJWNJM2C67DM56GHBJ4S7B89",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     String bundleId();

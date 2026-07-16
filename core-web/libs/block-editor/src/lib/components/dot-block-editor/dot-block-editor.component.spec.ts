@@ -1,5 +1,5 @@
-import { Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator } from '@openng/spectator';
+import { createComponentFactory } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
@@ -42,7 +42,7 @@ const BLOCK_EDITOR_FIELD = {
     imports: [BlockEditorModule],
     template: `
         <form [formGroup]="form">
-            <dot-block-editor formControlName="block"></dot-block-editor>
+            <dot-old-block-editor formControlName="block" />
         </form>
     `
 })

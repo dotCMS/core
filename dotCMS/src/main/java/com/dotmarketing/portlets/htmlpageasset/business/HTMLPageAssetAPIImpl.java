@@ -848,6 +848,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
             if (UtilMethods.isSet(contentId)) {
                 requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
+                requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, contentId);
             }
 
 

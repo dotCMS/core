@@ -1,56 +1,54 @@
+import { patchState, signalMethod } from '@ngrx/signals';
+
 import { Location } from '@angular/common';
 import {
+    ChangeDetectionStrategy,
     Component,
+    computed,
     DestroyRef,
     effect,
     inject,
+    OnDestroy,
     OnInit,
     signal,
-    untracked,
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
-import {
-    DotAnalyticsTrackerService,
-    DotContentletService,
-    DotESContentService,
-    DotExperimentsService,
-    DotFavoritePageService,
-    DotLanguagesService,
-    DotPageLayoutService,
-    DotPageRenderService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
+import { filter } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DEFAULT_VARIANT_ID, DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DotPageScannerReportComponent,
+    DotPageToolsSeoComponent,
+    PageScannerToolType
+} from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
-import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
-import { WINDOW } from '@dotcms/utils';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
+import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
-import { PERSONA_KEY } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DialogAction, DotPageAssetParams } from '../shared/models';
+import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { DialogAction, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
+    getErrorPayload,
+    getRequestHostName,
     getTargetUrl,
     normalizeQueryParams,
     sanitizeURL,
@@ -59,31 +57,9 @@ import {
 
 @Component({
     selector: 'dot-ema-shell',
-    providers: [
-        UVEStore,
-        DotPageApiService,
-        DotActionUrlService,
-        DotLanguagesService,
-        MessageService,
-        DotPageLayoutService,
-        ConfirmationService,
-        DotFavoritePageService,
-        DotESContentService,
-        DialogService,
-        DotPageRenderService,
-        DotSeoMetaTagsService,
-        DotSeoMetaTagsUtilService,
-        DotWorkflowsActionsService,
-        DotContentletService,
-        {
-            provide: WINDOW,
-            useValue: window
-        },
-        DotExperimentsService,
-        DotAnalyticsTrackerService
-    ],
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ButtonModule,
         ConfirmDialogModule,
@@ -91,16 +67,19 @@ import {
         EditEmaNavigationBarComponent,
         RouterModule,
         DotPageToolsSeoComponent,
+        DotPageScannerReportComponent,
         DotEmaDialogComponent,
         DotInfoPageComponent,
         DotNotLicenseComponent,
         MessageModule,
         DotMessagePipe
-    ]
+    ],
+    providers: [ConfirmationService]
 })
-export class DotEmaShellComponent implements OnInit {
+export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
+    @ViewChild('pageScanner') pageScanner!: DotPageScannerReportComponent;
 
     readonly uveStore = inject(UVEStore);
     readonly destroyRef = inject(DestroyRef);
@@ -109,10 +88,109 @@ export class DotEmaShellComponent implements OnInit {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
-    protected readonly $shellProps = this.uveStore.$shellProps;
-    protected readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    readonly #dotMessageService = inject(DotMessageService);
+    protected readonly $lockOptions = this.uveStore.$lockOptions;
+    protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
+    protected readonly $lockedByDisplay = computed(
+        () =>
+            this.$lockOptions()?.lockedBy ??
+            this.#dotMessageService.get('uve.shell.page.locked.unknown.user')
+    );
+    protected readonly $showLockBanner = computed(() => {
+        const lockOptions = this.$lockOptions();
+        return !!lockOptions?.isLocked && !lockOptions.isLockedByCurrentUser;
+    });
 
     protected readonly $showBanner = signal<boolean>(true);
+
+    protected readonly $showPageScanner = computed<boolean>(
+        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER] === true
+    );
+
+    // Component builds its own menu items locally
+    protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
+        const page = this.uveStore.pageAsset()?.page;
+        const template = this.uveStore.pageAsset()?.template;
+        const isLoading = this.uveStore.uveStatus() === UVE_STATUS.LOADING;
+        const templateDrawed = template?.drawed;
+        const isLayoutDisabled = !this.uveStore.editorCanEditLayout();
+        const canSeeRulesExists = page && 'canSeeRules' in page;
+
+        return [
+            {
+                materialIcon: 'description',
+                label: 'editema.editor.navbar.content',
+                href: 'content',
+                id: 'content'
+            },
+            {
+                materialIcon: 'space_dashboard',
+                label: 'editema.editor.navbar.layout',
+                href: 'layout',
+                id: 'layout',
+                isDisabled: isLayoutDisabled,
+                tooltip: templateDrawed
+                    ? null
+                    : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+            },
+            {
+                materialIcon: 'fork_left',
+                label: 'editema.editor.navbar.rules',
+                id: 'rules',
+                href: `rules/${page?.identifier}`,
+                isDisabled: (canSeeRulesExists && !page.canSeeRules) || !page?.canEdit
+            },
+            {
+                materialIcon: 'science',
+                label: 'editema.editor.navbar.experiments',
+                href: `experiments/${page?.identifier}`,
+                id: 'experiments',
+                isDisabled: !page?.canEdit
+            },
+            {
+                materialIcon: 'health_and_safety',
+                label: 'editema.editor.navbar.page-tools',
+                id: 'page-tools'
+            },
+            {
+                materialIcon: 'settings',
+                label: 'editema.editor.navbar.properties',
+                id: 'properties',
+                isDisabled: isLoading
+            }
+        ];
+    });
+
+    // Component builds SEO params locally
+    protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
+        const url = sanitizeURL(this.uveStore.pageAsset()?.page?.pageURI);
+        const currentUrl = url.startsWith('/') ? url : '/' + url;
+        const requestHostName = getRequestHostName(
+            this.uveStore.pageParams(),
+            this.uveStore.pageAsset()?.site?.hostname
+        );
+
+        return {
+            siteId: this.uveStore.pageAsset()?.site?.identifier,
+            languageId: this.uveStore.pageAsset()?.viewAs?.language?.id,
+            currentUrl,
+            requestHostName
+        };
+    });
+
+    // Component builds error display locally
+    protected readonly $errorDisplay = computed<{ code: number; pageInfo: InfoPage } | null>(() => {
+        const errorCode = this.uveStore.pageErrorCode();
+        if (!errorCode) return null;
+
+        return getErrorPayload(errorCode);
+    });
+
+    // Component determines read permissions locally
+    protected readonly $canRead = computed<boolean>(() => {
+        // Removed pageAPIResponse - use normalized accessors
+        return this.uveStore.pageAsset()?.page?.canRead ?? false;
+    });
 
     /**
      * Handle the update of the page params
@@ -121,7 +199,7 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const params = this.uveStore.$friendlyParams();
+        const params = this.uveStore.pageFriendlyParams();
 
         const { data } = this.#activatedRoute.snapshot;
 
@@ -132,52 +210,89 @@ export class DotEmaShellComponent implements OnInit {
         this.#updateLocation(cleanedParams);
     });
 
-    readonly $updateBreadcrumbEffect = effect(() => {
-        const pageAPIResponse = this.uveStore.pageAPIResponse();
+    readonly $breadcrumbPage = computed<DotCMSPage | null>(() => {
+        const page = this.uveStore.pageAsset()?.page;
 
-        const params = untracked(() => this.uveStore.$friendlyParams());
+        const status = this.uveStore.uveStatus();
 
-        const { data } = this.#activatedRoute.snapshot;
-
-        const baseClientHost = data?.uveConfig?.url;
-
-        const cleanedParams = normalizeQueryParams(params, baseClientHost);
-
-        const paramsString = new URLSearchParams(cleanedParams).toString();
-
-        const newURL = `#/edit-page/content?${paramsString}`;
-
-        if (pageAPIResponse) {
-            this.#globalStore.addNewBreadcrumb({
-                label: pageAPIResponse.page?.title,
-                url: newURL,
-                id: `${pageAPIResponse.page?.identifier}`
-            });
-        }
+        return page && status === UVE_STATUS.LOADED ? page : null;
     });
+
+    readonly $updateBreadcrumb = signalMethod<DotCMSPage | null>((page) => {
+        if (!page || !this.uveStore.pageParams()) return;
+
+        const params = this.uveStore.pageFriendlyParams();
+        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+        const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+        const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
+        const label = urlContentMap?.title ?? page.title;
+        const identifier = urlContentMap?.identifier ?? page.identifier;
+
+        this.#globalStore.addNewBreadcrumb({
+            label,
+            url: `/dotAdmin/#${urlTree.toString()}`,
+            id: `${identifier}`
+        });
+    });
+
+    constructor() {
+        this.$updateBreadcrumb(this.$breadcrumbPage);
+    }
 
     ngOnInit(): void {
         const params = this.#getPageParams();
         const viewParams = this.#getViewParams(params.mode);
 
-        this.uveStore.patchViewParams(viewParams);
-        this.uveStore.loadPageAsset(params);
+        // Initialize view viewParams from query parameters
+        patchState(this.uveStore, { viewParams });
+
+        // Check if we already have page data loaded with matching params
+        const currentPageParams = this.uveStore.pageParams();
+
+        const hasPageData = !!this.uveStore.pageAsset()?.page;
+        const paramsMatch =
+            currentPageParams &&
+            currentPageParams.url === params.url &&
+            currentPageParams.language_id === params.language_id &&
+            currentPageParams.mode === params.mode &&
+            currentPageParams.variantName === params.variantName &&
+            currentPageParams[PERSONA_KEY] === params.personaId;
+
+        if (!hasPageData || !paramsMatch) {
+            this.uveStore.pageLoad(params);
+        }
 
         this.#siteService.switchSite$
-            .pipe(takeUntilDestroyed(this.destroyRef))
+            .pipe(
+                filter((site) => site?.identifier !== this.uveStore.pageAsset()?.site?.identifier),
+                takeUntilDestroyed(this.destroyRef)
+            )
             .subscribe(() => this.#router.navigate(['/pages']));
+    }
+
+    ngOnDestroy(): void {
+        this.uveStore.resetPageParams();
     }
 
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                const pageAPIResponse = this.uveStore.pageAPIResponse();
-                this.uveStore.getWorkflowActions(pageAPIResponse.page.inode);
+                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
+                break;
+            }
+
+            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
+                // Fired by the edit content portlet when a page is saved in a new language
+                // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
+                // emitted). Reload to refresh pageLanguages so the UVE toolbar language
+                // dropdown reflects the newly created version.
+                this.uveStore.pageReload();
                 break;
             }
         }
@@ -191,17 +306,24 @@ export class DotEmaShellComponent implements OnInit {
      */
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAPIResponse().urlContentMap);
 
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
-            // Navigate to the new URL if it's different from the current one
-            this.uveStore.loadPageAsset({ url: targetUrl });
+        if (!htmlPageReferer) {
+            this.uveStore.pageReload();
 
             return;
         }
 
-        this.uveStore.reloadCurrentPage();
+        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
+
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+            // Navigate to the new URL if it's different from the current one
+            this.uveStore.pageLoad({ url: targetUrl });
+
+            return;
+        }
+
+        this.uveStore.pageReload();
     }
 
     /**
@@ -214,7 +336,10 @@ export class DotEmaShellComponent implements OnInit {
         if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
-            const page = this.uveStore.pageAPIResponse().page;
+            const page = this.uveStore.pageAsset()?.page;
+            if (!page) {
+                return;
+            }
 
             this.dialog.editContentlet({
                 inode: page.inode,
@@ -227,10 +352,94 @@ export class DotEmaShellComponent implements OnInit {
     }
 
     /**
+     * Handle scanner tool click from the page tools panel.
+     * Opens the page scanner report dialog with the selected tool type.
+     *
+     * The scanner is an external service that fetches the URL over the public
+     * internet, so the URL must point at this authoring instance
+     * (`window.location.origin`) — never the page's content-site hostname or a
+     * headless `clientHost`, which may not be publicly reachable.
+     *
+     * To re-render the exact page the user is looking at, every page-resolving
+     * param the editor is using is forwarded onto the scanned URL:
+     * - `host_id` — disambiguates the site for multisite pages sharing a path
+     *   (e.g. `/index`); dotCMS resolves it for the backend user regardless of host.
+     * - `language_id`, `personaId`, `variantName`, `mode` and `publishDate`
+     *   (time machine) — taken from the current page params so the scanner sees
+     *   the same language, persona, variant, mode and point-in-time as the editor.
+     *
+     * @param {PageScannerToolType} type
+     * @memberof DotEmaShellComponent
+     */
+    handleScannerToolClick(type: PageScannerToolType): void {
+        const { currentUrl, siteId } = this.$seoParams();
+        const url = new URL(currentUrl ?? '/', window.location.origin);
+
+        if (siteId) {
+            url.searchParams.set('host_id', siteId);
+        }
+
+        for (const [key, value] of Object.entries(this.#getScannerPageParams())) {
+            url.searchParams.set(key, value);
+        }
+
+        this.pageScanner.open(type, url.toString());
+    }
+
+    /**
+     * Build the page-resolving query params forwarded to the scanner from the
+     * params the editor is currently rendering with.
+     *
+     * Only the params that change which page dotCMS resolves are kept
+     * (`language_id`, persona, `variantName`, `mode`, `publishDate`). The page
+     * path, `clientHost` and `depth` are excluded: the path is already the URL
+     * itself, and `clientHost`/`depth` are editor-fetch concerns the public
+     * scanner must not inherit.
+     *
+     * Unlike SPA navigation, this URL is fetched and rendered by the dotCMS
+     * backend, so the persona must use the backend request param key
+     * (`com.dotmarketing.persona.id`, `WebKeys.CMS_PERSONA_PARAMETER`) — NOT the
+     * SPA-friendly `personaId`. Sending `personaId` would be silently ignored and
+     * the page would render with no persona. The default persona and default
+     * variant are dropped so the scanner falls back to the same implicit defaults
+     * as the editor.
+     *
+     * @return {Record<string, string>}
+     * @memberof DotEmaShellComponent
+     */
+    #getScannerPageParams(): Record<string, string> {
+        const params = this.uveStore.pageParams() ?? ({} as DotPageAssetParams);
+
+        const forwarded: Record<string, unknown> = {
+            [DotPageAssetKeys.LANGUAGE_ID]: params.language_id,
+            [DotPageAssetKeys.MODE]: params.mode,
+            [DotPageAssetKeys.PUBLISH_DATE]: params.publishDate
+        };
+
+        // Persona keeps the backend request param key — the scanner is a backend
+        // page render, not SPA navigation. Drop the default persona (implicit).
+        const persona = params[PERSONA_KEY];
+        if (persona && persona !== DEFAULT_PERSONA.identifier) {
+            forwarded[PERSONA_KEY] = persona;
+        }
+
+        // The default variant is implicit — omit it to keep the URL clean.
+        if (params.variantName && params.variantName !== DEFAULT_VARIANT_ID) {
+            forwarded[DotPageAssetKeys.VARIANT_NAME] = params.variantName;
+        }
+
+        return Object.fromEntries(
+            Object.entries(forwarded)
+                .filter(([, value]) => value !== undefined && value !== null && value !== '')
+                .map(([key, value]) => [key, String(value)])
+        );
+    }
+
+    /**
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.reloadCurrentPage();
+        this.uveStore.pageReload();
     }
 
     /**
@@ -242,11 +451,11 @@ export class DotEmaShellComponent implements OnInit {
 
     /**
      * Toggles the lock state of the current page
-     * Gets lock options from toggleLockOptions signal and calls store method to handle the lock/unlock
+     * Gets lock options from $lockOptions signal and calls store method to handle the lock/unlock
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
-        this.uveStore.toggleLock(inode, isLocked, isLockedByCurrentUser);
+        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = this.$lockOptions();
+        this.uveStore.workflowToggleLock(inode, isLocked, isLockedByCurrentUser, lockedBy);
     }
 
     /**

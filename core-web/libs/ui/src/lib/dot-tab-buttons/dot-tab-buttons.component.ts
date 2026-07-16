@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
@@ -23,7 +22,7 @@ interface TabButtonOptions {
  */
 @Component({
     selector: 'dot-tab-buttons',
-    imports: [ButtonModule, NgClass, TooltipModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tab-buttons.component.html',
     styleUrls: ['./dot-tab-buttons.component.scss']
 })

@@ -31,31 +31,31 @@
                 appendTo="body"
                 formControlName="menuOption"
                 optionLabel="name"
-                optionValue="id"></p-select>
+                optionValue="id" />
         </div>
         <div class="field">
             <label dotFieldRequired for="cardViewMode" data-testId="ViewModeLabel">
                 {{ 'contenttypes.content.add_to_menu.default_view' | dm }}
             </label>
-            <div class="radio">
+            <div class="form-radio">
                 <p-radioButton
                     [inputId]="'cardViewMode'"
                     data-testId="cardViewMode"
                     name="defaultView"
                     value="card"
-                    formControlName="defaultView"></p-radioButton>
+                    formControlName="defaultView" />
                 <label [for]="'cardViewMode'">
                     {{ 'custom.content.portlet.dataViewMode.card' | dm }}
                 </label>
             </div>
 
-            <div class="radio">
+            <div class="form-radio">
                 <p-radioButton
                     [inputId]="'listViewMode'"
                     data-testId="listViewMode"
                     name="defaultView"
                     value="list"
-                    formControlName="defaultView"></p-radioButton>
+                    formControlName="defaultView" />
                 <label [for]="'listViewMode'">
                     {{ 'custom.content.portlet.dataViewMode.list' | dm }}
                 </label>
@@ -70,14 +70,14 @@
                     [disabled]="dialogActions.cancel.disabled"
                     severity="secondary"
                     (click)="dialogActions.cancel.action()"
-                    data-testId="dotDialogCancelAction"></p-button>
+                    data-testId="dotDialogCancelAction" />
             }
             @if (dialogActions.accept) {
                 <p-button
                     [label]="dialogActions.accept.label"
                     [disabled]="dialogActions.accept.disabled"
                     (click)="dialogActions.accept.action()"
-                    data-testId="dotDialogAcceptAction"></p-button>
+                    data-testId="dotDialogAcceptAction" />
             }
         </ng-template>
     }

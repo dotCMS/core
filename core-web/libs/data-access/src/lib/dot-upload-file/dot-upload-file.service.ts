@@ -3,7 +3,7 @@ import { from, Observable, of, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, pluck, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { getFileMetadata, getFileVersion } from '@dotcms/utils';
@@ -66,15 +66,19 @@ export class DotUploadFileService {
                 statusCallback(FileStatus.IMPORT);
 
                 return this.#http
-                    .post(`${this.#BASE_URL}/fire/PUBLISH`, JSON.stringify({ contentlets }), {
-                        headers: {
-                            Origin: window.location.hostname,
-                            'Content-Type': 'application/json;charset=UTF-8'
+                    .post<{ entity: { results: DotCMSContentlet[] } }>(
+                        `${this.#BASE_URL}/fire/PUBLISH`,
+                        JSON.stringify({ contentlets }),
+                        {
+                            headers: {
+                                Origin: window.location.hostname,
+                                'Content-Type': 'application/json;charset=UTF-8'
+                            }
                         }
-                    })
-                    .pipe(pluck('entity', 'results')) as Observable<DotCMSContentlet[]>;
+                    )
+                    .pipe(map((x) => x?.entity?.results));
             }),
-            catchError((error) => throwError(error))
+            catchError((error) => throwError(() => error))
         );
     }
 
@@ -123,6 +127,41 @@ export class DotUploadFileService {
         return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>('dotAsset', {
             asset: file
         });
+    }
+
+    /**
+     * Uploads a file by resolving the content type from a base type instead of an explicit content
+     * type. The base type is sent to the backend, which resolves the matching content type for it
+     * (e.g. `FILEASSET` → File Asset, `DOTASSET` → dotAsset).
+     *
+     * @param file The file to be uploaded or the asset id.
+     * @param baseType The base type to create the contentlet as (e.g. `FILEASSET`, `DOTASSET`).
+     * @param extraData Additional data to be included in the contentlet object. This will be merged
+     * with the base contentlet data in the request body.
+     * @returns An observable that resolves to the created contentlet.
+     */
+    uploadFileByBaseType(
+        file: File | string,
+        baseType: string,
+        extraData?: DotActionRequestOptions['data']
+    ): Observable<DotCMSContentlet> {
+        if (file instanceof File) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            return this.#workflowActionsFireService.newContentletByBaseType<DotCMSContentlet>(
+                baseType,
+                { file: file.name, ...extraData },
+                formData
+            );
+        }
+
+        return this.#workflowActionsFireService.newContentletByBaseType<DotCMSContentlet>(
+            baseType,
+            {
+                asset: file
+            }
+        );
     }
 
     /**

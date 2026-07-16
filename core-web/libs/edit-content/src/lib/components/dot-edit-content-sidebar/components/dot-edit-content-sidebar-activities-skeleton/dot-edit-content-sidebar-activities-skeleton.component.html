@@ -1,11 +1,10 @@
 <div class="flex flex-col" data-testid="loading-state">
     @for (item of $skeletonItems(); track $index) {
-        <div
-            class="flex flex-col border-b border-[var(--gray-200)] last:border-b-0 py-3 first:pt-0">
+        <div class="flex flex-col border-b border-gray-200 py-3 first:pt-0 last:border-b-0">
             <div class="flex items-start gap-3">
-                <p-skeleton shape="circle" size="2.5rem" class="flex-shrink-0" />
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <p-skeleton shape="circle" size="2.5rem" class="shrink-0" />
+                <div class="min-w-0 flex-1">
+                    <div class="mb-1.5 flex flex-wrap items-center gap-2">
                         <p-skeleton width="8rem" height="0.875rem" />
                         <p-skeleton width="4rem" height="0.75rem" class="ml-auto shrink-0" />
                     </div>

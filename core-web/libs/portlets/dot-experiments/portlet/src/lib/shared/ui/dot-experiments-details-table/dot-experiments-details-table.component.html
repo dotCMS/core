@@ -35,7 +35,7 @@
                 @if (data) {
                     @for (header of data[0] | keyvalue; track header; let last = $last) {
                         <div
-                            [ngClass]="{ 'justify-end': last }"
+                            [class.justify-end]="last"
                             class="flex flex-col flex-wrap items-center capitalize"
                             data-testId="default-header-columns">
                             {{ header.key }}
@@ -57,7 +57,7 @@
         <div
             class="h-[200px] flex justify-center items-center flex-col"
             data-testId="empty-template">
-            <i class="material-icons text-red-500 mb-2">table_chart</i>
+            <i class="material-symbols-outlined text-red-500 mb-2">table_chart</i>
             <p class="m-0 text-lg" data-testId="empty-title">
                 {{ 'experiments.reports.summary.empty.title' | dm }}
             </p>
@@ -69,10 +69,10 @@
 } @else {
     <div class="grid grid-cols-12 gap-4" data-testId="loading-skeleton">
         <div class="col-span-2 mt-6">
-            <p-skeleton height="1rem" width="100%"></p-skeleton>
+            <p-skeleton height="1rem" width="100%" />
         </div>
         <div class="col-span-12">
-            <p-skeleton height="33rem" width="100%"></p-skeleton>
+            <p-skeleton height="33rem" width="100%" />
         </div>
     </div>
 }

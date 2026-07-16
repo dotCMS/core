@@ -14,6 +14,13 @@ describe('shouldSkip', () => {
     expect(shouldSkip(['bug', 'Area : Backend'])).toBe(false);
   });
 
+<<<<<<< HEAD
+=======
+  it('returns true for Doc : Not Needed label', () => {
+    expect(shouldSkip(['Doc : Not Needed'])).toBe(true);
+  });
+
+>>>>>>> refs/remotes/upstream-core/main
   it('returns false for empty labels', () => {
     expect(shouldSkip([])).toBe(false);
   });
@@ -67,6 +74,12 @@ describe('categorize', () => {
     expect(categorize(makePR({ title: 'feat: add new widget' }))).toBe('feature');
     expect(categorize(makePR({ title: 'fix: resolve crash' }))).toBe('fix');
     expect(categorize(makePR({ title: 'chore: update deps' }))).toBe('infrastructure');
+<<<<<<< HEAD
+=======
+    expect(categorize(makePR({ title: 'build: upgrade Maven wrapper' }))).toBe('infrastructure');
+    expect(categorize(makePR({ title: 'refactor: extract helper class' }))).toBe('infrastructure');
+    expect(categorize(makePR({ title: 'task: implement data export' }))).toBe('feature');
+>>>>>>> refs/remotes/upstream-core/main
   });
 
   it('detects release machinery as internal', () => {
@@ -112,4 +125,19 @@ describe('processChanges', () => {
     expect(result.rollbackUnsafe).toHaveLength(1);
     expect(result.skipped).toHaveLength(0);
   });
+<<<<<<< HEAD
+=======
+
+  it('rollback-unsafe PRs are immune to Changelog: Skip', () => {
+    const prDetails = new Map<number, PRDetails>([
+      [1, { number: 1, title: 'Dangerous migration', labels: ['feature', 'AI: Not Safe To Rollback', 'Changelog: Skip'], body: '', linkedIssues: [] }],
+    ]);
+
+    const result = processChanges(prDetails);
+
+    expect(result.changes).toHaveLength(1);
+    expect(result.rollbackUnsafe).toHaveLength(1);
+    expect(result.skipped).toHaveLength(0);
+  });
+>>>>>>> refs/remotes/upstream-core/main
 });

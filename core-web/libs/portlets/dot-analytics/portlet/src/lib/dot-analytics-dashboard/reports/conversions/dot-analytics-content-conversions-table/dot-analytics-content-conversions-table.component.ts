@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -22,7 +22,6 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
 @Component({
     selector: 'dot-analytics-content-conversions-table',
     imports: [
-        CommonModule,
         FormsModule,
         MultiSelectModule,
         SkeletonModule,
@@ -30,7 +29,8 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
         TagModule,
         DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DecimalPipe
     ],
     templateUrl: './dot-analytics-content-conversions-table.component.html',
     styleUrl: './dot-analytics-content-conversions-table.component.scss',

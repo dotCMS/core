@@ -1,26 +1,19 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
@@ -63,20 +56,11 @@ const fakeEvent = () => ({
 describe('DotIframeDialogComponent', () => {
     const defaultProviders = [
         { provide: LoginService, useClass: LoginServiceMock },
-        { provide: CoreWebService, useClass: CoreWebServiceMock },
+        provideHttpClient(),
+        provideHttpClientTesting(),
         DotIframeService,
         DotRouterService,
         DotUiColorsService,
-        DotcmsEventsService,
-        DotEventsSocket,
-        {
-            provide: DotEventsSocketURL,
-            useFactory: () =>
-                new DotEventsSocketURL(
-                    `${typeof window !== 'undefined' ? window.location.hostname : ''}:${typeof window !== 'undefined' ? window.location.port : ''}/api/ws/v1/system/events`,
-                    typeof window !== 'undefined' && window.location.protocol === 'https:'
-                )
-        },
         DotLoadingIndicatorService,
         LoggerService,
         StringUtils,
@@ -93,7 +77,7 @@ describe('DotIframeDialogComponent', () => {
 
         const createHost = createComponentFactory({
             component: TestHostComponent,
-            imports: [BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
+            imports: [BrowserAnimationsModule, RouterTestingModule],
             providers: defaultProviders,
             detectChanges: false
         });
@@ -256,7 +240,7 @@ describe('DotIframeDialogComponent', () => {
 
         const createHost2 = createComponentFactory({
             component: TestHost2Component,
-            imports: [BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
+            imports: [BrowserAnimationsModule, RouterTestingModule],
             providers: defaultProviders,
             detectChanges: false
         });

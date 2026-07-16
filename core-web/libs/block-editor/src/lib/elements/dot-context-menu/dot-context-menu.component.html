@@ -7,7 +7,7 @@
     <ng-template #item let-item>
         <a
             pRipple
-            class="group flex items-center justify-between gap-6! rounded-md px-3 py-2.5 text-gray-900 no-underline! transition-[background-color] duration-150 hover:bg-[var(--color-palette-primary-100)] focus:outline-none focus:shadow-none p-contextmenu-item-link"
+            class="group p-contextmenu-item-link flex items-center justify-between gap-6! rounded-md px-3 py-2.5 text-gray-900 no-underline! transition-[background-color] duration-150 hover:bg-primary-100 focus:shadow-none focus:outline-none"
             [class.rounded-none]="item.disabled"
             [class.bg-gray-200]="item.disabled"
             [class.text-gray-600]="item.disabled"

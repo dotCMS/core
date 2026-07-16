@@ -1,3 +1,4 @@
+import { MetricFormat } from './common.types';
 import { ChartData } from './entities.types';
 
 /** Data point for sparkline with date and value */
@@ -13,8 +14,12 @@ export interface EngagementSparklineData {
 }
 
 export interface EngagementKPI {
-    value: number | string;
-    trend: number;
+    /** Raw numeric value (the component handles formatting based on `format`) */
+    value: number;
+    /** Display format hint. Default is 'number'. */
+    format?: MetricFormat;
+    /** Trend percentage. Undefined when no prior data exists for comparison. */
+    trend?: number;
     label: string;
     /** Optional subtitle text */
     subtitle?: string;
@@ -30,8 +35,12 @@ export interface EngagementKPIs {
 
 export interface EngagementPlatformMetrics {
     name: string;
+    /** Engaged sessions (group-by API: `engagedSessions`). Pageview bar breakdown uses metric value here. */
     views: number;
+    /** Engagement rate percentage (rounded) from API or share of breakdown total for pageviews. */
     percentage: number;
+    /** Total sessions for the bucket (group-by API); pageview breakdown uses breakdown total per row for consistent typing. */
+    totalSessions: number;
     time: string;
 }
 

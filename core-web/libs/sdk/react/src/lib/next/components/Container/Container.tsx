@@ -1,6 +1,9 @@
+'use client';
+
 import { useContext, useMemo } from 'react';
 
 import { DotCMSBasicContentlet, DotCMSColumnContainer } from '@dotcms/types';
+import { DotContainerAttributes } from '@dotcms/types/internal';
 import {
     getContainersData,
     getDotContainerAttributes,
@@ -10,6 +13,7 @@ import {
 import { ContainerNotFound, EmptyContainer } from './ContainerFallbacks';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
+import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { Contentlet } from '../Contentlet/Contentlet';
 
 /**
@@ -44,6 +48,7 @@ type DotCMSContainerRendererProps = {
  */
 export function Container({ container }: DotCMSContainerRendererProps) {
     const { pageAsset } = useContext(DotCMSPageContext);
+    const isDevMode = useIsDevMode();
 
     const containerData = useMemo(
         () => getContainersData(pageAsset, container),
@@ -59,7 +64,10 @@ export function Container({ container }: DotCMSContainerRendererProps) {
     }
 
     const isEmpty = contentlets.length === 0;
-    const dotAttributes = getDotContainerAttributes(containerData);
+    // Container metadata is editor-only — strip it from live output.
+    const dotAttributes: Partial<DotContainerAttributes> = isDevMode
+        ? getDotContainerAttributes(containerData)
+        : {};
 
     if (isEmpty) {
         return <EmptyContainer {...dotAttributes} />;

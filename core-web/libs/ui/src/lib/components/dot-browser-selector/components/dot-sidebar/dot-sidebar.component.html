@@ -7,9 +7,8 @@
         selectionMode="single"
         [(selection)]="$state().selectedFile"
         loadingMode="icon"
-        class="w-full h-full"
+        class="size-full"
         styleClass="w-full h-full"
-        loadingMode="icon"
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)">
         <ng-template let-node pTemplate="default">
@@ -17,7 +16,7 @@
         </ng-template>
     </p-tree>
 } @else {
-    <div class="flex w-full h-full flex-col p-2">
+    <div class="flex size-full flex-col p-2">
         @for (col of $fakeColumns(); track $index) {
             <p-skeleton styleClass="mb-4" [width]="col" />
         }

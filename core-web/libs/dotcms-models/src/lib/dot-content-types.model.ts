@@ -51,6 +51,8 @@ export const DotRenderModes = {
 } as const;
 
 export const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
+export const HIDE_LABEL_VARIABLE_KEY = 'hideLabel';
+export const CUSTOM_FIELD_OPTIONS_KEY = 'customFieldOptions';
 
 /**
  * Union type representing all possible DotCMS class names
@@ -653,4 +655,16 @@ export interface DotContentTypePaginationOptions {
     per_page?: number; // Number of results per page
     type?: string;
     ensure?: string;
+}
+
+/**
+ * Describes an available field type as returned by the `/api/v1/fieldTypes` endpoint.
+ * Used to render the list of fields that can be added to a content type.
+ */
+export interface FieldType {
+    id: string;
+    label: string;
+    clazz: string;
+    helpText: string;
+    properties: string[];
 }

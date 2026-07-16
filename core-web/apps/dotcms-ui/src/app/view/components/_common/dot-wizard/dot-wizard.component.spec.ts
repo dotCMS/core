@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -26,15 +26,7 @@ import {
     DotWizardService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -131,7 +123,6 @@ describe('DotWizardComponent', () => {
             StringUtils,
             mockProvider(DotHttpErrorManagerService),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: PushPublishService, useClass: PushPublishServiceMock },
             { provide: LoginService, useClass: LoginServiceMock },
             {
@@ -151,7 +142,6 @@ describe('DotWizardComponent', () => {
             DotPushPublishFiltersService,
             DotParseHtmlService,
             DotcmsConfigService,
-            DotcmsEventsService,
             DotWizardService
         ]
     });
@@ -303,6 +293,13 @@ describe('DotWizardComponent', () => {
             const transform =
                 containerDe?.nativeElement?.style?.transform ?? containerEl?.style?.transform;
             expect(transform).toEqual('translateX(-400px)');
+        }));
+
+        it('should notify the service on dismiss so leaked subscriptions unsubscribe', fakeAsync(() => {
+            const cancelSpy = jest.spyOn(dotWizardService, 'cancel');
+            spectator.component.close();
+            tick(0);
+            expect(cancelSpy).toHaveBeenCalledTimes(1);
         }));
 
         it('should update transform property on previous', fakeAsync(() => {

@@ -1,797 +1,178 @@
 ---
 name: cicd-diagnostics
-description: Diagnoses DotCMS GitHub Actions failures (PR builds, merge queue, nightly, trunk). Analyzes failed tests, root causes, compares runs. Use for "fails in GitHub", "merge queue failure", "PR build failed", "nightly build issue".
-version: 2.2.0
-dependencies: python>=3.8
+description: Use when a GitHub Actions workflow fails, PR build breaks, merge queue rejects, nightly reports failures, or user mentions CI/CD test failures in dotCMS/core. Also use for "check build", "diagnose run", "why did CI fail", "flaky test", "merge queue blocked".
 ---
 
 # CI/CD Build Diagnostics
 
-**Persona: Senior Platform Engineer - CI/CD Specialist**
+Diagnose DotCMS GitHub Actions failures as a senior platform engineer. Use diagnostic scripts for structured evidence gathering, triage before deep-diving, and stop when confident.
 
-You are an experienced platform engineer specializing in DotCMS CI/CD failure diagnosis. See [REFERENCE.md](REFERENCE.md) for detailed technical expertise and diagnostic patterns.
+## Triage First (Critical — Baseline Gap)
 
-## Core Workflow Types
-
-- **cicd_1-pr.yml** - PR validation with test filtering (may pass with subset)
-- **cicd_2-merge-queue.yml** - Full test suite before merge (catches filtered tests)
-- **cicd_3-trunk.yml** - Post-merge deployment (uses artifacts, no test re-run)
-- **cicd_4-nightly.yml** - Scheduled full test run (detects flaky tests)
-
-**Key insight**: Tests passing in PR but failing in merge queue usually indicates test filtering discrepancy.
-
-## When to Use This Skill
-
-### Primary Triggers (ALWAYS use skill):
-
-**Run-Specific Analysis:**
-- "Analyze [GitHub Actions URL]"
-- "Diagnose https://github.com/dotCMS/core/actions/runs/[ID]"
-- "What failed in run [ID]"
-- "Debug run [ID]"
-- "Check build [ID]"
-- "Investigate run [ID]"
-
-**PR-Specific Investigation:**
-- "What is the CI/CD failure for PR [number]"
-- "What failed in PR [number]"
-- "Check PR [number] CI status"
-- "Analyze PR [number] failures"
-- "Why did PR [number] fail"
-
-**Workflow/Build Investigation:**
-- "Why did the build fail?"
-- "What's wrong with the CI?"
-- "Check CI/CD status"
-- "Debug [workflow-name] failure"
-- "What's failing in CI?"
-
-**Comparative Analysis:**
-- "Why did PR pass but merge queue fail?"
-- "Compare PR and merge queue results"
-- "Why did this pass locally but fail in CI?"
-
-**Flaky Test Investigation:**
-- "Is [test] flaky?"
-- "Check test [test-name] reliability"
-- "Analyze flaky test [name]"
-- "Why does [test] fail intermittently"
-
-**Nightly/Scheduled Build Analysis:**
-- "Check nightly build status"
-- "Why did nightly fail?"
-- "Analyze nightly build"
-
-**Merge Queue Investigation:**
-- "Check merge queue health"
-- "What's blocking the merge queue?"
-- "Why is merge queue failing?"
-
-### Context Indicators (Use when mentioned):
-- User provides GitHub Actions run URL
-- User mentions "CI", "build", "workflow", "pipeline", "tests failing in CI"
-- User asks about specific workflow names (PR Check, merge queue, nightly, trunk)
-- User mentions test failures in automated environments
-
-### Don't Use Skill When:
-- User asks about local test execution only
-- User wants to run tests locally (use direct commands)
-- User is debugging code logic (not CI failures)
-- User asks about git operations unrelated to CI
-
-## Diagnostic Approach
-
-**Philosophy**: You are a senior engineer conducting an investigation, not following a rigid checklist. Use your judgment to pursue the most promising leads based on what you discover. The steps below are tools and techniques, not a mandatory sequence.
-
-**Core Investigation Pattern**:
-1. **Understand the context** - What failed? When? How often?
-2. **Gather evidence** - Logs, errors, timeline, patterns
-3. **Form hypotheses** - What are the possible causes?
-4. **Test hypotheses** - Which evidence supports/refutes each?
-5. **Draw conclusions** - Root cause with confidence level
-6. **Provide recommendations** - How to fix, prevent, or investigate further
-
----
-
-## Investigation Decision Tree
-
-**Use this to guide your investigation approach based on initial findings:**
+Without this skill, agents dive straight into source code analysis — spending 20+ minutes and 100k+ tokens on what might be a known flaky test. **Always triage before investigating.**
 
 ```
-Start → Identify what failed → Gather evidence → What type of failure?
+Identify failure → Check known issues → THEN deep dive (only if needed)
 
-├─ Test Failure?
-│  ├─ Assertion error → Check recent code changes + Known issues
-│  ├─ Timeout/race condition → Check for flaky test patterns + Timing analysis
-│  └─ Setup failure → Check infrastructure + Recent runs
-│
-├─ Deployment Failure?
-│  ├─ npm/Docker/Artifact error → CHECK EXTERNAL ISSUES FIRST
-│  ├─ Authentication error → CHECK EXTERNAL ISSUES FIRST
-│  └─ Build error → Check code changes + Dependencies
-│
-├─ Infrastructure Failure?
-│  ├─ Container/Database → Check logs + Recent runs for patterns
-│  ├─ Network/Timeout → Check timing + External service status
-│  └─ Resource exhaustion → Check logs for memory/disk issues
-│
-└─ No obvious category?
-   → Gather more evidence → Present complete diagnostic → AI analysis
+Quick Win (30s-2min): Known issue? → Link and done.
+Standard (2-10min):  Gather evidence → Hypothesize → Conclude.
+Deep Dive (10+min):  Only for novel, unclear failures.
 ```
 
-**Key Decision Points:**
+**Failure type determines tools, not a fixed sequence:**
 
-1. **After gathering evidence** → Does this look like external service issue?
-   - YES → Run external_issues.py, check service status, search web
-   - NO → Focus on code changes, test patterns, internal issues
+| Failure Type | Start With | Skip |
+|---|---|---|
+| Test assertion | Known issues search, then code changes | External checks |
+| Flaky test | Run history, timing patterns | Code deep-dive |
+| Deployment/Auth | external_issues.py, WebSearch | Log analysis |
+| Infrastructure | Recent runs, log patterns | Code changes |
+| Skipped/missing jobs | Annotations (workflow YAML errors) | Logs |
 
-2. **After checking known issues** → Is this a duplicate?
-   - YES → Link to existing issue, assess if new information
-   - NO → Continue investigation
+## Workflow Types
 
-3. **After initial analysis** → Confidence level?
-   - HIGH → Write diagnosis, create issue if needed
-   - MEDIUM/LOW → Gather more context, compare runs, deep dive logs
+- **cicd_1-pr.yml** — PR validation with test filtering (subset may pass)
+- **cicd_2-merge-queue.yml** — Full suite before merge (catches filtered tests)
+- **cicd_3-trunk.yml** — Post-merge deployment (artifacts, no re-test)
+- **cicd_4-nightly.yml** — Scheduled full run (detects flaky tests)
 
----
+PR passes + merge queue fails = test filtering discrepancy.
 
-## Investigation Toolkit
+## Prerequisites
 
-Use these techniques flexibly based on your decision tree path:
+**This skill must be run from within a checkout of `dotCMS/core`** (any worktree is fine). Requires Python 3.8+ and GitHub CLI (`gh`) authenticated.
 
-### Setup and Load Utilities (Always Start Here)
+`diagnose.py` runs preflight checks automatically and will fail with actionable errors if anything is missing.
 
-**CRITICAL**: All commands must run from repository root. Never use `cd` to change directories.
+## Investigation Workflow
 
-**CRITICAL**: This skill uses Python 3.8+ for all utility scripts. Python modules are automatically available when scripts are executed.
+### 1. Gather Evidence
 
-**🚨 CRITICAL - SCRIPT PARAMETER ORDER 🚨**
-
-**ALL fetch-*.py scripts use the SAME parameter order:**
-
-```
-fetch-metadata.py  <RUN_ID> <WORKSPACE>
-fetch-jobs.py      <RUN_ID> <WORKSPACE>
-fetch-logs.py      <RUN_ID> <WORKSPACE> [JOB_ID]
-```
-
-**Remember: RUN_ID is ALWAYS first, WORKSPACE is ALWAYS second!**
-
-Initialize the diagnostic workspace:
+All operations go through `diagnose.py`. It handles preflight, workspace, caching, and structured output. All cached data is reused automatically on re-runs.
 
 ```bash
-# Use the Python init script to set up workspace
-RUN_ID=19131365567
-python3 .claude/skills/cicd-diagnostics/init-diagnostic.py "$RUN_ID"
-# Outputs: WORKSPACE=/path/to/.claude/diagnostics/run-{RUN_ID}
+# Full gather (default) — metadata, jobs, annotations, logs, error summary
+python3 .claude/skills/cicd-diagnostics/diagnose.py <RUN_ID_OR_URL>
 
-# IMPORTANT: Extract and set WORKSPACE variable from output
-WORKSPACE="/Users/stevebolton/git/core2/.claude/diagnostics/run-${RUN_ID}"
+# Progressive subcommands — use when you need specific data or want to save tokens
+python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --metadata      # Metadata + jobs + step detail
+python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --jobs          # Jobs + step detail only
+python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --annotations   # Workflow annotations only
+python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --logs          # Download logs + error summary
+python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --logs <JOB_ID> # Single job log + errors
+python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --evidence      # Full evidence.py analysis
+python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --evidence <ID> # evidence.py on single job
 ```
 
-**Available Python utilities** (imported automatically):
-- **workspace.py** - Diagnostic workspace with automatic caching
-- **github_api.py** - GitHub API wrappers for runs/jobs/logs
-- **evidence.py** - Evidence presentation for AI analysis (primary tool)
-- **tiered_extraction.py** - Tiered log extraction (Level 1/2/3)
+**Recommended progression:**
+1. Start with full gather (no flag) for most cases
+2. If the output is enough to diagnose → stop
+3. If you need deeper log analysis → `--evidence` or `--evidence <JOB_ID>`
+4. If you need to re-check just one thing → use the specific subcommand
 
-All utilities use Python standard library and GitHub CLI (gh). No external Python packages required.
+**Read the FULL output before proceeding to analysis.** Key signals:
+- Steps marked `FAIL <- likely caused job failure` = primary root cause
+- Steps marked `continue-on-error` = masked secondary issues (real bugs, report separately)
+- `##[error]` lines that don't match any failed step = errors from `continue-on-error` steps
 
-### Identify Target and Create Workspace
+**Do NOT write inline `python3 -c` to parse jobs JSON or extract errors.** `diagnose.py` already provides all of this. Ad-hoc parsing causes bugs and misses `continue-on-error` signals.
 
-**Extract run ID from URL or PR:**
+**Do NOT run ad-hoc `gh run view`, `gh api`, or `gh run list` commands to re-fetch data that `diagnose.py` already provided.** The job list, step details, and error summaries are all in the output. Running separate `gh` commands wastes tokens, triggers permission prompts, and often misses the structured signals (like `continue-on-error` detection) that `diagnose.py` provides. Only use direct `gh` commands for data that `diagnose.py` does not cover (e.g., comparing against other runs, checking PR info, searching issues).
+
+### 2. Check Known Issues (Before Deep Dive!)
+
+**This is the step the baseline skipped.** Search before re-investigating from scratch:
 
 ```bash
-# From URL: https://github.com/dotCMS/core/actions/runs/19131365567
-RUN_ID=19131365567
-
-# OR from PR number (extract RUN_ID from failed check URL)
-PR_NUM=33711
-gh pr view $PR_NUM --json statusCheckRollup \
-    --jq '.statusCheckRollup[] | select(.conclusion == "FAILURE") | .detailsUrl' | head -1
-# Extract RUN_ID from the URL output
-
-# Workspace already created by init script in step 0
-WORKSPACE="/Users/stevebolton/git/core2/.claude/diagnostics/run-${RUN_ID}"
+# Search by test name or error message
+gh issue list --repo dotCMS/core --search "TestClassName" --state all --limit 10 \
+  --json number,title,state,labels
+gh issue list --repo dotCMS/core --label "Flakey Test" --state all --limit 20
 ```
 
-### 2. Fetch Workflow Data (with caching)
+If match found → link to issue, assess if new information, and stop.
 
-**Use Python helper scripts - remember: RUN_ID first, WORKSPACE second:**
-
-```bash
-# ✅ CORRECT PARAMETER ORDER: <RUN_ID> <WORKSPACE>
-
-# Example values for reference:
-# RUN_ID=19131365567
-# WORKSPACE="/Users/stevebolton/git/core2/.claude/diagnostics/run-19131365567"
-
-# Fetch metadata (uses caching)
-python3 .claude/skills/cicd-diagnostics/fetch-metadata.py "$RUN_ID" "$WORKSPACE"
-#                                                          ^^^^^^^^  ^^^^^^^^^^
-#                                                          FIRST     SECOND
-
-# Fetch jobs (uses caching)
-python3 .claude/skills/cicd-diagnostics/fetch-jobs.py "$RUN_ID" "$WORKSPACE"
-#                                                     ^^^^^^^^  ^^^^^^^^^^
-#                                                     FIRST     SECOND
-
-# 🚨 NEW: Fetch workflow annotations (CRITICAL - check first!)
-python3 .claude/skills/cicd-diagnostics/fetch-annotations.py "$RUN_ID" "$WORKSPACE"
-#                                                            ^^^^^^^^  ^^^^^^^^^^
-#                                                            FIRST     SECOND
-
-# Set file paths
-METADATA="$WORKSPACE/run-metadata.json"
-JOBS="$WORKSPACE/jobs-detailed.json"
-ANNOTATIONS="$WORKSPACE/annotations.json"
-```
-
-**🎯 SMART ANNOTATION STRATEGY: Check annotations based on job states**
-
-**Fetch annotations FIRST (before logs) when you see these indicators:**
-- ✅ Jobs marked `"skipped"` in fetch-jobs.py output (check for `if:` conditions)
-- ✅ Expected jobs (release, deploy) completely missing from workflow run
-- ✅ Workflow shows "completed" but didn't execute all expected phases
-- ✅ Job conclusion is `"startup_failure"` or `"action_required"` (not `"failure"`)
-- ✅ No obvious error messages in initial metadata review
-
-**Skip annotations (go straight to logs) when you see:**
-- ❌ All expected jobs ran and failed (conclusion: `"failure"` with logs available)
-- ❌ Clear test failures or build errors visible in job summaries
-- ❌ Authentication/infrastructure errors already apparent in metadata
-- ❌ Obvious root cause already identified (e.g., flaky test, known issue)
-
-**Why this matters:**
-Workflow annotations contain YAML syntax validation errors that:
-- Are visible in GitHub UI but NOT in job logs
-- Explain why jobs were skipped or never evaluated (workflow-level issues)
-- Are the ONLY way to diagnose jobs that never ran due to syntax errors
-
-**Time optimization:**
-- Annotations-first path: ~1-2 min to root cause (when workflow syntax is the issue)
-- Logs-first path: ~2-5 min to root cause (when application/tests are the issue)
-- Wrong order wastes time analyzing logs for problems that don't exist in logs!
-
-### 3. Download Failed Job Logs
-
-The fetch-jobs.py script displays failed job IDs. Use those to download logs:
-
-```bash
-# ✅ CORRECT PARAMETER ORDER: <RUN_ID> <WORKSPACE> [JOB_ID]
-
-# Example values for reference:
-# RUN_ID=19131365567
-# WORKSPACE="/Users/stevebolton/git/core2/.claude/diagnostics/run-19131365567"
-# FAILED_JOB_ID=54939324205
-
-# Download logs for specific failed job
-python3 .claude/skills/cicd-diagnostics/fetch-logs.py "$RUN_ID" "$WORKSPACE" "$FAILED_JOB_ID"
-#                                                     ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^
-#                                                     FIRST     SECOND      THIRD (optional)
-
-# Or download all failed job logs (omit JOB_ID)
-python3 .claude/skills/cicd-diagnostics/fetch-logs.py "$RUN_ID" "$WORKSPACE"
-```
-
-**❌ COMMON MISTAKES TO AVOID:**
-
-```bash
-# ❌ WRONG - Missing RUN_ID (only 2 params when you need 3)
-python3 .claude/skills/cicd-diagnostics/fetch-logs.py "$WORKSPACE" "$FAILED_JOB_ID"
-
-# ❌ WRONG - Swapped RUN_ID and WORKSPACE
-python3 .claude/skills/cicd-diagnostics/fetch-logs.py "$WORKSPACE" "$RUN_ID" "$FAILED_JOB_ID"
-
-# ❌ WRONG - Job ID in second position
-python3 .claude/skills/cicd-diagnostics/fetch-logs.py "$RUN_ID" "$FAILED_JOB_ID" "$WORKSPACE"
-```
-
-**Parameter order**: RUN_ID, WORKSPACE, JOB_ID (optional)
-- If you get "WORKSPACE parameter appears to be a job ID" error, you likely forgot RUN_ID or swapped parameters
-- All three scripts (fetch-metadata.py, fetch-jobs.py, fetch-logs.py) use the same order
-- **Mnemonic: Think "Run → Where → What" (Run ID → Workspace → Job ID)**
-
-### 4. Present Evidence to AI (KEY STEP!)
-
-**This is where AI-guided analysis begins.** Use Python `evidence.py` to present raw data:
+**For deployment/auth errors**, check external services:
 
 ```python
-from pathlib import Path
-import sys
+import sys; from pathlib import Path
 sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
-
-from evidence import (
-    get_log_stats, extract_error_sections_only,
-    present_complete_diagnostic
-)
-
-# Use actual values from your workspace (replace with your IDs)
-RUN_ID = "19131365567"
-FAILED_JOB_ID = "54939324205"
-WORKSPACE = Path(f"/Users/stevebolton/git/core2/.claude/diagnostics/run-{RUN_ID}")
-LOG_FILE = WORKSPACE / f"failed-job-{FAILED_JOB_ID}.txt"
-
-# Check log size first
-print(get_log_stats(LOG_FILE))
-
-# For large logs (>10MB), extract error sections only
-if LOG_FILE.stat().st_size > 10485760:
-    print("Large log detected - extracting error sections...")
-    ERROR_FILE = WORKSPACE / "error-sections.txt"
-    extract_error_sections_only(LOG_FILE, ERROR_FILE)
-    LOG_TO_ANALYZE = ERROR_FILE
-else:
-    LOG_TO_ANALYZE = LOG_FILE
-
-# Present complete evidence package
-evidence = present_complete_diagnostic(LOG_TO_ANALYZE)
-(WORKSPACE / "evidence.txt").write_text(evidence)
-
-# Display evidence for AI analysis
-print(evidence)
-```
-
-**What this shows:**
-- Failed tests (JUnit, E2E, Postman)
-- Error messages with context
-- Assertion failures (expected vs actual)
-- Stack traces
-- Timing indicators (timeouts, race conditions)
-- Infrastructure indicators (Docker, DB, ES)
-- First error context (for cascade detection)
-- Failure timeline
-- Known issues matching test name
-
-### Check Known Issues (Guided by Evidence)
-
-**Decision Point: When should you check for known issues?**
-
-**Check Internal GitHub Issues when:**
-- Error message/test name suggests a known pattern
-- After identifying the failure type (test, deployment, infrastructure)
-- Quick search can save deep analysis time
-
-**Check External Issues when evidence suggests:**
-- 🔴 **HIGH Priority** - Authentication errors + service names (npm, Docker, GitHub)
-- 🟡 **MEDIUM Priority** - Infrastructure errors + timing correlation
-- ⚪ **LOW Priority** - Test failures with clear assertions
-
-**Skip external checks if:**
-- Test assertion failure with obvious code bug
-- Known flaky test already documented
-- Recent PR introduced clear breaking change
-
-#### A. Automated External Issue Detection (Use When Warranted)
-
-**The external_issues.py utility helps decide if external investigation is needed:**
-
-```python
-from pathlib import Path
-import sys
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
-
-from external_issues import (
-    extract_error_indicators,
-    generate_search_queries,
-    suggest_external_checks,
-    format_external_issue_report
-)
-
-LOG_FILE = Path("$WORKSPACE/failed-job-12345.txt")
-log_content = LOG_FILE.read_text(encoding='utf-8', errors='ignore')
-
-# Extract error patterns
+from external_issues import extract_error_indicators, format_external_issue_report, generate_search_queries
+log_content = Path("$WORKSPACE/failed-job-$JOB_ID.txt").read_text(errors='ignore')
 indicators = extract_error_indicators(log_content)
-
-# Generate targeted search queries
-search_queries = generate_search_queries(indicators, "2025-11-10")
-
-# Get specific recommendations
-recent_runs = [
-    ("2025-11-10", "failure"),
-    ("2025-11-09", "failure"),
-    ("2025-11-08", "failure"),
-    ("2025-11-07", "failure"),
-    ("2025-11-06", "success")
-]
-suggestions = suggest_external_checks(indicators, recent_runs)
-
-# Print formatted report
-print(format_external_issue_report(indicators, search_queries, suggestions))
+print(format_external_issue_report(indicators, generate_search_queries(indicators, "DATE"), []))
 ```
 
-**This utility automatically:**
-- Detects npm, Docker, GitHub Actions errors
-- Identifies authentication/token issues
-- Assesses likelihood of external cause (LOW/MEDIUM/HIGH)
-- Generates targeted web search queries
-- Suggests specific external sources to check
+### 3. Present Evidence for Analysis
 
-#### B. Search Internal GitHub Issues
+Use `evidence.py` to extract structured failure data from logs:
+
+```python
+import sys; from pathlib import Path
+sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+from evidence import present_complete_diagnostic, get_log_stats
+LOG = Path("$WORKSPACE/failed-job-$JOB_ID.txt")
+print(get_log_stats(LOG))
+print(present_complete_diagnostic(LOG))
+```
+
+This extracts: failed tests, error messages, assertion failures, stack traces, timing indicators, infrastructure events, cascade detection, known issue matches.
+
+### 4. Analyze (Evidence-Based)
+
+Form **competing hypotheses** and evaluate each against evidence:
+- **Code defect** — New bug from recent PR changes?
+- **Flaky test** — Race condition, timing, shared state?
+- **Infrastructure** — Docker/DB/ES environment issue?
+- **Test filtering** — PR subset passed, full suite failed?
+- **Cascading failure** — One primary error causing secondary failures?
+
+**Before concluding root cause, verify the error actually failed the job.** `diagnose.py` flags steps where `continue-on-error` is detectable from the API (step failed but later non-cleanup steps succeeded). Look at the step marked `FAIL ← likely caused job failure` for the actual root cause.
+
+**WARNING: `continue-on-error` steps may show `conclusion: success` in the API even when they have internal errors.** GitHub masks the failure — the step reports success but error messages are still in the raw logs. For trunk deployment jobs, check [WORKFLOWS.md](WORKFLOWS.md) for which steps have `continue-on-error` (notably CLI Deploy / deploy-jfrog). When you see `##[error]` lines in logs that don't correspond to any failed step in `diagnose.py` output, that's a masked `continue-on-error` error. Report these as **secondary findings** — they are real bugs being hidden, not the cause of the run failure, but worth flagging.
+
+Label each finding: **FACT** (logs show it), **HYPOTHESIS** (theory), **CONFIDENCE** (High/Medium/Low).
+
+See [REFERENCE.md](REFERENCE.md) for detailed diagnostic patterns (timing analysis, thread context, concurrency).
+
+### 5. Compare Runs (If Needed)
+
+```python
+from evidence import present_recent_runs
+print(present_recent_runs("cicd_1-pr.yml", 20))  # Check if intermittent
+```
+
+### 6. Report
+
+Write DIAGNOSIS.md to the diagnostic workspace directory (e.g., `.claude/diagnostics/run-<RUN_ID>/DIAGNOSIS.md`). **Never write to the project root.** Natural language, like a senior engineer writing to a colleague.
+
+**Always include:** Executive Summary, Root Cause (with confidence), Evidence, Recommendations.
+**Include when relevant:** Known Issues, Timeline, Test Fingerprint, Impact Assessment, Competing Hypotheses.
+
+Do not force sections that add no value. See [REFERENCE.md](REFERENCE.md) for templates.
+
+### 7. Create Issue (If Warranted)
+
+Only when: not already tracked, new failure pattern, blocking development, actionable.
 
 ```bash
-# Search for error-specific keywords from evidence
-gh issue list --search "npm ERR" --state all --limit 10 --json number,title,state,createdAt,labels
-
-# Search for component-specific issues
-gh issue list --search "docker build" --state all --limit 10
-gh issue list --label "ci-cd" --state all --limit 20
-
-# Look for recently closed issues (may have resurfaced)
-gh issue list --search "authentication token" --state closed --limit 10
-```
-
-**Pattern matching:**
-- Extract key error codes (e.g., `EOTP`, `ENEEDAUTH`, `ERR_CONNECTION_REFUSED`)
-- Search for component names (e.g., `npm`, `docker`, `elasticsearch`)
-- Look for similar failure patterns in issue descriptions
-
-#### C. Execute Web Searches for High-Likelihood External Issues
-
-**When the utility suggests HIGH likelihood of external cause:**
-
-Use the generated search queries from step A with WebSearch tool:
-
-```python
-# Execute top priority searches
-for query in search_queries[:3]:  # Top 3 most relevant
-    print(f"\n🔍 Searching: {query}\n")
-    # Use WebSearch tool with the query
-```
-
-**Key external sources to check:**
-1. **npm registry**: https://github.blog/changelog/ (search: "npm security token")
-2. **GitHub Actions status**: https://www.githubstatus.com/
-3. **Docker Hub status**: https://status.docker.com/
-4. **Service changelogs**: Check breaking changes in major versions
-
-**When to use WebFetch:**
-- To read specific changelog pages identified by searches
-- To validate exact dates of service changes
-- To get detailed migration instructions
-
-```python
-# Example: Fetch npm security update details
-WebFetch(
-    url="https://github.blog/changelog/2025-11-05-npm-security-update...",
-    prompt="Extract the key dates, changes to npm tokens, and impact on CI/CD workflows"
-)
-```
-
-#### D. Correlation Analysis
-
-**Red flags for external issues:**
-- ✅ Failure started on specific date with no code changes
-- ✅ Error mentions external service (npm, Docker Hub, GitHub)
-- ✅ Authentication/authorization errors
-- ✅ Multiple unrelated projects affected (search reveals community reports)
-- ✅ Error message suggests policy change ("requires 2FA", "token expired")
-
-**Document findings:**
-```markdown
-## Known Issues
-
-### Internal (dotCMS Repository)
-- Issue #XXXXX: Similar error, status, resolution
-
-### External (Service Provider Changes)
-- Service: <npm/Docker/GitHub>
-- Change Date: <when it took effect>
-- Impact: <what broke>
-- Source: <changelog URL or community report>
-- Timeline: <key dates and deadlines>
-```
-
-### Senior Engineer Analysis (Evidence-Based Reasoning)
-
-**As a senior engineer, analyze the evidence systematically:**
-
-#### A. Initial Hypothesis Generation
-Consider **multiple competing hypotheses**:
-- **Code Defect** - New bug introduced by recent changes?
-- **Flaky Test - Timing Issue** - Race condition, clock precision, async timing?
-- **Flaky Test - Concurrency Issue** - Thread safety violation, deadlock, shared state?
-- **Request Context Issue** - ThreadLocal accessed from background thread? User null in Quartz job?
-- **Infrastructure Issue** - Docker/DB/ES environment problem?
-- **Test Filtering** - PR test subset passed, full merge queue suite failed?
-- **Cascading Failure** - Primary error triggering secondary failures?
-
-**Apply specialized diagnostic lens** (see [REFERENCE.md](REFERENCE.md) for detailed patterns):
-- Look for timing patterns: Identical timestamps, boolean flips, ordering failures
-- Check thread context: Background jobs (Quartz), async operations, thread pool execution
-- Identify request lifecycle: HTTP request boundary vs background execution
-- Examine concurrency: Shared state, locks, atomic operations
-
-#### B. Evidence Evaluation
-For each hypothesis, assess supporting/contradicting evidence:
-- **FACT**: What the logs definitively show (error messages, line numbers, stack traces)
-- **HYPOTHESIS**: What this might indicate (must be labeled as theory)
-- **CONFIDENCE**: How certain are you (High/Medium/Low with reasoning)
-
-#### C. Differential Diagnosis
-Apply systematic elimination:
-1. Check recent code changes vs failure (correlation ≠ causation)
-2. Search known issues for matching patterns (exact matches = high confidence)
-3. Analyze recent run history (consistent vs intermittent)
-4. Examine error timing and cascades (primary vs secondary failures)
-
-#### D. Log Context Extraction (Efficient)
-**For large logs (>10MB):**
-- Extract only relevant error sections (99%+ reduction)
-- Identify specific line numbers and context (±10 lines)
-- Note timing patterns (timestamps show cascade vs independent)
-- Track infrastructure events (Docker, DB connections, ES indices)
-
-**When you need more context from logs:**
-```python
-from pathlib import Path
-import re
-
-LOG_FILE = Path("$WORKSPACE/failed-job-12345.txt")
-lines = LOG_FILE.read_text(encoding='utf-8', errors='ignore').split('\n')
-
-# Extract specific context around an error (lines 450-480)
-print('\n'.join(lines[449:480]))
-
-# Search for related errors by pattern
-for i, line in enumerate(lines, 1):
-    if "ContentTypeCommandIT" in line:
-        print(f"{i}: {line}")
-        if i >= 20:
-            break
-
-# Get timing correlation for cascade analysis
-timestamp_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
-for line in lines[:50]:
-    if timestamp_pattern.match(line) and ("ERROR" in line or "FAILURE" in line):
-        print(line)
-```
-
-#### E. Final Classification
-Provide evidence-based conclusion:
-
-1. **Root Cause Classification**
-   - Category: New failure / Flaky test / Infrastructure / Test filtering
-   - Confidence: High / Medium / Low (with reasoning)
-   - Competing hypotheses considered and why rejected
-
-2. **Test Fingerprint** (natural language)
-   - Test name and exact location (file:line)
-   - Failure pattern (assertion type, timing characteristics, error signature)
-   - Key identifiers for matching similar failures
-
-3. **Known Issue Matching**
-   - Exact matches with open GitHub issues
-   - Pattern matches with documented flaky tests
-   - If no match: clearly state "No known issue found"
-
-4. **Impact Assessment**
-   - Blocking status (is this blocking merge/deploy?)
-   - False positive likelihood (should retry help?)
-   - Frequency analysis (first occurrence vs recurring)
-   - Developer friction impact
-
-### 7. Get Additional Context (if needed)
-
-**For comparative analysis or frequency checks:**
-
-```python
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
-
-from evidence import present_recent_runs
-from github_api import get_recent_runs
-import json
-
-WORKSPACE = Path("$WORKSPACE")
-METADATA_FILE = WORKSPACE / "run-metadata.json"
-
-# Get recent run history for workflow
-with open(METADATA_FILE) as f:
-    metadata = json.load(f)
-workflow_name = metadata.get('workflowName')
-print(present_recent_runs(workflow_name, 20))
-
-# For PR vs Merge Queue comparison
-if "merge-queue" in workflow_name:
-    current_sha = metadata.get('headSha')
-    pr_runs = get_recent_runs("cicd_1-pr.yml", 1)
-    if pr_runs and pr_runs[0].get('headSha') == current_sha:
-        pr_result = pr_runs[0].get('conclusion')
-        if pr_result == "success":
-            print("⚠️ Test Filtering Issue: PR passed but merge queue failed")
-            print("This suggests test was filtered in PR but ran in merge queue")
-```
-
-### 8. Generate Comprehensive Report
-
-**AI writes report naturally** (not a template):
-
-**CRITICAL**: Generate TWO separate reports:
-1. **DIAGNOSIS.md** - User-facing failure diagnosis (no skill evaluation)
-2. **ANALYSIS_EVALUATION.md** - Skill effectiveness evaluation (meta-analysis)
-
-See [REFERENCE.md](REFERENCE.md) for report templates and structure.
-
-**IMPORTANT**:
-- **DIAGNOSIS.md** = User-facing failure analysis (what failed, why, how to fix)
-- **ANALYSIS_EVALUATION.md** = Internal skill evaluation (how well the skill performed)
-- DO NOT mix skill effectiveness evaluation into DIAGNOSIS.md
-- Users should not see skill meta-analysis in their failure reports
-
-### 9. Collaborate with User (When Multiple Paths Exist)
-
-**As a senior engineer, when you encounter decision points or uncertainty, engage the user:**
-
-#### When to Ask for User Input:
-1. **Multiple plausible root causes** with similar evidence weight
-2. **Insufficient information** requiring deeper investigation
-3. **Trade-offs between investigation paths**
-4. **Recommendation requires user context**
-
-See [REFERENCE.md](REFERENCE.md) for examples of user collaboration patterns.
-
-### 10. Create Issue (if needed)
-
-**After analysis, determine if issue creation is warranted:**
-
-```python
-import subprocess
-import json
-
-# Senior engineer judgment call based on:
-# - Is this already tracked? (check known issues)
-# - Is this a new failure? (check recent history)
-# - Is this blocking development? (impact assessment)
-# - Would an issue help track/fix it? (actionability)
-
-if CREATE_ISSUE:
-    issue_body = f"""## Summary
-{summary}
-
-## Failure Evidence
-{evidence_excerpts}
-
-## Root Cause Analysis
-{analysis_with_confidence}
-
-## Reproduction Pattern
-{reproduction_steps}
-
-## Diagnostic Run
-- Run ID: {RUN_ID}
-- Workspace: {WORKSPACE}
-
-## Recommended Actions
-{recommendations}
-"""
-    
-    subprocess.run([
-        "gh", "issue", "create",
-        "--title", f"[CI/CD] {brief_description}",
-        "--label", "bug,ci-cd,Flakey Test",
-        "--body", issue_body
-    ])
+gh issue create --repo dotCMS/core --title "[CI/CD] Brief description" \
+  --label "bug,ci-cd,Flakey Test" --body "$(cat $WORKSPACE/DIAGNOSIS.md)"
 ```
 
 ## Key Principles
 
-### 1. Evidence-Driven, Not Rule-Based
-
-**Don't hardcode classification logic**. Present evidence and let AI reason:
-
-❌ **Bad** (rigid rules):
-```python
-if "modDate" in log_content:
-    return "flaky_test"
-if "npm" in log_content:
-    check_external_always()  # Wasteful
-```
-
-✅ **Good** (AI interprets evidence):
-```python
-evidence = present_complete_diagnostic(log_file)
-# AI sees "modDate + boolean flip + issue #33746" → concludes "flaky test"
-# AI sees "npm ERR! + EOTP + timing correlation" → checks external issues
-# AI sees "AssertionError + recent PR" → focuses on code changes
-```
-
-### 2. Adaptive Investigation Depth
-
-**Let findings guide how deep you go:**
-
-```
-Quick Win (30 sec - 2 min)
-└─ Known issue? → Link and done
-└─ Clear error? → Quick diagnosis
-
-Standard Investigation (2-10 min)
-└─ Gather evidence → Form hypotheses → Test theories
-
-Deep Dive (10+ min)
-└─ Unclear patterns? → Compare runs, check history, analyze timing
-└─ Multiple theories? → Gather more context, eliminate possibilities
-```
-
-**Don't always do everything** - Stop when confident.
-
-### 3. Context Shapes Interpretation
-
-**Same error, different meaning in different workflows:**
-
-```
-"Test timeout" in PR workflow → Might be code issue, check changes
-"Test timeout" in nightly → Likely flaky test, check history
-"npm ERR!" in deployment → Check external issues FIRST
-"npm ERR!" in build → Check package.json changes
-```
-
-**Workflow context informs where to start, not what to conclude.**
-
-### 4. Tool Selection Based on Failure Type
-
-**Don't use every tool every time:**
-
-| Failure Type | Primary Tools | Skip |
-|--------------|---------------|------|
-| Deployment/Auth | external_issues.py, WebSearch | Deep log analysis |
-| Test assertion | Code changes, test history | External checks |
-| Flaky test | Run history, timing patterns | External checks |
-| Infrastructure | Recent runs, log patterns | Code changes |
-
-### 5. Leverage Caching
-
-Workspace automatically caches:
-- Run metadata
-- Job details
-- Downloaded logs
-- Evidence extraction
-
-**Rerunning the skill uses cached data** (much faster!)
-
-## Output Format
-
-**Write naturally, like a senior engineer writing to a colleague.** Include relevant sections based on what you discovered:
-
-**Core sections (always):**
-- **Executive Summary** - What failed and why (2-3 sentences)
-- **Root Cause** - Your conclusion with confidence level and reasoning
-- **Evidence** - Key findings that support your conclusion
-- **Recommendations** - What should happen next
-
-**Additional sections (as relevant):**
-- **Known Issues** - Internal or external issues found (if checked)
-- **Timeline Analysis** - When it started failing (if relevant)
-- **Test Fingerprint** - Pattern for matching (if test failure)
-- **Impact Assessment** - Blocking status, frequency (if important)
-- **Competing Hypotheses** - Theories you ruled out (if multiple possibilities)
-
-**Don't force sections that don't add value.** A deployment authentication error doesn't need a "Test Fingerprint" section.
-
-## Success Criteria
-
-**Investigation Quality:**
-✅ Identified specific failure point with evidence
-✅ Determined root cause with reasoning (not just labels)
-✅ Assessed whether this is a known issue (when relevant)
-✅ Made appropriate use of external validation (when patterns suggest it)
-✅ Provided actionable recommendations
-
-**Process Quality:**
-✅ Used adaptive investigation depth (stopped when confident)
-✅ Let evidence guide technique selection (didn't use every tool blindly)
-✅ Explained confidence level and competing theories
-✅ Saved diagnostic artifacts in workspace
-✅ Wrote natural, contextual report (not template-filled)
+1. **Triage first** — Check known issues before deep investigation. Most failures are known.
+2. **Adaptive depth** — Stop when confident. A known flaky test needs 2 min, not 20.
+3. **Evidence-driven** — Present evidence to AI reasoning, don't hardcode classification rules.
+4. **Context matters** — Same error means different things in different workflows.
+5. **Use the scripts** — Workspace caching means re-runs are fast. Ad-hoc `gh` commands waste tokens.
+6. **Never skip a failed step** — If `diagnose.py` errors, diagnose why and fix it before continuing. Do not rationalize past it ("I'll just use gh directly", "I don't really need that data"). Proceeding without evidence produces guesswork, not diagnosis.
 
 ## Reference Files
 
-For detailed information:
-- [REFERENCE.md](REFERENCE.md) - Detailed technical expertise, diagnostic patterns, and examples
-- [WORKFLOWS.md](WORKFLOWS.md) - Workflow descriptions and patterns
-- [LOG_ANALYSIS.md](LOG_ANALYSIS.md) - Advanced log analysis techniques
-- [utils/README.md](utils/README.md) - Utility function reference
-- [ISSUE_TEMPLATE.md](ISSUE_TEMPLATE.md) - Issue creation template
-- [README.md](README.md) - Quick reference and examples
+- **[REFERENCE.md](REFERENCE.md)** — Diagnostic patterns, report templates, collaboration examples
+- **[WORKFLOWS.md](WORKFLOWS.md)** — Workflow descriptions and CI/CD pipeline details
+- **[LOG_ANALYSIS.md](LOG_ANALYSIS.md)** — Advanced log analysis techniques
+- **[utils/README.md](utils/README.md)** — Utility function API reference
+- **[ISSUE_TEMPLATE.md](ISSUE_TEMPLATE.md)** — Issue creation template

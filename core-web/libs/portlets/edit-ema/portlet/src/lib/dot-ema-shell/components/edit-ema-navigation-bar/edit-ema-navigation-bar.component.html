@@ -1,65 +1,22 @@
-<nav class="edit-ema-nav-bar">
-    @for (item of items; track $index) {
-        <ng-container
-            [ngTemplateOutlet]="!item.href?.length ? button : anchor"
-            [ngTemplateOutletContext]="{ item: item, index: $index }" />
+<nav class="flex flex-col items-center" aria-label="Page editor navigation">
+    @for (item of items(); track item.id) {
+        <div class="w-full p-2 flex justify-center relative">
+            <span
+                class="absolute left-0 inset-y-0 w-1 bg-primary"
+                [style.opacity]="item.href === $activeHref() ? 1 : 0"></span>
+            <p-button
+                [text]="true"
+                [disabled]="item.isDisabled"
+                [attr.aria-label]="item.label | dm"
+                [attr.aria-disabled]="item.isDisabled ? 'true' : null"
+                [pTooltip]="(item.isDisabled && item.tooltip ? item.tooltip : item.label) | dm"
+                (click)="navigate(item)"
+                data-testid="nav-bar-item"
+                tooltipPosition="left">
+                <span class="material-symbols-outlined" data-testid="nav-bar-item-icon">
+                    {{ item.materialIcon }}
+                </span>
+            </p-button>
+        </div>
     }
 </nav>
-
-<ng-template #anchor let-item="item" let-index="index">
-    <div class="edit-ema-nav-bar__item-container">
-        <a
-            [routerLink]="item.isDisabled ? null : item.href"
-            [queryParams]="$params()"
-            [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
-            [pTooltip]="item.tooltip | dm"
-            class="edit-ema-nav-bar__item"
-            data-testId="nav-bar-item"
-            routerLinkActive="edit-ema-nav-bar__item--active"
-            [routerLinkActiveOptions]="{
-                queryParams: 'ignored',
-                matrixParams: 'ignored',
-                paths: 'exact',
-                fragment: 'ignored'
-            }"
-            queryParamsHandling="merge"
-            tooltipPosition="left"
-            rel="noopener">
-            <ng-container
-                [ngTemplateOutlet]="item.icon ? icon : iconURL"
-                [ngTemplateOutletContext]="{ item: item }" />
-            <span class="item__label" data-testId="nav-bar-item-label">
-                {{ item.label | dm }}
-            </span>
-        </a>
-    </div>
-</ng-template>
-
-<ng-template #button let-item="item">
-    <button
-        (click)="item.isDisabled ? null : itemAction(item)"
-        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
-        [disabled]="item.isDisabled"
-        class="edit-ema-nav-bar__item edit-ema-nav-bar__item--button"
-        data-testId="nav-bar-item">
-        <ng-container
-            [ngTemplateOutlet]="item.icon ? icon : iconURL"
-            [ngTemplateOutletContext]="{ item: item }" />
-        <span class="item__label" data-testId="nav-bar-item-label">
-            {{ item.label | dm }}
-        </span>
-    </button>
-</ng-template>
-
-<ng-template #icon let-item="item">
-    <i [class]="'pi ' + item.icon" data-testId="nav-bar-item-icon"></i>
-</ng-template>
-<ng-template #iconURL let-item="item">
-    <svg class="item__image" fill="currentColor" viewBox="0 0 24 24" width="24px" height="24px">
-        <use
-            data-testId="nav-bar-item-image"
-            attr.href="./assets/edit-ema/{{ item.iconURL }}.svg#{{ item.iconURL }}"
-            width="24px"
-            height="24px"></use>
-    </svg>
-</ng-template>

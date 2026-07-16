@@ -158,10 +158,14 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
             return;
         }
 
-        const { oldInode, inode } = payload;
+        const { oldInode, inode, fieldName } = payload;
         const currentInode = this.contentlet.inode;
+        const matchesInode = currentInode === oldInode || currentInode === inode;
 
-        if (currentInode === oldInode || currentInode === inode) {
+        // Match the field too: a contentlet's fields all share one inode, so an
+        // inode-only check focuses every editable field on the contentlet (the
+        // last one wins) instead of the one the user clicked.
+        if (matchesInode && fieldName === this.fieldName) {
             this.editorComponent.editor.focus();
 
             return;

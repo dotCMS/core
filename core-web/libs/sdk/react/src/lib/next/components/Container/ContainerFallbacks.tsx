@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 
 import { DotContainerAttributes } from '@dotcms/types/internal';
@@ -43,10 +45,10 @@ export const ContainerNotFound = ({ identifier }: { identifier: string }) => {
  *
  * Component to display when a container is empty.
  *
- * @param {DotContainerAttributes} dotAttributes
+ * @param {Partial<DotContainerAttributes>} dotAttributes
  * @return {*}
  */
-export const EmptyContainer = (dotAttributes: DotContainerAttributes) => {
+export const EmptyContainer = (dotAttributes: Partial<DotContainerAttributes>) => {
     const isDevMode = useIsDevMode();
 
     if (!isDevMode) {

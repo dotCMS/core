@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { discardPeriodicTasks, fakeAsync, flush, tick } from '@angular/core/testing';
 
@@ -89,14 +89,26 @@ describe('DotCopyButtonComponent', () => {
             discardPeriodicTasks();
         }));
 
-        it('should show "Copied" in tooltip after clicking the button', fakeAsync(() => {
+        it('should show "Copied" in tooltip after clicking', fakeAsync(() => {
             const event = { stopPropagation: jest.fn() } as unknown as MouseEvent;
             spectator.component.copyUrlToClipboard(event);
-            tick(0); // run promise microtask so .then() runs and sets $tempTooltipText
+            tick(0); // flush promise .then()
             spectator.detectChanges();
 
             expect(spectator.component.$tooltipText()).toBe('Copied');
             discardPeriodicTasks();
+        }));
+
+        it('should reset tooltip text after 1 second', fakeAsync(() => {
+            const event = { stopPropagation: jest.fn() } as unknown as MouseEvent;
+            spectator.component.copyUrlToClipboard(event);
+            tick(0); // flush promise .then()
+            spectator.detectChanges();
+
+            tick(1000);
+            spectator.detectChanges();
+
+            expect(spectator.component.$tooltipText()).toBe('Tooltip text');
         }));
     });
 });

@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -13,10 +13,10 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialog, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 
 import {
@@ -33,7 +33,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -86,7 +86,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
-            mockProvider(DotVersionableService)
+            mockProvider(DotVersionableService),
+            ConfirmationService
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -271,13 +272,28 @@ describe('EditContentLayoutComponent', () => {
             expect(dialogStore.clearWorkflowActionSuccess).toHaveBeenCalled();
         });
 
-        it('should not emit contentSaved when workflow action succeeds in route mode', () => {
+        it('should mark the form pristine after a successful workflow action', () => {
+            const dialogSpectator = createComponent({ detectChanges: false });
+            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
+
+            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
+
+            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
+            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+
+            dialogSpectator.setInput('contentTypeId', 'blog-post');
+
+            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should mark pristine and clear success but not emit in route mode', () => {
             const routeSpectator = createComponent({ detectChanges: false });
             const routeStore = routeSpectator.inject(DotEditContentStore, true);
 
-            // Mock store signals for route mode
+            const markFormPristineSpy = jest.spyOn(routeSpectator.component, 'markFormPristine');
             jest.spyOn(routeStore, 'isDialogMode').mockReturnValue(false);
             jest.spyOn(routeStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+            jest.spyOn(routeStore, 'clearWorkflowActionSuccess');
 
             const contentSavedSpy = jest.spyOn(routeSpectator.component.contentSaved, 'emit');
 
@@ -285,15 +301,18 @@ describe('EditContentLayoutComponent', () => {
             routeSpectator.detectChanges();
 
             expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
+            expect(routeStore.clearWorkflowActionSuccess).toHaveBeenCalledTimes(1);
         });
 
-        it('should not emit contentSaved when no workflow action success in dialog mode', () => {
+        it('should be a no-op when there is no workflow action success', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
 
-            // Mock store signals
+            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
             jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
             jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(dialogStore, 'clearWorkflowActionSuccess');
 
             const contentSavedSpy = jest.spyOn(dialogSpectator.component.contentSaved, 'emit');
 
@@ -301,6 +320,8 @@ describe('EditContentLayoutComponent', () => {
             dialogSpectator.setInput('contentTypeId', 'blog-post');
 
             expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(markFormPristineSpy).not.toHaveBeenCalled();
+            expect(dialogStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
         });
     });
 
@@ -322,6 +343,41 @@ describe('EditContentLayoutComponent', () => {
                 spectator.component.onFormChange(MOCK_FORM_VALUES);
 
                 expect(onFormChangeSpy).toHaveBeenCalledWith(MOCK_FORM_VALUES);
+            });
+        });
+
+        describe('onWorkflowActionFired()', () => {
+            it('should delegate to the form with params built from the store', () => {
+                const fireWorkflowActionSpy = jest.fn();
+                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+                    fireWorkflowAction: fireWorkflowActionSpy
+                } as unknown as DotEditContentFormComponent);
+
+                jest.spyOn(store, 'currentLocale').mockReturnValue(MOCK_LANGUAGES[0]);
+                jest.spyOn(store, 'contentlet').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+                jest.spyOn(store, 'contentType').mockReturnValue(CONTENT_TYPE_MOCK);
+                jest.spyOn(store, 'currentIdentifier').mockReturnValue(
+                    MOCK_CONTENTLET_1_TAB.identifier
+                );
+
+                const workflow = { id: 'action-id' } as DotCMSWorkflowAction;
+                spectator.component.onWorkflowActionFired(workflow);
+
+                expect(fireWorkflowActionSpy).toHaveBeenCalledWith({
+                    workflow,
+                    inode: MOCK_CONTENTLET_1_TAB.inode,
+                    contentType: CONTENT_TYPE_MOCK.variable,
+                    languageId: MOCK_LANGUAGES[0].id.toString(),
+                    identifier: MOCK_CONTENTLET_1_TAB.identifier
+                });
+            });
+
+            it('should not throw when the form ref is undefined (compare view)', () => {
+                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue(undefined);
+
+                const workflow = { id: 'action-id' } as DotCMSWorkflowAction;
+
+                expect(() => spectator.component.onWorkflowActionFired(workflow)).not.toThrow();
             });
         });
 
@@ -350,6 +406,60 @@ describe('EditContentLayoutComponent', () => {
             // Stores should be different instances
             expect(spectator.component.$store).not.toBe(spectator2.component.$store);
             expect(store).not.toBe(store2);
+        });
+    });
+
+    describe('Unsaved Changes Support', () => {
+        it('should return false from hasUnsavedChanges when the form ref is undefined', () => {
+            // No content has been initialized, so the inner form viewChild is empty.
+            expect(spectator.component.hasUnsavedChanges()).toBe(false);
+        });
+
+        it('should return true from hasUnsavedChanges when the form is dirty', () => {
+            const fakeForm = { dirty: true, markAsPristine: jest.fn() };
+            jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+                form: fakeForm
+            } as unknown as DotEditContentFormComponent);
+
+            expect(spectator.component.hasUnsavedChanges()).toBe(true);
+        });
+
+        it('should not crash markFormPristine when the form ref is undefined', () => {
+            // No content has been initialized, so the inner form viewChild is empty.
+            expect(() => spectator.component.markFormPristine()).not.toThrow();
+        });
+    });
+
+    // Isolated to its own describe so that no other component mounted earlier
+    // in the file can race the `window:beforeunload` listener registered via
+    // the host metadata. The outer `spectator` fixture is destroyed and a
+    // fresh one is created so dispatching on `window` exercises a single
+    // active listener — pollution surfaces immediately as a count mismatch.
+    describe('Before Unload Listener', () => {
+        beforeEach(() => {
+            spectator.fixture.destroy();
+            spectator = createComponent({ detectChanges: false });
+            spectator.detectChanges();
+        });
+
+        it('should preventDefault on window beforeunload when the form is dirty', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
+            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+
+            window.dispatchEvent(event);
+
+            expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should NOT preventDefault on window beforeunload when the form is pristine', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+            const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
+            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+
+            window.dispatchEvent(event);
+
+            expect(preventDefaultSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -495,6 +605,91 @@ describe('EditContentLayoutComponent', () => {
         });
     });
 
+    describe('Pending Locale Switch', () => {
+        it('should call confirmPendingLocaleSwitch directly when the form is clean', () => {
+            const ds = createComponent({ detectChanges: false });
+            const dsStore = ds.inject(DotEditContentStore, true);
+
+            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
+            const confirmSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
+            const cancelSpy = jest.spyOn(dsStore, 'cancelPendingLocaleSwitch');
+
+            ds.detectChanges();
+
+            expect(confirmSpy).toHaveBeenCalledTimes(1);
+            expect(cancelSpy).not.toHaveBeenCalled();
+        });
+
+        it('should open the confirm dialog when the form is dirty', () => {
+            const ds = createComponent({ detectChanges: false });
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+
+            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const confirmDialogSpy = jest.spyOn(dsConfirmService, 'confirm');
+
+            ds.detectChanges();
+
+            expect(confirmDialogSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should call confirmPendingLocaleSwitch when the user discards changes', () => {
+            const ds = createComponent({ detectChanges: false });
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+
+            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const confirmSwitchSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
+
+            let rejectFn: ((type?: ConfirmEventType) => void) | undefined;
+            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
+                rejectFn = opts.reject as (type?: ConfirmEventType) => void;
+            });
+
+            ds.detectChanges();
+            rejectFn!(ConfirmEventType.REJECT);
+
+            expect(confirmSwitchSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should call cancelPendingLocaleSwitch when the user keeps editing', () => {
+            const ds = createComponent({ detectChanges: false });
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+
+            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const cancelSwitchSpy = jest.spyOn(dsStore, 'cancelPendingLocaleSwitch');
+
+            let acceptFn: (() => void) | undefined;
+            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
+                acceptFn = opts.accept;
+            });
+
+            ds.detectChanges();
+            acceptFn!();
+
+            expect(cancelSwitchSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not trigger confirm or switch when pendingLocaleInode is null', () => {
+            const ds = createComponent({ detectChanges: false });
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+
+            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue(null);
+            const confirmSwitchSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
+            const confirmDialogSpy = jest.spyOn(dsConfirmService, 'confirm');
+
+            ds.detectChanges();
+
+            expect(confirmDialogSpy).not.toHaveBeenCalled();
+            expect(confirmSwitchSpy).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Warning Messages', () => {
         beforeEach(() => {
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -578,6 +773,220 @@ describe('EditContentLayoutComponent', () => {
                 // When lockWarningMessage returns a message, the store value should be used
                 expect(store.lockWarningMessage()).toBe(mockMessage);
             }));
+        });
+    });
+});
+
+// Separate top-level describe so the outer beforeEach above (which creates a component and
+// instantiates TestBed) never runs before these tests. Provider overrides via
+// createComponent({ providers: [...] }) require a fresh TestBed — calling them after
+// TestBed is already instantiated throws "Cannot override provider when the test module
+// has already been instantiated".
+describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
+    let dialogCloseMock: jest.Mock;
+
+    const createDialogComponent = createComponentFactory({
+        component: DotEditContentLayoutComponent,
+        imports: [
+            MessageModule,
+            ButtonModule,
+            MockComponent(DotEditContentFormComponent),
+            MockComponent(DotEditContentSidebarComponent),
+            DotMessagePipe
+        ],
+        componentProviders: [
+            DotEditContentStore,
+            mockProvider(DotWorkflowsActionsService),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotEditContentService),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService),
+            mockProvider(DotContentletService),
+            mockProvider(DotVersionableService),
+            ConfirmationService
+        ],
+        providers: [
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(MessageService),
+            mockProvider(DialogService),
+            mockProvider(DotLanguagesService),
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest
+                    .fn()
+                    .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
+            }),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(of({}))
+            }),
+            GlobalStore,
+            {
+                provide: DotCurrentUserService,
+                useValue: {
+                    getCurrentUser: () =>
+                        of({
+                            userId: '123',
+                            userName: 'John Doe'
+                        })
+                }
+            },
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    get snapshot() {
+                        return { params: { id: '', contentType: '' } };
+                    }
+                }
+            },
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotMessageService, {
+                get: jest.fn((key: string, ...args: unknown[]) =>
+                    key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
+                )
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        dialogCloseMock = jest.fn();
+    });
+
+    const createWithDialogRef = (extraProviders: unknown[] = []) =>
+        createDialogComponent({
+            detectChanges: false,
+            providers: [
+                { provide: DynamicDialogRef, useValue: { close: dialogCloseMock } },
+                ...extraProviders
+            ]
+        });
+
+    describe('programmatic close (dialogRef.close override)', () => {
+        it('should pass through when the form is clean', () => {
+            const ds = createWithDialogRef();
+            const dialogRef = ds.inject(DynamicDialogRef);
+            ds.detectChanges();
+
+            dialogRef.close('result');
+
+            expect(dialogCloseMock).toHaveBeenCalledWith('result');
+        });
+
+        it('should open the confirm dialog instead of closing when the form is dirty', () => {
+            const ds = createWithDialogRef();
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+            const dialogRef = ds.inject(DynamicDialogRef);
+
+            ds.detectChanges();
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+            const confirmSpy = jest.spyOn(dsConfirmService, 'confirm');
+
+            dialogRef.close('result');
+
+            expect(confirmSpy).toHaveBeenCalledTimes(1);
+            expect(dialogCloseMock).not.toHaveBeenCalled();
+        });
+
+        it('should close after the user discards changes', () => {
+            const ds = createWithDialogRef();
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+            const dialogRef = ds.inject(DynamicDialogRef);
+
+            ds.detectChanges();
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+
+            let rejectFn: ((type?: ConfirmEventType) => void) | undefined;
+            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
+                rejectFn = opts.reject as (type?: ConfirmEventType) => void;
+            });
+
+            dialogRef.close('result');
+            rejectFn!(ConfirmEventType.REJECT);
+
+            expect(dialogCloseMock).toHaveBeenCalledWith('result');
+        });
+
+        it('should not close when the user chooses keep editing', () => {
+            const ds = createWithDialogRef();
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+            const dialogRef = ds.inject(DynamicDialogRef);
+
+            ds.detectChanges();
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+
+            let acceptFn: (() => void) | undefined;
+            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
+                acceptFn = opts.accept;
+            });
+
+            dialogRef.close('result');
+            acceptFn!();
+
+            expect(dialogCloseMock).not.toHaveBeenCalled();
+        });
+
+        it('should bypass dirty check when a workflow action has just succeeded', () => {
+            const ds = createWithDialogRef();
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dialogRef = ds.inject(DynamicDialogRef);
+
+            ds.detectChanges();
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+
+            dialogRef.close('result');
+
+            expect(dialogCloseMock).toHaveBeenCalledWith('result');
+        });
+    });
+
+    describe('UI close (pDialog.close override)', () => {
+        it('should pass through when the form is clean', () => {
+            const pDialogCloseMock = jest.fn();
+            const mockDynamicDialog = { dialog: { close: pDialogCloseMock } };
+
+            const ds = createWithDialogRef([
+                { provide: DynamicDialog, useValue: mockDynamicDialog }
+            ]);
+            ds.detectChanges();
+
+            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+            mockDynamicDialog.dialog.close(mockEvent);
+
+            expect(pDialogCloseMock).toHaveBeenCalledWith(mockEvent);
+        });
+
+        it('should call preventDefault and open confirm dialog when the form is dirty', () => {
+            const pDialogCloseMock = jest.fn();
+            const mockDynamicDialog = { dialog: { close: pDialogCloseMock } };
+
+            const ds = createWithDialogRef([
+                { provide: DynamicDialog, useValue: mockDynamicDialog }
+            ]);
+            const dsStore = ds.inject(DotEditContentStore, true);
+            const dsConfirmService = ds.inject(ConfirmationService, true);
+
+            ds.detectChanges();
+            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+            const confirmSpy = jest.spyOn(dsConfirmService, 'confirm');
+
+            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+            mockDynamicDialog.dialog.close(mockEvent);
+
+            expect((mockEvent as { preventDefault: jest.Mock }).preventDefault).toHaveBeenCalled();
+            expect(confirmSpy).toHaveBeenCalledTimes(1);
+            expect(pDialogCloseMock).not.toHaveBeenCalled();
         });
     });
 });

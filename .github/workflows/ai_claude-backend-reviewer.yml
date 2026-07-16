@@ -1,0 +1,296 @@
+name: Claude Backend Code Reviewer
+
+# Pilot: runs only on PRs from developers listed in the authorized-authors job.
+# To expand: add logins to PILOT_AUTHORS or replace with a team membership check.
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # Gate 1 — Pilot author allowlist
+  # ─────────────────────────────────────────────────────────────────
+  authorized-authors:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      authorized: ${{ steps.check.outputs.authorized }}
+    steps:
+      - name: Check if PR author is in pilot list
+        id: check
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          PILOT_AUTHORS='["dsolistorres","gortiz-dotcms","dsilvam"]'
+          if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
+            echo "authorized=true" >> $GITHUB_OUTPUT
+            echo "✅ $AUTHOR is in the pilot list"
+          else
+            echo "authorized=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  $AUTHOR is not in the pilot list — skipping backend review"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────
+  # Gate 2 — Detect Java file changes
+  # Skips entirely if no .java files changed — saves API cost.
+  # ─────────────────────────────────────────────────────────────────
+  detect-backend-changes:
+    needs: authorized-authors
+    if: needs.authorized-authors.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_java: ${{ steps.check.outputs.has_java }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for Java file changes
+        id: check
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          echo "Changed files:"
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '\.java$'; then
+            echo "has_java=true" >> $GITHUB_OUTPUT
+            echo "✅ Java files detected — proceeding with backend review"
+          else
+            echo "has_java=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No Java files changed — skipping backend review"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────
+  # Backend review — multi-agent orchestrator
+  #
+  # Spawns 4 specialized sub-agents in parallel (security, database,
+  # java-standards, rest-api), collects findings, deduplicates, and
+  # posts a single structured comment on the PR.
+  # ─────────────────────────────────────────────────────────────────
+  claude-backend-review:
+    needs: [authorized-authors, detect-backend-changes]
+    if: |
+      needs.authorized-authors.outputs.authorized == 'true' &&
+      needs.detect-backend-changes.outputs.has_java == 'true'
+    concurrency:
+      group: claude-backend-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      issues: write
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
+    with:
+      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      trigger_mode: automatic
+      timeout_minutes: 30
+      runner: ubuntu-latest
+      enable_mention_detection: false
+      claude_args: >-
+        --allowedTools
+        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh pr review*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"
+      prompt: |
+        You are the orchestrator of a dotCMS backend code review pipeline.
+        Your job is to coordinate specialized sub-agents, collect their findings,
+        and post one consolidated review comment on the PR.
+
+        ## STEP 1 — Load dotCMS conventions
+        Read these files before doing anything else:
+          cat CLAUDE.md
+          cat docs/backend/JAVA_STANDARDS.md
+          cat docs/backend/DATABASE_PATTERNS.md
+          cat docs/backend/REST_API_PATTERNS.md
+          cat docs/core/SECURITY_PRINCIPLES.md
+
+        ## STEP 2 — Get the Java diff
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} -- '*.java'
+
+        ## STEP 3 — Spawn 4 specialized sub-agents in parallel
+
+        Use the Agent tool to launch all four sub-agents at the same time.
+        Pass each sub-agent the full diff output from STEP 2 and the relevant
+        rules from the docs you read in STEP 1.
+
+        ---
+
+        ### Sub-agent 1: Security Reviewer
+        Focus exclusively on security issues:
+        - Permission checks missing before accessing or modifying content/users
+          (look for missing DotSecurityException or hasPermission calls)
+        - SQL built with string concatenation — must use DotConnect + addParam()
+        - User input used in file paths or system calls without validation
+        - Sensitive data (tokens, passwords, PII) logged via Logger or returned in responses
+        - Hardcoded secrets, API keys, or environment-specific values
+        - System.getProperty / System.getenv — must use Config.getStringProperty()
+
+        Investigate beyond the diff when needed:
+        - If a method takes user input, read the full method to see how it's used
+        - grep -rn for usages of a modified security-sensitive method
+
+        Return findings as a markdown list. Each finding must include:
+        - Severity: 🔴 Critical / 🟠 High / 🟡 Medium
+        - File path and line number
+        - What the problem is and why it matters
+        - The problematic code snippet (2-4 lines max)
+        - Suggested fix if straightforward
+
+        If no security issues found, return: NO_FINDINGS
+
+        ---
+
+        ### Sub-agent 2: Database Reviewer
+        Focus exclusively on database and cache issues:
+        - SQL built with string concatenation — must use DotConnect + addParam()
+        - Multi-step writes without LocalTransaction.wrapReturn() or @WrapInTransaction
+        - Hibernate session used where DotConnect should be used
+        - SELECT * in production queries
+        - Write or delete operations that don't invalidate the relevant CacheLocator entry
+        - Missing @WrapInTransaction on API methods that write to the DB
+
+        Investigate beyond the diff when needed:
+        - If a write operation is added, read surrounding code to check for transaction scope
+        - grep -rn for the modified class in CacheLocator to check existing cache patterns
+
+        Return findings in the same format as Sub-agent 1.
+        If no database issues found, return: NO_FINDINGS
+
+        ---
+
+        ### Sub-agent 3: Java Standards Reviewer
+        Focus exclusively on Java syntax and code quality:
+        - Core modules target Java 25 (runtime + compile default); CLI tools may target
+          lower bytecode for portability — flag any code that won't compile at the module's target
+        - Raw types: List, Map, Set without generics
+        - Missing @Override on methods that override a parent
+        - System.out.println — must use Logger.info/error/debug(this, msg)
+        - System.getProperty / System.getenv — must use Config.getStringProperty()
+        - Direct instantiation of API or Factory classes — must use APILocator or FactoryLocator
+        - WebAPILocator used outside REST resources or servlets
+        - New dependencies added directly to dotCMS/pom.xml instead of bom/application/pom.xml
+
+        Return findings in the same format as Sub-agent 1.
+        If no Java standard issues found, return: NO_FINDINGS
+
+        ---
+
+        ### Sub-agent 4: REST API Reviewer
+        Focus exclusively on REST API issues:
+        - @Schema annotation absent or type doesn't match the actual return type
+        - Exceptions caught silently (empty catch blocks, exception not mapped to HTTP response)
+        - Missing UtilMethods.isSet() validation on path or query params
+        - Missing webResource.init() call at the start of endpoint methods
+        - Missing @NoCache on read endpoints
+        - Error messages that expose internal stack traces or system details to the caller
+
+        Investigate beyond the diff when needed:
+        - Read the full resource class if only part of it changed
+        - Check sibling endpoint methods for consistent error handling patterns
+
+        Return findings in the same format as Sub-agent 1.
+        If no REST API issues found, return: NO_FINDINGS
+
+        ---
+
+        ## STEP 4 — Consolidate findings
+
+        Once all sub-agents return:
+
+        1. Collect all findings from the four sub-agents
+        2. Remove exact duplicates (same file + line flagged by two agents — keep the higher severity)
+        3. Sort by severity: 🔴 Critical first, then 🟠 High, then 🟡 Medium
+        4. If ALL four sub-agents returned NO_FINDINGS, the review is clean
+        5. If a sub-agent errored, returned empty output, or returned unparseable content,
+           do NOT treat it as NO_FINDINGS. Instead include a warning in the comment:
+           ⚠️ **<Domain> review unavailable** — sub-agent failed, manual review required for this area.
+
+        ## STEP 5 — Upsert a single sticky PR comment
+
+        Keep exactly ONE backend-review comment per PR and edit it in place on
+        every run, so it always reflects the CURRENT state of the branch. This is
+        mandatory: when a push resolves earlier findings, the previous comment
+        must be updated (to the smaller finding set, or to "no issues found") —
+        never leave a stale comment showing findings that have already been fixed.
+
+        Write the full review body to a temp file first (posting with a file
+        avoids any risk of shell injection from delimiter collisions).
+
+        Write findings to /tmp/dotcms_review_body.md using this format.
+        The FIRST LINE must always be exactly: <!-- dotcms-backend-review -->
+        This marker is invisible in GitHub's rendered markdown and is how you
+        find the existing comment to edit on later runs.
+
+        <!-- dotcms-backend-review -->
+        ## 🔍 dotCMS Backend Review
+
+        <one block per issue>
+
+        **[🔴 Critical / 🟠 High / 🟡 Medium]** `path/to/File.java:LINE`
+        > What the problem is and why it matters in the dotCMS context.
+        ```java
+        // problematic code snippet (2-4 lines)
+        ```
+        💡 _Suggested fix (only if straightforward)_
+
+        ---
+
+        **Next steps**
+        - 🔴 / 🟠 Fix locally and push — these need your judgment
+        - 🟡 You can ask me to handle mechanical fixes inline: `@claude fix <issue description> in <File.java>`
+        - Every new push updates this comment automatically
+
+        If ALL agents returned NO_FINDINGS, write this to /tmp/dotcms_review_body.md instead:
+          <!-- dotcms-backend-review -->
+          ✅ **dotCMS Backend Review**: no issues found.
+
+        Then UPSERT the comment. Always run this exact logic — it edits the
+        existing marker comment when one exists and only creates a new comment on
+        the first run. Do not skip it, even when the result is "no issues found":
+
+          # Emit one bare id per matching comment and take the last globally with
+          # tail -n1. Do NOT use an aggregate jq filter (e.g. `[...] | last`) here:
+          # with --paginate, gh runs --jq once PER PAGE and concatenates, so an
+          # aggregate returns a per-page result and non-matching pages emit `null`,
+          # yielding a multi-line EXISTING_ID that breaks the PATCH on busy PRs.
+          EXISTING_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --paginate --jq '.[] | select(.body | contains("<!-- dotcms-backend-review -->")) | .id' | tail -n1)
+          if [ -n "$EXISTING_ID" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$EXISTING_ID --method PATCH -F body=@/tmp/dotcms_review_body.md
+            echo "Updated existing backend-review comment $EXISTING_ID"
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
+            echo "Created backend-review comment"
+          fi
+
+        ## STEP 6 — Submit a formal GitHub review
+
+        After upserting the comment, submit a formal PR review so that merging is
+        blocked while Critical or High findings remain, and unblocked once they
+        are resolved. Always submit a review on every run: this reviewer's latest
+        review supersedes its previous one, so a later --approve automatically
+        clears an earlier --request-changes once the findings are fixed.
+
+        Check whether the review body contains any Critical or High findings:
+
+          if grep -qE '🔴 Critical|🟠 High' /tmp/dotcms_review_body.md; then
+            gh pr review ${{ github.event.pull_request.number }} \
+              --request-changes \
+              --body "🚫 Critical or High severity findings must be resolved before merging. See the review comment above for details."
+          else
+            gh pr review ${{ github.event.pull_request.number }} \
+              --approve \
+              --body "✅ No Critical or High severity issues found."
+          fi
+
+        Rules:
+        - One block per issue — do not combine multiple issues
+        - Be specific: quote actual file names and line numbers
+        - Do not praise. Do not summarize what the PR does.
+        - Do not invent issues. Only report what sub-agents confirmed.
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

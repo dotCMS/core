@@ -1,4 +1,5 @@
 // Components (now standalone)
+export * from './lib/components/dot-color-icon/dot-color-icon.component';
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 // Components
@@ -9,7 +10,7 @@ export * from './lib/components/dot-api-link/dot-api-link.component';
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
-export * from './lib/components/dot-contentlet-status-chip/dot-contentlet-status-chip.component';
+export * from './lib/components/dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 export * from './lib/components/dot-collapse-breadcrumb/dot-collapse-breadcrumb.component';
 export * from './lib/components/dot-copy-button/dot-copy-button.component';
 export * from './lib/components/dot-drop-zone/dot-drop-zone.component';
@@ -22,12 +23,14 @@ export * from './lib/components/dot-language-variable-selector/dot-language-vari
 export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
+export * from './lib/components/dot-permissions-iframe-dialog/dot-permissions-iframe-dialog.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
-export * from './lib/components/dot-contentlet-status-chip/dot-contentlet-status-chip.component';
 export * from './lib/components/dot-sidebar-accordion';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
-export * from './lib/components/dot-temp-file-thumbnail/dot-temp-file-thumbnail.component';
+export * from './lib/components/dot-content-thumbnail/dot-content-thumbnail.component';
+export * from './lib/components/dot-content-thumbnail/models/dot-content-thumbnail.model';
+export * from './lib/components/dot-content-thumbnail/utils/dot-content-thumbnail.utils';
 export * from './lib/components/dot-content-type/dot-content-type.component';
 export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
@@ -57,7 +60,6 @@ export * from './lib/services/clipboard/ClipboardUtil';
 export * from './lib/services/dot-copy-content-modal/dot-copy-content-modal.service';
 export * from './lib/services/dot-browsing/dot-browsing.service';
 // Pipes
-export * from './lib/dot-contentlet-status/dot-contentlet-status.pipe';
 export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/pipes/dot-diff/dot-diff.pipe';
 export * from './lib/pipes/dot-file-size-format/dot-file-size-format.pipe';
@@ -81,6 +83,9 @@ export * from './lib/validators/dotValidators';
 
 // Animations
 export * from './lib/animations/fade.animations';
+
+// Monaco editor presets
+export * from './lib/monaco/editor-options';
 
 // Theme
 export * from './lib/theme';

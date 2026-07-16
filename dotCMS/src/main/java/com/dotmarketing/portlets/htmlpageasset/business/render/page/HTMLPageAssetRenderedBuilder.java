@@ -3,6 +3,11 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.page.PageResourceHelper;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView.Builder;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -30,6 +35,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -70,6 +77,25 @@ public class HTMLPageAssetRenderedBuilder {
     private boolean parseJSON;
     private Experiment runningExperiment;
     private VanityURLView vanityUrl;
+
+    public static final String SDK_EDITOR_SCRIPT_SOURCE = "<script src=\"/ext/uve/dot-uve.js\"></script>";
+
+    private static final String UVE_SCRIPTS_TEMPLATE =
+            "<script>" +
+            "function initDotUVE() {" +
+            "if (typeof dotUVE !== 'undefined' && dotUVE.registerStyleEditorSchemas) {" +
+            "dotUVE.registerStyleEditorSchemas(%s);" +
+            "} else {" +
+            "console.error('dotUVE is not available');" +
+            "}" +
+            "}" +
+            "</script>" +
+            "<script src=\"/ext/uve/dot-uve.js\" onload=\"initDotUVE()\"></script>";
+
+    /**
+     * Prefix of the inline init function — referenced by {@code UVE_SCRIPT_BLOCK_PATTERN} in HTMLPageAssetRenderedAPIImpl.
+     */
+    public static final String UVE_INIT_FUNCTION_PREFIX = "<script>function initDotUVE()";
 
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
@@ -153,7 +179,7 @@ public class HTMLPageAssetRenderedBuilder {
         final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
                 ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
-        // this forces all velocity dotParses to use the site for the given page 
+        // this forces all velocity dotParses to use the site for the given page
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
@@ -180,6 +206,7 @@ public class HTMLPageAssetRenderedBuilder {
                     .runningExperiment(runningExperiment)
                     .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
+            applyStyleEditorSchemas(resolveStyleEditorSchemas(mode, containers), mode, pageViewBuilder);
 
             return pageViewBuilder.build();
         } else {
@@ -192,7 +219,22 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = this.getPageHTML(mode);
+            final String rawHTML = this.getPageHTML(mode);
+            // Compute schemas once here so both the UVE script block and the PageView builder
+            // consume the same result without a redundant DB traversal.
+            final List<JsonNode> styleEditorSchemas = resolveStyleEditorSchemas(mode, containers);
+            final String pageHTML;
+            if (mode != PageMode.LIVE) {
+                Logger.debug(this, () -> String.format(
+                        "Injecting UVE script for page '%s' in mode %s",
+                        htmlPageAsset.getPageUrl(), mode));
+                pageHTML = injectUVEScript(rawHTML, styleEditorSchemas);
+            } else {
+                Logger.debug(this, () -> String.format(
+                        "Skipping UVE script injection for page '%s' (LIVE mode)",
+                        htmlPageAsset.getPageUrl()));
+                pageHTML = rawHTML;
+            }
 
             transformLegacyContainerUUIDs(layout);
 
@@ -206,18 +248,64 @@ public class HTMLPageAssetRenderedBuilder {
                     .runningExperiment(runningExperiment)
                     .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
+            applyStyleEditorSchemas(styleEditorSchemas, mode, pageViewBuilder);
 
             return pageViewBuilder.build();
         }
     }
 
     /**
-     * Returns the URL contentlet if it exists. This is used to get the contentlet that is associated with the URL of the page like a urlMapContent
-     * @param request
-     * @param mode
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Returns Style Editor schemas for all distinct ContentTypes on the page when the
+     * {@code FEATURE_FLAG_UVE_STYLE_EDITOR} feature flag is enabled and the page is not in
+     * {@link PageMode#LIVE} mode; returns an empty list otherwise.
+     * <p>
+     * This is the single computation point — call it once per request and share the result with
+     * both the UVE script-injection block and the {@link PageView.Builder}. The UVE script
+     * injection uses schemas for all non-LIVE modes; the REST/GQL response only exposes them in
+     * {@link PageMode#EDIT_MODE} (enforced by {@link #applyStyleEditorSchemas}).
+     *
+     * @param mode       The {@link PageMode} the page is being rendered in.
+     * @param containers The containers whose contentlets are inspected for schemas.
+     * @return A (possibly empty) list of JSON schema nodes.
+     */
+    private static List<JsonNode> resolveStyleEditorSchemas(final PageMode mode,
+            final Collection<? extends ContainerRaw> containers) {
+        if (mode == PageMode.LIVE || !ConfigUtils.isFeatureFlagOn(
+                FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR)) {
+            return Collections.emptyList();
+        }
+        final List<Contentlet> pageContentlets = containers.stream()
+                .flatMap(c -> c.getContentlets().values().stream())
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        return PageResourceHelper.getStyleEditorSchemas(pageContentlets);
+    }
+
+    /**
+     * Conditionally populates the {@link PageView.Builder} with pre-resolved Style Editor schemas.
+     * <p>
+     * Schemas are only written to the REST/GQL response in {@link PageMode#EDIT_MODE}; other
+     * non-LIVE modes receive schemas only in the injected UVE script block, not in the page JSON.
+     *
+     * @param schemas         Pre-resolved schemas from {@link #resolveStyleEditorSchemas}.
+     * @param mode            The current {@link PageMode}; schemas are applied only in EDIT_MODE.
+     * @param pageViewBuilder The builder that will receive the resolved schemas.
+     */
+    private static void applyStyleEditorSchemas(final List<JsonNode> schemas,
+            final PageMode mode, final Builder pageViewBuilder) {
+        if (mode == PageMode.EDIT_MODE && !schemas.isEmpty()) {
+            pageViewBuilder.styleEditorSchemas(schemas);
+        }
+    }
+
+    /**
+     * Returns the URL contentlet associated with the page's URL content map, if one exists.
+     *
+     * @param request The current HTTP request, used to read URL contentlet attributes.
+     * @param mode    The {@link PageMode} the page is being rendered in.
+     * @return An {@link Optional} containing the URL contentlet, or empty if none is found.
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The user does not have the required permissions.
      */
     private Optional<Contentlet> findUrlMapContentlet(final HttpServletRequest request, final PageMode mode)
             throws DotDataException, DotSecurityException {
@@ -319,7 +407,7 @@ public class HTMLPageAssetRenderedBuilder {
     /**
      * Transforms legacy container UUIDs (LEGACY_RELATION_TYPE) to "1" throughout the template layout
      * to ensure consistency between layout and rendered container fields in the API response.
-     * 
+     *
      * @param layout The template layout to transform
      */
     private void transformLegacyContainerUUIDs(TemplateLayout layout) {
@@ -348,6 +436,60 @@ public class HTMLPageAssetRenderedBuilder {
                     .filter(container -> ContainerUUID.UUID_LEGACY_VALUE.equals(container.getUUID()))
                     .forEach(container -> container.setUuid(ContainerUUID.UUID_START_VALUE));
         }
+    }
+
+    /**
+     * Injects UVE scripts before the closing {@code </body>} tag in the given HTML string. If
+     * pre-resolved schemas are non-empty, the full {@code UVE_SCRIPTS_TEMPLATE} is injected
+     * (init function + {@code <script src>} with onload). Otherwise, the plain
+     * {@code SDK_EDITOR_SCRIPT_SOURCE} tag is injected. If no {@code </body>} tag is found, the
+     * scripts are appended at the end.
+     *
+     * @param html    The rendered HTML content of the page.
+     * @param schemas Pre-resolved style editor schemas (from {@link #resolveStyleEditorSchemas}).
+     * @return The HTML content with the UVE scripts injected.
+     */
+    private String injectUVEScript(final String html, final List<JsonNode> schemas) {
+        if (!UtilMethods.isSet(html)) {
+            Logger.debug(this, "Skipping UVE script injection: rendered HTML is empty or null");
+            return html;
+        }
+        final Optional<String> styleEditorScript = buildUVEStyleEditorScripts(schemas);
+        final String scripts = styleEditorScript.orElse(SDK_EDITOR_SCRIPT_SOURCE);
+        Logger.debug(this, () -> styleEditorScript.isPresent()
+                ? "Injecting UVE script with style editor schemas"
+                : "Injecting plain UVE script (no style editor schemas found)");
+        final int closingBodyIndex = html.toLowerCase().lastIndexOf("</body>");
+        if (closingBodyIndex != -1) {
+            return html.substring(0, closingBodyIndex) + scripts + html.substring(closingBodyIndex);
+        }
+        Logger.warn(this, "No </body> tag found in page HTML, appending UVE script at end");
+        return html + scripts;
+    }
+
+    /**
+     * Formats a UVE script block from pre-resolved schemas: an inline {@code initDotUVE()}
+     * function that calls {@code dotUVE.registerStyleEditorSchemas(schemas)}, followed by a
+     * {@code <script src>} tag that triggers it on load.
+     *
+     * @param schemas Pre-resolved schemas (from {@link #resolveStyleEditorSchemas}).
+     * @return An {@link Optional} with the formatted script block, or empty if schemas is empty.
+     */
+    private Optional<String> buildUVEStyleEditorScripts(final List<JsonNode> schemas) {
+        if (schemas.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final Optional<String> schemasJson = Try.of(() -> Optional.of(
+                DotObjectMapperProvider.getInstance()
+                        .getDefaultObjectMapper()
+                        .writeValueAsString(schemas)
+                        .replace("</script>", "<\\/script>")))
+                .onFailure(e -> Logger.error(HTMLPageAssetRenderedBuilder.class,
+                        "Failed to serialize DOT_STYLE_EDITOR_SCHEMA, falling back to plain script tag", e))
+                .getOrElse(Optional.empty());
+
+        return schemasJson.map(json -> String.format(UVE_SCRIPTS_TEMPLATE, json));
     }
 
 }

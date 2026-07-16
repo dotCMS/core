@@ -9,7 +9,7 @@
                     size="small"
                     #languageDropdown
                     data-testId="language"
-                    formControlName="language"></p-select>
+                    formControlName="language" />
             </header>
             <h3 class="text-2xl font-bold" data-testId="header">
                 {{ loginInfo.i18nMessagesMap['welcome-login'] }}
@@ -42,7 +42,7 @@
                         loginInfo.i18nMessagesMap['emailAddressLabel']
                     )
                 "
-                [field]="loginForm.get('login')"></dot-field-validation-message>
+                [field]="loginForm.get('login')" />
         </div>
         <div class="field">
             <label dotFieldRequired data-testId="passwordLabel" for="password">
@@ -62,16 +62,16 @@
                         loginInfo.i18nMessagesMap['password']
                     )
                 "
-                [field]="loginForm.get('password')"></dot-field-validation-message>
+                [field]="loginForm.get('password')" />
         </div>
         <div class="flex justify-between items-center">
-            <div class="checkbox">
+            <div class="form-checkbox">
                 <p-checkbox
                     [inputId]="'rememberMe'"
                     formControlName="rememberMe"
                     data-testId="rememberMe"
-                    [binary]="true"></p-checkbox>
-                <label [for]="'rememberMe'">
+                    [binary]="true" />
+                <label [for]="'rememberMe'" class="whitespace-nowrap">
                     {{ loginInfo.i18nMessagesMap['remember-me'] }}
                 </label>
             </div>

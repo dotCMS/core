@@ -1,30 +1,39 @@
-import { signalState, patchState } from '@ngrx/signals';
+import { patchState, signalState } from '@ngrx/signals';
+import { merge, Subscription } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    model,
-    output,
-    input,
-    inject,
-    signal,
+    computed,
     effect,
     forwardRef,
-    computed,
-    OnInit,
+    HostListener,
+    inject,
+    input,
+    model,
     OnDestroy,
-    ViewChild,
-    HostListener
+    OnInit,
+    output,
+    signal,
+    untracked,
+    ViewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
+import { Select, SelectLazyLoadEvent, SelectModule } from 'primeng/select';
 
-import { DotSiteService } from '@dotcms/data-access';
+import { debounceTime, map, tap } from 'rxjs/operators';
+
+import {
+    DotEventsSocket,
+    DotSiteService,
+    DotSystemEventType,
+    SITE_REFRESH_EVENTS,
+    SITE_UNAVAILABLE_EVENTS
+} from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
@@ -66,14 +75,7 @@ interface DotSiteState {
 
 @Component({
     selector: 'dot-site',
-    imports: [
-        CommonModule,
-        FormsModule,
-        SelectModule,
-        IconFieldModule,
-        InputIconModule,
-        InputTextModule
-    ],
+    imports: [FormsModule, SelectModule, IconFieldModule, InputIconModule, InputTextModule],
     templateUrl: './dot-site.component.html',
     styles: [
         `
@@ -93,6 +95,8 @@ interface DotSiteState {
 })
 export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy {
     private siteService = inject(DotSiteService);
+    private eventsSocket = inject(DotEventsSocket);
+    private siteEventsSub: Subscription | null = null;
 
     @HostListener('focus')
     onHostFocus(): void {
@@ -120,6 +124,21 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
      * Settable via component input.
      */
     disabled = input<boolean>(false);
+
+    /**
+     * Version counter that triggers a full site list reload when it changes.
+     * Pass `globalStore.siteListVersion()` here so the dropdown reacts to backend
+     * site events (SAVE_SITE, PUBLISH_SITE, etc.) without needing direct WebSocket access.
+     * Defaults to 0 — the initial value does NOT trigger a reload (ngOnInit handles the first load).
+     */
+    reload = input<number>(0);
+
+    /**
+     * Whether to include the SYSTEM_HOST site in the dropdown list.
+     * Defaults to `true` (show it). Set to `false` to hide it — e.g. in the toolbar
+     * where the system host is not a valid selection context.
+     */
+    showSystemHost = input<boolean>(true);
 
     /**
      * Two-way model binding for the selected site.
@@ -185,8 +204,9 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
 
     /**
      * Computed options for the select dropdown.
-     * Combines pinned option (if any) with lazy-loaded options.
-     * The pinned option is always at the top and filtered out from the lazy-loaded list to avoid duplicates.
+     * The pinned option (current site) is always at the top so it remains accessible
+     * even when the current site is on a page not yet loaded. The rest of the list
+     * is alphabetical (duplicates of the pinned site are removed).
      */
     $options = computed<DotSite[]>(() => {
         const loaded = this.$state.sites();
@@ -201,17 +221,16 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         // If filtering, only show pinned if it matches the filter
         if (filterValue) {
             const pinnedName = pinned.hostname.toLowerCase();
-            const matchesFilter = pinnedName.includes(filterValue);
 
-            if (!matchesFilter) {
+            if (!pinnedName.includes(filterValue)) {
                 return loaded;
             }
         }
 
-        // Filter out pinned from loaded to avoid duplicates, then prepend pinned
-        const filtered = loaded.filter((s) => s.identifier !== pinned.identifier);
+        // Pin current site at the top; remove it from the sorted list to avoid duplicates
+        const withoutPinned = loaded.filter((s) => s.identifier !== pinned.identifier);
 
-        return [pinned, ...filtered];
+        return [pinned, ...withoutPinned];
     });
 
     /**
@@ -262,12 +281,43 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
                 }
             });
         });
+
+        // Reload effect — resets the lazy-loaded sites list when the version counter changes.
+        // The initial value (0) is intentionally skipped: ngOnInit handles the first load.
+        // untracked() prevents onLazyLoad's internal signal reads (sites, totalRecords) from
+        // being tracked as dependencies of this effect, which would cause an infinite loop.
+        effect(() => {
+            const version = this.reload();
+            if (version === 0) {
+                return;
+            }
+
+            untracked(() => {
+                this.loadedPages.clear();
+                patchState(this.$state, { sites: [], totalRecords: 0, filterValue: '' });
+                this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
+            });
+        });
     }
 
     ngOnInit(): void {
         if (this.$state.sites().length === 0) {
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
+
+        const tagEvent = (event: DotSystemEventType) =>
+            this.eventsSocket
+                .on<{ identifier: string }>(event)
+                .pipe(map((data) => ({ ...data, event })));
+
+        // Each event immediately refreshes the selected site; list reload is debounced
+        // to coalesce rapid bursts into a single resetFilter() call.
+        this.siteEventsSub = merge(...SITE_REFRESH_EVENTS.map(tagEvent))
+            .pipe(
+                tap((siteData) => this.refreshSelectedSite(siteData)),
+                debounceTime(300)
+            )
+            .subscribe(() => this.resetFilter());
     }
 
     ngOnDestroy(): void {
@@ -275,6 +325,8 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             clearTimeout(this.filterDebounceTimeout);
             this.filterDebounceTimeout = null;
         }
+
+        this.siteEventsSub?.unsubscribe();
     }
 
     // ControlValueAccessor callback functions
@@ -417,7 +469,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
      */
     private setSites(sites: DotSite[]): void {
         const sorted = [...sites].sort((a, b) =>
-            (a.hostname || '').localeCompare(b.hostname || '')
+            (a.hostname || '').localeCompare(b.hostname || '', undefined, { sensitivity: 'base' })
         );
         patchState(this.$state, { sites: sorted });
     }
@@ -585,6 +637,8 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             .getSites({
                 page: pageToLoad,
                 per_page: this.pageSize,
+                live: false,
+                system: this.showSystemHost(),
                 ...(filter ? { filter } : {})
             })
             .subscribe({
@@ -626,5 +680,37 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
                     patchState(this.$state, { loading: false });
                 }
             });
+    }
+
+    /**
+     * Refreshes the selected (pinned) site when a site event fires.
+     * - Unavailable events (archive, stop, delete): switches to the default site.
+     * - Other events: re-fetches the site to reflect any name/property changes.
+     *
+     * @private
+     * @param siteData The payload from the site WebSocket event
+     */
+    private refreshSelectedSite(
+        siteData: { identifier: string; event?: DotSystemEventType } | undefined
+    ): void {
+        const pinned = this.$state.pinnedOption();
+        if (!pinned || siteData?.identifier !== pinned.identifier) {
+            return;
+        }
+
+        if (siteData.event && SITE_UNAVAILABLE_EVENTS.has(siteData.event)) {
+            this.siteService.switchSite(null).subscribe({
+                next: (defaultSite) => this.onSiteChange(defaultSite),
+                // Fall back to clearing the selection via the CVA path so the
+                // parent form sees the null value (not just a nulled pinnedOption).
+                error: () => this.onSiteChange(null)
+            });
+            return;
+        }
+
+        this.siteService.getSiteById(pinned.identifier).subscribe({
+            next: (site) => patchState(this.$state, { pinnedOption: site }),
+            error: () => this.onSiteChange(null)
+        });
     }
 }

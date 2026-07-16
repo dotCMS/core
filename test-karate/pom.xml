@@ -12,9 +12,9 @@
     <artifactId>dotcms-test-karate</artifactId>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.source>${dotcms.core.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${dotcms.core.compiler.release}</maven.compiler.target>
+        <maven.compiler.release>${dotcms.core.compiler.release}</maven.compiler.release>
 
         <license.use>true</license.use>
         <clean.docker.volumes>true</clean.docker.volumes>
@@ -74,6 +74,7 @@
                                 <env>
                                     <CATALINA_OPTS>-XX:+PrintFlagsFinal</CATALINA_OPTS>
                                     <DB_MAX_TOTAL>15</DB_MAX_TOTAL>
+                                    <DB_MAX_WAIT>120000</DB_MAX_WAIT>
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>

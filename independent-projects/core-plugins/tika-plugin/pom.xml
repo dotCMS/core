@@ -13,11 +13,13 @@
         <maven.bundle.version>5.1.8</maven.bundle.version>
         <osgi.core.version>8.0.0</osgi.core.version>
         <osgi.compendium.version>7.0.0</osgi.compendium.version>
-        <tika.version>3.2.2</tika.version>
+        <tika.version>3.3.1</tika.version>
         <skip.rewrite>true</skip.rewrite>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.release>11</maven.compiler.release>
+        <!-- Pinned to Java 11 for OSGi/portability; preview features cannot be enabled at release 11. -->
+        <maven.compiler.enablePreview>false</maven.compiler.enablePreview>
     </properties>
     <dependencies>
 

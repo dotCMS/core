@@ -10,6 +10,11 @@ import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.business.interceptor.CoreDatabaseConnectionOps;
+import com.dotcms.business.interceptor.CoreInterceptorLogger;
+import com.dotcms.business.interceptor.CoreLicenseOps;
+import com.dotcms.business.interceptor.CoreTransactionOps;
+import com.dotcms.business.interceptor.InterceptorServiceProvider;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestCostAdvice;
 import com.dotcms.util.EnterpriseFeature;
@@ -74,13 +79,44 @@ public class ByteBuddyFactory {
     }
 
     public static void init() {
+        // Register core SPI implementations so that handlers/advice delegate to the
+        // real DbConnectionFactory, HibernateUtil, LicenseUtil, and Logger.
+        InterceptorServiceProvider.init(
+                CoreDatabaseConnectionOps.INSTANCE,
+                CoreTransactionOps.INSTANCE,
+                CoreLicenseOps.INSTANCE,
+                CoreInterceptorLogger.INSTANCE);
+
         if (!agentLoaded.get()) {
             try {
-                premain(null, ByteBuddyAgent.install());
+                premain(null, resolveInstrumentation());
                 LOGGER.info("Loaded ByteBuddy Advice");
             } catch (Exception e) {
-                LOGGER.error("Cannot install ByteBuddy Advice");
+                LOGGER.error("Cannot install ByteBuddy Advice", e);
             }
+        }
+    }
+
+    /**
+     * Returns an {@link Instrumentation} instance, preferring one already supplied by
+     * a {@code -javaagent:byte-buddy-agent.jar} at JVM startup. This avoids
+     * {@link ByteBuddyAgent#install()}'s external-attach fallback, which spawns a child
+     * JVM and blocks on {@code Process.waitFor()} — that path hangs indefinitely on
+     * Java 21+/25 in containers where the JDK attach binaries are absent or restricted
+     * (see ByteBuddyAgent.installExternal).
+     *
+     * Falls back to {@link ByteBuddyAgent#install()} only when no agent was preloaded
+     * (typical for IDE/test runs where {@code -Djdk.attach.allowAttachSelf=true} is set).
+     */
+    private static Instrumentation resolveInstrumentation() {
+        try {
+            return ByteBuddyAgent.getInstrumentation();
+        } catch (IllegalStateException notPreloaded) {
+            LOGGER.warn("byte-buddy-agent not pre-loaded via -javaagent; "
+                    + "falling back to runtime self-attach. "
+                    + "In production set -javaagent:<path>/byte-buddy-agent.jar to avoid "
+                    + "the external-attach path which can hang on Java 21+ in containers.");
+            return ByteBuddyAgent.install();
         }
     }
 

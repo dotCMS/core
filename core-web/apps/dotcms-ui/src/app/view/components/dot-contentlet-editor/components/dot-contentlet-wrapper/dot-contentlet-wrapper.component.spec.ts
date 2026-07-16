@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By, Title } from '@angular/platform-browser';
@@ -20,18 +21,8 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
-import {
-    CoreWebServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
@@ -41,7 +32,7 @@ import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.componen
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
@@ -72,23 +63,21 @@ describe('DotContentletWrapperComponent', () => {
                 DotContentletWrapperComponent,
                 DotIframeDialogComponent,
                 RouterTestingModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
+                BrowserAnimationsModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentletEditorService,
                 DotIframeService,
                 DotAlertConfirmService,
                 DotEventsService,
                 IframeOverlayService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
                 Title,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
@@ -110,10 +99,6 @@ describe('DotContentletWrapperComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },

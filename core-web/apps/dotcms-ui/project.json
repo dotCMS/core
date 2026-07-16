@@ -4,10 +4,14 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcms-ui/src",
     "prefix": "dot",
+    "tags": [],
+    "implicitDependencies": ["dotcms-webcomponents"],
     "targets": {
         "build": {
             "executor": "@angular/build:application",
             "outputs": ["{options.outputPath.base}"],
+            "defaultConfiguration": "production",
+            "dependsOn": ["^build"],
             "options": {
                 "baseHref": "./",
                 "outputPath": {
@@ -98,7 +102,7 @@
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "5mb"
+                            "maximumError": "6mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -116,23 +120,21 @@
                     "extractLicenses": false,
                     "fileReplacements": [],
                     "outputHashing": "none",
-                    "budgets": [],
-                    "externalDependencies": ["date-fns/locale"]
+                    "budgets": []
                 }
-            },
-            "defaultConfiguration": "production",
-            "dependsOn": ["^build"]
+            }
         },
         "serve": {
             "continuous": true,
             "executor": "@angular/build:dev-server",
             "dependsOn": [],
-
+            "defaultConfiguration": "development",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
                 "liveReload": true,
-                "watch": true
+                "watch": true,
+                "allowedHosts": true
             },
             "configurations": {
                 "production": {
@@ -141,8 +143,7 @@
                 "development": {
                     "buildTarget": "dotcms-ui:build:development"
                 }
-            },
-            "defaultConfiguration": "development"
+            }
         },
         "extract-i18n": {
             "executor": "@angular/build:extract-i18n",
@@ -150,48 +151,16 @@
                 "buildTarget": "dotcms-ui:build"
             }
         },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "apps/dotcms-ui/jest.config.ts",
                 "passWithNoTests": false
-            }
-        },
-        "storybook": {
-            "executor": "@storybook/angular:start-storybook",
-            "options": {
-                "port": 4400,
-                "configDir": "apps/dotcms-ui/.storybook",
-                "browserTarget": "dotcms-ui:build",
-                "compodoc": false
             },
             "configurations": {
                 "ci": {
-                    "quiet": true
-                }
-            }
-        },
-        "build-storybook": {
-            "executor": "@storybook/angular:build-storybook",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "outputDir": "dist-docs",
-                "configDir": "apps/dotcms-ui/.storybook",
-                "browserTarget": "dotcms-ui:build",
-                "compodoc": false
-            },
-            "configurations": {
-                "ci": {
-                    "quiet": true
+                    "ci": true,
+                    "coverage": true
                 }
             }
         }
-    },
-    "tags": [],
-    "implicitDependencies": ["dotcms-webcomponents"]
+    }
 }

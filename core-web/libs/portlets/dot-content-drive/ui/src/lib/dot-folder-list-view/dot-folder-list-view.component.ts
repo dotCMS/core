@@ -5,7 +5,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     effect,
     inject,
     input,
@@ -18,9 +17,9 @@ import {
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { take } from 'rxjs/operators';
 
@@ -32,7 +31,8 @@ import {
     DotLanguage
 } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
@@ -44,8 +44,9 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     selector: 'dot-folder-list-view',
     imports: [
         ButtonModule,
-        ChipModule,
-        DotContentletStatusChipComponent,
+        TagModule,
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
@@ -53,7 +54,6 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
         DotLocaleTagPipe,
         NgTemplateOutlet
     ],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
     styleUrls: ['./dot-folder-list-view.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

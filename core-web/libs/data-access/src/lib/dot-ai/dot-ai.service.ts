@@ -1,18 +1,20 @@
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, pluck, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
     DotCMSContentlet,
     AiPluginResponse,
-    DotAICompletionsConfig,
     DotAIImageContent,
-    DotAIImageOrientation,
-    DotAIImageResponse
+    DotAIImageResponse,
+    DotAiProviderConfig,
+    DEFAULT_IMAGE_SIZE
 } from '@dotcms/dotcms-models';
+
+export { DotAiProviderConfig };
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
@@ -61,10 +63,10 @@ export class DotAiService {
                 }),
                 catchError((error) => {
                     if (error instanceof HttpErrorResponse) {
-                        return throwError(error.statusText);
+                        return throwError(() => error.statusText);
                     }
 
-                    return throwError(error);
+                    return throwError(() => error);
                 })
             );
     }
@@ -78,7 +80,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: string = DotAIImageOrientation.HORIZONTAL
+        size = DEFAULT_IMAGE_SIZE
     ): Observable<DotAIImageContent> {
         return this.#http
             .post<DotAIImageResponse>(
@@ -89,9 +91,17 @@ export class DotAiService {
                 }
             )
             .pipe(
-                catchError(() =>
-                    throwError('block-editor.extension.ai-image.api-error.missing-token')
-                ),
+                catchError((error: HttpErrorResponse) => {
+                    const body = error?.error;
+                    const message =
+                        body?.error?.message ??
+                        (typeof body?.error === 'string' ? body.error : null) ??
+                        body?.message;
+
+                    return throwError(
+                        () => message ?? 'block-editor.extension.ai-image.api-error.missing-token'
+                    );
+                }),
                 switchMap((response: DotAIImageResponse) => {
                     return this.createAndPublishContentlet(response);
                 })
@@ -105,15 +115,32 @@ export class DotAiService {
      */
     checkPluginInstallation(): Observable<boolean> {
         return this.#http
-            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
+            .get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
                 observe: 'response'
             })
             .pipe(
-                map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+                map((res) => res.status === 200 && !!res?.body?.providerConfig),
                 catchError(() => {
                     return of(false);
                 })
             );
+    }
+
+    getConfig(siteId?: string): Observable<DotAiProviderConfig> {
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
+
+        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
+            params
+        });
+    }
+
+    saveConfig(json: string, siteId?: string): Observable<DotAiProviderConfig> {
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
+
+        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
+            headers,
+            params
+        });
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {
@@ -137,7 +164,7 @@ export class DotAiService {
                 }
             )
             .pipe(
-                pluck('entity', 'results'),
+                map((x) => x?.entity?.results),
                 map((contentlets: DotCMSContentlet[]) => {
                     if (contentlets.length === 0) {
                         throw new Error('contentlets is empty.');
@@ -160,7 +187,7 @@ export class DotAiService {
                 }),
                 catchError(() =>
                     throwError(
-                        'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
+                        () => 'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
                     )
                 )
             );

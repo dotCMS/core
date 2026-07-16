@@ -127,11 +127,23 @@ public interface MultiTreeAPI {
 
     /**
      * Saves a list of MultiTrees
-     * 
+     *
      * @param mTrees
      * @throws DotDataException
      */
     void saveMultiTrees(List<MultiTree> mTrees) throws DotDataException;
+
+    /**
+     * Persists style-property changes for a list of MultiTree entries without altering their
+     * {@code treeOrder}. Use this instead of {@link #saveMultiTrees(List)} when only style
+     * properties are being modified, so the existing contentlet ordering within each container is
+     * preserved.
+     *
+     * @param mTrees the MultiTree entries to update; each entry must already carry the correct
+     *               {@code treeOrder} value as loaded from the database
+     * @throws DotDataException if any database operation fails
+     */
+    void updateStyleProperties(List<MultiTree> mTrees) throws DotDataException;
 
     /**
      * Deletes a list of MultiTrees
@@ -447,12 +459,11 @@ public interface MultiTreeAPI {
      * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
      * {@link MultiTree} linked previously with the page.
      *
-     * @param pageId {@link String} Page's identifier
-     * @param personalization {@link String} personalization token
-     * @param multiTrees {@link List} of {@link MultiTree} to safe
-     * @param languageIdOpt {@link Optional} {@link Long}  optional language, if present will deletes only the contentlets that have a version on this language.
-     *                                      Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
-     * @throws DotDataException
+     * @param pageId          The page identifier.
+     * @param personalization The personalization token (e.g., persona key tag).
+     * @param multiTrees      The list of {@link MultiTree} objects to save.
+     * @param languageIdOpt      The optional language ID that scopes the deletion.
+     * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
      */
     void overridesMultitreesByPersonalization(final String pageId,
             final String personalization,
@@ -464,14 +475,12 @@ public interface MultiTreeAPI {
      * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
      * {@link MultiTree} linked previously with the page.
      *
-     * @param pageId {@link String} Page's identifier
-     * @param personalization {@link String} personalization token
-     * @param multiTrees {@link List} of {@link MultiTree} to safe
-     * @param languageIdOpt {@link Optional} {@link Long}  optional language, if present will deletes only the contentlets that have a version on this language.
-     *                                      Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
-     * @param variantId {@link com.dotcms.variant.model.Variant}'s id
-     *
-     * @throws DotDataException
+     * @param pageId          The page identifier.
+     * @param personalization The personalization token (e.g., persona key tag).
+     * @param multiTrees      The list of {@link MultiTree} objects to save.
+     * @param languageIdOpt      The optional language ID that scopes the deletion.
+     * @param variantId       The variant identifier.
+     * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
      */
     void overridesMultitreesByPersonalization(final String pageId,
                                              final String personalization,

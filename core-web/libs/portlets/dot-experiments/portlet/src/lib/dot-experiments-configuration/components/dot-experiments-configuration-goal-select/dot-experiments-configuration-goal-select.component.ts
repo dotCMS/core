@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -40,7 +40,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 @Component({
     selector: 'dot-experiments-configuration-goal-select',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
@@ -55,7 +54,8 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotExperimentsGoalConfigurationUrlParameterComponentComponent,
         DotExperimentsGoalsComingSoonComponent,
         DotTrimInputDirective,
-        DotFieldValidationMessageComponent
+        DotFieldValidationMessageComponent,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

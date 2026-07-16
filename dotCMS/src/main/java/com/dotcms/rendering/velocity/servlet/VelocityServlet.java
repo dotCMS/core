@@ -115,7 +115,9 @@ public class VelocityServlet extends HttpServlet {
 
     @Override
     @CloseDB
-    protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
+    // Not final: Weld's Tomcat InstanceManager (WELD-ENV-001100) processes all servlets
+    // for interceptor bindings. WELD-001504 rejects final methods with @CloseDB.
+    protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         Logger.debug(this, "======Starting VelocityServlet_service=====");
         final VelocityRequestWrapper request =VelocityRequestWrapper.wrapVelocityRequest(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);

@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotF
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -1654,11 +1655,13 @@ public class HTMLPageAssetRenderedTest {
                             .build(),
                     mockRequest, mockResponse);
 
+            // With DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and rendering in EN (language 1),
+            // only content1 (EN-only) and content2 (EN+ES) are included. content3 (ES-only)
+            // has no EN version and is correctly excluded — it will not appear in the rendered output.
             final String regexExpected =
                     "<div data-dot-object=\"container\" .* data-dot-uuid=\"dotParser_.*\" .*>" +
-                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
-                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
-                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
+                            "<div class=\"dotcms-contentlet\" data-dot-object=\"contentlet\" .*>.*</div>" +
+                            "<div class=\"dotcms-contentlet\" data-dot-object=\"contentlet\" .*>.*</div>" +
                             "</div>";
 
             assertTrue(html.matches(regexExpected));
@@ -1688,13 +1691,6 @@ public class HTMLPageAssetRenderedTest {
         final TestHostType anotherHost = TestHostType.ANOTHER;
         final TestHostType defaultHost = TestHostType.DEFAULT;
         final TestHostType currentHost = TestHostType.CURRENT;
-
-        /* We are not using this mocked request ?
-        final HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(currentHost);
-
-         */
 
         return new Object[][]{
                 {currentHost, currentHost, currentHost, relativePath, advanceTemplate, true},
@@ -1872,9 +1868,13 @@ public class HTMLPageAssetRenderedTest {
                             WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR)
                     .values());
 
-            //Create Contentlet
+            //Create Contentlet — must be published so it is visible in LIVE mode
             final Contentlet widgetContentlet = TestDataUtils.getWidgetContent(true, 1,
                     contentType.id());
+            widgetContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            widgetContentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            widgetContentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(widgetContentlet, systemUser, false);
             addAnonymousPermissions(widgetContentlet);
 
             //Create Container, Template and Page
@@ -2374,7 +2374,10 @@ public class HTMLPageAssetRenderedTest {
                 "<script>console.log(\"AAAA\");</SCRIPT>\n" +
                 "<script>console.log(\"BBB\");</script>\n";
 
-        final Language language = new LanguageDataGen().nextPersisted();
+        // JSON-escaped form of SDK_EDITOR_SCRIPT_SOURCE: quotes become \" and </script> becomes \</script\>
+        final String sdkEditorTestScript = HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE
+                .replace("\"", "\\\"")
+                .replace("</script>", "\\</script\\>");
         final Host host = new SiteDataGen().nextPersisted();
 
         final ContentType widgetContentType = new ContentTypeDataGen()
@@ -2429,10 +2432,11 @@ public class HTMLPageAssetRenderedTest {
                                 .setPageMode(PageMode.NAVIGATE_EDIT_MODE)
                                 .build(),
                         mockRequest, mockResponse);
-        final String expected = "\"rendered\" : \"<div><html>\\nThis is a test\\n</html>\\n<script>console.log(\\\"AAAA\\\");\\</script\\>\\n<script>console.log(\\\"BBB\\\");\\</script\\>\\n</div>\"";
-        assertTrue(html.contains(expected));
+        // Assert page.rendered has correctly escaped script tags from the widget
+        final String expectedWidgetRendered = "\"rendered\" : \"<div><html>\\nThis is a test\\n</html>\\n<script>console.log(\\\"AAAA\\\");\\</script\\>\\n<script>console.log(\\\"BBB\\\");\\</script\\>\\n</div>";
+        assertTrue(html.contains(expectedWidgetRendered));
 
-
-
+        // Assert UVE script is present in page.rendered.
+        assertTrue("UVE script should be present in page.rendered", html.contains(sdkEditorTestScript));
     }
 }

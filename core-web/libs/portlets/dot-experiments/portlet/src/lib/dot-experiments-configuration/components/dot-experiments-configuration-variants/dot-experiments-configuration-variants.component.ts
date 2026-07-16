@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgClass, AsyncPipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -40,7 +40,6 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
 @Component({
     selector: 'dot-experiments-configuration-variants',
     imports: [
-        CommonModule,
         DotMessagePipe,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
@@ -52,7 +51,10 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         TooltipModule,
         ConfirmPopupModule,
         AutoFocusModule,
-        DotExperimentsInlineEditTextComponent
+        DotExperimentsInlineEditTextComponent,
+        AsyncPipe,
+        DecimalPipe,
+        NgClass
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

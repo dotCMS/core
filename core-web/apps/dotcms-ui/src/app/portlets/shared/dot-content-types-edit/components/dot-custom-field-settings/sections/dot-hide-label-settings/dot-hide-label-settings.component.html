@@ -1,0 +1,14 @@
+<div class="flex gap-2 items-center py-2">
+    <p-checkbox
+        [formField]="formTree.hideLabel"
+        [binary]="true"
+        inputId="hideLabel"
+        data-testid="hide-label-checkbox" />
+    <label for="hideLabel">
+        {{ 'contenttypes.field.properties.hideLabel.label' | dm }}
+    </label>
+    <i
+        class="pi pi-info-circle pl-1"
+        [pTooltip]="'contenttypes.field.properties.hideLabel.tooltip' | dm"
+        tooltipPosition="right"></i>
+</div>

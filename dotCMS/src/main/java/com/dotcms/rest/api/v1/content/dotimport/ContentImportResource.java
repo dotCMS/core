@@ -13,6 +13,7 @@ import com.dotcms.rest.ResponseEntityJobView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -50,8 +51,9 @@ import org.glassfish.jersey.media.sse.SseFeature;
  * REST resource for handling content import operations, including creating and enqueuing content import jobs.
  * This class provides endpoints for importing content from CSV files and processing them based on the provided parameters.
  */
+@SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/content/_import")
-@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
+@Tag(name = "Content")
 public class ContentImportResource {
 
     private final WebResource webResource;

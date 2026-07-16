@@ -4,59 +4,30 @@ import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
+    DotCMSContentTypeField,
+    DotContentDriveDateRange,
     DotContentDriveFolder,
     DotContentDriveItem,
-    DotFolder,
-    DotSite
+    DotContentDriveUserSearchableValue,
+    DotFolder
 } from '@dotcms/dotcms-models';
+import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
-import { QueryBuilder } from '@dotcms/query-builder';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
-import { BASE_QUERY, SYSTEM_HOST } from '../shared/constants';
+import {
+    FIELD_FILTER_CHECKBOX_TYPE,
+    FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_MULTI_VALUE_TYPES,
+    USER_SEARCHABLE_PREFIX,
+    USER_SEARCHABLE_VALUE_SEPARATOR
+} from '../shared/constants';
 import {
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
     DotKnownContentDriveFilters
 } from '../shared/models';
-
-/**
- * Escapes special Lucene characters in a search term.
- * Special characters: + - && || ! ( ) { } [ ] ^ " ~ * ? : \ /
- *
- * WHY WE NEED THIS:
- * Without escaping, Lucene interprets special characters as query operators:
- * - Searching "profile-test" would be interpreted as "profile" NOT "test" (dash means exclusion)
- * - Searching "A+B" would be interpreted as "A" AND "B" (plus means required term)
- * - This causes queries to fail or return wrong results
- *
- * By escaping (adding backslash before special chars), we tell Lucene to treat them as literal text.
- *
- * WHY WE HAVE DIFFERENT SEARCH STRATEGIES:
- * - Analyzed fields ('title', 'catchall'): Lucene strips special chars during indexing
- *   Example: "profile-test" is indexed as ["profile", "test"] - the dash is removed
- *   Searching for escaped "profile\-test" won't match because the dash doesn't exist in the index
- *
- * - Non-analyzed fields ('title_dotraw'): Preserve exact text including special chars
- *   Example: "profile-test" is indexed as "profile-test" - the dash is kept
- *   Searching for escaped "profile\-test" WILL match because we're looking for the literal dash
- *
- * This is why we use escaped values for title_dotraw but not for catchall/title fields.
- *
- * @see https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/analysis/package-summary.html
- * @see https://www.baeldung.com/lucene-analyzers
- *
- * @param {string} term - The term to escape
- * @return {string} The escaped term
- * @example
- * escapeLuceneSpecialChars('profile-test') // returns 'profile\\-test'
- * escapeLuceneSpecialChars('A+B') // returns 'A\\+B'
- */
-export function escapeLuceneSpecialChars(term: string): string {
-    // Escape special Lucene characters by prefixing with backslash
-    return term.replace(/([+\-&|!(){}[\]^"~*?:\\/])/g, '\\$1');
-}
 
 /**
  * Decodes a multi-selector value.
@@ -77,6 +48,52 @@ const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
  * @return {*}  {string}
  */
 const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
+
+/** A single workflow filter entry: one scheme, optionally pinned to a step. */
+export interface WorkflowFilterEntry {
+    scheme: string;
+    step?: string;
+}
+
+/** Separator for the `schemeId[:stepId]` workflow token encoding. */
+export const WORKFLOW_TOKEN_SEPARATOR = ':';
+
+/**
+ * Canonical parse for one `workflow` token. Splits on the FIRST separator only,
+ * so any separator inside the step id is preserved.
+ * `'A:X'` → `{ scheme: 'A', step: 'X' }`; `'B'` → `{ scheme: 'B' }`.
+ *
+ * @param {string} token
+ * @return {*}  {WorkflowFilterEntry}
+ */
+export function parseWorkflowToken(token: string): WorkflowFilterEntry {
+    const index = token.indexOf(WORKFLOW_TOKEN_SEPARATOR);
+    return index === -1
+        ? { scheme: token }
+        : { scheme: token.slice(0, index), step: token.slice(index + 1) };
+}
+
+/**
+ * Canonical serialize, inverse of {@link parseWorkflowToken}.
+ * `{ scheme: 'A', step: 'X' }` → `'A:X'`; `{ scheme: 'B' }` → `'B'`.
+ *
+ * @param {WorkflowFilterEntry} entry
+ * @return {*}  {string}
+ */
+export function workflowEntryToToken({ scheme, step }: WorkflowFilterEntry): string {
+    return step ? `${scheme}${WORKFLOW_TOKEN_SEPARATOR}${step}` : scheme;
+}
+
+/**
+ * Parses the `workflow` filter tokens (`schemeId` or `schemeId:stepId`) into the
+ * `{ scheme, step? }` entries the drive-search request expects.
+ *
+ * @param {string[]} tokens
+ * @return {*}  {WorkflowFilterEntry[]}
+ */
+export function parseWorkflowFilter(tokens: string[] = []): WorkflowFilterEntry[] {
+    return tokens.map(parseWorkflowToken);
+}
 
 /**
  * Decodes the value by the key. This is a dictionary of functions that will be used to decode the value by the key.
@@ -99,7 +116,9 @@ export const decodeByFilterKey: Record<
     // Should always return an array
     contentType: multiSelector,
     title: singleSelector,
-    languageId: multiSelector
+    languageId: multiSelector,
+    // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
+    workflow: multiSelector
 };
 
 /**
@@ -137,6 +156,14 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
+        // Field-filter (user-searchable) values are stored raw: the field type — not comma
+        // sniffing — decides their shape downstream, so never split/trim them here.
+        if (key.startsWith(USER_SEARCHABLE_PREFIX)) {
+            acc[key] = singleSelector(value);
+
+            return acc;
+        }
+
         const decodeFunction = decodeByFilterKey[key];
 
         if (decodeFunction) {
@@ -148,7 +175,7 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         }
 
         return acc;
-    }, {});
+    }, {} as DotContentDriveFilters);
 }
 
 /**
@@ -193,109 +220,8 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
             }
 
             return acc;
-        }, [])
+        }, [] as string[])
         .join(';');
-}
-
-/**
- * Builds a search query for content drive based on the provided parameters.
- *
- * @example
- *
- * ```typescript
- * buildContentDriveQuery({
- *   path: '/some/path',
- *   currentSite: { identifier: 'site123' },
- *   filters: { contentType: 'Blog', title: 'test' }
- * })
- * // Output: A built query string for content search
- * ```
- *
- * @export
- * @param {Object} params - The query parameters
- * @param {string} [params.path] - The path to filter by
- * @param {SiteEntity} params.currentSite - The current site
- * @param {DotContentDriveFilters} [params.filters] - The filters to apply
- * @return {string} The built query string
- */
-export function buildContentDriveQuery({
-    path,
-    currentSite,
-    filters = {}
-}: {
-    path?: string;
-    currentSite: DotSite;
-    filters?: DotContentDriveFilters;
-}): string {
-    const query = new QueryBuilder();
-    const baseQuery = query.raw(BASE_QUERY);
-    let modifiedQuery = baseQuery;
-
-    const filtersEntries = Object.entries(filters);
-
-    // Add path filter if provided
-    if (path) {
-        modifiedQuery = modifiedQuery.field('parentPath').equals(path);
-    }
-
-    if (currentSite && currentSite.identifier !== SYSTEM_HOST.identifier) {
-        // Add site and working/variant filters
-        modifiedQuery = modifiedQuery.raw(
-            `+(conhost:${currentSite?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-        );
-    } else {
-        modifiedQuery = modifiedQuery.raw(
-            `+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`
-        );
-    }
-
-    // Apply custom filters
-    filtersEntries
-        .filter(([_key, value]) => value !== undefined)
-        .forEach(([key, value]) => {
-            // Handle multiselectors
-            if (Array.isArray(value)) {
-                const orChain = value.join(' OR ');
-                const orQuery = value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
-                modifiedQuery = modifiedQuery.raw(orQuery);
-                return;
-            }
-
-            // Handle raw search for title
-            if (key === 'title') {
-                // Check if the search term contains special characters
-                const hasSpecialChars = /[+\-&|!(){}[\]^"~*?:\\/]/.test(value);
-
-                if (hasSpecialChars) {
-                    // Always escape special characters for Lucene
-                    const escapedValue = escapeLuceneSpecialChars(value);
-                    // For searches with special chars, search both title_dotraw and catchall
-                    /// We cannot use title field because it is analyzed and special characters are stripped
-                    modifiedQuery = modifiedQuery.raw(
-                        `+(title_dotraw:*${escapedValue}*^20 OR catchall:*${escapedValue}*^10)`
-                    );
-                } else {
-                    // For regular searches without special chars, use the original broader approach
-                    modifiedQuery = modifiedQuery.raw(
-                        `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
-                    );
-
-                    // Split by spaces only (not dashes) and search individual words
-                    value
-                        .split(/\s+/)
-                        .filter((word) => word.trim().length > 0)
-                        .forEach((word) => {
-                            modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
-                        });
-                }
-
-                return;
-            }
-
-            modifiedQuery = modifiedQuery.field(key).equals(value);
-        });
-
-    return modifiedQuery.build();
 }
 
 /**
@@ -362,4 +288,204 @@ export function getFolderNodesByPath(
  */
 export function isFolder(item: DotContentDriveItem): item is DotContentDriveFolder {
     return item != null && 'type' in item && item.type === 'folder';
+}
+
+/** True when the field type stores a `{ from, to }` date range (Date / Date-and-Time / Time). */
+export function isDateFieldFilterType(fieldType: string): boolean {
+    return (FIELD_FILTER_DATE_TYPES as readonly string[]).includes(fieldType);
+}
+
+/** True when the field type stores a list of values (Multi-Select / Checkbox / Tag / …). */
+export function isMultiValueFieldFilterType(fieldType: string): boolean {
+    return FIELD_FILTER_MULTI_VALUE_TYPES.includes(fieldType);
+}
+
+/**
+ * The field variables that have a `us.*` field-filter entry in the bag, in insertion order.
+ * Parsed at the same layer as {@link decodeFilters} so the store just stores the result.
+ *
+ * @param {DotContentDriveFilters} filters
+ * @return {*}  {string[]}
+ */
+export function getUserSearchableActive(filters: DotContentDriveFilters): string[] {
+    return Object.keys(filters ?? {})
+        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
+        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length));
+}
+
+/**
+ * True for a binary (boolean) checkbox — a Checkbox field with a single option (e.g. `|true`).
+ * Unlike a multi-option checkbox, this is a single boolean *value* (true/false), not a selection.
+ */
+export function isBinaryCheckboxField(field: DotCMSContentTypeField): boolean {
+    return (
+        field.fieldType === FIELD_FILTER_CHECKBOX_TYPE &&
+        getSingleSelectableFieldOptions(field.values ?? '', field.dataType).length <= 1
+    );
+}
+
+/**
+ * Reshapes a raw stored field-filter string into the payload value for its field type:
+ * date → `{ from, to }`, multi-select → `string[]`, everything else → the raw string.
+ * Returns `undefined` when the value is effectively empty (so callers can skip it).
+ *
+ * @param {string} raw - The raw value stored in the filter bag.
+ * @param {string} fieldType - The content-type field type (e.g. `Text`, `Date`, `Multi-Select`).
+ * @return {*}  {(DotContentDriveUserSearchableValue | undefined)}
+ */
+export function parseUserSearchableValue(
+    raw: string,
+    fieldType: string
+): DotContentDriveUserSearchableValue | undefined {
+    if (!raw) {
+        return undefined;
+    }
+
+    if (isDateFieldFilterType(fieldType)) {
+        const [from = '', to = ''] = raw.split(USER_SEARCHABLE_VALUE_SEPARATOR);
+
+        return from || to ? { from, to } : undefined;
+    }
+
+    if (isMultiValueFieldFilterType(fieldType)) {
+        const values = parseMultiValue(raw);
+
+        return values.length ? values : undefined;
+    }
+
+    return raw;
+}
+
+/** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
+const safeDecode = (value: string): string => {
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+};
+
+/**
+ * Splits a stored multi-value string back into its values. Each value is percent-encoded on
+ * serialize (see {@link serializeMultiValue}) so a value containing the separator — e.g. a tag
+ * label like `"News, Press"` — round-trips intact.
+ *
+ * @param {string} raw
+ * @return {*}  {string[]}
+ */
+export function parseMultiValue(raw: string): string[] {
+    if (!raw) {
+        return [];
+    }
+
+    return raw
+        .split(USER_SEARCHABLE_VALUE_SEPARATOR)
+        .map((value) => safeDecode(value.trim()))
+        .filter(Boolean);
+}
+
+/**
+ * Joins multi-value entries into the stored string, percent-encoding each value so it can safely
+ * contain the separator. Inverse of {@link parseMultiValue}.
+ *
+ * @param {string[]} values
+ * @return {*}  {string}
+ */
+export function serializeMultiValue(values: string[]): string {
+    return values.map(encodeURIComponent).join(USER_SEARCHABLE_VALUE_SEPARATOR);
+}
+
+/**
+ * Serializes a shaped field-filter value back into the raw string stored in the filter bag,
+ * inverse of {@link parseUserSearchableValue}. Empty values serialize to `''` so the URL encoder
+ * (which drops empty entries) leaves no dangling criterion.
+ *
+ * @param {(DotContentDriveUserSearchableValue | null | undefined)} value
+ * @param {string} fieldType
+ * @return {*}  {string}
+ */
+/** Narrows a user-searchable value to a `{ from, to }` date range (object, not array). */
+function isDateRange(value: DotContentDriveUserSearchableValue): value is DotContentDriveDateRange {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function serializeUserSearchableValue(
+    value: DotContentDriveUserSearchableValue | null | undefined,
+    fieldType: string
+): string {
+    if (value == null) {
+        return '';
+    }
+
+    if (isDateFieldFilterType(fieldType)) {
+        // Guard the shape rather than blindly casting: a mismatched fieldType/value pair yields ''
+        // (not filtering) instead of a misleading partial range.
+        if (!isDateRange(value)) {
+            return '';
+        }
+
+        if (!value.from && !value.to) {
+            return '';
+        }
+
+        return `${value.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${value.to ?? ''}`;
+    }
+
+    if (isMultiValueFieldFilterType(fieldType)) {
+        return serializeMultiValue(Array.isArray(value) ? value : []);
+    }
+
+    return String(value);
+}
+
+/**
+ * Builds the `userSearchable` payload object from the flat filter bag, keyed by field variable.
+ * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. A binary
+ * checkbox emits its boolean value when set (`true`/`false`); every field type is included only
+ * when its value is non-empty. Returns `undefined` when there are no active field filters.
+ *
+ * @param {DotContentDriveFilters} filters - The full filter bag.
+ * @param {DotCMSContentTypeField[]} fields - The active content type's searchable fields.
+ * @return {*}  {(Record<string, DotContentDriveUserSearchableValue> | undefined)}
+ */
+export function buildUserSearchablePayload(
+    filters: DotContentDriveFilters,
+    fields: DotCMSContentTypeField[]
+): Record<string, DotContentDriveUserSearchableValue> | undefined {
+    const fieldByVariable = new Map(fields.map((field) => [field.variable, field]));
+    const payload: Record<string, DotContentDriveUserSearchableValue> = {};
+
+    for (const [key, raw] of Object.entries(filters ?? {})) {
+        if (!key.startsWith(USER_SEARCHABLE_PREFIX)) {
+            continue;
+        }
+
+        const variable = key.slice(USER_SEARCHABLE_PREFIX.length);
+        const field = fieldByVariable.get(variable);
+        if (!field) {
+            continue;
+        }
+
+        const rawValue = Array.isArray(raw)
+            ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR)
+            : (raw ?? '');
+
+        // A binary checkbox filters for the chosen boolean; empty means not filtering.
+        if (isBinaryCheckboxField(field)) {
+            if (rawValue === 'true' || rawValue === 'false') {
+                payload[variable] = rawValue === 'true';
+            }
+
+            continue;
+        }
+
+        const value = parseUserSearchableValue(rawValue, field.fieldType);
+        if (value === undefined) {
+            continue;
+        }
+
+        payload[variable] = value;
+    }
+
+    return Object.keys(payload).length ? payload : undefined;
 }

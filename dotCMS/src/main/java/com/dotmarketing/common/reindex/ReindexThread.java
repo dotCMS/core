@@ -8,12 +8,18 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
+import com.dotcms.content.index.domain.IndexBulkProcessor;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -24,16 +30,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import org.apache.felix.framework.OSGISystem;
-import org.elasticsearch.action.bulk.BulkProcessor;
-
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.felix.framework.OSGISystem;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -69,6 +71,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @version 3.3
  * @since Mar 22, 2012
  */
+@IndexLibraryIndependent
 public class ReindexThread {
 
     private enum ThreadState {
@@ -104,7 +107,7 @@ public class ReindexThread {
             Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 1);
 
     // Time (in seconds) to wait before closing bulk processor in a full reindex
-    private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config.getIntProperty(
+    public static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config.getIntProperty(
             "BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
 
     public static final int BACKOFF_POLICY_TIME_IN_SECONDS = Config.getIntProperty(
@@ -118,18 +121,11 @@ public class ReindexThread {
             "WAIT_BEFORE_PAUSE_SECONDS", 0);
 
 
-    private AtomicReference<ThreadState> state = new AtomicReference<>(ThreadState.STOPPED);
+    private final AtomicReference<ThreadState> state = new AtomicReference<>(ThreadState.STOPPED);
 
 
     private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
     private final static Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());
-
-    private final static AtomicBoolean rebuildBulkIndexer = new AtomicBoolean(false);
-
-    public static void rebuildBulkIndexer() {
-        Logger.warn(ReindexThread.class, "--- ReindexThread BulkProcessor needs to be Rebuilt");
-        ReindexThread.rebuildBulkIndexer.set(true);
-    }
 
     private ReindexThread() {
 
@@ -174,20 +170,12 @@ public class ReindexThread {
     }
 
 
-    private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor)
-            throws InterruptedException {
-        if (bulkProcessor != null) {
-            bulkProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
-        }
-        rebuildBulkIndexer.set(false);
-        return null;
-    }
-
-
-    private BulkProcessor finalizeReIndex(BulkProcessor bulkProcessor)
+    /**
+     * Handles queue-drained logic: attempts index switchover and pauses the thread
+     * if no full reindex is in progress.
+     */
+    private void finalizeReIndex()
             throws InterruptedException, LanguageException, DotDataException, SQLException {
-        bulkProcessor = closeBulkProcessor(bulkProcessor);
-        
         // Don't perform switchover operations during shutdown
         if (!ShutdownCoordinator.isRequestDraining()) {
             switchOverIfNeeded();
@@ -197,8 +185,6 @@ public class ReindexThread {
         } else {
             Logger.debug(this, "Skipping reindex finalization due to shutdown in progress");
         }
-        return bulkProcessor;
-
     }
 
 
@@ -208,13 +194,15 @@ public class ReindexThread {
      * Elastic index. If that's not possible, a notification containing the content identifier will
      * be sent to the user via the Notifications API to take care of the problem as soon as
      * possible.
+     *
+     * <p><strong>Thread-safety:</strong> each batch gets its own {@link BulkProcessorListener}
+     * and {@link IndexBulkProcessor}. The processor is closed (blocking until {@code afterBulk}
+     * completes) before the next batch starts, so there is no shared mutable state between
+     * consecutive batches and no TOCTOU race on the processor reference.</p>
      */
     private void runReindexLoop() {
-        BulkProcessor bulkProcessor = null;
-        BulkProcessorListener bulkProcessorListener = null;
         while (state.get() != ThreadState.STOPPED) {
             try {
-                // Check for shutdown before doing any database operations
                 if (ShutdownCoordinator.isRequestDraining()) {
                     Logger.info(this, "Shutdown detected, stopping reindex operations");
                     break;
@@ -223,34 +211,29 @@ public class ReindexThread {
                 final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
 
                 if (workingRecords.isEmpty()) {
-                    bulkProcessor = finalizeReIndex(bulkProcessor);
-                }
-
-                if (!workingRecords.isEmpty()) {
-                    // Check again before processing records
+                    finalizeReIndex();
+                } else {
                     if (ShutdownCoordinator.isRequestDraining()) {
                         Logger.info(this, "Shutdown detected during record processing, stopping reindex operations");
                         break;
                     }
 
-                    Logger.debug(this,
-                            "Found  " + workingRecords + " index items to process");
+                    Logger.debug(this, "Found  " + workingRecords + " index items to process");
 
-                    if (bulkProcessor == null || rebuildBulkIndexer.get()) {
-                        closeBulkProcessor(bulkProcessor);
-                        bulkProcessorListener = new BulkProcessorListener();
-                        bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-                    }
-                    bulkProcessorListener.workingRecords.putAll(workingRecords);
-                    indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-                    contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-                    // otherwise, reindex normally
-
+                    // Fresh listener per batch: each afterBulk callback resolves against its own
+                    // immutable workingRecords snapshot — no race with the next putAll.
+                    final BulkProcessorListener batchListener = new BulkProcessorListener();
+                    batchListener.workingRecords.putAll(workingRecords);
+                    try (final IndexBulkProcessor batchProcessor =
+                            indexAPI.createBulkProcessor(batchListener)) {
+                        indexAPI.appendToBulkProcessor(batchProcessor, workingRecords.values());
+                    } // close() blocks until afterBulk completes before the next batch starts
+                    contentletsIndexed += batchListener.getContentletsIndexed();
                 }
+
             } catch (Throwable ex) {
-                // Check if this is a shutdown-related exception
-                if (isShutdownRelated(ex) || ShutdownCoordinator.isRequestDraining() || 
-                    ex instanceof com.dotcms.shutdown.ShutdownException) {
+                if (isShutdownRelated(ex) || ShutdownCoordinator.isRequestDraining()
+                        || ex instanceof com.dotcms.shutdown.ShutdownException) {
                     Logger.debug(this, "ReindexThread stopping due to shutdown: " + ex.getMessage());
                     break;
                 }
@@ -260,15 +243,6 @@ public class ReindexThread {
                 DbConnectionFactory.closeSilently();
             }
             sleep();
-        }
-        
-        // Clean up bulk processor on exit
-        try {
-            if (bulkProcessor != null) {
-                closeBulkProcessor(bulkProcessor);
-            }
-        } catch (Exception e) {
-            Logger.debug(this, "Exception while closing bulk processor during shutdown: " + e.getMessage());
         }
     }
     

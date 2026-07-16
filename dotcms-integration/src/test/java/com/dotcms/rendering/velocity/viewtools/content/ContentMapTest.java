@@ -38,6 +38,7 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.generic.EscapeTool;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -466,6 +467,46 @@ public class ContentMapTest extends IntegrationTestBase {
                 .contentTypeId(contentTypeId).build();
 
         return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} applied on a text field whose value ends with a bare dollar sign.
+     * Given Scenario: A contentlet title is set to "Title $". Without the fix, Velocity throws a
+     *                 ParseException when merging the .field.vm template, ContentMap returns null,
+     *                 and the caller's $urlMapContent.title renders as a literal expression string.
+     * ExpectedResult: The field value is returned as-is with the dollar sign preserved ("Title $").
+     * @see <a href="https://github.com/dotCMS/core/issues/32951">Issue #32951</a>
+     */
+    @Test
+    public void testGet_textField_withTrailingDollarSign_preservesDollarSign()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            contentType = createContentType("testTrailingDollar" + System.currentTimeMillis());
+            createTextField("title", contentType.id());
+
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .host(defaultHost)
+                    .setProperty("title", "Title $")
+                    .nextPersisted();
+            ContentletDataGen.publish(contentlet);
+
+            // A real VelocityContext with EscapeTool is required so that $esc.d
+            // in the generated .field.vm resolves to a literal "$" during merge.
+            final Context velocityContext = new VelocityContext();
+            velocityContext.put("esc", new EscapeTool());
+
+            final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                    PageMode.LIVE, defaultHost, velocityContext);
+
+            final Object result = contentMap.get("title");
+            assertNotNull("Field value must not be null when title ends with $", result);
+            assertEquals("Title $", result.toString());
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
     }
 
     /**

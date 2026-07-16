@@ -1,4 +1,4 @@
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
+import { SpectatorService, createServiceFactory } from '@openng/spectator';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -79,6 +79,23 @@ describe('DotCMSStore', () => {
             });
 
             expect(service.$isDevMode()).toBe(false);
+        });
+    });
+
+    describe('$isAnalyticsActive', () => {
+        afterEach(() => {
+            delete (window as unknown as Record<string, unknown>)['__dotAnalyticsActive__'];
+        });
+
+        it('should be false by default', () => {
+            expect(service.$isAnalyticsActive()).toBe(false);
+        });
+
+        it('should become true when the analytics ready event fires after activation', () => {
+            (window as unknown as Record<string, unknown>)['__dotAnalyticsActive__'] = true;
+            window.dispatchEvent(new CustomEvent('dotcms:analytics:ready'));
+
+            expect(service.$isAnalyticsActive()).toBe(true);
         });
     });
 });

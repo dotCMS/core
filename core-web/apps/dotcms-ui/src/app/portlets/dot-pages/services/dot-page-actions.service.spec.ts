@@ -1,7 +1,6 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -27,7 +26,6 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import { DotPageActionsService } from './dot-page-actions.service';
 import { DotPageListService } from './dot-page-list.service';
@@ -150,7 +148,6 @@ describe('DotPageActionsService', () => {
     let mockPushPublishDialogService: jest.Mocked<DotPushPublishDialogService>;
     let mockCurrentUserService: jest.Mocked<DotCurrentUserService>;
     let mockPushPublishService: jest.Mocked<PushPublishService>;
-    let mockGlobalStore: { loggedUser: ReturnType<typeof signal> };
     let mockPagesStore: PagesStoreMock;
     let mockDotPageListService: jest.Mocked<Pick<DotPageListService, 'getFavoritePageByURL'>>;
 
@@ -199,16 +196,13 @@ describe('DotPageActionsService', () => {
         } as unknown as jest.Mocked<DotPushPublishDialogService>;
 
         mockCurrentUserService = {
+            getCurrentUser: jest.fn().mockReturnValue(of(MOCK_USER)),
             getUserPermissions: jest.fn().mockReturnValue(of(MOCK_PERMISSIONS))
         } as unknown as jest.Mocked<DotCurrentUserService>;
 
         mockPushPublishService = {
             getEnvironments: jest.fn().mockReturnValue(of(MOCK_ENVIRONMENTS))
         } as unknown as jest.Mocked<PushPublishService>;
-
-        mockGlobalStore = {
-            loggedUser: signal(MOCK_USER)
-        };
 
         mockPagesStore = {
             getFavoritePages: jest.fn()
@@ -240,7 +234,6 @@ describe('DotPageActionsService', () => {
                 { provide: DotPushPublishDialogService, useValue: mockPushPublishDialogService },
                 { provide: DotCurrentUserService, useValue: mockCurrentUserService },
                 { provide: PushPublishService, useValue: mockPushPublishService },
-                { provide: GlobalStore, useValue: mockGlobalStore },
                 { provide: DotCMSPagesStore, useValue: mockPagesStore },
                 { provide: DotPageListService, useValue: mockDotPageListService }
             ]

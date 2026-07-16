@@ -1,10 +1,11 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+
+import { CardModule } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ContentConversionRow,
-    ConversionsOverviewEntity,
+    ConversionOverviewData,
     DotAnalyticsDashboardStore,
     MetricData,
     transformContentConversionsData,
@@ -33,7 +34,7 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
 @Component({
     selector: 'dot-analytics-conversions-report',
     imports: [
-        CommonModule,
+        CardModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsContentConversionsTableComponent,
@@ -71,7 +72,7 @@ export default class DotAnalyticsConversionsReportComponent {
         return timeRangeLabel ? `${baseTitle} (${timeRangeLabel})` : baseTitle;
     });
 
-    /** Transformed rows for the content conversions table (from ContentAttribution cube) */
+    /** Transformed rows for the content conversions table */
     protected readonly $contentConversionsData = computed<ContentConversionRow[]>(() => {
         const contentConversions = this.store.contentConversions();
 
@@ -82,8 +83,8 @@ export default class DotAnalyticsConversionsReportComponent {
         () => this.store.contentConversions().status
     );
 
-    /** Data rows for the conversions overview table (from Conversion cube) */
-    protected readonly $conversionsOverviewData = computed<ConversionsOverviewEntity[]>(() => {
+    /** Data rows for the conversions overview table */
+    protected readonly $conversionsOverviewData = computed<ConversionOverviewData[]>(() => {
         const conversionsOverview = this.store.conversionsOverview();
 
         return conversionsOverview.data ?? [];
@@ -99,28 +100,24 @@ export default class DotAnalyticsConversionsReportComponent {
         const totalConversions = this.store.totalConversions();
         const convertingVisitors = this.store.convertingVisitors();
 
-        const totalConversionsRaw = totalConversions.data
-            ? parseInt(totalConversions.data['EventSummary.totalEvents'], 10)
-            : null;
-        const totalConversionsValue = totalConversionsRaw === 0 ? null : totalConversionsRaw;
+        const totalEvents = totalConversions.data?.totalEvents;
+        /** `0` is a valid aggregate; only hide when still loading/error (no payload). */
+        const totalConversionsValue = totalEvents == null ? null : totalEvents;
 
-        const uniqueVisitors = convertingVisitors.data
-            ? parseInt(convertingVisitors.data['EventSummary.uniqueVisitors'], 10)
-            : null;
-
-        const uniqueConvertingVisitors = convertingVisitors.data
-            ? parseInt(convertingVisitors.data['EventSummary.uniqueConvertingVisitors'], 10)
-            : null;
+        const uniqueVisitors = convertingVisitors.data?.uniqueVisitors ?? null;
+        const uniqueConvertingVisitors = convertingVisitors.data?.uniqueConvertingVisitors ?? null;
 
         const hasVisitorData = uniqueVisitors != null && uniqueVisitors > 0;
 
-        const conversionRate = hasVisitorData
-            ? `${Math.round(((uniqueConvertingVisitors ?? 0) / uniqueVisitors) * 10000) / 100}%`
-            : null;
+        const conversionRate =
+            hasVisitorData && uniqueConvertingVisitors != null
+                ? Math.round((uniqueConvertingVisitors / uniqueVisitors) * 10000) / 100
+                : null;
 
-        const convertingVisitorsValue = hasVisitorData
-            ? `${uniqueConvertingVisitors ?? 0}/${uniqueVisitors}`
-            : null;
+        const convertingVisitorsValue =
+            hasVisitorData && uniqueConvertingVisitors != null
+                ? `${uniqueConvertingVisitors}/${uniqueVisitors}`
+                : null;
 
         return [
             {
@@ -142,6 +139,7 @@ export default class DotAnalyticsConversionsReportComponent {
             {
                 name: 'analytics.metrics.site-conversion-rate',
                 value: conversionRate,
+                format: 'percentage',
                 subtitle: 'analytics.metrics.site-conversion-rate.subtitle',
                 icon: 'pi-chart-line',
                 status: convertingVisitors.status,

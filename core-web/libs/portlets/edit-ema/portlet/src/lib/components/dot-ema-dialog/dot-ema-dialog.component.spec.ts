@@ -5,11 +5,11 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
@@ -27,15 +27,11 @@ import {
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotCMSBaseTypesContentTypes, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
-import {
-    DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -82,28 +78,22 @@ describe('DotEmaDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEmaDialogComponent,
-        imports: [HttpClientTestingModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotEmaDialogStore,
-            HttpClient,
             DotWorkflowActionsFireService,
             MessageService,
             {
                 provide: UVEStore,
                 useValue: {
-                    pageParams: signal({
-                        variantName: 'DEFAULT' // Is the only thing we need to test the component
-                    }),
-                    $variantId: signal('DEFAULT')
+                    pageVariantId: signal('DEFAULT'),
+                    pageAsset: signal({ site: { identifier: 'test-site-id' } })
                 }
             },
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,
@@ -128,12 +118,6 @@ describe('DotEmaDialogComponent', () => {
                     getCreateContentletUrl: jest
                         .fn()
                         .mockReturnValue(of('https://demo.dotcms.com/jsp.jsp'))
-                }
-            },
-            {
-                provide: CoreWebService,
-                useValue: {
-                    requestView: jest.fn().mockReturnValue(of({}))
                 }
             },
             {
@@ -246,6 +230,20 @@ describe('DotEmaDialogComponent', () => {
             expect(handleWorkflowEventSpy).toHaveBeenCalledWith({});
         });
 
+        it('should emit reloadFromDialog after a successful workflow action', () => {
+            const reloadFromDialogSpy = jest.spyOn(component.reloadFromDialog, 'emit');
+
+            component.addContentlet(PAYLOAD_MOCK);
+            spectator.detectChanges();
+
+            // dialog appends to body so @ViewChild('iframe') is not populated; stub it out
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            component.iframe = { nativeElement: { contentWindow: null } } as any;
+            component.handleWorkflowEvent({} as DotCMSWorkflowActionEvent);
+
+            expect(reloadFromDialogSpy).toHaveBeenCalled();
+        });
+
         it("should trigger setDirty in the store when the iframe's custom event is 'edit-contentlet-data-updated' and is not a translation", () => {
             const setDirtySpy = jest.spyOn(storeSpy, 'setDirty');
 
@@ -281,6 +279,26 @@ describe('DotEmaDialogComponent', () => {
             });
 
             expect(setSavedSpy).toHaveBeenCalled();
+        });
+
+        it("should NOT emit reloadFromDialog when the iframe's custom event is 'edit-contentlet-data-updated' and is a translation", () => {
+            const reloadFromDialogSpy = jest.spyOn(component.reloadFromDialog, 'emit');
+
+            component.translatePage({
+                page: MOCK_RESPONSE_HEADLESS.page,
+                newLanguage: '3'
+            });
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED,
+                    data: {},
+                    payload: {}
+                }
+            });
+
+            expect(reloadFromDialogSpy).not.toHaveBeenCalled();
         });
 
         it("should trigger setSaved in the store when the iframe's custom event is 'edit-contentlet-data-updated', is a translation and payload is move action", () => {
@@ -520,7 +538,7 @@ describe('DotEmaDialogComponent', () => {
             component['onIframeLoad']();
 
             // Verify setColors was called with the html element from the iframe
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             expect(setColorsSpy).toHaveBeenCalledWith(iframe.contentDocument!.documentElement);
 
             // Clean up

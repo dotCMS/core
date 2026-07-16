@@ -1,12 +1,16 @@
 package com.dotcms;
 
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
+import com.dotcms.ai.util.ContentToStringUtilTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.publisher.business.PublisherQueueJobTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.MetricTimeoutTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
@@ -23,6 +27,9 @@ import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeT
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.SecondaryCategoryPermissionTest;
+import com.dotmarketing.factories.TreeFactoryTest;
+import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
+import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
@@ -30,6 +37,10 @@ import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableT
 import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTreeTest;
 import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTableTest;
 import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenuTest;
+import com.dotmarketing.startup.runonce.Task260320AddPluginsPortletToMenuTest;
+import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifierTest;
+import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenuTest;
+import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLengthTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -52,12 +63,15 @@ import org.junit.runners.Suite;
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
+        FixTask00090RecreateMissingFoldersInParentPathTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
+        ContentDriveWorkflowFilterTest.class,
         AppsAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
@@ -71,6 +85,14 @@ import org.junit.runners.Suite;
         StoryBlockUtilTest.class,
         Task251212AddVersionColumnIndicesTableTest.class,
         Task260206AddUsagePortletToMenuTest.class,
+        Task260320AddPluginsPortletToMenuTest.class,
+        Task260505AddPluginsPortletToMenuTest.class,
+        Task260407AddBaseTypeColumnToIdentifierTest.class,
+        Task260615AlterClusterIdLengthTest.class,
+        ImportContentletsActionSmokeTest.class,
+        TreeFactoryTest.class,
+        PublisherQueueJobTest.class,
+        ContentToStringUtilTest.class,
 })
 
 public class MainSuite3a {

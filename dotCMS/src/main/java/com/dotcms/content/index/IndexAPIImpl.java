@@ -1,11 +1,10 @@
 package com.dotcms.content.index;
 
-import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
-import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -14,44 +13,81 @@ import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * Vendor-neutral router implementation of {@link IndexAPI}.
+ * Phase-aware router implementation of {@link IndexAPI}.
  *
- * <p>Routing is controlled by {@code FEATURE_FLAG_OPEN_SEARCH_PHASE}. Each operation
- * delegates based on the current {@link IndexConfigHelper.MigrationPhase}:</p>
+ * <h2>Routing table</h2>
+ * <pre>
+ * Phase                     | Read provider | Write providers
+ * --------------------------|---------------|-----------------
+ * 0 — not started           | ES            | [ES]
+ * 1 — dual-write, ES reads  | ES            | [ES, OS]
+ * 2 — dual-write, OS reads  | OS            | [ES, OS]
+ * 3 — OS only               | OS            | [OS]
+ * </pre>
+ *
+ * <h2>Routing delegation</h2>
+ * <p>All routing decisions are centralised in {@link PhaseRouter}. Methods in this class
+ * are thin wrappers that use one of four delegation patterns:</p>
  * <ul>
- *   <li><strong>Phase 3 (COMPLETE)</strong> — all operations route exclusively to
- *       {@link OSIndexAPIImpl}.</li>
- *   <li><strong>Phases 0–2</strong> — read operations route to {@link ESIndexAPI};
- *       mutating operations that must stay consistent (e.g. clearIndex, updateReplicas,
- *       createAlias) are dual-written to both implementations so both indices
- *       remain in sync during the migration window.</li>
+ *   <li>{@code router.read(impl -&gt; ...)} — single read provider, unchecked.</li>
+ *   <li>{@code router.write(impl -&gt; ...)} — void write fan-out, unchecked.</li>
+ *   <li>{@code router.writeBoolean(impl -&gt; ...)} — boolean write fan-out (AND of all results).</li>
+ *   <li>{@code router.writeReturning(impl -&gt; ...)} — value-returning write fan-out; returns
+ *       the read-provider's result for consistency with subsequent reads.</li>
+ *   <li>Checked variants ({@code readChecked}, {@code writeChecked},
+ *       {@code writeReturningChecked}) for methods that declare {@code IOException} or
+ *       {@code DotDataException}.</li>
  * </ul>
  *
- * <p>This class mirrors the pattern established by
- * {@code com.dotcms.content.elasticsearch.business.ESContentFactoryImpl}
- * for {@code ContentFactoryIndexOperations}.</p>
+ * <h2>Exceptions to the uniform pattern</h2>
+ * <p>Three categories of methods cannot use the uniform delegation pattern and contain
+ * inline routing logic instead:</p>
+ * <ol>
+ *   <li><strong>Aggregating reads</strong> — {@code listIndices}, {@code getClosedIndexes},
+ *       {@code getIndices}, {@code getClusterHealth}: in dual-write phases both providers
+ *       maintain their own index sets simultaneously; the results must be <em>merged</em>
+ *       rather than selecting one provider. These methods inspect
+ *       {@code router.writeProviders().size()} to detect the dual-write phase and combine
+ *       results from both {@code esImpl} and {@code osImpl} with deduplication.</li>
+ *   <li><strong>Flush-and-return</strong> — {@code flushCaches}: must write to all providers
+ *       (so caches are consistent) but the return value must come from the read provider
+ *       (so it matches what a subsequent read would observe). Uses
+ *       {@link PhaseRouter#writeReturning} which calls each provider exactly once.</li>
+ *   <li><strong>Checked exceptions</strong> — methods that declare {@code IOException} or
+ *       {@code DotDataException} must catch and re-throw because Java's functional
+ *       interfaces ({@code Function}, {@code Consumer}) do not permit checked exceptions.
+ *       The {@code Checked} variants of the router methods accept
+ *       {@link PhaseRouter.ThrowingFunction} / {@link PhaseRouter.ThrowingConsumer}
+ *       instead, so the caller only needs a catch-rethrow for the declared type.</li>
+ * </ol>
  *
  * @author Fabrizio Araya
+ * @see PhaseRouter
  * @see ESIndexAPI
  * @see OSIndexAPIImpl
- * @see IndexConfigHelper
  */
 @IndexLibraryIndependent
-@IndexRouter(
-        access = IndexAccess.READ_WRITE
-)
+@IndexRouter(access = {IndexAccess.READ, IndexAccess.WRITE})
 public class IndexAPIImpl implements IndexAPI {
 
     private final ESIndexAPI esImpl;
     private final OSIndexAPIImpl osImpl;
+    private final PhaseRouter<IndexAPI> router;
 
     public IndexAPIImpl() {
         this(new ESIndexAPI(), CDIUtils.getBeanThrows(OSIndexAPIImpl.class));
@@ -61,282 +97,409 @@ public class IndexAPIImpl implements IndexAPI {
      * Package-private constructor for testing.
      */
     IndexAPIImpl(final ESIndexAPI esImpl, final OSIndexAPIImpl osImpl) {
-        this.esImpl = esImpl;
-        this.osImpl = osImpl;
+        this.esImpl  = esImpl;
+        this.osImpl  = osImpl;
+        this.router  = new PhaseRouter<>(esImpl, osImpl);
     }
 
     /**
-     * delegate accessor
-     * @return ESIndexAPI
+     * Direct access to the ES implementation, bypassing the read-path router.
+     *
+     * <p>Use only in bootstrap readiness checks ({@code indexReadyES}) that must
+     * verify ES cluster state regardless of the current migration phase.
+     * Do NOT use for normal read operations — use {@link #indexExists(String)} instead.</p>
+     *
+     * <p>Applies to phases 0, 1, and 2.</p>
      */
     public ESIndexAPI esImpl() {
         return esImpl;
     }
 
     /**
-     * delegate accessor
-     * @return OSIndexAPIImpl
+     * Direct access to the OS implementation, bypassing the read-path router.
+     *
+     * <p>Use only in bootstrap readiness checks ({@code indexReadyOS}) that must
+     * verify OS cluster state regardless of the current migration phase.
+     * Do NOT use for normal read operations — use {@link #indexExists(String)} instead.</p>
+     *
+     * <p>Applies to phases 1, 2, and 3.</p>
      */
     public OSIndexAPIImpl osImpl() {
         return osImpl;
     }
 
     // -------------------------------------------------------------------------
-    // Read operations
+    // Read operations — uniform pattern: router.read(impl -> ...)
     // -------------------------------------------------------------------------
 
     @Override
-    public Map<String, IndexStats> getIndicesStats() {
-        if(isMigrationComplete()) {
-           return osImpl.getIndicesStats();
+    public boolean optimize(final List<String> indexNames) {
+        // Tag-dispatch: each index name declares its owning provider via its vendor tag
+        // (OS names carry the .os suffix; untagged names are legacy ES). The list handed in
+        // comes from getIndices(), which in dual-write phases aggregates BOTH providers, so a
+        // mixed list (ES bare names + OS .os-tagged names) routed to a single provider via
+        // router.read() would hit index_not_found_exception on the foreign-tagged names —
+        // the exact Phase 2 optimize misrouting reported against the /optimize endpoint.
+        // Force-merge each provider only with the names it actually holds; skip a provider
+        // when its subset is empty so Phase 0 never contacts OS and Phase 3 never contacts ES.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return true;
         }
-        return esImpl.getIndicesStats();
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        boolean result = true;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            result &= router.esImpl().optimize(esNames);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            result &= router.osImpl().optimize(osNames);
+        }
+        return result;
     }
 
     @Override
-    public Map<String, Integer> flushCaches(List<String> indexNames) {
-        //All this logic will be revisited as we progress making changes on other apis that interact with this
-        //For now it is simply set to work with the ES index provider
-        if(isMigrationNotStarted()){
-            return esImpl.flushCaches(indexNames);
-        }
-        if (isMigrationComplete()) {
-            return osImpl.flushCaches(indexNames);
-        }
-        if(isReadEnabled()) {
-            osImpl.flushCaches(indexNames);
-        }
-        return esImpl.flushCaches(indexNames);
+    public boolean isIndexClosed(final String index) {
+        return router.read(impl -> impl.isIndexClosed(index));
     }
 
     @Override
-    public boolean optimize(List<String> indexNames) {
-        if (isMigrationComplete()) {
-            return osImpl.optimize(indexNames);
-        }
-        return esImpl.optimize(indexNames);
-    }
-
-    @Override
-    public Set<String> listIndices() {
-        if (isMigrationComplete()) {
-            return osImpl.listIndices();
-        }
-        return esImpl.listIndices();
-    }
-
-    @Override
-    public boolean isIndexClosed(String index) {
-        if (isMigrationComplete()) {
-            return osImpl.isIndexClosed(index);
-        }
-        return esImpl.isIndexClosed(index);
-    }
-
-    @Override
-    public boolean indexExists(String indexName) {
-        if (isMigrationComplete()) {
-            return osImpl.indexExists(indexName);
-        }
-        return esImpl.indexExists(indexName);
+    public boolean indexExists(final String indexName) {
+        return router.read(impl -> impl.indexExists(indexName));
     }
 
     @Override
     public String getDefaultIndexSettings() {
-        if (isMigrationComplete()) {
-            return osImpl.getDefaultIndexSettings();
-        }
-        return esImpl.getDefaultIndexSettings();
+        return router.read(IndexAPI::getDefaultIndexSettings);
     }
 
     @Override
-    public Map<String, ClusterIndexHealth> getClusterHealth() {
-        if (isMigrationComplete()) {
-            return osImpl.getClusterHealth();
-        }
-        return esImpl.getClusterHealth();
+    public Map<String, String> getIndexAlias(final List<String> indexNames) {
+        return router.read(impl -> impl.getIndexAlias(indexNames));
     }
 
     @Override
-    public Map<String, String> getIndexAlias(List<String> indexNames) {
-        if (isMigrationComplete()) {
-            return osImpl.getIndexAlias(indexNames);
-        }
-        return esImpl.getIndexAlias(indexNames);
+    public Map<String, String> getIndexAlias(final String[] indexNames) {
+        return router.read(impl -> impl.getIndexAlias(indexNames));
     }
 
     @Override
-    public Map<String, String> getIndexAlias(String[] indexNames) {
-        if (isMigrationComplete()) {
-            return osImpl.getIndexAlias(indexNames);
-        }
-        return esImpl.getIndexAlias(indexNames);
+    public String getIndexAlias(final String indexName) {
+        return router.read(impl -> impl.getIndexAlias(indexName));
     }
 
     @Override
-    public String getIndexAlias(String indexName) {
-        if (isMigrationComplete()) {
-            return osImpl.getIndexAlias(indexName);
-        }
-        return esImpl.getIndexAlias(indexName);
-    }
-
-    @Override
-    public Map<String, String> getAliasToIndexMap(List<String> indices) {
-        if (isMigrationComplete()) {
-            return osImpl.getAliasToIndexMap(indices);
-        }
-        return esImpl.getAliasToIndexMap(indices);
-    }
-
-    @Override
-    public List<String> getIndices(boolean expandToOpenIndices, boolean expandToClosedIndices) {
-        if (isMigrationComplete()) {
-            return osImpl.getIndices(expandToOpenIndices, expandToClosedIndices);
-        }
-        return esImpl.getIndices(expandToOpenIndices, expandToClosedIndices);
+    public Map<String, String> getAliasToIndexMap(final List<String> indices) {
+        return router.read(impl -> impl.getAliasToIndexMap(indices));
     }
 
     @Override
     public List<String> getLiveWorkingIndicesSortedByCreationDateDesc() {
-        if (isMigrationComplete()) {
-            return osImpl.getLiveWorkingIndicesSortedByCreationDateDesc();
-        }
-        return esImpl.getLiveWorkingIndicesSortedByCreationDateDesc();
+        return router.read(IndexAPI::getLiveWorkingIndicesSortedByCreationDateDesc);
     }
 
     @Override
-    public List<String> getClosedIndexes() {
-        if (isMigrationComplete()) {
-            return osImpl.getClosedIndexes();
+    public Status getIndexStatus(final String indexName) throws DotDataException {
+        try {
+            return router.readChecked(impl -> impl.getIndexStatus(indexName));
+        } catch (DotDataException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(), e);
         }
-        return esImpl.getClosedIndexes();
     }
 
-    @Override
-    public Status getIndexStatus(String indexName) throws DotDataException {
-        if (isMigrationComplete()) {
-            return osImpl.getIndexStatus(indexName);
-        }
-        return esImpl.getIndexStatus(indexName);
-    }
-
-    @Override
-    public String getNameWithClusterIDPrefix(String name) {
-        if (isMigrationComplete()) {
-            return osImpl.getNameWithClusterIDPrefix(name);
-        }
-        return esImpl.getNameWithClusterIDPrefix(name);
-    }
+    // getNameWithClusterIDPrefix / removeClusterIdFromName / getClusterPrefix / hasClusterPrefix
+    // are inherited from IndexAPI defaults: the cluster prefix is a JVM-wide value identical for
+    // both backends, so computing it directly is equivalent to routing and needs no override here.
 
     @Override
     public boolean waitUtilIndexReady() {
-        if (isMigrationComplete()) {
-            return osImpl.waitUtilIndexReady();
-        }
-        return esImpl.waitUtilIndexReady();
+        return router.read(IndexAPI::waitUtilIndexReady);
     }
 
     @Override
     public ClusterStats getClusterStats() {
-        if (isMigrationComplete()) {
-            return osImpl.getClusterStats();
-        }
-        return esImpl.getClusterStats();
+        return router.read(IndexAPI::getClusterStats);
     }
 
     // -------------------------------------------------------------------------
-    // Write operations — dual-write: OS receives the mutation when enabled,
-    // ES always receives it so both indices stay consistent during migration.
+    // Aggregating reads — EXCEPTION: dual-write phases need results from BOTH
+    // providers merged into a single response.
+    //
+    // Why: in phases 1 and 2, ES and OS each maintain their own physical index
+    // sets simultaneously (different names, different clusters).  Routing the
+    // read to just one provider would hide the other provider's indices from
+    // admin callers.  Deduplication (via HashSet / seen-set) prevents duplicates
+    // if the same logical name ever appears in both providers.
+    //
+    // Detection: router.writeProviders().size() == 1 → single-provider phase,
+    //            delegate to that provider directly.  Size == 2 → dual-write,
+    //            merge results from both esImpl and osImpl.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the union of all index names across every active write provider.
+     *
+     * <p><strong>Routing exception:</strong> in dual-write phases (1 and 2) both ES and OS
+     * maintain their own index sets; results from both are combined so that admin callers
+     * can observe all active indices regardless of origin. In single-provider phases the
+     * set is returned directly from that provider.</p>
+     */
+    @Override
+    public Set<String> listIndices() {
+        final List<IndexAPI> providers = router.writeProviders();
+        if (providers.size() == 1) {
+            return providers.get(0).listIndices();
+        }
+        final Set<String> combined = new HashSet<>(esImpl.listIndices());
+        combined.addAll(osImpl.listIndices());
+        return combined;
+    }
+
+    /**
+     * Returns the merged per-index stats map from every active write provider.
+     *
+     * <p><strong>Routing exception:</strong> same aggregation rule as {@link #listIndices()}.
+     * In Phase 1/2 ES (T0) and OS (T1) indices have distinct names, so no collisions are
+     * expected; on collision the OS entry wins, since OS is the future primary.</p>
+     */
+    @Override
+    public Map<String, IndexStats> getIndicesStats() {
+        final List<IndexAPI> providers = router.writeProviders();
+        if (providers.size() == 1) {
+            return providers.get(0).getIndicesStats();
+        }
+        final Map<String, IndexStats> merged = new HashMap<>(esImpl.getIndicesStats());
+        merged.putAll(osImpl.getIndicesStats());
+        return merged;
+    }
+
+    /**
+     * Returns the merged cluster health map from every active write provider.
+     *
+     * <p><strong>Routing exception:</strong> same aggregation rule as {@link #listIndices()}.
+     * On key collision in dual-write phases the OS entry wins, since OS is the future primary.</p>
+     */
+    @Override
+    public Map<String, ClusterIndexHealth> getClusterHealth() {
+        final List<IndexAPI> providers = router.writeProviders();
+        if (providers.size() == 1) {
+            return providers.get(0).getClusterHealth();
+        }
+        final Map<String, ClusterIndexHealth> merged = new HashMap<>(esImpl.getClusterHealth());
+        merged.putAll(osImpl.getClusterHealth());
+        return merged;
+    }
+
+    /**
+     * Returns the combined list of open/closed indices from every active write provider.
+     *
+     * <p><strong>Routing exception:</strong> same aggregation rule as {@link #listIndices()}.
+     * Order is preserved (ES first, then OS) with deduplication via a seen-set.</p>
+     */
+    @Override
+    public List<String> getIndices(final boolean expandToOpenIndices,
+            final boolean expandToClosedIndices) {
+
+        if (isMigrationNotStarted()){
+           return router.esImpl().getIndices(expandToOpenIndices, expandToClosedIndices);
+        }
+
+        return router.writeProviders().stream()
+                .flatMap(api -> api.getIndices(expandToOpenIndices, expandToClosedIndices).stream())
+                .distinct().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the combined list of closed indices from every active write provider.
+     *
+     * <p><strong>Routing exception:</strong> same aggregation rule as {@link #listIndices()}.
+     * Order is preserved (ES first, then OS) with deduplication via a seen-set.</p>
+     */
+    @Override
+    public List<String> getClosedIndexes() {
+
+        if (isMigrationNotStarted()){
+            return router.esImpl().getClosedIndexes();
+        }
+
+        return router.writeProviders().stream()
+                .flatMap(api -> api.getClosedIndexes().stream())
+                .distinct().collect(Collectors.toList());
+
+    }
+
+    // -------------------------------------------------------------------------
+    // Flush-and-return — EXCEPTION: fan out to write to ALL providers but
+    // return the READ provider's result.
+    //
+    // Why: all provider caches must be consistent after a flush (write fan-out),
+    // but the integer map returned to the caller should reflect the state of the
+    // index that reads are currently served from (read-provider result).
+    //
+    // PhaseRouter.writeReturning() handles this in one call: it invokes every
+    // write provider exactly once and returns the read-provider's value, avoiding
+    // the double-call that would occur if we called router.write() then router.read().
+    // -------------------------------------------------------------------------
+
+    /**
+     * Flushes caches on all active providers and returns the read provider's result.
+     *
+     * <p><strong>Routing exception:</strong> this is the only method that fans out a write
+     * <em>and</em> returns a value. {@link PhaseRouter#writeReturning} ensures each provider
+     * is called exactly once: the read-provider's result is returned for consistency with
+     * subsequent reads; the other provider's result is discarded.</p>
+     */
+    @Override
+    public Map<String, Integer> flushCaches(final List<String> indexNames) {
+        // Tag-dispatch (mirrors optimize): flush each provider only with the names it owns
+        // (OS → .os-tagged, ES → untagged). The list handed in comes from getIndices(), which in
+        // dual-write phases aggregates BOTH providers; passing that mixed list to a single
+        // provider made each hit index_not_found_exception on the other engine's names, so the
+        // OS cache flush depended on the .os names being present and was cross-contaminated with
+        // ES names (issue #35640). Skip a provider whose subset is empty so Phase 0 never
+        // contacts OS and Phase 3 never contacts ES. Shard counts are aggregated across the
+        // providers actually contacted.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return ImmutableMap.of("failedShards", 0, "successfulShards", 0);
+        }
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        int failedShards = 0;
+        int successfulShards = 0;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            final Map<String, Integer> esResult = router.esImpl().flushCaches(esNames);
+            failedShards += esResult.getOrDefault("failedShards", 0);
+            successfulShards += esResult.getOrDefault("successfulShards", 0);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            final Map<String, Integer> osResult = router.osImpl().flushCaches(osNames);
+            failedShards += osResult.getOrDefault("failedShards", 0);
+            successfulShards += osResult.getOrDefault("successfulShards", 0);
+        }
+        return ImmutableMap.of("failedShards", failedShards, "successfulShards", successfulShards);
+    }
+
+    // -------------------------------------------------------------------------
+    // Write operations — uniform pattern: router.write / writeBoolean / writeReturning
+    //
+    // Methods that declare checked exceptions (IOException, DotDataException) use
+    // the *Checked variants of the router: writeChecked / writeReturningChecked.
+    // These accept ThrowingConsumer / ThrowingFunction so that the lambda body may
+    // propagate checked exceptions.  The method wrapper catches-and-rethrows the
+    // declared type and wraps anything else into it.
     // -------------------------------------------------------------------------
 
     @Override
-    public boolean delete(String indexName) {
-        if (isMigrationComplete()) {
-           return osImpl.delete(indexName);
-        }
-        return esImpl.delete(indexName);
+    public boolean delete(final String indexName) {
+        return router.writeBoolean(impl -> impl.delete(indexName));
     }
 
     @Override
-    public boolean deleteMultiple(String... indexNames) {
-        if (isMigrationComplete()) {
-            return osImpl.deleteMultiple(indexNames);
-        }
-        return esImpl.deleteMultiple(indexNames);
+    public boolean deleteMultiple(final String... indexNames) {
+        return router.writeBoolean(impl -> impl.deleteMultiple(indexNames));
     }
 
     @Override
-    public void deleteInactiveLiveWorkingIndices(int inactiveLiveWorkingSetsToKeep) {
-        if (isMigrationComplete()) {
-            osImpl.deleteInactiveLiveWorkingIndices(inactiveLiveWorkingSetsToKeep);
-        }
-        esImpl.deleteInactiveLiveWorkingIndices(inactiveLiveWorkingSetsToKeep);
+    public void deleteInactiveLiveWorkingIndices(final int inactiveLiveWorkingSetsToKeep) {
+        router.write(impl -> impl.deleteInactiveLiveWorkingIndices(inactiveLiveWorkingSetsToKeep));
     }
 
     @Override
-    public void createIndex(String indexName) throws DotStateException, IOException {
-        if (isMigrationComplete()) {
-            osImpl.createIndex(indexName);
+    public void createIndex(final String indexName) throws DotStateException, IOException {
+        try {
+            router.writeChecked(impl -> impl.createIndex(indexName));
+        } catch (DotStateException | IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
         }
-        esImpl.createIndex(indexName);
     }
 
     @Override
-    public CreateIndexStatus createIndex(String indexName, int shards)
+    public CreateIndexStatus createIndex(final String indexName, final int shards)
             throws DotStateException, IOException {
-        if (isMigrationComplete()) {
-           return osImpl.createIndex(indexName, shards);
+        try {
+            return router.writeReturningChecked(impl -> impl.createIndex(indexName, shards));
+        } catch (DotStateException | IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
         }
-        return esImpl.createIndex(indexName, shards);
+    }
+
+    /**
+     * The physical name each write provider should receive for a single-name fan-out so it targets
+     * its OWN real index: the OpenSearch provider gets the {@code .os}-tagged name, every other
+     * provider gets the bare name. This is what makes lifecycle ops (clear/open/close/replicas)
+     * a faithful mirror across both engines instead of silently hitting only ES.
+     *
+     * <p>Site-search indices are the exception — their OS copy is NOT {@code .os}-tagged (separate
+     * cluster, own {@code siteSearch} slot), so they stay bare on both engines.</p>
+     */
+    private String providerName(final IndexAPI provider, final String indexName) {
+        final String logical = IndexTag.OS.untag(indexName);
+        return provider == router.osImpl() && !IndexType.SITE_SEARCH.is(logical)
+                ? IndexTag.OS.tag(logical)
+                : logical;
     }
 
     @Override
-    public void clearIndex(String indexName) throws DotStateException, IOException, DotDataException {
-        if (isMigrationComplete()) {
-            osImpl.clearIndex(indexName);
+    public void clearIndex(final String indexName)
+            throws DotStateException, IOException, DotDataException {
+        // clearIndex is delete + recreate-empty, so it is as destructive as delete: guard the
+        // active/building index here too (issue #35640, TC-018, swicken review). Covers every
+        // clear entry point — REST modIndex, legacy PUT /clear, and IndexAjaxAction.clearIndex.
+        APILocator.getContentletIndexAPI().assertIndexNotActive(indexName, "cleared");
+        try {
+            router.writeChecked(impl -> impl.clearIndex(providerName(impl, indexName)));
+        } catch (DotStateException | IOException | DotDataException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
         }
-        esImpl.clearIndex(indexName);
     }
 
     @Override
-    public CreateIndexStatus createIndex(String indexName, String settings, int shards)
-            throws IOException {
-        if (isMigrationComplete()) {
-            return osImpl.createIndex(indexName, settings, shards);
+    public CreateIndexStatus createIndex(final String indexName, final String settings,
+            final int shards) throws IOException {
+        try {
+            return router.writeReturningChecked(impl -> impl.createIndex(indexName, settings, shards));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
         }
-        return esImpl.createIndex(indexName, settings, shards);
     }
 
     @Override
-    public void updateReplicas(String indexName, int replicas) throws DotDataException {
-        if (isMigrationComplete()) {
-            osImpl.updateReplicas(indexName, replicas);
+    public void updateReplicas(final String indexName, final int replicas)
+            throws DotDataException {
+        try {
+            router.writeChecked(impl -> impl.updateReplicas(providerName(impl, indexName), replicas));
+        } catch (DotDataException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(), e);
         }
-        esImpl.updateReplicas(indexName, replicas);
     }
 
     @Override
-    public void createAlias(String indexName, String alias) {
-        if (isMigrationComplete()) {
-            osImpl.createAlias(indexName, alias);
-        }
-        esImpl.createAlias(indexName, alias);
+    public void createAlias(final String indexName, final String alias) {
+        router.write(impl -> impl.createAlias(indexName, alias));
     }
 
     @Override
-    public void closeIndex(String indexName) {
-        if (isMigrationComplete()) {
-            osImpl.closeIndex(indexName);
-        }
-        esImpl.closeIndex(indexName);
+    public void closeIndex(final String indexName) {
+        router.write(impl -> impl.closeIndex(providerName(impl, indexName)));
     }
 
     @Override
-    public void openIndex(String indexName) {
-        if (isMigrationComplete()) {
-            osImpl.openIndex(indexName);
-        }
-        esImpl.openIndex(indexName);
+    public void openIndex(final String indexName) {
+        router.write(impl -> impl.openIndex(providerName(impl, indexName)));
     }
 }

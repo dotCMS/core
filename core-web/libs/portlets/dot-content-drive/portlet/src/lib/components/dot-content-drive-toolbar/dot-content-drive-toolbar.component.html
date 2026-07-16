@@ -1,45 +1,79 @@
-<p-toolbar class="gap-1 h-full px-3 justify-start border-none!">
+<p-toolbar class="h-full justify-start gap-1 border-none! px-3">
     <div
-        class="grid w-full grid-cols-[min-content_1fr] grid-rows-2 items-center transition-all duration-300 ease-in-out gap-y-1 py-3"
+        class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center gap-y-4 py-3 transition-all duration-300 ease-in-out"
         [class.gap-x-1]="!$treeExpanded()"
         [class.gap-x-0]="$treeExpanded()">
         <dot-content-drive-tree-toggler data-testid="tree-toggler" [style]="$togglerStyles()" />
 
         <div
-            class="grid items-center w-full gap-1 row-start-1 col-start-2"
-            [class]="'grid-cols-[repeat(2,minmax(4.5rem,14rem))_1fr]'">
+            class="col-start-2 row-start-1 grid w-full grid-cols-[repeat(2,minmax(4.5rem,14rem))_1fr] items-center gap-1">
             <dot-content-drive-search-input data-testid="search-input" class="col-span-2" />
 
-            @if ($displayButton()) {
-                <p-button
-                    animate.enter="toolbar-enter"
-                    animate.leave="toolbar-leave"
-                    [label]="'content-drive.add-new' | dm"
-                    icon="pi pi-chevron-down"
-                    iconPos="right"
-                    class="justify-self-end"
-                    data-testid="add-new-button"
-                    (click)="menu.toggle($event)"
-                    #button />
-            }
+            <div class="col-start-3 flex items-center gap-2 justify-self-end">
+                @if ($displayButton()) {
+                    <p-button
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        [label]="'content-drive.upload' | dm"
+                        icon="pi pi-upload"
+                        [outlined]="true"
+                        data-testid="upload-asset-button"
+                        (click)="$upload.emit()" />
 
-            @if ($displayActions()) {
-                <dot-content-drive-workflow-actions
-                    animate.enter="toolbar-enter"
-                    animate.leave="toolbar-leave"
-                    class="justify-self-end"
-                    data-testid="workflow-actions" />
-            }
+                    <p-button
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        [label]="'content-drive.add-new' | dm"
+                        icon="pi pi-chevron-down"
+                        iconPos="right"
+                        data-testid="add-new-button"
+                        (click)="menu.toggle($event)"
+                        #button />
+                }
+
+                @if ($displayActions()) {
+                    <dot-content-drive-workflow-actions
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        data-testid="workflow-actions" />
+                }
+            </div>
         </div>
 
-        <div
-            class="grid w-full gap-1 row-start-2 col-start-2"
-            [class]="'grid-cols-[repeat(3,minmax(4.5rem,15rem))_1fr]'">
-            <dot-content-drive-base-type-selector data-testid="base-type-selector" />
-            <dot-content-drive-content-type-field data-testid="content-type-field" />
+        <div class="col-start-2 row-start-2 flex w-full flex-wrap items-center gap-2">
+            <dot-content-drive-content-type-filter data-testid="content-type-filter" />
+            <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
+
+            @for (field of $activeFieldFilters(); track field.variable) {
+                <dot-content-drive-field-filter
+                    animate.enter="field-filter-enter"
+                    animate.leave="field-filter-leave"
+                    [field]="field" />
+            }
+
+            <dot-content-drive-field-filter-menu data-testid="field-filter-menu" />
+
+            @if ($hasFilters()) {
+                <p-button
+                    [label]="'content-drive.filters.clear-all' | dm"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    (click)="onClearAll()"
+                    data-testid="clear-all-filters" />
+            }
         </div>
     </div>
 </p-toolbar>
 
-<p-menu [model]="$items()" #menu data-testId="actionsMenu" [popup]="true" appendTo="body" />
+<p-menu [model]="$items()" #menu data-testId="actionsMenu" [popup]="true" appendTo="body">
+    <ng-template #item let-item>
+        <span class="p-menu-item-link flex cursor-pointer items-center gap-3 px-3 py-2">
+            <i class="material-symbols-outlined text-[1.25rem]! leading-none text-gray-500">
+                {{ item.icon }}
+            </i>
+            <span class="text-gray-800">{{ item.label }}</span>
+        </span>
+    </ng-template>
+</p-menu>

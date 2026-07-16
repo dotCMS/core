@@ -1,8 +1,6 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
-
-import { fakeAsync, tick } from '@angular/core/testing';
 
 import { DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -61,6 +59,7 @@ describe('DotCreatePageDialogComponent', () => {
     });
 
     beforeEach(() => {
+        jest.useFakeTimers();
         spectator = createComponent({
             providers: [
                 MockProvider(DotPageTypesService, {
@@ -83,6 +82,7 @@ describe('DotCreatePageDialogComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+        jest.useRealTimers();
     });
 
     it('should create', () => {
@@ -104,12 +104,12 @@ describe('DotCreatePageDialogComponent', () => {
             expect(spectator.component.searchControl.value).toBe('');
         });
 
-        it('should initialize $searchTerm signal with empty string', fakeAsync(() => {
+        it('should initialize $searchTerm signal with empty string', () => {
             spectator.detectChanges();
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('');
-        }));
+        });
 
         it('should initialize $filteredPageTypes with all page types', () => {
             spectator.detectChanges();
@@ -149,107 +149,107 @@ describe('DotCreatePageDialogComponent', () => {
             expect(emittedValue).toBe(false);
         });
 
-        it('should reset searchControl on dialog hide', fakeAsync(() => {
+        it('should reset searchControl on dialog hide', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('blog');
-            tick(300);
+            jest.advanceTimersByTime(300);
             expect(spectator.component.$searchTerm()).toBe('blog');
 
             spectator.triggerEventHandler('p-dialog', 'onHide', null);
             expect(spectator.component.searchControl.value).toBe('');
 
-            tick(300);
+            jest.advanceTimersByTime(300);
             expect(spectator.component.$searchTerm()).toBe('');
-        }));
+        });
     });
 
     describe('Search Functionality', () => {
-        it('should debounce search input by 300ms', fakeAsync(() => {
+        it('should debounce search input by 300ms', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('simple');
-            tick(100);
+            jest.advanceTimersByTime(100);
             expect(spectator.component.$searchTerm()).toBe('');
 
-            tick(200);
+            jest.advanceTimersByTime(200);
             expect(spectator.component.$searchTerm()).toBe('simple');
-        }));
+        });
 
-        it('should trim and lowercase search term', fakeAsync(() => {
+        it('should trim and lowercase search term', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('  SIMPLE Page  ');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('simple page');
-        }));
+        });
 
-        it('should filter by page type name', fakeAsync(() => {
+        it('should filter by page type name', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('landing');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
             expect(filtered[0].name).toBe('Landing Page');
-        }));
+        });
 
-        it('should filter by page type variable', fakeAsync(() => {
+        it('should filter by page type variable', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('blogPost');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
             expect(filtered[0].variable).toBe('blogPost');
-        }));
+        });
 
-        it('should filter case-insensitively', fakeAsync(() => {
+        it('should filter case-insensitively', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('ADVANCED');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
             expect(filtered[0].name).toBe('Advanced Page');
-        }));
+        });
 
-        it('should return empty array when no matches found', fakeAsync(() => {
+        it('should return empty array when no matches found', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('nonexistent');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
-        }));
+        });
 
-        it('should return all page types when search is empty', fakeAsync(() => {
+        it('should return all page types when search is empty', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('landing');
-            tick(300);
+            jest.advanceTimersByTime(300);
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
 
             spectator.component.searchControl.setValue('');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
-        }));
+        });
 
-        it('should filter by partial matches', fakeAsync(() => {
+        it('should filter by partial matches', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('page');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered.length).toBeGreaterThan(1);
             expect(filtered.every((type) => type.name?.toLowerCase().includes('page'))).toBe(true);
-        }));
+        });
     });
 
     describe('Template Rendering', () => {
@@ -285,17 +285,17 @@ describe('DotCreatePageDialogComponent', () => {
             expect(items.length).toBeGreaterThan(0);
         });
 
-        it('should render "No results" when filtered list is empty', fakeAsync(() => {
+        it('should render "No results" when filtered list is empty', () => {
             spectator.setInput('visibility', true);
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('nonexistent');
-            tick(300);
+            jest.advanceTimersByTime(300);
             spectator.detectChanges();
 
             const noResults = spectator.query('.text-center');
             expect(noResults?.textContent?.trim()).toContain('No results');
-        }));
+        });
 
         it('should render correct number of page types', () => {
             spectator.setInput('visibility', true);
@@ -319,7 +319,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.setInput('visibility', true);
             spectator.detectChanges();
 
-            const icons = spectator.queryAll('.material-icons');
+            const icons = spectator.queryAll('.material-symbols-outlined');
             expect(icons.length).toBeGreaterThan(0);
             expect(icons[0]?.textContent?.trim()).toBe('description');
         });
@@ -369,20 +369,17 @@ describe('DotCreatePageDialogComponent', () => {
     });
 
     describe('Integration Workflows', () => {
-        it('should handle complete search and navigation workflow', fakeAsync(() => {
+        it('should handle complete search and navigation workflow', () => {
             spectator.setInput('visibility', true);
             spectator.detectChanges();
 
-            // Step 1: User searches for page type
             spectator.component.searchControl.setValue('landing');
-            tick(300);
+            jest.advanceTimersByTime(300);
             spectator.detectChanges();
 
-            // Step 2: Verify filtered results
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
             expect(spectator.component.$filteredPageTypes()[0].name).toBe('Landing Page');
 
-            // Step 3: User clicks on filtered page type
             let emittedVisibility: boolean | null = null;
             spectator.output('visibilityChange').subscribe((value) => {
                 emittedVisibility = value;
@@ -390,68 +387,57 @@ describe('DotCreatePageDialogComponent', () => {
 
             spectator.component.goToCreatePage('landingPage');
 
-            // Step 4: Verify dialog closes and navigation occurs
             expect(emittedVisibility).toBe(false);
             expect(mockRouterService.goToURL).toHaveBeenCalledWith('/pages/new/landingPage');
-        }));
+        });
 
-        it('should handle search with no results workflow', fakeAsync(() => {
+        it('should handle search with no results workflow', () => {
             spectator.setInput('visibility', true);
             spectator.detectChanges();
 
-            // Step 1: User searches for non-existent type
             spectator.component.searchControl.setValue('nonexistent');
-            tick(300);
+            jest.advanceTimersByTime(300);
             spectator.detectChanges();
 
-            // Step 2: Verify empty results
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
 
-            // Step 3: Verify "No results" message is shown
             const noResults = spectator.query('.text-center');
             expect(noResults?.textContent?.trim()).toContain('No results');
 
-            // Step 4: User clears search
             spectator.component.searchControl.setValue('');
-            tick(300);
+            jest.advanceTimersByTime(300);
             spectator.detectChanges();
 
-            // Step 5: Verify all page types are shown again
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
-        }));
+        });
 
-        it('should handle rapid search input changes', fakeAsync(() => {
+        it('should handle rapid search input changes', () => {
             spectator.setInput('visibility', true);
             spectator.detectChanges();
 
             const input = spectator.query('input[type="text"]') as HTMLInputElement;
             expect(input).toBeTruthy();
 
-            // Simulate rapid typing in the DOM input (user-like)
             spectator.typeInElement('g', input);
-            tick(100);
+            jest.advanceTimersByTime(100);
             spectator.typeInElement('go', input);
-            tick(100);
+            jest.advanceTimersByTime(100);
             spectator.typeInElement('gon', input);
-            tick(100);
+            jest.advanceTimersByTime(100);
             spectator.typeInElement('gone', input);
 
-            // Should not update until debounce completes
             expect(spectator.component.$searchTerm()).toBe('');
 
-            tick(300);
+            jest.advanceTimersByTime(300);
 
-            // Should now have the final value
             expect(spectator.component.$searchTerm()).toBe('gone');
-        }));
+        });
     });
 
     describe('Edge Cases', () => {
         it('should handle empty page types list', () => {
-            // Simulate service returning empty array
             mockPageTypesService.getPageContentTypes.mockReturnValue(of([]));
 
-            // Re-create component with empty data
             spectator.component.$pageTypes.set([]);
             spectator.detectChanges();
 
@@ -459,7 +445,7 @@ describe('DotCreatePageDialogComponent', () => {
             expect(spectator.component.$filteredPageTypes()).toEqual([]);
         });
 
-        it('should handle page types with null name', fakeAsync(() => {
+        it('should handle page types with null name', () => {
             const typesWithNull = [
                 createMockContentType({ name: null, variable: 'test' })
             ] as DotCMSContentType[];
@@ -469,17 +455,16 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('test');
-            tick(300);
+            jest.advanceTimersByTime(300);
             spectator.detectChanges();
 
-            // Should not throw error and should render 1 row (filtering by variable)
             const rows = spectator.queryAll(
                 '[data-testid="dot-pages-create-page-dialog__page-type-row"]'
             );
             expect(rows).toHaveLength(1);
-        }));
+        });
 
-        it('should handle page types with null variable', fakeAsync(() => {
+        it('should handle page types with null variable', () => {
             const typesWithNull = [
                 createMockContentType({ name: 'Test Page', variable: null })
             ] as DotCMSContentType[];
@@ -488,56 +473,53 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('test');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
-            // Should not throw error and should filter by name
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
-        }));
+        });
 
-        it('should handle whitespace-only search input', fakeAsync(() => {
+        it('should handle whitespace-only search input', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('   ');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
-            // Should trim to empty string and return all types
             expect(spectator.component.$searchTerm()).toBe('');
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
-        }));
+        });
 
-        it('should handle special characters in search', fakeAsync(() => {
+        it('should handle special characters in search', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('simple@#$');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
-            // Should not throw error
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
-        }));
+        });
     });
 
     describe('Signal State Management', () => {
-        it('should update $searchTerm signal when form control changes', fakeAsync(() => {
+        it('should update $searchTerm signal when form control changes', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$searchTerm()).toBe('');
 
             spectator.component.searchControl.setValue('test');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('test');
-        }));
+        });
 
-        it('should reactively update $filteredPageTypes when $searchTerm changes', fakeAsync(() => {
+        it('should reactively update $filteredPageTypes when $searchTerm changes', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
 
             spectator.component.searchControl.setValue('simple');
-            tick(300);
+            jest.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
-        }));
+        });
 
         it('should accept visibility input updates', () => {
             spectator.setInput('visibility', true);
@@ -552,7 +534,6 @@ describe('DotCreatePageDialogComponent', () => {
 
             expect(spectator.component.$pageTypes()).toEqual(MOCK_PAGE_TYPES);
 
-            // Simulate service returning different data
             const newTypes = [createMockContentType({ name: 'New Type', variable: 'newType' })];
             spectator.component.$pageTypes.set(newTypes);
 

@@ -2,8 +2,8 @@
 <portlet-app>
     <!-- Struts Portlets -->
     <portlet>
-        <portlet-name>categories</portlet-name>
-        <display-name>Category Manager</display-name>
+        <portlet-name>categories-legacy</portlet-name>
+        <display-name>Categories Legacy</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
         <init-param>
             <name>view-action</name>
@@ -236,7 +236,14 @@
 
     <portlet>
         <portlet-name>query-tool</portlet-name>
-        <display-name>Lucene Test Tool</display-name>
+        <display-name>Query Tool</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/query-tool</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>query-tool-legacy</portlet-name>
+        <display-name>Query Tool (Legacy)</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
@@ -270,13 +277,19 @@
     </portlet>
 
     <portlet>
-        <portlet-name>dynamic-plugins</portlet-name>
-        <display-name>OSGI Manager</display-name>
+        <portlet-name>plugins-legacy</portlet-name>
+        <display-name>Plugins Legacy</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
             <value>/portlet/ext/osgi/main.jsp</value>
         </init-param>
+    </portlet>
+
+    <portlet>
+        <portlet-name>plugins</portlet-name>
+        <display-name>Plugins</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
     <portlet>
@@ -337,7 +350,17 @@
 
     <portlet>
         <portlet-name>es-search</portlet-name>
-        <display-name>ES Query Tool</display-name>
+        <display-name>ES Search</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <init-param>
+            <name>view-path</name>
+            <value>/es-search</value>
+        </init-param>
+    </portlet>
+
+    <portlet>
+        <portlet-name>es-search-legacy</portlet-name>
+        <display-name>ES Search Legacy</display-name>
         <portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
     </portlet>
 
@@ -364,7 +387,27 @@
     <portlet>
         <portlet-name>velocity_playground</portlet-name>
         <display-name>Velocity Playground</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/velocity-playground</portlet-url>
+        <init-param>
+            <name>view-path</name>
+            <value>/velocity-playground</value>
+        </init-param>
+    </portlet>
+
+    <portlet>
+        <portlet-name>velocity_playground-legacy</portlet-name>
+        <display-name>Velocity Playground (Legacy)</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/jsp/velocity_playground/render.jsp</value>
+        </init-param>
+        <init-param>
+            <name>useWEBINFDIR</name>
+            <value>true</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
     <portlet>
@@ -465,6 +508,19 @@
         <display-name>Tags</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
         <portlet-url>/tags</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>categories</portlet-name>
+        <display-name>Categories</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/categories</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>publishing-queue-beta</portlet-name>
+        <display-name>Content Publishing Tools (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
 </portlet-app>

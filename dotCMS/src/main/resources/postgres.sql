@@ -25,12 +25,12 @@ create table AdminConfig (
 	companyId varchar(100) not null,
 	type_ varchar(100) null,
 	name varchar(100) null,
-	config text null
+	config text COMPRESSION lz4 null
 );
 
 create table Company (
 	companyId varchar(100) not null primary key,
-	key_ text null,
+	key_ text COMPRESSION lz4 null,
 	portalURL varchar(100) not null,
 	homeURL varchar(100) not null,
 	mx varchar(100) default 'dotcms.com',
@@ -58,7 +58,7 @@ create table Counter (
 
 create table Image (
 	imageId varchar(200) not null primary key,
-	text_ text not null
+	text_ text COMPRESSION lz4 not null
 );
 
 create table PasswordTracker (
@@ -71,7 +71,7 @@ create table PasswordTracker (
 create table PollsChoice (
 	choiceId varchar(100) not null,
 	questionId varchar(100) not null,
-	description text null,
+	description text COMPRESSION lz4 null,
 	primary key (choiceId, questionId)
 );
 
@@ -93,7 +93,7 @@ create table PollsQuestion (
 	createDate timestamptz null,
 	modifiedDate timestamptz null,
 	title varchar(100) null,
-	description text null,
+	description text COMPRESSION lz4 null,
 	expirationDate timestamptz null,
 	lastVoteDate timestamptz null
 );
@@ -110,9 +110,9 @@ create table Portlet (
 	portletId varchar(100) not null,
 	groupId varchar(100) not null,
 	companyId varchar(100) not null,
-	defaultPreferences text null,
+	defaultPreferences text COMPRESSION lz4 null,
 	narrow bool,
-	roles text null,
+	roles text COMPRESSION lz4 null,
 	active_ bool,
 	primary key (portletId, groupId, companyId)
 );
@@ -121,7 +121,7 @@ create table PortletPreferences (
 	portletId varchar(100) not null,
 	userId varchar(100) not null,
 	layoutId varchar(100) not null,
-	preferences text null,
+	preferences text COMPRESSION lz4 null,
 	primary key (portletId, userId, layoutId)
 );
 
@@ -130,7 +130,7 @@ create table User_ (
 	companyId varchar(100) not null,
 	createDate timestamptz null,
 	mod_date timestamptz null,
-	password_ text null,
+	password_ text COMPRESSION lz4 null,
 	passwordEncrypted bool,
 	passwordExpirationDate timestamptz null,
 	passwordReset bool,
@@ -160,7 +160,7 @@ create table User_ (
 	resolution varchar(100) null,
 	refreshRate varchar(100) null,
 	layoutIds varchar(100) null,
-	comments text null,
+	comments text COMPRESSION lz4 null,
 	loginDate timestamptz null,
 	loginIP varchar(100) null,
 	lastLoginDate timestamptz null,
@@ -170,7 +170,7 @@ create table User_ (
 	active_ bool,
     delete_in_progress BOOLEAN DEFAULT FALSE,
     delete_date timestamptz,
-    additional_info JSONB NULL
+    additional_info JSONB COMPRESSION lz4 NULL
 );
 
 create table UserTracker (
@@ -186,7 +186,7 @@ create table UserTracker (
 create table UserTrackerPath (
 	userTrackerPathId varchar(100) not null primary key,
 	userTrackerId varchar(100) not null,
-	path text not null,
+	path text COMPRESSION lz4 not null,
 	pathDate timestamptz not null
 );
 
@@ -232,7 +232,7 @@ CREATE TABLE qrtz_job_details
     IS_VOLATILE BOOL NOT NULL,
     IS_STATEFUL BOOL NOT NULL,
     REQUESTS_RECOVERY BOOL NOT NULL,
-    JOB_DATA BYTEA NULL,
+    JOB_DATA BYTEA COMPRESSION lz4 NULL,
     PRIMARY KEY (JOB_NAME,JOB_GROUP)
 );
 
@@ -263,7 +263,7 @@ CREATE TABLE qrtz_triggers
     END_TIME BIGINT NULL,
     CALENDAR_NAME VARCHAR(80) NULL,
     MISFIRE_INSTR SMALLINT NULL,
-    JOB_DATA BYTEA NULL,
+    JOB_DATA BYTEA COMPRESSION lz4 NULL,
     PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
     FOREIGN KEY (JOB_NAME,JOB_GROUP)
 	REFERENCES QRTZ_JOB_DETAILS(JOB_NAME,JOB_GROUP)
@@ -296,7 +296,7 @@ CREATE TABLE qrtz_blob_triggers
   (
     TRIGGER_NAME VARCHAR(80) NOT NULL,
     TRIGGER_GROUP VARCHAR(80) NOT NULL,
-    BLOB_DATA BYTEA NULL,
+    BLOB_DATA BYTEA COMPRESSION lz4 NULL,
     PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
     FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP)
         REFERENCES QRTZ_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP)
@@ -316,7 +316,7 @@ CREATE TABLE qrtz_trigger_listeners
 CREATE TABLE qrtz_calendars
   (
     CALENDAR_NAME  VARCHAR(80) NOT NULL,
-    CALENDAR BYTEA NOT NULL,
+    CALENDAR BYTEA COMPRESSION lz4 NOT NULL,
     PRIMARY KEY (CALENDAR_NAME)
 );
 
@@ -376,7 +376,7 @@ CREATE TABLE QRTZ_EXCL_job_details
     IS_VOLATILE BOOL NOT NULL,
     IS_STATEFUL BOOL NOT NULL,
     REQUESTS_RECOVERY BOOL NOT NULL,
-    JOB_DATA BYTEA NULL,
+    JOB_DATA BYTEA COMPRESSION lz4 NULL,
     PRIMARY KEY (JOB_NAME,JOB_GROUP)
 );
 
@@ -407,7 +407,7 @@ CREATE TABLE QRTZ_EXCL_triggers
     END_TIME BIGINT NULL,
     CALENDAR_NAME VARCHAR(80) NULL,
     MISFIRE_INSTR SMALLINT NULL,
-    JOB_DATA BYTEA NULL,
+    JOB_DATA BYTEA COMPRESSION lz4 NULL,
     PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
     FOREIGN KEY (JOB_NAME,JOB_GROUP)
 	REFERENCES QRTZ_EXCL_JOB_DETAILS(JOB_NAME,JOB_GROUP)
@@ -440,7 +440,7 @@ CREATE TABLE QRTZ_EXCL_blob_triggers
   (
     TRIGGER_NAME VARCHAR(80) NOT NULL,
     TRIGGER_GROUP VARCHAR(80) NOT NULL,
-    BLOB_DATA BYTEA NULL,
+    BLOB_DATA BYTEA COMPRESSION lz4 NULL,
     PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
     FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP)
         REFERENCES QRTZ_EXCL_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP)
@@ -459,7 +459,7 @@ CREATE TABLE QRTZ_EXCL_trigger_listeners
 CREATE TABLE QRTZ_EXCL_calendars
   (
     CALENDAR_NAME  VARCHAR(80) NOT NULL,
-    CALENDAR BYTEA NOT NULL,
+    CALENDAR BYTEA COMPRESSION lz4 NOT NULL,
     PRIMARY KEY (CALENDAR_NAME)
 );
 
@@ -531,11 +531,11 @@ create table user_comments (
    type varchar(255),
    method varchar(255),
    subject varchar(255),
-   ucomment text,
+   ucomment text COMPRESSION lz4,
    communication_id varchar(36),
    primary key (inode)
 );
-create table permission_reference (
+create unlogged table permission_reference (
    id int8 not null,
    asset_id varchar(36),
    reference_id varchar(36),
@@ -633,7 +633,7 @@ create table web_form (
    country varchar(255),
    phone varchar(255),
    email varchar(255),
-   custom_fields text,
+   custom_fields text COMPRESSION lz4,
    user_inode varchar(100),
    categories varchar(255),
    primary key (web_form_id)
@@ -687,16 +687,16 @@ create table template (
    mod_user varchar(100),
    sort_order int4,
    friendly_name varchar(255),
-   body text,
-   header text,
-   footer text,
+   body text COMPRESSION lz4,
+   header text COMPRESSION lz4,
+   footer text COMPRESSION lz4,
    image varchar(36),
    identifier varchar(36),
    drawed bool,
-   drawed_body text,
+   drawed_body text COMPRESSION lz4,
    add_container_links int4,
    containers_added int4,
-   head_code text,
+   head_code text COMPRESSION lz4,
    theme varchar(255),
    primary key (inode)
 );
@@ -730,13 +730,13 @@ create table structure (
    sort_order int4,
    icon varchar(255),
    marked_for_deletion bool not null default false,
-   metadata JSONB NULL,
+   metadata JSONB COMPRESSION lz4 NULL,
    primary key (inode)
 );
 create table cms_role (
    id varchar(36) not null,
    role_name varchar(255) not null,
-   description text,
+   description text COMPRESSION lz4,
    role_key varchar(255),
    db_fqn varchar(1000) not null,
    parent varchar(36) not null,
@@ -752,7 +752,7 @@ create table container_structures (
    container_id varchar(36) not null,
    container_inode varchar(36) not null,
    structure_id varchar(36) not null,
-   code text,
+   code text COMPRESSION lz4,
    primary key (id)
 );
 create table permission (
@@ -776,7 +776,7 @@ create table contentlet (inode varchar(36) not null,
 	identifier varchar(36),
 	language_id int8,
     variant_id varchar(255) default 'DEFAULT',
-	contentlet_as_json jsonb,
+	contentlet_as_json jsonb COMPRESSION lz4,
 	date1 timestamptz,
 	date2 timestamptz,
 	date3 timestamptz,
@@ -827,31 +827,31 @@ create table contentlet (inode varchar(36) not null,
 	text23 varchar(255),
 	text24 varchar(255),
 	text25 varchar(255),
-	text_area1 text,
-	text_area2 text,
-	text_area3 text,
-	text_area4 text,
-	text_area5 text,
-	text_area6 text,
-	text_area7 text,
-	text_area8 text,
-	text_area9 text,
-	text_area10 text,
-	text_area11 text,
-	text_area12 text,
-	text_area13 text,
-	text_area14 text,
-	text_area15 text,
-	text_area16 text,
-	text_area17 text,
-	text_area18 text,
-	text_area19 text,
-	text_area20 text,
-	text_area21 text,
-	text_area22 text,
-	text_area23 text,
-	text_area24 text,
-	text_area25 text,
+	text_area1 text COMPRESSION lz4,
+	text_area2 text COMPRESSION lz4,
+	text_area3 text COMPRESSION lz4,
+	text_area4 text COMPRESSION lz4,
+	text_area5 text COMPRESSION lz4,
+	text_area6 text COMPRESSION lz4,
+	text_area7 text COMPRESSION lz4,
+	text_area8 text COMPRESSION lz4,
+	text_area9 text COMPRESSION lz4,
+	text_area10 text COMPRESSION lz4,
+	text_area11 text COMPRESSION lz4,
+	text_area12 text COMPRESSION lz4,
+	text_area13 text COMPRESSION lz4,
+	text_area14 text COMPRESSION lz4,
+	text_area15 text COMPRESSION lz4,
+	text_area16 text COMPRESSION lz4,
+	text_area17 text COMPRESSION lz4,
+	text_area18 text COMPRESSION lz4,
+	text_area19 text COMPRESSION lz4,
+	text_area20 text COMPRESSION lz4,
+	text_area21 text COMPRESSION lz4,
+	text_area22 text COMPRESSION lz4,
+	text_area23 text COMPRESSION lz4,
+	text_area24 text COMPRESSION lz4,
+	text_area25 text COMPRESSION lz4,
 	integer1 int8,
 	integer2 int8,
 	integer3 int8,
@@ -956,7 +956,7 @@ create table workflow_comment (
    id varchar(36) not null,
    creation_date timestamptz,
    posted_by varchar(255),
-   wf_comment text,
+   wf_comment text COMPRESSION lz4,
    workflowtask_id varchar(36),
    primary key (id)
 );
@@ -966,7 +966,7 @@ create table category (
    category_key varchar(255),
    sort_order int4,
    active bool,
-   keywords text,
+   keywords text COMPRESSION lz4,
    category_velocity_var_name varchar(255),
    mod_date timestamptz,
    primary key (inode)
@@ -974,7 +974,7 @@ create table category (
 create table chain_link_code (
    id int8 not null,
    class_name varchar(255) unique,
-   code text not null,
+   code text COMPRESSION lz4 not null,
    last_mod_date timestamptz not null,
    language varchar(255) not null,
    primary key (id)
@@ -1001,7 +1001,7 @@ create table user_preferences (
    id int8 not null,
    user_id varchar(100) not null,
    preference varchar(255),
-   pref_value text,
+   pref_value text COMPRESSION lz4,
    primary key (id)
 );
 create table language (
@@ -1028,6 +1028,7 @@ create table identifier (
    owner varchar(255),
    create_date timestamptz,
    asset_subtype varchar(255),
+   base_type int4,
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -1060,7 +1061,7 @@ create table multi_tree (
    tree_order int4,
    personalization varchar(255) not null default 'dot:default',
    variant_id varchar(255) default 'DEFAULT' not null,
-   style_properties JSONB,
+   style_properties JSONB COMPRESSION lz4,
    primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (
@@ -1072,7 +1073,7 @@ create table workflow_task (
    assigned_to varchar(255),
    belongs_to varchar(255),
    title varchar(255),
-   description text,
+   description text COMPRESSION lz4,
    status varchar(255),
    webasset varchar(255),
    language_id INT8,
@@ -1139,7 +1140,7 @@ create table clickstream_request (
    server_port int4,
    request_uri varchar(255),
    request_order int4,
-   query_string text,
+   query_string text COMPRESSION lz4,
    language_id int8,
    timestamptzper timestamptz,
    host_id varchar(36),
@@ -1189,7 +1190,7 @@ create table campaign (
    from_email varchar(255),
    from_name varchar(255),
    subject varchar(255),
-   message text,
+   message text COMPRESSION lz4,
    user_id varchar(255),
    start_date timestamptz,
    completed_date timestamptz,
@@ -1221,9 +1222,9 @@ create table analytic_summary_referer (
 );
 create table dot_containers (
    inode varchar(36) not null,
-   code text,
-   pre_loop text,
-   post_loop text,
+   code text COMPRESSION lz4,
+   pre_loop text COMPRESSION lz4,
+   post_loop text COMPRESSION lz4,
    show_on_menu bool,
    title varchar(255),
    mod_date timestamptz,
@@ -1234,7 +1235,7 @@ create table dot_containers (
    use_div bool,
    staticify bool,
    sort_contentlets_by varchar(255),
-   lucene_query text,
+   lucene_query text COMPRESSION lz4,
    notes varchar(255),
    identifier varchar(36),
    primary key (inode)
@@ -1248,7 +1249,7 @@ create table communication (
    from_email varchar(255),
    email_subject varchar(255),
    html_page_inode varchar(36),
-   text_message text,
+   text_message text COMPRESSION lz4,
    mod_date timestamptz,
    modified_by varchar(255),
    ext_comm_id varchar(255),
@@ -1258,7 +1259,7 @@ create table workflow_history (
    id varchar(36) not null,
    creation_date timestamptz,
    made_by varchar(255),
-   change_desc text,
+   change_desc text COMPRESSION lz4,
    workflowtask_id varchar(36),
    workflow_action_id varchar(36),
    workflow_step_id varchar(36),
@@ -1288,7 +1289,7 @@ create table links (
    target varchar(100),
    internal_link_identifier varchar(36),
    link_type varchar(255),
-   link_code text,
+   link_code text COMPRESSION lz4,
    primary key (inode)
 );
 create table chain_state_parameter (
@@ -1310,7 +1311,7 @@ create table field (
    listed bool,
    velocity_var_name varchar(255),
    sort_order int4,
-   field_values text,
+   field_values text COMPRESSION lz4,
    regex_check varchar(255),
    hint varchar(255),
    default_value varchar(255),
@@ -1353,7 +1354,7 @@ create table folder (
 create table clickstream_404 (
    clickstream_404_id int8 not null,
    referer_uri varchar(255),
-   query_string text,
+   query_string text COMPRESSION lz4,
    request_uri varchar(255),
    user_id varchar(255),
    host_id varchar(36),
@@ -1372,7 +1373,7 @@ create table field_variable (
    field_id varchar(36),
    variable_name varchar(255),
    variable_key varchar(255),
-   variable_value text,
+   variable_value text COMPRESSION lz4,
    user_id varchar(255),
    last_mod_date timestamptz,
    primary key (id)
@@ -1517,6 +1518,7 @@ create index idx_preference_1 on user_preferences (preference);
 create index idx_identifier_pub on identifier (syspublish_date);
 create index idx_identifier_exp on identifier (sysexpire_date);
 create index idx_identifier_asset_subtype on identifier (asset_subtype);
+create index idx_identifier_base_type on identifier (base_type);
 create index idx_user_clickstream11 on clickstream (host_id);
 create index idx_user_clickstream12 on clickstream (last_page_id);
 create index idx_user_clickstream15 on clickstream (browser_name);
@@ -2107,7 +2109,7 @@ create table workflow_scheme(
 	id varchar(36) primary key,
 	name varchar(255) not null,
     variable_name varchar(255) not null unique,
-	description text,
+	description text COMPRESSION lz4,
 	archived boolean default false,
 	mandatory boolean default false,
 	default_scheme boolean default false,
@@ -2133,7 +2135,7 @@ create table workflow_action(
 	id varchar(36) primary key,
 	step_id varchar(36),
 	name varchar(255) not null,
-	condition_to_progress text,
+	condition_to_progress text COMPRESSION lz4,
 	next_step_id varchar(36),
 	next_assign varchar(36) not null references cms_role(id),
 	my_order int default 0,
@@ -2144,7 +2146,7 @@ create table workflow_action(
     show_on varchar(255) default 'LOCKED,UNLOCKED',
 	use_role_hierarchy_assign bool default false,
     scheme_id VARCHAR(36) NOT NULL,
-    metadata JSONB NULL
+    metadata JSONB COMPRESSION lz4 NULL
 );
 
 CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0);
@@ -2157,7 +2159,7 @@ create table workflow_action_class(
 	action_id varchar(36) references workflow_action(id),
 	name varchar(255) not null,
 	my_order int default 0,
-	clazz text
+	clazz text COMPRESSION lz4
 );
 create index workflow_idx_action_class_action on workflow_action_class(action_id);
 
@@ -2165,7 +2167,7 @@ create table workflow_action_class_pars(
 	id varchar(36) primary key,
 	workflow_action_class_id varchar(36) references workflow_action_class(id),
 	key varchar(255) not null,
-	value text
+	value text COMPRESSION lz4
 );
 create index workflow_idx_action_class_param_action on
 	workflow_action_class_pars(workflow_action_class_id);
@@ -2227,6 +2229,11 @@ ALTER TABLE indicies
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
+-- Supports the identifier_parent_path_check trigger which validates parent folder existence via
+-- lower(parent_path||asset_name||'/') = lower(NEW.parent_path). Without this index the trigger
+-- falls back to a full filter scan over all folders on the host for every updated row.
+create index if not exists idx_identifier_parent_path_trigger on identifier (host_inode, asset_type, lower(parent_path||asset_name||'/'));
+
 CREATE TABLE broken_link (
    id VARCHAR(36) PRIMARY KEY,
    inode VARCHAR(36) NOT NULL,
@@ -2258,7 +2265,7 @@ CREATE TABLE publishing_queue (
 CREATE TABLE publishing_queue_audit
 (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL,
 status INTEGER,
-status_pojo text,
+status_pojo text COMPRESSION lz4,
 status_updated timestamptz,
 create_date timestamptz);
 
@@ -2271,8 +2278,27 @@ CREATE TABLE publishing_end_point (
 	port varchar(10),
 	protocol varchar(10),
 	enabled bool,
-	auth_key text,
+	auth_key text COMPRESSION lz4,
 	sending bool);
+
+CREATE TABLE static_s3_vanity_mapping (
+    endpoint_id varchar(36) not null,
+    host_id varchar(36) not null,
+    language_id bigint not null,
+    canonical_path varchar not null,
+    canonical_path_hash varchar(64) not null,
+    vanity_path varchar not null,
+    vanity_path_hash varchar(64) not null,
+    vanity_url_id varchar(36),
+    bucket_name varchar not null,
+    bucket_region varchar,
+    bucket_prefix varchar,
+    mod_date timestamptz not null,
+    primary key (endpoint_id, host_id, language_id, canonical_path_hash, vanity_path_hash)
+);
+
+CREATE INDEX idx_static_s3_vanity_mapping_vurl
+    ON static_s3_vanity_mapping (endpoint_id, vanity_url_id);
 
 create table publishing_environment(
 	id varchar(36) NOT NULL  primary key,
@@ -2326,8 +2352,8 @@ create table publishing_pushed_assets(
 	asset_type varchar(255) NOT NULL,
 	push_date timestamptz,
 	environment_id varchar(36) NOT NULL,
-	endpoint_ids text,
-	publisher text
+	endpoint_ids text COMPRESSION lz4,
+	publisher text COMPRESSION lz4
 );
 
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
@@ -2367,7 +2393,7 @@ CREATE INDEX CONCURRENTLY idx_contentlet_template_value ON contentlet((contentle
 CREATE TABLE notification (
     group_id VARCHAR(36) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
+    message TEXT COMPRESSION lz4 NOT NULL,
     notification_type VARCHAR(100),
     notification_level VARCHAR(100),
     time_sent timestamptz NOT NULL,
@@ -2390,7 +2416,7 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 
 
 -- license repo
-create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamptz not null, startup_time bigint);
+create table sitelic(id varchar(36) primary key, serverid varchar(100), license text COMPRESSION lz4 not null, lastping timestamptz not null, startup_time bigint);
 
 -- Integrity Checker
 create table folders_ir(folder varchar(255), local_inode varchar(36), remote_inode varchar(36), local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(40), PRIMARY KEY (local_inode, endpoint_id));
@@ -2419,16 +2445,16 @@ create table cluster_server_action(
 -- Rules Engine
 create table dot_rule(id varchar(36) primary key,name varchar(255) not null,fire_on varchar(20),short_circuit boolean default false,parent_id varchar(36) not null,folder varchar(36) not null,priority int default 0,enabled boolean default false,mod_date timestamptz);
 create table rule_condition_group(id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),operator varchar(10) not null,priority int default 0,mod_date timestamptz);
-create table rule_condition(id varchar(36) primary key,conditionlet text not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,priority int default 0,mod_date timestamptz);
-create table rule_condition_value (id varchar(36) primary key,condition_id varchar(36) references rule_condition(id), paramkey varchar(255) not null, value text,priority int default 0);
-create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date timestamptz);
-create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
+create table rule_condition(id varchar(36) primary key,conditionlet text COMPRESSION lz4 not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,priority int default 0,mod_date timestamptz);
+create table rule_condition_value (id varchar(36) primary key,condition_id varchar(36) references rule_condition(id), paramkey varchar(255) not null, value text COMPRESSION lz4,priority int default 0);
+create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text COMPRESSION lz4 not null,mod_date timestamptz);
+create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text COMPRESSION lz4);
 create index idx_rules_fire_on on dot_rule (fire_on);
 
 CREATE TABLE system_event (
     identifier VARCHAR(36) NOT NULL,
     event_type VARCHAR(50) NOT NULL,
-    payload TEXT NOT NULL,
+    payload TEXT COMPRESSION lz4 NOT NULL,
     created BIGINT NOT NULL,
     server_id varchar(36) NOT NULL
 );
@@ -2449,7 +2475,7 @@ CREATE TABLE api_token_issued(
     revoke_date timestamptz, 
     allowed_from  varchar(255) , 
     issuer  varchar(255) , 
-    claims  text , 
+    claims  text COMPRESSION lz4 , 
     mod_date  timestamptz NOT NULL, 
     PRIMARY KEY (token_id)
  );
@@ -2476,7 +2502,7 @@ CREATE INDEX idx_storage_hash ON storage (hash);
 
 create table storage_data (
     hash_id  varchar(64) not null,
-    data     bytea not null,
+    data     bytea COMPRESSION lz4 not null,
     mod_date timestamptz NOT NULL DEFAULT CURRENT_DATE,
     PRIMARY KEY (hash_id)
 );
@@ -2507,16 +2533,16 @@ create table experiment (
      name varchar(255) not null,
      description varchar(255) not null,
      status varchar(255) not null,
-     traffic_proportion jsonb not null,
+     traffic_proportion jsonb COMPRESSION lz4 not null,
      traffic_allocation float4 not null,
      mod_date timestamptz not null,
-     scheduling jsonb,
+     scheduling jsonb COMPRESSION lz4,
      creation_date timestamptz not null,
      created_by varchar(255) not null,
      last_modified_by varchar(255) not null,
-     goals jsonb,
+     goals jsonb COMPRESSION lz4,
      lookback_window integer not null,
-     running_ids jsonb
+     running_ids jsonb COMPRESSION lz4
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
@@ -2524,7 +2550,7 @@ CREATE INDEX idx_exp_pageid ON experiment (page_id);
 -- system table for general purposes and configuration
 create table  if not exists system_table (
      key varchar(511) primary key,
-     value text not null
+     value text COMPRESSION lz4 not null
 );
 
 
@@ -2548,8 +2574,8 @@ CREATE TABLE job
     id             VARCHAR(255) PRIMARY KEY,
     queue_name     VARCHAR(255) NOT NULL,
     state          VARCHAR(50)  NOT NULL,
-    parameters     JSONB        NOT NULL,
-    result         JSONB,
+    parameters     JSONB COMPRESSION lz4        NOT NULL,
+    result         JSONB COMPRESSION lz4,
     progress       FLOAT   DEFAULT 0,
     created_at     timestamptz  NOT NULL,
     updated_at     timestamptz  NOT NULL,
@@ -2567,7 +2593,7 @@ CREATE TABLE job_history
     state          VARCHAR(50)  NOT NULL,
     execution_node VARCHAR(255),
     created_at     timestamptz  NOT NULL,
-    result         JSONB,
+    result         JSONB COMPRESSION lz4,
     FOREIGN KEY (job_id) REFERENCES job (id)
 );
 
@@ -2583,12 +2609,12 @@ CREATE INDEX idx_job_history_job_id_state ON job_history (job_id, state);
 
 CREATE TABLE IF NOT EXISTS analytic_custom_attributes (
     event_type  varchar(255) primary key,
-    custom_attribute jsonb not null
+    custom_attribute jsonb COMPRESSION lz4 not null
 );
 
 
 CREATE TABLE IF NOT EXISTS unique_fields
 (
     unique_key_val VARCHAR PRIMARY KEY,
-    supporting_values JSONB
+    supporting_values JSONB COMPRESSION lz4
 );

@@ -1,19 +1,18 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
-import { QueryBuilder } from '@dotcms/query-builder';
+import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
-    BASE_QUERY,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
@@ -65,125 +64,6 @@ describe('DotContentDriveStore', () => {
     });
 
     describe('Computed Properties', () => {
-        describe('$query', () => {
-            it('should build base query when no path or filters are provided', () => {
-                const baseQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .build();
-
-                expect(store.$query()).toEqual(baseQuery);
-            });
-
-            it('should include path in query when provided', () => {
-                const testPath = '/test/path/';
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: testPath,
-                    filters: {},
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .field('parentPath')
-                    .equals(testPath)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include custom site in query when provided', () => {
-                const customSite = MOCK_SITES[0] as SiteEntity;
-
-                store.initContentDrive({
-                    currentSite: customSite,
-                    path: DEFAULT_PATH,
-                    filters: {},
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(
-                        `+(conhost:${customSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include filters in query when provided', () => {
-                const filters = {
-                    contentType: ['Blog'],
-                    status: 'published'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .field('contentType')
-                    .equals('Blog')
-                    .field('status')
-                    .equals('published')
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include title filter in query when provided', () => {
-                const filters = {
-                    title: 'Blog'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include title filter in query when provided with multiple words', () => {
-                const filters = {
-                    title: 'Blog Post'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .raw(
-                        `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
-                    )
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-        });
-
         describe('$request', () => {
             it('should build request with default values when no path or filters are provided', () => {
                 store.initContentDrive({
@@ -227,7 +107,7 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site hostname in assetPath when provided', () => {
-                const customSite = MOCK_SITES[0] as SiteEntity;
+                const customSite = MOCK_SITES[0] as DotSite;
                 store.initContentDrive({
                     currentSite: customSite,
                     path: DEFAULT_PATH,
@@ -311,6 +191,36 @@ describe('DotContentDriveStore', () => {
                 expect(request.showFolders).toBe(false);
             });
 
+            it('should map the workflow filter tokens into request.workflow entries', () => {
+                const filters = {
+                    workflow: ['a:a2', 'b']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.workflow).toEqual([{ scheme: 'a', step: 'a2' }, { scheme: 'b' }]);
+            });
+
+            it('should leave request.workflow undefined when no workflow filter is provided', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.workflow).toBeUndefined();
+            });
+
             it('should include pagination in request', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
@@ -390,6 +300,38 @@ describe('DotContentDriveStore', () => {
                 expect(request.showFolders).toBe(false);
             });
 
+            it('should set showFolders to false when workflow filter is provided', () => {
+                const filters = {
+                    workflow: ['a']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to false when a field filter is active', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { 'us.body': 'hello' },
+                    isTreeExpanded: false
+                });
+                store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+
+                const request = store.$request();
+
+                expect(request.userSearchable).toEqual({ body: 'hello' });
+                expect(request.showFolders).toBe(false);
+            });
+
             it('should set showFolders to true when no filters are provided', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
@@ -458,7 +400,7 @@ describe('DotContentDriveStore', () => {
 
         describe('setItems', () => {
             it('should update items and set status to LOADED', () => {
-                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                store.setItems(MOCK_ITEMS);
 
                 expect(store.items()).toEqual(MOCK_ITEMS);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -466,12 +408,12 @@ describe('DotContentDriveStore', () => {
 
             it('should update items with empty array', () => {
                 // First set some items
-                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                store.setItems(MOCK_ITEMS);
                 expect(store.items()).toEqual(MOCK_ITEMS);
 
                 // Then clear them
                 const emptyItems: DotContentDriveItem[] = [];
-                store.setItems(emptyItems, emptyItems.length);
+                store.setItems(emptyItems);
 
                 expect(store.items()).toEqual(emptyItems);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -501,12 +443,24 @@ describe('DotContentDriveStore', () => {
                 expect(store.filters()).toEqual({ title: 'test search' });
             });
 
-            it('should clear filters when search is empty', () => {
+            it('should preserve other filters when setting a search value', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+
+                store.setGlobalSearch('test search');
+
+                expect(store.filters()).toEqual({
+                    contentType: ['Blog'],
+                    baseType: ['1'],
+                    title: 'test search'
+                });
+            });
+
+            it('should preserve other filters when search is empty', () => {
                 store.patchFilters({ contentType: ['Blog'] });
                 expect(store.filters()).toEqual({ contentType: ['Blog'] });
 
                 store.setGlobalSearch('');
-                expect(store.filters()).toEqual({});
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
             });
 
             it('should reset pagination offset when setting global search', () => {
@@ -523,6 +477,25 @@ describe('DotContentDriveStore', () => {
 
                 store.setGlobalSearch('test');
                 expect(store.path()).toBe(DEFAULT_PATH);
+            });
+        });
+
+        describe('clearFilters', () => {
+            it('should remove every filter', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+                store.setGlobalSearch('hello');
+
+                store.clearFilters();
+
+                expect(store.filters()).toEqual({});
+            });
+
+            it('should reset pagination when clearing filters', () => {
+                store.setPagination({ limit: 20, page: 3, offset: 40 });
+
+                store.clearFilters();
+
+                expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
             });
         });
 
@@ -672,6 +645,22 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.path()).toBe('/new/path/');
             });
+
+            it('should not touch filters when changing path', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                store.setGlobalSearch('hello');
+                expect(store.filters()).toEqual({ contentType: ['Blog'], title: 'hello' });
+
+                store.setPath('/documents/');
+
+                expect(store.filters()).toEqual({ contentType: ['Blog'], title: 'hello' });
+            });
+
+            it('should leave filters empty when entering a folder with no filters set', () => {
+                store.setPath('/some/folder/');
+
+                expect(store.filters()).toEqual({});
+            });
         });
     });
 });
@@ -765,6 +754,30 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
     });
 
+    it('should defer the search while a restored us.* filter has no field metadata yet', () => {
+        // Cold URL restore: a us.* value is present but the field metadata hasn't loaded.
+        // Drive loadItems() directly (the init effect would overwrite state from empty queryParams).
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: { 'us.body': 'hello' },
+            isTreeExpanded: false
+        });
+
+        store.loadItems();
+
+        // No search yet — searching now would drop the us.* value from the payload.
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+
+        // Once the field metadata arrives, the search fires with the value shaped in.
+        store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+        store.loadItems();
+
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({ userSearchable: { body: 'hello' } })
+        );
+    });
+
     it('should clear selected items when loading items', () => {
         // Set some selected items
         store.setSelectedItems([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
@@ -821,12 +834,99 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         // Set pagination in store
         store.setPagination({ limit: 10, page: 1, offset: 0 });
 
-        spectator.flushEffects();
+        spectator.service.loadItems();
 
         expect(contentDriveService.search).toHaveBeenCalledWith(
             expect.objectContaining({
                 maxResults: 10
             })
         );
+    });
+
+    it('should refresh hasMore flags from an empty result that matches an existing page', () => {
+        // An empty result returns cursors 0,0 — which match DEFAULT_PAGE (the initial page,
+        // optimistically hasMoreContent: true). The matched page's flags must be refreshed
+        // from the response so the paginator does not offer a next page on zero items.
+        contentDriveService.search.mockReturnValue(
+            of({
+                list: [],
+                contentTotalCount: 0,
+                folderCount: 0,
+                contentCount: 0,
+                hasMoreContent: false,
+                hasMoreFolders: false,
+                nextContentCursor: 0,
+                nextFolderCursor: 0
+            } as unknown as DotContentDriveSearchResponse)
+        );
+
+        spectator.service.loadItems();
+
+        expect(store.items()).toEqual([]);
+        expect(store.pages()).toHaveLength(1);
+        const lastPage = store.pages().at(-1);
+        expect(lastPage?.hasMoreContent).toBe(false);
+        expect(lastPage?.hasMoreFolders).toBe(false);
+    });
+
+    describe('User-searchable field filters', () => {
+        it('should add a chip to the active list without touching the filter bag', () => {
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+            // No us.* entry until it has a value — so the search request is unchanged.
+            expect(store.filters()['us.title']).toBeUndefined();
+        });
+
+        it('should not add the same field twice', () => {
+            store.addUserSearchableField('title');
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+        });
+
+        it('should clear all field filters, the active list and the cached fields', () => {
+            store.setUserSearchableFields([createFakeTextField({ variable: 'title' })]);
+            store.addUserSearchableField('title');
+            store.patchFilters({ 'us.title': 'review', baseType: ['1'] });
+
+            store.clearUserSearchableFilters();
+
+            expect(store.userSearchableActive()).toEqual([]);
+            expect(store.userSearchableFields()).toEqual([]);
+            expect(store.filters()['us.title']).toBeUndefined();
+            // Non us.* filters are preserved.
+            expect(store.filters()['baseType']).toEqual(['1']);
+        });
+
+        it('should reshape us.* values into the userSearchable payload by field type', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+            store.setUserSearchableFields([
+                createFakeTextField({ variable: 'title' }),
+                createFakeTagField({ variable: 'tags' })
+            ]);
+            store.patchFilters({ 'us.title': 'review', 'us.tags': 'angular,cms' });
+
+            expect(store.$request().userSearchable).toEqual({
+                title: 'review',
+                tags: ['angular', 'cms']
+            });
+        });
+
+        it('should restore the active list from us.* keys in the URL filters on init', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: { 'us.title': 'review', 'us.tags': 'angular', contentType: ['Blog'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.userSearchableActive()).toEqual(['title', 'tags']);
+        });
     });
 });

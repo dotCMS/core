@@ -1,10 +1,7 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-
-import { pluck } from 'rxjs/operators';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
 
 export interface DotContentletLockResponse {
     id: string;
@@ -21,7 +18,7 @@ export interface DotContentletLockResponse {
  */
 @Injectable()
 export class DotContentletLockerService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Lock a content asset
@@ -31,12 +28,7 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     lock(inode: string): Observable<DotContentletLockResponse> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `/api/content/lock/inode/${inode}`
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http.put<DotContentletLockResponse>(`/api/content/lock/inode/${inode}`, {});
     }
 
     /**
@@ -47,11 +39,6 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     unlock(inode: string): Observable<DotContentletLockResponse> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `/api/content/unlock/inode/${inode}`
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http.put<DotContentletLockResponse>(`/api/content/unlock/inode/${inode}`, {});
     }
 }

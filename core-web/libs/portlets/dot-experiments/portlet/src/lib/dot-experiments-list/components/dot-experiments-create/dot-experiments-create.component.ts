@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -35,7 +35,6 @@ interface CreateForm {
 @Component({
     selector: 'dot-experiments-create',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         // dotCMS
         DotSidebarDirective,
@@ -49,7 +48,8 @@ interface CreateForm {
         DrawerModule,
         ButtonModule,
         DotFieldRequiredDirective,
-        DotTrimInputDirective
+        DotTrimInputDirective,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-create.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
