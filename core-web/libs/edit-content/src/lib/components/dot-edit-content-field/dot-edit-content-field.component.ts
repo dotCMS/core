@@ -20,7 +20,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
 import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -61,7 +60,6 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentTagFieldComponent,
         DotEditContentCheckboxFieldComponent,
         DotEditContentMultiSelectFieldComponent,
-        DotBinaryFieldWrapperComponent,
         DotEditContentJsonFieldComponent,
         DotEditContentCustomFieldComponent,
         DotEditContentWYSIWYGFieldComponent,

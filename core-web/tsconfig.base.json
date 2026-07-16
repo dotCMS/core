@@ -73,6 +73,9 @@
             ],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
             "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
+            "@dotcms/portlets/dot-publishing-queue/portlet": [
+                "libs/portlets/dot-publishing-queue/src/index.ts"
+            ],
             "@dotcms/portlets/dot-query-tool/portlet": [
                 "libs/portlets/dot-query-tool/src/index.ts"
             ],
@@ -103,11 +106,13 @@
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
             "sdk-create-app": ["libs/sdk/create-app/src/index.ts"],
+            "@dotcms/agentic-tools": ["libs/agentic-tools/src/index.ts"],
             "@dotcms/image-editor": ["libs/image-editor/src/index.ts"],
             "@dotcms/ai/runtime": ["libs/sdk/ai/src/runtime.ts"],
             "@dotcms/ai/sandbox": ["libs/sdk/ai/src/sandbox/index.ts"],
             "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
-            "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"]
+            "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
+            "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

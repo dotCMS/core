@@ -26,6 +26,7 @@ import {
     FULLSCREEN_AWARE_OVERLAY_OPTIONS,
     OVERLAY_ABOVE_FULLSCREEN_Z_INDEX
 } from '../../config.utils';
+import { DOT_IMAGE_NODE_NAME } from '../../extensions/nodes/image.extension';
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
 import { EditorModalService } from '../../services/editor-modal.service';
@@ -104,7 +105,7 @@ export class ToolbarComponent implements OnDestroy {
 
     /**
      * Per-PrimeNG-Tooltip delay before any toolbar tooltip appears. Centralized here so
-     * the 44 toolbar buttons stay in sync — change the timing in one place.
+     * the toolbar buttons stay in sync — change the timing in one place.
      */
     protected readonly TOOLTIP_SHOW_DELAY = 350;
 
@@ -339,6 +340,10 @@ export class ToolbarComponent implements OnDestroy {
         this.editor().chain().focus().toggleItalic().run();
     }
 
+    protected toggleUnderline(): void {
+        this.editor().chain().focus().toggleUnderline().run();
+    }
+
     protected toggleStrike(): void {
         this.editor().chain().focus().toggleStrike().run();
     }
@@ -411,6 +416,19 @@ export class ToolbarComponent implements OnDestroy {
         const editor = this.editor();
         const { from, to, empty } = editor.state.selection;
         const btn = event.currentTarget as HTMLElement;
+
+        // Image selected → apply the link to the image node's href/target instead of inserting
+        // text. Without this branch the insert-text path below would delete the image (#36361).
+        if (editor.isActive(DOT_IMAGE_NODE_NAME)) {
+            const attrs = editor.getAttributes(DOT_IMAGE_NODE_NAME);
+            this.popovers.openLink(() => btn.getBoundingClientRect(), {
+                isImageLink: true,
+                initialValues: attrs['href']
+                    ? { href: attrs['href'], target: attrs['target'] ?? null }
+                    : undefined
+            });
+            return;
+        }
 
         // Check if cursor/selection is inside an existing link
         const linkMark = editor.state.doc

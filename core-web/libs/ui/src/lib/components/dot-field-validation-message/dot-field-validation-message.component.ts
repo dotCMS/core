@@ -1,7 +1,6 @@
 /*
 - TODO: maybe crawl the html to find the form parent and save one @Input
 */
-/* eslint-disable @stylistic/padding-line-between-statements */
 
 import { Subject } from 'rxjs';
 
@@ -42,6 +41,13 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
 
     @Input()
     patternErrorMessage: string;
+
+    /**
+     * Overrides the copy shown for a `required` error, without affecting
+     * any other validator's message on the same field.
+     */
+    @Input()
+    requiredErrorMessage: string;
 
     defaultMessage: string;
     errorMsg = '';
@@ -122,7 +128,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
 
                     case 'required':
                         errorTranslated = this.dotMessageService.get(
-                            NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
+                            this.requiredErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
                         );
                         break;
 

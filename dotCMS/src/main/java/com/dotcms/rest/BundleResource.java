@@ -28,6 +28,7 @@ import com.dotcms.publishing.output.TarGzipBundleOutput;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
@@ -197,6 +198,17 @@ public class BundleResource {
 
         //Reading the parameters
         String userId = initData.getParamsMap().get( "userid" );
+
+        // Authorization: a caller may only list their own unsent bundles. The path userId is
+        // client-supplied, so without this check any backend user could enumerate another user's
+        // draft bundles by editing the URL. CMS Administrators may query any user's bundles.
+        final User currentUser = initData.getUser();
+        if ( UtilMethods.isSet( userId ) && !userId.equals( currentUser.getUserId() ) && !currentUser.isAdmin() ) {
+            throw new ForbiddenException( String.format(
+                    "User '%s' is not allowed to list bundles owned by user '%s'",
+                    currentUser.getUserId(), userId ) );
+        }
+
         String bundleName = request.getParameter( "name" );
         String startParam = request.getParameter( "start" );
         String countParam = request.getParameter( "count" );

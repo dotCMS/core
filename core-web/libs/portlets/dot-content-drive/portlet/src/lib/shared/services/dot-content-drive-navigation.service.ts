@@ -61,8 +61,14 @@ export class DotContentDriveNavigationService {
      * to the legacy create editor.
      *
      * @param contentTypeVariable - The variable name of the content type to create
+     * @param folder - The folder the user is currently browsing, so the new content is created
+     * there. `folderPath` (`hostname/path`) pre-selects the Host/Folder field in the new editor;
+     * `folderInode` pre-selects the target folder in the legacy editor.
      */
-    createContent(contentTypeVariable: string): void {
+    createContent(
+        contentTypeVariable: string,
+        folder: { folderPath?: string; folderInode?: string } = {}
+    ): void {
         const currentPath = this.#location.path(true);
         // Parse the query string directly — avoids depending on window.location (SSR/tests).
         const currentQueryParams = new URLSearchParams(currentPath?.split('?')[1] ?? '');
@@ -86,6 +92,14 @@ export class DotContentDriveNavigationService {
                     // params so closing the legacy editor returns the user to Content Drive with
                     // their filters preserved — same mechanism as #editContentlet.
                     const mappedQueryParams = mapQueryParamsToCDParams(currentQueryParams);
+
+                    // The legacy editor pre-selects the target folder from a `folder=<inode>` param
+                    // on its action URL. DotCreateContentletResolver reads this route param and
+                    // appends it to the resolved action URL loaded in the iframe.
+                    if (folder.folderInode) {
+                        mappedQueryParams['folder'] = folder.folderInode;
+                    }
+
                     this.#router.navigate([`c/content/new/${contentTypeVariable}`], {
                         queryParams: mappedQueryParams
                     });
@@ -94,8 +108,11 @@ export class DotContentDriveNavigationService {
 
                 // The new content editor owns its own close/back navigation, so — like the edit
                 // flow (#editContentlet) — it does not need the CD_-prefixed return params that
-                // only the legacy editor's onClose consumes.
-                this.#router.navigate([`content/new/${contentTypeVariable}`]);
+                // only the legacy editor's onClose consumes. It pre-selects the Host/Folder field
+                // from the `folderPath` query param (see hostFolderResolutionFn in edit-content).
+                this.#router.navigate([`content/new/${contentTypeVariable}`], {
+                    queryParams: folder.folderPath ? { folderPath: folder.folderPath } : {}
+                });
             });
     }
 

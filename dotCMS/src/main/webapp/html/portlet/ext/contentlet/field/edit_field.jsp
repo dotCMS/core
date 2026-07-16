@@ -265,16 +265,21 @@
                         const proseMirror = blockEditor.querySelector('.ProseMirror');
                         blockEditor.id = "block-editor-<%=field.getVelocityVarName()%>";
 
-                        const editorValue = <%=safeTextValue%> || null;
+                        // Decode the template-literal-safety encoding applied server-side above
+                        // (`$` -> &#36;, backtick -> &#96;) so the runtime value is restored on BOTH
+                        // the JSON (Block Editor) and markdown-fallback paths. Without this, valid
+                        // Block Editor JSON parses successfully, the catch never runs, and &#36; leaks
+                        // into ProseMirror (and can be re-persisted via JSON.stringify below).
+                        const editorValue = (<%=safeTextValue%> || '')
+                            .replace(/&#96;/g, '`').replace(/&#36;/g, '$') || null;
                         let content;
 
                         try {
                             content = JSON.parse(editorValue);
                         } catch (e) {
                             // If it can't be parsed as a JSON, then it means that the value is a string
-                              const text = editorValue.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
                             const converter = new showdown.Converter({ tables: true });
-                            content = converter.makeHtml(text || '');
+                            content = converter.makeHtml(editorValue || '');
                         }
 
 

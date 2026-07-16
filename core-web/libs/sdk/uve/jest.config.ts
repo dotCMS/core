@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'sdk-uve',
     preset: '../../../jest.preset.js',

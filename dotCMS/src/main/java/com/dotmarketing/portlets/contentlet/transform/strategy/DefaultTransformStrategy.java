@@ -14,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -252,6 +253,22 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                         : contentlet.getBinaryMetadata(FILE_ASSET).getName();
 
                     putBinaryLinks(FILE_ASSET, name, contentlet, map);
+
+                    // Surface the binary metadata (including the focal point from custom
+                    // metadata) for the FileAsset's binary field, mirroring the dotAsset path
+                    // below. Without this the image editor cannot re-seed the focal marker when
+                    // reopening a File/Image field that references a legacy FileAsset.
+                    final Metadata fileAssetMetadata = contentlet.getBinaryMetadata(FILE_ASSET);
+                    if (null != fileAssetMetadata) {
+                        final Map<String, Serializable> metaMap = new HashMap<>(
+                                fileAssetMetadata.getMap());
+                        metaMap.remove("path");
+                        final String focalPoint = Try.of(() -> fileAssetMetadata.getCustomMeta()
+                                .getOrDefault(FocalPointAPI.FOCAL_POINT, "0.0").toString())
+                                .getOrElse("0.0");
+                        metaMap.put(FocalPointAPI.FOCAL_POINT, focalPoint);
+                        map.put(FILE_ASSET + "MetaData", metaMap);
+                    }
                     continue;
                 }
 
@@ -264,9 +281,19 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                 if (null != metadata) {
                     Map<String, Serializable> metaMap = new HashMap<>(metadata.getMap());
                     metaMap.remove("path");
+                    // Focal point lives in the binary's custom metadata under a prefixed key, so it
+                    // is not exposed under the clean "focalPoint" key by metadata.getMap(). Surface
+                    // it explicitly so the image editor can re-seed its marker when reopened.
+                    final String focalPoint = Try.of(() ->
+                            metadata.getCustomMeta().getOrDefault(FocalPointAPI.FOCAL_POINT, "0.0").toString()
+                    ).onFailure(e -> Logger.debug(this,
+                            "Unable to read focal point for field '" + velocityVarName + "': "
+                                    + e.getMessage()))
+                            .getOrElse("0.0");
+                    metaMap.put(FocalPointAPI.FOCAL_POINT, focalPoint);
                     map.put(velocityVarName + "MetaData", metaMap);
                     putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);
-                } 
+                }
             } catch (final Exception e) {
                 Logger.warn(this,
                                 String.format("An error occurred when retrieving the Binary file from field"

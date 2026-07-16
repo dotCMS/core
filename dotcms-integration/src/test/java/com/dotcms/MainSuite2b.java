@@ -487,6 +487,7 @@ import org.junit.runners.Suite.SuiteClasses;
         AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexThreadTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
         com.dotmarketing.common.db.ParamsSetterTest.class,

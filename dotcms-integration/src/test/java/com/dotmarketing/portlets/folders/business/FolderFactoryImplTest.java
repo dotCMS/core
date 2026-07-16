@@ -20,8 +20,10 @@ import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -224,6 +226,70 @@ public class FolderFactoryImplTest extends IntegrationTestBase {
                 folderAPI.delete(testFolder, user, false);
             }
         }
+    }
+
+    // ── findDirectChildFolders ────────────────────────────────────────────────
+
+    /**
+     * Method to test: {@link FolderFactoryImpl#findDirectChildFolders} <br>
+     * Given Scenario: Two parent folders each have one direct child; both parent paths are queried. <br>
+     * Expected Result: Both children are returned; an unrelated folder is not included.
+     */
+    @Test
+    public void test_findDirectChildFolders_returnsDirectChildren()
+            throws DotDataException {
+        final FolderFactoryImpl factory = new FolderFactoryImpl();
+        final Host site        = new SiteDataGen().nextPersisted();
+        final Folder p1        = new FolderDataGen().site(site).name("parent-a").nextPersisted();
+        final Folder p2        = new FolderDataGen().site(site).name("parent-b").nextPersisted();
+        final Folder c1        = new FolderDataGen().site(site).parent(p1).name("child-a").nextPersisted();
+        final Folder c2        = new FolderDataGen().site(site).parent(p2).name("child-b").nextPersisted();
+        new FolderDataGen().site(site).name("unrelated").nextPersisted();
+
+        final List<Folder> result = factory.findDirectChildFolders(
+                site.getIdentifier(), Set.of(p1.getPath(), p2.getPath()));
+
+        final List<String> ids = result.stream().map(Folder::getIdentifier).toList();
+        assertTrue("child-a should be returned", ids.contains(c1.getIdentifier()));
+        assertTrue("child-b should be returned", ids.contains(c2.getIdentifier()));
+        assertEquals("only 2 direct children expected", 2, result.size());
+    }
+
+    /**
+     * Method to test: {@link FolderFactoryImpl#findDirectChildFolders} <br>
+     * Given Scenario: An empty path collection is passed. <br>
+     * Expected Result: Empty list returned immediately without hitting the database.
+     */
+    @Test
+    public void test_findDirectChildFolders_emptyPaths_returnsEmpty()
+            throws DotDataException {
+        final FolderFactoryImpl factory = new FolderFactoryImpl();
+        final List<Folder> result = factory.findDirectChildFolders("any-host", Set.of());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link FolderFactoryImpl#findDirectChildFolders} <br>
+     * Given Scenario: Parent has a direct child and a grandchild; only the parent path is queried. <br>
+     * Expected Result: Only the direct child is returned; the grandchild is not included.
+     */
+    @Test
+    public void test_findDirectChildFolders_doesNotReturnGrandchildren()
+            throws DotDataException {
+        final FolderFactoryImpl factory = new FolderFactoryImpl();
+        final Host site         = new SiteDataGen().nextPersisted();
+        final Folder parent     = new FolderDataGen().site(site).name("gp-parent").nextPersisted();
+        final Folder child      = new FolderDataGen().site(site).parent(parent).name("gp-child").nextPersisted();
+        final Folder grandchild = new FolderDataGen().site(site).parent(child).name("gp-grandchild").nextPersisted();
+
+        final List<Folder> result = factory.findDirectChildFolders(
+                site.getIdentifier(), Set.of(parent.getPath()));
+
+        final List<String> ids = result.stream().map(Folder::getIdentifier).toList();
+        assertTrue("direct child should be returned", ids.contains(child.getIdentifier()));
+        assertTrue("grandchild must not be returned",
+                ids.stream().noneMatch(id -> id.equals(grandchild.getIdentifier())));
     }
 
 }

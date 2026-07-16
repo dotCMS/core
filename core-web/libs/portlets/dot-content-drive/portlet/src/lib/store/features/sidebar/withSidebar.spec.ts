@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';

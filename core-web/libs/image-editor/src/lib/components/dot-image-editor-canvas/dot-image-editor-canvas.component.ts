@@ -515,7 +515,7 @@ export class DotImageEditorCanvasComponent {
         };
     }
 
-    /** Lazily attaches a single ResizeObserver to the displayed image element. */
+    /** Lazily attaches a single ResizeObserver to the displayed image and its stage. */
     #observeDisplayImg(): void {
         const img = this.$displayImg()?.nativeElement;
 
@@ -525,6 +525,19 @@ export class DotImageEditorCanvasComponent {
 
         this.#resizeObserver = new ResizeObserver(() => this.#measureImageRect());
         this.#resizeObserver.observe(img);
+
+        // Also observe the stage. Toggling full-screen resizes the dialog, which
+        // re-centres the image within the stage WITHOUT changing the image's own size
+        // — a ResizeObserver on the image alone never reports that, leaving
+        // imageRect.x/y (img.offsetLeft/Top) stale and the focal/crop overlays
+        // mispositioned (notably on the full-screen -> windowed transition). The stage
+        // (the image's offsetParent) always resizes with the dialog, so observing it
+        // re-measures the image's offset box and keeps the overlays aligned.
+        const stage = this.$stage()?.nativeElement;
+
+        if (stage) {
+            this.#resizeObserver.observe(stage);
+        }
     }
 
     /**

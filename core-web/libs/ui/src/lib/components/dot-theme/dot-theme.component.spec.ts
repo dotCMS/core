@@ -5,7 +5,7 @@ import {
     Spectator,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -24,14 +24,6 @@ import { GlobalStore } from '@dotcms/store';
 import { DotThemeComponent } from './dot-theme.component';
 
 import { DotSiteComponent } from '../dot-site/dot-site.component';
-
-jest.mock('@primeuix/motion', () => ({
-    createMotion: () => ({
-        enter: jest.fn(),
-        leave: jest.fn().mockResolvedValue(undefined),
-        cancel: jest.fn()
-    })
-}));
 
 const mockThemes: DotTheme[] = [
     {

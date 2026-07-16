@@ -57,11 +57,17 @@ let historyEntrySeq = 0;
  * {@link FilterCategory} therefore starts a new entry rather than overwriting the
  * previous one. Either way a new value invalidates forward history built against
  * the old one.
+ *
+ * Passing a `null` coalesceKey marks a *discrete* action (e.g. a flip toggle,
+ * which is a button click, not a continuous drag): it never merges into the head,
+ * so every invocation is its own undoable step — two flips of the same axis are
+ * two history entries, not one silently updated in place.
  * @param state - The current editor state
  * @param category - The category the edit belongs to (used for grouping/labels)
  * @param label - The human-readable label for the entry
  * @param snapshot - The editable slices to capture
- * @param coalesceKey - The control identity edits merge on; defaults to `category`
+ * @param coalesceKey - The control identity edits merge on; defaults to `category`.
+ *   `null` disables coalescing (each call appends a distinct entry).
  * @returns The new `history` array and `historyIndex`
  */
 export function coalesceHistory(
@@ -69,11 +75,11 @@ export function coalesceHistory(
     category: FilterCategory,
     label: string,
     snapshot: EditableSlices,
-    coalesceKey: string = category
+    coalesceKey: string | null = category
 ): Pick<ImageEditorState, 'history' | 'historyIndex'> {
     const head = state.history[state.historyIndex];
 
-    if (head && head.coalesceKey === coalesceKey) {
+    if (coalesceKey !== null && head && head.coalesceKey === coalesceKey) {
         // Update the head in place AND drop any redo tail: a new value for the same
         // control invalidates forward history built against the old value (matching
         // the redo-tail truncation the new-entry branch below performs).
@@ -85,12 +91,15 @@ export function coalesceHistory(
         return { history, historyIndex: state.historyIndex };
     }
 
+    // A monotonic counter keeps ids collision-free even for two entries created
+    // in the same millisecond (Date.now() could collide, e.g. under fake timers).
+    const id = `${category}-${++historyEntrySeq}`;
     const entry: ImageEditorHistoryEntry = {
-        // A monotonic counter keeps ids collision-free even for two entries created
-        // in the same millisecond (Date.now() could collide, e.g. under fake timers).
-        id: `${category}-${++historyEntrySeq}`,
+        id,
         category,
-        coalesceKey,
+        // A discrete action (null key) falls back to its unique id so it never
+        // coalesces with a later action sharing the same category.
+        coalesceKey: coalesceKey ?? id,
         label,
         snapshot
     };
@@ -238,7 +247,7 @@ export function transformPatch(
     crop: CropState,
     category: FilterCategory,
     label: string,
-    coalesceKey: string = category
+    coalesceKey: string | null = category
 ): ImageEditorState {
     const next: ImageEditorState = {
         ...state,
