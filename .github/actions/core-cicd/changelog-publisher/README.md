@@ -53,8 +53,8 @@ The workflow branches Slack wording on this contract, so it is fixed here before
   by the `::changelog-skip::` marker line on stdout.
 - Any **non-zero exit** is a real failure — never a skip. The marker never appears on a
   non-zero exit.
-- This split is what lets `cicd_comp_changelog-site-publish-phase.yml` post **failure**
-  wording for a non-zero exit and **skip** wording when the marker is present (FR-008, US3).
+- This is what lets `cicd_comp_changelog-site-publish-phase.yml`'s single Slack notice say
+  **FAILED** for a non-zero exit and **SKIPPED** when the marker is present (FR-008, US3).
 
 ## Manual backfill (explicit, per-version — never automatic)
 

@@ -181,7 +181,7 @@ jobs:
           done
           [ -n "$DOCKER_IMAGE" ] || DOCKER_IMAGE="dotcms/dotcms:${RELEASE_VERSION}"
 
-          # Capture the tool's exit code + stdout so the Slack steps can branch on the
+          # Capture the tool's exit code + stdout so the Slack step can branch on the
           # T005 contract (0 = success/skip via ::changelog-skip:: marker; non-zero = failure).
           # This step itself always exits 0 so the branch steps run and the release is never
           # blocked (FR-008); the job is also allow_failure as belt-and-suspenders.
@@ -207,46 +207,21 @@ jobs:
             echo "result=success" >> "$GITHUB_OUTPUT"
           fi
 
-      # Slack branch (FR-008, US3): failure and protective-skip post DIFFERENT wording to
-      # #dot-releases; success posts nothing. The release is unaffected either way.
-      - name: Notify Slack on failure
-        if: steps.publish.outputs.result == 'failure'
+      # Slack notice (FR-008, US3, SC-005): ONE step, one channel (#dot-releases). Fires on
+      # publisher failure, protective skip, or any earlier step failing (`failure()` covers
+      # the pre-publisher case, where result/reason are unset and the reason falls back).
+      # Success posts nothing. The release is unaffected either way.
+      - name: Notify Slack
+        if: failure() || steps.publish.outputs.result == 'failure' || steps.publish.outputs.result == 'skip'
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: ${{ inputs.slack_channel_id }}
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: >-
-            :rotating_light: *Changelog site publish FAILED* for `${{ inputs.release_version }}`
-            (${{ steps.publish.outputs.reason }}). The GitHub release is published and
-            unaffected. Re-run to retry:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-      - name: Notify Slack on skip
-        if: steps.publish.outputs.result == 'skip'
-        uses: ./.github/actions/core-cicd/notification/notify-slack
-        with:
-          channel-id: ${{ inputs.slack_channel_id }}
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: >-
-            :warning: *Changelog site publish SKIPPED* for `${{ inputs.release_version }}` —
-            ${{ steps.publish.outputs.reason }}. The existing entry was left untouched;
-            overwriting requires a manual `--force` re-run.
-
-      # Catch-all (SC-005): the two steps above only fire when the publisher step ran and set
-      # an output. A failure in any EARLIER step (npm ci, tsc, gather-release-data, Claude
-      # generation, verify-notes) would skip them, and allow_failure would keep the run green
-      # — no entry AND no notification. This posts a generic failure notice for those cases so
-      # a pre-publisher failure is never silent. `failure()` here excludes the handled
-      # success/skip results (the publisher step exits 0, so the job isn't in a failure state
-      # for those).
-      - name: Notify Slack on pre-publisher failure
-        if: failure()
-        uses: ./.github/actions/core-cicd/notification/notify-slack
-        with:
-          channel-id: ${{ inputs.slack_channel_id }}
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: >-
-            :rotating_light: *changelog-site-publish failed before the publisher step* for
-            `${{ inputs.release_version }}` (generation or setup error). No changelog entry was
-            published. The GitHub release is unaffected. See run:
+            ${{ steps.publish.outputs.result == 'skip'
+                && ':warning: *Changelog site publish SKIPPED*'
+                || ':rotating_light: *Changelog site publish FAILED*' }}
+            for `${{ inputs.release_version }}` —
+            ${{ steps.publish.outputs.reason || 'failed before the publisher step (generation or setup error)' }}.
+            The GitHub release is published and unaffected. Run:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
