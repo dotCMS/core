@@ -16,7 +16,6 @@ import {
 import { Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
@@ -86,7 +85,6 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotContentDriveDialogContentTypeSelectorComponent,
         DotContentDriveDialogUploadSelectorComponent,
         MessageModule,
-        ButtonModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
         DotSeverityIconComponent
