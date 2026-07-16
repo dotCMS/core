@@ -370,12 +370,18 @@ export class DotContentDriveFieldFilterComponent {
         return to ? new Date(to) : null;
     });
 
-    /** True when both time bounds are set and `from` is after `to` — drives the inline error. */
+    /** True when both bounds are set and `from` is after `to` — drives the inline error. */
     protected readonly $timeRangeInvalid = computed(() => {
         const from = this.$timeFrom();
         const to = this.$timeTo();
+        if (!from || !to) {
+            return false;
+        }
 
-        return !!from && !!to && this.#timeOfDay(from) > this.#timeOfDay(to);
+        // Time-only compares by time-of-day; date-and-time by the full instant.
+        return this.$timeOnly()
+            ? this.#timeOfDay(from) > this.#timeOfDay(to)
+            : from.getTime() > to.getTime();
     });
 
     protected readonly $isBinary = computed(() => this.$control() === 'binary-checkbox');
@@ -670,6 +676,34 @@ export class DotContentDriveFieldFilterComponent {
             this.$timeTo.set(value);
         }
 
+        this.#applyRange();
+    }
+
+    /**
+     * Date-and-Time uses a date-range calendar (no `showTime`, which crashes in PrimeNG's range
+     * mode) plus two time-only pickers. The calendar sets the date part of each bound; the pickers
+     * set the time part. Both feed the same from/to bounds.
+     */
+    protected onDateTimeDatesChange(dates: Date[] | null): void {
+        const [fromDate, toDate] = dates ?? [];
+        this.$timeFrom.set(fromDate ? this.#withDatePart(this.$timeFrom(), fromDate) : null);
+        this.$timeTo.set(toDate ? this.#withDatePart(this.$timeTo(), toDate) : null);
+        this.#applyRange();
+    }
+
+    /** Applies the time part to one bound of a Date-and-Time range (keeping its date). */
+    protected onDateTimeTimeChange(value: Date | null, bound: 'from' | 'to'): void {
+        if (bound === 'from') {
+            this.$timeFrom.set(this.#withTimePart(this.$timeFrom(), value));
+        } else {
+            this.$timeTo.set(this.#withTimePart(this.$timeTo(), value));
+        }
+
+        this.#applyRange();
+    }
+
+    /** Serializes the current from/to bounds, unless the range is inverted (the inline error shows). */
+    #applyRange(): void {
         if (this.$timeRangeInvalid()) {
             return;
         }
@@ -681,6 +715,26 @@ export class DotContentDriveFieldFilterComponent {
             to: to ? to.toISOString() : ''
         };
         this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
+    }
+
+    /** Copy of `base` (or today) with `date`'s year/month/day applied — keeps the time part. */
+    #withDatePart(base: Date | null, date: Date): Date {
+        const next = base ? new Date(base) : new Date();
+        next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+
+        return next;
+    }
+
+    /** Copy of `base` (or today) with `time`'s hours/minutes/seconds applied; null time clears the bound. */
+    #withTimePart(base: Date | null, time: Date | null): Date | null {
+        if (!time) {
+            return null;
+        }
+
+        const next = base ? new Date(base) : new Date();
+        next.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), 0);
+
+        return next;
     }
 
     /**
@@ -706,10 +760,26 @@ export class DotContentDriveFieldFilterComponent {
         const date = new Date(iso);
         if (Number.isNaN(date.getTime())) return iso;
 
-        return this.$timeOnly()
-            ? date.toLocaleTimeString()
-            : this.$showTime()
-              ? date.toLocaleString()
-              : date.toLocaleDateString();
+        // 24-hour to match the pickers (which default to 24h) — avoids an AM/PM label over a 24h input.
+        const time: Intl.DateTimeFormatOptions = {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        };
+
+        if (this.$timeOnly()) {
+            return date.toLocaleTimeString([], time);
+        }
+
+        if (this.$showTime()) {
+            return date.toLocaleString([], {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                ...time
+            });
+        }
+
+        return date.toLocaleDateString();
     }
 }

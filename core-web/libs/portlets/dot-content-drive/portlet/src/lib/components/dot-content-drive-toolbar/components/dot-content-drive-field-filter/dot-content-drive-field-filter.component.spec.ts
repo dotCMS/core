@@ -98,6 +98,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             { fieldType: 'Tag', testId: 'field-filter-lazy-multiselect' },
             { fieldType: 'Category', testId: 'field-filter-lazy-multiselect' },
             { fieldType: 'Date', testId: 'field-filter-date' },
+            { fieldType: 'Date-and-Time', testId: 'field-filter-datetime' },
             { fieldType: 'Time', testId: 'field-filter-time' }
         ];
 
