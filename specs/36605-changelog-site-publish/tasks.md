@@ -222,18 +222,18 @@ human and verify the tool skips with the skip marker instead of overwriting.
 - [x] T028 [P] [US2] Unit test for the **`>1` hit guard** in `tests/test_publisher.py`: a search returning
         two contentlets → error / non-zero exit (never guess which to update) — feeds the US3 failure path.
 
-- [ ] T029 [US2] [GATE] **Developer approval** of the US2 test set (T025–T028). Test-type omission already
+- [x] T029 [US2] [GATE] **Developer approval** of the US2 test set (T025–T028). Test-type omission already
         signed off (header block); record acknowledgement and proceed on explicit approval.
-- [ ] T030 [US2] [GATE] **Red** — confirm US2 tests FAIL for the intended reason before implementing.
+- [x] T030 [US2] [GATE] **Red** — confirm US2 tests FAIL for the intended reason before implementing.
         Record the failing output.
 
 ### Implementation for User Story 2 *(only after T029 + T030 pass)*
 
-- [ ] T031 [US2] Extend `src/changelog_publisher/publisher.py` with the full decision table from
+- [x] T031 [US2] Extend `src/changelog_publisher/publisher.py` with the full decision table from
         `data-model.md`: 0 hits → create (US1); 1 hit + service account → update-in-place with
         `identifier`; 1 hit + other user + no `--force` → skip + emit skip marker; 1 hit + other user +
         `--force` → update; `>1` hit → error. Make T025–T028 green.
-- [ ] T032 [US2] Add `--force` to `src/changelog_publisher/cli.py`, reachable only via manual operator
+- [x] T032 [US2] Add `--force` to `src/changelog_publisher/cli.py`, reachable only via manual operator
         re-run (the release workflow in T022/T023 never passes it). Confirm T025–T028 **PASS**.
 
 **Checkpoint**: US1 AND US2 work; exactly one row per version across any number of runs; human edits safe.

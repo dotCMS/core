@@ -14,6 +14,10 @@ _RELEASED = True
 _DOWNLOAD = 1
 
 
+class AmbiguousMatchError(RuntimeError):
+    """Raised when >1 entry matches a version — the tool refuses to guess (D4)."""
+
+
 @dataclass(frozen=True)
 class PublishResult:
     """Outcome of a publish attempt, consumed by the CLI to set exit code / skip marker."""
@@ -68,6 +72,12 @@ def publish(
     """Search for an existing entry, decide create/update/skip, and fire Publish."""
     hits = client._search(version)
 
+    # >1 hit → never guess which row to update; surface as a failure (D4).
+    if len(hits) > 1:
+        raise AmbiguousMatchError(
+            f"{len(hits)} entries match version {version}; refusing to guess which to update"
+        )
+
     if not hits:
         contentlet = build_contentlet(
             version=version,
@@ -78,5 +88,37 @@ def publish(
         client.fire(contentlet, apply=apply)
         return PublishResult(status="created", version=version)
 
-    # 1-hit update-in-place, human-edit-protection skip, and the >1 guard are US2 (T031).
-    raise NotImplementedError("update / human-edit protection / >1 guard land in US2")
+    # Exactly one hit → update-in-place, unless a human last touched it (FR-011).
+    hit = hits[0]
+    if not force and not _owned_by_service_account(hit, service_account):
+        return PublishResult(
+            status="skipped",
+            version=version,
+            reason=(
+                f"last modified by {hit.mod_user_name or hit.mod_user} "
+                f"(not the automation service account); use --force to override"
+            ),
+        )
+
+    contentlet = build_contentlet(
+        version=version,
+        release_notes=release_notes,
+        docker_image=docker_image,
+        released_date=released_date,
+        identifier=hit.identifier,
+    )
+    client.fire(contentlet, apply=apply)
+    return PublishResult(status="updated", version=version)
+
+
+def _owned_by_service_account(hit, service_account: str | None) -> bool:
+    """True if the automation service account was the last modifier.
+
+    Compares the immutable `modUser` id when present (a display-name rename must not
+    silently disable FR-011 protection); falls back to `modUserName` only when the entry
+    carries no `modUser` id. See data-model.md.
+    """
+    if not service_account:
+        return False
+    owner = hit.mod_user if hit.mod_user else hit.mod_user_name
+    return owner is not None and owner == service_account

@@ -11,15 +11,20 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import logging
+import os
 import sys
 
 import requests
 
 from .client import CorpsitesClient
-from .publisher import publish
+from .publisher import AmbiguousMatchError, publish
 from .version import is_current_track
 
 log = logging.getLogger("changelog_publisher")
+
+# Service-account identity (a modUser id) for human-edit protection (FR-011). CLI wins over
+# env; either may be unset for a create-only run (a 1-hit then skips protectively).
+_SERVICE_ACCOUNT_ENV = "DOTCMS_DEVSITE_SERVICE_ACCOUNT"
 
 
 def cmd_publish(args: argparse.Namespace) -> int:
@@ -36,6 +41,8 @@ def cmd_publish(args: argparse.Namespace) -> int:
         release_notes = fh.read()
     released_date = args.released_date or dt.date.today().isoformat()
 
+    service_account = args.service_account or os.environ.get(_SERVICE_ACCOUNT_ENV, "")
+
     try:
         client = CorpsitesClient()
         result = publish(
@@ -44,9 +51,11 @@ def cmd_publish(args: argparse.Namespace) -> int:
             release_notes=release_notes,
             docker_image=args.docker_image,
             released_date=released_date,
+            service_account=service_account or None,
+            force=args.force,
             apply=args.apply,
         )
-    except requests.RequestException as exc:
+    except (requests.RequestException, AmbiguousMatchError) as exc:
         # Concise, token-free failure (the token lives in the session header, not the URL/body).
         log.error("publish failed for %s: %s", args.version, exc)
         return 1
@@ -71,6 +80,14 @@ def build_parser() -> argparse.ArgumentParser:
     pub.add_argument("--docker-image", required=True, help="deployment docker image tag")
     pub.add_argument("--released-date", default="", help="availability date (yyyy-MM-dd); defaults to today")
     pub.add_argument("--apply", action="store_true", help="actually search + fire the Publish action")
+    pub.add_argument(
+        "--service-account", default="",
+        help=f"service-account modUser id for human-edit protection (or ${_SERVICE_ACCOUNT_ENV})",
+    )
+    pub.add_argument(
+        "--force", action="store_true",
+        help="override human-edit protection and update in place (manual operator use only)",
+    )
     pub.set_defaults(func=cmd_publish)
     return p
 
