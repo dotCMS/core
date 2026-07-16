@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import responses as responses_lib
 
 from changelog_publisher import publisher
@@ -95,3 +96,113 @@ def test_fire_payload_always_disables_wysiwyg_for_release_notes():
     _publish_create(client)
 
     assert _fired_contentlet()["disabledWYSIWYG"] == ["releaseNotes"]
+
+
+# ===========================================================================
+# User Story 2 — update-in-place, idempotency, human-edit protection, >1 guard
+# ===========================================================================
+
+# The service-account identity is the immutable user id (modUser), not the mutable
+# display name (modUserName) — per lead directive, a rename must not silently disable
+# FR-011 protection. data-model.md documents the display-name fallback.
+SERVICE_ACCOUNT = "user-devbot-0000"
+
+
+def _all_fire_bodies() -> list[dict]:
+    return [
+        json.loads(c.request.body)["contentlet"]
+        for c in responses_lib.calls
+        if c.request.method == "PUT"
+    ]
+
+
+def _publish(client, **overrides):
+    kwargs = dict(
+        version="26.07.10-01",
+        release_notes="### Fixes {#Fixes-26.07.10-01}\n- Something ([#1](https://x/pull/1))\n",
+        docker_image="dotcms/dotcms:26.07.10-01_abc1234",
+        released_date="2026-07-16",
+        service_account=SERVICE_ACCOUNT,
+        apply=True,
+    )
+    kwargs.update(overrides)
+    return publisher.publish(client, **kwargs)
+
+
+@responses_lib.activate
+def test_update_in_place_fires_with_found_identifier():
+    """1 hit owned by the service account -> update in place: the fire carries the found
+    identifier (no second row) (FR-003, SC-003)."""
+    _add_search("search_hit_automation.json")
+    _add_fire()
+    client = CorpsitesClient(token="t")
+
+    result = _publish(client)
+
+    assert result.status == "updated"
+    c = _fired_contentlet()
+    assert c["identifier"] == "aaaa1111-bbbb-2222-cccc-333344445555"
+
+
+@responses_lib.activate
+def test_idempotent_rerun_takes_update_path_with_latest_notes():
+    """Two runs (miss then hit) converge to one row: run 1 creates, run 2 updates in place
+    carrying the latest notes — never a second create (FR-004)."""
+    # responses consumes registered responses in order for the same URL.
+    _add_search("search_empty.json")   # run 1: no existing row
+    _add_fire()
+    _add_search("search_hit_automation.json")  # run 2: the row now exists (automation-owned)
+    _add_fire()
+    client = CorpsitesClient(token="t")
+
+    first = _publish(client)
+    second = _publish(client, release_notes="### Fixes {#Fixes-26.07.10-01}\n- Corrected ([#2](x))\n")
+
+    assert first.status == "created"
+    assert second.status == "updated"
+    bodies = _all_fire_bodies()
+    assert len(bodies) == 2
+    assert "identifier" not in bodies[0]                      # create
+    assert bodies[1]["identifier"] == "aaaa1111-bbbb-2222-cccc-333344445555"  # update in place
+    assert "Corrected" in bodies[1]["releaseNotes"]           # latest notes win
+
+
+@responses_lib.activate
+def test_human_edited_entry_is_skipped_without_force():
+    """1 hit last modified by someone other than the service account -> skip, no fire,
+    skip reason names the human modifier (FR-011, SC-006)."""
+    _add_search("search_hit.json")  # modUser = Jamie Mauro's id, != service account
+    _add_fire()
+    client = CorpsitesClient(token="t")
+
+    result = _publish(client)
+
+    assert result.status == "skipped"
+    assert _all_fire_bodies() == []          # nothing fired
+    assert "Jamie Mauro" in (result.reason or "")
+
+
+@responses_lib.activate
+def test_force_overrides_human_edit_protection():
+    """--force updates a human-edited entry in place (explicit operator override, FR-011)."""
+    _add_search("search_hit.json")
+    _add_fire()
+    client = CorpsitesClient(token="t")
+
+    result = _publish(client, force=True)
+
+    assert result.status == "updated"
+    assert _fired_contentlet()["identifier"] == "d6d34add-14d7-43df-8270-03cb104063f3"
+
+
+@responses_lib.activate
+def test_more_than_one_hit_raises_ambiguous():
+    """>1 hit -> error (never guess which to update); feeds the US3 failure path (D4)."""
+    _add_search("search_two_hits.json")
+    _add_fire()
+    client = CorpsitesClient(token="t")
+
+    with pytest.raises(publisher.AmbiguousMatchError):
+        _publish(client)
+
+    assert _all_fire_bodies() == []

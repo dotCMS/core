@@ -210,16 +210,16 @@ human and verify the tool skips with the skip marker instead of overwriting.
 
 ### Tests for User Story 2 (MANDATORY — write FIRST)
 
-- [ ] T025 [P] [US2] Unit test for the **update-in-place** decision in `tests/test_publisher.py`: a 1-hit
+- [x] T025 [P] [US2] Unit test for the **update-in-place** decision in `tests/test_publisher.py`: a 1-hit
         search whose `modUserName` = the service account fires Publish **with the found `identifier`** in
         the payload — asserting no create/second row (FR-003, SC-003).
-- [ ] T026 [P] [US2] Unit test for **idempotent re-run** in `tests/test_publisher.py`: two successive runs
+- [x] T026 [P] [US2] Unit test for **idempotent re-run** in `tests/test_publisher.py`: two successive runs
         plus a notes edit converge to a single row carrying the latest notes; the second run takes the
         update path, not create (FR-004, US2).
-- [ ] T027 [P] [US2] Unit test for **human-edit protection** in `tests/test_publisher.py`: a 1-hit search
+- [x] T027 [P] [US2] Unit test for **human-edit protection** in `tests/test_publisher.py`: a 1-hit search
         whose `modUserName` ≠ service account → **skip** (no fire call), emitting the skip marker from the
         T005 contract; with `--force`, the same case updates in place (FR-011, SC-006).
-- [ ] T028 [P] [US2] Unit test for the **`>1` hit guard** in `tests/test_publisher.py`: a search returning
+- [x] T028 [P] [US2] Unit test for the **`>1` hit guard** in `tests/test_publisher.py`: a search returning
         two contentlets → error / non-zero exit (never guess which to update) — feeds the US3 failure path.
 
 - [ ] T029 [US2] [GATE] **Developer approval** of the US2 test set (T025–T028). Test-type omission already
