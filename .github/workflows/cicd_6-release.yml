@@ -171,7 +171,7 @@ jobs:
 
   # Promote latest - move the floating `latest` Docker tag to this GA release.
   #
-  # evergreen-tracks (cicd/evergreen-tracks) is the single controller of the
+  # evergreen-tracks (.github/actions/core-cicd/evergreen-tracks) is the single controller of the
   # latest/standard/trailing tags. Its daily cron ages standard/trailing, but
   # `latest` must move the instant a GA ships — so the release pipeline invokes
   # the same engine on-demand, scoped to the latest track only (--tracks latest).
@@ -213,7 +213,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Move latest to ${{ needs.release-prepare.outputs.release_version }}
-        working-directory: cicd/evergreen-tracks
+        working-directory: .github/actions/core-cicd/evergreen-tracks
         run: |
           for repo in dotcms/dotcms dotcms/dotcms-dev; do
             echo "--- promoting latest on ${repo} ---"
