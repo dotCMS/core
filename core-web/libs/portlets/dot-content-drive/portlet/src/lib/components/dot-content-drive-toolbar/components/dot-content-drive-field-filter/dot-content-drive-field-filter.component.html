@@ -205,7 +205,9 @@
                         range mode on hour change) sets each bound's date, and two time-only pickers
                         set each bound's time. Both combine into the from/to instants.
                     -->
-                    <div class="flex flex-col gap-3 p-3" data-testid="field-filter-datetime">
+                    <div
+                        class="flex flex-col items-center gap-3 p-3"
+                        data-testid="field-filter-datetime">
                         <p-datePicker
                             selectionMode="range"
                             [ngModel]="$dateValue()"
@@ -257,18 +259,20 @@
                         }
                     </div>
                 } @else {
-                    <p-datePicker
-                        selectionMode="range"
-                        [ngModel]="$dateValue()"
-                        (ngModelChange)="onDateChange($event)"
-                        [ngModelOptions]="{ standalone: true }"
-                        [showButtonBar]="true"
-                        [readonlyInput]="true"
-                        dateFormat="yy-mm-dd"
-                        [inline]="true"
-                        [pt]="datePickerPt"
-                        [attr.aria-label]="$title()"
-                        data-testid="field-filter-date" />
+                    <div class="flex justify-center p-3">
+                        <p-datePicker
+                            selectionMode="range"
+                            [ngModel]="$dateValue()"
+                            (ngModelChange)="onDateChange($event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            [showButtonBar]="true"
+                            [readonlyInput]="true"
+                            dateFormat="yy-mm-dd"
+                            [inline]="true"
+                            [pt]="datePickerPt"
+                            [attr.aria-label]="$title()"
+                            data-testid="field-filter-date" />
+                    </div>
                 }
             }
         }

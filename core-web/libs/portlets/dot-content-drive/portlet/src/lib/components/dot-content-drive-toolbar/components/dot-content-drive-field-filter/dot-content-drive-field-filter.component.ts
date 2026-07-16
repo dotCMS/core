@@ -135,7 +135,9 @@ export class DotContentDriveFieldFilterComponent {
      * the chip popover as a single surface instead of a panel-inside-a-panel.
      */
     protected readonly datePickerPt = {
-        panel: { class: '!border-0 !rounded-none !shadow-none' }
+        // max-width caps the panel so the wider month/year grids can't grow it and bounce the
+        // popover horizontally, while the day view still sizes naturally within the cap.
+        panel: { class: '!border-0 !rounded-none !shadow-none !max-w-96' }
     };
     /**
      * Time pickers additionally trim the panel/time-picker padding so the spinner sits tight to its
