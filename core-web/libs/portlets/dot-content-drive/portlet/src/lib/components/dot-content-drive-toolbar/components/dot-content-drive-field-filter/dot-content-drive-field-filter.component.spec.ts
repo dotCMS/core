@@ -97,7 +97,8 @@ describe('DotContentDriveFieldFilterComponent', () => {
             { fieldType: 'Checkbox', values: '|true', testId: 'field-filter-binary' },
             { fieldType: 'Tag', testId: 'field-filter-lazy-multiselect' },
             { fieldType: 'Category', testId: 'field-filter-lazy-multiselect' },
-            { fieldType: 'Date', testId: 'field-filter-date' }
+            { fieldType: 'Date', testId: 'field-filter-date' },
+            { fieldType: 'Time', testId: 'field-filter-time' }
         ];
 
         cases.forEach(({ fieldType, values, testId }) => {
@@ -163,6 +164,19 @@ describe('DotContentDriveFieldFilterComponent', () => {
             spectator.triggerEventHandler('dot-chip-filter', 'removed', undefined);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
+        });
+    });
+
+    describe('time range', () => {
+        it('should render two independent time pickers (from / to) for a Time field', () => {
+            spectator.setInput('field', field({ fieldType: 'Time' }));
+            spectator.detectChanges();
+            openPopover();
+
+            // Two independent pickers, not a single range control (PrimeNG has no timeOnly range).
+            expect(spectator.query(byTestId('field-filter-time-from'), { root: true })).toBeTruthy();
+            expect(spectator.query(byTestId('field-filter-time-to'), { root: true })).toBeTruthy();
+            expect(spectator.query(byTestId('field-filter-date'), { root: true })).toBeNull();
         });
     });
 

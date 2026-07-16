@@ -354,6 +354,22 @@ export class DotContentDriveFieldFilterComponent {
         return dates.length ? dates : null;
     });
 
+    /**
+     * Time-only fields use two independent pickers (from / to) instead of a range picker: PrimeNG's
+     * `p-datePicker` doesn't support range selection in `timeOnly` mode, so a single range control
+     * can't express a time span. Each bound is nullable so an open-ended range is allowed.
+     */
+    protected readonly $timeFrom = linkedSignal<Date | null>(() => {
+        const [from] = this.$rawValue().split(USER_SEARCHABLE_VALUE_SEPARATOR);
+
+        return from ? new Date(from) : null;
+    });
+    protected readonly $timeTo = linkedSignal<Date | null>(() => {
+        const to = this.$rawValue().split(USER_SEARCHABLE_VALUE_SEPARATOR)[1];
+
+        return to ? new Date(to) : null;
+    });
+
     protected readonly $isBinary = computed(() => this.$control() === 'binary-checkbox');
 
     /** Relationship is picked in a full dialog, so the chip opens it instead of a popover. */
@@ -627,6 +643,23 @@ export class DotContentDriveFieldFilterComponent {
     protected onDateChange(dates: Date[] | null): void {
         this.$dateValue.set(dates);
         const [from, to] = dates ?? [];
+        const range = {
+            from: from ? from.toISOString() : '',
+            to: to ? to.toISOString() : ''
+        };
+        this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
+    }
+
+    /** Updates one bound of a time-only range (from/to) independently and re-serializes. */
+    protected onTimeBoundChange(value: Date | null, bound: 'from' | 'to'): void {
+        if (bound === 'from') {
+            this.$timeFrom.set(value);
+        } else {
+            this.$timeTo.set(value);
+        }
+
+        const from = this.$timeFrom();
+        const to = this.$timeTo();
         const range = {
             from: from ? from.toISOString() : '',
             to: to ? to.toISOString() : ''

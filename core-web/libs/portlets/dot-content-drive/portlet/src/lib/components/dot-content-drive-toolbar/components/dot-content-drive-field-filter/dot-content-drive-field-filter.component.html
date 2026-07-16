@@ -153,20 +153,51 @@
                 </p-listbox>
             }
             @case ('date') {
-                <p-datePicker
-                    selectionMode="range"
-                    [ngModel]="$dateValue()"
-                    (ngModelChange)="onDateChange($event)"
-                    [ngModelOptions]="{ standalone: true }"
-                    [showTime]="$showTime()"
-                    [timeOnly]="$timeOnly()"
-                    [showButtonBar]="true"
-                    [readonlyInput]="true"
-                    dateFormat="yy-mm-dd"
-                    [inline]="true"
-                    [pt]="datePickerPt"
-                    [attr.aria-label]="$title()"
-                    data-testid="field-filter-date" />
+                @if ($timeOnly()) {
+                    <!--
+                        Time-only fields use two independent pickers: p-datePicker has no range mode
+                        for timeOnly, so a single control can't express a time span. Any time can be
+                        picked for either bound, and either can be left empty (open-ended range).
+                    -->
+                    <div class="form flex w-72 flex-col gap-3 p-3" data-testid="field-filter-time">
+                        <div class="field">
+                            <label>{{ 'from' | dm }}</label>
+                            <p-datePicker
+                                [timeOnly]="true"
+                                [ngModel]="$timeFrom()"
+                                (ngModelChange)="onTimeBoundChange($event, 'from')"
+                                [ngModelOptions]="{ standalone: true }"
+                                [showButtonBar]="true"
+                                [attr.aria-label]="$title() + ' ' + ('from' | dm)"
+                                data-testid="field-filter-time-from" />
+                        </div>
+                        <div class="field">
+                            <label>{{ 'To' | dm }}</label>
+                            <p-datePicker
+                                [timeOnly]="true"
+                                [ngModel]="$timeTo()"
+                                (ngModelChange)="onTimeBoundChange($event, 'to')"
+                                [ngModelOptions]="{ standalone: true }"
+                                [showButtonBar]="true"
+                                [attr.aria-label]="$title() + ' ' + ('To' | dm)"
+                                data-testid="field-filter-time-to" />
+                        </div>
+                    </div>
+                } @else {
+                    <p-datePicker
+                        selectionMode="range"
+                        [ngModel]="$dateValue()"
+                        (ngModelChange)="onDateChange($event)"
+                        [ngModelOptions]="{ standalone: true }"
+                        [showTime]="$showTime()"
+                        [showButtonBar]="true"
+                        [readonlyInput]="true"
+                        dateFormat="yy-mm-dd"
+                        [inline]="true"
+                        [pt]="datePickerPt"
+                        [attr.aria-label]="$title()"
+                        data-testid="field-filter-date" />
+                }
             }
         }
     }
