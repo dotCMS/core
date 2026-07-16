@@ -3,9 +3,15 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSAPIResponse,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSResponse,
+    FieldType
+} from '@dotcms/dotcms-models';
 
 export type DotFieldFilter =
     | 'SHOW_IN_LIST'
@@ -13,7 +19,6 @@ export type DotFieldFilter =
     | 'USER_SEARCHABLE'
     | 'SYSTEM_INDEXED'
     | 'UNIQUE';
-
 @Injectable({
     providedIn: 'root'
 })
@@ -31,8 +36,79 @@ export class DotFieldService {
 
         return this.#http
             .get<
-                DotCMSContentTypeField[]
+                DotCMSAPIResponse<DotCMSContentTypeField[]>
             >(`/api/v3/contenttype/${contentType}/fields/allfields`, { params })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
+    }
+
+    /**
+     * Get the field types
+     *
+     * @return {*}  {Observable<FieldType[]>}
+     * @memberof DotFieldService
+     */
+    loadFieldTypes(): Observable<FieldType[]> {
+        return this.#http
+            .get<DotCMSResponse<FieldType[]>>('/api/v1/fieldTypes')
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Save content type's layout.
+     * @param string contentTypeId Content Type'id
+     * @param DotContentTypeField[] fields fields to add
+     * @returns Observable<DotCMSContentTypeLayoutRow[]>
+     * @memberof DotFieldService
+     */
+    saveFields(
+        contentTypeId: string,
+        fields: DotCMSContentTypeLayoutRow[]
+    ): Observable<DotCMSContentTypeLayoutRow[]> {
+        return this.#http
+            .put<
+                DotCMSResponse<DotCMSContentTypeLayoutRow[]>
+            >(`/api/v3/contenttype/${contentTypeId}/fields/move`, { layout: fields })
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Delete fields
+     *
+     * @param {string} contentTypeId content types's id that contains the fields
+     * @param {string[]} fieldIds ids of the fields to delete
+     * @returns {Observable<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>}
+     * @memberof DotFieldService
+     */
+    deleteFields(
+        contentTypeId: string,
+        fieldIds: string[]
+    ): Observable<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }> {
+        return this.#http
+            .delete<DotCMSResponse<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>>(
+                `/api/v3/contenttype/${contentTypeId}/fields`,
+                {
+                    body: { fieldsID: fieldIds }
+                }
+            )
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Update a field
+     *
+     * @param {string} contentTypeId content type's id
+     * @param {DotCMSContentTypeField} field field to update
+     * @returns {Observable<DotCMSContentTypeLayoutRow[]>}
+     * @memberof DotFieldService
+     */
+    updateField(
+        contentTypeId: string,
+        field: DotCMSContentTypeField
+    ): Observable<DotCMSContentTypeLayoutRow[]> {
+        return this.#http
+            .put<
+                DotCMSResponse<DotCMSContentTypeLayoutRow[]>
+            >(`/api/v3/contenttype/${contentTypeId}/fields/${field.id}`, { field: field })
+            .pipe(map((response) => response.entity));
     }
 }

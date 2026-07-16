@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LANG_ID } from '../bubble-menu/models/index';
+import { DEFAULT_LANG_ID } from '../../shared/utils';
 
 @Component({
     selector: 'dot-asset-form',
     templateUrl: './asset-form.component.html',
-    styleUrls: ['./asset-form.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./asset-form.component.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class AssetFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
@@ -18,6 +19,7 @@ export class AssetFormComponent {
     @Input() onHide: (value: boolean) => void;
 
     public disableTabs = false;
+    public activeTab = 0;
 
     public onPreventClose(value) {
         this.preventClose(value);

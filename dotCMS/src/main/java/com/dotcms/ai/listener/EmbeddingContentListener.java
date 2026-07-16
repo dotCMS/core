@@ -1,5 +1,6 @@
 package com.dotcms.ai.listener;
 
+import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
@@ -8,9 +9,11 @@ import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.util.Logger;
@@ -76,12 +79,14 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
         deleteFromIndexes(contentlet);
     }
 
-    private AppConfig getAppConfig(final String hostId) {
-        final Host host = Try
+    private Host resolveHost(final String hostId) {
+        return Try
                 .of(() -> APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false))
                 .getOrElse(APILocator.systemHost());
+    }
 
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+    private AppConfig getAppConfig(final String hostId) {
+        final AppConfig appConfig = ConfigService.INSTANCE.config(resolveHost(hostId));
         if (!appConfig.isEnabled()) {
             appConfig.debugLogger(
                     getClass(),
@@ -111,26 +116,33 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
      *
      * @param contentlet
      */
+    @WrapInTransaction
     private void addToIndexesIfNeeded(final Contentlet contentlet) {
         final String contentType = contentlet.getContentType().variable();
         if (contentType == null) {
             return;
         }
 
-        final JSONObject config = getConfigJson(contentlet.getHost());
+        try {
+            final Host host = resolveHost(contentlet.getHost());
+            final JSONObject config = getConfigJson(contentlet.getHost());
 
-        for(final Entry<String, Object> entry : (Set<Entry<String, Object>>) config.entrySet()) {
-            final String indexName = entry.getKey();
-            final Map<String, List<Field>> typesAndFields =
-                    APILocator.getDotAIAPI().getEmbeddingsAPI().parseTypesAndFields((String) entry.getValue());
-            typesAndFields.entrySet()
-                    .stream()
-                    .filter(typeFields -> contentType.equalsIgnoreCase(typeFields.getKey()))
-                    .forEach(e -> APILocator.getDotAIAPI().getEmbeddingsAPI()
-                            .generateEmbeddingsForContent(
-                                    contentlet,
-                                    e.getValue(),
-                                    indexName));
+            for (final Entry<String, Object> entry : (Set<Entry<String, Object>>) config.entrySet()) {
+                final String indexName = entry.getKey();
+                final EmbeddingsAPI embeddingsAPI = APILocator.getDotAIAPI().getEmbeddingsAPI(host);
+                final Map<String, List<Field>> typesAndFields =
+                        embeddingsAPI.parseTypesAndFields((String) entry.getValue());
+                typesAndFields.entrySet()
+                        .stream()
+                        .filter(typeFields -> contentType.equalsIgnoreCase(typeFields.getKey()))
+                        .forEach(e -> embeddingsAPI.generateEmbeddingsForContent(
+                                        contentlet,
+                                        e.getValue(),
+                                        indexName));
+            }
+        } catch (final Exception e) {
+            Logger.error(getClass(), "Error adding content to embeddings index: " + e.getMessage(), e);
+            throw new DotRuntimeException("Error adding content to embeddings index: " + e.getMessage(), e);
         }
     }
 
@@ -138,15 +150,22 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
      * If a contentlet is unpublished, we delete it from the dot_embeddings no matter what index it is part of
      * @param contentlet
      */
+    @WrapInTransaction
     private void deleteFromIndexes(final Contentlet contentlet) {
-        getConfigJson(contentlet.getHost());
+        try {
+            final Host host = resolveHost(contentlet.getHost());
+            getConfigJson(contentlet.getHost());
 
-        final EmbeddingsDTO dto = new EmbeddingsDTO.Builder()
-                .withIdentifier(contentlet.getIdentifier())
-                .withLanguage(contentlet.getLanguageId())
-                .withIndexName(ALL_INDICES)
-                .build();
-        APILocator.getDotAIAPI().getEmbeddingsAPI().deleteEmbedding(dto);
+            final EmbeddingsDTO dto = new EmbeddingsDTO.Builder()
+                    .withIdentifier(contentlet.getIdentifier())
+                    .withLanguage(contentlet.getLanguageId())
+                    .withIndexName(ALL_INDICES)
+                    .build();
+            APILocator.getDotAIAPI().getEmbeddingsAPI(host).deleteEmbedding(dto);
+        } catch (final Exception e) {
+            Logger.error(getClass(), "Error deleting content from embeddings index: " + e.getMessage(), e);
+            throw new DotRuntimeException("Error deleting content from embeddings index: " + e.getMessage(), e);
+        }
     }
 
     /**

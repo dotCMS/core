@@ -1,13 +1,38 @@
-import { ErrorMessage } from './components/ErrorMessage';
+import { ReactNode } from 'react';
 
-import { DotCMSPageContext, DotCMSPageRendererMode } from '../../contexts/DotCMSPageContext';
-import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
+import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
+
+import { ErrorMessage } from './components/ErrorMessage';
+import { DotCMSPageProvider } from './DotCMSPageProvider';
+
 import { Row } from '../Row/Row';
 
-interface DotCMSLayoutBodyProps {
+export interface DotCMSLayoutBodyProps<
+    TContentlet extends DotCMSBasicContentlet = DotCMSBasicContentlet
+> {
     page: DotCMSPageAsset;
-    components: Record<string, React.ComponentType<DotCMSContentlet>>;
+    components: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [key: string]: React.ComponentType<TContentlet> | React.ComponentType<any>;
+    };
     mode?: DotCMSPageRendererMode;
+    /**
+     * Pre-rendered server component nodes keyed by contentlet identifier.
+     * Use this to render Next.js async server components within the layout.
+     * Build this map using the `buildSlots` helper.
+     *
+     * @example
+     * ```tsx
+     * import { buildSlots } from '@dotcms/react';
+     *
+     * const slots = buildSlots(pageContent.pageAsset.containers, {
+     *   BlogList: BlogListContainer,
+     * });
+     *
+     * <DotCMSLayoutBody page={pageAsset} components={pageComponents} slots={slots} />
+     * ```
+     */
+    slots?: Record<string, ReactNode>;
 }
 
 /**
@@ -22,6 +47,7 @@ interface DotCMSLayoutBodyProps {
  * @param {DotCMSPageAsset} props.page - The DotCMS page asset containing the layout information.
  * @param {Record<string, React.ComponentType<DotCMSContentlet>>} [props.components] - mapping of custom components for content rendering.
  * @param {DotCMSPageRendererMode} [props.mode='production'] - The renderer mode; defaults to 'production'. Alternate modes might trigger different behaviors.
+ * @param {Record<string, ReactNode>} [props.slots] - Pre-rendered server component nodes keyed by contentlet identifier.
  *
  * @returns {JSX.Element} The rendered DotCMS page body or an error message if the layout body is missing.
  *
@@ -29,25 +55,20 @@ interface DotCMSLayoutBodyProps {
 export const DotCMSLayoutBody = ({
     page,
     components = {},
-    mode = 'production'
+    mode = 'production',
+    slots = {}
 }: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 
-    if (!dotCMSPageBody) {
-        return <ErrorMessage mode={mode} />;
-    }
-
-    const contextValue = {
-        pageAsset: page,
-        userComponents: components,
-        mode
-    };
-
     return (
-        <DotCMSPageContext.Provider value={contextValue}>
-            {dotCMSPageBody.rows.map((row, index) => (
-                <Row key={index} row={row} />
-            ))}
-        </DotCMSPageContext.Provider>
+        <DotCMSPageProvider page={page} components={components} mode={mode} slots={slots}>
+            {dotCMSPageBody ? (
+                dotCMSPageBody.rows.map((row, index) => (
+                    <Row key={index} index={index + 1} row={row} />
+                ))
+            ) : (
+                <ErrorMessage />
+            )}
+        </DotCMSPageProvider>
     );
 };

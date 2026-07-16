@@ -9,17 +9,20 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.google.common.annotations.VisibleForTesting;
+import javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.BulkActionView;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
 import com.dotcms.rest.api.v1.workflow.CountWorkflowStep;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
+import com.dotcms.rest.api.v1.workflow.WorkflowSearcherForm;
+import com.dotcms.rest.api.v1.workflow.WorkflowTaskView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireBulkActionsForm;
 import com.dotcms.workflow.form.IWorkflowStepForm;
@@ -57,6 +60,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -66,6 +70,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.web.VelocityWebUtil;
@@ -79,10 +84,8 @@ import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.velocity.context.Context;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -184,13 +187,12 @@ public class WorkflowHelper {
 
             final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, queryWithDatesFormatted);
             //We should only be considering Working content.
-            final SearchResponse response = LicenseManager.getInstance().isCommunity()?
-                    this.contentletAPI.esSearch(query,
-                                    false, user, false).getResponse():
-                    this.contentletAPI
-                            .esSearchRaw(StringUtils.lowercaseStringExceptMatchingTokens(query,
+            final ContentSearchResponse response = LicenseManager.getInstance().isCommunity()?
+                    this.contentletAPI.search(query, false, user, false).getResponse():
+                    this.contentletAPI.searchRaw(
+                            StringUtils.lowercaseStringExceptMatchingTokens(query,
                                     ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
-                                    false, user, false);
+                            false, user, false);
             //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
@@ -224,21 +226,16 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      */
     @CloseDBIfOpened
-    private BulkActionView buildBulkActionView (final SearchResponse response,
+    private BulkActionView buildBulkActionView (final ContentSearchResponse response,
                                                 final User user) throws DotDataException, DotSecurityException {
 
         final Set<String> archivedSchemes = workflowAPI.findArchivedSchemes().stream().map(WorkflowScheme::getId).collect(Collectors.toSet());
 
-        final Aggregations aggregations     = response.getAggregations();
         final Map<String, Long> stepCounts  = new HashMap<>();
 
-        for (final Aggregation aggregation : aggregations.asList()) {
-
-            if (aggregation instanceof ParsedStringTerms) {
-                ((ParsedStringTerms) aggregation)
-                .getBuckets().forEach(
-                    bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount())
-                );
+        for (final Map.Entry<String, java.util.List<AggregationBucket>> entry : response.aggregations().entrySet()) {
+            for (final AggregationBucket bucket : entry.getValue()) {
+                stepCounts.put(bucket.key(), bucket.docCount());
             }
         }
 
@@ -556,6 +553,71 @@ public class WorkflowHelper {
 
     public List<SystemActionWorkflowActionMapping> findSystemActionsByContentType(final ContentType contentType, final User user) throws DotDataException, DotSecurityException {
         return this.workflowAPI.findSystemActionsByContentType(contentType, user);
+    }
+
+    /**
+     * Convert the WorkflowSearcherForm to WorkflowSearcher
+     * @param workflowSearcherForm
+     * @param user
+     * @return
+     */
+    public WorkflowSearcher toWorkflowSearcher(final WorkflowSearcherForm workflowSearcherForm, final User user) {
+
+        final WorkflowSearcher workflowSearcher = new WorkflowSearcher();
+
+        workflowSearcher.setUser(user);
+        Optional.ofNullable(workflowSearcherForm.getKeywords()).ifPresent(workflowSearcher::setKeywords);
+            workflowSearcher.setAssignedTo(Optional.ofNullable(workflowSearcherForm.getAssignedTo()).orElseGet(() ->
+                    !workflowSearcherForm.isShow4all()? // if show all is set we have to set as a null when not assignedto set
+                            user.getUserRole().getId():null));
+        workflowSearcher.setDaysOld(workflowSearcherForm.getDaysOld());
+        Optional.ofNullable(workflowSearcherForm.getSchemeId()).ifPresent(workflowSearcher::setSchemeId);
+        Optional.ofNullable(workflowSearcherForm.getStepId()).ifPresent(workflowSearcher::setStepId);
+        workflowSearcher.setOpen(workflowSearcherForm.isOpen());
+        workflowSearcher.setClosed(workflowSearcherForm.isClosed());
+        Optional.ofNullable(workflowSearcherForm.getCreatedBy()).ifPresent(workflowSearcher::setCreatedBy);
+        workflowSearcher.setShow4All(workflowSearcherForm.isShow4all());
+        workflowSearcher.setOrderBy(Optional.ofNullable(workflowSearcherForm.getOrderBy()).orElseGet(()->"title"));
+        workflowSearcher.setCount(workflowSearcherForm.getCount());
+        workflowSearcher.setPage(workflowSearcherForm.getPage());
+
+        return workflowSearcher;
+    }
+
+    public List<WorkflowTaskView> toWorkflowTasksView(final List<WorkflowTask> workflowTasks) {
+        if (workflowTasks == null || workflowTasks.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        final java.util.List<WorkflowTaskView> views = new java.util.ArrayList<>(workflowTasks.size());
+        for (final WorkflowTask task : workflowTasks) {
+            if (task != null) {
+                views.add(this.toWorkflowTaskView(task));
+            }
+        }
+        return views;
+    }
+
+    public WorkflowTaskView toWorkflowTaskView(final WorkflowTask workflowTask) {
+
+        final WorkflowTaskView.Builder builder = WorkflowTaskView.builder();
+
+        final String assignedUserName =
+                Try.of(()-> APILocator.getRoleAPI().loadRoleById(workflowTask.getAssignedTo()).getName()).getOrElse("Unknown Name");
+
+        builder.id(workflowTask.getId())
+                .assignedTo(workflowTask.getAssignedTo())
+                .assignedUserName(assignedUserName)
+                .createdBy(workflowTask.getCreatedBy())
+                .description(workflowTask.getDescription())
+                .belongsTo(workflowTask.getBelongsTo())
+                .creationDate(workflowTask.getCreationDate())
+                .getDueDate(workflowTask.getDueDate())
+                .languageId(workflowTask.getLanguageId())
+                .modDate(workflowTask.getModDate())
+                .title(workflowTask.getTitle())
+                .status(workflowTask.getStatus());
+
+        return builder.build();
     }
 
     private static class SingletonHolder {
@@ -2034,10 +2096,33 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    public Optional<Contentlet> getContentletByIdentifier(final String identifier,
+                                                          final PageMode mode,
+                                                          final User     user,
+                                                          final Supplier<Long> sessionLanguageSupplier) throws DotSecurityException, DotDataException {
+
+        return getContentletByIdentifier(identifier, mode, user, VariantAPI.DEFAULT_VARIANT.name(), sessionLanguageSupplier);
+    }
+
+    /**
+     * Figure out the contentlet by identifier (when not language) depending on the following rules:
+     * If there is a contentlet associated to the current session language tries the id+session lang combination
+     * If there is not a contentlet associated and the default language is diff to the session lang will tries this combination.
+     * Otherwise will try to get the content on some language
+     * @param identifier {@link String} shorty or long identifier
+     * @param mode {@link PageMode} page mode
+     * @param user {@link User} user
+     * @param variantName String
+     * @param sessionLanguageSupplier {@link Supplier} supplier to get the session language in case needed
+     * @return Optional contentlet
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @CloseDBIfOpened
     public Optional<Contentlet> getContentletByIdentifier(final String identifier,
                                                            final PageMode mode,
                                                            final User     user,
+                                                           final String variantName,
                                                            final Supplier<Long> sessionLanguageSupplier) throws DotSecurityException, DotDataException {
 
         Contentlet contentlet = null;
@@ -2048,7 +2133,7 @@ public class WorkflowHelper {
         if(sessionLanguage > 0) {
 
             contentlet = this.getContentletByIdentifier
-                    (longIdentifier, mode.showLive, sessionLanguage, user, mode.respectAnonPerms);
+                    (longIdentifier, mode.showLive, sessionLanguage, user, mode.respectAnonPerms, variantName);
         }
 
         if (null == contentlet) {
@@ -2058,7 +2143,7 @@ public class WorkflowHelper {
 
 
                 contentlet = this.getContentletByIdentifier
-                        (longIdentifier, mode.showLive, defaultLanguage, user, mode.respectAnonPerms);
+                        (longIdentifier, mode.showLive, defaultLanguage, user, mode.respectAnonPerms, variantName);
             }
         }
 
@@ -2068,11 +2153,12 @@ public class WorkflowHelper {
     }
 
     public Contentlet getContentletByIdentifier(final String longIdentifier, final boolean showLive,
-                                                final long languageId, final User user, final boolean respectAnonPerms) {
+                                                final long languageId, final User user, final boolean respectAnonPerms,
+                                                final String variantName) {
 
         try {
             return this.contentletAPI.findContentletByIdentifier
-                    (longIdentifier, showLive, languageId, user, respectAnonPerms);
+                    (longIdentifier, showLive, languageId, variantName, user, respectAnonPerms);
         } catch (DotContentletStateException | DotSecurityException | DotDataException e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -2087,11 +2173,21 @@ public class WorkflowHelper {
      */
     public Map<String, Object> contentletToMap(final Contentlet contentlet) {
         //In case the contentlet is null because it was destroyed/deleted.
-        if(null == contentlet){
+        if(null == contentlet) {
+
            return Collections.emptyMap();
         }
+
+        final ContentType type = contentlet.getContentType();
+        final Map<String, Object> contentMap = new HashMap<>();
         final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
-        return transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        contentMap.putAll(transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+
+        contentMap.put("__icon__", Try.of(()->UtilHTML.getIconClass(contentlet)).getOrElse("uknIcon"));
+        contentMap.put("contentTypeIcon", type.icon());
+        contentMap.put("variant", contentlet.getVariantId());
+
+        return contentMap;
     }
 
     /**

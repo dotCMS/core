@@ -1,14 +1,20 @@
-import { Observable, Subject, of, merge } from 'rxjs';
+import { Observable, Subject, merge, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck, map, take, switchMap, tap } from 'rxjs/operators';
+import { filter, map, skip, startWith, switchMap, take, tap } from 'rxjs/operators';
 
-import { CoreWebService } from './core-web.service';
-import { DotcmsEventsService } from './dotcms-events.service';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
+
 import { LoggerService } from './logger.service';
 import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
+
+// Response type for content search endpoints that return contentlets
+interface DotContentSearchResponse<T> {
+    contentlets: T;
+}
 
 /**
  * @deprecated
@@ -22,8 +28,11 @@ import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper'
     providedIn: 'root'
 })
 export class SiteService {
+    private http = inject(HttpClient);
+    private loggerService = inject(LoggerService);
+
     private selectedSite: Site;
-    private urls: any;
+    private urls: { currentSiteUrl: string; sitesUrl: string; switchSiteUrl: string };
     private events: string[] = [
         'SAVE_SITE',
         'PUBLISH_SITE',
@@ -32,32 +41,18 @@ export class SiteService {
         'UPDATE_SITE',
         'ARCHIVE_SITE'
     ];
-    private _switchSite$: Subject<Site> = new Subject<Site>();
+
+    private _currentSite$: Subject<Site> = new Subject<Site>();
     private _refreshSites$: Subject<Site> = new Subject<Site>();
 
-    constructor(
-        loginService: LoginService,
-        dotcmsEventsService: DotcmsEventsService,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const loginService = inject(LoginService);
+
         this.urls = {
-            currentSiteUrl: 'v1/site/currentSite',
-            sitesUrl: 'v1/site',
-            switchSiteUrl: 'v1/site/switch'
+            currentSiteUrl: '/api/v1/site/currentSite',
+            sitesUrl: '/api/v1/site',
+            switchSiteUrl: '/api/v1/site/switch'
         };
-
-        dotcmsEventsService
-            .subscribeToEvents<Site>(['ARCHIVE_SITE', 'UPDATE_SITE'])
-            .subscribe((event: DotEventTypeWrapper<Site>) => this.eventResponse(event));
-
-        dotcmsEventsService
-            .subscribeToEvents<Site>(this.events)
-            .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.siteEventsHandler(data));
-
-        dotcmsEventsService
-            .subscribeToEvents<Site>(['SWITCH_SITE'])
-            .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
         loginService.watchUser(() => this.loadCurrentSite());
     }
@@ -102,12 +97,37 @@ export class SiteService {
     }
 
     /**
-     * Observable tigger when the current site is changed
+     * Returns an Observable that immediately emits the current selected site upon subscription,
+     * then emits whenever the site changes.
+     *
+     * This Observable will always emit at least one value (the current site) as soon as you subscribe,
+     * making it ideal for components that need the current site data immediately.
+     *
+     * @readonly
+     * @memberof SiteService
+     */
+    get currentSite$(): Observable<Site> {
+        return this._currentSite$.asObservable().pipe(
+            startWith(this.selectedSite),
+            filter((site) => !!site)
+        );
+    }
+
+    /**
+     * Returns an Observable that only emits when the site selector changes after you're already subscribed.
+     *
+     * This Observable will NOT emit the current site immediately upon subscription. It will only emit
+     * when a site switch occurs after the subscription is active. The first emission from the internal
+     * subject is skipped, so you only get notifications of actual site changes.
+     *
+     * Use this when you want to react to site changes but don't need the current site value immediately.
+     * If you need the current site right away, use `currentSite$` instead.
+     *
      * @readonly
      * @memberof SiteService
      */
     get switchSite$(): Observable<Site> {
-        return this._switchSite$.asObservable();
+        return this.currentSite$.pipe(skip(1));
     }
 
     /**
@@ -126,12 +146,9 @@ export class SiteService {
      * @memberof SiteService
      */
     switchToDefaultSite(): Observable<Site> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: 'v1/site/switch'
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .put<DotCMSResponse<Site>>(this.urls.switchSiteUrl, {})
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -142,14 +159,11 @@ export class SiteService {
      * @memberof SiteService
      */
     getSiteById(id: string): Observable<Site> {
-        return this.coreWebService
-            .requestView({
-                url: `/api/content/render/false/query/+contentType:host%20+identifier:${id}`
-            })
-            .pipe(
-                pluck('contentlets'),
-                map((sites: Site[]) => sites[0])
-            );
+        return this.http
+            .get<
+                DotContentSearchResponse<Site[]>
+            >(`/api/content/render/false/query/+contentType:host%20+identifier:${id}`)
+            .pipe(map((response) => response.contentlets[0]));
     }
 
     /**
@@ -173,6 +187,7 @@ export class SiteService {
     }
 
     /**
+     * @deprecated Use other site-switching mechanisms instead. Use libs/data-access/src/lib/dot-site/dot-site.service.ts
      * Change the current site
      *
      * @param {Site} site
@@ -182,11 +197,8 @@ export class SiteService {
     switchSite(site: Site): Observable<Site> {
         this.loggerService.debug('Applying a Site Switch', site.identifier);
 
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `${this.urls.switchSiteUrl}/${site.identifier}`
-            })
+        return this.http
+            .put<DotCMSResponse<unknown>>(`${this.urls.switchSiteUrl}/${site.identifier}`, {})
             .pipe(
                 take(1),
                 tap(() => this.setCurrentSite(site)),
@@ -202,32 +214,41 @@ export class SiteService {
     getCurrentSite(): Observable<Site> {
         return merge(
             this.selectedSite ? of(this.selectedSite) : this.requestCurrentSite(),
-            this.switchSite$
+            this.switchSite$.pipe(filter((site) => !!site))
         );
     }
 
     private requestCurrentSite(): Observable<Site> {
-        return this.coreWebService
-            .requestView({
-                url: this.urls.currentSiteUrl
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<DotCMSResponse<Site>>(this.urls.currentSiteUrl)
+            .pipe(map((response) => response.entity));
     }
 
     private setCurrentSite(site: Site): void {
         this.selectedSite = site;
-        this._switchSite$.next({ ...site });
+        this._currentSite$.next({ ...site });
     }
 
     private loadCurrentSite(): void {
         this.getCurrentSite()
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                filter((site) => !!site)
+            )
             .subscribe((currentSite: Site) => {
                 this.setCurrentSite(currentSite);
             });
     }
 }
 
+/**
+ * @deprecated
+ * This interface is deprecated do not use it in new code.
+ * If you need to interact with the sites use the DotSiteService from @dotcms/data-access.
+ *
+ * @export
+ * @interface Site
+ */
 export interface Site {
     hostname: string;
     type: string;

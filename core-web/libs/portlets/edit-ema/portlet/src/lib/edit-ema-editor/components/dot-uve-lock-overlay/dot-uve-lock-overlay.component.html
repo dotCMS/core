@@ -1,0 +1,15 @@
+<div
+    class="pointer-events-auto relative flex size-full justify-center bg-(--color-palette-black-op-90) pt-[10%]"
+    data-testid="lock-overlay">
+    <div class="text-center text-white">
+        <div class="inline-block" data-testid="lock-overlay-icon">
+            <i [class]="$overlayMessages()?.icon"></i>
+        </div>
+        <h3 class="m-0 text-xl font-semibold text-white" data-testid="lock-overlay-title">
+            {{ $overlayMessages()?.title | dm }}
+        </h3>
+        <p class="m-0 text-sm" data-testid="lock-overlay-message">
+            {{ $overlayMessages()?.message | dm }}
+        </p>
+    </div>
+</div>

@@ -35,7 +35,7 @@ services:
         links:
             - elasticsearch-test
     db-test:
-        image: postgres:15
+        image: pgvector/pgvector:pg18
         command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
         environment:
             POSTGRES_USER: ${DB_USER:-postgres}
@@ -44,7 +44,7 @@ services:
         volumes:
             - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
         tmpfs:
-            - /var/lib/postgresql/data:rw
+            - /var/lib/postgresql:rw
         networks:
             - db_net
         ports:
@@ -61,6 +61,7 @@ services:
             DOT_ES_PROTOCOL: 'http'
             DOT_DOTCMS_DEV_MODE: 'true'
             DB_MAX_TOTAL: 15
+            DB_MAX_WAIT: 600000
             DOT_INDEX_POLICY_SINGLE_CONTENT: 'FORCE'
             DOT_ASYNC_REINDEX_COMMIT_LISTENERS: 'false'
             DOT_ASYNC_COMMIT_LISTENERS: 'false'

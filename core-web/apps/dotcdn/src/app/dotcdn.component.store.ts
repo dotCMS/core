@@ -2,11 +2,11 @@ import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 
-import { mergeMap, pluck, switchMapTo, tap } from 'rxjs/operators';
+import { mergeMap, switchMap, tap } from 'rxjs/operators';
 
 import {
     ChartData,
@@ -22,9 +22,10 @@ import { DotCDNService } from './dotcdn.service';
 
 @Injectable()
 export class DotCDNStore extends ComponentStore<DotCDNState> {
+    private readonly dotCdnService = inject(DotCDNService);
     selectedPeriod: SelectItem<string> = { value: ChartPeriod.Last15Days };
 
-    constructor(private readonly dotCdnService: DotCDNService) {
+    constructor() {
         super({
             chartBandwidthData: {
                 labels: [],
@@ -91,20 +92,18 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 });
 
                 return this.dotCdnService.requestStats(period).pipe(
-                    tapResponse(
-                        (data: DotCDNStats) => {
+                    tapResponse({
+                        next: (data: DotCDNStats) => {
                             // Now the chart is loaded
                             this.dispatchLoading({
                                 loadingState: LoadingState.LOADED,
                                 loader: Loader.CHART
                             });
-
                             const {
                                 statsData,
                                 chartData: [chartBandwidthData, chartRequestsData],
                                 cdnDomain
                             } = this.getChartStatsData(data);
-
                             this.updateChartState({
                                 chartBandwidthData,
                                 chartRequestsData,
@@ -112,10 +111,10 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                                 cdnDomain
                             });
                         },
-                        (_error) => {
+                        error: (_error) => {
                             // TODO: Handle error
                         }
-                    )
+                    })
                 );
             })
         );
@@ -168,7 +167,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         );
 
         return loading$.pipe(
-            switchMapTo(
+            switchMap(() =>
                 this.dotCdnService.purgeCache(urls).pipe(
                     tap(() => {
                         this.dispatchLoading({
@@ -189,14 +188,12 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             })
         );
 
-        $loading
-            .pipe(switchMapTo(this.dotCdnService.purgeCacheAll()), pluck('bodyJsonObject'))
-            .subscribe(() => {
-                this.dispatchLoading({
-                    loadingState: LoadingState.LOADED,
-                    loader: Loader.PURGE_PULL_ZONE
-                });
+        $loading.pipe(switchMap(() => this.dotCdnService.purgeCacheAll())).subscribe(() => {
+            this.dispatchLoading({
+                loadingState: LoadingState.LOADED,
+                loader: Loader.PURGE_PULL_ZONE
             });
+        });
     }
 
     private getChartStatsData({ stats }: DotCDNStats) {

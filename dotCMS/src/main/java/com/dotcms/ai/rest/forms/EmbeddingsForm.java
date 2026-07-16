@@ -11,7 +11,7 @@ import com.liferay.portal.util.PortalUtil;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.Size;
+import org.hibernate.validator.constraints.Length;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -19,7 +19,7 @@ import java.util.Objects;
 @JsonDeserialize(builder = EmbeddingsForm.Builder.class)
 public class EmbeddingsForm {
 
-    @Size(min = 1, max = 4096)
+    @Length(min = 1, max = 4096)
     public final String query;
 
     @Min(1)
@@ -33,6 +33,7 @@ public class EmbeddingsForm {
     public final String velocityTemplate;
     public final String[] fields;
     public final String userId;
+    public final String requestHostId;
     public List<String> fieldsAsList(){
         return Arrays.asList(fields);
     }
@@ -46,11 +47,12 @@ public class EmbeddingsForm {
         this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getEmbeddingsModel().getCurrentModel();
         this.fields = (builder.fields != null) ? AppConfig.SPLITTER.split(builder.fields.toLowerCase()) : new String[0];
         this.userId= PortalUtil.getUser() != null ? PortalUtil.getUser().getUserId() : APILocator.systemUser().getUserId();
+        this.requestHostId = UtilMethods.isSet(builder.requestHostId) ? builder.requestHostId : "";
     }
 
     String validateBuilderQuery(String query) {
         if (UtilMethods.isEmpty(query)) {
-            throw new IllegalArgumentException("query cannot be null");
+            return null;
         }
         return String.join(" ", query.trim().split("\\s+"));
     }
@@ -63,7 +65,8 @@ public class EmbeddingsForm {
                 .query(form.query)
                 .fields(String.join(",", form.fields))
                 .velocityTemplate(form.velocityTemplate)
-                .indexName(form.indexName);
+                .indexName(form.indexName)
+                .requestHostId(form.requestHostId);
     }
 
     @Override
@@ -120,6 +123,7 @@ public class EmbeddingsForm {
         @JsonSetter(nulls = Nulls.SKIP)
         private String velocityTemplate;
 
+        private String requestHostId;
 
         public Builder query(String query) {
             this.query = query;
@@ -153,6 +157,11 @@ public class EmbeddingsForm {
 
         public Builder velocityTemplate(String velocityTemplate) {
             this.velocityTemplate = velocityTemplate;
+            return this;
+        }
+
+        public Builder requestHostId(String requestHostId) {
+            this.requestHostId = requestHostId;
             return this;
         }
 

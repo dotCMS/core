@@ -1,0 +1,197 @@
+name: Claude AI Orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode for debugging'
+        required: false
+        type: boolean
+        default: false
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  # Security gate: Check if user is dotCMS organization member
+  #
+  # REQUIREMENTS FOR CLAUDE ACCESS:
+  # 1. Must be a member of the dotCMS organization
+  # 2. Membership must be set to PUBLIC visibility
+  #
+  # TROUBLESHOOTING: If blocked, visit https://github.com/orgs/dotCMS/people
+  # and ensure your membership is public (click "Make public" if needed)
+  security-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read           # Allow repository checkout
+      # Note: Organization membership checking uses fine-grained token
+      # so no additional GITHUB_TOKEN permissions needed for that API
+    outputs:
+      authorized: ${{ steps.membership-check.outputs.is_member }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check organization membership
+        id: membership-check
+        uses: ./.github/actions/security/org-membership-check
+        with:
+          username: ${{ github.event.comment.user.login || github.actor }}
+
+      - name: Log security decision
+        run: |
+          if [ "${{ steps.membership-check.outputs.is_member }}" = "true" ]; then
+            echo "✅ Access granted: User is a dotCMS organization member"
+          else
+            echo "❌ Access denied: User failed dotCMS organization membership check"
+            echo ""
+            echo "📋 TROUBLESHOOTING: If you are a dotCMS team member:"
+            echo "   1. Visit https://github.com/orgs/dotCMS/people"
+            echo "   2. Ensure your membership is set to 'Public'"
+            echo "   3. If you're not listed, contact an organization owner"
+            echo ""
+            echo "::warning::Unauthorized user attempted to trigger Claude workflow: ${{ github.event.comment.user.login || github.actor }}"
+          fi
+
+  # Interactive Claude mentions (simplified using centralized logic)
+  # Stays on Anthropic Claude — @claude is intentionally the Claude brand and
+  # developers expect Claude-specific tool use (Bash, Agent, etc.) when they invoke it.
+  claude-interactive:
+    needs: security-check
+    # Never cancel in-progress interactive sessions — a user may be mid-conversation
+    concurrency:
+      group: claude-interactive-${{ github.event.pull_request.number || github.event.issue.number || 'manual' }}
+      cancel-in-progress: false
+    if: |
+      needs.security-check.outputs.authorized == 'true' &&
+      (
+        github.event_name == 'issue_comment' ||
+        github.event_name == 'pull_request_review_comment' ||
+        (
+          github.event_name == 'pull_request' && (
+            contains(github.event.pull_request.title, '@claude') ||
+            contains(github.event.pull_request.title, '@Claude') ||
+            contains(github.event.pull_request.title, '@CLAUDE') ||
+            contains(github.event.pull_request.body, '@claude') ||
+            contains(github.event.pull_request.body, '@Claude') ||
+            contains(github.event.pull_request.body, '@CLAUDE')
+          )
+        )
+      )
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
+    with:
+      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      trigger_mode: interactive
+      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: true  # Uses built-in @claude mention detection
+      # custom_trigger_condition: |    # Optional: Override default mention detection
+      #   your custom condition here
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # Load the GPT review prompt from its dedicated file so prompt edits don't
+  # require touching the workflow YAML (which is locked to trunk on open PRs).
+  # Only runs when a GPT automatic review would actually fire, avoiding a
+  # wasted checkout on PRs that will use the @claude interactive path instead.
+  load-gpt-prompt:
+    needs: security-check
+    if: |
+      needs.security-check.outputs.authorized == 'true' &&
+      github.event_name == 'pull_request' &&
+      !contains(github.event.pull_request.title, '@claude') &&
+      !contains(github.event.pull_request.title, '@Claude') &&
+      !contains(github.event.pull_request.title, '@CLAUDE') &&
+      !contains(github.event.pull_request.body, '@claude') &&
+      !contains(github.event.pull_request.body, '@Claude') &&
+      !contains(github.event.pull_request.body, '@CLAUDE')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      prompt: ${{ steps.build.outputs.prompt }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          cp .github/prompts/gpt-auto-review.md /tmp/full_prompt.md
+
+          # Extract structured findings from the most recent prior AI review comment.
+          # Findings are stored as a JSON array in a hidden HTML comment at the top of each review.
+          PRIOR_FINDINGS=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            | jq -r '[.[] | select(.body | test("<!-- dotcms-review-findings:"))] | sort_by(.created_at) | last | .body // empty' \
+            | grep '<!-- dotcms-review-findings:' \
+            | sed 's/.*<!-- dotcms-review-findings:\(.*\) -->.*/\1/' \
+            | head -1)
+
+          if [ -n "$PRIOR_FINDINGS" ]; then
+            # Cap at 15 findings and truncate desc to 300 chars to bound prompt size
+            # and prevent prompt injection via model-generated content in prior reviews.
+            PRIOR_LIST=$(echo "$PRIOR_FINDINGS" \
+              | jq -r '.[0:15][] | "- **[\(.sev)]** `\(.loc)` — \(.desc | .[0:300])"')
+            printf '\n\n---\n\n## Prior review findings (recheck these)\n\n%s\n' "$PRIOR_LIST" >> /tmp/full_prompt.md
+          fi
+
+          DELIM="PROMPT_$(openssl rand -hex 8)"
+          {
+            echo "prompt<<${DELIM}"
+            cat /tmp/full_prompt.md
+            echo "${DELIM}"
+          } >> "$GITHUB_OUTPUT"
+
+  # Automatic PR reviews (no @claude mention)
+  # Uses DeepSeek R1 via AWS Bedrock (Converse API, generic-bedrock route) for model
+  # diversity — Claude writes code here, a non-Claude model reviews it so training/weighting
+  # biases from one model family don't carry into the review. Interactive @claude sessions
+  # remain on Anthropic Claude (job above). Prompt lives in .github/prompts/gpt-auto-review.md.
+  #
+  # Was openai.gpt-5.5 (Bedrock Mantle), but as of 2026-06-15 gpt-5.5 is failing on mantle
+  # in both regions ("Engine not found"; AWS-side). Switched to DeepSeek R1 (reasoning model)
+  # which produces higher-quality code review findings than V3.2.
+  ai-automatic-review:
+    needs: [security-check, load-gpt-prompt]
+    # load-gpt-prompt enforces all the PR/no-mention conditions; if it was skipped
+    # or failed this job is skipped too.
+    if: needs.load-gpt-prompt.result == 'success'
+    # Cancel in-progress automatic reviews when a new push arrives — always review latest state
+    concurrency:
+      group: claude-automatic-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
+    with:
+      # Routes to bedrock-generic (Converse) executor for non-Anthropic/OpenAI models.
+      # Set REVIEW_MODEL_ID in GitHub repo variables (Settings → Variables → Actions).
+      # R1 requires the cross-region inference profile id (us.deepseek.r1-v1:0), not the bare model id.
+      model_id: ${{ vars.REVIEW_MODEL_ID || 'us.deepseek.r1-v1:0' }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      # Use the agentic harness on the Bedrock path (model reads the repo via tools, posts
+      # inline comments, gates on severity) instead of the single-shot diff reviewer.
+      agentic: true
+      trigger_mode: automatic
+      prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
+      # Sticky comments: one auto-updating review comment per PR (default), instead of a fresh
+      # comment per push. Driven by the AI_REVIEW_STICKY_COMMENTS repo/org variable — set it to
+      # "false" for the per-commit feedback→change history; unset (or anything else) ⇒ sticky.
+      # Must evaluate to a REAL boolean: the reusable input is type: boolean, and handing it a
+      # string (`vars.X || 'true'`) makes GitHub fail to instantiate this caller job. `!= 'false'`
+      # yields a genuine boolean — sticky by default, off only when the var is exactly "false".
+      use_sticky_comment: ${{ vars.AI_REVIEW_STICKY_COMMENTS != 'false' }}
+      timeout_minutes: 20
+      runner: ubuntu-latest
+      enable_mention_detection: false
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # Note: rollback safety analysis has moved to its own workflow:
+  #   .github/workflows/ai_claude-rollback-safety.yml

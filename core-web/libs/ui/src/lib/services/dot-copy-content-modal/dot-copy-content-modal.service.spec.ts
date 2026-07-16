@@ -33,6 +33,8 @@ const CONTENT_EDIT_OPTIONS_MOCK = {
 const DYNAMIC_DIALOG_CONFIG = {
     header: 'Edit Content',
     width: '37rem',
+    closable: true,
+    draggable: false,
     data: { options: CONTENT_EDIT_OPTIONS_MOCK },
     contentStyle: { padding: '0px' }
 };

@@ -23,8 +23,7 @@ interface DotActionMenuClickEvent {
     selector: 'dot-action-menu-button',
     styleUrls: ['./dot-action-menu-button.component.scss'],
     templateUrl: 'dot-action-menu-button.component.html',
-    imports: [DotMenuComponent, ButtonModule, TooltipModule],
-    standalone: true
+    imports: [DotMenuComponent, ButtonModule, TooltipModule]
 })
 export class DotActionMenuButtonComponent implements OnInit {
     filteredActions: CustomMenuItem[] = [];
@@ -48,7 +47,7 @@ export class DotActionMenuButtonComponent implements OnInit {
                     command: ($event: DotActionMenuClickEvent) => {
                         action.menuItem.command(this.item);
 
-                        $event.originalEvent.stopPropagation();
+                        $event?.originalEvent?.stopPropagation();
                     }
                 };
             });

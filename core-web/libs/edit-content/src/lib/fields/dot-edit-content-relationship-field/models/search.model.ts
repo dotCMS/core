@@ -1,4 +1,9 @@
-import { DotLanguage } from '@dotcms/dotcms-models';
+export interface SystemSearchableFields {
+    languageId?: number;
+    siteId?: string;
+    folderId?: string;
+    [key: string]: unknown;
+}
 
 /**
  * Interface representing the parameters for a search operation.
@@ -7,7 +12,6 @@ import { DotLanguage } from '@dotcms/dotcms-models';
  * @interface SearchParams
  */
 export interface SearchParams {
-    languageId: DotLanguage['id'];
-    siteId: string;
-    query: string;
+    query?: string;
+    systemSearchableFields?: SystemSearchableFields;
 }

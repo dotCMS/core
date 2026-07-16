@@ -1,8 +1,8 @@
-import { Directive, ViewContainerRef } from '@angular/core';
+import { Directive, ViewContainerRef, inject } from '@angular/core';
 
 @Directive({
     selector: '[dotContainerReference]'
 })
 export class DotContainerReferenceDirective {
-    constructor(public viewContainerRef: ViewContainerRef) {}
+    viewContainerRef = inject(ViewContainerRef);
 }

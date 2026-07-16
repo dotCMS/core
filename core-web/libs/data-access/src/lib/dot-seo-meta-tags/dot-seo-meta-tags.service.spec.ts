@@ -4,13 +4,14 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { IMG_NOT_FOUND_KEY } from '@dotcms/dotcms-models';
 import { seoOGTagsResultOgMock } from '@dotcms/utils-testing';
 
 import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotSeoMetaTagsUtilService } from '../dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
+import { DotUploadService } from '../dot-upload/dot-upload.service';
 
 function createTestDocument(): XMLDocument {
     return document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
@@ -498,6 +499,184 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(doc).subscribe((value) => {
             expect(value[7].items[0].message).toEqual('seo.rules.twitter-card-title.not.found');
+            done();
+        });
+    });
+
+    it('should get description less warning when description is too short', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content = 'Short desc';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('seo.rules.description.less');
+            done();
+        });
+    });
+
+    it('should get description greater warning when description is too long', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content =
+            'This description is way too long and exceeds the maximum allowed length of one hundred and fifty characters for a meta description tag in dotCMS SEO rules checker system.';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('seo.rules.description.greater');
+            done();
+        });
+    });
+
+    it('should get og:description less warning when og:description is too short', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.setAttribute('property', 'og:description');
+        metaDesc.setAttribute('content', 'Short og desc');
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual('seo.rules.og-description.less');
+            done();
+        });
+    });
+
+    it('should get og:title less warning when og:title is too short', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaTitle = doc.createElement('meta');
+        metaTitle.name = 'og:title';
+        metaTitle.content = 'Short';
+        head.appendChild(metaTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[2].items[0].message).toEqual('seo.rules.og-title.less');
+            done();
+        });
+    });
+
+    it('should get og:title greater warning when og:title is too long', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaTitle = doc.createElement('meta');
+        metaTitle.name = 'og:title';
+        metaTitle.content = 'This og:title is way too long and exceeds sixty characters limit';
+        head.appendChild(metaTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[2].items[0].message).toEqual('seo.rules.og-title.greater');
+            done();
+        });
+    });
+
+    it('should get title less warning when HTML title is too short', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const title = document.createElement('title');
+        title.innerText = 'Short';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual('seo.rules.title.less');
+            done();
+        });
+    });
+
+    it('should get title greater warning when HTML title is too long', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const title = document.createElement('title');
+        title.innerText =
+            'This HTML title is way too long and definitely exceeds the sixty character limit';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual('seo.rules.title.greater');
+            done();
+        });
+    });
+
+    it('should get twitter:title less warning when twitter:title is too short', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterTitle = doc.createElement('meta');
+        twitterTitle.name = 'twitter:title';
+        twitterTitle.content = 'Short';
+        head.appendChild(twitterTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual('seo.rules.twitter-card.title.less');
+            done();
+        });
+    });
+
+    it('should get twitter:title greater warning when twitter:title is too long', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterTitle = doc.createElement('meta');
+        twitterTitle.name = 'twitter:title';
+        twitterTitle.content =
+            'This twitter title is way too long and exceeds the seventy character maximum limit';
+        head.appendChild(twitterTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual('seo.rules.twitter-card.title.greater');
+            done();
+        });
+    });
+
+    it('should get twitter:description less warning when twitter:description is too short', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterDesc = doc.createElement('meta');
+        twitterDesc.name = 'twitter:description';
+        twitterDesc.content = 'Too short';
+        head.appendChild(twitterDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.less');
+            done();
+        });
+    });
+
+    it('should get twitter:description greater warning when twitter:description is too long', (done) => {
+        const doc: XMLDocument = createTestDocument();
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterDesc = doc.createElement('meta');
+        twitterDesc.name = 'twitter:description';
+        twitterDesc.content =
+            'This twitter description is way too long and it exceeds the maximum allowed two hundred characters limit for twitter card description meta tags used in dotCMS SEO rules validation checker to ensure proper social media sharing optimization across all platforms.';
+        head.appendChild(twitterDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.greater');
             done();
         });
     });

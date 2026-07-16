@@ -11,8 +11,10 @@ import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.domain.AIResponse;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
+import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.EncodingUtil;
+import com.dotcms.analytics.Util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -20,6 +22,8 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -36,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * This class implements the CompletionsAPI interface and provides the specific logic for interacting with the AI service.
@@ -43,6 +48,10 @@ import java.util.Optional;
  * It also provides methods for building request JSON for the AI service and reducing string size to fit the max token size of the model.
  */
 public class CompletionsAPIImpl implements CompletionsAPI {
+
+    private static String DEFAULT_AI_MAX_NUMBER_OF_TOKENS = "AI_DEFAULT_MAX_NUMBER_OF_TOKENS";
+    public static final Lazy<Integer> DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE =
+            Lazy.of(() -> Config.getIntProperty(DEFAULT_AI_MAX_NUMBER_OF_TOKENS, 16384));
 
     private final AppConfig config;
 
@@ -65,6 +74,9 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final Model model = config.resolveModelOrThrow(modelIn, AIModelType.TEXT)._2;
         final JSONObject json = new JSONObject();
 
+        if (temperature <= 0) {
+            Logger.warn(this.getClass(), "Temperature is " + temperature + ". Set a positive value in providerConfig if unintended.");
+        }
         json.put(AiKeys.TEMPERATURE, temperature);
         buildMessages(systemPrompt, userPrompt, json);
 
@@ -83,6 +95,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final List<EmbeddingsDTO> localResults = APILocator.getDotAIAPI()
                 .getEmbeddingsAPI()
                 .getEmbeddingResults(searcher);
+
+        if (localResults.isEmpty()) {
+            return new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"));
+        }
 
         // send all this as a json blob to OpenAI
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
@@ -110,6 +126,17 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 .getEmbeddingsAPI()
                 .getEmbeddingResults(searcher);
 
+        if (localResults.isEmpty()) {
+            Try.run(() -> {
+                output.write(
+                        (new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"))
+                                .toString() + "\n")
+                                .getBytes());
+                output.flush();
+            });
+            return;
+        }
+
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);
         AIProxyClient.get().callToAI(
@@ -122,10 +149,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     @Override
     public JSONObject raw(final JSONObject json, final String userId) {
-        config.debugLogger(this.getClass(), () -> "OpenAI request:" + json.toString(2));
+        config.debugLogger(this.getClass(), () -> "AI request:" + json.toString(2));
 
         final String response = sendRequest(config, json, userId).getResponse();
-        config.debugLogger(this.getClass(), () -> "OpenAI response:" + response);
+        config.debugLogger(this.getClass(), () -> "AI response:" + response);
 
         return new JSONObject(response);
     }
@@ -161,7 +188,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
-        final Tuple2<AIModel, Model> modelTuple = config.resolveModelOrThrow(form.model, AIModelType.TEXT);
+        final ResolvedModel resolvedModel = resolveModel(form);
+
         // aggregate matching results into text
         final StringBuilder supportingContent = new StringBuilder();
         searchResults.forEach(s -> supportingContent.append(s.extractedText).append(" "));
@@ -172,7 +200,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final int systemPromptTokens = countTokens(systemPrompt);
         textPrompt = reduceStringToTokenSize(
                 textPrompt,
-                modelTuple._1.getMaxTokens() - form.responseLengthTokens - systemPromptTokens);
+                resolvedModel.maxTokens - form.responseLengthTokens - systemPromptTokens);
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.STREAM, form.stream);
@@ -181,7 +209,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         buildMessages(systemPrompt, textPrompt, json);
 
         if (UtilMethods.isSet(form.model)) {
-            json.put(AiKeys.MODEL, modelTuple._2.getName());
+            json.put(AiKeys.MODEL, resolvedModel.name);
         }
 
         if (UtilMethods.isSet(form.responseFormat)) {
@@ -191,6 +219,50 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
 
         return json;
+    }
+
+
+    /**
+     * Determines the current model and the maximum number of tokens to use when making a request to the OpenAI server.
+     * Here's how it works:
+     *
+     * - First, it checks if a whitelist of allowed models is configured in the DotAI App.
+     * - If a whitelist exists:
+     *    - It verifies that the model name provided in the request is in the whitelist.
+     *    - If it is, the method uses that model and the max number of tokens defined in the DotAI App.
+     *    - If it isn't, a {@link DotAIModelNotFoundException} is thrown.
+     * - If no whitelist is configured (i.e., it's empty), then:
+     *    - The provided model name is used.
+     *    - The max number of tokens is taken from the DEFAULT_AI_MAX_NUMBER_OF_TOKENS variable.
+     *
+     * @param completionsForm
+     * @return
+     */
+    private ResolvedModel resolveModel(final CompletionsForm completionsForm) {
+        final AIModel aiModel = config.resolveModel(AIModelType.TEXT);
+        final List<Model> models = aiModel.getModels().stream()
+                .filter(model -> UtilMethods.isSet(model.getName()))
+                .collect(Collectors.toList());
+
+        if (UtilMethods.isSet(models)) {
+            if (UtilMethods.isSet(completionsForm.model)) {
+                final Tuple2<AIModel, Model> modelTuple = config
+                        .resolveModelOrThrow(completionsForm.model, AIModelType.TEXT);
+                final int maxTokens = modelTuple._1.getMaxTokens() > 0
+                        ? modelTuple._1.getMaxTokens()
+                        : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
+                return new ResolvedModel(modelTuple._2.getName(), maxTokens);
+            }
+            final int maxTokens = aiModel.getMaxTokens() > 0
+                    ? aiModel.getMaxTokens()
+                    : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
+            return new ResolvedModel(aiModel.getCurrentModel(), maxTokens);
+        } else if (UtilMethods.isSet(completionsForm.model)) {
+            return new ResolvedModel(completionsForm.model, DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get());
+        } else {
+            throw new DotAIModelNotFoundException(
+                    "The model is mandatory, you need to set one neither in the dotAPI APP or in the request");
+        }
     }
 
     private String getPrompt(final String prompt, final String supportingContent, final AppKeys key) {
@@ -221,7 +293,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         return EncodingUtil.get()
                 .getEncoding(config, AIModelType.TEXT)
                 .map(enc -> enc.countTokens(testString))
-                .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
+                .orElseGet(() -> Math.max(1, testString.length() / 4));
     }
 
     /***
@@ -259,12 +331,15 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private JSONObject buildRequestJson(final CompletionsForm form) {
         final AIModel aiModel = config.getModel();
+        final int effectiveMaxTokens = aiModel.getMaxTokens() > 0
+                ? aiModel.getMaxTokens()
+                : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
         final int promptTokens = countTokens(form.prompt);
 
         final JSONArray messages = new JSONArray();
         final String textPrompt = reduceStringToTokenSize(
                 form.prompt,
-                aiModel.getMaxTokens() - form.responseLengthTokens - promptTokens);
+                effectiveMaxTokens - form.responseLengthTokens - promptTokens);
 
         messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, textPrompt));
 
@@ -276,6 +351,20 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         json.put(AiKeys.STREAM, form.stream);
 
         return json;
+    }
+
+    /**
+     * Use in resolveModel(CompletionsForm) method to return the model and max number of token can must ve used in any
+     * request to OpenAI. this can be different according to the request parameters
+     */
+    private static class ResolvedModel {
+        private String name;
+        private int maxTokens;
+
+        private ResolvedModel(final String name, final int maxTokens) {
+            this.name = name;
+            this.maxTokens = maxTokens;
+        }
     }
 
 }

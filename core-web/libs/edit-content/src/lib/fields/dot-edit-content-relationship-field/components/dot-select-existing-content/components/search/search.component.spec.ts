@@ -1,28 +1,105 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { MockComponent } from 'ng-mocks';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { ReactiveFormsModule } from '@angular/forms';
+import { Component, forwardRef, signal } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
+import {
+    ControlValueAccessor,
+    FormControl,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
+import { ChipModule } from 'primeng/chip';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
-import { TreeNodeItem } from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
-import { DotMessagePipe } from '@dotcms/ui';
+import { TreeNodeItem } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
-import { SearchComponent } from './search.compoment';
+import { SiteFieldComponent } from './components/site-field/site-field.component';
+import { SearchComponent, DEBOUNCE_TIME } from './search.component';
+
+import { ContentletFilterContext } from '../../../../models/relationship.models';
+import { SearchParams } from '../../../../models/search.model';
+
+// Mock components for testing
+@Component({
+    selector: 'dot-language-field',
+    template: '<input [formControlName]="null" />',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MockLanguageFieldComponent),
+            multi: true
+        }
+    ]
+})
+class MockLanguageFieldComponent implements ControlValueAccessor {
+    languageControl = new FormControl({ isoCode: 'en-US', id: 1 });
+    $selectedLanguageLabel = signal('en-US');
+
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    writeValue(): void {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnChange(): void {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnTouched(): void {}
+}
+
+@Component({
+    selector: 'dot-site-field',
+    template: '<input [formControlName]="null" />',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MockSiteFieldComponent),
+            multi: true
+        }
+    ]
+})
+class MockSiteFieldComponent implements ControlValueAccessor {
+    siteControl = new FormControl({
+        label: 'demo.dotcms.com',
+        data: { id: 'site123', type: 'site' }
+    });
+    $selectedNodeLabel = signal('demo.dotcms.com');
+
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    writeValue(): void {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnChange(): void {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnTouched(): void {}
+}
 
 describe('SearchComponent', () => {
     let spectator: Spectator<SearchComponent>;
     let component: SearchComponent;
+
+    function makeMockLanguageField(isoCode = 'en-US', id = 1): LanguageFieldComponent {
+        return {
+            languageControl: { value: { isoCode, id } },
+            $selectedLanguageLabel: signal(isoCode)
+        } as unknown as LanguageFieldComponent;
+    }
+
+    function makeMockSiteField(
+        label = 'demo.dotcms.com',
+        id = 'site123',
+        type = 'site'
+    ): SiteFieldComponent {
+        return {
+            siteControl: { value: { label, data: { id, type } } },
+            $selectedNodeLabel: signal(label)
+        } as unknown as SiteFieldComponent;
+    }
 
     const messageServiceMock = new MockDotMessageService({
         'dot.file.relationship.dialog.search.language.failed': 'Failed to load languages'
@@ -71,17 +148,19 @@ describe('SearchComponent', () => {
         imports: [
             ReactiveFormsModule,
             ButtonModule,
-            DropdownModule,
+            SelectModule,
             InputGroupModule,
             InputTextModule,
-            OverlayPanelModule
+            PopoverModule,
+            ChipModule,
+            MockLanguageFieldComponent,
+            MockSiteFieldComponent
         ],
-        declarations: [MockComponent(LanguageFieldComponent)],
         mocks: [DotMessagePipe],
         detectChanges: true,
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
-            mockProvider(DotEditContentService, {
+            mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
                 getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
             }),
@@ -109,15 +188,283 @@ describe('SearchComponent', () => {
             const formValues = component.form.getRawValue();
             expect(formValues).toEqual({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {
+                    languageId: -1,
+                    siteOrFolderId: ''
+                }
             });
         });
 
         it('should have valid form controls', () => {
             expect(component.form.get('query')).toBeTruthy();
-            expect(component.form.get('languageId')).toBeTruthy();
-            expect(component.form.get('siteId')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields').get('languageId')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields').get('siteOrFolderId')).toBeTruthy();
+        });
+    });
+
+    describe('Active Filters', () => {
+        beforeEach(() => {
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
+        });
+
+        it('should return empty filters when no active search params', () => {
+            expect(component.$activeFilters()).toEqual([]);
+        });
+
+        it('should show language filter when language is selected', () => {
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: { languageId: 1 }
+            });
+
+            const filters = component.$activeFilters();
+            expect(filters).toHaveLength(1);
+            expect(filters[0]).toEqual({
+                label: 'en-US',
+                value: 1,
+                type: 'language'
+            });
+        });
+
+        it('should show site filter when site is selected', () => {
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: { siteId: 'site123' }
+            });
+
+            const filters = component.$activeFilters();
+            expect(filters).toHaveLength(1);
+            expect(filters[0]).toEqual({
+                label: 'demo.dotcms.com',
+                value: 'site:site123',
+                type: 'site'
+            });
+        });
+
+        it('should show folder filter when folder is selected', () => {
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: { folderId: 'folder123' }
+            });
+
+            const filters = component.$activeFilters();
+            expect(filters).toHaveLength(1);
+            expect(filters[0]).toEqual({
+                label: 'demo.dotcms.com',
+                value: 'folder:folder123',
+                type: 'folder'
+            });
+        });
+
+        it('should show multiple filters when multiple are selected', () => {
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: 'site123'
+                }
+            });
+
+            const filters = component.$activeFilters();
+            expect(filters).toHaveLength(2);
+            expect(filters.some((f) => f.type === 'language')).toBe(true);
+            expect(filters.some((f) => f.type === 'site')).toBe(true);
+        });
+
+        it('should not show language filter when languageId is -1', () => {
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: { languageId: -1 }
+            });
+
+            const filters = component.$activeFilters();
+            expect(filters).toHaveLength(0);
+        });
+    });
+
+    describe('removeFilter', () => {
+        it('should remove language filter and trigger search', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.form.patchValue({
+                systemSearchableFields: { languageId: 1 }
+            });
+
+            component.removeFilter('language');
+
+            expect(component.form.get('systemSearchableFields.languageId')?.value).toBe(-1);
+            expect(searchSpy).toHaveBeenCalled();
+        });
+
+        it('should remove site filter and trigger search', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.form.patchValue({
+                systemSearchableFields: { siteOrFolderId: 'site:123' }
+            });
+
+            component.removeFilter('site');
+
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe('');
+            expect(searchSpy).toHaveBeenCalled();
+        });
+
+        it('should remove folder filter and trigger search', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.form.patchValue({
+                systemSearchableFields: { siteOrFolderId: 'folder:123' }
+            });
+
+            component.removeFilter('folder');
+
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe('');
+            expect(searchSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('getValues', () => {
+        it('should handle site type correctly', () => {
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'site:site123'
+                }
+            });
+
+            const result = component.getValues();
+
+            expect(result).toEqual({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteId: 'site123'
+                }
+            });
+        });
+
+        it('should handle folder type correctly', () => {
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'folder:folder123'
+                }
+            });
+
+            const result = component.getValues();
+
+            expect(result).toEqual({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    folderId: 'folder123'
+                }
+            });
+        });
+
+        it('should handle empty siteOrFolderId', () => {
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: ''
+                }
+            });
+
+            const result = component.getValues();
+
+            expect(result).toEqual({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2
+                }
+            });
+        });
+
+        it('should handle malformed siteOrFolderId (no colon)', () => {
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'invalidformat'
+                }
+            });
+
+            const result = component.getValues();
+
+            expect(result).toEqual({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2
+                }
+            });
+        });
+
+        it('should filter out empty values and -1', () => {
+            component.form.patchValue({
+                query: '',
+                systemSearchableFields: {
+                    languageId: -1,
+                    siteOrFolderId: ''
+                }
+            });
+
+            const result = component.getValues();
+
+            expect(result).toEqual({
+                query: '',
+                systemSearchableFields: {}
+            });
+        });
+    });
+
+    describe('Display Label Methods', () => {
+        it('should get language display label from signal', () => {
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+
+            const label = component['getLanguageDisplayLabel'](1);
+            expect(label).toBe('en-US');
+        });
+
+        it('should fallback to language ID when no control value', () => {
+            jest.spyOn(component, '$languageField').mockReturnValue(null);
+
+            const label = component['getLanguageDisplayLabel'](1);
+            expect(label).toBe('Language Id: 1');
+        });
+
+        it('should get site display label from control value', () => {
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
+
+            const label = component['getSiteDisplayLabel']('site123');
+            expect(label).toBe('demo.dotcms.com');
+        });
+
+        it('should fallback to ID when no control value', () => {
+            jest.spyOn(component, '$siteField').mockReturnValue(null);
+
+            const label = component['getSiteDisplayLabel']('site123');
+            expect(label).toBe('site123');
+        });
+
+        it('should not truncate a label with exactly 45 characters', () => {
+            const exactLabel = 'a'.repeat(45);
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(exactLabel));
+
+            const label = component['getSiteDisplayLabel']('site123');
+            expect(label).toBe(exactLabel);
+        });
+
+        it('should truncate labels longer than 45 characters', () => {
+            const longLabel = 'a'.repeat(46);
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(longLabel));
+
+            const label = component['getSiteDisplayLabel']('site123');
+            expect(label).toBe(longLabel.substring(0, 45) + '...');
         });
     });
 
@@ -126,8 +473,10 @@ describe('SearchComponent', () => {
             // Set some values in the form
             component.form.patchValue({
                 query: 'test query',
-                languageId: 1,
-                siteId: 'site1'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteOrFolderId: 'site:site1'
+                }
             });
         });
 
@@ -137,8 +486,10 @@ describe('SearchComponent', () => {
             const formValues = component.form.getRawValue();
             expect(formValues).toEqual({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {
+                    languageId: -1,
+                    siteOrFolderId: ''
+                }
             });
         });
 
@@ -149,20 +500,72 @@ describe('SearchComponent', () => {
 
             expect(hideSpy).toHaveBeenCalled();
         });
+
+        it('should clear active search parameters', () => {
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: { languageId: 1 }
+            });
+
+            component.clearForm();
+
+            expect(component.$activeSearchParams()).toEqual({});
+        });
+
+        it('should emit empty search', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.clearForm();
+
+            expect(searchSpy).toHaveBeenCalledWith({});
+        });
     });
 
     describe('doSearch', () => {
-        it('should emit form values and hide overlay panel', () => {
+        it('should emit form values and hide overlay panel (site)', () => {
             const searchParams: SearchParams = {
                 query: 'test search',
-                languageId: 2,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteId: 'site123'
+                }
             };
 
             const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
 
-            component.form.patchValue(searchParams);
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'site:site123'
+                }
+            });
+            component.doSearch();
+
+            expect(hideSpy).toHaveBeenCalled();
+            expect(searchSpy).toHaveBeenCalledWith(searchParams);
+        });
+
+        it('should emit form values and hide overlay panel (folder)', () => {
+            const searchParams: SearchParams = {
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    folderId: 'folder123'
+                }
+            };
+
+            const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'folder:folder123'
+                }
+            });
             component.doSearch();
 
             expect(hideSpy).toHaveBeenCalled();
@@ -176,9 +579,30 @@ describe('SearchComponent', () => {
 
             expect(searchSpy).toHaveBeenCalledWith({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {}
             });
+        });
+
+        it('should update active search parameters', () => {
+            const searchParams = {
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteId: 'site123'
+                }
+            };
+
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'site:site123'
+                }
+            });
+
+            component.doSearch();
+
+            expect(component.$activeSearchParams()).toEqual(searchParams);
         });
 
         it('should set isLoading to true when search is performed', () => {
@@ -198,6 +622,49 @@ describe('SearchComponent', () => {
         });
     });
 
+    describe('Debounced Search', () => {
+        it('should trigger search automatically after debounce delay', fakeAsync(() => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            // Set query value
+            component.form.get('query')?.setValue('test search');
+
+            // Fast-forward time by less than debounce time - should not trigger search
+            tick(DEBOUNCE_TIME - 1);
+            expect(searchSpy).not.toHaveBeenCalled();
+
+            // Fast-forward remaining time - should trigger search
+            tick(1);
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test search',
+                systemSearchableFields: {}
+            });
+        }));
+
+        it('should include system search fields in debounced search', fakeAsync(() => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            // Set form values
+            component.form.patchValue({
+                query: 'test',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteOrFolderId: 'site:123'
+                }
+            });
+
+            tick(DEBOUNCE_TIME);
+
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: '123'
+                }
+            });
+        }));
+    });
+
     describe('Integration Tests', () => {
         it('should update form values when input changes', () => {
             const queryInput = spectator.query('input[formControlName="query"]');
@@ -206,13 +673,33 @@ describe('SearchComponent', () => {
             expect(component.form.get('query').value).toBe('test query');
         });
 
-        it('should trigger search when search button is clicked', () => {
+        it('should trigger debounced search when typing in input', fakeAsync(() => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const queryInput = spectator.query('input[formControlName="query"]');
+
+            spectator.typeInElement('test search', queryInput);
+
+            // Should not trigger immediately
+            expect(searchSpy).not.toHaveBeenCalled();
+
+            // Wait for debounce
+            tick(DEBOUNCE_TIME);
+
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test search',
+                systemSearchableFields: {}
+            });
+        }));
+
+        it('should trigger search when search button is clicked (site)', () => {
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 query: 'test search',
-                languageId: 1,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteOrFolderId: 'site:site123'
+                }
             });
 
             const openFiltersButton = spectator.query(
@@ -225,16 +712,48 @@ describe('SearchComponent', () => {
 
             expect(searchSpy).toHaveBeenCalledWith({
                 query: 'test search',
-                languageId: 1,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: 'site123'
+                }
+            });
+        });
+
+        it('should trigger search when search button is clicked (folder)', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteOrFolderId: 'folder:folder123'
+                }
+            });
+
+            const openFiltersButton = spectator.query(
+                'p-button[data-testid="open-filters-button"] button'
+            );
+            spectator.click(openFiltersButton);
+
+            const searchButton = spectator.query('p-button[data-testid="search-button"] button');
+            spectator.click(searchButton);
+
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 1,
+                    folderId: 'folder123'
+                }
             });
         });
 
         it('should clear form when clear button is clicked', () => {
             component.form.patchValue({
                 query: 'test query',
-                languageId: 1,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteOrFolderId: 'site:site123'
+                }
             });
 
             const openFiltersButton = spectator.query(
@@ -247,9 +766,117 @@ describe('SearchComponent', () => {
 
             expect(component.form.getRawValue()).toEqual({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {
+                    languageId: -1,
+                    siteOrFolderId: ''
+                }
             });
+        });
+
+        it('should display filter chips when filters are active', () => {
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: 'site123'
+                }
+            });
+
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
+
+            spectator.detectChanges();
+
+            const chips = spectator.queryAll('p-chip');
+            expect(chips.length).toBe(2);
+        });
+
+        it('should remove filter when chip is removed', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.$activeSearchParams.set({
+                query: 'test',
+                systemSearchableFields: { languageId: 1 }
+            });
+
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+
+            spectator.detectChanges();
+
+            const chip = spectator.query('p-chip');
+            expect(chip).toBeTruthy();
+
+            // Simulate chip removal
+            component.removeFilter('language');
+
+            expect(searchSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('Pre-population from initialFilters', () => {
+        const mockFilters: ContentletFilterContext = {
+            hostId: 'site-abc',
+            hostName: 'demo.dotcms.com',
+            languageId: 2,
+            folderId: null,
+            folderPath: null
+        };
+
+        it('should pre-populate language and site from initialFilters', () => {
+            spectator.setInput('initialFilters', mockFilters);
+            spectator.detectChanges();
+
+            expect(component.form.get('systemSearchableFields.languageId')?.value).toBe(2);
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe(
+                'site:site-abc'
+            );
+        });
+
+        it('should pre-populate folder when folderId is present', () => {
+            const folderFilters: ContentletFilterContext = {
+                ...mockFilters,
+                hostId: null,
+                folderId: 'folder-xyz',
+                folderPath: '/blog/'
+            };
+            spectator.setInput('initialFilters', folderFilters);
+            spectator.detectChanges();
+
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe(
+                'folder:folder-xyz'
+            );
+        });
+
+        it('should set activeSearchParams so chips display immediately', () => {
+            spectator.setInput('initialFilters', mockFilters);
+            spectator.detectChanges();
+
+            const params = component.$activeSearchParams();
+            expect(params.systemSearchableFields?.languageId).toBe(2);
+        });
+
+        it('should not pre-populate more than once', () => {
+            spectator.setInput('initialFilters', mockFilters);
+            spectator.detectChanges();
+
+            // Change filters after first pre-population
+            const newFilters: ContentletFilterContext = {
+                ...mockFilters,
+                languageId: 5
+            };
+            spectator.setInput('initialFilters', newFilters);
+            spectator.detectChanges();
+
+            // Language should still be 2 from first pre-population
+            expect(component.form.get('systemSearchableFields.languageId')?.value).toBe(2);
+        });
+
+        it('should not pre-populate when initialFilters is null', () => {
+            spectator.setInput('initialFilters', null);
+            spectator.detectChanges();
+
+            expect(component.form.get('systemSearchableFields.languageId')?.value).toBe(-1);
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe('');
         });
     });
 });

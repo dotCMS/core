@@ -16,6 +16,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,6 +41,7 @@ import static com.dotcms.util.CollectionsUtils.toImmutableList;
  * @author nollymar
  */
 @Path("/v1/relationships")
+@Tag(name = "Relationships", description = "Content relationship management")
 public class RelationshipsResource {
 
     private final WebResource webResource;

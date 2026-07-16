@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { CardModule } from 'primeng/card';
 import { Skeleton, SkeletonModule } from 'primeng/skeleton';
@@ -10,8 +10,7 @@ describe('DotAssetCardSkeletonComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAssetCardSkeletonComponent,
-        imports: [CardModule, SkeletonModule],
-        declarations: [Skeleton]
+        imports: [CardModule, SkeletonModule]
     });
 
     beforeEach(() => {

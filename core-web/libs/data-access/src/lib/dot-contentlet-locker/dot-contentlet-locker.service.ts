@@ -1,10 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
-
-import { pluck } from 'rxjs/operators';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 export interface DotContentletLockResponse {
     id: string;
@@ -12,9 +9,16 @@ export interface DotContentletLockResponse {
     message: string;
 }
 
+/**
+ * Service to lock and unlock contentlets.
+ *
+ * @export
+ * @class DotContentletLockerService
+ * @deprecated Use DotContentletService.lockContent and DotContentletService.unlockContent instead.
+ */
 @Injectable()
 export class DotContentletLockerService {
-    constructor(private coreWebService: CoreWebService) {}
+    private http = inject(HttpClient);
 
     /**
      * Lock a content asset
@@ -24,12 +28,7 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     lock(inode: string): Observable<DotContentletLockResponse> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `/api/content/lock/inode/${inode}`
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http.put<DotContentletLockResponse>(`/api/content/lock/inode/${inode}`, {});
     }
 
     /**
@@ -40,11 +39,6 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     unlock(inode: string): Observable<DotContentletLockResponse> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `/api/content/unlock/inode/${inode}`
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http.put<DotContentletLockResponse>(`/api/content/unlock/inode/${inode}`, {});
     }
 }

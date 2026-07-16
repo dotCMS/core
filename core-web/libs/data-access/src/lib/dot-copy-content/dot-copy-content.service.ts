@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck, shareReplay } from 'rxjs/operators';
+import { map, shareReplay } from 'rxjs/operators';
 
 import { DotTreeNode, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -15,7 +15,7 @@ const API_ENDPOINT = `/api/v1/page/copyContent`;
     providedIn: 'root'
 })
 export class DotCopyContentService {
-    constructor(private readonly http: HttpClient) {}
+    private readonly http = inject(HttpClient);
 
     /**
      *
@@ -30,6 +30,9 @@ export class DotCopyContentService {
             personalization: treeNode?.personalization || DEFAULT_PERSONALIZATION
         };
 
-        return this.http.put(API_ENDPOINT, body).pipe(shareReplay(), pluck('entity'));
+        return this.http.put<{ entity: DotCMSContentlet }>(API_ENDPOINT, body).pipe(
+            shareReplay(),
+            map((x) => x?.entity)
+        );
     }
 }

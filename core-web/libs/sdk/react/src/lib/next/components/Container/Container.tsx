@@ -1,14 +1,19 @@
+'use client';
+
 import { useContext, useMemo } from 'react';
 
-import { ContainerNoFound, EmptyContainer } from './ContainerFallbakcs';
-
-import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
-import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
+import { DotCMSBasicContentlet, DotCMSColumnContainer } from '@dotcms/types';
+import { DotContainerAttributes } from '@dotcms/types/internal';
 import {
     getContainersData,
-    getContentletsInContainer,
-    getDotContainerAttributes
-} from '../../utils';
+    getDotContainerAttributes,
+    getContentletsInContainer
+} from '@dotcms/uve/internal';
+
+import { ContainerNotFound, EmptyContainer } from './ContainerFallbacks';
+
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
+import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { Contentlet } from '../Contentlet/Contentlet';
 
 /**
@@ -43,6 +48,7 @@ type DotCMSContainerRendererProps = {
  */
 export function Container({ container }: DotCMSContainerRendererProps) {
     const { pageAsset } = useContext(DotCMSPageContext);
+    const isDevMode = useIsDevMode();
 
     const containerData = useMemo(
         () => getContainersData(pageAsset, container),
@@ -54,11 +60,14 @@ export function Container({ container }: DotCMSContainerRendererProps) {
     );
 
     if (!containerData) {
-        return <ContainerNoFound identifier={container.identifier} />;
+        return <ContainerNotFound identifier={container.identifier} />;
     }
 
     const isEmpty = contentlets.length === 0;
-    const dotAttributes = getDotContainerAttributes(containerData);
+    // Container metadata is editor-only — strip it from live output.
+    const dotAttributes: Partial<DotContainerAttributes> = isDevMode
+        ? getDotContainerAttributes(containerData)
+        : {};
 
     if (isEmpty) {
         return <EmptyContainer {...dotAttributes} />;
@@ -66,7 +75,7 @@ export function Container({ container }: DotCMSContainerRendererProps) {
 
     return (
         <div {...dotAttributes}>
-            {contentlets.map((contentlet: DotCMSContentlet) => (
+            {contentlets.map((contentlet: DotCMSBasicContentlet) => (
                 <Contentlet
                     key={contentlet.identifier}
                     contentlet={contentlet}

@@ -1,5 +1,7 @@
 package com.dotcms.cli.command;
 
+import static com.dotcms.cli.common.GlobalMixin.OPTION_NO_VALIDATE_UNMATCHED_ARGUMENTS;
+
 import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
@@ -59,7 +61,7 @@ public class PullCommand implements Callable<Integer>, DotCommand {
 
         // Preparing the list of arguments to be passed to the subcommands
         var expandedArgs = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
-        expandedArgs.add("--noValidateUnmatchedArguments");
+        expandedArgs.add(OPTION_NO_VALIDATE_UNMATCHED_ARGUMENTS);
         var args = expandedArgs.toArray(new String[0]);
 
         // Sort the subcommands by order

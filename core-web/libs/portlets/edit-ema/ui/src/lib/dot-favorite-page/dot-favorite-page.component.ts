@@ -1,7 +1,14 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import {
+    Component,
+    OnInit,
+    OnDestroy,
+    CUSTOM_ELEMENTS_SCHEMA,
+    inject,
+    signal
+} from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -10,10 +17,13 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { filter, map, startWith, takeUntil } from 'rxjs/operators';
 
-import { DotTempFileUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotPageRenderService,
+    DotTempFileUploadService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
-    DotAutofocusDirective,
     DotFormDialogComponent,
     DotFieldValidationMessageComponent,
     DotPagesFavoritePageEmptySkeletonComponent,
@@ -44,38 +54,41 @@ export interface DotFavoritePageFormData {
 @Component({
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
-    styleUrls: ['./dot-favorite-page.component.scss'],
-    standalone: true,
     imports: [
-        CommonModule,
         ButtonModule,
-        DotAutofocusDirective,
         DotFormDialogComponent,
         DotFieldValidationMessageComponent,
         DotPagesFavoritePageEmptySkeletonComponent,
         InputTextModule,
         ReactiveFormsModule,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        AsyncPipe
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    providers: [DotFavoritePageStore, DotTempFileUploadService, DotWorkflowActionsFireService]
+    providers: [
+        DotFavoritePageStore,
+        DotPageRenderService,
+        DotTempFileUploadService,
+        DotWorkflowActionsFireService
+    ]
 })
 export class DotFavoritePageComponent implements OnInit, OnDestroy {
+    private ref = inject(DynamicDialogRef);
+    private config = inject(DynamicDialogConfig);
+    private fb = inject(UntypedFormBuilder);
+    private store = inject(DotFavoritePageStore);
+
     form: FormGroup;
     isFormValid$: Observable<boolean>;
     timeStamp: string;
+    protected readonly isThumbnailLoading = signal(true);
 
     vm$: Observable<DotFavoritePageState> = this.store.vm$;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private ref: DynamicDialogRef,
-        private config: DynamicDialogConfig,
-        private fb: UntypedFormBuilder,
-        private store: DotFavoritePageStore
-    ) {
+    constructor() {
         this.store.setInitialStateData({
             favoritePageUrl: this.config.data.page.favoritePageUrl,
             favoritePage: this.config.data.page.favoritePage
@@ -91,6 +104,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 filter((formStateData) => !!formStateData)
             )
             .subscribe((formStateData: DotFavoritePageFormData) => {
+                this.isThumbnailLoading.set(true);
                 this.form = this.fb.group({
                     inode: [formStateData?.inode],
                     thumbnail: [formStateData?.thumbnail],
@@ -110,6 +124,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 requestAnimationFrame(() => {
                     if (formStateData?.inode) {
                         this.form.get('thumbnail').setValue(formStateData?.thumbnail);
+                        // img (load) event will clear isThumbnailLoading for this path
                     } else {
                         this.setPreviewThumbnailListener();
                     }
@@ -122,6 +137,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 filter((renderThumbnail) => renderThumbnail)
             )
             .subscribe(() => {
+                this.isThumbnailLoading.set(true);
                 requestAnimationFrame(() => {
                     this.setPreviewThumbnailListener();
                 });
@@ -181,18 +197,27 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
         this.store.setRenderThumbnail(true);
     }
 
+    protected onPreviewLoaded(): void {
+        this.isThumbnailLoading.set(false);
+    }
+
     private setPreviewThumbnailListener() {
         const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
         if (dotHtmlToImageElement) {
             dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-                if (event.detail.file) {
-                    this.form.get('thumbnail').setValue(event.detail.file);
+                this.isThumbnailLoading.set(false);
+                const file = event.detail?.file;
+                if (file) {
+                    this.form.get('thumbnail').setValue(file);
                 } else {
                     this.form.get('thumbnail').setValue('');
                     this.store.setShowFavoriteEmptySkeleton(true);
+                    const errorMsg =
+                        event.detail?.error ||
+                        'Thumbnail could not be generated (e.g. html2canvas script failed to load).';
                     console.warn(
                         'We apologize for the inconvenience. The following error occurred while generating a thumbnail for this page:',
-                        event?.detail?.error
+                        errorMsg
                     );
                 }
             });

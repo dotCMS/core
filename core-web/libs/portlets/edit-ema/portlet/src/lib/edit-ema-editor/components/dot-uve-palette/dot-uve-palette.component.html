@@ -1,0 +1,75 @@
+<p-tabs
+    (valueChange)="handleTabChange($event)"
+    [value]="$activeTab()"
+    [pt]="tabsPt"
+    [dt]="{ tabpanel: { padding: '0' } }">
+    <p-tablist>
+        @for (tab of $tabHeaders(); track tab.value) {
+            <p-tab [value]="tab.value">
+                <div
+                    class="flex h-full flex-1 items-center justify-center"
+                    [pTooltip]="tab.tooltipKey | dm"
+                    tooltipPosition="bottom">
+                    <i class="pi" [class]="tab.icon"></i>
+                </div>
+            </p-tab>
+        }
+    </p-tablist>
+    <p-tabpanels class="min-h-0 flex-1 overflow-hidden">
+        <p-tabpanel [value]="TABS_MAP.CONTENT_TYPES" class="h-full min-h-0 overflow-hidden">
+            <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
+            creating triple renders and triple requests to the server. -->
+            @if ($activeTab() === TABS_MAP.CONTENT_TYPES) {
+                <dot-uve-palette-list
+                    [listType]="DotUVEPaletteListTypes.CONTENT"
+                    [languageId]="$languageId()"
+                    [pagePath]="$pagePath()"
+                    [variantId]="$variantId()" />
+            }
+        </p-tabpanel>
+        <p-tabpanel [value]="TABS_MAP.WIDGETS" class="h-full min-h-0 overflow-hidden">
+            @if ($activeTab() === TABS_MAP.WIDGETS) {
+                <dot-uve-palette-list
+                    [listType]="DotUVEPaletteListTypes.WIDGET"
+                    [languageId]="$languageId()"
+                    [pagePath]="$pagePath()"
+                    [variantId]="$variantId()" />
+            }
+        </p-tabpanel>
+        <p-tabpanel [value]="TABS_MAP.FAVORITES" class="h-full min-h-0 overflow-hidden">
+            @if ($activeTab() === TABS_MAP.FAVORITES) {
+                <dot-uve-palette-list
+                    [listType]="DotUVEPaletteListTypes.FAVORITES"
+                    [languageId]="$languageId()"
+                    [pagePath]="$pagePath()"
+                    [variantId]="$variantId()"
+                    [allowedContentTypes]="$allowedContentTypes()" />
+            }
+        </p-tabpanel>
+        <p-tabpanel [value]="TABS_MAP.LAYERS">
+            @if ($activeTab() === TABS_MAP.LAYERS) {
+                @if ($isStandardTemplate()) {
+                    <div class="size-full overflow-y-auto">
+                        <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
+                    </div>
+                } @else {
+                    <div
+                        data-testid="layers-advanced-template-empty"
+                        class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
+                        <span class="material-symbols-outlined text-[5rem]! text-gray-300">
+                            space_dashboard
+                        </span>
+                        <div class="font-bold text-gray-900">
+                            {{ 'uve.palette.layers.advanced-template.title' | dm }}
+                        </div>
+                        <p
+                            class="m-0 self-stretch text-sm text-gray-800 [&_a]:cursor-pointer [&_a]:font-semibold [&_a]:text-primary-500 [&_a]:underline hover:[&_a]:text-primary-600"
+                            [innerHTML]="
+                                'uve.palette.layers.advanced-template.description' | dm
+                            "></p>
+                    </div>
+                }
+            }
+        </p-tabpanel>
+    </p-tabpanels>
+</p-tabs>

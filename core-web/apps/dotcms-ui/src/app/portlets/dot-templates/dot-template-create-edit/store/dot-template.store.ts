@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { Observable, of, zip } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import {
@@ -18,8 +18,6 @@ import {
     withLatestFrom
 } from 'rxjs/operators';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -28,6 +26,9 @@ import {
 } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
+
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 type DotTemplateType = 'design' | 'advanced';
 
@@ -101,6 +102,14 @@ export const EMPTY_TEMPLATE_ADVANCED: DotTemplateItemadvanced = {
 
 @Injectable()
 export class DotTemplateStore extends ComponentStore<DotTemplateState> {
+    private dotTemplateService = inject(DotTemplatesService);
+    private dotRouterService = inject(DotRouterService);
+    private activatedRoute = inject(ActivatedRoute);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private templateContainersCacheService = inject(DotTemplateContainersCacheService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotMessageService = inject(DotMessageService);
+
     readonly vm$ = this.select<VM>(({ working, original, apiLink }: DotTemplateState): VM => {
         return {
             working,
@@ -152,21 +161,21 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 return this.dotTemplateService
                     .saveAndPublish(this.cleanTemplateItem(template))
                     .pipe(
-                        tapResponse(
-                            (template: DotTemplate) => {
+                        tapResponse({
+                            next: (template: DotTemplate) => {
                                 this.dotGlobalMessageService.success(
                                     this.dotMessageService.get('message.template.published')
                                 );
                                 this.dotRouterService.allowRouteDeactivation();
                                 this.updateTemplateState(template);
                             },
-                            (err: HttpErrorResponse) => {
+                            error: (err: HttpErrorResponse) => {
                                 this.dotGlobalMessageService.error(err.statusText);
                                 this.dotHttpErrorManagerService.handle(err).subscribe(() => {
                                     this.dotRouterService.allowRouteDeactivation();
                                 });
                             }
-                        )
+                        })
                     );
             })
         );
@@ -187,6 +196,10 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
 
     readonly saveTemplate = this.effect((origin$: Observable<DotTemplateItem>) => {
         return origin$.pipe(
+            tap((template: DotTemplateItem) => {
+                // Update working template immediately so UI reflects changes
+                this.updateWorkingTemplate(template);
+            }),
             switchMap((template: DotTemplateItem) => {
                 this.dotGlobalMessageService.loading(
                     this.dotMessageService.get('dot.common.message.saving')
@@ -265,15 +278,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         }
     );
 
-    constructor(
-        private dotTemplateService: DotTemplatesService,
-        private dotRouterService: DotRouterService,
-        private activatedRoute: ActivatedRoute,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private templateContainersCacheService: DotTemplateContainersCacheService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotMessageService: DotMessageService
-    ) {
+    constructor() {
         super(null);
 
         const template$ = this.activatedRoute.data.pipe(pluck('template'));
@@ -378,7 +383,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 title,
                 friendlyName,
                 layout: template.layout || EMPTY_TEMPLATE_DESIGN.layout,
-                theme: template.theme,
+                theme: template.theme ?? template.themeId ?? null,
                 containers: template.containers,
                 drawed: true,
                 live: template.live,

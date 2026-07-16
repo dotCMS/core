@@ -1,17 +1,16 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     CONTAINER_SOURCE,
     DotActionBulkResult,
     DotContainerEntity,
     DotContainerPayload
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { CONTAINER_API_URL, DotContainersService } from './dot-containers.service';
 
@@ -30,9 +29,7 @@ const mockContainer: DotContainerEntity = {
         identifier: '1234',
         live: true,
         name: 'movie',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'movie',
@@ -58,12 +55,9 @@ describe('DotContainersService', () => {
                         }
                     }
                 },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
-                }
-            ],
-            imports: [HttpClientTestingModule]
+                provideHttpClient(),
+                provideHttpClientTesting()
+            ]
         });
         service = TestBed.inject(DotContainersService);
 
@@ -220,7 +214,7 @@ describe('DotContainersService', () => {
         service.copy('testId01').subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}testId01/_copy`);
 
-        expect(req.request.method).toBe('PUT');
+        expect(req.request.method).toBe('POST');
         req.flush(mockContainer);
     });
 });

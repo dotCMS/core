@@ -1,6 +1,6 @@
 import { expect, it } from '@jest/globals';
-import { createFakeEvent } from '@ngneat/spectator';
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { createFakeEvent } from '@openng/spectator';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -8,10 +8,10 @@ import { FormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
@@ -49,8 +49,7 @@ describe('AddStyleClassesDialogComponent', () => {
             DynamicDialogModule,
             FormsModule,
             ButtonModule,
-            DotMessagePipe,
-            DotSelectItemDirective
+            DotMessagePipe
         ],
         component: AddStyleClassesDialogComponent,
         providers: [DynamicDialogRef, DynamicDialogConfig, DotMessageService, provideHttpClient()],
@@ -85,9 +84,10 @@ describe('AddStyleClassesDialogComponent', () => {
             expect(autocomplete.autofocus).toBe(true);
             expect(autocomplete.multiple).toBe(true);
             expect(autocomplete.inputId).toBe('auto-complete-input');
-            expect(autocomplete.appendTo).toBe('body');
+            // appendTo is an InputSignal, so we need to call it to get the value
+            expect(autocomplete.appendTo()).toBe('body');
             expect(autocomplete.dropdown).toBe(true);
-            expect(autocomplete.el.nativeElement.className).toContain('p-fluid');
+            expect(autocomplete.el.nativeElement.className).toContain('w-full');
             expect(autocomplete.suggestions).toEqual(['class1', 'class2']);
         });
 
@@ -116,13 +116,6 @@ describe('AddStyleClassesDialogComponent', () => {
             });
 
             expect(autocomplete.suggestions).toEqual(['class1']);
-        });
-
-        it('should there is a dotSelectItem directive', () => {
-            spectator.detectChanges();
-
-            const element = spectator.query(DotSelectItemDirective);
-            expect(element).toBeTruthy();
         });
 
         it('should add class on keyup.enter', () => {

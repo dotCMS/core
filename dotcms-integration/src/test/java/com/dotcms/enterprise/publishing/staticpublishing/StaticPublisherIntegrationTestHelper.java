@@ -1,5 +1,7 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
+import static org.junit.Assert.assertNotEquals;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -285,7 +287,17 @@ public class StaticPublisherIntegrationTestHelper {
         final Language language = APILocator.getLanguageAPI()
                 .getLanguage(contentlet.getLanguageId());
 
-        return new TestCase(contentlet, list(), list(language), assetsMap);
+        final TestCase testCase = new TestCase(contentlet, list(), list(language), assetsMap);
+        // Content has no live version, so un-publish writes a /live/ removal marker (issue #35365).
+        final String urlMap = APILocator.getContentletAPI()
+                .getUrlMapForContentlet(contentlet, APILocator.systemUser(), false);
+        if (UtilMethods.isSet(urlMap)) {
+            final String markerPath = File.separator + "live" + File.separator
+                    + host.getHostname() + File.separator + language.getId()
+                    + urlMap.replace("/", File.separator);
+            testCase.unPublishExpected = list(new FileExpected(markerPath, null, true));
+        }
+        return testCase;
     }
 
     private static String getPageFileParentFolder(final PageWithDependencies detailPage) {
@@ -435,7 +447,11 @@ public class StaticPublisherIntegrationTestHelper {
 
         final Map<String, String> assetsMap = getAssetsMap(fileAssetWorking);
 
-        return new TestCase(fileAssetWorking, list(), language, assetsMap);
+        final TestCase testCase = new TestCase(fileAssetWorking, list(), language, assetsMap);
+        // Content has no live version, so un-publish writes a /live/ removal marker (issue #35365).
+        testCase.unPublishExpected = list(
+                new FileExpected(getFileAssetPath(fileAssetWorking), null, true));
+        return testCase;
     }
 
     private static Contentlet createFileAsset(Language language)
@@ -626,13 +642,89 @@ public class StaticPublisherIntegrationTestHelper {
         return new TestCase(livePageWithContent.page, filesExpected, livePageWithContent.language, assetsMap);
     }
 
+    /**
+     * Creates a TestCase for a live page that verifies {@code $URLMapContent} is NOT populated
+     * when bundling a regular (non-URL-mapped) HTML page. The container code renders a distinct
+     * marker string only if {@code $URLMapContent} is set, so the expected HTML output is
+     * {@code <div></div>} (empty container) when the variable is correctly absent.
+     */
+    public static TestCase getLivePageWhenURLMapContentIsNotPopulated()
+            throws WebAssetException, DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Field textField = new FieldDataGen().type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen().field(textField).nextPersisted();
+
+        // Container code outputs a marker ONLY if $URLMapContent is populated.
+        // For regular (non-URL-mapped) pages $URLMapContent must always be null/empty.
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .withContentType(contentType, "#if($URLMapContent)URLMapContentSet#end")
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .site(host)
+                .withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(textField.variable(), "pageContent")
+                .nextPersisted();
+
+        final HTMLPageAsset page = ((HTMLPageDataGen) new HTMLPageDataGen(folder, template)
+                .host(host)
+                .languageId(language.getId()))
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(contentlet)
+                .nextPersisted();
+
+        ContentletDataGen.publish(contentlet);
+        TemplateDataGen.publish(template);
+        ContainerDataGen.publish(container);
+        HTMLPageDataGen.publish(page);
+
+        final String xmlFilePath = File.separator + "live" + File.separator
+                + host.getHostname() + File.separator
+                + language.getId()
+                + page.getURI().replace("/", File.separator)
+                + HTMLPAGE_ASSET_EXTENSION;
+
+        final String pageFilePath = File.separator + "live" + File.separator
+                + host.getHostname() + File.separator
+                + language.getId()
+                + page.getURI().replace("/", File.separator);
+
+        // With the fix, $URLMapContent is null so #if block doesn't execute → empty container
+        final List<FileExpected> filesExpected = list(
+                new FileExpected(xmlFilePath, null, true),
+                new FileExpected(pageFilePath, "<div></div>", true)
+        );
+
+        final Map<String, String> assetsMap = getAssetsMap(page);
+
+        return new TestCase(page, filesExpected, list(language), assetsMap);
+    }
+
     public static TestCase getWorkingPage() {
         final PageWithDependencies workingPageWithContent = new PageWithDependenciesBuilder().build();
 
-        return new TestCase(workingPageWithContent.page,
-                Collections.EMPTY_LIST,
+        final TestCase testCase = new TestCase(workingPageWithContent.page,
+                new ArrayList<>(),
                 workingPageWithContent.language,
                 java.util.Collections.emptyMap());
+        // Content has no live version, so un-publish writes a /live/ removal marker (issue #35365).
+        testCase.unPublishExpected = list(
+                new FileExpected(getPageFilePath(workingPageWithContent), null, true));
+        return testCase;
     }
 
     public static TestCase getLivePageWithDifferentLangIncludingJustOne()
@@ -672,6 +764,69 @@ public class StaticPublisherIntegrationTestHelper {
 
         return new TestCase(livePageWithContent.page,
                 filesExpected, list(livePageWithContent.language, language), assetsMap);
+    }
+
+    /**
+     * A page that is LIVE in its original language and has a WORKING-only version (never published)
+     * in a second language. On un-publish the live language is rendered by the content bundlers (and
+     * removed by the publisher's delete branch), while the working-only language has no live version
+     * and therefore gets a /live/ removal marker. Verifies that markers are scoped to the non-live
+     * languages only — the live language must NOT get a marker. See issue #35365.
+     */
+    public static TestCase getLivePageInOneLangAndWorkingInAnother()
+            throws WebAssetException, DotDataException, DotSecurityException {
+        final PageWithDependencies livePageWithContent = new PageWithDependenciesBuilder().buildAndPublish();
+
+        // Second-language version left as WORKING (NOT published) -> no live version in that language.
+        final Language workingLanguage = new LanguageDataGen().nextPersisted();
+        new PageWithDependenciesBuilder().buildAnotherVersion(livePageWithContent, workingLanguage);
+
+        final List<FileExpected> filesExpected = list(
+                new FileExpected(getXmlFilePath(livePageWithContent), null, true),
+                new FileExpected(getPageFilePath(livePageWithContent), "<div>Testing Field Value</div>", true)
+        );
+
+        final Map<String, String> assetsMap = getAssetsMap(livePageWithContent.page);
+
+        final TestCase testCase = new TestCase(livePageWithContent.page, filesExpected,
+                list(livePageWithContent.language, workingLanguage), assetsMap);
+        // Only the working-only (non-live) language gets a removal marker; the live language does not.
+        testCase.unPublishExpected = list(
+                new FileExpected(getPageFilePath(livePageWithContent, workingLanguage), null, true));
+        return testCase;
+    }
+
+    /**
+     * QA repro for issue #35365: a page whose only real version is in the DEFAULT language, with the
+     * bundle configured for an additional language. Push Publish renders the page in BOTH languages
+     * — the additional one via default-language fallback ({@code findByIdLanguageFallback}) — so the
+     * artifact exists on the static endpoint for both. Push Remove must therefore remove BOTH
+     * language artifacts, not only the default-language one. The page has no live version (working
+     * only, i.e. already unpublished), so removal is driven entirely by /live/ markers.
+     */
+    public static TestCase getWorkingPageInDefaultLangConfiguredForFallbackLang()
+            throws DotDataException, DotSecurityException {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final PageWithDependencies workingPage = new PageWithDependenciesBuilder()
+                .language(defaultLanguage)
+                .build();
+
+        // A second language with NO real version of this page; Push Publish renders it via
+        // default-language fallback, so its artifact also exists on the endpoint. It must be a
+        // distinct language for the fallback scenario to be exercised.
+        final Language fallbackLanguage = new LanguageDataGen().nextPersisted();
+        assertNotEquals("fallback language must differ from the default language",
+                defaultLanguage.getId(), fallbackLanguage.getId());
+
+        final Map<String, String> assetsMap = getAssetsMap(workingPage.page);
+
+        final TestCase testCase = new TestCase(workingPage.page, new ArrayList<>(),
+                list(defaultLanguage, fallbackLanguage), assetsMap);
+        // Both the default-language and the fallback-language artifacts must be removed.
+        testCase.unPublishExpected = list(
+                new FileExpected(getPageFilePath(workingPage, defaultLanguage), null, true),
+                new FileExpected(getPageFilePath(workingPage, fallbackLanguage), null, true));
+        return testCase;
     }
 
     private static Contentlet createNewVersionInDifferentLang(final Contentlet contentlet,
@@ -756,6 +911,11 @@ public class StaticPublisherIntegrationTestHelper {
         List<FileExpected> filesExpected;
         Collection<Language> languages;
         Map<String, String> assetsMap;
+        /**
+         * Files expected ONLY in an un-publish bundle (not in a publish bundle), e.g. the zero-byte
+         * /live/ removal markers written for content with no live version (issue #35365).
+         */
+        List<FileExpected> unPublishExpected = new ArrayList<>();
 
         public TestCase(final Object addToBundle,
                 final List<FileExpected> filesExpected,
@@ -775,7 +935,9 @@ public class StaticPublisherIntegrationTestHelper {
         }
 
         Optional<FileExpected> getFileExpected(final String absolutePath){
-            for (FileExpected fileExpected : filesExpected) {
+            final List<FileExpected> all = new ArrayList<>(filesExpected);
+            all.addAll(unPublishExpected);
+            for (FileExpected fileExpected : all) {
                 if (absolutePath.endsWith(fileExpected.path)) {
                     return Optional.of(fileExpected);
                 }
@@ -785,9 +947,11 @@ public class StaticPublisherIntegrationTestHelper {
         }
 
         public Collection<FileExpected> getAddToBundleFiles() {
-            return filesExpected.stream()
+            final List<FileExpected> addToBundleFiles = filesExpected.stream()
                     .filter(fileExpected -> fileExpected.shouldBeIncludeInUnPublish)
                     .collect(Collectors.toList());
+            addToBundleFiles.addAll(unPublishExpected);
+            return addToBundleFiles;
         }
     }
 

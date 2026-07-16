@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.UserWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -32,6 +33,7 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
+
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -52,7 +54,7 @@ import java.util.Collection;
  */
 public class UserHandler implements IHandler {
 
-    private PublisherConfig config;
+    private final PublisherConfig config;
 
     public UserHandler ( PublisherConfig config ) {
         this.config = config;
@@ -149,9 +151,9 @@ public class UserHandler implements IHandler {
 
             }
         } catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when processing User in '%s' with ID '%s': %s",
+            final String errorMsg = String.format("An error occurred when processing User in '%s' with email '%s' [%s]: %s",
                     workingOn, (null == user ? "(empty)" : user.getEmailAddress()), (null == user ? "(empty)" : user
-                            .getUserId()), e.getMessage());
+                            .getUserId()), ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
         }

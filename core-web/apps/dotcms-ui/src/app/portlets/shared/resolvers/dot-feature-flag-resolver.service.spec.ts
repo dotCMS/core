@@ -53,7 +53,9 @@ describe('DotFeatureFlagResolver', () => {
             [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: false
         };
 
-        spyOn(dotConfigurationService, 'getFeatureFlags').and.returnValue(of(expectedFlagsResult));
+        jest.spyOn(dotConfigurationService, 'getFeatureFlags').mockReturnValue(
+            of(expectedFlagsResult)
+        );
 
         (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
             (result: Record<string, boolean>) => {

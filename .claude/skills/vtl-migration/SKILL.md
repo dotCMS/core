@@ -1,0 +1,286 @@
+---
+name: vtl-migration
+description: >
+  Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. Use this skill whenever a user asks to migrate, update, or convert a VTL file, custom field template, or dotCMS field that uses any of: DotCustomFieldApi.get(), DotCustomFieldApi.set(), DotCustomFieldApi.onChangeField(), dojo.ready(), dojo.byId(), dijit.byId(), dijit.form.*, dojoType attributes, or any Dojo/Dijit pattern. Also trigger when the user pastes a VTL snippet and asks "what needs to change" or "can you update this". If in doubt, use this skill.
+---
+
+# VTL Migration: Legacy API → DotCustomFieldApi
+
+You are migrating DotCMS VTL custom field templates from Dojo/Dijit-era APIs to the modern `DotCustomFieldApi`. The goal is **identical functionality with modern, clean code** and **semantic styling with DaisyUI**.
+
+For the full migration rules, all code examples, the DaisyUI styling section, and the step-by-step checklist, read `references/migration-guide.md`.
+
+## The Core API Swap (Quick Reference)
+
+| Old (deprecated) | New |
+|---|---|
+| `DotCustomFieldApi.get('id')` | `DotCustomFieldApi.getField('id').getValue()` |
+| `DotCustomFieldApi.set('id', val)` | `DotCustomFieldApi.getField('id').setValue(val)` |
+| `DotCustomFieldApi.onChangeField('id', cb)` | `DotCustomFieldApi.getField('id').onChange(cb)` |
+| Manual DOM show/hide of a field | `DotCustomFieldApi.getField('id').show()` / `.hide()` |
+| Manual DOM enable/disable of a field | `DotCustomFieldApi.getField('id').enable()` / `.disable()` |
+| Manual checks against dijit validation state | `DotCustomFieldApi.getField('id').getValidationState()` |
+| No legacy equivalent | `DotCustomFieldApi.getField('id').onValidationChange(cb)` |
+| `dojo.ready(fn)` | `DotCustomFieldApi.ready(fn)` |
+| `dojo.byId('el')` | `document.getElementById('el')` |
+| `dijit.byId('id')` | `DotCustomFieldApi.getField('id')` |
+| `dijit.form.*` widgets | Native HTML + **DaisyUI** classes (`input`, `btn`, `select`, etc.) |
+| `dojoType="..."` attribute | Remove; use semantic HTML + DaisyUI components |
+| `class="dijit*"` classes | Remove; use **DaisyUI** component classes instead |
+| Inline styles / ad-hoc CSS | **DaisyUI** component classes + Tailwind utilities (see guide) |
+| `onclick="fn()"` inline handlers | `addEventListener('click', fn)` |
+
+## Process
+
+1. **Read the entire file** to understand all functionality before touching anything.
+2. **Identify deprecated patterns** — scan for the patterns in the table above.
+3. **Wrap everything in `DotCustomFieldApi.ready()`** — all field access must live inside this callback.
+4. **Store field references once** — call `getField()` once per field at the top of `ready()`, then reuse the reference.
+5. **Migrate each pattern** — follow the migration rules in `references/migration-guide.md`.
+6. **Apply DaisyUI for styling** — use DaisyUI component classes (`btn`, `input`, `select`, `modal`, `link`, etc.) and Tailwind utilities instead of inline styles or ad-hoc CSS; see “Styling with DaisyUI” in the guide.
+7. **Preserve VTL variables** — `${fieldId}`, `$maxChar`, `$variableName`, and server-side context variables (`$inode`, `$identifier`, `$lang`, `$contentlet`, `$structure`, `$field`) are server-side; never change them.
+8. **Output three files** — see the File Output Pattern below.
+
+## File Output Pattern
+
+Every migration produces **three files**. You must write all three — not just the migrated version.
+
+Given an original file at `/static/personas/keytag_custom_field.vtl`, the three outputs are:
+
+---
+
+### File 1 — `keytag_custom_field_old.vtl`
+The **original file content, completely unchanged**. Copy it verbatim — every deprecated API call, every dijit class, every dojo.ready. This is the fallback for the legacy editor.
+
+---
+
+### File 2 — `keytag_custom_field_new.vtl`
+The **fully migrated file** with all deprecated patterns replaced per the migration rules.
+
+---
+
+### File 3 — `keytag_custom_field.vtl` (replaces the original)
+The **conditional router** — this file takes the name of the original and delegates to `_new` or `_old` based on which edit mode is active:
+
+```vtl
+#if( $structures.isNewEditModeEnabled() )
+    #parse('/static/personas/keytag_custom_field_new.vtl')
+#else
+    #parse('/static/personas/keytag_custom_field_old.vtl')
+#end
+```
+
+The `#parse` paths must use the **full server path** of the file, not just the filename. Use the same directory as the original file.
+
+---
+
+This pattern lets both legacy and new edit modes coexist safely — old editor users continue using the deprecated code, new editor users get the modernized version.
+
+**When the user gives you a file path**, derive all three filenames automatically. If you only receive file contents without a path, ask for the filename and its server path before outputting.
+
+## Non-Negotiables
+
+- All `getField()` calls must be inside `DotCustomFieldApi.ready()`
+- Never use `DotCustomFieldApi.get()` or `DotCustomFieldApi.set()` (the old short forms)
+- VTL variables stay exactly as-is
+- Business logic stays exactly as-is — only the API calls and styling approach change
+- Dijit CSS classes (any `class="dijit*"`) must be removed
+- **Styling:** Prefer DaisyUI component classes + Tailwind utilities; keep custom CSS only when the guide says so
+- Translate non-English comments to English
+- Server-side VTL variables (`$inode`, `$identifier`, `$lang`, `$contentlet`, `$structure`, `$field`) are resolved at render time — do not confuse them with `DotCustomFieldApi` JavaScript APIs
+
+## Key Patterns to Know
+
+**Field reference lifecycle:**
+```js
+DotCustomFieldApi.ready(() => {
+  // Get once, reuse everywhere
+  const titleField = DotCustomFieldApi.getField('title');
+  const urlField = DotCustomFieldApi.getField('url');
+
+  // Read
+  const current = titleField.getValue() || '';
+
+  // Write
+  urlField.setValue(slugify(current));
+
+  // Watch
+  titleField.onChange((value) => {
+    urlField.setValue(slugify(value));
+  });
+});
+```
+
+**Field visibility and state control:**
+```js
+DotCustomFieldApi.ready(() => {
+  const mediaField = DotCustomFieldApi.getField('media');
+  const mediaFileField = DotCustomFieldApi.getField('mediafile');
+
+  // Show/hide based on current value
+  if (mediaField.getValue() === 'upload') {
+    mediaFileField.show();
+  } else {
+    mediaFileField.hide();
+  }
+
+  // React to changes
+  mediaField.onChange((value) => {
+    if (value === 'upload') {
+      mediaFileField.show();
+    } else {
+      mediaFileField.hide();
+    }
+  });
+
+  // Enable/disable a field
+  mediaFileField.disable(); // blocks editing, applies disabled styling
+  mediaFileField.enable();  // restores interactivity
+});
+```
+
+**Reacting to validation state (required, errors, touched):**
+```html
+<style>
+  /* Self-contained: legacy iframe pages do NOT load DaisyUI, so we ship the rule with the template. */
+  #slugInput.is-invalid {
+    border-color: #ef4444;
+    outline-color: #ef4444;
+  }
+</style>
+
+<script type="module">
+  DotCustomFieldApi.ready(() => {
+    const field = DotCustomFieldApi.getField('urlTitle');
+    const input = document.getElementById('slugInput');
+
+    const applyValidation = (state) => {
+      // Only show the error after the user (or Save) has marked the control as touched —
+      // mirrors how Angular's built-in fields paint the red border.
+      const showError = state.invalid && state.touched;
+      input.classList.toggle('is-invalid', showError);
+    };
+
+    // onValidationChange emits the initial state synchronously, so a separate
+    // getValidationState() call up front is redundant. The bridge auto-cleans
+    // on form destroy, so the unsubscribe return value can be ignored here.
+    field.onValidationChange(applyValidation);
+  });
+</script>
+```
+
+> Use a self-contained `is-invalid` class with inline `<style>` instead of DaisyUI's `input-error`. The legacy iframe page (`legacy-custom-field.jsp`) does NOT load DaisyUI or Tailwind, so an `input-error` toggle would silently produce no visual feedback there. In iframe mode the callback also never fires (the Dojo bridge's `onValidationChange` is a no-op) — the legacy editor has its own validation surface. See Rule 13 in `references/migration-guide.md` for the full gotchas list.
+
+`state` shape: `{ valid, invalid, touched, dirty, errors }` (mirrors Angular's `AbstractControl`). `errors` is `null` when valid, otherwise a record like `{ required: true }`.
+
+**Multiple onChange for the same field** → combine into one handler:
+```js
+// Old: two separate onChangeField calls for 'title'
+// New: one onChange that does both
+titleField.onChange((value) => {
+  updateURL(value);
+  updateFriendlyName(value);
+});
+```
+
+**Native dialog with DaisyUI modal** (replaces `dojoType="dijit.Dialog"`):
+```html
+<button type="button" id="openModalButton" class="btn btn-primary">Open modal</button>
+<dialog id="myDialog" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">Hello!</h3>
+    <p class="py-4">Press ESC key or click the button below to close</p>
+    <div class="modal-action">
+      <form method="dialog">
+        <button type="submit" class="btn">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+<script>
+  const myDialog = document.getElementById('myDialog');
+  const openModalButton = document.getElementById('openModalButton');
+  openModalButton?.addEventListener('click', () => {
+    myDialog?.showModal();
+  });
+</script>
+```
+
+**Styling (DaisyUI):** Buttons → `btn`, `btn-primary`, `btn-ghost`, `btn-sm`. Inputs → `input input-bordered`. Selects → `select select-bordered`. Links → `link link-primary`. Use Tailwind for layout (`flex`, `gap`, `w-full`). Full reference in `references/migration-guide.md` → “Styling with DaisyUI”.
+
+## Available Velocity Context Variables
+
+Custom field templates can use **server-side VTL variables** injected by dotCMS when the field is rendered. These are resolved on the server before HTML reaches the browser — they are **not** available in JavaScript and must not be confused with `DotCustomFieldApi`.
+
+| Variable | Type | Description |
+|---|---|---|
+| `$inode` | `String` | The contentlet's inode (version ID) |
+| `$identifier` | `String` | The contentlet's persistent identifier |
+| `$lang` | `long` | The contentlet's language ID |
+| `$contentlet` | `Contentlet` | The full Contentlet object |
+| `$structure` | `ContentType` | The content type (structure) |
+| `$field` | `Field` | The current field being rendered |
+
+**Availability:**
+- `$structure` and `$field` are always available when the custom field is rendered.
+- `$inode`, `$identifier`, `$lang`, and `$contentlet` are populated only when **editing an existing contentlet** (when an inode is known). On new content, those four variables are empty/unset.
+- Both the new editor (REST API component mode and iframe mode) and the legacy editor expose the same variables.
+
+**Example — display context variables in the template:**
+
+```html
+<p>
+  <strong>inode:</strong> $inode
+</p>
+<p>
+  <strong>identifier:</strong> $identifier
+</p>
+<p>
+  <strong>lang:</strong> $lang
+</p>
+<p>
+  <strong>contentlet:</strong> $contentlet
+</p>
+<p>
+  <strong>structure:</strong> $structure
+</p>
+<p>
+  <strong>field:</strong> $field
+</p>
+```
+
+**Example — guard for new vs existing content:**
+
+```html
+#if($utilMethods.isSet($inode))
+  <input type="hidden" id="contentInode" value="$inode" />
+#else
+  <p class="text-sm text-base-content/70">Save the content first to access inode-specific features.</p>
+#end
+```
+
+For full details, availability rules, and practical examples → read `references/migration-guide.md` → “Server-Side Velocity Context Variables”.
+
+## Before Outputting
+
+Verify the migration passes this checklist (details in `references/migration-guide.md`):
+
+**Three-file output:**
+- [ ] `_old.vtl` — original file content, completely unchanged (deprecated code preserved intentionally)
+- [ ] `_new.vtl` — fully migrated content
+- [ ] Router file (original filename) — contains only the `#if( $structures.isNewEditModeEnabled() )` block with correct full-path `#parse` directives pointing to `_new` and `_old`
+
+**Migrated file (`_new.vtl`):**
+- [ ] No `DotCustomFieldApi.get()` or `.set()` or `.onChangeField()` remaining
+- [ ] No `dojo.*` or `dijit.*` references remaining
+- [ ] No `dojoType` attributes remaining
+- [ ] No `dijit*` CSS classes remaining
+- [ ] Styling uses DaisyUI components where applicable (buttons, inputs, selects, modals, links) and Tailwind for layout; no inline styles unless necessary
+- [ ] All field access inside `DotCustomFieldApi.ready()`
+- [ ] All `getField()` calls stored in variables and reused
+- [ ] Field visibility uses `field.show()` / `field.hide()` instead of manual DOM manipulation
+- [ ] Field state uses `field.enable()` / `field.disable()` instead of manual DOM attribute changes
+- [ ] VTL variables unchanged
+- [ ] Business logic unchanged
+
+For complete rules, **DaisyUI styling section**, all migration examples (character counter, title field, slug generator, dialogs, file browser), and edge cases → read `references/migration-guide.md`.

@@ -13,8 +13,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.VariantBundler;
-import com.dotcms.experiments.model.Experiment;
-import com.dotcms.publisher.pusher.wrapper.ExperimentWrapper;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.wrapper.VariantWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.BundlerUtil;
@@ -24,9 +23,9 @@ import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.Optional;
@@ -106,8 +105,7 @@ public class VariantHandler implements IHandler {
 			}
     	} catch (final Exception e) {
 			final String errorMsg = String.format("An error occurred when processing Variant in '%s' with name '%s': %s",
-					workingOn, variant.name(),
-							variant.name(), e.getMessage());
+					workingOn, null != variant ? variant.name() : "- null -", ExceptionUtil.getErrorMessage(e));
 			Logger.error(this.getClass(), errorMsg, e);
 			throw new DotPublishingException(errorMsg, e);
     	}

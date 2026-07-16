@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.wrapper.PushContentWorkflowWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
@@ -192,7 +193,7 @@ public class ContentWorkflowHandler implements IHandler {
         } catch (final Exception ex) {
             final String errorMsg = String.format("An error occurred when processing Workflow Task in '%s' with Title: %s And ID '%s': %s",
                     workingOn, (null == workflowTask ? "(empty)" : workflowTask.getTitle()), (null == workflowTask ? "(empty)" :
-                            workflowTask.getId()), ex.getMessage());
+                            workflowTask.getId()), ExceptionUtil.getErrorMessage(ex));
             Logger.error(this.getClass(), errorMsg, ex);
             throw new DotPublishingException(errorMsg, ex);
         } finally {

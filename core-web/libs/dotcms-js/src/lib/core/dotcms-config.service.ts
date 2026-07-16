@@ -1,10 +1,12 @@
-import { Observable, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck, filter, map, take } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs/operators';
 
-import { CoreWebService } from './core-web.service';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
+
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
 
@@ -14,6 +16,8 @@ import { Menu } from './routing.service';
  * Wraps the configuration properties for dotCMS in order to provide an
  * easier way to access the information.
  *
+ * @deprecated Use DotSystemConfigService from @dotcms/data-access instead.
+ * This service will be removed in a future version.
  */
 const DOTCMS_WEBSOCKET_RECONNECT_TIME = 'dotcms.websocket.reconnect.time';
 const DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = 'dotcms.websocket.disable';
@@ -25,6 +29,12 @@ export interface DotUiColors {
     primary: string;
     secondary: string;
     background: string;
+}
+
+export interface SystemTimezone {
+    id: string;
+    label: string;
+    offset: string;
 }
 
 export interface ConfigParams {
@@ -48,6 +58,7 @@ export interface ConfigParams {
         version: string;
     };
     websocket: WebSocketConfigParams;
+    systemTimezone: SystemTimezone;
 }
 
 export interface WebSocketConfigParams {
@@ -61,8 +72,56 @@ export interface DotTimeZone {
     offset: string;
 }
 
-@Injectable()
+interface DotAppConfigResponse {
+    config: {
+        colors: DotUiColors;
+        [EMAIL_REGEX]: string;
+        license: {
+            displayServerId: string;
+            isCommunity: boolean;
+            level: number;
+            levelName: string;
+        };
+        logos: {
+            loginScreen: string;
+            navBar: string;
+        };
+        [DOTCMS_PAGINATOR_LINKS]: number;
+        [DOTCMS_PAGINATOR_ROWS]: number;
+        releaseInfo?: {
+            buildDate: string;
+            version: string;
+        };
+        websocket: {
+            [DOTCMS_WEBSOCKET_RECONNECT_TIME]: number;
+            [DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]: boolean;
+        };
+        systemTimezone: SystemTimezone;
+        timezones: DotTimeZone[];
+    };
+    menu: Menu[];
+}
+
+/**
+ * @deprecated Use DotSystemConfigService from @dotcms/data-access instead.
+ * This service will be removed in a future version.
+ *
+ * @example
+ * ```typescript
+ * // Old way (deprecated)
+ * private dotcmsConfigService = inject(DotcmsConfigService);
+ *
+ * // New way (recommended)
+ * private systemConfigService = inject(DotSystemConfigService);
+ * ```
+ */
+@Injectable({
+    providedIn: 'root'
+})
 export class DotcmsConfigService {
+    private http = inject(HttpClient);
+    private loggerService = inject(LoggerService);
+
     private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
     private configUrl: string;
 
@@ -71,11 +130,8 @@ export class DotcmsConfigService {
      *
      * @param configParams - The configuration properties for the current instance.
      */
-    constructor(
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
-        this.configUrl = 'v1/appconfiguration';
+    constructor() {
+        this.configUrl = '/api/v1/appconfiguration';
         this.loadConfig();
     }
 
@@ -88,12 +144,10 @@ export class DotcmsConfigService {
     loadConfig(): void {
         this.loggerService.debug('Loading configuration on: ', this.configUrl);
 
-        this.coreWebService
-            .requestView({
-                url: this.configUrl
-            })
-            .pipe(pluck('entity'))
-            .subscribe((res: any) => {
+        this.http
+            .get<DotCMSResponse<DotAppConfigResponse>>(this.configUrl)
+            .pipe(map((response) => response.entity))
+            .subscribe((res: DotAppConfigResponse) => {
                 this.loggerService.debug('Configuration Loaded!', res);
 
                 const configParams: ConfigParams = {
@@ -112,7 +166,8 @@ export class DotcmsConfigService {
                         websocketReconnectTime:
                             res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
                         disabledWebsockets: res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]
-                    }
+                    },
+                    systemTimezone: res.config.systemTimezone
                 };
 
                 this.configParamsSubject.next(configParams);
@@ -129,27 +184,23 @@ export class DotcmsConfigService {
      * @memberof DotcmsConfigService
      */
     getTimeZones(): Observable<DotTimeZone[]> {
-        return this.coreWebService
-            .requestView({
-                url: this.configUrl
+        return this.http.get<DotCMSResponse<DotAppConfigResponse>>(this.configUrl).pipe(
+            map((response) => response.entity.config.timezones),
+            map((timezones: DotTimeZone[]) => {
+                return timezones.sort((a: DotTimeZone, b: DotTimeZone) => {
+                    if (a.label > b.label) {
+                        return 1;
+                    }
+
+                    if (a.label < b.label) {
+                        return -1;
+                    }
+
+                    // a must be equal to b
+                    return 0;
+                });
             })
-            .pipe(
-                pluck('entity', 'config', 'timezones'),
-                map((timezones: DotTimeZone[]) => {
-                    return timezones.sort((a: DotTimeZone, b: DotTimeZone) => {
-                        if (a.label > b.label) {
-                            return 1;
-                        }
-
-                        if (a.label < b.label) {
-                            return -1;
-                        }
-
-                        // a must be equal to b
-                        return 0;
-                    });
-                })
-            );
+        );
     }
 
     /**
@@ -158,10 +209,9 @@ export class DotcmsConfigService {
      * @memberof DotcmsConfigService
      */
     getSystemTimeZone(): Observable<DotTimeZone> {
-        return this.coreWebService
-            .requestView({
-                url: this.configUrl
-            })
-            .pipe(pluck('entity', 'config', 'systemTimezone'), take(1));
+        return this.http.get<DotCMSResponse<DotAppConfigResponse>>(this.configUrl).pipe(
+            map((response) => response.entity.config.systemTimezone),
+            take(1)
+        );
     }
 }

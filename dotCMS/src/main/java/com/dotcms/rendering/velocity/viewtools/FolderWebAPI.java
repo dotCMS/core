@@ -47,4 +47,8 @@ public class FolderWebAPI implements ViewTool{
 	public Folder findCurrentFolder(String path, Host host) throws DotStateException, DotDataException, DotSecurityException{
 		return folderAPI.findFolderByPath(path, host.getIdentifier(), APILocator.getUserAPI().getSystemUser(), true);
 	}
+
+	public Folder find(String folderIdOrInode) throws DotSecurityException,DotDataException{
+		return folderAPI.find(folderIdOrInode, APILocator.getUserAPI().getSystemUser(),true);
+	}
 }

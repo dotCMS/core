@@ -851,8 +851,8 @@ public class UserAjax {
 	 *             An error occurred when retrieving the user list.
 	 */
 	public Map<String, Object> getUsersList(String assetInode, String permission, Map<String, String> params) throws Exception {
-		// Make sure the DWR request calling this method is authenticated
-		getLoggedInUser();
+		// Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(getLoggedInUser());
 		return UserServiceFactory.getInstance().getUserService().getUsersList(assetInode, permission, params);
 	}
 

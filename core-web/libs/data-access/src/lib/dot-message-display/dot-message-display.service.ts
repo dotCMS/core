@@ -1,13 +1,13 @@
 import { merge, Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotMessage, DotMessageSeverity } from '@dotcms/dotcms-models';
 
 import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotEventsSocket } from '../dot-websocket/dot-events-socket.service';
 
 /**
  * Handle message send by the Backend, this message are sended as Event through the {@link DotcmsEventsService}
@@ -17,17 +17,15 @@ import { DotRouterService } from '../dot-router/dot-router.service';
  */
 @Injectable()
 export class DotMessageDisplayService {
+    private dotRouterService = inject(DotRouterService);
+    private dotEventsSocket = inject(DotEventsSocket);
+
     private messages$: Observable<DotMessage>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private localMessage$: Subject<DotMessage> = new Subject<DotMessage>();
 
-    constructor(
-        dotcmsEventsService: DotcmsEventsService,
-        private dotRouterService: DotRouterService
-    ) {
-        const webSocketMessage = (
-            dotcmsEventsService.subscribeTo('MESSAGE') as Observable<DotMessage>
-        ).pipe(
+    constructor() {
+        const webSocketMessage = this.dotEventsSocket.on<DotMessage>('MESSAGE').pipe(
             takeUntil<DotMessage>(this.destroy$),
             filter((data: DotMessage) => this.hasPortletIdList(data))
         );

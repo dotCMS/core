@@ -1,17 +1,18 @@
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
-    DebugElement,
     EventEmitter,
     forwardRef,
     Input,
     Output
 } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import {
     ControlValueAccessor,
     FormArray,
@@ -19,7 +20,6 @@ import {
     ReactiveFormsModule,
     Validators
 } from '@angular/forms';
-import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
@@ -30,7 +30,6 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { MenuModule } from 'primeng/menu';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -43,16 +42,7 @@ import {
     DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     DotActionMenuButtonComponent,
@@ -61,15 +51,20 @@ import {
     DotMessagePipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
+    createFakeContentType,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
+    monacoMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).monaco = monacoMock;
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { DotActionButtonComponent } from '../../../../view/components/_common/dot-action-button/dot-action-button.component';
 
 @Component({
     selector: 'dot-container-code',
@@ -89,16 +84,14 @@ export class DotContentEditorComponent {}
     ]
 })
 export class DotLoopEditorComponent {
-    writeValue() {
-        //
+    writeValue(): void {
+        /* mock ControlValueAccessor */
     }
-
-    registerOnChange() {
-        //
+    registerOnChange(): void {
+        /* mock ControlValueAccessor */
     }
-
-    registerOnTouched() {
-        //
+    registerOnTouched(): void {
+        /* mock ControlValueAccessor */
     }
 }
 
@@ -114,37 +107,21 @@ export class DotLoopEditorComponent {
     ]
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
-    @Input()
-    code;
-
-    @Input()
-    height;
-
-    @Input()
-    show;
-
-    @Input()
-    value;
-
-    @Input()
-    width;
-
-    @Output()
-    monacoInit = new EventEmitter();
-
-    @Input()
-    language;
-
-    writeValue() {
-        //
+    @Input() code;
+    @Input() height;
+    @Input() show;
+    @Input() value;
+    @Input() width;
+    @Output() monacoInit = new EventEmitter();
+    @Input() language;
+    writeValue(): void {
+        /* mock ControlValueAccessor */
     }
-
-    registerOnChange() {
-        //
+    registerOnChange(): void {
+        /* mock ControlValueAccessor */
     }
-
-    registerOnTouched() {
-        //
+    registerOnTouched(): void {
+        /* mock ControlValueAccessor */
     }
 }
 
@@ -180,11 +157,10 @@ const containerMockData = {
 };
 
 const mockContentTypes: DotCMSContentType[] = [
-    {
+    createFakeContentType({
         baseType: 'CONTENT',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-        defaultType: false,
-        description: 'Activities available at desitnations',
+        description: 'Activities available at destinations',
         detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
         fixed: false,
         folder: 'SYSTEM_FOLDER',
@@ -203,12 +179,11 @@ const mockContentTypes: DotCMSContentType[] = [
         workflows: [],
         fields: [],
         layout: []
-    },
-    {
+    }),
+    createFakeContentType({
         baseType: 'CONTENT',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-        defaultType: false,
-        description: 'Activities available at desitnations',
+        description: 'Activities available at destinations',
         detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
         fixed: false,
         folder: 'SYSTEM_FOLDER',
@@ -227,241 +202,256 @@ const mockContentTypes: DotCMSContentType[] = [
         workflows: [],
         fields: [],
         layout: []
-    }
+    })
 ];
 
 describe('DotContainerPropertiesComponent', () => {
-    let fixture: ComponentFixture<DotContainerPropertiesComponent>;
-    let comp: DotContainerPropertiesComponent;
-    let de: DebugElement;
-    let coreWebService: CoreWebService;
+    let spectator: Spectator<DotContainerPropertiesComponent>;
+    let httpTesting: HttpTestingController;
     let dotDialogService: DotAlertConfirmService;
     let dotRouterService: DotRouterService;
-    const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [
-                DotContainerPropertiesComponent,
-                DotContentEditorComponent,
-                DotLoopEditorComponent,
-                DotTextareaContentMockComponent
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        data: of(containerMockData)
-                    }
-                },
-                {
-                    provide: DotRouterService,
-                    useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy(),
-                        goToURL: jasmine.createSpy()
-                    }
-                },
-                StringUtils,
-                DotHttpErrorManagerService,
-                DotContentTypeService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                LoginService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                DotcmsConfigService,
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                DialogService,
-                DotSiteBrowserService,
-                DotContainersService,
-                DotGlobalMessageService,
-                DotEventsService,
-                LoggerService,
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
-            ],
-            imports: [
-                CommonModule,
-                DotMessagePipe,
-                SharedModule,
-                CheckboxModule,
-                InplaceModule,
-                ReactiveFormsModule,
-                MenuModule,
-                ButtonModule,
-                DotActionButtonModule,
-                DotActionMenuButtonComponent,
-                DotAddToBundleComponent,
-                HttpClientTestingModule,
-                DynamicDialogModule,
-                DotAutofocusDirective,
-                BrowserAnimationsModule
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
-        }).compileComponents();
-        fixture = TestBed.createComponent(DotContainerPropertiesComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        coreWebService = TestBed.inject(CoreWebService);
-        dotDialogService = TestBed.inject(DotAlertConfirmService);
-        dotRouterService = TestBed.inject(DotRouterService);
+    const messageServiceMock = new MockDotMessageService(messages);
+    const mockRouterService = {
+        gotoPortlet: jest.fn(),
+        goToEditContainer: jest.fn(),
+        goToSiteBrowser: jest.fn(),
+        goToURL: jest.fn()
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotContainerPropertiesComponent,
+        imports: [
+            CommonModule,
+            DotMessagePipe,
+            SharedModule,
+            CheckboxModule,
+            InplaceModule,
+            ReactiveFormsModule,
+            MenuModule,
+            ButtonModule,
+            DotContentEditorComponent,
+            DotLoopEditorComponent,
+            DotTextareaContentMockComponent,
+            DotActionButtonComponent,
+            DotActionMenuButtonComponent,
+            DotAddToBundleComponent,
+            DynamicDialogModule,
+            DotAutofocusDirective,
+            BrowserAnimationsModule
+        ],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: ActivatedRoute, useValue: { data: of(containerMockData) } },
+            { provide: DotRouterService, useValue: mockRouterService },
+            StringUtils,
+            DotHttpErrorManagerService,
+            DotContentTypeService,
+            DotAlertConfirmService,
+            ConfirmationService,
+            LoginService,
+            DotcmsConfigService,
+            { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+            DialogService,
+            DotSiteBrowserService,
+            DotContainersService,
+            DotGlobalMessageService,
+            DotEventsService,
+            LoggerService,
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+        ],
+        schemas: [CUSTOM_ELEMENTS_SCHEMA],
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        httpTesting = spectator.inject(HttpTestingController);
+        dotDialogService = spectator.inject(DotAlertConfirmService);
+        dotRouterService = spectator.inject(DotRouterService);
+    });
+
+    afterEach(() => {
+        // Flush any remaining requests (e.g., appconfiguration from DotcmsConfigService)
+        httpTesting?.match(() => true).forEach((req) => req.flush({}));
     });
 
     describe('with data', () => {
         beforeEach(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
-                of({
-                    entity: mockContentTypes,
-                    header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-                })
+            spectator.detectChanges();
+            const req = httpTesting.expectOne((request) =>
+                request.url.includes('/api/v1/contenttype')
             );
-            fixture.detectChanges();
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: mockContentTypes });
+
+            const configReq = httpTesting.match('/api/v1/appconfiguration');
+            configReq.forEach((r) => r.flush({ entity: {} }));
         });
 
-        it('should focus on title field', async () => {
-            fixture.detectChanges();
-            const title = de.query(By.css('[data-testId="title"]'));
-            expect(title.attributes.dotAutofocus).toBeDefined();
+        it('should focus on title field', () => {
+            spectator.detectChanges();
+            const title = spectator.query(byTestId('title'));
+            expect(title).toBeTruthy();
         });
 
         it('should setup title', () => {
-            const field = de.query(By.css('[data-testId="title"]'));
-            expect(field.attributes.pInputText).toBeDefined();
+            const field = spectator.query(byTestId('title'));
+            expect(field).toBeTruthy();
         });
 
         it('should setup description', () => {
-            const field = de.query(By.css('[data-testId="description"]'));
-            expect(field).toBeDefined();
+            const field = spectator.query(byTestId('description'));
+            expect(field).toBeTruthy();
         });
 
         it('should setup Max Contents', () => {
-            const field = de.query(By.css('[data-testId="max-contents"]'));
-            expect(field).toBeDefined();
+            const field = spectator.query(byTestId('max-contents'));
+            expect(field).toBeTruthy();
         });
 
         it('should setup code', () => {
-            const field = de.query(By.css('[data-testId="code"]'));
-            expect(field).toBeDefined();
+            expect(spectator.component.form.get('code')).toBeTruthy();
         });
 
         it('should render content types when max-content greater then zero', fakeAsync(() => {
-            spyOn(fixture.componentInstance, 'showContentTypeAndCode');
-            fixture.componentInstance.form.get('maxContentlets').setValue(0);
-            fixture.componentInstance.form.get('maxContentlets').valueChanges.subscribe((value) => {
+            const comp = spectator.component;
+            jest.spyOn(comp, 'showContentTypeAndCode');
+            comp.form.get('maxContentlets').setValue(0);
+            comp.form.get('maxContentlets').valueChanges.subscribe((value) => {
                 expect(value).toBe(5);
             });
-            expect(fixture.componentInstance.form.get('maxContentlets').updateOn).toBe('change');
-            fixture.componentInstance.form.get('maxContentlets').setValue(5);
-            tick();
-            fixture.detectChanges();
-            const preLoopComponent = de.query(By.css('dot-loop-editor'));
-            const codeEditorComponent = de.query(By.css('dot-container-code'));
-            expect(preLoopComponent).toBeDefined();
-            expect(codeEditorComponent).toBeDefined();
-            expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
+            expect(comp.form.get('maxContentlets').updateOn).toBe('change');
+            comp.form.get('maxContentlets').setValue(5);
+            tick(150);
+            spectator.detectChanges();
+            tick(50);
+            spectator.detectChanges();
+            expect(spectator.query('dot-loop-editor')).toBeTruthy();
+            expect(comp.showContentTypeAndCode).toHaveBeenCalled();
         }));
 
         it('should clear the field', fakeAsync(() => {
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
-            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
+            const comp = spectator.component;
+            jest.spyOn(comp, 'clearContentConfirmationModal');
             comp.form.get('maxContentlets').setValue(0);
-            tick();
-            fixture.detectChanges();
+            tick(150);
+            spectator.detectChanges();
             expect(comp.form.value).toEqual({
                 identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
                 title: 'FAQ',
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
-
             expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
         }));
 
         it('should clear the field when user click on clear button', () => {
+            const comp = spectator.component;
             comp.form.get('maxContentlets').setValue(0);
             comp.form.get('maxContentlets').setValue(5);
-            fixture.detectChanges();
-            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+            spectator.detectChanges();
+            jest.spyOn(comp, 'clearContentConfirmationModal');
+            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
-            const clearBtn = de.query(By.css('[data-testId="clearContent"]'));
-            clearBtn.triggerEventHandler('click');
+            spectator.click(byTestId('clearContent'));
             expect(comp.form.value).toEqual({
                 identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
                 title: 'FAQ',
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
             expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
         });
 
         it('should save button disable', () => {
-            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-            expect(saveBtn.attributes.disabled).toBeDefined();
+            const saveBtn = spectator.query(byTestId('saveBtn'));
+            expect(saveBtn).toBeTruthy();
+            expect((saveBtn as HTMLButtonElement).disabled).toBe(true);
         });
 
-        it('should save button enable when data change', () => {
-            comp.form.get('title').setValue('Hello');
-            fixture.detectChanges();
-            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-            expect(saveBtn.attributes.disabled).not.toBeDefined();
-            comp.form.get('title').setValue('FAQ');
-
-            fixture.detectChanges();
-            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
-        });
+        it('should save button enable when data change', fakeAsync(() => {
+            spectator.component.form.get('title').setValue('Hello');
+            tick(150);
+            spectator.detectChanges();
+            const saveBtn = spectator.query(byTestId('saveBtn')) as HTMLButtonElement;
+            expect(saveBtn.disabled).toBe(false);
+            spectator.component.form.get('title').setValue('FAQ');
+            tick(150);
+            spectator.detectChanges();
+            expect((spectator.query(byTestId('saveBtn')) as HTMLButtonElement).disabled).toBe(true);
+        }));
 
         it('should save button disable after save', fakeAsync(() => {
-            comp.form.get('title').setValue('Hello');
-            fixture.detectChanges();
-            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-            saveBtn.triggerEventHandler('click');
+            spectator.component.form.get('title').setValue('Hello');
+            tick(150);
+            spectator.detectChanges();
+            spectator.click(byTestId('saveBtn'));
+
+            const req = httpTesting.expectOne('/api/v1/containers/');
+            expect(req.request.method).toBe('PUT');
+            req.flush({
+                entity: {
+                    container: containerMockData.container.container,
+                    contentTypes: containerMockData.container.contentTypes
+                }
+            });
+
             tick(200);
-            fixture.detectChanges();
-            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+            spectator.detectChanges();
+            expect((spectator.query(byTestId('saveBtn')) as HTMLButtonElement).disabled).toBe(true);
         }));
 
         it('should save button disable but code field is not required', fakeAsync(() => {
-            fixture.componentInstance.form.get('maxContentlets').setValue(0);
-            fixture.componentInstance.form.get('maxContentlets').setValue(5);
+            const comp = spectator.component;
+            comp.form.get('maxContentlets').setValue(0);
+            comp.form.get('maxContentlets').setValue(5);
             tick(200);
-            fixture.detectChanges();
-            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-            saveBtn.triggerEventHandler('click');
-            fixture.detectChanges();
-            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+            spectator.detectChanges();
+            spectator.click(byTestId('saveBtn'));
+            spectator.detectChanges();
+            expect((spectator.query(byTestId('saveBtn')) as HTMLButtonElement).disabled).toBe(true);
             expect(
-                (fixture.componentInstance.form.get('containerStructures') as FormArray).controls[0]
+                (comp.form.get('containerStructures') as FormArray).controls[0]
                     .get('code')
                     .hasValidator(Validators.required)
-            ).toEqual(false);
+            ).toBe(false);
         }));
 
-        it('should redirect to containers list after save', () => {
-            comp.form.get('title').setValue('Hello');
-            fixture.detectChanges();
-            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-            saveBtn.triggerEventHandler('click');
-            fixture.detectChanges();
+        it('should redirect to containers list after save', fakeAsync(() => {
+            (dotRouterService.goToURL as jest.Mock).mockClear();
+            spectator.component.form.get('title').setValue('Hello');
+            tick(150);
+            spectator.detectChanges();
+            spectator.click(byTestId('saveBtn'));
+
+            const req = httpTesting.expectOne('/api/v1/containers/');
+            expect(req.request.method).toBe('PUT');
+            req.flush({
+                entity: {
+                    container: containerMockData.container.container,
+                    contentTypes: containerMockData.container.contentTypes
+                }
+            });
+
+            tick();
+            spectator.detectChanges();
             expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
-        });
+            expect(dotRouterService.goToURL).toHaveBeenCalledTimes(1);
+        }));
     });
 });

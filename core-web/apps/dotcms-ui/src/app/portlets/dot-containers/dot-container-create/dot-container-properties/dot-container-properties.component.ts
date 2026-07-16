@@ -1,18 +1,46 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
+import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import {
+    FormArray,
+    FormBuilder,
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
-import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+import { SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
+import { TabsModule } from 'primeng/tabs';
+
+import { debounceTime, pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
-import { MonacoEditor } from '@models/monaco-editor';
+import {
+    DotApiLinkComponent,
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
+
 import {
     DotContainerPropertiesState,
     DotContainerPropertiesStore
-} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
+} from './store/dot-container-properties.store';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-editor.model';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
+import { DotContentEditorComponent } from '../dot-container-code/dot-container-code.component';
+import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.component';
 
 @Component({
     animations: [
@@ -22,10 +50,31 @@ import {
     ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
-    styleUrls: ['./dot-container-properties.component.scss'],
-    providers: [DotContainerPropertiesStore]
+    imports: [
+        ReactiveFormsModule,
+        InplaceModule,
+        SharedModule,
+        InputTextModule,
+        CardModule,
+        DotTextareaContentComponent,
+        TabsModule,
+        MenuModule,
+        DotMessagePipe,
+        DotLoopEditorComponent,
+        DotContentEditorComponent,
+        DotApiLinkComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        ButtonModule,
+        AsyncPipe
+    ],
+    providers: [DotContainerPropertiesStore, DotContainersService]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
+    private dotMessageService = inject(DotMessageService);
+    private fb = inject(FormBuilder);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+
     readonly #store = inject(DotContainerPropertiesStore);
     readonly #dotRouterService = inject(DotRouterService);
 
@@ -33,12 +82,6 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     editor: MonacoEditor;
     form: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private fb: FormBuilder,
-        private dotAlertConfirmService: DotAlertConfirmService
-    ) {}
 
     ngOnInit(): void {
         this.#store.containerAndStructure$
@@ -73,7 +116,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             });
 
         this.form.valueChanges
-            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
+            .pipe(
+                takeUntil(this.destroy$),
+                startWith(this.form.value),
+                pairwise(),
+                debounceTime(100)
+            )
             .subscribe(([prevValue, currValue]) => {
                 this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,

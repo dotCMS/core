@@ -1,0 +1,803 @@
+@font-face {
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: swap;
+    src: url('/dotAdmin/assets/MaterialSymbolsOutlined.woff2') format('woff2');
+}
+
+/* ─── Host-page typography defense (web component only) ─── */
+/* Only when the editor is bootstrapped as the custom element `dotcms-block-editor`
+   (apps/dotcms-block-editor/src/main.ts). In Angular apps the host is
+   `dot-block-editor`, so these rules do not run there.
+
+   Inside the dotCMS admin JSP, /html/css/dijit-dotcms/dotcms.css ships unlayered
+   element-name resets that strip margins/padding from p/ul/ol/h1-6/td/th and
+   force font-size 0.875rem on many controls. Tailwind v4 emits prose +
+   utilities inside @layer, so unlayered author CSS beats them regardless of
+   specificity. These (unlayered) rules match that priority, then revert-layer
+   falls back to prose/utilities.
+
+   PrimeNG widgets are excluded: PrimeNG's theme is injected UNLAYERED (no
+   `cssLayer` configured), so `.p-button` (0,1,0) already out-specifies JSP's
+   `button` (0,0,1) and wins on its own. It never needed this defense — and
+   reverting its padding/margin/font-size would roll back to Tailwind preflight
+   (0) and strip its design tokens. `[class~="p-component"]` is PrimeNG's host
+   marker on every widget root; the `, [class~="p-component"] *` also excludes
+   everything inside it (labels, icons, inner controls). A token match (`~=`)
+   avoids the `[class*="p-"]` trap of also matching Tailwind's `p-4` utility.
+
+   SPECIFICITY IS LOAD-BEARING: the exclusion is wrapped in `:where()` (which
+   contributes ZERO specificity) so the whole rule stays at (0,1,1) — high enough
+   to beat JSP's element selectors (0,0,1), but BELOW this file's own component
+   rules like `.tiptap { padding }` (0,2,0). Without `:where()`, each bare
+   `:not([class~=…])` would add (0,1,0), pushing the rule past our own styles and
+   reverting the editor's own padding/spacing to nothing. */
+:host(dotcms-block-editor) {
+    display: block;
+    font-family:
+        'Inter var',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+    line-height: 1.5;
+    color: #1f2937;
+}
+
+:host(dotcms-block-editor)
+    ::ng-deep
+    *:not(:where([class~='p-component'], [class~='p-component'] *)) {
+    margin: revert-layer;
+    padding: revert-layer;
+    font-size: revert-layer;
+}
+
+/* Block layout for both WC (`dotcms-block-editor`) and Angular (`dot-block-editor`) hosts */
+:host {
+    display: block;
+}
+
+/* ─── ProseMirror base ──────────────────────────────────── */
+:host ::ng-deep .ProseMirror {
+    outline: none;
+    min-height: 200px;
+}
+
+/* ─── Editor padding ────────────────────────────────────── */
+/*
+ * The left padding has to clear the left-margin furniture without it being clipped by
+ * `.editor-scroll-container` (whose `overflow-y: auto` forces `overflow-x: auto`, so it
+ * clips horizontally at x=0). Two things live in that left strip:
+ *   - the block gutter (~50px wide, pushed a further GUTTER_OFFSET=15px left), and
+ *   - the table row handle (protrudes 12px left of the table).
+ * 5rem (80px) keeps the gutter's left edge ~14px inside the clip boundary.
+ */
+:host ::ng-deep .tiptap {
+    padding: 2rem 5rem;
+}
+
+/* ─── Scroll lock while overlays are open ───────────────── */
+/* Always reserve the scrollbar gutter so the scrollbar can disappear without
+   shifting content horizontally — needed for the locked state below to feel seamless. */
+:host ::ng-deep .editor-scroll-container {
+    scrollbar-gutter: stable;
+}
+
+/* While any popover or the slash menu is open, freeze the editor's scroll so
+   the cursor stays anchored beneath its overlay. `overflow: hidden` only blocks
+   USER scroll (wheel, keyboard, drag); ProseMirror's programmatic scroll-into-view
+   on typing still works. */
+:host ::ng-deep .editor-scroll-container--locked {
+    overflow-y: hidden;
+}
+
+/* ─── Material Symbols (Outlined) ──────────────────────── */
+/* Font must be loaded by the consuming app (Google Fonts or self-hosted) */
+:host ::ng-deep .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 20;
+}
+
+/* ─── Block spacing ─────────────────────────────────────── */
+/* Vertical rhythm between top-level blocks. Without this rule, a `<figure>`
+   followed by a `<.tableWrapper>` (or grid, or another figure) butts right up
+   against it because each block sets its own `margin: 0` to control internal
+   spacing. The lobotomized-owl selector adds a top gap only to a block that
+   follows a sibling — never to the first block in the doc. Floated figures
+   (image-wrap-left/right) are excluded because they live outside normal flow. */
+:host ::ng-deep .ProseMirror > * + *:not(.image-wrap-left):not(.image-wrap-right) {
+    margin-top: 2.5rem;
+}
+
+/* ─── Lists ─────────────────────────────────────────────── */
+/* Self-contained list rendering. We do NOT rely on the host page's Tailwind
+   Typography (`prose`) for markers: Tailwind's preflight resets
+   `ol, ul, menu { list-style: none }` in `@layer base`, and depending on the
+   consuming app's layer order that can beat `prose` (it does in the
+   `dotcms-block-editor` web-component build, where lists rendered with no
+   bullets/numbers). These rules are unlayered component CSS, so they win over
+   any layered Tailwind reset regardless of host. `padding-left` is required for
+   the markers to be visible (`list-style-position: outside` paints them in the
+   indent); it also out-specifies the host-style `revert-layer` defense (0,1,1),
+   which would otherwise strip the list's padding and clip the markers. */
+:host ::ng-deep .tiptap ul,
+:host ::ng-deep .tiptap ol {
+    padding-left: 1.625rem;
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap ul {
+    list-style: disc;
+}
+
+:host ::ng-deep .tiptap ol {
+    list-style: decimal;
+}
+
+/* Nested markers cycle so depth stays legible */
+:host ::ng-deep .tiptap ul ul {
+    list-style: circle;
+}
+
+:host ::ng-deep .tiptap ul ul ul {
+    list-style: square;
+}
+
+/* `list-style: inherit` is load-bearing: the admin JSP ships an unlayered
+   `li { list-style: none }` that sets the property *directly on the <li>*,
+   overriding the value `list-style-type` would otherwise inherit from the
+   <ul>/<ol> above. Forcing the li to inherit re-derives the correct marker
+   (disc / decimal / circle / square) from its list parent. `.tiptap li`
+   (0,2,1) out-specifies the JSP's `li` (0,0,1). */
+:host ::ng-deep .tiptap li {
+    margin: 0.25rem 0;
+    list-style: inherit;
+}
+
+/* Markers default to Tailwind prose's light-gray bullet/counter color; match
+   them to the editor's text color so they read as part of the content. */
+:host ::ng-deep .tiptap li::marker {
+    color: currentColor;
+}
+
+/* TipTap wraps list-item content in a <p>; collapse its prose margins so the
+   marker stays vertically aligned with the first line of text. */
+:host ::ng-deep .tiptap li > p {
+    margin: 0;
+}
+
+/* ─── Figures / Images ──────────────────────────────────── */
+:host ::ng-deep .ProseMirror figure {
+    display: block;
+    margin: 0;
+}
+
+:host ::ng-deep .ProseMirror figure.image-wrap-left {
+    float: left;
+    width: 50%;
+    margin: 0 1rem 1rem 0;
+}
+
+:host ::ng-deep .ProseMirror figure.image-wrap-right {
+    float: right;
+    width: 50%;
+    margin: 0 0 1rem 1rem;
+}
+
+/* text-align on the figure positions the inline <img> child */
+:host ::ng-deep .ProseMirror figure.image-align-left {
+    text-align: left;
+}
+
+:host ::ng-deep .ProseMirror figure.image-align-center {
+    text-align: center;
+}
+
+:host ::ng-deep .ProseMirror figure.image-align-right {
+    text-align: right;
+}
+
+:host ::ng-deep .ProseMirror figure img {
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+    /* Align to the top of the line box so the inline-block image carries no baseline
+       descender gap. Without this, wrapping the image in an inline <a> (when a link is
+       added) introduces extra space below it and the layout visibly jumps (#36361). */
+    vertical-align: top;
+    /* Tailwind Typography's `.prose :where(img)` adds `margin: 2em 0`, normally cancelled by
+       its `figure > *` reset. Once the image is wrapped in <a> (linked), it's no longer a direct
+       figure child so that reset stops applying and the 2em margin returns. Zero it explicitly —
+       this selector out-specifies prose's zero-specificity `:where()` rules (#36361). */
+    margin: 0;
+}
+
+/* A linked image is rendered as <figure><a href><img></a></figure>. Keep the anchor a
+   zero-line-height inline-block so it hugs the image and linking doesn't shift layout.
+   `vertical-align: top` is essential: once the anchor wraps the image, the *anchor* (not the
+   img) is the inline-level box in the figure's formatting context, so it must align to the top
+   or the browser reserves font-descender space below it and the layout jumps (#36361). */
+:host ::ng-deep .ProseMirror figure a {
+    display: inline-block;
+    line-height: 0;
+    vertical-align: top;
+}
+
+/* ─── Selected node ring ────────────────────────────────── */
+:host ::ng-deep .ProseMirror figure.is-selected img,
+:host ::ng-deep .ProseMirror video.is-selected,
+:host ::ng-deep .ProseMirror [data-type='dot-content'].is-selected {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* ─── Drag handle ──────────────────────────────────────── */
+/* The extension manages show/hide via element.style.visibility — do NOT use opacity here */
+:host ::ng-deep .drag-handle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    z-index: 20;
+}
+
+:host ::ng-deep .drag-handle,
+:host ::ng-deep .add-block-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    color: #9ca3af;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+:host ::ng-deep .drag-handle {
+    cursor: grab;
+}
+
+:host ::ng-deep .add-block-btn {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+:host ::ng-deep .drag-handle:hover,
+:host ::ng-deep .add-block-btn:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+}
+
+:host ::ng-deep .drag-handle:active {
+    cursor: grabbing;
+    background-color: #e5e7eb;
+}
+
+:host ::ng-deep .add-block-btn:active {
+    background-color: #e5e7eb;
+}
+
+/* ─── Table ─────────────────────────────────────────────── */
+:host ::ng-deep .tiptap table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+    /* No `overflow: hidden` — the cell-anchored handles (.dot-cell-handle) sit on the
+       table's outer border via negative top/left offsets and would otherwise be clipped. */
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap td,
+:host ::ng-deep .tiptap th {
+    border: 1px solid #e5e7eb;
+    padding: 6px 10px;
+    vertical-align: top;
+    position: relative;
+    min-width: 80px;
+}
+
+/*
+ * Tailwind Typography's `prose` adds vertical margins to <p> globally; inside a table
+ * cell those margins compound with the cell's padding and make every cell feel bloated.
+ * Reset paragraph margins inside the NodeView's content wrapper so the cell padding
+ * (4px 8px above) is the only spacing.
+ */
+:host ::ng-deep .tiptap .dot-cell-content > * {
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    text-align: left;
+}
+
+:host ::ng-deep .tiptap .selectedCell {
+    background-color: #eff6ff;
+}
+
+:host ::ng-deep .tiptap .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #6366f1;
+    cursor: col-resize;
+    pointer-events: all;
+}
+
+:host ::ng-deep .tiptap .tableWrapper {
+    /* `overflow: visible` (instead of `overflow-x: auto`) so the column / row handles can
+       protrude past the table's outer edges without being clipped. Wide-table horizontal
+       scrolling is handled by the editor's outer scroll container; combined with
+       `table-layout: fixed; width: 100%` above, tables stay within the editor width by
+       resizing columns instead of overflowing. */
+    overflow: visible;
+}
+
+/* ─── Table contextual handles (cell-anchored NodeView) ─── */
+/*
+ * Handles live INSIDE the cell DOM (rendered by the DotTableCell / DotTableHeader
+ * NodeViews). Pure CSS positioning — no floating-ui, no autoUpdate. The cell's
+ * `position: relative` is already set on the .tiptap td/th rule above; the handles
+ * absolute-position themselves against the cell.
+ */
+:host ::ng-deep .tiptap .dot-cell-handle {
+    position: absolute;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid #c7d2fe;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #4f46e5;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    z-index: 5;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle .material-symbols-outlined {
+    font-size: 14px;
+    line-height: 1;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle:hover {
+    background-color: #eef2ff;
+    color: #4338ca;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--col {
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--row {
+    top: 50%;
+    left: -12px;
+    transform: translateY(-50%);
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--selection {
+    top: 50%;
+    right: -12px;
+    transform: translateY(-50%);
+}
+
+/*
+ * Visibility rules — the TableActiveCellsPlugin marks every cell in the cursor's
+ * column with `is-active-column` and every cell in the cursor's row with `is-active-row`.
+ * For multi-cell `CellSelection`, only the bottom-right cell of the selection gets
+ * `is-selection-anchor` (column / row decorations are skipped in that branch).
+ *
+ * Column handle only shows on the first-row cell of the active column; row handle only
+ * shows on the first cell of the active row; selection handle only shows on the chosen
+ * anchor cell.
+ */
+:host ::ng-deep .tiptap tbody > tr:first-child > .is-active-column > .dot-cell-handle--col {
+    display: inline-flex;
+}
+
+:host ::ng-deep .tiptap tbody > tr > .is-active-row:first-child > .dot-cell-handle--row {
+    display: inline-flex;
+}
+
+:host ::ng-deep .tiptap .is-selection-anchor > .dot-cell-handle--selection {
+    display: inline-flex;
+}
+
+/*
+ * Even-row-count selections: the plugin anchors to the cell at floor(N/2) from the top.
+ * Override the default `top: 50%` so the handle sits at the cell's top border — which is
+ * the boundary between the two middle rows = the selection's vertical center.
+ */
+:host ::ng-deep .tiptap .is-selection-anchor--edge > .dot-cell-handle--selection {
+    top: 0;
+}
+
+/* ─── Placeholders ──────────────────────────────────────── */
+:host ::ng-deep .tiptap p.is-empty::before,
+:host ::ng-deep .tiptap h1.is-empty::before,
+:host ::ng-deep .tiptap h2.is-empty::before,
+:host ::ng-deep .tiptap h3.is-empty::before,
+:host ::ng-deep .tiptap h4.is-empty::before,
+:host ::ng-deep .tiptap blockquote p.is-empty::before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    pointer-events: none;
+    float: left;
+    height: 0;
+}
+
+/* ─── Links ─────────────────────────────────────────────── */
+:host ::ng-deep .tiptap a {
+    color: #6366f1;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+:host ::ng-deep .tiptap a:hover {
+    color: #4f46e5;
+}
+
+:host ::ng-deep .tiptap a.link-editing {
+    background-color: rgba(99, 102, 241, 0.12);
+    border-radius: 2px;
+    outline: 2px solid rgba(99, 102, 241, 0.3);
+    outline-offset: 1px;
+}
+
+/* ─── Code block ────────────────────────────────────────── */
+/* The `<dot-code-block-node-view>` Angular node view renders
+   `<div class="code-block"><select/><pre><code/></pre></div>`. The wrapper
+   gives the language selector a positioning context; the inner `<pre>` keeps
+   the dark frame so existing token styles below match unchanged. */
+:host ::ng-deep .code-block {
+    position: relative;
+    margin: 1rem 0;
+    background-color: #2e2b29;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+}
+
+:host ::ng-deep .code-block pre {
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap pre {
+    color: #e6edf3;
+    font-family:
+        'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+        'Liberation Mono', monospace;
+    font-size: 0.875rem;
+    padding-inline: 0;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+}
+
+:host ::ng-deep .tiptap pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    font-family: inherit;
+}
+
+/* ─── Syntax highlighting (lowlight / highlight.js → github-dark) ── */
+/* Class names come from highlight.js; lowlight emits them inside <pre><code>. */
+:host ::ng-deep .tiptap pre .hljs-comment,
+:host ::ng-deep .tiptap pre .hljs-quote {
+    color: #8b949e;
+}
+
+:host ::ng-deep .tiptap pre .hljs-keyword,
+:host ::ng-deep .tiptap pre .hljs-selector-tag,
+:host ::ng-deep .tiptap pre .hljs-literal,
+:host ::ng-deep .tiptap pre .hljs-section,
+:host ::ng-deep .tiptap pre .hljs-link {
+    color: #ff7b72;
+}
+
+:host ::ng-deep .tiptap pre .hljs-function .hljs-keyword {
+    color: #ff7b72;
+}
+
+:host ::ng-deep .tiptap pre .hljs-subst {
+    color: #e6edf3;
+}
+
+:host ::ng-deep .tiptap pre .hljs-string,
+:host ::ng-deep .tiptap pre .hljs-doctag {
+    color: #a5d6ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-title,
+:host ::ng-deep .tiptap pre .hljs-section,
+:host ::ng-deep .tiptap pre .hljs-selector-id,
+:host ::ng-deep .tiptap pre .hljs-title.class_,
+:host ::ng-deep .tiptap pre .hljs-title.function_ {
+    color: #d2a8ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-type,
+:host ::ng-deep .tiptap pre .hljs-class .hljs-title {
+    color: #ffa657;
+}
+
+:host ::ng-deep .tiptap pre .hljs-tag,
+:host ::ng-deep .tiptap pre .hljs-name,
+:host ::ng-deep .tiptap pre .hljs-attribute {
+    color: #7ee787;
+}
+
+:host ::ng-deep .tiptap pre .hljs-regexp,
+:host ::ng-deep .tiptap pre .hljs-link {
+    color: #a5d6ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-symbol,
+:host ::ng-deep .tiptap pre .hljs-bullet {
+    color: #ffa198;
+}
+
+:host ::ng-deep .tiptap pre .hljs-built_in,
+:host ::ng-deep .tiptap pre .hljs-builtin-name {
+    color: #79c0ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-meta {
+    color: #79c0ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-deletion {
+    color: #ffdcd7;
+    background-color: #67060c;
+}
+
+:host ::ng-deep .tiptap pre .hljs-addition {
+    color: #aff5b4;
+    background-color: #033a16;
+}
+
+:host ::ng-deep .tiptap pre .hljs-emphasis {
+    font-style: italic;
+}
+
+:host ::ng-deep .tiptap pre .hljs-strong {
+    font-weight: 700;
+}
+
+:host ::ng-deep .tiptap pre .hljs-number {
+    color: #79c0ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-variable,
+:host ::ng-deep .tiptap pre .hljs-template-variable {
+    color: #ffa657;
+}
+
+:host ::ng-deep .tiptap pre .hljs-params {
+    color: #e6edf3;
+}
+
+/* ─── Inline code (mark) ────────────────────────────────── */
+:host ::ng-deep .tiptap code {
+    background-color: rgba(99, 102, 241, 0.12);
+    color: #4338ca;
+    font-family:
+        'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+}
+
+/* ─── Upload placeholder ─────────────────────────────── */
+:host ::ng-deep .upload-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    border: 1.5px dashed #d1d5db;
+    color: #6b7280;
+    margin: 0.25rem 0;
+    user-select: none;
+    cursor: default;
+}
+
+:host ::ng-deep .upload-placeholder__icon {
+    font-size: 1.25rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+:host ::ng-deep .upload-placeholder__label {
+    font-size: 0.875rem;
+    flex: 1;
+}
+
+:host ::ng-deep .upload-placeholder__bar {
+    width: 100px;
+    height: 4px;
+    border-radius: 9999px;
+    background-color: #e5e7eb;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+}
+
+:host ::ng-deep .upload-placeholder__bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: #6366f1;
+    border-radius: 9999px;
+    animation: upload-sweep 1.4s ease-in-out infinite;
+    transform-origin: left center;
+}
+
+@keyframes upload-sweep {
+    0% {
+        transform: translateX(-100%) scaleX(0.4);
+    }
+    50% {
+        transform: translateX(60%) scaleX(0.6);
+    }
+    100% {
+        transform: translateX(200%) scaleX(0.4);
+    }
+}
+
+/* ─── Grid block ────────────────────────────────────────── */
+/* fr-based columns, position:relative for resize handle overlay */
+:host ::ng-deep .ProseMirror .grid-block {
+    display: grid;
+    gap: 1rem;
+    margin: 1rem 0;
+    position: relative;
+}
+
+/* display:contents lets gridColumn cells participate in the parent CSS Grid */
+:host ::ng-deep .ProseMirror .grid-block__grid {
+    display: contents;
+}
+
+:host ::ng-deep .ProseMirror .grid-block__column {
+    min-width: 0;
+}
+
+:host ::ng-deep .ProseMirror .grid-block__column-content {
+    padding: 0.5rem;
+    border: 1px dashed #d1d5db;
+    border-radius: 0.375rem;
+    min-height: 3rem;
+}
+
+:host ::ng-deep .ProseMirror .grid-block__column-content:focus-within {
+    border-color: #a5b4fc;
+    background: color-mix(in srgb, #6366f1 8%, transparent);
+}
+
+/* ─── Grid resize handle ────────────────────────────────── */
+:host ::ng-deep .grid-block__resize-handle {
+    position: absolute;
+    width: 0.75rem;
+    cursor: col-resize;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:host ::ng-deep .grid-block__resize-handle::after {
+    content: '';
+    width: 1px;
+    height: 2rem;
+    background: #9ca3af;
+    border-radius: 9999px;
+    transition:
+        background 0.15s,
+        height 0.15s;
+}
+
+:host ::ng-deep .grid-block__resize-handle:hover::after {
+    background: #6366f1;
+    height: 100%;
+}
+
+:host ::ng-deep .grid-block__resize-handle--active::after {
+    background: #6366f1;
+    height: 100%;
+    transition: none;
+}
+
+/* ─── Grid drag preview ─────────────────────────────────── */
+:host ::ng-deep .grid-block__drag-preview {
+    position: absolute;
+    display: flex;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 0.5rem;
+}
+
+:host ::ng-deep .grid-block__drag-preview-col {
+    border-radius: 0.5rem;
+    border: 2px dashed #818cf8;
+    background: color-mix(in srgb, #6366f1 8%, transparent);
+}
+
+/* ─── Selection preserved while a dialog is open ────────── */
+:host ::ng-deep .ProseMirror .editor-selection-preserved {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+:host ::ng-deep .ProseMirror .editor-selection-preserved::before {
+    display: none !important;
+}
+
+/* ─── Block-target highlight while toolbar pop-ups are open ─── */
+/* Stronger than selection-preserved: communicates "this WILL change" not "this is the cursor". */
+:host ::ng-deep .ProseMirror .editor-block-target {
+    background-color: rgba(99, 102, 241, 0.12);
+    box-shadow: inset 3px 0 0 #6366f1;
+    border-radius: 4px;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+:host ::ng-deep .ProseMirror .editor-block-target::before {
+    display: none !important;
+}
+
+/* Suppress the native text-selection inside the targeted block — the block-target
+   highlight is the only visual we want while the toolbar pop-up is open. */
+:host ::ng-deep .ProseMirror .editor-block-target ::selection,
+:host ::ng-deep .ProseMirror .editor-block-target::selection {
+    background: transparent;
+    color: inherit;
+}
+
+/* ─── Exact selection highlight while the link popover is open (insert mode) ─── */
+/* Matches the `.link-editing` indigo tint so creating and editing a link look alike. */
+:host ::ng-deep .ProseMirror .editor-link-selection {
+    background-color: rgba(99, 102, 241, 0.18);
+    border-radius: 2px;
+}

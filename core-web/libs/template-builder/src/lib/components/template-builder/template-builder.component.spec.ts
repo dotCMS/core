@@ -1,28 +1,32 @@
 import { expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator';
+import { of } from 'rxjs';
 
-import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
-import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ToolbarModule } from 'primeng/toolbar';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
-import { DotContainersService, DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContainersService,
+    DotCurrentUserService,
+    DotEventsService,
+    DotMessageService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
-    CoreWebServiceMock,
     DotContainersServiceMock,
+    DotCurrentUserServiceMock,
     LoginServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
-import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -54,31 +58,24 @@ const mockRect = {
 describe('TemplateBuilderComponent', () => {
     let spectator: Spectator<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
-    const mockContainer = containersMock[0];
     let dialog: DialogService;
-
+    let dotContainersService: DotContainersService;
     let openDialogMock: jest.SpyInstance;
+    let defaultContainerSpy: jest.SpyInstance;
+    const mockContainer = containersMock[0];
 
     const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
-
-        imports: [
-            NgFor,
-            NgIf,
-            AsyncPipe,
-            DotMessagePipe,
-            DynamicDialogModule,
-            NgStyle,
-            NgClass,
-            ToolbarModule,
-            DividerModule,
-            TemplateBuilderComponentsModule,
-            HttpClientTestingModule
-        ],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotTemplateBuilderStore,
             DialogService,
             DynamicDialogRef,
+            {
+                provide: DotCurrentUserService,
+                useClass: DotCurrentUserServiceMock
+            },
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -88,16 +85,20 @@ describe('TemplateBuilderComponent', () => {
                 useValue: new DotContainersServiceMock()
             },
             {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
-            },
-            {
                 provide: SiteService,
                 useClass: SiteServiceMock
             },
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
+            },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
+            },
+            {
+                provide: GlobalStore,
+                useValue: { currentSiteId: () => null }
             },
             DotEventsService
         ]
@@ -124,8 +125,9 @@ describe('TemplateBuilderComponent', () => {
 
         store = spectator.inject(DotTemplateBuilderStore, true);
         dialog = spectator.inject(DialogService);
-
         openDialogMock = jest.spyOn(dialog, 'open');
+        dotContainersService = spectator.inject(DotContainersService, true);
+        defaultContainerSpy = jest.spyOn(dotContainersService.defaultContainer$, 'pipe');
         spectator.detectChanges();
     });
 
@@ -133,6 +135,12 @@ describe('TemplateBuilderComponent', () => {
         // Store init is called on init
         const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
         expect(changeMock).not.toHaveBeenCalled();
+    });
+
+    describe('ngOnInit and defaultContainer$ subscription', () => {
+        it('should subscribe to defaultContainer$ on ngOnInit', () => {
+            expect(defaultContainerSpy).toHaveBeenCalled();
+        });
     });
 
     it("should call updateOldRows from the store when the layout changes and it's not the first time", () => {
@@ -183,23 +191,26 @@ describe('TemplateBuilderComponent', () => {
         spectator.triggerEventHandler(builderBox1, 'deleteColumn', undefined);
         expect(spectator.component.removeColumn).toHaveBeenCalled();
 
-        const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
-        const rowId = box1.nativeElement
-            .closest('dotcms-template-builder-row')
-            .getAttribute('gs-id');
+        // Wait for GridStack to be initialized via requestAnimationFrame
+        requestAnimationFrame(() => {
+            const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
+            const rowId = box1.nativeElement
+                .closest('dotcms-template-builder-row')
+                .getAttribute('gs-id');
 
-        const box1Id = box1.nativeElement.getAttribute('gs-id');
+            const box1Id = box1.nativeElement.getAttribute('gs-id');
 
-        spectator.component.removeColumn(
-            { id: box1Id, parentId: rowId },
-            box1.nativeElement,
-            rowId
-        );
-        expect(store.removeColumn).toHaveBeenCalledWith({
-            ...{ id: box1Id, parentId: rowId },
-            parentId: rowId
+            spectator.component.removeColumn(
+                { id: box1Id, parentId: rowId },
+                box1.nativeElement,
+                rowId
+            );
+            expect(store.removeColumn).toHaveBeenCalledWith({
+                ...{ id: box1Id, parentId: rowId },
+                parentId: rowId
+            });
+            done();
         });
-        done();
     });
 
     it('should call addContainer from store when triggering addContainer', (done) => {
@@ -300,7 +311,8 @@ describe('TemplateBuilderComponent', () => {
             '[data-testId="delete-section-button"]'
         );
 
-        spectator.click(deleteSectionButton);
+        // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
+        spectator.click(deleteSectionButton.querySelector('button'));
 
         expect(deleteSectionMock).toHaveBeenCalledWith('header');
     });
@@ -312,27 +324,17 @@ describe('TemplateBuilderComponent', () => {
             '[data-testId="delete-section-button"]'
         );
 
-        spectator.click(deleteSectionButton);
+        // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
+        spectator.click(deleteSectionButton.querySelector('button'));
 
         expect(deleteSectionMock).toHaveBeenCalledWith('footer');
     });
 
     it("should emit changes with a not null layout when the theme is changed and layoutProperties or rows weren't touched", () => {
-        const templateBuilderActions = spectator.query(byTestId('template-builder-actions'));
         const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
 
-        spectator.dispatchFakeEvent(templateBuilderActions, 'selectTheme');
-
-        // This queries from the body
-        const templateBuilderThemeSelector = spectator.fixture.debugElement.parent.query(
-            By.css('dotcms-template-builder-theme-selector')
-        ).componentInstance;
-
-        templateBuilderThemeSelector.currentTheme = {
-            identifier: 'test-123'
-        };
-
-        templateBuilderThemeSelector.apply();
+        // Theme changes are routed through TemplateBuilderActions -> TemplateBuilderComponent.updateTheme()
+        spectator.component.updateTheme('test-123');
 
         expect(layoutChangeMock).toHaveBeenCalledWith({
             layout: {
@@ -367,24 +369,29 @@ describe('TemplateBuilderComponent', () => {
                 }
             });
 
-            store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
-                expect(layoutChangeMock).toHaveBeenCalledWith({
-                    layout: {
-                        body: FULL_DATA_MOCK,
-                        header: true,
-                        footer: true,
-                        sidebar: {
-                            containers: [],
-                            location: 'left',
-                            width: 'small'
+            store.vm$
+                .pipe(
+                    map((x) => x?.items),
+                    take(1)
+                )
+                .subscribe(() => {
+                    expect(layoutChangeMock).toHaveBeenCalledWith({
+                        layout: {
+                            body: FULL_DATA_MOCK,
+                            header: true,
+                            footer: true,
+                            sidebar: {
+                                containers: [],
+                                location: 'left',
+                                width: 'small'
+                            },
+                            width: 'Mobile',
+                            title: 'Test Title'
                         },
-                        width: 'Mobile',
-                        title: 'Test Title'
-                    },
-                    themeId: '123'
+                        themeId: '123'
+                    });
+                    done();
                 });
-                done();
-            });
         });
     });
 
@@ -405,18 +412,23 @@ describe('TemplateBuilderComponent', () => {
 
         spectator.detectChanges();
 
-        store.vm$.pipe(pluck('layoutProperties'), take(1)).subscribe(() => {
-            expect(layoutChangeMock).toHaveBeenCalledWith({
-                layout: {
-                    ...LAYOUT_PROPERTIES_MOCK,
-                    body: FULL_DATA_MOCK,
-                    width: 'Mobile',
-                    title: 'Test Title'
-                },
-                themeId: '123'
+        store.vm$
+            .pipe(
+                map((x) => x?.layoutProperties),
+                take(1)
+            )
+            .subscribe(() => {
+                expect(layoutChangeMock).toHaveBeenCalledWith({
+                    layout: {
+                        ...LAYOUT_PROPERTIES_MOCK,
+                        body: FULL_DATA_MOCK,
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    themeId: '123'
+                });
+                done();
             });
-            done();
-        });
     });
 
     describe('Scroll on Drag', () => {

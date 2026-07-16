@@ -1,19 +1,23 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 /**
- * Provides util listing methods
+ * @deprecated
+ * This class is deprecated. Use HttpClient directly instead of this service.
+ * It is recommended to migrate any usage of DotCrudService to native HttpClient.
+ * Provides utility listing methods
  * @export
  * @class CrudService
  */
 @Injectable()
 export class DotCrudService {
-    constructor(private coreWebService: CoreWebService) {}
+    private http = inject(HttpClient);
 
     /**
      * Will do a POST request and return the response to the url provide
@@ -24,13 +28,9 @@ export class DotCrudService {
      * @memberof CrudService
      */
     public postData<T, K>(baseUrl: string, data: K): Observable<T> {
-        return this.coreWebService
-            .requestView<T>({
-                body: data,
-                method: 'POST',
-                url: `${baseUrl}`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .post<DotCMSResponse<T>>(baseUrl, data)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -42,13 +42,9 @@ export class DotCrudService {
      * @memberof CrudService
      */
     public putData<T>(baseUrl: string, data: unknown): Observable<T> {
-        return this.coreWebService
-            .requestView<T>({
-                body: data,
-                method: 'PUT',
-                url: `${baseUrl}`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .put<DotCMSResponse<T>>(baseUrl, data)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -60,12 +56,14 @@ export class DotCrudService {
      * @returns {Observable<any>}
      * @memberof DotCrudService
      */
-    getDataById<T>(baseUrl: string, id: string, pick = 'entity'): Observable<T> {
-        return this.coreWebService
-            .requestView<T>({
-                url: `${baseUrl}/id/${id}`
-            })
-            .pipe(pluck(pick));
+    getDataById<T>(
+        baseUrl: string,
+        id: string,
+        pick: 'entity' | 'contentlets' | 'tempFiles' = 'entity'
+    ): Observable<T> {
+        return this.http
+            .get<DotCMSResponse<T>>(`${baseUrl}/id/${id}`)
+            .pipe(map((response) => response[pick] as T));
     }
 
     /**
@@ -77,11 +75,8 @@ export class DotCrudService {
      * @memberof CrudService
      */
     delete<T>(baseUrl: string, id: string): Observable<T> {
-        return this.coreWebService
-            .requestView<T>({
-                method: 'DELETE',
-                url: `${baseUrl}/${id}`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .delete<DotCMSResponse<T>>(`${baseUrl}/${id}`)
+            .pipe(map((response) => response.entity));
     }
 }

@@ -11,6 +11,10 @@
     <packaging>jar</packaging>
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
+        <!-- Preload the byte-buddy agent for this module's tests so CacheSizingUtil can use
+             Instrumentation.getObjectSize(). The path is populated by the dependency-plugin
+             'properties' goal (see build/plugins). Consumed by the shared surefire/failsafe argLine. -->
+        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
@@ -65,8 +69,6 @@
         <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
         <tomcat.run.data.folder>${project.build.directory}/tomcat-run-data/${context.name}</tomcat.run.data.folder>
         <cleanup.data.folder>false</cleanup.data.folder>
-        <!-- Add enterprise to sonar sources -->
-        <sonar.sources>src/main/java,src/enterprise/java</sonar.sources>
     </properties>
     <dependencies>
         <!-- Force dependency resolution when using also-make option even though these do not provide jar dependencies -->
@@ -220,16 +222,8 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.hibernate-validator</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -398,6 +392,18 @@
             <artifactId>dot.txtmark</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-tables</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.util-taglib</artifactId>
         </dependency>
@@ -508,6 +514,51 @@
             <!-- Functional programming utilities including Try, Tuple, Option, Either, Collections, etc. -->
             <groupId>io.vavr</groupId>
             <artifactId>vavr</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J OpenAI provider: Chat, Embedding, Image models via OpenAI API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Azure OpenAI provider: Chat, Embedding models via Azure OpenAI Service -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-azure-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Amazon Bedrock provider: Chat and Embedding models via AWS Bedrock Runtime -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-bedrock</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J official OpenAI SDK provider: Image model via gpt-image-1 on Azure (Microsoft Foundry) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai-official</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Anthropic provider: Chat model via the Anthropic Messages API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Google AI Gemini provider: Chat, Embedding models via Google AI Studio (API key auth) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-google-ai-gemini</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Google Vertex AI provider: Chat model via Vertex AI Gemini (ADC auth) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-vertex-ai-gemini</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.android</groupId>
+                    <artifactId>annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
@@ -718,6 +769,10 @@
             <artifactId>aws-java-sdk-s3</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>jmespath-java</artifactId>
         </dependency>
@@ -731,6 +786,37 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
+        </dependency>
+
+        <!-- Open search migration -->
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.client5</groupId>
+                    <artifactId>httpclient5</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.core5</groupId>
+                    <artifactId>httpcore5</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
         </dependency>
 
         <dependency>
@@ -763,6 +849,10 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
         </dependency>
 
         <dependency>
@@ -874,6 +964,15 @@
 
         <!-- Image Processing -->
         <dependency>
+            <groupId>com.github.gotson</groupId>
+            <artifactId>webp-imageio</artifactId>
+        </dependency>
+        <!-- libvips bindings (FFM) — alternative image engine; native libvips must be present on host -->
+        <dependency>
+            <groupId>app.photofox.vips-ffm</groupId>
+            <artifactId>vips-ffm-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-batik</artifactId>
         </dependency>
@@ -946,10 +1045,6 @@
             <artifactId>imageio-tiff</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-webp</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.twelvemonkeys.servlet</groupId>
             <artifactId>servlet</artifactId>
         </dependency>
@@ -963,17 +1058,22 @@
 
         <!-- Security -->
         <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
 
 
@@ -1326,6 +1426,19 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Jandex for test annotation scanning -->
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- explicitly add all the declared logging dependencies -->
         <!-- Logging framework support Log4j2 as base logger
             very specific artifacts are required to support other frameworks.
@@ -1365,18 +1478,19 @@
 
         <!-- Graalvm Js Engine -->
         <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.js</groupId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <!-- Select language: js, ruby, python, java, llvm, wasm, languages -->
             <artifactId>js</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
         </dependency>
-
         <!-- AI -->
         <dependency>
             <groupId>com.knuddels</groupId>
@@ -1395,6 +1509,20 @@
                     <artifactId>postgresql</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Metrics and Monitoring -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-jmx</artifactId>
         </dependency>
 
         <!-- Weld CDI -->
@@ -1435,11 +1563,6 @@
 
         <!-- Weld CDI -->
 
-        <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>jandex</artifactId>
-            <version>3.0.5</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina</artifactId>
@@ -1504,6 +1627,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <!-- Populate ${net.bytebuddy:byte-buddy-agent:jar} so the test argLine can
+                             preload it via -javaagent (see bytebuddy.agent.argline property). -->
+                        <id>resolve-bytebuddy-agent-path</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
                     <execution>
                         <id>unpack</id>
                         <phase>prepare-package</phase>
@@ -1815,7 +1947,7 @@
                               -->
                             <location>${exploded-webapp-dir}</location>
                             <properties>
-                                <context>/</context>
+                                <context/>
                             </properties>
                         </deployable>
                     </deployables>
@@ -1862,6 +1994,11 @@
                                     <SDKMAN_JAVA_VERSION>${runtime.docker.sdkman.java.version}</SDKMAN_JAVA_VERSION>
                                 </args>
                             </build>
+                            <run>
+                                <env combine.children="append">
+                                    <DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>false</DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>
+                                </env>
+                            </run>
                         </dotcms>
                     </imagesMap>
                 </configuration>
@@ -1891,6 +2028,40 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <!-- First execution: Process annotations to generate immutable classes -->
+                    <execution>
+                        <id>process-annotations</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Include both main and enterprise sources for annotation processing -->
+                            <compileSourceRoots>
+                                <compileSourceRoot>${basedir}/src/main/java</compileSourceRoot>
+                                <compileSourceRoot>${basedir}/src/enterprise/java</compileSourceRoot>
+                            </compileSourceRoots>
+                            <!-- Only process annotations, don't fail on errors from missing generated classes -->
+                            <proc>only</proc>
+                            <annotationProcessors>
+                                <annotationProcessor>org.immutables.processor.ProxyProcessor</annotationProcessor>
+                            </annotationProcessors>
+                        </configuration>
+                    </execution>
+                    <!-- Second execution: Normal compilation with generated sources available -->
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Disable annotation processing in this phase since it was already done -->
+                            <proc>none</proc>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -1905,6 +2076,8 @@
                         <configuration>
                             <sources>
                                 <source>${basedir}/src/enterprise/java</source>
+                                <!-- Add generated immutable classes to source path -->
+                                <source>${project.build.directory}/generated-sources/annotations</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -1963,6 +2136,39 @@
                     </execution>
                 </executions>
             </plugin>
+            
+            <!-- OpenAPI/Swagger documentation generation -->
+            <plugin>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <configuration>
+                    <outputFileName>openapi</outputFileName>
+                    <!--<outputPath>${project.build.directory}/generated-resources/openapi</outputPath>-->
+                    <outputPath>${project.basedir}/src/main/webapp/WEB-INF/openapi</outputPath>
+                    <outputFormat>YAML</outputFormat>
+                    <prettyPrint>true</prettyPrint>
+                    <!-- Enable sorting for consistent output -->
+                    <sortOutput>true</sortOutput>
+                    <!-- Scan all dotCMS packages to extract @OpenAPIDefinition -->
+                    <resourcePackages>
+                        <package>com.dotcms.rest.config</package>
+                        <package>com.dotcms.rest</package>
+                        <package>com.dotcms.contenttype.model.field</package>
+                        <package>com.dotcms.rendering.js</package>
+                        <package>com.dotcms.ai.rest</package>
+                        <package>com.dotcms.health</package>
+                    </resourcePackages>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-openapi</id>
+                        <goals>
+                            <goal>resolve</goal>
+                        </goals>
+                        <phase>compile</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -2001,10 +2207,6 @@
                                             <todir>bin</todir>
                                         </configfile>
                                         <configfile>
-                                            <file>${tomcat9-overrides}/bin/setenv.bat</file>
-                                            <todir>bin</todir>
-                                        </configfile>
-                                        <configfile>
                                             <file>${tomcat9-overrides}/bin/setenv.sh</file>
                                             <todir>bin</todir>
                                         </configfile>
@@ -2014,10 +2216,6 @@
                                         </configfile>
                                         <configfile>
                                             <file>${tomcat9-overrides}/conf/context.xml</file>
-                                            <todir>conf</todir>
-                                        </configfile>
-                                        <configfile>
-                                            <file>${tomcat9-overrides}/conf/local.dotcms.site.pem</file>
                                             <todir>conf</todir>
                                         </configfile>
                                     </configfiles>
@@ -2078,7 +2276,7 @@
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
-                            <filter>database,opensearch</filter>
+                            <filter>database,opensearch,opensearch-upgrade</filter>
                         </configuration>
                         <executions>
                             <execution>
@@ -2146,7 +2344,7 @@
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
-                            <filter>database,opensearch</filter>
+                            <filter>database,opensearch,opensearch-upgrade</filter>
                         </configuration>
                         <executions>
                             <execution>
@@ -2194,6 +2392,39 @@
                                 </dotcms>
                             </imagesMap>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>docker-stop-no-remove</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <defaultGoal>validate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <removeVolumes>false</removeVolumes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>docker-stop-no-remove</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <keepContainer>true</keepContainer>
+                                    <removeVolumes>false</removeVolumes>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

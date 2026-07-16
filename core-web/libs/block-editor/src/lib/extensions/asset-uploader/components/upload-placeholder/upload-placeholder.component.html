@@ -1,20 +1,14 @@
 @switch (type) {
     @case ('video') {
-        <div class="placeholder-container">
-            <div class="preview-container__video">
-                <video class="video" src="" controls></video>
+        <div class="preview-container__video">
+            <video class="video" src="" controls></video>
+        </div>
+        <div class="preview-container__loading">
+            <div>
+                <dot-spinner size="30px" />
+                Uploading video, wait until finished.
             </div>
-            <div class="preview-container__loading">
-                <div>
-                    <dot-spinner size="30px"></dot-spinner>
-                    Uploading video, wait until finished.
-                </div>
-                <button
-                    (click)="cancel.emit(true)"
-                    class="p-button-md p-button-outlined"
-                    pButton
-                    label="Cancel"></button>
-            </div>
+            <p-button (onClick)="canceled.emit(true)" label="Cancel" variant="outlined" />
         </div>
     }
     @default {

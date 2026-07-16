@@ -7,18 +7,19 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 import {
-    dotcmsContentTypeFieldBasicMock,
-    FieldUtil,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+import { FieldUtil } from '@dotcms/utils';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsRowComponent } from '.';
 
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { FieldDragDropService } from '../service';
 
 const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
@@ -26,12 +27,12 @@ const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
 mockFieldRow.columns[0].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
+        clazz: DotCMSClazzes.TEXT,
         name: 'field-1'
     },
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'image',
+        clazz: DotCMSClazzes.IMAGE,
         name: 'field-1'
     }
 ];
@@ -39,18 +40,21 @@ mockFieldRow.columns[0].fields = [
 mockFieldRow.columns[1].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
+        clazz: DotCMSClazzes.TEXT,
         name: 'field-1'
     }
 ];
 
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldDraggableItemComponent {
     @Input()
     field: DotCMSContentTypeField;
+    @Input()
+    isSmall = false;
     @Output()
     remove: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     @Output()
@@ -59,7 +63,8 @@ class TestContentTypeFieldDraggableItemComponent {
 
 @Component({
     selector: 'dot-test-host',
-    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>'
+    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>',
+    standalone: false
 })
 class DotTestHostComponent {
     data: DotCMSContentTypeLayoutRow;
@@ -109,18 +114,15 @@ describe('ContentTypeFieldsRowComponent', () => {
 
         hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
         hostComp = hostFixture.componentInstance;
+        hostComp.data = mockFieldRow;
         hostDe = hostFixture.debugElement;
+        hostFixture.detectChanges();
         de = hostDe.query(By.css('dot-content-type-fields-row'));
         comp = de.componentInstance;
-        dotDialogService = de.injector.get(DotAlertConfirmService);
+        dotDialogService = hostFixture.debugElement.injector.get(DotAlertConfirmService);
     }));
 
     describe('setting rows and columns', () => {
-        beforeEach(() => {
-            hostComp.setData(mockFieldRow);
-            hostFixture.detectChanges();
-        });
-
         it('should has row and columns', () => {
             const columns = de.queryAll(By.css('.row-columns__item'));
             expect(2).toEqual(columns.length);
@@ -141,7 +143,7 @@ describe('ContentTypeFieldsRowComponent', () => {
 
             const field = {
                 ...dotcmsContentTypeFieldBasicMock,
-                clazz: 'text',
+                clazz: DotCMSClazzes.TEXT,
                 name: 'field-1'
             };
 
@@ -155,79 +157,106 @@ describe('ContentTypeFieldsRowComponent', () => {
         });
 
         it('should not show the remove row button', () => {
-            const removeButon = de.query(By.css('.row-header__remove'));
+            const removeButon = de.query(By.css('p-button[icon="pi pi-trash"]'));
             expect(removeButon === null).toBe(true);
         });
     });
 
     describe('remove', () => {
         describe('row', () => {
+            let rowFixture: ComponentFixture<DotTestHostComponent>;
+            let rowHostDe: DebugElement;
+            let rowHostComp: DotTestHostComponent;
+            let rowDe: DebugElement;
+            let rowComp: ContentTypeFieldsRowComponent;
+
             beforeEach(() => {
+                // Create fresh fixture with empty column
+                rowFixture = DOTTestBed.createComponent(DotTestHostComponent);
+                rowHostComp = rowFixture.componentInstance;
                 const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-                hostComp.setData(mock);
-                hostFixture.detectChanges();
-                spyOn(dotDialogService, 'confirm');
+                mock.columns[0].fields = [];
+                rowHostComp.data = mock;
+                rowHostDe = rowFixture.debugElement;
+                rowFixture.detectChanges();
+                rowDe = rowHostDe.query(By.css('dot-content-type-fields-row'));
+                rowComp = rowDe.componentInstance;
+                jest.spyOn(dotDialogService, 'confirm');
             });
 
-            it('should show 1 remove button', () => {
-                const removeButon = de.queryAll(By.css('.row-header__remove'));
-                expect(removeButon.length).toBe(1);
+            it('should show 1 remove button when column is empty', () => {
+                const removeButtons = rowDe.queryAll(By.css('p-button'));
+                expect(removeButtons.length).toBe(1);
             });
 
             it('should emit row remove event with no confirmation dialog', () => {
                 let result;
-                comp.removeRow.subscribe((rowToRemove: DotCMSContentTypeLayoutRow) => {
+                rowComp.removeRow.subscribe((rowToRemove: DotCMSContentTypeLayoutRow) => {
                     result = rowToRemove;
                 });
 
-                const removeRowButon = de.query(By.css('.row-header__remove'));
-                removeRowButon.nativeElement.click();
+                const removeButton = rowDe.query(By.css('p-button'));
+                removeButton.nativeElement.querySelector('button').click();
 
-                expect(result).toEqual(comp.fieldRow);
+                expect(result).toEqual(rowComp.fieldRow);
                 expect(dotDialogService.confirm).not.toHaveBeenCalled();
             });
         });
 
         describe('columns', () => {
+            let colFixture: ComponentFixture<DotTestHostComponent>;
+            let colHostDe: DebugElement;
+            let colHostComp: DotTestHostComponent;
+            let colDe: DebugElement;
+            let colComp: ContentTypeFieldsRowComponent;
+
             beforeEach(() => {
+                // Create fresh fixture with 2 empty columns
+                colFixture = DOTTestBed.createComponent(DotTestHostComponent);
+                colHostComp = colFixture.componentInstance;
                 const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
-                hostComp.setData(mock);
-                hostFixture.detectChanges();
+                mock.columns[0].fields = [];
+                mock.columns[1].fields = [];
+                colHostComp.data = mock;
+                colHostDe = colFixture.debugElement;
+                colFixture.detectChanges();
+                colDe = colHostDe.query(By.css('dot-content-type-fields-row'));
+                colComp = colDe.componentInstance;
             });
 
-            it('should show 2 remove button', () => {
-                const removeButon = de.queryAll(By.css('.row-header__remove'));
-                expect(removeButon.length).toBe(2);
+            it('should show 2 remove buttons when both columns are empty', () => {
+                const removeButtons = colDe.queryAll(By.css('p-button'));
+                expect(removeButtons.length).toBe(2);
             });
 
-            it('should emit remove field event', () => {
-                comp.fieldRow.columns[0].columnDivider.id = 'test';
+            it('should emit remove field event when column has id', () => {
+                colComp.fieldRow.columns[0].columnDivider.id = 'test';
 
                 let result;
-                comp.removeField.subscribe((col: DotCMSContentTypeField) => {
+                colComp.removeField.subscribe((col: DotCMSContentTypeField) => {
                     result = col;
                 });
 
-                const removeRowButon = de.query(By.css('.row-header__remove'));
-                removeRowButon.nativeElement.click();
+                const removeButton = colDe.query(By.css('p-button'));
+                removeButton.nativeElement.querySelector('button').click();
 
                 expect(result.clazz).toEqual(
                     'com.dotcms.contenttype.model.field.ImmutableColumnField'
                 );
             });
 
-            it('should remove column from local row and no emit', () => {
+            it('should remove column from local row and not emit when column has no id', () => {
                 let result;
-                comp.removeField.subscribe((col: DotCMSContentTypeField) => {
+                colComp.removeField.subscribe((col: DotCMSContentTypeField) => {
                     result = col;
                 });
 
-                expect(comp.fieldRow.columns.length).toBe(2);
+                expect(colComp.fieldRow.columns.length).toBe(2);
 
-                const removeRowButon = de.query(By.css('.row-header__remove'));
-                removeRowButon.nativeElement.click();
+                const removeButton = colDe.query(By.css('p-button'));
+                removeButton.nativeElement.querySelector('button').click();
 
-                expect(comp.fieldRow.columns.length).toBe(1);
+                expect(colComp.fieldRow.columns.length).toBe(1);
                 expect(result).toBeUndefined();
             });
         });

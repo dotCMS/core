@@ -7,8 +7,9 @@ import { AvatarModule } from 'primeng/avatar';
 import { DotAvatarDirective } from './dot-avatar.directive';
 
 @Component({
+    imports: [AvatarModule, DotAvatarDirective],
     template: `
-        <p-avatar [text]="text" [image]="image" dotAvatar></p-avatar>
+        <p-avatar [text]="text" [image]="image" dotAvatar />
     `
 })
 class TestHostComponent {
@@ -23,8 +24,7 @@ describe('DotAvatarDirective', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            imports: [AvatarModule, DotAvatarDirective]
+            imports: [TestHostComponent]
         });
         fixture = TestBed.createComponent(TestHostComponent);
         component = fixture.componentInstance;

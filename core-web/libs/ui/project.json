@@ -4,25 +4,18 @@
     "projectType": "library",
     "sourceRoot": "libs/ui/src",
     "prefix": "dotcms",
+    "tags": [],
     "targets": {
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/ui/jest.config.ts",
                 "passWithNoTests": true
             },
             "configurations": {
                 "ci": {
                     "ci": true,
-                    "codeCoverage": true
+                    "coverage": true
                 }
             }
         }
-    },
-    "tags": []
+    }
 }

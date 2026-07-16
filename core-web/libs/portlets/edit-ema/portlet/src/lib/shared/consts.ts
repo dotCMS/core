@@ -1,4 +1,6 @@
-import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
+import { StyleEditorFieldType } from '@dotcms/types/internal';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -6,6 +8,19 @@ import { CommonErrorsInfo } from './models';
 export const LAYOUT_URL = '/c/portal/layout';
 
 export const PERSONA_KEY = 'com.dotmarketing.persona.id';
+
+/**
+ * Default relationship expansion depth sent to the Page API.
+ *
+ * The backend (`ContentUtils.addRelationships`) only expands relationship
+ * fields on the page's contentlets when the `depth` query param is present
+ * at all — omitting it skips relationship expansion entirely rather than
+ * falling back to a default. UVE's REST page fetch (used for the editor's
+ * own state on every page type, and as the pre-CLIENT_READY fetch for
+ * headless pages) must always send a value so relationship data isn't
+ * silently dropped from the page response.
+ */
+export const DEFAULT_PAGE_DEPTH = '0';
 
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
@@ -17,7 +32,36 @@ export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const IFRAME_SCROLL_ZONE = 100;
 
-export const BASE_IFRAME_MEASURE_UNIT = 'px';
+export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
+
+/**
+ * Coalescing window (ms) for persisting style-editor changes.
+ *
+ * This is intentionally small: it only batches a rapid burst of commits (e.g.
+ * several quick radio clicks, or a blur landing right after a change) into a
+ * single save. It is NOT used to "wait for typing to finish" — that is handled
+ * by blur/Enter and by STYLE_EDITOR_INPUT_IDLE_SAVE_TIME.
+ */
+export const STYLE_EDITOR_SAVE_DEBOUNCE_TIME = 250;
+
+/**
+ * Idle window (ms) after the last keystroke before a continuous field
+ * (text/number input) auto-commits without requiring blur/Enter.
+ *
+ * Deliberately much longer than any inter-keystroke gap, so even a slow typist
+ * never triggers a save (or a traditional page reload) mid-word. Blur/Enter
+ * still commits immediately — this is the "user stopped typing" fallback.
+ */
+export const STYLE_EDITOR_INPUT_IDLE_SAVE_TIME = 2000;
+
+export const DEFAULT_IFRAME_HEIGHT = 1080;
+
+export const DEFAULT_IFRAME_DOC_WIDTH = 1520;
+
+export const MIN_IFRAME_WIDTH = 320;
+export const MIN_IFRAME_HEIGHT = 400;
+
+export const DEFAULT_VIEW_ZOOM_LEVEL = 100;
 
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {
@@ -36,8 +80,7 @@ export const COMMON_ERRORS: CommonErrorsInfo = {
     }
 };
 
-export const DEFAULT_PERSONA: DotPersona = {
-    hostFolder: 'SYSTEM_HOST',
+export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
     inode: '',
     host: 'SYSTEM_HOST',
     locked: false,
@@ -67,7 +110,12 @@ export const DEFAULT_PERSONA: DotPersona = {
 };
 
 // Add the Feature flags we want to fetch for UVE
-export const UVE_FEATURE_FLAGS = [];
+export const UVE_FEATURE_FLAGS = [
+    FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
+    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
+    FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER,
+    FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION
+];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',
@@ -100,3 +148,14 @@ export const DEFAULT_DEVICES: DotDeviceListItem[] = [
         _isDefault: true
     }
 ];
+
+/**
+ * Constants for style editor field types.
+ * Use these constants in templates instead of hardcoded strings.
+ */
+export const STYLE_EDITOR_FIELD_TYPES = {
+    INPUT: 'input',
+    DROPDOWN: 'dropdown',
+    RADIO: 'radio',
+    CHECKBOX_GROUP: 'checkboxGroup'
+} as const satisfies Record<string, StyleEditorFieldType>;

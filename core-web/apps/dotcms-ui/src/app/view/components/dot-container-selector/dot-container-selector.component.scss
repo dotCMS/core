@@ -1,12 +1,15 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     display: block;
 }
 
 .container-selector__list {
-    @include naked-list;
+    @include mixins.naked-list;
     margin: 0;
     overflow-x: hidden;
     padding: 0;
@@ -15,14 +18,14 @@
 .container-selector__list-item {
     display: flex;
     align-items: center;
-    border-top: 1px solid $color-palette-gray-200;
-    color: $black;
-    font-size: $font-size-md;
+    border-top: 1px solid colors.$color-palette-gray-200;
+    color: colors.$black;
+    font-size: fonts.$font-size-md;
     overflow: hidden;
-    padding: $spacing-1 0;
+    padding: spacing.$spacing-1 0;
 
     dot-icon-button {
-        margin-right: $spacing-1;
+        margin-right: spacing.$spacing-1;
     }
 
     &:first-child {
@@ -31,5 +34,5 @@
 }
 
 .container-selector__list-item-text {
-    @include truncate-text;
+    @include mixins.truncate-text;
 }

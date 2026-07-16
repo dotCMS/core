@@ -7,13 +7,6 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 import { ConfirmationService } from 'primeng/api';
 
 import {
-    DotAlertConfirmService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotRouterService
-} from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
-import {
     DotMessageDisplayServiceMock,
     MockDotMessageService,
     MockDotRouterJestService,
@@ -22,11 +15,15 @@ import {
 
 import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
 
+import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;
     let dotDialogService: DotAlertConfirmService;
-    let loginService: LoginService;
     let result: any;
     let injector: TestBed;
 
@@ -47,20 +44,6 @@ describe('DotHttpErrorManagerService', () => {
         TestBed.configureTestingModule({
             providers: [
                 {
-                    provide: LoginService,
-                    useValue: {
-                        auth: {
-                            user: {
-                                emailAddress: 'admin@dotcms.com',
-                                firstName: 'Admin',
-                                lastName: 'Admin',
-                                loggedInDate: 123456789,
-                                userId: '123'
-                            }
-                        }
-                    }
-                },
-                {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
@@ -78,30 +61,26 @@ describe('DotHttpErrorManagerService', () => {
         service = injector.inject(DotHttpErrorManagerService);
         dotRouterService = injector.inject(DotRouterService);
         dotDialogService = injector.inject(DotAlertConfirmService);
-        loginService = injector.inject(LoginService);
     });
 
-    it('should handle 401 error when user is login we use 403', () => {
+    it('should handle 401 error when user is logged in by redirecting to login', () => {
         jest.spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotRouterService, 'goToLogin');
 
         service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: false,
+            redirected: true,
             status: 401
         });
 
-        expect(dotDialogService.alert).toHaveBeenCalledWith({
-            footerLabel: { accept: 'dot.common.dialog.accept' },
-            message: '403 Message',
-            header: '403 Header'
-        });
+        expect(dotDialogService.alert).not.toHaveBeenCalled();
+        expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle 401 error when user is logout and redirect to login', () => {
-        loginService.auth.user = undefined as any;
+    it('should handle 401 error when user is not logged in and redirect to login', () => {
         jest.spyOn(dotDialogService, 'alert');
         jest.spyOn(dotRouterService, 'goToLogin');
 

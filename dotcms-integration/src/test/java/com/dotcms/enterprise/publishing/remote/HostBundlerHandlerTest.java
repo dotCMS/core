@@ -8,6 +8,7 @@ import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -19,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -28,6 +28,21 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * Unit test class for testing the functionality of the Host Bundler and Handler operations. This
+ * class verifies the integration points and behaviors of the HostBundler and HostHandler classes
+ * when managing Sites (Hosts) in various scenarios like unpublishing and generating Host bundles.
+ * It extends {@link IntegrationTestBase} to leverage the testing infrastructure for integration
+ * tests.
+ *
+ * @author Steve Bolton
+ * @since Aug 27th, 2018
+ */
 public class HostBundlerHandlerTest extends IntegrationTestBase {
 
     private static User user;
@@ -48,9 +63,14 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
     }
 
     /**
-     * This test creates a host and add it to a bundle as an unpublish operation (push-remove
-     * option). After a couple of seconds, the HostHandler handle this bundle and apply the
-     * operation (removes the host)
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostBundler#generate(BundleOutput, BundlerStatus)}, 
+     *     and {@link HostHandler#handle(File)}</li>
+     *     <li><b>Given Scenario: </b>This test creates a Site and adds it to a bundle as an
+     *     unpublish operation (push-remove option).</li>
+     *     <li><b>Expected Result: </b>After a couple of seconds, the {@link HostHandler} handles
+     *     this bundle and applies the operation (removes the Site).</li>
+     * </ul>
      */
     @Test
     public void testBundlerHandler_UnpublishHost_Success() throws Exception {
@@ -62,25 +82,25 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
         final Set<String> contentSet;
 
         try {
-
-            contentSet = new HashSet();
+            contentSet = new HashSet<>();
             hostBundler = new HostBundler();
             status = new BundlerStatus(HostBundler.class.getName());
 
-            Host host2 = LocalTransaction.wrapReturn(() -> {
-                Host host = new Host();
-                //Creating host
-                host.setHostname("hostUnpublish" + System.currentTimeMillis() + ".dotcms.com");
-                host.setDefault(false);
-                host.setIndexPolicy(IndexPolicy.FORCE);
-                return APILocator.getHostAPI().save(host, user, false);
+            final Host site2 = LocalTransaction.wrapReturn(() -> {
+                Host site = new Host();
+                // Creating site
+                site.setHostname("siteUnpublish" + System.currentTimeMillis() + ".dotcms.com");
+                site.setDefault(false);
+                site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                site.setIndexPolicy(IndexPolicy.FORCE);
+                return APILocator.getHostAPI().save(site, user, false);
             });
 
-            Assert.assertEquals(originalHostSize + 1,
+            assertEquals("The total number of Sites should be one more, including the recently created test Site", originalHostSize + 1,
                     APILocator.getHostAPI().findAllFromDB(user,
                             HostAPI.SearchType.INCLUDE_SYSTEM_HOST).size());
 
-            contentSet.add(host2.getIdentifier());
+            contentSet.add(site2.getIdentifier());
 
             //Mocking Push Publish configuration
             config = Mockito.mock(PushPublisherConfig.class);
@@ -93,14 +113,13 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config,
                     tempDir);
 
-            //Creating temp bundle dir
-
+            // Creating the temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
             }
 
             hostBundler.generate(directoryBundleOutput, status);
-            Assert.assertEquals(1, status.getCount()); //Only 1 content in the bundler
+            assertEquals("Only one Contentlet (the test Site) is expected in the bundle", 1, status.getCount());
 
             TestDataUtils.assertEmptyQueue();
 
@@ -108,7 +127,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             final HostHandler hostHandler = new HostHandler(config);
             hostHandler.handle(tempDir);
 
-            Assert.assertEquals(originalHostSize,
+            assertEquals("The test Site created in this test must NOT exist anymore", originalHostSize,
                     APILocator.getHostAPI().findAllFromDB(user,
                             HostAPI.SearchType.INCLUDE_SYSTEM_HOST).size());
 
@@ -127,34 +146,33 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
         final HostBundler hostBundler;
         final PushPublisherConfig config;
         final Set<String> contentSet;
-        contentSet = new HashSet();
-        Host host = new Host();
+        contentSet = new HashSet<>();
+        Host site = new Host();
 
         try {
-
             hostBundler = new HostBundler();
             status = new BundlerStatus(HostBundler.class.getName());
 
-            //Creating host
-            host.setHostname("hostGenerate" + System.currentTimeMillis() + ".dotcms.com");
-            host.setDefault(false);
-
+            // Creating the test Site
+            site.setHostname("siteGenerate" + System.currentTimeMillis() + ".dotcms.com");
+            site.setDefault(false);
+            site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
             HibernateUtil.startTransaction();
             try {
-                host.setIndexPolicy(IndexPolicy.FORCE);
-                host = APILocator.getHostAPI().save(host, user, false);
-            } catch (Exception e) {
+                site.setIndexPolicy(IndexPolicy.FORCE);
+                site = APILocator.getHostAPI().save(site, user, false);
+            } catch (final Exception e) {
                 HibernateUtil.rollbackTransaction();
                 throw e;
             } finally {
                 HibernateUtil.closeAndCommitTransaction();
             }
 
-            Assert.assertEquals(originalHostSize + 1,
+            assertEquals("The total number of Sites should be one more, including the recently created test Site", originalHostSize + 1,
                     APILocator.getHostAPI().findAllFromDB(user,
                             HostAPI.SearchType.INCLUDE_SYSTEM_HOST).size());
 
-            contentSet.add(host.getIdentifier());
+            contentSet.add(site.getIdentifier());
 
             //Mocking Push Publish configuration
             config = Mockito.mock(PushPublisherConfig.class);
@@ -166,18 +184,168 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config,
                     tempDir);
 
-            //Creating temp bundle dir
-
+            // Creating the temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
             }
 
             hostBundler.generate(directoryBundleOutput, status);
-            Assert.assertEquals(1, status.getCount()); //Only 1 content in the bundler
+            assertEquals("Only one Contentlet (the test Site) is expected in the bundle", 1, status.getCount()); //Only 1 content in the bundler
         } finally {
             tempDir.delete();
-            hostAPI.archive(host, user, false);
-            hostAPI.delete(host, user, false);
+            hostAPI.archive(site, user, false);
+            hostAPI.delete(site, user, false);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostBundler#generate(BundleOutput, BundlerStatus)},
+     *     and {@link HostHandler#handle(File)}</li>
+     *     <li><b>Given Scenario: </b>A Site is archived on the sender and pushed with a
+     *     non-Remove {@code PUBLISH} operation. The receiver processes the bundle.</li>
+     *     <li><b>Expected Result: </b>The Site on the receiver is preserved in archived state —
+     *     it must NOT be deleted. Fixes issue #36034 where the receiver was unconditionally
+     *     calling {@code HostAPI.delete()} regardless of the push action.</li>
+     * </ul>
+     */
+    @Test
+    public void testBundlerHandler_PushArchivedSite_SitePreservedAsArchived() throws Exception {
+        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
+        Host site = new Host();
+
+        try {
+            site = LocalTransaction.wrapReturn(() -> {
+                final Host newSite = new Host();
+                newSite.setHostname("siteArchivedPush" + System.currentTimeMillis() + ".dotcms.com");
+                newSite.setDefault(false);
+                newSite.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                newSite.setIndexPolicy(IndexPolicy.FORCE);
+                return APILocator.getHostAPI().save(newSite, user, false);
+            });
+
+            assertEquals("Total Sites should include the newly created one",
+                    originalHostSize + 1,
+                    APILocator.getHostAPI().findAllFromDB(user, HostAPI.SearchType.INCLUDE_SYSTEM_HOST).size());
+
+            // Archive the site to simulate the sender's archived state
+            hostAPI.archive(site, user, false);
+            assertTrue("Site must be archived before bundling", site.isArchived());
+
+            final Set<String> contentSet = new HashSet<>();
+            contentSet.add(site.getIdentifier());
+
+            final PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
+            Mockito.when(config.getHostSet()).thenReturn(contentSet);
+            Mockito.when(config.isDownloading()).thenReturn(true);
+            Mockito.when(config.getOperation()).thenReturn(Operation.PUBLISH);
+            Mockito.when(config.getId()).thenReturn(UUIDGenerator.generateUuid());
+
+            final HostBundler hostBundler = new HostBundler();
+            final BundlerStatus status = new BundlerStatus(HostBundler.class.getName());
+            hostBundler.setConfig(config);
+
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
+            hostBundler.generate(new DirectoryBundleOutput(config, tempDir), status);
+
+            TestDataUtils.assertEmptyQueue();
+
+            new HostHandler(config).handle(tempDir);
+
+            // Site must still exist — archived push must NOT delete it
+            assertEquals("Archived Site must NOT be deleted after a non-Remove push operation",
+                    originalHostSize + 1,
+                    APILocator.getHostAPI().findAllFromDB(user, HostAPI.SearchType.INCLUDE_SYSTEM_HOST).size());
+
+            final Host resultSite = hostAPI.find(site.getIdentifier(), user, false);
+            assertNotNull("Site must still be findable on the receiver after push", resultSite);
+            assertTrue("Site must remain in archived state on the receiver", resultSite.isArchived());
+
+            TestDataUtils.assertEmptyQueue();
+        } finally {
+            tempDir.delete();
+            if (site != null && site.getIdentifier() != null) {
+                hostAPI.archive(site, user, false);
+                hostAPI.delete(site, user, false);
+            }
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostBundler#generate(BundleOutput, BundlerStatus)},
+     *     and {@link HostHandler#handle(File)}</li>
+     *     <li><b>Given Scenario: </b>An archived Site is pushed with an explicit {@code UNPUBLISH}
+     *     (Remove / Push Remove) operation.</li>
+     *     <li><b>Expected Result: </b>The Site on the receiver is deleted, confirming that the fix
+     *     for #36034 does not regress the explicit-Remove path.</li>
+     * </ul>
+     */
+    @Test
+    public void testBundlerHandler_UnpublishArchivedSite_SiteDeleted() throws Exception {
+        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
+        Host site = new Host();
+        boolean siteDeleted = false;
+
+        try {
+            site = LocalTransaction.wrapReturn(() -> {
+                final Host newSite = new Host();
+                newSite.setHostname("siteArchivedUnpublish" + System.currentTimeMillis() + ".dotcms.com");
+                newSite.setDefault(false);
+                newSite.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                newSite.setIndexPolicy(IndexPolicy.FORCE);
+                return APILocator.getHostAPI().save(newSite, user, false);
+            });
+
+            assertEquals("Total Sites should include the newly created one",
+                    originalHostSize + 1,
+                    APILocator.getHostAPI().findAllFromDB(user, HostAPI.SearchType.INCLUDE_SYSTEM_HOST).size());
+
+            hostAPI.archive(site, user, false);
+            assertTrue("Site must be archived before bundling", site.isArchived());
+
+            final Set<String> contentSet = new HashSet<>();
+            contentSet.add(site.getIdentifier());
+
+            final PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
+            Mockito.when(config.getHostSet()).thenReturn(contentSet);
+            Mockito.when(config.isDownloading()).thenReturn(true);
+            Mockito.when(config.getOperation()).thenReturn(Operation.UNPUBLISH);
+            Mockito.when(config.getId()).thenReturn(UUIDGenerator.generateUuid());
+
+            final HostBundler hostBundler = new HostBundler();
+            final BundlerStatus status = new BundlerStatus(HostBundler.class.getName());
+            hostBundler.setConfig(config);
+
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
+            hostBundler.generate(new DirectoryBundleOutput(config, tempDir), status);
+
+            TestDataUtils.assertEmptyQueue();
+
+            new HostHandler(config).handle(tempDir);
+            siteDeleted = true;
+
+            // Explicit Remove must still delete the Site even if it was archived
+            assertEquals("Site must be deleted after an explicit Remove push operation",
+                    originalHostSize,
+                    APILocator.getHostAPI().findAllFromDB(user, HostAPI.SearchType.INCLUDE_SYSTEM_HOST).size());
+
+            assertNull("Site must no longer be findable after explicit Remove",
+                    hostAPI.find(site.getIdentifier(), user, false));
+
+            TestDataUtils.assertEmptyQueue();
+        } finally {
+            tempDir.delete();
+            if (!siteDeleted && site != null && site.getIdentifier() != null) {
+                hostAPI.archive(site, user, false);
+                hostAPI.delete(site, user, false);
+            }
         }
     }
 

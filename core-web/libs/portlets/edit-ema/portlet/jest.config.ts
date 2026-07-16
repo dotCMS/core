@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'portlets-edit-ema-portlet',
     preset: '../../../../jest.preset.js',
@@ -9,12 +8,15 @@ export default {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
             {
+                // Prevent type checking in tests and deps
                 tsconfig: '<rootDir>/tsconfig.spec.json',
                 stringifyContentPathRegex: '\\.(html|svg)$'
             }
         ]
     },
-    transformIgnorePatterns: ['<rootDir>/node_modules/(?!.*\\.mjs$)'],
+    transformIgnorePatterns: [
+        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap|marked|lowlight|devlop))'
+    ],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',

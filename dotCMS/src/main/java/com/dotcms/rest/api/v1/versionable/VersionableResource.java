@@ -20,6 +20,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -41,6 +42,7 @@ import java.util.Optional;
  * Resource to interact with versions for Contentlet, Templates, Containers, Links, etc
  * @author erickgonzalez
  */
+@Tag(name = "Variants")
 @Path("/v1/versionables")
 public class VersionableResource {
 
@@ -123,7 +125,6 @@ public class VersionableResource {
     @Path("/{versionableInodeOrIdentifier}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findVersionable(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,

@@ -106,7 +106,8 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
             } catch (final Exception e) { // NOSONAR
                 // do nothing
             } finally {
-                System.exit(Config.getIntProperty("SYSTEM_EXIT_CODE", 0));
+                int exitCode = Config.getIntProperty("SYSTEM_EXIT_CODE", 0);
+                com.dotcms.shutdown.SystemExitManager.clusterManagementExit(exitCode, "Cluster restart requested");
             }
         }
     }

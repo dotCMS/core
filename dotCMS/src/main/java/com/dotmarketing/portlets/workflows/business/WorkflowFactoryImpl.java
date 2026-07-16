@@ -90,7 +90,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private static final String WA_USE_ROLE_HIERARCHY_ASSIGN_COLUMN = "use_role_hierarchy_assign";
     private static final String WA_METADATA_COLUMN = "metadata";
 
-    private static final String VALID_VARIABLE_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
+    public static final String VALID_VARIABLE_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
     /**
      * Creates an instance of the {@link WorkFlowFactory}.

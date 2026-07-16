@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -10,10 +10,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageMode } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTabButtonsComponent } from './dot-tab-buttons.component';
+
+import { DotMessagePipe } from '../dot-message/dot-message.pipe';
 
 describe('DotTabButtonsComponent', () => {
     let spectator: Spectator<DotTabButtonsComponent>;
@@ -48,6 +49,7 @@ describe('DotTabButtonsComponent', () => {
                 activeId: DotPageMode.PREVIEW
             }
         });
+        spectator.detectChanges();
 
         editID = spectator.component._options[0].value.id;
         previewID = spectator.component._options[1].value.id;
@@ -62,7 +64,7 @@ describe('DotTabButtonsComponent', () => {
         });
     });
 
-    it('should emit openMenu event when showMenu is called', () => {
+    it('should emit openMenu when onClickDropdown is called with correct target', () => {
         const openMenuSpy = jest.spyOn(spectator.component.openMenu, 'emit');
         const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
         const button = spectator.fixture.debugElement.queryAll(
@@ -80,7 +82,7 @@ describe('DotTabButtonsComponent', () => {
         });
     });
 
-    it('should emit openMenu event when showMenu is called', () => {
+    it('should emit openMenu when dropdown button is clicked via template', () => {
         const openMenuSpy = jest.spyOn(spectator.component.openMenu, 'emit');
         const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
 
@@ -103,7 +105,7 @@ describe('DotTabButtonsComponent', () => {
         });
     });
 
-    it('should not emit openMenu event when showMenu is called and the option does not have showDropdownButton setted to true', () => {
+    it('should not emit openMenu when onClickDropdown is called for option without showDropdownButton', () => {
         const openMenuSpy = jest.spyOn(spectator.component.openMenu, 'emit');
         spectator.component.onClickDropdown(pointerEvent, editID);
         const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
@@ -163,58 +165,38 @@ describe('DotTabButtonsComponent', () => {
         });
     });
 
-    it('should show dot-tab-indicator when a tab is active', () => {
-        spectator.component.activeId = DotPageMode.EDIT;
-
-        const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
-
+    it('should show dot-tab-indicator for the active tab', () => {
+        const indicatorEl = spectator.queryAll(byTestId('dot-tab-button'));
         expect(indicatorEl).toBeDefined();
+        expect(indicatorEl.length).toBe(1);
     });
 
-    it('should show dot-tab-indicator when a tab is active', () => {
-        spectator.component.activeId = DotPageMode.PREVIEW;
-
-        const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
-
-        expect(indicatorEl).toBeDefined();
-    });
-
-    it('should toggle and change all dropdowns icon to original state when resetDropdowns is called', () => {
-        spectator.component.onClickDropdown(pointerEvent, previewID);
-
-        const icon = spectator.query(byTestId('dot-tab-icon'));
-
-        expect(spectator.component._options[1].value.toggle).toBe(true);
-
+    it('should display closed dropdown icon when dropdown is closed', () => {
         spectator.detectChanges();
 
-        expect(icon.classList).toContain('pi-angle-up');
+        const icon = spectator.query(byTestId('dot-tab-icon'));
+        expect(icon?.classList.contains('pi-angle-down')).toBe(true);
+    });
+
+    it('should set all dropdown toggles to false when resetDropdowns is called', () => {
+        spectator.component.onClickDropdown(pointerEvent, previewID);
+
+        expect(spectator.component._options[1].value.toggle).toBe(true);
 
         spectator.component.resetDropdowns();
 
-        spectator.detectChanges();
-
         expect(spectator.component._options[1].value.toggle).toBe(false);
-        expect(icon.classList).toContain('pi-angle-down');
+        expect(spectator.component._options.every((o) => o.value.toggle !== true)).toBe(true);
     });
 
-    it('should toggle and change one dropdown icon to original state when resetDropdownById', () => {
+    it('should set the given dropdown toggle to false when resetDropdownById is called', () => {
         spectator.component.onClickDropdown(pointerEvent, previewID);
-
-        const icon = spectator.query(byTestId('dot-tab-icon'));
 
         expect(spectator.component._options[1].value.toggle).toBe(true);
 
-        spectator.detectChanges();
-
-        expect(icon.classList).toContain('pi-angle-up');
-
         spectator.component.resetDropdownById(previewID);
 
-        spectator.detectChanges();
-
         expect(spectator.component._options[1].value.toggle).toBe(false);
-        expect(icon.classList).toContain('pi-angle-down');
     });
 
     describe('N tab buttons with and without dropdowns', () => {

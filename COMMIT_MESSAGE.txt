@@ -1,0 +1,11 @@
+refactor: migrate PrimeFlex classes to Tailwind CSS
+
+Migrate all PrimeFlex utility classes to Tailwind CSS equivalents using pf2tw tool.
+
+- Replace `align-items-*` → `items-*`
+- Replace `justify-content-*` → `justify-*`
+- Replace `flex-grow-1` → `grow`
+- Update spacing and sizing utilities to Tailwind scale
+- Update color utilities to use PrimeNG theme tokens
+
+Affects components across dotcms-ui, ui library, and various portlets.

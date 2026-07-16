@@ -1,20 +1,23 @@
 import { Observable } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
+
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+
+// Response type for temp file endpoints
+interface DotTempFileResponse {
+    tempFiles: DotCMSTempFile[];
+}
 
 @Injectable()
 export class DotTempFileUploadService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+    private http = inject(HttpClient);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Upload file to the dotcms temp service
@@ -35,33 +38,19 @@ export class DotTempFileUploadService {
         const formData = new FormData();
         formData.append('file', file);
 
-        return this.coreWebService
-            .requestView<DotCMSTempFile[]>({
-                url: `/api/v1/temp`,
-                body: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-                method: 'POST'
-            })
-            .pipe(
-                pluck('tempFiles'),
-                catchError((error: HttpErrorResponse) => this.handleError(error))
-            );
+        return this.http.post<DotTempFileResponse>('/api/v1/temp', formData).pipe(
+            map((response) => response.tempFiles),
+            catchError((error: HttpErrorResponse) => this.handleError(error))
+        );
     }
 
     private uploadByUrl(file: string): Observable<DotCMSTempFile[] | string> {
-        return this.coreWebService
-            .requestView<DotCMSTempFile[]>({
-                url: `/api/v1/temp/byUrl`,
-                body: {
-                    remoteUrl: file
-                },
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                method: 'POST'
+        return this.http
+            .post<DotTempFileResponse>('/api/v1/temp/byUrl', {
+                remoteUrl: file
             })
             .pipe(
-                pluck('tempFiles'),
+                map((response) => response.tempFiles),
                 catchError((error: HttpErrorResponse) => this.handleError(error))
             );
     }

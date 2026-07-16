@@ -1,0 +1,46 @@
+@let timeFilterOptions = $translatedTimeOptions();
+@let showCustomDatePicker = $showCustomTimeRange();
+@let timePeriodPlaceholder = 'analytics.filters.time-period.placeholder' | dm;
+@let customDatePlaceholder = 'analytics.filters.custom-date-range.placeholder' | dm;
+
+<div class="flex items-center gap-3" data-testid="analytics-filters">
+    <!-- Time Period Filter -->
+    <p-select
+        id="period-filter"
+        size="small"
+        [options]="timeFilterOptions"
+        [(ngModel)]="$selectedTimeRange"
+        optionLabel="label"
+        optionValue="value"
+        [placeholder]="timePeriodPlaceholder"
+        [style]="{ minWidth: '250px' }"
+        (onChange)="onChangeTimeRange($event)"
+        data-testid="period-dropdown" />
+
+    <!-- Custom Date Range Calendar -->
+    @if (showCustomDatePicker) {
+        <p-datepicker
+            [(ngModel)]="$customDateRange"
+            selectionMode="range"
+            [readonlyInput]="false"
+            [showIcon]="false"
+            [placeholder]="customDatePlaceholder"
+            dateFormat="mm/dd/yy"
+            [maxDate]="$today()"
+            [disabledDates]="$disabledDates()"
+            [showButtonBar]="true"
+            [style]="{ minWidth: '250px' }"
+            (onSelect)="onDateSelect($event)"
+            (onClose)="onCalendarClosed()"
+            data-testid="custom-date-range-calendar">
+            <ng-template #buttonbar let-api>
+                <p-button
+                    [label]="'analytics.filters.custom-date-range.clear' | dm"
+                    [text]="true"
+                    size="small"
+                    (onClick)="clearDateRange(); api.onClearButtonClick($event)"
+                    data-testid="custom-date-range-clear-btn" />
+            </ng-template>
+        </p-datepicker>
+    }
+</div>

@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.content.dotimport;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import javax.ws.rs.FormParam;
+
 /**
  * Represents the schema for content import parameters used in Swagger documentation.
  * <p>
@@ -12,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "Schema for content import parameters.")
 public class ContentImportParamsSchema {
 
+    @FormParam("file")
     @Schema(
             description = "The CSV file to import.",
             type = "string",
@@ -20,6 +23,7 @@ public class ContentImportParamsSchema {
     )
     private String file;
 
+    @FormParam("form")
     @Schema(
             description = "JSON string representing import settings.",
             type = "string",
@@ -28,7 +32,7 @@ public class ContentImportParamsSchema {
                     "  \"contentType\": \"activity\",\n" +
                     "  \"language\": \"en-US\",\n" +
                     "  \"workflowActionId\": \"b9d89c80-3d88-4311-8365-187323c96436\",\n" +
-                    "  \"fields\": [\"e1f99107-fd0e-49d4-a099-1cc10aa284d8\"]\n" +
+                    "  \"fields\": [\"title\"]\n" +
                     "  \"stopOnError\":false \n" +
                     "  \"commitGranularity\": 100\n" +
                     "}"

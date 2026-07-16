@@ -1,0 +1,113 @@
+@use "../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
+@use "variables" as *;
+
+:host {
+    form {
+        max-width: 64.25rem;
+    }
+
+    textarea {
+        font-family: fonts.$font-code;
+        max-height: 21.5rem;
+        overflow: auto !important;
+    }
+
+    ::ng-deep {
+        .p-field-hint {
+            markdown pre {
+                background-color: colors.$color-palette-secondary-100;
+            }
+        }
+    }
+}
+
+.p-field {
+    margin-bottom: spacing.$spacing-4;
+
+    label {
+        display: block;
+    }
+
+    input,
+    textarea {
+        font-size: fonts.$font-size-lmd;
+        width: 100%;
+    }
+
+    dot-icon {
+        color: colors.$color-palette-primary;
+        margin-left: spacing.$spacing-1;
+        vertical-align: middle;
+    }
+
+    ::ng-deep {
+        p-dropdown .p-dropdown {
+            min-width: 14.28rem;
+            margin-bottom: spacing.$spacing-1;
+        }
+
+        p-checkbox label {
+            font-size: fonts.$font-size-lmd;
+        }
+
+        p-checkbox.required label:before,
+        label.required:before {
+            color: colors.$red;
+            content: "* ";
+        }
+
+        markdown p {
+            margin: 0;
+        }
+    }
+}
+
+.dot-apps-configuration-detail {
+    &__section-header {
+        align-items: center;
+        border-bottom: 2px solid $color-palette-secondary-100;
+        display: flex;
+        gap: $spacing-2;
+        margin: $spacing-6 0 $spacing-4;
+        padding-bottom: $spacing-2;
+
+        h3 {
+            font-size: $font-size-xl;
+            font-weight: 500;
+            margin: 0;
+        }
+    }
+
+    &__info-box {
+        background-color: $color-palette-primary-100;
+        border: 1px solid $color-palette-primary-200;
+        border-radius: $border-radius-md;
+        margin-bottom: $spacing-4;
+        padding: $spacing-3 $spacing-4;
+        color: $color-palette-primary-700;
+    }
+
+    &__bool-card {
+        &:hover {
+            border-color: $color-palette-primary;
+        }
+
+        p-checkbox {
+            display: flex;
+            align-items: center;
+
+            ::ng-deep {
+                .p-checkbox-label {
+                    margin-bottom: 0;
+                }
+            }
+        }
+
+        .p-field-hint {
+            display: block;
+        }
+    }
+}

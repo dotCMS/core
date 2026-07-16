@@ -56,12 +56,17 @@ public enum SystemEventType {
 	/**
 	 * When a site is published
 	 */
-	PUBLISH_SITE, // todo: not used
+	PUBLISH_SITE,
 
 	/**
 	 * When a site is updated
 	 */
 	UPDATE_SITE, // todo: not used
+
+	/**
+	 * When a site is unpublished (stopped)
+	 */
+	UN_PUBLISH_SITE,
 
 	/**
 	 * When a site is archived
@@ -263,6 +268,12 @@ public enum SystemEventType {
 
 	// Osgi bundles push on the load folder
 	OSGI_BUNDLES_LOADED,
+
+	/**
+	 * Fired when a bundle fails to process during the async upload pipeline.
+	 * Covers failures in package extraction, file moves, and configuration updates.
+	 */
+	OSGI_BUNDLES_UPLOAD_FAILED,
 
 	// Logout Event
 	SESSION_LOGOUT,

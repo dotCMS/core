@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import org.apache.logging.log4j.util.Strings;
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -26,7 +26,7 @@ import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Map;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 /**

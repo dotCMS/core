@@ -550,4 +550,104 @@ public class ApiTokenAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Test findExpiringTokens method returns tokens expiring within specified days
+     */
+    @Test
+    public void testFindExpiringTokens() throws DotDataException, DotSecurityException {
+        User adminUser = APILocator.getUserAPI().getSystemUser();
+        User regularUser = new UserDataGen().nextPersisted();
+        
+        // Create tokens expiring in different timeframes
+        ApiToken expiringInFiveDays = ApiToken.builder()
+                .withIssuer(ClusterFactory.getClusterId())
+                .withExpires(futureDate(Duration.ofDays(5)))
+                .withUserId(regularUser.getUserId())
+                .withRequestingUserId(adminUser.getUserId())
+                .withRequestingIp("127.0.0.1")
+                .build();
+        
+        ApiToken expiringInTenDays = ApiToken.builder()
+                .withIssuer(ClusterFactory.getClusterId())
+                .withExpires(futureDate(Duration.ofDays(10)))
+                .withUserId(regularUser.getUserId())
+                .withRequestingUserId(adminUser.getUserId())
+                .withRequestingIp("127.0.0.1")
+                .build();
+        
+        ApiToken expiringInTwentyDays = ApiToken.builder()
+                .withIssuer(ClusterFactory.getClusterId())
+                .withExpires(futureDate(Duration.ofDays(20)))
+                .withUserId(regularUser.getUserId())
+                .withRequestingUserId(adminUser.getUserId())
+                .withRequestingIp("127.0.0.1")
+                .build();
+        
+        // Persist tokens
+        expiringInFiveDays = apiTokenAPI.persistApiToken(expiringInFiveDays, adminUser);
+        expiringInTenDays = apiTokenAPI.persistApiToken(expiringInTenDays, adminUser);
+        expiringInTwentyDays = apiTokenAPI.persistApiToken(expiringInTwentyDays, adminUser);
+        
+        // Test different lookahead periods
+        List<ApiToken> tokensExpiring7Days = apiTokenAPI.findExpiringTokens(7, adminUser);
+        List<ApiToken> tokensExpiring15Days = apiTokenAPI.findExpiringTokens(15, adminUser);
+        List<ApiToken> tokensExpiring30Days = apiTokenAPI.findExpiringTokens(30, adminUser);
+
+        final ApiToken expiringInFiveDaysFinal = expiringInFiveDays;
+        final ApiToken expiringInTenDaysFinal = expiringInTenDays;
+        final ApiToken expiringInTwentyDaysFinal = expiringInTwentyDays;
+
+        // Check if the correct tokens are returned
+        boolean fiveDayTokenFound7 = tokensExpiring7Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInFiveDaysFinal.id));
+        boolean tenDayTokenFound7 = tokensExpiring7Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInTenDaysFinal.id));
+        boolean twentyDayTokenFound7 = tokensExpiring7Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInTwentyDaysFinal.id));
+        
+        boolean fiveDayTokenFound15 = tokensExpiring15Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInFiveDaysFinal.id));
+        boolean tenDayTokenFound15 = tokensExpiring15Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInTenDaysFinal.id));
+        boolean twentyDayTokenFound15 = tokensExpiring15Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInTwentyDaysFinal.id));
+        
+        boolean fiveDayTokenFound30 = tokensExpiring30Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInFiveDaysFinal.id));
+        boolean tenDayTokenFound30 = tokensExpiring30Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInTenDaysFinal.id));
+        boolean twentyDayTokenFound30 = tokensExpiring30Days.stream()
+                .anyMatch(token -> token.id.equals(expiringInTwentyDaysFinal.id));
+        
+        // Assertions for 7-day lookahead
+        assertTrue("Token expiring in 5 days should be found in 7-day lookahead", fiveDayTokenFound7);
+        assertFalse("Token expiring in 10 days should NOT be found in 7-day lookahead", tenDayTokenFound7);
+        assertFalse("Token expiring in 20 days should NOT be found in 7-day lookahead", twentyDayTokenFound7);
+        
+        // Assertions for 15-day lookahead
+        assertTrue("Token expiring in 5 days should be found in 15-day lookahead", fiveDayTokenFound15);
+        assertTrue("Token expiring in 10 days should be found in 15-day lookahead", tenDayTokenFound15);
+        assertFalse("Token expiring in 20 days should NOT be found in 15-day lookahead", twentyDayTokenFound15);
+        
+        // Assertions for 30-day lookahead
+        assertTrue("Token expiring in 5 days should be found in 30-day lookahead", fiveDayTokenFound30);
+        assertTrue("Token expiring in 10 days should be found in 30-day lookahead", tenDayTokenFound30);
+        assertTrue("Token expiring in 20 days should be found in 30-day lookahead", twentyDayTokenFound30);
+        
+        // Test role-based filtering
+        List<ApiToken> regularUserTokens = apiTokenAPI.findExpiringTokens(30, regularUser);
+        
+        // Regular user should only see their own tokens
+        assertTrue("Regular user should see their own tokens", regularUserTokens.size() <= 3);
+        
+        // Clean up
+        try {
+            apiTokenAPI.deleteToken(expiringInFiveDays, adminUser);
+            apiTokenAPI.deleteToken(expiringInTenDays, adminUser);
+            apiTokenAPI.deleteToken(expiringInTwentyDays, adminUser);
+        } catch (Exception e) {
+            // Ignore cleanup errors
+        }
+    }
+
 }

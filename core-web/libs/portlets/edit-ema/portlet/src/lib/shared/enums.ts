@@ -29,6 +29,8 @@ export enum EDITOR_STATE {
     DRAGGING = 'dragging',
     SCROLL_DRAG = 'scroll-drag',
     SCROLLING = 'scrolling',
+    /** User is dragging an iframe resize handle. Overlays hide; bounds re-emit on release. */
+    RESIZING = 'resizing',
     INLINE_EDITING = 'inline-editing'
 }
 
@@ -47,4 +49,14 @@ export enum FormStatus {
     DIRTY = 'DIRTY',
     SAVED = 'SAVED',
     PRISTINE = 'PRISTINE'
+}
+
+export enum PALETTE_CLASSES {
+    OPEN = 'open',
+    CLOSED = 'closed'
+}
+
+export enum CONTAINER_INSERT_ERROR {
+    CONTAINER_LIMIT_REACHED = 'CONTAINER_LIMIT_REACHED',
+    DUPLICATE_CONTENT = 'DUPLICATE_CONTENT'
 }

@@ -1,3 +1,7 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -7,20 +11,20 @@
 
 .locale-confirmation__message {
     display: flex;
-    gap: $spacing-2;
+    gap: spacing.$spacing-2;
     word-break: break-word;
     align-items: flex-start;
 
     i {
-        color: $color-alert-yellow;
-        font-size: $font-size-md;
+        color: colors.$color-alert-yellow;
+        font-size: fonts.$font-size-md;
     }
 }
 
 .locale-confirmation__confirmation {
     display: flex;
-    gap: $spacing-1;
-    margin: $spacing-4 0;
+    gap: spacing.$spacing-1;
+    margin: spacing.$spacing-4 0;
     align-items: center;
 
     input {
@@ -31,5 +35,5 @@
 .locale-confirmation__buttons {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }

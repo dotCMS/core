@@ -45,7 +45,7 @@
 	}
 
 	let isBringBack = false;
-	function bringBackTemplateVersion(inode){
+	function bringBackVersion(inode){
 		if(!isBringBack && confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.template.working.version"))%>')){
 			setIsBringBack(true);
 			fetch(`/api/v1/versionables/${inode}/_bringback`, {

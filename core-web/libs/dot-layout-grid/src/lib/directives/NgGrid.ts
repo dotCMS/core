@@ -13,7 +13,8 @@ import {
     OnDestroy,
     DoCheck,
     Output,
-    Renderer2
+    Renderer2,
+    inject
 } from '@angular/core';
 
 import { NgGridItem } from './NgGridItem';
@@ -53,6 +54,11 @@ const CONST_DEFAULT_RESIZE_DIRECTIONS: string[] = [
 })
 // eslint-disable-next-line @angular-eslint/directive-class-suffix
 export class NgGrid implements OnInit, DoCheck, OnDestroy {
+    private _differs = inject(KeyValueDiffers);
+    private _ngEl = inject(ElementRef);
+    private _renderer = inject(Renderer2);
+    private componentFactoryResolver = inject(ComponentFactoryResolver);
+
     private static CONST_DEFAULT_CONFIG: NgGridConfig = {
         margins: [10],
         draggable: true,
@@ -182,12 +188,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     }
 
     // 	Constructor
-    constructor(
-        private _differs: KeyValueDiffers,
-        private _ngEl: ElementRef,
-        private _renderer: Renderer2,
-        private componentFactoryResolver: ComponentFactoryResolver
-    ) {
+    constructor() {
         this._defineListeners();
     }
 

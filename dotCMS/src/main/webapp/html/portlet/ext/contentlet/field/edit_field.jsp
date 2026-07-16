@@ -244,6 +244,9 @@
 
             List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
+            String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
+                    ? "dotcms-block-editor"
+                    : "dotcms-old-block-editor";
 
             %>
             <script src="/html/showdown.min.js"></script>
@@ -251,35 +254,45 @@
                 <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
             </div>
 
-            <script>
+            <script type="text/javascript">
 
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (
                     function autoexecute() {
                         const blockEditorContainer = document.querySelector('#block-editor-<%=field.getVelocityVarName()%>-container');
                         const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
-                        const blockEditor = document.createElement('dotcms-block-editor');
+                        const blockEditor = document.createElement('<%=blockEditorTag%>');
                         const proseMirror = blockEditor.querySelector('.ProseMirror');
                         blockEditor.id = "block-editor-<%=field.getVelocityVarName()%>";
 
-                        const editorValue = <%=value%> || null;
+                        // Decode the template-literal-safety encoding applied server-side above
+                        // (`$` -> &#36;, backtick -> &#96;) so the runtime value is restored on BOTH
+                        // the JSON (Block Editor) and markdown-fallback paths. Without this, valid
+                        // Block Editor JSON parses successfully, the catch never runs, and &#36; leaks
+                        // into ProseMirror (and can be re-persisted via JSON.stringify below).
+                        const editorValue = (<%=safeTextValue%> || '')
+                            .replace(/&#96;/g, '`').replace(/&#36;/g, '$') || null;
                         let content;
 
-                        /**
-                         * If the value is a string, we need to convert it to HTML
-                         * using showdown.
-                         * If the value is an object, it means that the value is already Block Editor's
-                         */
-                        if (typeof editorValue === 'string') {
-                            const text = editorValue.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+                        try {
+                            content = JSON.parse(editorValue);
+                        } catch (e) {
+                            // If it can't be parsed as a JSON, then it means that the value is a string
                             const converter = new showdown.Converter({ tables: true });
-                            content = converter.makeHtml(text || '');
-                        } else {
-                            content = editorValue;
+                            content = converter.makeHtml(editorValue || '');
                         }
 
-                        // Set current value in the hidden field
-                        field.value = content || '';
+
+                        // Set current value in the hidden field.
+                        // When the stored value is JSON, `content` is a parsed object — assigning
+                        // it directly would coerce via toString() and write "[object Object]" into
+                        // the input. The form submits the input verbatim, so without the explicit
+                        // JSON.stringify the field is corrupted on save whenever the user edits
+                        // another field without touching the Block Editor (the `valueChange`
+                        // listener below only fires on user input).
+                        field.value = (content && typeof content === 'object')
+                            ? JSON.stringify(content)
+                            : (content || '');
 
                         const contentlet =  (<%=contentletObj%>);
                         const fieldData = {
@@ -292,7 +305,7 @@
                          * to the editor.
                          */
                         blockEditor.addEventListener('valueChange', ({ detail }) => {
-                            field.value = !detail ? null : JSON.stringify(detail);;
+                            field.value = !detail ? null : JSON.stringify(detail);
                         });
 
                         //
@@ -1102,7 +1115,7 @@
 
         function change<%=field.getFieldContentlet()%>ThumbnailSize(newValue) {
             <%=field.getFieldContentlet()%>ThumbSize = newValue;
-            $('<%=field.getFieldContentlet()%>Thumbnail').src =
+            document.getElementById('<%=field.getFieldContentlet()%>Thumbnail').src =
                 "/contentAsset/image-thumbnail/<%=inode+"/"+field.getVelocityVarName()%>?w=" + newValue + "&rand=" + Math.random();
             dojo.cookie('<%=field.getStructureInode()%>-<%=field.getFieldContentlet()%>ThumbSize', new String(newValue));
         }
@@ -1261,7 +1274,7 @@
         <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>MultiSelect() {
             var valuesList = "";
-            var multiselect = $('<%=field.getVelocityVarName()%>MultiSelect');
+            var multiselect = document.getElementById('<%=field.getVelocityVarName()%>MultiSelect');
             for(var i = 0; i < multiselect.options.length; i++) {
                 if(multiselect.options[i].selected) {
                     if (valuesList != ""){
@@ -1270,7 +1283,7 @@
                     valuesList += multiselect.options[i].value;
                 }
             }
-            $('<%=field.getVelocityVarName()%>MultiSelectHF').value = valuesList;
+            document.getElementById('<%=field.getVelocityVarName()%>MultiSelectHF').value = valuesList;
         }
 
         update<%=field.getVelocityVarName()%>MultiSelect();
@@ -1328,7 +1341,7 @@
             checkedInputs.forEach(function(checkedInput) {
                 valuesList.push(checkedInput.value);
             });
-            $("<%=field.getVelocityVarName()%>Checkbox").value = valuesList.join(",");
+            document.getElementById("<%=field.getVelocityVarName()%>Checkbox").value = valuesList.join(",");
         }
 
         update<%=field.getVelocityVarName()%>Checkbox();
@@ -1487,13 +1500,13 @@
         while (iterator.hasNext()) {
             final String key = iterator.next();
             final Object object = keyValueMap.get(key);
-            if(null != object) {
-                keyValueDataRaw.append(key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;")).append(":").append(object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;"));
-                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;").append(":").append("&#x22;" + object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;");
-                if (iterator.hasNext()) {
-                    keyValueDataRaw.append(',');
-                    dotKeyValueDataRaw.append(',');
-                }
+            final String encodedKey = key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;");
+            final String encodedValue = null != object ? object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") : "null";
+            keyValueDataRaw.append(encodedKey).append(":").append(encodedValue);
+            dotKeyValueDataRaw.append("&#x22;" + encodedKey + "&#x22;").append(":").append("&#x22;" + encodedValue + "&#x22;");
+            if (iterator.hasNext()) {
+                keyValueDataRaw.append(',');
+                dotKeyValueDataRaw.append(',');
             }
         }
         keyValueDataRaw.append("}");

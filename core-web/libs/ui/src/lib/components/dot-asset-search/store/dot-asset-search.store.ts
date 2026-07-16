@@ -1,9 +1,9 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
+import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
-import { Observable } from 'rxjs/internal/Observable';
 import { map, switchMap, tap } from 'rxjs/operators';
 
 import {
@@ -35,6 +35,9 @@ const defaultState: DotAssetSearch = {
 
 @Injectable()
 export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
+    private dotContentSearchService = inject(DotContentSearchService);
+    private dotLanguagesService = inject(DotLanguagesService);
+
     // Selectors
     readonly vm$ = this.select((state) => state);
 
@@ -59,10 +62,7 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
 
     private languages: { [key: string]: DotLanguage } = {};
 
-    constructor(
-        private dotContentSearchService: DotContentSearchService,
-        private dotLanguagesService: DotLanguagesService
-    ) {
+    constructor() {
         super(defaultState);
 
         this.dotLanguagesService.get().subscribe((languages) => {
@@ -82,12 +82,12 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
             tap(() => this.updateLoading(true)),
             switchMap((params) => {
                 return this.searchContentletsRequest(params).pipe(
-                    tapResponse(
-                        (contentlets) => this.updateContentlets(contentlets),
-                        (_error) => {
+                    tapResponse({
+                        next: (contentlets) => this.updateContentlets(contentlets),
+                        error: (_error) => {
                             /* */
                         }
-                    )
+                    })
                 );
             })
         );
@@ -102,12 +102,12 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
         return params$.pipe(
             switchMap((params) =>
                 this.searchContentletsRequest(params).pipe(
-                    tapResponse(
-                        (contentlets) => this.mergeContentlets(contentlets),
-                        (_error) => {
+                    tapResponse({
+                        next: (contentlets) => this.mergeContentlets(contentlets),
+                        error: (_error) => {
                             /* */
                         }
-                    )
+                    })
                 )
             )
         );

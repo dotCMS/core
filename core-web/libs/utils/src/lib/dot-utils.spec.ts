@@ -1,7 +1,53 @@
-import { DotCMSBaseTypesContentTypes, DotPageToolUrlParams } from '@dotcms/dotcms-models';
-import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotPageToolUrlParams
+} from '@dotcms/dotcms-models';
 
-import { getImageAssetUrl, ellipsizeText, getRunnableLink } from './dot-utils';
+import {
+    buildCurlSnippet,
+    buildFetchSnippet,
+    getImageAssetUrl,
+    ellipsizeText,
+    getRunnableLink,
+    hasValidValue,
+    mapQueryParamsToCDParams,
+    mapParamsFromEditContentlet
+} from './dot-utils';
+
+const EMPTY_CONTENTLET: DotCMSContentlet = {
+    inode: '14dd5ad9-55ae-42a8-a5a7-e259b6d0901a',
+    variantId: 'DEFAULT',
+    locked: false,
+    stInode: 'd5ea385d-32ee-4f35-8172-d37f58d9cd7a',
+    contentType: 'Image',
+    height: 4000,
+    identifier: '93ca45e0-06d2-4eef-be1d-79bd6bf0fc99',
+    hasTitleImage: true,
+    sortOrder: 0,
+    hostName: 'demo.dotcms.com',
+    extension: 'jpg',
+    isContent: true,
+    baseType: 'FILEASSETS',
+    archived: false,
+    working: true,
+    live: true,
+    isContentlet: true,
+    languageId: 1,
+    titleImage: 'fileAsset',
+    hasLiveVersion: true,
+    deleted: false,
+    folder: '',
+    host: '',
+    modDate: '',
+    modUser: '',
+    modUserName: '',
+    owner: '',
+    title: '',
+    url: '',
+    contentTypeIcon: 'assessment',
+    __icon__: 'Icon'
+};
 
 describe('Dot Utils', () => {
     describe('getImageAssetUrl', () => {
@@ -102,17 +148,17 @@ describe('Ellipsize Text Utility', () => {
         expect(ellipsizeText(text, 18)).toEqual(truncated);
     });
     it('should return empty string when a non-string value is passed', () => {
-        expect(ellipsizeText(12345 as any, 10)).toEqual('');
-        expect(ellipsizeText({} as any, 10)).toEqual('');
-        expect(ellipsizeText([] as any, 10)).toEqual('');
+        expect(ellipsizeText(12345 as unknown as string, 10)).toEqual('');
+        expect(ellipsizeText({} as unknown as string, 10)).toEqual('');
+        expect(ellipsizeText([] as unknown as string, 10)).toEqual('');
         expect(ellipsizeText(null, 10)).toEqual('');
     });
     it('should return empty string when limit is not a number', () => {
         const text = 'Any text';
         expect(ellipsizeText(text, NaN)).toEqual('');
-        expect(ellipsizeText(text, 'abc' as any)).toEqual('');
-        expect(ellipsizeText(text, {} as any)).toEqual('');
-        expect(ellipsizeText(text, [] as any)).toEqual('');
+        expect(ellipsizeText(text, 'abc' as unknown as number)).toEqual('');
+        expect(ellipsizeText(text, {} as unknown as number)).toEqual('');
+        expect(ellipsizeText(text, [] as unknown as number)).toEqual('');
         expect(ellipsizeText(text, null)).toEqual('');
     });
 
@@ -365,6 +411,173 @@ describe('Dot Utils', () => {
             expect(getRunnableLink(url, params)).toEqual(
                 'https://example.com/http://my-site.com/current-page?host_id=123&language_id=456'
             );
+        });
+    });
+
+    describe('hasValidValue', () => {
+        it('should return FALSE when value is null or undefined', () => {
+            expect(hasValidValue(null)).toEqual(false);
+            expect(hasValidValue(undefined)).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty string', () => {
+            expect(hasValidValue('test')).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty string', () => {
+            expect(hasValidValue('')).toEqual(false);
+        });
+
+        it('should return FALSE when value is space string', () => {
+            expect(hasValidValue('   ')).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty array', () => {
+            expect(hasValidValue(['test'])).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty array', () => {
+            expect(hasValidValue([])).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty object', () => {
+            expect(hasValidValue({ test: 'test' })).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty object', () => {
+            expect(hasValidValue({})).toEqual(false);
+        });
+
+        it('should return TRUE when value is a positive number', () => {
+            expect(hasValidValue(1)).toEqual(true);
+        });
+
+        it('should return TRUE when value is 0', () => {
+            expect(hasValidValue(0)).toEqual(true);
+        });
+
+        it('should return TRUE when value is true', () => {
+            expect(hasValidValue(true)).toEqual(true);
+        });
+
+        it('should return TRUE when value is false', () => {
+            expect(hasValidValue(false)).toEqual(true);
+        });
+    });
+
+    describe('mapQueryParamsToCDParams', () => {
+        it('should add CD_ prefix to query parameters', () => {
+            const queryParams = new URLSearchParams('folderId=123&path=/images');
+
+            expect(mapQueryParamsToCDParams(queryParams)).toEqual({
+                CD_folderId: '123',
+                CD_path: '/images'
+            });
+        });
+
+        it('should return empty object when no query parameters', () => {
+            const queryParams = new URLSearchParams('');
+
+            expect(mapQueryParamsToCDParams(queryParams)).toEqual({});
+        });
+
+        it('should handle single query parameter', () => {
+            const queryParams = new URLSearchParams('folderId=456');
+
+            expect(mapQueryParamsToCDParams(queryParams)).toEqual({
+                CD_folderId: '456'
+            });
+        });
+
+        it('should handle multiple query parameters', () => {
+            const queryParams = new URLSearchParams('folderId=123&path=/images&filter=active');
+
+            expect(mapQueryParamsToCDParams(queryParams)).toEqual({
+                CD_folderId: '123',
+                CD_path: '/images',
+                CD_filter: 'active'
+            });
+        });
+    });
+
+    describe('mapParamsFromEditContentlet', () => {
+        it('should extract CD_ prefixed params and remove prefix', () => {
+            const cdParams = new URLSearchParams('CD_folderId=123&CD_path=/images');
+
+            expect(mapParamsFromEditContentlet(cdParams)).toEqual({
+                folderId: '123',
+                path: '/images'
+            });
+        });
+
+        it('should return empty object when no CD_ params', () => {
+            const cdParams = new URLSearchParams('folderId=123&path=/images');
+
+            expect(mapParamsFromEditContentlet(cdParams)).toEqual({});
+        });
+
+        it('should filter out non-CD_ params', () => {
+            const cdParams = new URLSearchParams(
+                'CD_folderId=123&CD_path=/images&regularParam=value'
+            );
+
+            expect(mapParamsFromEditContentlet(cdParams)).toEqual({
+                folderId: '123',
+                path: '/images'
+            });
+        });
+
+        it('should handle single CD_ parameter', () => {
+            const cdParams = new URLSearchParams('CD_folderId=456');
+
+            expect(mapParamsFromEditContentlet(cdParams)).toEqual({
+                folderId: '456'
+            });
+        });
+
+        it('should return empty object when URLSearchParams is empty', () => {
+            const cdParams = new URLSearchParams('');
+
+            expect(mapParamsFromEditContentlet(cdParams)).toEqual({});
+        });
+    });
+
+    describe('buildCurlSnippet', () => {
+        it('produces a POST curl command with JSON body', () => {
+            const snippet = buildCurlSnippet({
+                url: 'https://demo.dotcms.com/api/v1/content/_search',
+                body: { query: '+live:true', limit: 20 }
+            });
+
+            expect(snippet).toContain(
+                'curl -X POST "https://demo.dotcms.com/api/v1/content/_search"'
+            );
+            expect(snippet).toContain('"Content-Type: application/json"');
+            expect(snippet).toContain(`-d '{"query":"+live:true","limit":20}'`);
+        });
+
+        it('escapes single quotes in the body using POSIX shell quoting', () => {
+            const snippet = buildCurlSnippet({
+                url: 'https://x/y',
+                body: { title: "it's" }
+            });
+            expect(snippet).toContain(`"title":"it'\\''s"`);
+            expect(snippet).not.toContain(`"title":"it's"`);
+        });
+    });
+
+    describe('buildFetchSnippet', () => {
+        it('emits a fetch() POST with credentials and an indented body', () => {
+            const snippet = buildFetchSnippet({
+                url: '/api/v1/content/_search',
+                body: { query: '+live:true', limit: 20 }
+            });
+
+            expect(snippet).toContain(`fetch('/api/v1/content/_search'`);
+            expect(snippet).toContain(`method: 'POST'`);
+            expect(snippet).toContain(`credentials: 'include'`);
+            expect(snippet).toContain(`"query": "+live:true"`);
+            expect(snippet).toContain(`"limit": 20`);
         });
     });
 });

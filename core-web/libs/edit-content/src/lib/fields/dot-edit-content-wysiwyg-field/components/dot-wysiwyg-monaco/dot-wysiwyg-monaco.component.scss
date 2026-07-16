@@ -1,9 +1,0 @@
-@use "variables" as *;
-:host {
-    ngx-monaco-editor {
-        height: 400px;
-        width: 100%;
-        padding: $spacing-0;
-        display: flex;
-    }
-}

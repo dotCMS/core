@@ -1,4 +1,13 @@
-@use "variables" as *;
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 :host {
     display: grid;
@@ -6,40 +15,38 @@
         "topBar topBar"
         "header sidebar"
         "body sidebar";
-    grid-template-columns: 1fr 0;
+    grid-template-columns: minmax(0, 1fr) 0;
     grid-template-rows: auto auto 1fr;
     padding-bottom: 0;
     height: 100%;
     width: 100%;
-    transition: grid-template-columns $basic-speed ease-in-out;
+    max-width: 100%;
+    overflow-x: hidden;
+    transition: grid-template-columns 150ms ease-in-out;
 
     &.edit-content--with-sidebar {
-        grid-template-columns: 1fr 21.875rem;
+        grid-template-columns: minmax(0, 1fr) 360px;
     }
 }
 
+// Normalize every p-message banner in the top bar to the same compact banner padding
+// (12px vertical / 28px horizontal) so the info, lock and workflow messages all align with
+// each other. Done here once instead of per-instance styleClass so they can't drift apart.
 .edit-content-layout__topBar {
-    grid-area: topBar;
-    padding: $spacing-0 $spacing-1;
-
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-0;
-
-    .pi {
-        font-size: $font-size-lmd;
-        margin-right: $spacing-1;
+    ::ng-deep .p-message-content-wrapper {
+        padding: 0 !important;
     }
-}
 
-.edit-content-layout__header {
-    grid-area: header;
-}
-
-.edit-content-layout__body {
-    grid-area: body;
-}
-
-.edit-content-layout__sidebar {
-    grid-area: sidebar;
+    // Fixed banner height + vertical centering (instead of vertical padding) so every top-bar
+    // message is the same height regardless of its content. The info banner carries a close
+    // button (~32px) that would otherwise stretch its row taller than the text-only lock banner.
+    // Font is set in px (not rem) because the app root is 14px, so a rem value would not land
+    // on the intended 13.5px.
+    ::ng-deep .p-message-content {
+        display: flex;
+        align-items: center;
+        min-height: 54px;
+        padding: 0 1.75rem !important;
+        font-size: 13.5px;
+    }
 }

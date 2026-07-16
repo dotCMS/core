@@ -13,8 +13,10 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -27,10 +29,11 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import io.vavr.control.Try;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -58,6 +61,7 @@ public class BundleResourceTest {
     private static BundleResource bundleResource;
     private static User adminUser;
     static HttpServletResponse response;
+    private static final List<User> createdUsers = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -70,6 +74,14 @@ public class BundleResourceTest {
             roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), adminUser);
         }
         response = new MockHttpResponse();
+    }
+
+    @AfterClass
+    public static void cleanup() {
+        for (final User user : createdUsers) {
+            UserDataGen.remove(user, Boolean.TRUE);
+        }
+        createdUsers.clear();
     }
 
     /**
@@ -157,7 +169,7 @@ public class BundleResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }
@@ -275,5 +287,69 @@ public class BundleResourceTest {
         publishAuditStatus.setStatusPojo(new PublishAuditHistory());
         publishAuditStatus.setStatus(status);
         APILocator.getPublishAuditAPI().insertPublishAuditStatus(publishAuditStatus);
+    }
+
+    private static HttpServletRequest mockRequestFor(final User user) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(user);
+        return request;
+    }
+
+    private static User newBackendUser() throws Exception {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
+        createdUsers.add(user);
+        return user;
+    }
+
+    /**
+     * Reproduces the horizontal information-disclosure gap in issue #36415.
+     *
+     * Method to Test: {@link BundleResource#getUnsendBundles(HttpServletRequest, HttpServletResponse, String)}
+     * Given: a non-admin backend user
+     * When:  they request the unsent bundles of ANOTHER user via the path userId
+     * Should: be rejected with 403 Forbidden (a user may only list their own drafts).
+     *         Before the fix this returned 200 with the other user's bundles.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void test_getUnsendBundles_otherUsersId_isForbidden() throws Exception {
+        final User userA = newBackendUser();
+        final User userB = newBackendUser();
+
+        bundleResource.getUnsendBundles(
+                mockRequestFor(userA), response, "userid/" + userB.getUserId());
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#getUnsendBundles(HttpServletRequest, HttpServletResponse, String)}
+     * Given: a non-admin backend user
+     * When:  they request their OWN unsent bundles
+     * Should: succeed (200) - the shipped Add-to-Bundle flow always queries the caller's own id.
+     */
+    @Test
+    public void test_getUnsendBundles_ownId_isAllowed() throws Exception {
+        final User userA = newBackendUser();
+
+        final Response resp = bundleResource.getUnsendBundles(
+                mockRequestFor(userA), response, "userid/" + userA.getUserId());
+
+        assertEquals(200, resp.getStatus());
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#getUnsendBundles(HttpServletRequest, HttpServletResponse, String)}
+     * Given: a CMS Administrator
+     * When:  they request another user's unsent bundles
+     * Should: succeed (200) - admins may query any user's drafts.
+     */
+    @Test
+    public void test_getUnsendBundles_adminCanQueryAnyUser() throws Exception {
+        final User userB = newBackendUser();
+
+        final Response resp = bundleResource.getUnsendBundles(
+                mockRequestFor(APILocator.systemUser()), response, "userid/" + userB.getUserId());
+
+        assertEquals(200, resp.getStatus());
     }
 }

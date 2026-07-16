@@ -16,6 +16,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -29,7 +30,6 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -56,6 +56,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     private static final String PAGE = "PAGE";
     private static final String CONTENTLET = "CONTENTLET";
     private static final String RELATION_TYPE = "RELATION_TYPE";
+    private static MultiTreeAPI multiTreeAPI;
+    private static MultiTree testMultiTree;
 
     final static int runs =2;
     final static int contentlets =5;
@@ -63,16 +65,15 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @BeforeClass
     public static void initData() throws Exception {
         IntegrationTestInitService.getInstance().init();
-      //  testUpgradeTask();
-        buildInitalData();
-    }
-    
-    public static void buildInitalData() throws Exception {
-        buildInitalData(VariantAPI.DEFAULT_VARIANT.name());
-
+        multiTreeAPI = APILocator.getMultiTreeAPI();
+        buildInitialData();
     }
 
-    public static void buildInitalData(final String variantName) throws Exception {
+    public static void buildInitialData() throws Exception {
+        buildInitialData(VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    public static void buildInitialData(final String variantName) throws Exception {
         for(int i=0;i<runs;i++) {
             for(int j=0;j<contentlets;j++) {
                 MultiTree mt = new MultiTree()
@@ -83,10 +84,40 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         .setInstanceId(RELATION_TYPE + i)
                         .setVariantId(variantName);
 
-                APILocator.getMultiTreeAPI().saveMultiTree(mt);
+                multiTreeAPI.saveMultiTree(mt);
             }
         }
 
+    }
+
+    private MultiTree createMultiTreeWithStyleProperties(final Map<String, Object> styleProperties)
+            throws DotDataException {
+        MultiTree multiTree = new MultiTree()
+                .setContainer(CONTAINER + 0)
+                .setHtmlPage(PAGE)
+                .setContentlet(CONTENTLET + 0)
+                .setTreeOrder(0)
+                .setInstanceId(RELATION_TYPE + 0)
+                .setStyleProperties(styleProperties);
+        multiTreeAPI.saveMultiTree(multiTree);
+        return multiTree;
+    }
+
+    private MultiTree retrieveMultiTree(int multiTreeIndex) throws DotDataException {
+        return multiTreeAPI.getMultiTree(
+                PAGE,
+                CONTAINER + multiTreeIndex,
+                CONTENTLET + multiTreeIndex,
+                RELATION_TYPE + multiTreeIndex
+        );
+    }
+
+    private Map<String, Object> createDefaultStyleProperties() {
+        Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("backgroundColor", "red");
+        styleProperties.put("fontSize", "16px");
+        styleProperties.put("padding", "10px");
+        return styleProperties;
     }
 
     /**
@@ -133,7 +164,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void testDeletes() throws Exception {
         deleteInitialData();
-        buildInitalData() ;
+        buildInitialData() ;
         List<MultiTree> all = APILocator.getMultiTreeAPI().getAllMultiTrees();
         
         List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
@@ -147,7 +178,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void testReorder() throws Exception {
         deleteInitialData();
-        buildInitalData();
+        buildInitialData();
 
         MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
@@ -176,8 +207,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         deleteInitialData();
-        buildInitalData();
-        buildInitalData(variant.name());
+        buildInitialData();
+        buildInitialData(variant.name());
 
         MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
@@ -234,8 +265,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void findByChild() throws Exception {
         deleteInitialData();
-        buildInitalData() ;
-        
+        buildInitialData() ;
+
         List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTreesByChild(CONTENTLET + "0");
         
         assertTrue("getByChild returns all results", list.size() == runs );
@@ -249,18 +280,23 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @AfterClass
     public static void deleteInitialData() throws Exception {
 
-        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
+        List<MultiTree> list = multiTreeAPI.getMultiTrees(PAGE);
 
         for(MultiTree tree : list) {
-            APILocator.getMultiTreeAPI().deleteMultiTree(tree);
+            multiTreeAPI.deleteMultiTree(tree);
+        }
+
+        if (testMultiTree != null) {
+            try {
+                multiTreeAPI.deleteMultiTree(testMultiTree);
+            } catch (DotDataException e) {
+                // ignore if already deleted
+            }
         }
 
     }
     
-    
-    
-    
-    
+
     @Test
     public  void testSaveMultiTree() throws Exception {
         MultiTree mt = new MultiTree()
@@ -275,20 +311,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         MultiTree mt2 = APILocator.getMultiTreeAPI().getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
         assertTrue("multiTree save and get equals", mt.equals(mt2));
     }
-    
-    
-    
 
-    
-    
-    
     @Test
     public void testLegacyMultiTreeSave() throws Exception {
 
-        
         long time = System.currentTimeMillis();
 
-        
         MultiTree multiTree = new MultiTree();
         multiTree.setHtmlPage( PAGE+time);
         multiTree.setContainer( CONTAINER +time);
@@ -341,7 +369,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         // but the objects should contain the same data
         assert(trees.equals(cachedTrees));
 
-        // there is no container entry 
+        // there is no container entry
         assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
 
 
@@ -588,9 +616,6 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Structure structure = new StructureDataGen().nextPersisted();
         final Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
         final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
-
-        
-        
         
         final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
 
@@ -711,10 +736,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
      * When: A Page with content in spanish and english, is trying to add the spanish content again into the same container, but
      * it's editing the english version of the page
-     * Should: Throw an exception saying that the content already exists in that container.
+     * Should: Complete without throwing an exception, the duplicate INSERT is silently skipped.
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void test_overridesMultitreesByPersonalization_AddContentTwiceDiffLangEditing_throwException() throws Exception {
+    @Test
+    public void test_overridesMultitreesByPersonalization_multiLangContent_noFallback_skipsExistingEntries() throws Exception {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
 
@@ -731,11 +756,11 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Folder folder = new FolderDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
         final Structure structure = new StructureDataGen().nextPersisted();
-        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
 
         final String uniqueId = UUIDGenerator.shorty();
 
-        final MultiTree multiTreeContentEN =new MultiTreeDataGen()
+        final MultiTree multiTreeContentEN = new MultiTreeDataGen()
                 .setPage(page)
                 .setContainer(container)
                 .setContentlet(enContentlet)
@@ -753,13 +778,305 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setTreeOrder(2)
                 .nextPersisted();
 
+        // With fallback OFF, the language-scoped DELETE only removes the EN contentlet.
+        // The ES contentlet (no EN version) stays in multi_tree, so its INSERT is skipped.
+        // No exception should be thrown — both end up on the page.
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeContentEN, multiTreeContentES),
+                    Optional.of(defaultLanguage.getId())
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should remain on the page (was skipped, not duplicated)", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in the <b>default
+     * language</b> (EN), and the page already has an EN-only entry and an ES-only entry in the DB.
+     * Since the requested language is the default language, a single-language DELETE is performed
+     * (scoped to EN). The client only re-submits the EN contentlet.
+     * Should: Delete only the EN entry (has EN version), preserve the ES entry (has no EN version),
+     * and re-insert the EN entry — leaving exactly 2 entries in the DB.
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_defaultLangEdit_preservesEsOnlyContent() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        // EN-only contentlet (no ES version)
+        final Contentlet enContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        // ES-only contentlet (no EN version)
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // The render() re-submits only the EN contentlet.
+        final MultiTree multiTreeContentEN = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier())
+                .setInstanceId(uniqueId)
+                .setTreeOrder(1);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeContentEN),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN entry re-inserted + ES entry preserved = 2 entries", 2, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES-only contentlet should be preserved", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in a
+     * <b>non-default language</b> (ES), and the page already has three entries: EN-only, ES-only,
+     * and FR-only. {@code render()} in ES mode returns: the EN contentlet (fallback to default
+     * language) and the ES contentlet (direct match); the FR-only contentlet is excluded because it
+     * has no version in either ES or the default language (EN). The client re-submits EN + ES.
+     * Should: Execute a two-language DELETE (ES OR EN), removing the EN-only and ES-only entries
+     * but leaving the FR-only entry untouched. After re-inserting EN + ES the page has 3 entries.
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_nonDefaultLangEdit_deletesTwoLangs_preservesThirdLang() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+        final Language frLanguage  = new LanguageDataGen().country("FRA").languageCode("fra").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+        final Contentlet frContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(frLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(3).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(frContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3).nextPersisted();
+
+        // render() in ES returns EN (fallback to default) + ES (direct match).
+        // FR-only is excluded because it has no version in ES or EN.
+        final MultiTree multiTreeEN  = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(1);
+        final MultiTree multiTreeES  = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(espContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(2);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeEN, multiTreeES),
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN + ES re-inserted + FR preserved = 3 entries", 3, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should be on the page", resultIds.contains(espContentlet.getIdentifier()));
+        assertTrue("FR-only contentlet should be preserved", resultIds.contains(frContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=false}, the page is edited in a non-default
+     * language (ES), and the page already has an EN-only entry and an ES-only entry. Without the
+     * fallback flag, {@code render()} in ES mode does not include the EN-only contentlet (no EN
+     * version exists). The client re-submits only the ES contentlet.
+     * Should: Execute a single-language DELETE (ES), removing only the ES entry. The EN-only entry
+     * has no ES version, so it is untouched. After re-inserting the ES entry the page has 2 entries.
+     */
+    @Test
+    public void test_overridesMultitrees_withoutFallback_nonDefaultLangEdit_preservesEnOnlyContent() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // render() in ES without fallback returns only the ES contentlet; EN-only is excluded.
+        final MultiTree multiTreeES = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(espContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(2);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeES),
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN preserved + ES re-inserted = 2 entries", 2, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN-only contentlet should be preserved", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should be on the page", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: No language context is provided ({@code languageIdOpt} is empty), so the full DELETE
+     * path is taken. The page already has an EN entry and an ES entry, but the client submits only
+     * the EN contentlet.
+     * Should: Delete all existing entries for the page and re-insert only the submitted EN entry,
+     * leaving exactly 1 entry in the DB.
+     */
+    @Test
+    public void test_overridesMultitrees_noLanguage_fullDeleteAndReinsert() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // Full-DELETE path: no language is provided, so all existing entries are removed first.
+        final MultiTree multiTreeEN = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(1);
 
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
-                list(multiTreeContentEN,multiTreeContentES),
-                Optional.of(defaultLanguage.getId())
+                list(multiTreeEN),
+                Optional.empty(),
+                VariantAPI.DEFAULT_VARIANT.name()
         );
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Full DELETE then re-insert: only 1 entry should remain", 1, result.size());
+        assertEquals("EN contentlet should be the sole entry", enContentlet.getIdentifier(),
+                result.get(0).getContentlet());
     }
 
     /**
@@ -978,7 +1295,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
     /**
      * Method to Test: {@link MultiTreeAPI#getMultiTreesByVariant(String, String)} (String, String)}
-     * When: Create a Page with {@link MultiTree} is different {@link Variant} and call the 
+     * When: Create a Page with {@link MultiTree} is different {@link Variant} and call the
      * {@link MultiTreeAPI#getMultiTreesByVariant(String, String)} method just for a specific {@link Variant}
      * Should: Return just the {@link MultiTree} for that {@link Variant}
      */
@@ -4258,6 +4575,378 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         assertEquals(1, contentlets.size());
         assertEquals(contentlet.getIdentifier(), contentlets.iterator().next().getContentletId());
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with style properties
+     * Should: return the MultiTree with the style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void createAndPersist_styleProperties() throws DotDataException {
+        Map<String, Object> styleProperties = createDefaultStyleProperties();
+        testMultiTree = createMultiTreeWithStyleProperties(styleProperties);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNotNull("Style properties should not be null", retrieved.getStyleProperties());
+        assertEquals("Style properties should have 3 entries", 3,
+                retrieved.getStyleProperties().size());
+        assertEquals("Background color should match", "red",
+                retrieved.getStyleProperties().get("backgroundColor"));
+        assertEquals("Font size should match", "16px",
+                retrieved.getStyleProperties().get("fontSize"));
+        assertEquals("Padding should match", "10px",
+                retrieved.getStyleProperties().get("padding"));
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You update a MultiTree with style properties
+     * Should: return the MultiTree with the updated style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testUpdate_styleProperties() throws Exception {
+        Map<String, Object> originalProperties = createDefaultStyleProperties();
+        testMultiTree = createMultiTreeWithStyleProperties(originalProperties);
+
+        // Update with new style properties
+        Map<String, Object> updatedProperties = new HashMap<>();
+        updatedProperties.put("backgroundColor", "#ff0000");
+        updatedProperties.put("margin", "20px");
+
+        testMultiTree.setStyleProperties(updatedProperties);
+        multiTreeAPI.saveMultiTree(testMultiTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Updated style properties should not be null",
+                retrieved.getStyleProperties());
+        assertEquals("Updated style properties should have 2 entries", 2,
+                retrieved.getStyleProperties().size());
+        assertEquals("Updated background color should match", "#ff0000",
+                retrieved.getStyleProperties().get("backgroundColor"));
+        assertEquals("Margin should match", "20px",
+                retrieved.getStyleProperties().get("margin"));
+        assertNull("Font size should not exist in updated properties",
+                retrieved.getStyleProperties().get("fontSize"));
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You update a MultiTree with style properties to null
+     * Should: return the MultiTree with null style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testUpdate_stylePropertiesToNull() throws Exception {
+        Map<String, Object> originalProperties = createDefaultStyleProperties();
+        testMultiTree = createMultiTreeWithStyleProperties(originalProperties);
+
+        // Set style properties to null
+        testMultiTree.setStyleProperties(null);
+        multiTreeAPI.saveMultiTree(testMultiTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNull("NULL style properties should be persisted",
+                retrieved.getStyleProperties());
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with null style properties
+     * Should: return the MultiTree with null style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testCreate_withNullStyleProperties() throws Exception {
+        testMultiTree = createMultiTreeWithStyleProperties(null);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNull("Style properties should be null", retrieved.getStyleProperties());
+    }
+
+    // ── Net-loss threshold guard tests (empty + non-empty) ─────────────────
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=0}, the page already has contentlets, and
+     * the caller submits an empty list (complete stale-session wipe scenario).
+     * Should: throw {@link StalePageSaveException} — net loss equals all existing rows, exceeding threshold 0.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_threshold0_emptyPayload_throwsStalePageSaveException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(contentlet)
+                .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    Collections.emptyList(),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=-1} (default, disabled), the page has existing
+     * contentlets, and the caller submits an empty list.
+     * Should: not throw — wipe proceeds normally, leaving 0 rows for the page.
+     */
+    @Test
+    public void test_overridesMultitrees_thresholdDisabled_emptyPayload_wipesExistingRows() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(contentlet)
+                .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        // Default: threshold is -1 (disabled) — no property set needed, but explicit for clarity
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                DOT_PERSONALIZATION_DEFAULT,
+                Collections.emptyList(),
+                Optional.of(defaultLanguage.getId()),
+                VariantAPI.DEFAULT_VARIANT.name()
+        );
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertTrue("Threshold disabled — empty save should wipe all rows", result.isEmpty());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=0} but the page genuinely has no existing contentlets
+     * (first save on a blank page).
+     * Should: not throw — the guard only fires when there are existing rows to protect.
+     */
+    @Test
+    public void test_overridesMultitrees_threshold0_genuinelyEmptyPage_noException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    Collections.emptyList(),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertTrue("Genuinely empty page — should remain empty after save", result.isEmpty());
+    }
+
+    // ── Net-loss threshold guard tests ─────────────────────────────────────
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the save would drop 10 contentlets (20 → 10).
+     * Should: throw {@link StalePageSaveException} — the net loss exceeds the configured threshold.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_netLossThreshold_excessiveDrop_throwsStalePageSaveException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(20).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Persist 20 contentlets on the page (simulates what the DB looks like after other users' work)
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            // Stale session only saw the first 10 — re-submit those 10
+            if (i < 10) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Submitting 10 of 20 contentlets → net loss of 10, which exceeds threshold of 5
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the user intentionally removes 2 contentlets
+     * (8 existing → 6 incoming, net loss of 2).
+     * Should: not throw — the net loss is within the configured threshold.
+     */
+    @Test
+    public void test_overridesMultitrees_netLossThreshold_smallDrop_allowsSave() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(8).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Persist 8 contentlets; user intentionally keeps 6 (removes 2)
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            if (i < 6) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Net loss of 2 — within threshold of 5, should save cleanly
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Intentional removal of 2 should leave 6 contentlets", 6, result.size());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: The default threshold (1) is in effect and the user removes exactly 1 contentlet
+     * (the most a single UVE action can ever remove).
+     * Should: not throw — a net loss of 1 is within the default threshold.
+     */
+    @Test
+    public void test_overridesMultitrees_defaultThreshold_singleRemoval_allowsSave() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(3).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            // User intentionally removes the last contentlet; keeps the first two
+            if (i < 2) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        // Threshold of 1 — a loss of exactly 1 should be allowed
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 1);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Single intentional removal should leave 2 contentlets", 2, result.size());
+    }
+
+    // ── Style-properties tests ──────────────────────────────────────────────
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with empty style properties
+     * Should: return the MultiTree with empty style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testCreate_withEmptyStyleProperties() throws Exception {
+        Map<String, Object> emptyProperties = new HashMap<>();
+        testMultiTree = createMultiTreeWithStyleProperties(emptyProperties);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNull("Style properties should be null", retrieved.getStyleProperties());
     }
 
 }

@@ -40,11 +40,6 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
-import org.apache.commons.io.output.TeeOutputStream;
-import org.apache.commons.lang.StringUtils;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -58,6 +53,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -142,19 +141,14 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				if(!InodeUtils.isSet(structure.getInode()))
 				{
 
-						int shards = Config.getIntProperty("es.index.number_of_shards", 2);
-						try{
-							shards = Integer.parseInt(req.getParameter("shards"));
-						}catch(Exception e){
+					int shards = Config.getIntProperty("es.index.number_of_shards", 1);
+					System.setProperty("es.index.number_of_shards", String.valueOf(shards));
+					Logger.info(this, "Running Contentlet Reindex");
 
-						}
-						System.setProperty("es.index.number_of_shards", String.valueOf(shards));
-						Logger.info(this, "Running Contentlet Reindex");
+					conAPI.refreshAllContent();
 
-						conAPI.refreshAllContent();
-
-						message = "message.cmsmaintenance.cache.indexrebuilt";
-						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
+					message = "message.cmsmaintenance.cache.indexrebuilt";
+					AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
 
 				}
 				else

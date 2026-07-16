@@ -1,19 +1,26 @@
 {
-    "extends": "../../tsconfig.base.json",
     "compilerOptions": {
+        "baseUrl": "../..",
+        "paths": {
+            "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
+            "@dotcms/dotcms-models/*": ["libs/dotcms-models/src/*"]
+        },
         "allowSyntheticDefaultImports": true,
         "allowUnreachableCode": false,
         "declaration": false,
+        "esModuleInterop": true,
         "experimentalDecorators": true,
-        "lib": ["dom", "es2017"],
+        "lib": ["dom", "es2015"],
         "moduleResolution": "node",
         "module": "esnext",
         "target": "es2017",
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "jsx": "react",
-        "jsxFactory": "h"
+        "jsxFactory": "h",
+        "types": ["node"],
+        "skipLibCheck": true
     },
-    "include": ["src"],
-    "exclude": ["**/*.stories.ts", "**/*.stories.js"]
+    "exclude": ["**/*.spec.ts", "**/*.spec.tsx", "**/*.e2e.ts", "**/*.e2e.tsx"],
+    "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "stencil-types.d.ts"]
 }

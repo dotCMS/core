@@ -1,0 +1,64 @@
+{
+    "name": "mcp-server",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/mcp-server/src",
+    "projectType": "application",
+    "tags": ["skip:build"],
+    "targets": {
+        "build": {
+            "executor": "nx:run-commands",
+            "outputs": ["{workspaceRoot}/dist/apps/mcp-server"],
+            "dependsOn": [
+                {
+                    "target": "generate-spec",
+                    "projects": ["sdk-ai"]
+                }
+            ],
+            "options": {
+                "commands": [
+                    "npx xmcp build",
+                    "cp package.json ../../dist/apps/mcp-server/",
+                    "cp README.md ../../dist/apps/mcp-server/"
+                ],
+                "cwd": "apps/mcp-server",
+                "parallel": false,
+                "forwardAllArgs": false
+            }
+        },
+        "serve": {
+            "executor": "nx:run-commands",
+            "dependsOn": [
+                {
+                    "target": "generate-spec",
+                    "projects": ["sdk-ai"]
+                }
+            ],
+            "options": {
+                "command": "npx xmcp dev",
+                "cwd": "apps/mcp-server"
+            }
+        },
+        "test": {
+            "dependsOn": [
+                {
+                    "target": "generate-spec",
+                    "projects": ["sdk-ai"]
+                }
+            ],
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
+            }
+        },
+        "lint": {
+            "options": {
+                "args": ["src/**/*.ts"]
+            }
+        }
+    }
+}

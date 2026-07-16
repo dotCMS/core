@@ -647,6 +647,10 @@ public class UserModel extends BaseModel {
 	public String getRememberMeToken() {
 		return _skinId;
 	}
+	public void setRememberMeToken(String rememberMeToken) {
+		_skinId = rememberMeToken;
+		setModified(true);
+	}
 
 	public String getSkinId() {
 		return _skinId;

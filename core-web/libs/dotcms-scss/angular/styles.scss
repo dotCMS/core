@@ -1,10 +1,11 @@
 @use "variables" as *;
+@use "../shared/material-symbols-outlined";
 
-@import "forms";
-@import "mixins";
-@import "typography";
-@import "dotcms-theme/utils/theme-variables"; /* temporary */
-@import "dotcms-theme/theme"; /* prime-ng */
+// @import "forms";
+@use "mixins";
+// @import "typography";
+@use "dotcms-theme/utils/theme-variables"; /* temporary */
+// @import "dotcms-theme/theme"; /* prime-ng */
 
 // INCLUDE FONT FACES
 @include assistant-font-face(400, "Regular");
@@ -12,32 +13,6 @@
 @include assistant-font-face(700, "Bold");
 
 @include redhatmono-font-face(400, "Regular");
-
-// MATERIAL DESIGN ICONS
-@font-face {
-    font-family: "Material Icons";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url("/dotAdmin/assets/MaterialIcons-Regular.ttf") format("truetype");
-}
-
-.material-icons {
-    font-family: "Material Icons", $font-default;
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
-    display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    font-feature-settings: "liga";
-    -webkit-font-feature-settings: "liga";
-    -webkit-font-smoothing: antialiased;
-}
 
 :root {
     --border-radius: 0.375rem; // 6px;
@@ -59,38 +34,56 @@ body {
 }
 
 html {
-    color: $black;
-    font-family: $font-default;
+    font-size: 14px;
+    font-family:
+        Inter var,
+        -apple-system,
+        BlinkMacSystemFont,
+        Segoe UI,
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif,
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        Segoe UI Symbol;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    line-height: 1.4rem;
 }
 
-body {
-    background-position: top center;
-    background-repeat: no-repeat;
-    background-size: cover;
-}
+// html {
+//     color: $black;
+//     font-family: $font-default;
+// }
 
-a {
-    color: $color-palette-primary;
+// body {
+//     background-position: top center;
+//     background-repeat: no-repeat;
+//     background-size: cover;
+// }
 
-    &:hover {
-        text-decoration: none;
-    }
+// a {
+//     color: $color-palette-primary;
 
-    &.link-secondary {
-        color: $color-palette-secondary;
-    }
+//     &:hover {
+//         text-decoration: none;
+//     }
 
-    &[actionlink] {
-        color: $color-palette-secondary;
-        font-size: $button-tiny-text-size;
-        text-transform: uppercase;
-        cursor: pointer;
-    }
-}
+//     &.link-secondary {
+//         color: $color-palette-secondary;
+//     }
 
-button {
-    font-family: $font-default;
-}
+//     &[actionlink] {
+//         color: $color-palette-secondary;
+//         font-size: $button-tiny-text-size;
+//         text-transform: uppercase;
+//         cursor: pointer;
+//     }
+// }
+
+// button {
+//     font-family: $font-default;
+// }
 
 /*
 
@@ -113,24 +106,16 @@ However this is for the dragula we use in the angular components the one in the 
     user-select: none !important;
 }
 
-code {
-    color: $color-accessible-text-purple;
-    background-color: $color-accessible-text-purple-bg;
-    padding: $spacing-0 $spacing-1;
-    font-family: $font-code;
-    line-break: anywhere;
-}
-
 .dot-mask {
     background-color: transparent;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
     pointer-events: auto;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: 999;
 }
 
 .cursor-not-allowed {

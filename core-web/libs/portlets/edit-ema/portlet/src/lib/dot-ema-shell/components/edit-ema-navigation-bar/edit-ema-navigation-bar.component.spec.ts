@@ -1,22 +1,69 @@
 import { describe, expect } from '@jest/globals';
-import { byTestId, byText, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
+import { byTestId, createRoutingFactory, SpectatorRouting } from '@openng/spectator/jest';
 
-import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
 
+import { UVEStore } from '../../../store/dot-uve.store';
+
 const messages = {
     'editema.editor.navbar.content': 'Content',
     'editema.editor.navbar.layout': 'Layout',
     'editema.editor.navbar.rules': 'Rules',
     'editema.editor.navbar.experiments': 'Experiments',
-    'editema.editor.navbar.action': 'Action'
+    'editema.editor.navbar.action': 'Action',
+    'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template':
+        'Cannot edit advanced template'
+};
+
+const store = {
+    paletteOpen: () => false,
+    setPaletteOpen: jest.fn(),
+    pageParams: () => ({
+        language_id: '3',
+        personaId: '123'
+    })
 };
 
 const messageServiceMock = new MockDotMessageService(messages);
+
+const MOCK_ITEMS = [
+    {
+        materialIcon: 'description',
+        label: 'editema.editor.navbar.content',
+        id: 'content',
+        href: 'content'
+    },
+    {
+        materialIcon: 'space_dashboard',
+        label: 'editema.editor.navbar.layout',
+        href: 'layout',
+        id: 'layout',
+        isDisabled: true,
+        tooltip: 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+    },
+    {
+        materialIcon: 'rule',
+        label: 'editema.editor.navbar.rules',
+        href: 'rules',
+        id: 'rules'
+    },
+    {
+        materialIcon: 'call_split',
+        label: 'editema.editor.navbar.experiments',
+        href: 'experiments',
+        id: 'experiments'
+    },
+    {
+        materialIcon: 'bar_chart',
+        label: 'editema.editor.navbar.action',
+        id: 'action'
+    }
+];
 
 describe('EditEmaNavigationBarComponent', () => {
     let spectator: SpectatorRouting<EditEmaNavigationBarComponent>;
@@ -24,142 +71,138 @@ describe('EditEmaNavigationBarComponent', () => {
     const createComponent = createRoutingFactory({
         component: EditEmaNavigationBarComponent,
         stubsEnabled: false,
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: UVEStore, useValue: store }
+        ],
         routes: [
-            {
-                path: 'content',
-                component: EditEmaNavigationBarComponent
-            },
-            {
-                path: 'layout',
-                component: EditEmaNavigationBarComponent
-            },
-            {
-                path: 'rules',
-                component: EditEmaNavigationBarComponent
-            },
-            {
-                path: 'experiments',
-                component: EditEmaNavigationBarComponent
-            }
+            { path: 'content', component: EditEmaNavigationBarComponent },
+            { path: 'layout', component: EditEmaNavigationBarComponent },
+            { path: 'rules', component: EditEmaNavigationBarComponent },
+            { path: 'experiments', component: EditEmaNavigationBarComponent }
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                items: [
-                    {
-                        icon: 'pi-file',
-                        label: 'editema.editor.navbar.content',
-                        id: 'content',
-                        href: 'content'
-                    },
-                    {
-                        icon: 'pi-table',
-                        label: 'editema.editor.navbar.layout',
-                        href: 'layout',
-                        id: 'layout',
-                        isDisabled: true
-                    },
-                    {
-                        icon: 'pi-sliders-h',
-                        label: 'editema.editor.navbar.rules',
-                        href: 'rules',
-                        id: 'rules'
-                    },
-                    {
-                        iconURL: 'assets/images/experiments.svg',
-                        label: 'editema.editor.navbar.experiments',
-                        href: 'experiments',
-                        id: 'experiments'
-                    },
-                    {
-                        icon: 'pi-sliders-h',
-                        label: 'editema.editor.navbar.action',
-                        id: 'action'
-                    }
-                ]
-            }
-        });
+        spectator = createComponent({ props: { items: MOCK_ITEMS } });
     });
 
     describe('DOM', () => {
         describe('Nav Bar', () => {
-            it('should have 5 items', () => {
-                const links = spectator.queryAll(byTestId('nav-bar-item'));
-
-                expect(links.length).toBe(5);
-                expect(links[0].textContent.trim()).toBe('Content');
-                expect(links[1].textContent.trim()).toBe('Layout');
-                expect(links[2].textContent.trim()).toBe('Rules');
-                expect(links[3].textContent.trim()).toBe('Experiments');
-                expect(links[4].textContent.trim()).toBe('Action');
-
-                expect(links[0].getAttribute('ng-reflect-router-link')).toBe('content');
-                expect(links[2].getAttribute('ng-reflect-router-link')).toBe('rules');
-                expect(links[3].getAttribute('ng-reflect-router-link')).toBe('experiments');
-                expect(links[4].getAttribute('ng-reflect-router-link')).toBeNull();
+            it('should render 5 items', () => {
+                const buttons = spectator.queryAll(byTestId('nav-bar-item'));
+                expect(buttons.length).toBe(5);
             });
 
-            it("should be a button if action is defined on last item 'Action'", () => {
-                const actionLink = spectator.query('button[data-testId="nav-bar-item"]');
-
-                expect(actionLink).not.toBeNull();
-            });
-
-            it("should emit action on clicking last item 'Action'", () => {
-                const actionLink = spectator.query(byText('Action'));
-                const mockedAction = jest.spyOn(spectator.component.action, 'emit');
-
-                spectator.click(actionLink);
-
-                expect(mockedAction).toHaveBeenCalledWith('action');
-            });
-
-            describe('NavBar with disabled', () => {
-                it('should render disabled item without router link', () => {
-                    const links = spectator.queryAll(byTestId('nav-bar-item'));
-                    expect(links[1].textContent.trim()).toBe('Layout');
-                    expect(links[1].getAttribute('ng-reflect-router-link')).toBeNull();
-                });
+            it('should have a <nav> with aria-label "Page editor navigation"', () => {
+                const nav = spectator.query('nav');
+                expect(nav.getAttribute('aria-label')).toBe('Page editor navigation');
             });
         });
 
-        describe('item', () => {
-            it('should have Content as selected', () => {
-                const contentButton = spectator.query(byTestId('nav-bar-item'));
+        describe('Navigation', () => {
+            it('should navigate with query params when clicking a link item', () => {
+                const router = spectator.inject(Router);
+                const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
 
-                spectator.click(contentButton);
+                const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
+                const innerButton = contentHost.querySelector('button');
+                spectator.click(innerButton);
 
-                expect(spectator.query(byTestId('nav-bar-item')).classList).toContain(
-                    'edit-ema-nav-bar__item--active'
+                expect(navigateSpy).toHaveBeenCalledWith(
+                    ['edit-page', 'content'],
+                    expect.objectContaining({ queryParams: store.pageParams() })
                 );
             });
 
-            it('should have Layout as disabled', () => {
-                const links = spectator.queryAll(byTestId('nav-bar-item'));
-                expect(links[1].classList).toContain('edit-ema-nav-bar__item--disabled');
+            it('should not navigate when item is disabled', () => {
+                const router = spectator.inject(Router);
+                const navigateSpy = jest.spyOn(router, 'navigate');
+
+                const layoutHost = spectator.queryAll(byTestId('nav-bar-item'))[1];
+                const innerButton = layoutHost.querySelector('button');
+                spectator.click(innerButton);
+
+                expect(navigateSpy).not.toHaveBeenCalled();
             });
 
-            it('should have an icon', () => {
-                expect(spectator.query(byTestId('nav-bar-item-icon'))).not.toBeNull();
+            it('should emit action when clicking an action item (no href)', () => {
+                const emitSpy = jest.spyOn(spectator.component.action, 'emit');
+
+                const actionHost = spectator.queryAll(byTestId('nav-bar-item'))[4];
+                const innerButton = actionHost.querySelector('button');
+                spectator.click(innerButton);
+
+                expect(emitSpy).toHaveBeenCalledWith('action');
+            });
+        });
+
+        describe('Active state', () => {
+            it('should set opacity 1 on the indicator span of the active item after navigation', async () => {
+                await spectator.router.navigate(['content']);
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
+                const indicator = contentHost.parentElement.querySelector('span');
+                expect(indicator.style.opacity).toBe('1');
             });
 
-            it('should have a label', () => {
-                expect(spectator.query(byTestId('nav-bar-item-label'))).not.toBeNull();
+            it('should set opacity 0 on the indicator span of inactive items', () => {
+                const rulesHost = spectator.queryAll(byTestId('nav-bar-item'))[2];
+                const indicator = rulesHost.parentElement.querySelector('span');
+                expect(indicator.style.opacity).toBe('0');
             });
 
-            describe('item without icon', () => {
-                it("should have an image with href 'assets/images/experiments.svg'", () => {
-                    const image = spectator.debugElement.query(
-                        By.css('[data-testId="nav-bar-item-image"]')
-                    );
+            it('should set opacity 0 on the indicator span of action items (no href)', () => {
+                const actionHost = spectator.queryAll(byTestId('nav-bar-item'))[4];
+                const indicator = actionHost.parentElement.querySelector('span');
+                expect(indicator.style.opacity).toBe('0');
+            });
+        });
 
-                    expect(image.nativeElement.getAttribute('href')).toBe(
-                        './assets/edit-ema/assets/images/experiments.svg.svg#assets/images/experiments.svg'
-                    );
+        describe('Disabled state', () => {
+            it('should mark disabled items with aria-disabled="true"', () => {
+                const buttons = spectator.queryAll(byTestId('nav-bar-item'));
+                expect(buttons[1].getAttribute('aria-disabled')).toBe('true');
+            });
+
+            it('should have disabled attribute on the inner button of a disabled item', () => {
+                const layoutHost = spectator.queryAll(byTestId('nav-bar-item'))[1];
+                const innerButton = layoutHost.querySelector('button') as HTMLButtonElement;
+                expect(innerButton.disabled).toBe(true);
+            });
+        });
+
+        describe('Icons', () => {
+            it('should render material icon for each item', () => {
+                const icons = spectator.queryAll(byTestId('nav-bar-item-icon'));
+                expect(icons.length).toBe(5);
+                expect(icons[0].textContent.trim()).toBe('description');
+                expect(icons[1].textContent.trim()).toBe('space_dashboard');
+                expect(icons[2].textContent.trim()).toBe('rule');
+                expect(icons[3].textContent.trim()).toBe('call_split');
+                expect(icons[4].textContent.trim()).toBe('bar_chart');
+            });
+        });
+
+        describe('Accessibility', () => {
+            it('should have aria-label on all interactive elements', () => {
+                const items = spectator.queryAll(byTestId('nav-bar-item'));
+                items.forEach((item) => {
+                    expect(item.getAttribute('aria-label')).toBeTruthy();
                 });
+            });
+
+            it('should show translated label as aria-label', () => {
+                const buttons = spectator.queryAll(byTestId('nav-bar-item'));
+                expect(buttons[0].getAttribute('aria-label')).toBe('Content');
+                expect(buttons[2].getAttribute('aria-label')).toBe('Rules');
+            });
+
+            it('should show item label as aria-label for disabled items', () => {
+                const layoutButton = spectator.queryAll(byTestId('nav-bar-item'))[1];
+                expect(layoutButton.getAttribute('aria-label')).toBe('Layout');
             });
         });
     });

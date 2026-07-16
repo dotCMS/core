@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 /**
  * Custom hook to determine if the current UVE (Universal Visual Editor) mode

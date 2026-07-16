@@ -1,22 +1,44 @@
+// TODO: (migration) this needs refactoring there are two method doing the same, there should not be an exclusive method for pagination.
+
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
+import { defaultIfEmpty, filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     StructureTypeView,
     ContentTypeView,
-    DotCopyContentTypeDialogFormFields
+    DotCopyContentTypeDialogFormFields,
+    DotPagination,
+    DotContentTypePaginationOptions
 } from '@dotcms/dotcms-models';
+import { hasValidValue } from '@dotcms/utils';
+
+/**
+ * Creates HttpParams for content type filtering
+ * @param type Comma-separated string of content types
+ * @param baseParams Optional base HttpParams to append to
+ * @returns HttpParams with type filters added
+ */
+const generateContentTypeFilter = (type: string, baseParams?: HttpParams): HttpParams => {
+    let params = baseParams || new HttpParams();
+
+    if (type && type.length > 0) {
+        const types = type.split(',').filter((t) => t.trim());
+        types.forEach((typeValue) => {
+            params = params.append('type', typeValue.trim());
+        });
+    }
+
+    return params;
+};
 
 @Injectable()
 export class DotContentTypeService {
-    private readonly coreWebService = inject(CoreWebService);
-    private readonly http = inject(HttpClient);
+    readonly #httpClient = inject(HttpClient);
 
     /**
      * Get a content type by id or variable name
@@ -24,29 +46,110 @@ export class DotContentTypeService {
      * @returns Content Type
      */
     getContentType(idOrVar: string): Observable<DotCMSContentType> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/contenttype/id/${idOrVar}`
+        return this.#httpClient
+            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${idOrVar}`)
+            .pipe(
+                take(1),
+                map((data) => data.entity)
+            );
+    }
+
+    /**
+     * Get a content type by id or variable name with render mode.
+     * When an inode is provided, contentlet-specific Velocity variables
+     * ($inode, $identifier, $lang, etc.) will be resolved in custom fields.
+     * @param idOrVar content type's id or variable name
+     * @param inode optional contentlet inode for Velocity variable resolution
+     * @returns Content Type
+     */
+    getContentTypeWithRender(idOrVar: string, inode?: string): Observable<DotCMSContentType> {
+        let params = new HttpParams();
+        if (inode) {
+            params = params.set('inode', inode);
+        }
+
+        return this.#httpClient
+            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/render/id/${idOrVar}`, {
+                params
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((data) => data.entity)
+            );
+    }
+
+    /**
+     * Creates HttpParams for retrieving content types with optional parameters
+     * Only includes parameters that have meaningful values (not empty, null, or undefined)
+     */
+    private getContentTypePaginationParams(
+        options: DotContentTypePaginationOptions = {}
+    ): HttpParams {
+        let params = new HttpParams();
+
+        // Default parameters
+        params = params.set('orderby', 'name');
+        params = params.set('direction', 'ASC');
+        params = params.set('per_page', (options.per_page ?? 40).toString());
+
+        // Add page parameter if provided (defaults to 1 if not specified)
+        if (options.page !== undefined && options.page !== null) {
+            params = params.set('page', options.page.toString());
+        }
+
+        // Add optional parameters if they have meaningful values
+        if (hasValidValue(options.filter)) {
+            params = params.set('filter', options.filter);
+        }
+
+        if (hasValidValue(options.ensure)) {
+            params = params.set('ensure', options.ensure);
+        }
+
+        if (hasValidValue(options.type)) {
+            params = generateContentTypeFilter(options.type, params);
+        }
+
+        return params;
     }
 
     /**
      *Get the content types from the endpoint
      *
-     * @param {*} { filter = '', page = 40, type = '' }
-     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @param options Optional parameters for filtering and pagination
+     * @return {Observable<DotCMSContentType[]>} Observable containing content types info
      * @memberof DotContentTypeService
      */
-    getContentTypes({ filter = '', page = 40, type = '' }): Observable<DotCMSContentType[]> {
-        return this.coreWebService
-            .requestView({
-                url: `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${
-                    type ? `&type=${type}` : ''
-                }`
-            })
-            .pipe(pluck('entity'));
+    getContentTypes(
+        options: DotContentTypePaginationOptions = {}
+    ): Observable<DotCMSContentType[]> {
+        return this.#httpClient
+            .get<{
+                entity: DotCMSContentType[];
+            }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
+            .pipe(map((data) => data.entity));
     }
+
+    /**
+     * Get the content types from the endpoint with pagination
+     *
+     * @param options Optional parameters for filtering and pagination
+     * @return {Observable<{contentTypes: DotCMSContentType[];pagination: DotPagination;}>}
+     * Observable containing content types and pagination info
+     * @memberof DotContentTypeService
+     */
+    getContentTypesWithPagination(options: DotContentTypePaginationOptions = {}): Observable<{
+        contentTypes: DotCMSContentType[];
+        pagination: DotPagination;
+    }> {
+        return this.#httpClient
+            .get<{
+                entity: DotCMSContentType[];
+                pagination: DotPagination;
+            }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
+            .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
+    }
+
     /**
      * Gets all content types excluding the RECENT ones
      *
@@ -55,7 +158,7 @@ export class DotContentTypeService {
     getAllContentTypes(): Observable<StructureTypeView[]> {
         return this.getBaseTypes()
             .pipe(
-                flatMap((structures: StructureTypeView[]) => structures),
+                mergeMap((structures: StructureTypeView[]) => structures),
                 filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
             )
             .pipe(toArray());
@@ -70,9 +173,14 @@ export class DotContentTypeService {
      * @memberof DotContentTypeService
      */
     filterContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
-        return this.coreWebService
-            .requestView({
-                body: {
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+        });
+
+        return this.#httpClient
+            .post<{ entity: DotCMSContentType[] }>(
+                `/api/v1/contenttype/_filter`,
+                {
                     filter: {
                         types: allowedTypes,
                         query: filter
@@ -81,10 +189,9 @@ export class DotContentTypeService {
                     direction: 'ASC',
                     perPage: 40
                 },
-                method: 'POST',
-                url: `/api/v1/contenttype/_filter`
-            })
-            .pipe(pluck('entity'));
+                { headers }
+            )
+            .pipe(map((data) => data.entity));
     }
 
     /**
@@ -96,14 +203,14 @@ export class DotContentTypeService {
      */
     getUrlById(id: string): Observable<string> {
         return this.getBaseTypes().pipe(
-            flatMap((structures: StructureTypeView[]) => structures),
-            pluck('types'),
-            flatMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
+            mergeMap((structures: StructureTypeView[]) => structures),
+            map((x) => x?.types),
+            mergeMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
             filter(
                 (contentTypeView: ContentTypeView) =>
                     contentTypeView.variable.toLocaleLowerCase() === id
             ),
-            pluck('action')
+            map((x) => x?.action)
         );
     }
 
@@ -132,30 +239,49 @@ export class DotContentTypeService {
         variable: string,
         copyFormFields: DotCopyContentTypeDialogFormFields
     ): Observable<DotCMSContentType> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    ...copyFormFields
-                },
-                method: 'POST',
-                url: `/api/v1/contenttype/${variable}/_copy`
-            })
-            .pipe(pluck('entity'));
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+        });
+
+        return this.#httpClient
+            .post<{
+                entity: DotCMSContentType;
+            }>(`/api/v1/contenttype/${variable}/_copy`, copyFormFields, { headers })
+            .pipe(map((data) => data.entity));
     }
 
     /**
      * Get content type by types
      *
-     * @param {string} type
-     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @param {string} type Comma-separated string of content types
+     * @param {number} per_page Number of items per page (default: 100)
+     * @return {Observable<DotCMSContentType[]>} Observable containing content types info
      * @memberof DotContentTypeService
      */
     getByTypes(type: string, per_page = 100): Observable<DotCMSContentType[]> {
-        return this.http
-            .get<{
-                entity: DotCMSContentType[];
-            }>(`/api/v1/contenttype?type=${type}&per_page=${per_page}`)
-            .pipe(pluck('entity'));
+        let params = new HttpParams().set('per_page', per_page.toString());
+        params = generateContentTypeFilter(type, params);
+
+        return this.#httpClient
+            .get<{ entity: DotCMSContentType[] }>('/api/v1/contenttype', { params })
+            .pipe(map((data) => data.entity));
+    }
+
+    /**
+     * Updates a content type by its ID with the provided payload.
+     *
+     * This method allows updating any property of a content type by sending a partial or full payload.
+     * The payload should match the expected structure for the content type update API.
+     *
+     * @param id The unique identifier of the content type to update.
+     * @param payload The data to update the content type with. This can be a partial or full content type object.
+     * @returns Observable<DotCMSContentType> The updated content type.
+     * @memberof DotContentTypeService
+     */
+    updateContentType(id: string, payload: unknown): Observable<DotCMSContentType> {
+        return this.#httpClient
+            .put<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${id}`, payload)
+            .pipe(map((data) => data.entity));
     }
 
     private isRecentContentType(type: StructureTypeView): boolean {
@@ -163,10 +289,8 @@ export class DotContentTypeService {
     }
 
     private getBaseTypes(): Observable<StructureTypeView[]> {
-        return this.coreWebService
-            .requestView({
-                url: 'v1/contenttype/basetypes'
-            })
-            .pipe(pluck('entity'));
+        return this.#httpClient
+            .get<{ entity: StructureTypeView[] }>('/api/v1/contenttype/basetypes')
+            .pipe(map((data) => data.entity));
     }
 }

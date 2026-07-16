@@ -4,7 +4,9 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -15,10 +17,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
+import com.liferay.util.Xss;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,9 +46,9 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     private final Function<Host,String> analyticsKeyFunction;
 
     public AnalyticsWebAPIImpl() {
-        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)), // injection turn on by default
+        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, false)), // injection turn on by default
                 WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
-                APILocator::systemUser, currentHost->ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost));
+                APILocator::systemUser, currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
     }
 
     public AnalyticsWebAPIImpl(final AtomicBoolean isAutoInjectTurnedOn,
@@ -85,11 +90,12 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
      */
     private boolean anySecrets (final Host host) {
 
-        return   Try.of(
-                        () ->
-                                this.appsAPI.getSecrets(
-                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
-                .getOrElseGet(e -> false);
+        return Try.of(() -> this.appsAPI.getSecrets(
+                        ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
+                .getOrElseGet(e -> {
+                    Logger.warn(this, "Error getting analytics secrets. Please check that the App Content Analytics is configured: " + e.getMessage() + " for the site: " + host.getHostname(), e);
+                    return false;
+                });
     }
 
     @Override
@@ -110,18 +116,37 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     /**
      * Return the Analytics Js Code to inject
      *
+     * Replaces template placeholders:
+     * - ${siteAuth}: Analytics site key from the current host → data-analytics-auth
+     * - ${debug}: Debug mode flag (default: false) → data-analytics-debug
+     * - ${autoPageView}: Auto page view tracking flag (default: true) → data-analytics-auto-page-view
+     *
      * @param currentHost Host to use the {@link com.dotcms.analytics.app.AnalyticsApp}
      * @param request To get the Domain name
-     * @return
+     * @return The processed Analytics JS code with placeholders replaced
      */
     private String getJSCode(final Host currentHost, final HttpServletRequest request) {
 
         try {
 
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
+            final Map<String, Secret> secrets = ContentAnalyticsUtil.getAppSecrets(currentHost);
 
-            Map.of("${jitsu_key}", this.analyticsKeyFunction.apply(currentHost))
-                    .forEach((key, value) -> {
+            final Function<String, String> getSecret = (key) -> {
+                final Secret secret = secrets.get(key);
+                return (secret != null) ? secret.getString() : StringPool.BLANK;
+            };
+
+            final Map<String, String> placeholders = new HashMap<>();
+            // Escape user-provided values to prevent XSS attacks
+            placeholders.put("${siteAuth}", Xss.escapeHTMLAttrib(getSecret.apply("siteAuth")));
+            placeholders.put("${debug}", getSecret.apply("debug"));
+            placeholders.put("${autoPageView}", getSecret.apply("autoPageView"));
+            placeholders.put("${contentImpression}", getSecret.apply("contentImpression"));
+            placeholders.put("${contentClick}", getSecret.apply("contentClick"));
+            placeholders.put("${advancedConfig}", Xss.escapeHTMLAttrib(getSecret.apply("advancedConfig")));
+
+            placeholders.forEach((key, value) -> {
 
                 int start;
                 while ((start = builder.indexOf(key)) != -1) {

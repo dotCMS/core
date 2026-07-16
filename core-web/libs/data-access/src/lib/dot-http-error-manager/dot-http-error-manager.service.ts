@@ -1,9 +1,9 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
-import { HttpCode, LoginService } from '@dotcms/dotcms-js';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
@@ -15,7 +15,6 @@ export interface DotHttpErrorHandled {
     redirected: boolean;
     status: HttpCode;
 }
-
 /**
  * Handle the UI for http errors messages
  *
@@ -24,16 +23,15 @@ export interface DotHttpErrorHandled {
  */
 @Injectable()
 export class DotHttpErrorManagerService {
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotMessageService = inject(DotMessageService);
+    private dotRouterService = inject(DotRouterService);
+
     private readonly errorHandlers?: Record<HttpCode, (response?: HttpErrorResponse) => boolean>;
     private _unobtrusive = false;
 
-    constructor(
-        private dotDialogService: DotAlertConfirmService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotMessageService: DotMessageService,
-        private loginService: LoginService,
-        private dotRouterService: DotRouterService
-    ) {
+    constructor() {
         if (!this.errorHandlers) {
             this.errorHandlers = {
                 [HttpCode.NOT_FOUND]: this.handleNotFound.bind(this),
@@ -78,7 +76,7 @@ export class DotHttpErrorManagerService {
             ? this.isLicenseError(response)
                 ? this.handleLicense()
                 : this.handleForbidden()
-            : (this.errorHandlers?.[code as HttpCode](response) ?? false);
+            : (this.errorHandlers?.[code as HttpCode]?.(response) ?? false);
     }
 
     private contentletIsForbidden(error: string): boolean {
@@ -177,15 +175,9 @@ export class DotHttpErrorManagerService {
     }
 
     private handleUnathorized(): boolean {
-        if (this.loginService.auth.user) {
-            this.handleForbidden();
-        } else {
-            this.dotRouterService.goToLogin();
+        this.dotRouterService.goToLogin();
 
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     /**

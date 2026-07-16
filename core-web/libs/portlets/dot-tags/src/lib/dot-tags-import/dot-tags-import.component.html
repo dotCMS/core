@@ -1,0 +1,91 @@
+<div class="flex h-full flex-col">
+    @if (errorMessage()) {
+        <p-message
+            severity="error"
+            icon="pi pi-times-circle"
+            class="-mx-6 mb-4"
+            [pt]="{ root: { class: '!rounded-none' } }"
+            data-testid="tag-import-error">
+            {{ errorMessage() }}
+        </p-message>
+    }
+
+    <p class="mb-4 text-lg">{{ 'tags.import.instructions' | dm }}</p>
+
+    <!-- File Upload -->
+    <div class="min-h-0 flex-1">
+        <p-fileupload
+            #fileUpload
+            mode="advanced"
+            chooseIcon="pi pi-upload"
+            [showUploadButton]="false"
+            [showCancelButton]="false"
+            [multiple]="false"
+            [auto]="false"
+            [customUpload]="true"
+            accept=".csv,text/csv"
+            styleClass="w-full h-full"
+            (onSelect)="onFileSelect($event)"
+            (onClear)="onFileClear()"
+            [pt]="{
+                header: { style: { padding: '0', border: '0' } },
+                root: { class: 'h-full flex flex-col' },
+                content: { class: 'flex-1 min-h-0' }
+            }"
+            data-testid="tag-import-file">
+            <ng-template #header />
+            <ng-template #content>
+                <div
+                    class="group flex size-full cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border border-surface-200 bg-surface-100 p-8 text-center"
+                    (click)="fileUpload.choose()">
+                    <div
+                        class="flex size-24 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
+                        <i class="pi pi-upload text-4xl!"></i>
+                    </div>
+
+                    <p class="text-2xl font-semibold text-color">
+                        {{ 'tags.import.dropzone.prefix' | dm }}
+                        <span class="text-primary hover:underline">
+                            {{ 'tags.import.choose-file' | dm }}
+                        </span>
+                        {{ 'tags.import.dropzone.suffix' | dm }}
+                    </p>
+
+                    <div class="text-color-secondary flex items-center gap-2 text-base">
+                        <span>{{ 'tags.import.csv-support' | dm }}</span>
+                        <i
+                            class="pi pi-info-circle"
+                            [pTooltip]="tooltipMessage()"
+                            tooltipPosition="right"></i>
+                    </div>
+
+                    @if (selectedFile(); as file) {
+                        <span class="text-sm font-medium text-color">{{ file.name }}</span>
+                    }
+                </div>
+            </ng-template>
+        </p-fileupload>
+    </div>
+
+    <!-- Actions -->
+    <div class="mt-4 flex justify-end gap-2">
+        <p-button
+            [label]="'tags.cancel' | dm"
+            text
+            [disabled]="importing()"
+            (onClick)="close()"
+            data-testid="tag-import-cancel-btn" />
+        <p-button
+            [label]="'tags.import.download-template' | dm"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="downloadTemplate()"
+            data-testid="tag-import-download-btn" />
+        <p-button
+            [label]="'tags.import' | dm"
+            [disabled]="!selectedFile()"
+            [loading]="importing()"
+            (onClick)="importFile()"
+            data-testid="tag-import-submit-btn" />
+    </div>
+</div>

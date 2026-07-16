@@ -132,7 +132,48 @@ export const MD_SYNTAX = ['# ', '## ', '### ', '- ', '* ', '1. ', '```', '>['];
  *
  * This array can be used to identify or manipulate these specific HTML elements in a web development context.
  */
-export const HTML_TAGS = ['<div', '<p>', '<span', '<a ', '<img', '<ul', '<li', '<table'];
+export const HTML_TAGS = [
+    '<div',
+    '<p>',
+    '<span',
+    '<a ',
+    '<img',
+    '<ul',
+    '<ol',
+    '<li',
+    '<table',
+    '<tr',
+    '<td',
+    '<th',
+    '<thead',
+    '<tbody',
+    '<h1',
+    '<h2',
+    '<h3',
+    '<h4',
+    '<h5',
+    '<h6',
+    '<br',
+    '<hr',
+    '<strong',
+    '<em',
+    '<b>',
+    '<i>',
+    '<pre',
+    '<code',
+    '<blockquote',
+    '<section',
+    '<article',
+    '<header',
+    '<footer',
+    '<nav',
+    '<form',
+    '<input',
+    '<button',
+    '<textarea',
+    '<select',
+    '<option'
+];
 
 /**
  * An array of common JavaScript keywords and operators.

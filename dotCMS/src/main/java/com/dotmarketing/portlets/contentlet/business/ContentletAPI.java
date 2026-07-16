@@ -1,7 +1,10 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.IndexContentletScroll;
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -30,6 +33,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -48,6 +52,8 @@ import java.util.Set;
  * @since Mar 22, 2012
  *
  */
+// ES-DECOMMISSION: Public interface exposes ESSearchResults and SearchCriteria in deprecated method
+// signatures. Remove esSearch, esSearchRaw after R7 dotEvergreen cutover (~Aug 18).
 public interface ContentletAPI {
 
 	/**
@@ -81,15 +87,21 @@ public interface ContentletAPI {
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
 	/**
-	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
-	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
-	 * of content.  Doesn't respect permissions.
+	 * Retrieves contentlets from the database. Doesn't respect permissions.
+	 *
+	 * <p><strong>DO NOT USE THIS METHOD.</strong></p>
+	 *
+	 * <p>This method is deprecated and should not be used in production code as it may cause
+	 * severe performance issues. For test code, use {@code ContentletDataGen.findAllContent(offset, limit)}
+	 * from the test module instead, which provides the same functionality in a test-appropriate context.</p>
 	 *
 	 * @param offset can be 0 if no offset
-	 * @param limit can be 0 of no limit
-	 * @return List<Contentlet> list of contentlets
-	 * @throws DotDataException
+	 * @param limit can be 0 if no limit
+	 * @return List of contentlets
+	 * @throws DotDataException if a database error occurs
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
 	 */
+	@Deprecated
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException;
 	
 	/**
@@ -276,7 +288,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
+    Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
 
 	/**
 	 * Retrieves a contentlet from the database by its identifier, the working version and any {@link com.dotcms.variant.model.Variant}.
@@ -397,6 +409,39 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Creates an ElasticSearch Scroll API query with proper permissions applied.
+	 * <p>
+	 * This method should be used instead of directly accessing the factory when you need
+	 * scroll functionality for large result sets. It ensures that permissions are properly
+	 * applied to the query before creating the scroll context.
+	 * </p>
+	 * <p>
+	 * <strong>IMPORTANT:</strong> Always use try-with-resources to ensure the scroll
+	 * context is properly cleaned up:
+	 * </p>
+	 * <pre>
+	 * try (ESContentletScroll scroll = contentletAPI.createScrollQuery(query, user, false, 100, "title asc")) {
+	 *     List&lt;ContentletSearch&gt; batch;
+	 *     while ((batch = scroll.nextBatch()) != null && !batch.isEmpty()) {
+	 *         // process batch
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param luceneQuery The base lucene query (permissions will be added automatically)
+	 * @param user The user making the request (required if not respecting frontend roles)
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize Number of results to retrieve per batch
+	 * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+	 * @return ESContentletScroll instance for iterating through results
+	 * @throws DotSecurityException If user is null and not respecting frontend roles
+	 * @throws DotDataException If there's an error creating the scroll query
+	 */
+	public IndexContentletScroll createScrollQuery(
+			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy)
+			throws DotSecurityException, DotDataException;
 
 	/**
 	 *
@@ -929,18 +974,25 @@ public interface ContentletAPI {
 	 * @throws DotStateException 
 	 */
 	public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException,DotContentletStateException, DotContentletStateException, DotStateException;
-	
-	/**
-	 * Publishes a piece of content. 
-	 * @param contentlets
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotContentletStateException
-	 * @throws DotStateException
-	 */
-	public void publish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException,DotContentletStateException, DotStateException;
+
+    /**
+     * Publishes the list of specified Contentlets.
+     *
+     * @param contentlets          The list of {@link Contentlet} objects to publish.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If front-end Roles for the specified User must be validated, set
+     *                             this to {@code true}.
+     *
+     * @throws DotSecurityException        The specified user does not have the required permissions
+     *                                     to perform this action.
+     * @throws DotDataException            An error occurred when interacting with the database.
+     * @throws DotContentletStateException The current status of a Contentlet is causing it to not
+     *                                     be able to be published.
+     * @throws DotStateException           The current status of a Contentlet is causing it to not
+     *                                     be able to be published.
+     */
+    void publish(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
 	/**
 	 * This method unpublishes the given contentlet
@@ -1894,6 +1946,21 @@ public interface ContentletAPI {
 
 	public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
 
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param searchCriteria The {@link SearchCriteria} object that allows you to filter the data
+     *                       being pulled.
+     *
+     * @return The list of contentlet versions matching the specified criteria.
+     *
+     * @throws DotSecurityException The specified user does not have permission to retrieve the
+     *                              versions.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
+    List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
 	 * @param identifier
@@ -1975,6 +2042,15 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
 	 */
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException;
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
+	 */
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException;
 	
 	/**
 	 * Use to validate your contentlet.
@@ -1993,11 +2069,40 @@ public interface ContentletAPI {
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
+	@WrapInTransaction
 	public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException;
 
 	@CloseDBIfOpened
+	@WrapInTransaction
 	void validateContentletNoRels(Contentlet contentlet,
 			List<Category> cats) throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param contentRelationships Contentlet's relationships
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@WrapInTransaction
+	void validateContentlet(Contentlet contentlet,
+									 ContentletRelationships contentRelationships,List<Category> cats, boolean preview )
+			throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@CloseDBIfOpened
+	@WrapInTransaction
+	void validateContentletNoRels(Contentlet contentlet,
+								  List<Category> cats, boolean preview) throws DotContentletValidationException;
 
 	/**
 	 * Use to validate your contentlet.
@@ -2008,7 +2113,9 @@ public interface ContentletAPI {
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats) throws DotContentletValidationException;
-	
+
+
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field
@@ -2412,31 +2519,59 @@ public interface ContentletAPI {
 	void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
+	 * Executes a raw JSON search query and returns a vendor-neutral response without loading contentlets.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
+	 *
+	 * @param query the JSON search query
+	 * @param live {@code true} to query the live index
+	 * @param user the user performing the action
+	 * @param respectFrontendRoles whether front-end roles should be applied
+	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResponse}
+	 * @see #esSearchRaw(String, boolean, User, boolean)
+	 */
+	default com.dotcms.content.index.domain.ContentSearchResponse searchRaw(
+			final String query, final boolean live, final User user,
+			final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		return com.dotmarketing.business.APILocator.getSearchAPI()
+				.searchRaw(query, live, user, respectFrontendRoles);
+	}
+
+	/**
+	 * Executes a JSON search query, loads the matching contentlets from the DB and returns them.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
+	 *
+	 * @param query the JSON search query
+	 * @param live {@code true} to query the live index
+	 * @param user the user performing the action
+	 * @param respectFrontendRoles whether front-end roles should be applied
+	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResults}
+	 * @see #esSearch(String, boolean, User, boolean)
+	 */
+	default com.dotcms.content.index.domain.ContentSearchResults<com.dotmarketing.portlets.contentlet.model.Contentlet> search(
+			final String query, final boolean live, final User user,
+			final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		return com.dotmarketing.business.APILocator.getSearchAPI()
+				.search(query, live, user, respectFrontendRoles);
+	}
+
+	/**
 	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @param esQuery
-	 * @param live
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
+	@Deprecated(forRemoval = true)
 	public org.elasticsearch.action.search.SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Executes a given Elastic Search query.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @param esQuery
-	 * @param live
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @deprecated Use {@link #search(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
+	@Deprecated(forRemoval = true)
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
@@ -2461,6 +2596,21 @@ public interface ContentletAPI {
 	 */
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
+
+	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If the content is not found in the language passed in
+	 * then the method will try to "fallback" and return the content in the default language based on the properties set in the dotmarketing-config.properties
+	 * @param identifier
+	 * @param live
+	 * @param incomingLangId
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param variantName
+	 * @return
+	 * @throws DotSecurityException
+	 */
+	Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+															  boolean respectFrontendRoles, String variantName);
 
 	/**
 	 * This will find the live/working version of a piece of content for the language passed in.  If

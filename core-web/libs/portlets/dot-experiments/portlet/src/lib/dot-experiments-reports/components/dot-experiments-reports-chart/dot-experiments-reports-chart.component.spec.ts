@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { MockModule } from 'ng-mocks';
 
 import { ChartModule, UIChart } from 'primeng/chart';
@@ -69,7 +69,8 @@ describe('DotExperimentsReportsChartComponent', () => {
 
     it('should show the loading state', () => {
         spectator.setInput({
-            isLoading: true
+            isLoading: true,
+            data: DAILY_CHARTJS_DATA_MOCK_WITH_DATA
         });
         expect(spectator.query(byTestId('loading-skeleton'))).toExist();
     });

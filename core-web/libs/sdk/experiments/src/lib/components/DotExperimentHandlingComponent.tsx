@@ -1,9 +1,9 @@
-import { DotcmsPageProps } from '@dotcms/react';
+import { DotCMSLayoutBodyProps } from '@dotcms/react';
 
 import { useExperimentVariant } from '../hooks/useExperimentVariant';
 
-interface ExperimentHandlingProps extends DotcmsPageProps {
-    WrappedComponent: React.ComponentType<DotcmsPageProps>;
+interface ExperimentHandlingProps extends DotCMSLayoutBodyProps {
+    WrappedComponent: React.ComponentType<DotCMSLayoutBodyProps>;
 }
 
 /**
@@ -24,7 +24,7 @@ export const DotExperimentHandlingComponent: React.FC<ExperimentHandlingProps> =
     WrappedComponent,
     ...props
 }) => {
-    const { shouldWaitForVariant } = useExperimentVariant(props.pageContext.pageAsset);
+    const { shouldWaitForVariant } = useExperimentVariant(props.page);
 
     if (shouldWaitForVariant) {
         return (

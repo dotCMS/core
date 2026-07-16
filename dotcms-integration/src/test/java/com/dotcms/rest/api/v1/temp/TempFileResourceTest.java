@@ -47,6 +47,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -170,6 +171,27 @@ public class TempFileResourceTest {
         assertTrue(dotTempFile.file.getName().equals(fileName));
         final Optional<DotTempFile> dotTempFileOpt = APILocator.getTempFileAPI().getTempFile(request, dotTempFile.id);
         assertTrue(dotTempFileOpt.get().length() > 0);
+    }
+
+    @Test
+    public void test_temp_resource_upload_preserves_unicode_filename() throws IOException {
+        resetTempResourceConfig();
+        Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+
+        // Jersey decodes multipart Content-Disposition filenames as ISO-8859-1.
+        // Simulate what a macOS browser sends: NFD UTF-8 bytes re-interpreted as ISO-8859-1.
+        // The expected result is NFC (canonical composition); input is deliberately NFD so that
+        // the Normalizer.normalize(…, NFC) step in sanitizeFileName is exercised.
+        final String expectedFileName = "Test_document_``$$#ääöüÄÖÜ.txt";
+        final String nfdFileName = Normalizer.normalize(expectedFileName, Normalizer.Form.NFD);
+        final String jerseyEncodedName = new String(
+                nfdFileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+
+        final HttpServletRequest request = mockRequest();
+        final DotTempFile dotTempFile = saveTempFile_usingTempResource(jerseyEncodedName, request);
+
+        assertEquals("Unicode characters must be preserved in the uploaded filename",
+                expectedFileName, dotTempFile.file.getName());
     }
 
     @Test
@@ -539,7 +561,7 @@ public class TempFileResourceTest {
     public void test_TempResource_uploadFileByURL_success() {
         HttpServletRequest request = mockRequest();
         final String fileName = "test.png";
-        final String url = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg";
+        final String url = "https://dotcms-storage.b-cdn.net/Bocas2.jpg";
 
         final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url, fileName, null);
 

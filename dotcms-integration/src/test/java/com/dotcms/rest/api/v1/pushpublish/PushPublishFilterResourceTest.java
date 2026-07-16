@@ -14,7 +14,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.collect.ImmutableMap;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,7 +67,7 @@ public class PushPublishFilterResourceTest {
 
         if(authorization) {
             request.setHeader("Authorization",
-                    "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                    "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         }
 

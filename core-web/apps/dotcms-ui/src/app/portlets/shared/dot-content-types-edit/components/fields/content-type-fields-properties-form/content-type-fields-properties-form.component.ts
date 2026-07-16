@@ -1,65 +1,131 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
-    EventEmitter,
-    Input,
+    ElementRef,
     OnChanges,
     OnDestroy,
     OnInit,
-    Output,
     SimpleChanges,
-    ViewChild
+    computed,
+    inject,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    FeaturedFlags,
+    NEW_RENDER_MODE_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
-    styleUrls: ['./content-type-fields-properties-form.component.scss'],
-    templateUrl: './content-type-fields-properties-form.component.html'
+    templateUrl: './content-type-fields-properties-form.component.html',
+    standalone: false,
+    host: {
+        class: 'block'
+    }
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
-    @Output() saveField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
+    /** Form builder instance for creating reactive forms */
+    private fb = inject(UntypedFormBuilder);
 
-    @Output() valid: EventEmitter<boolean> = new EventEmitter();
+    /** Service for managing field properties */
+    private fieldPropertyService = inject(FieldPropertyService);
 
-    @Input() formFieldData: DotCMSContentTypeField;
+    /** Change detector reference for manual change detection */
+    private cdr = inject(ChangeDetectorRef);
 
-    @Input() contentType: DotCMSContentType;
+    /** Event emitter for saving field properties */
+    readonly saveField = output<DotCMSContentTypeField>();
 
-    @ViewChild('properties') propertiesContainer;
+    /** Event emitter for form validation status */
+    readonly valid = output<boolean>();
 
+    /** Input data for the form field being edited */
+    readonly $formFieldData = input<DotCMSContentTypeField>(undefined, { alias: 'formFieldData' });
+
+    /** Signal containing the content type information */
+    readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
+
+    /** Reference to the properties container element */
+    readonly $propertiesContainer = viewChild<ElementRef>('properties');
+
+    /** Local copy of form field data for mutations */
+    formFieldData: DotCMSContentTypeField;
+
+    /** Reactive form group for field properties */
     form: UntypedFormGroup;
+
+    /** Array of field property names to display */
     fieldProperties: string[] = [];
+
+    /** Array of checkbox field names */
     checkboxFields: string[] = ['indexed', 'listed', 'required', 'searchable', 'unique'];
 
+    /** Original form value used for change detection */
     private originalValue: DotCMSContentTypeField;
+
+    /** Subject for managing component destruction and unsubscribing from observables */
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private fb: UntypedFormBuilder,
-        private fieldPropertyService: FieldPropertyService
-    ) {}
+    /** Computed signal indicating if the new content editor is enabled */
+    $isNewContentEditorEnabled = computed(() => {
+        const contentType = this.$contentType();
+        return contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
+    });
 
+    /**
+     * Angular lifecycle hook called when input properties change
+     *
+     * @param changes - Object containing changed properties
+     */
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.formFieldData?.currentValue && this.formFieldData) {
-            this.destroy();
-
-            setTimeout(this.init.bind(this), 0);
+        if (
+            changes.$formFieldData?.currentValue &&
+            changes.$formFieldData.currentValue !== this.formFieldData
+        ) {
+            this.formFieldData = this.$formFieldData();
+            if (this.formFieldData) {
+                this.destroy();
+                this.init();
+                this.cdr.detectChanges();
+            }
         }
     }
 
+    /**
+     * Angular lifecycle hook called after component initialization
+     */
     ngOnInit(): void {
-        this.initFormGroup();
+        this.formFieldData = this.$formFieldData();
+        if (this.formFieldData) {
+            // ngOnChanges runs before ngOnInit when formFieldData is provided up-front,
+            // so the form may already be initialized. Re-running init() here would create
+            // a second FormGroup, leaving the rendered inputs bound to the old one while
+            // change detection tracks the new one (Save never enables). Only init if needed.
+            if (!this.form) {
+                this.init();
+            }
+        } else {
+            this.initFormGroup();
+        }
     }
 
+    /**
+     * Angular lifecycle hook called before component destruction
+     */
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
@@ -67,32 +133,66 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     /**
      * Emit the form data to be saved
-     *
-     * @memberof ContentTypeFieldsPropertiesFormComponent
+     * Validates the form and marks all fields as touched if invalid
      */
     saveFieldProperties(): void {
         if (this.form.valid) {
-            this.saveField.emit(this.form.value);
+            const transformedValue = this.transformFormValue(this.form.value);
+            this.saveField.emit(transformedValue);
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
 
-        this.valid.next(false);
+        this.valid.emit(false);
     }
 
+    /**
+     * Transform form value before saving
+     * Handles special case for custom fields with new render mode variable
+     *
+     * @param value - The form value to transform
+     */
+    transformFormValue(
+        value: Partial<DotCMSContentTypeField> & { newRenderMode?: string }
+    ): DotCMSContentTypeField {
+        if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
+            const existingVariables = this.formFieldData.fieldVariables || [];
+            const otherVariables = existingVariables.filter(
+                (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY
+            );
+            const existingNewRenderMode = existingVariables.find(
+                (v) => v.key === NEW_RENDER_MODE_VARIABLE_KEY
+            );
+
+            const newFormValue = {
+                ...value,
+                fieldVariables: [
+                    ...otherVariables,
+                    {
+                        ...(existingNewRenderMode || {}), // Preserve existing properties (id, etc.)
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value:
+                            value.newRenderMode || this.fieldPropertyService.$newRenderModeDefault()
+                    }
+                ]
+            };
+            return newFormValue as DotCMSContentTypeField;
+        }
+        return value as DotCMSContentTypeField;
+    }
+
+    /**
+     * Clean up component state and remove dynamically created property components
+     */
     destroy(): void {
         this.fieldProperties = [];
-
-        if (this.propertiesContainer) {
-            const propertiesContainer = this.propertiesContainer.nativeElement;
-            propertiesContainer.childNodes.forEach((child) => {
-                if (child.tagName) {
-                    propertiesContainer.removeChild(child);
-                }
-            });
-        }
     }
 
+    /**
+     * Initialize the form with field properties
+     * Updates form field data, retrieves properties, and initializes form group
+     */
     private init(): void {
         this.updateFormFieldData();
 
@@ -104,17 +204,28 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.sortProperties(properties);
     }
 
+    /**
+     * Initialize the reactive form group with field properties
+     *
+     * @param [properties] - Optional array of property names to include in the form
+     */
     private initFormGroup(properties?: string[]): void {
         const formFields = {};
 
         if (properties) {
             properties
                 .filter((property) => this.fieldPropertyService.existsComponent(property))
+                .filter((property) => {
+                    if (property === NEW_RENDER_MODE_VARIABLE_KEY) {
+                        return this.$isNewContentEditorEnabled();
+                    }
+                    return true;
+                })
                 .forEach((property) => {
                     formFields[property] = [
                         {
                             value:
-                                this.formFieldData[property] ||
+                                this.fieldPropertyService.getValue(this.formFieldData, property) ||
                                 this.fieldPropertyService.getDefaultValue(
                                     property,
                                     this.formFieldData.clazz
@@ -134,31 +245,60 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.notifyFormChanges();
     }
 
+    /**
+     * Subscribe to form value changes and emit validation status
+     * Tracks original value for change detection
+     */
     private notifyFormChanges() {
         this.originalValue = this.form.value;
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.valid.next(this.isFormValueUpdated() && this.form.valid);
+            this.valid.emit(this.isFormValueUpdated() && this.form.valid);
         });
     }
 
+    /**
+     * Check if the form value has been updated from the original value
+     *
+     * @returns True if the form value differs from the original value
+     */
     private isFormValueUpdated(): boolean {
         return !isEqual(this.form.value, this.originalValue);
     }
 
+    /**
+     * Check if a property should be disabled in edit mode
+     *
+     * @param property - The property name to check
+     * @returns True if the property should be disabled
+     */
     private isPropertyDisabled(property: string): boolean {
         return this.fieldPropertyService.isDisabledInEditMode(property);
     }
 
+    /**
+     * Sort and filter properties based on component availability and feature flags
+     *
+     * @param properties - Array of property names to sort
+     */
     private sortProperties(properties: string[]): void {
         this.fieldProperties = properties
             .filter((property) => this.fieldPropertyService.existsComponent(property))
+            .filter((property) => {
+                if (property === NEW_RENDER_MODE_VARIABLE_KEY) {
+                    return this.$isNewContentEditorEnabled();
+                }
+                return true;
+            })
             .sort(
-                (property1, proeprty2) =>
+                (property1, property2) =>
                     this.fieldPropertyService.getOrder(property1) -
-                    this.fieldPropertyService.getOrder(proeprty2)
+                    this.fieldPropertyService.getOrder(property2)
             );
     }
 
+    /**
+     * Set up automatic checkbox value handling for searchable, listed, and unique fields
+     */
     private setAutoCheckValues(): void {
         [this.form.get('searchable'), this.form.get('listed'), this.form.get('unique')]
             .filter((checkbox) => !!checkbox)
@@ -167,6 +307,11 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             });
     }
 
+    /**
+     * Handle checkbox value changes and set up value change subscriptions
+     *
+     * @param checkbox - The checkbox form control to handle
+     */
     private handleCheckValues(checkbox: AbstractControl): void {
         if (checkbox.value) {
             if (checkbox === this.form.get('unique')) {
@@ -183,6 +328,11 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         });
     }
 
+    /**
+     * Set the indexed checkbox value and handle its disabled state
+     *
+     * @param propertyValue - The value to set for the indexed property
+     */
     private setIndexedValueChecked(propertyValue: boolean): void {
         if (this.form.get('indexed') && propertyValue) {
             this.form.get('indexed').setValue(propertyValue);
@@ -191,6 +341,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.handleDisabledIndexed(propertyValue);
     }
 
+    /**
+     * Handle unique checkbox value changes
+     * Sets indexed and required values, and manages their disabled states
+     *
+     * @param propertyValue - The value of the unique checkbox
+     */
     private handleUniqueValuesChecked(propertyValue: boolean): void {
         this.setIndexedValueChecked(propertyValue);
 
@@ -202,18 +358,31 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.handleDisabledIndexed(true);
     }
 
+    /**
+     * Enable or disable the indexed form control
+     *
+     * @param disable - True to disable, false to enable
+     */
     private handleDisabledIndexed(disable: boolean): void {
         if (this.form.get('indexed')) {
             disable ? this.form.get('indexed').disable() : this.form.get('indexed').enable();
         }
     }
 
+    /**
+     * Enable or disable the required form control
+     *
+     * @param disable - True to disable, false to enable
+     */
     private handleDisabledRequired(disable: boolean): void {
         if (this.form.get('required')) {
             disable ? this.form.get('required').disable() : this.form.get('required').enable();
         }
     }
 
+    /**
+     * Update form field data by removing the name property for new fields
+     */
     private updateFormFieldData() {
         if (!this.formFieldData.id) {
             delete this.formFieldData['name'];

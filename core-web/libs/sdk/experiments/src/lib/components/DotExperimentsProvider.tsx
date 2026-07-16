@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode, useEffect, useState } from 'react';
 
-import { isInsideEditor } from '@dotcms/client';
+import { getUVEState } from '@dotcms/uve';
 
 import DotExperimentsContext from '../contexts/DotExperimentsContext';
 import { DotExperiments } from '../dot-experiments';
@@ -13,43 +13,13 @@ interface DotExperimentsProviderProps {
 }
 
 /**
- * `DotExperimentsProvider` is a component that uses React's Context API to provide
- * an instance of `DotExperiments` to all of its descendants.
+ * Internal React context provider used by `withExperiments`.
  *
+ * @internal Do not import or use directly — use `withExperiments` from the package entry point.
  *
- * @component
- * @example
- * ```jsx
- *
- * // Your application component
- * function App() {
- *
- * // Configuration options could be taken from environment variables or can send you own.
- *  const experimentConfig = {
- *     apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY ,
- *     server: process.env.NEXT_PUBLIC_DOTCMS_HOST ,
- *     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG,
- *     redirectFn: YourRedirectFunction
- *   };
- *
- *   return (
- *     <DotExperimentsProvider config={experimentConfig}>
- *       <Header>
- *           <Navigation items={nav} />
- *         </Header>
- *       <DotcmsLayout  entity={{...}} config={{...}} />
- *     </DotExperimentsProvider>
- *   );
- * }
- * ```
- *
- * @param {object} props - The properties that define the `DotExperimentsProvider`.
- * @param {ReactNode} props.children - The descendants of this provider, which will
- *   have access to the provided `DotExperiments` instance.
- * @param {DotExperimentConfig} props.config - The configuration object for `DotExperiments`.
- *
- * @returns {ReactElement} The provider component, which should wrap the components
- * that need access to the `DotExperiments` instance.
+ * @param props.children - Descendants that need access to the `DotExperiments` instance.
+ * @param props.config - Configuration object for `DotExperiments`.
+ * @returns The provider component.
  */
 export const DotExperimentsProvider = ({
     children,
@@ -62,14 +32,25 @@ export const DotExperimentsProvider = ({
 
     // Initialize the DotExperiments instance
     useEffect(() => {
-        const insideEditor = isInsideEditor();
+        const insideEditor = getUVEState()?.mode;
 
         if (!insideEditor) {
             const dotExperimentsInstance = DotExperiments.getInstance(config);
 
-            dotExperimentsInstance.ready().then(() => {
-                setInstance(dotExperimentsInstance);
-            });
+            dotExperimentsInstance
+                .ready()
+                .catch((error) => {
+                    if (config.debug) {
+                        console.error(
+                            'DotExperimentsProvider: failed to initialize DotExperiments instance.',
+                            error
+                        );
+                    }
+                })
+                .finally(() => {
+                    // Expose the instance even on failure, so consumers stop waiting and render.
+                    setInstance(dotExperimentsInstance);
+                });
         } else {
             if (config.debug) {
                 console.warn(

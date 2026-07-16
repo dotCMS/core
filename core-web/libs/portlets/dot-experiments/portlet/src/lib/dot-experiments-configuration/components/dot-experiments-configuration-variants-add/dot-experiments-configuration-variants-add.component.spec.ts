@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -88,9 +88,10 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
 
         await spectator.fixture.whenStable();
 
-        const submitButton = spectator.query(byTestId('add-variant-button')) as HTMLButtonElement;
+        const submitButtonWrapper = spectator.query(byTestId('add-variant-button'));
+        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
 
-        expect(submitButton.disabled).toEqual(false);
+        expect(submitButton.hasAttribute('disabled')).toBe(false);
         expect(spectator.component.form.valid).toEqual(true);
 
         spectator.click(submitButton);
@@ -112,7 +113,8 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
 
         await spectator.fixture.whenStable();
 
-        const submitButton = spectator.query(byTestId('add-variant-button')) as HTMLButtonElement;
-        expect(submitButton.disabled).toEqual(true);
+        const submitButtonWrapper = spectator.query(byTestId('add-variant-button'));
+        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
+        expect(submitButton.hasAttribute('disabled')).toBe(true);
     });
 });

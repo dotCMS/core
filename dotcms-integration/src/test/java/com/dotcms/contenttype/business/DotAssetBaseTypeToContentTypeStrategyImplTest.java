@@ -24,7 +24,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.util.WebKeys;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -98,7 +98,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

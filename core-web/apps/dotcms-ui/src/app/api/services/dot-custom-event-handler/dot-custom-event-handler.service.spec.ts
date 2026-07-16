@@ -2,41 +2,37 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotPropertiesService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotIframeService,
-    DotGlobalMessageService,
-    DotFormatDateService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -46,15 +42,17 @@ import {
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+
+import { DotCustomEventHandlerService } from './dot-custom-event-handler.service';
+
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotMenuService } from '../dot-menu.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;
@@ -87,17 +85,13 @@ describe('DotCustomEventHandlerService', () => {
                 DotRouterService,
                 DotContentletEditorService,
                 PushPublishService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 ApiRoot,
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 UserModel,
                 StringUtils,
-                DotcmsEventsService,
                 LoggerService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 LoggerService,
                 DotCurrentUserService,
@@ -119,9 +113,11 @@ describe('DotCustomEventHandlerService', () => {
                 DotLicenseService,
                 { provide: DotPropertiesService, useValue: dotPropertiesMock },
                 Router,
-                DotContentTypeService
+                DotContentTypeService,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ],
-            imports: [RouterTestingModule, HttpClientTestingModule]
+            imports: [RouterTestingModule]
         });
 
         service = TestBed.inject(DotCustomEventHandlerService);
@@ -151,7 +147,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
-        spyOn(dotLoadingIndicatorService, 'show');
+        jest.spyOn(dotLoadingIndicatorService, 'show');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -175,7 +171,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should create a contentlet', () => {
-        spyOn(dotContentletEditorService, 'create');
+        jest.spyOn(dotContentletEditorService, 'create');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -194,7 +190,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should create a host', () => {
-        spyOn(dotContentletEditorService, 'create');
+        jest.spyOn(dotContentletEditorService, 'create');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -213,7 +209,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should create a contentlet from edit page', () => {
-        spyOn(dotContentletEditorService, 'create');
+        jest.spyOn(dotContentletEditorService, 'create');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -242,6 +238,7 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
+        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledTimes(1);
     });
 
     it('should edit a host', () => {
@@ -256,6 +253,7 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
+        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledTimes(1);
     });
 
     it('should edit a a workflow task', () => {
@@ -270,12 +268,13 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+        expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
     });
 
     it('should set colors in the ui', () => {
-        spyOn(dotUiColorsService, 'setColors');
+        jest.spyOn(dotUiColorsService, 'setColors');
         const fakeHtmlEl = { hello: 'html' };
-        spyOn<any>(document, 'querySelector').and.returnValue(fakeHtmlEl);
+        jest.spyOn<any>(document, 'querySelector').mockReturnValue(fakeHtmlEl);
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -303,7 +302,7 @@ describe('DotCustomEventHandlerService', () => {
             password: '123'
         };
 
-        spyOn(dotGenerateSecurePasswordService, 'open');
+        jest.spyOn(dotGenerateSecurePasswordService, 'open');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -324,7 +323,7 @@ describe('DotCustomEventHandlerService', () => {
             isBundle: false
         };
 
-        spyOn(dotPushPublishDialogService, 'open');
+        jest.spyOn(dotPushPublishDialogService, 'open');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -338,7 +337,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should notify to open download bundle dialog', () => {
-        spyOn(dotDownloadBundleDialogService, 'open');
+        jest.spyOn(dotDownloadBundleDialogService, 'open');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -348,23 +347,33 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotDownloadBundleDialogService.open).toHaveBeenCalledWith('testID');
+        expect(dotDownloadBundleDialogService.open).toHaveBeenCalledTimes(1);
     });
 
     it('should notify to open download bundle dialog', () => {
-        spyOn(dotWorkflowEventHandlerService, 'open');
+        jest.spyOn(dotWorkflowEventHandlerService, 'open');
+        const mockWorkflowEvent = {
+            workflow: {
+                actionInputs: []
+            },
+            inode: 'testInode',
+            contentType: 'testContentType',
+            languageId: 1,
+            identifier: 'testIdentifier'
+        };
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
                     name: 'workflow-wizard',
-                    data: 'testData'
+                    data: mockWorkflowEvent
                 }
             })
         );
-        expect<any>(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith('testData');
+        expect<any>(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith(mockWorkflowEvent);
     });
 
     it('should notify to open contnt compare dialog', () => {
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(dotEventsService, 'notify');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -377,7 +386,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it("should update license when 'license-changed' event is received", () => {
-        spyOn(dotLicenseService, 'updateLicense');
+        jest.spyOn(dotLicenseService, 'updateLicense');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -395,14 +404,14 @@ describe('DotCustomEventHandlerService', () => {
                 getKeys: () => of(createFeatureFlagResponse('true'))
             });
 
-            spyOn(router, 'navigate');
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(router, 'navigate');
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata } as DotCMSContentType)
             );
         });
 
         it('should create a contentlet', () => {
-            spyOn(dotContentletEditorService, 'create');
+            jest.spyOn(dotContentletEditorService, 'create');
 
             service.handle(
                 new CustomEvent('ng-event', {
@@ -413,10 +422,31 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
+                queryParams: {}
+            });
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
-        it('should edit a a workflow task', () => {
+        it('should create a contentlet with folderPath query param', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: {
+                            contentType: 'test',
+                            folderPath: 'default/level1/level2/'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
+                queryParams: { folderPath: 'default/level1/level2/' }
+            });
+        });
+
+        it('should edit a workflow task using legacy handler regardless of feature flag', () => {
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -429,7 +459,8 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a contentlet', () => {
@@ -445,6 +476,7 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -454,14 +486,14 @@ describe('DotCustomEventHandlerService', () => {
                 getKeys: () => of(createFeatureFlagResponse('true', 'test,test2'))
             });
 
-            spyOn(router, 'navigate');
+            jest.spyOn(router, 'navigate');
         });
 
         it('should create a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata } as DotCMSContentType)
             );
-            spyOn(dotContentletEditorService, 'create');
+            jest.spyOn(dotContentletEditorService, 'create');
 
             service.handle(
                 new CustomEvent('ng-event', {
@@ -472,13 +504,13 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
+                queryParams: {}
+            });
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
-        it('should edit a a workflow task', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of({ metadata } as DotCMSContentType)
-            );
+        it('should edit a workflow task using legacy handler regardless of content type metadata', () => {
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -491,11 +523,12 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata } as DotCMSContentType)
             );
             service.handle(
@@ -510,13 +543,14 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
         it('should not create a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata: metadata2 } as DotCMSContentType)
             );
-            spyOn(dotContentletEditorService, 'create');
+            jest.spyOn(dotContentletEditorService, 'create');
 
             service.handle(
                 new CustomEvent('ng-event', {
@@ -527,14 +561,10 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).not.toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
-        it('should not edit a a workflow task', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of({ metadata: metadata2 } as DotCMSContentType)
-            );
-
+        it('should edit a workflow task using legacy handler even when content type is not in list', () => {
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -547,11 +577,12 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
         });
 
         it('should not edit a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata: metadata2 } as DotCMSContentType)
             );
             service.handle(

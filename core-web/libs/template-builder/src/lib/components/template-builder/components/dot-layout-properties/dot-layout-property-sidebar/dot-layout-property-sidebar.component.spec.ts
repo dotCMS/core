@@ -17,14 +17,15 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
 
-import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
+import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
+    standalone: false,
     template: `
         <form [formGroup]="group">
-            <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
+            <dot-layout-property-sidebar formControlName="sidebar" />
         </form>
     `
 })
@@ -55,9 +56,10 @@ describe('DotLayoutSidebarComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLayoutSidebarComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
-                DotLayoutPropertiesItemModule,
+                DotLayoutSidebarComponent,
+                DotLayoutPropertiesItemComponent,
                 DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,

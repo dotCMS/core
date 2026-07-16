@@ -45,19 +45,4 @@ public interface AbstractAnalyticsEvent {
      */
     List<String> arguments();
 
-    /**
-     * Retrieves the value of the {@code user} attribute associated with this analytics event.
-     *
-     * @return The user email linked to this analytics event.
-     */
-    String user();
-
-    /**
-     * Retrieves the site information associated with the analytics event.
-     *
-     * @return The value of the {@code site} attribute, representing the site where command was
-     * executed.
-     */
-    String site();
-
 }

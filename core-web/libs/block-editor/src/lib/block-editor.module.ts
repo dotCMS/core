@@ -1,50 +1,53 @@
+import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
+
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
 import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
-import { DynamicDialogModule } from 'primeng/dynamicdialog';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { PaginatorModule } from 'primeng/paginator';
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { Checkbox } from 'primeng/checkbox';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
+import { DynamicDialog } from 'primeng/dynamicdialog';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
 
 import {
     DotContentSearchService,
     DotLanguagesService,
     DotMessageService,
     DotPropertiesService,
-    DotUploadFileService,
-    DotAiService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotContentTypeService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
-    DotSpinnerModule
+    DotSpinnerComponent,
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent
 } from '@dotcms/ui';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
+import { DragHandleDirective } from './directive/drag-handle.directive';
+import { DotAddButtonComponent } from './elements/dot-add-button/dot-add-button.component';
+import { DotBubbleMenuComponent } from './elements/dot-bubble-menu/dot-bubble-menu.component';
+import { DotContextMenuComponent } from './elements/dot-context-menu/dot-context-menu.component';
 import {
     BubbleFormComponent,
-    BubbleLinkFormComponent,
-    BubbleMenuButtonComponent,
-    BubbleMenuComponent,
-    DragHandlerComponent,
     FloatingButtonComponent,
-    FormActionsComponent,
-    SuggestionPageComponent,
     UploadPlaceholderComponent
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared';
-import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 
 const initTranslations = (dotMessageService: DotMessageService) => {
@@ -57,59 +60,59 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         FormsModule,
         ReactiveFormsModule,
         SharedModule,
-        PrimengModule,
-        DynamicDialogModule,
+        DynamicDialog,
         AssetFormModule,
         DotFieldRequiredDirective,
         UploadPlaceholderComponent,
         DotMessagePipe,
-        ConfirmDialogModule,
+        ConfirmDialog,
         DotAssetSearchComponent,
-        DialogModule,
-        InputTextareaModule,
-        PaginatorModule,
-        DotSpinnerModule
+        Dialog,
+        Textarea,
+        Card,
+        Checkbox,
+        InputText,
+        Button,
+        DotSpinnerComponent,
+        DotBubbleMenuComponent,
+        TiptapBubbleMenuDirective,
+        DragHandleDirective,
+        DotContextMenuComponent,
+        DotAddButtonComponent,
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent
     ],
     declarations: [
         EditorDirective,
         ContentletBlockComponent,
-        DragHandlerComponent,
-        BubbleMenuComponent,
-        BubbleMenuButtonComponent,
-        BubbleLinkFormComponent,
-        FormActionsComponent,
         BubbleFormComponent,
-        SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
         FloatingButtonComponent
     ],
     providers: [
-        DotUploadFileService,
         LoggerService,
         StringUtils,
-        DotAiService,
         ConfirmationService,
         DotPropertiesService,
         DotContentSearchService,
         DotLanguagesService,
+        DotContentTypeService,
         DotWorkflowActionsFireService,
-        {
-            provide: APP_INITIALIZER,
-            useFactory: initTranslations,
-            deps: [DotMessageService],
-            multi: true
-        }
+        provideAppInitializer(() => {
+            const initializerFn = initTranslations(inject(DotMessageService));
+            return initializerFn();
+        })
     ],
     exports: [
         EditorDirective,
-        BubbleMenuComponent,
-        BubbleLinkFormComponent,
+        DotBubbleMenuComponent,
         ReactiveFormsModule,
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        DotSpinnerModule
+        DotSpinnerComponent,
+        DragHandleDirective
     ]
 })
 export class BlockEditorModule {}

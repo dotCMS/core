@@ -3,19 +3,16 @@ package com.dotcms.rendering.velocity.viewtools.content;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rendering.velocity.RecycledHttpServletRequest;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -39,14 +36,19 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.generic.EscapeTool;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -147,6 +149,8 @@ public class ContentMapTest extends IntegrationTestBase {
 
         APILocator.getPermissionAPI().save(catsPermsSystemHost, APILocator.systemHost(),
                 APILocator.systemUser(), false);
+        // Ensure permissions are properly propagated to child categories
+        APILocator.getPermissionAPI().resetPermissionsUnder(APILocator.systemHost());
 
         //Create Categories
         final Category categoryChild1 = new CategoryDataGen().setCategoryName("RoadBike-"+System.currentTimeMillis()).setKey("RoadBike").setKeywords("RoadBike").setCategoryVelocityVarName("roadBike").next();
@@ -395,6 +399,188 @@ public class ContentMapTest extends IntegrationTestBase {
                 .contentTypeId(contentTypeId).build();
 
         return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} applied on a key-value field
+     * Given Scenario: Creates a key-value field with keys containing non-word characters (spaces, hyphens, dots, etc.)
+     * ExpectedResult: The ContentMap should preserve the original keys with non-word characters
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGetKeyValueFieldWithNonWordCharacters() throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            // Create content type
+            contentType = createContentType("testContentTypeWithKeyValueField");
+
+            // Create key-value field
+            final Field keyValueField = createKeyValueField("testKeyValueField", contentType.id());
+
+            // Create content with key-value data containing non-word characters
+            final String keyValueData = "{\"my-key\": \"value1\", \"my key.with spaces\": \"value2\", \"my@special#key\": \"value3\"}";
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+            final Contentlet contentlet = contentletDataGen
+                    .setProperty("testKeyValueField", keyValueData).next();
+
+            // Test ContentMap behavior
+            final Context velocityContext = mock(Context.class);
+            final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                    PageMode.LIVE, defaultHost, velocityContext);
+
+            // Get the key-value field result
+            final Map<String, Object> result = (Map<String, Object>) contentMap.get("testKeyValueField");
+            assertNotNull(result);
+
+            // Verify that keys with non-word characters are preserved
+            assertEquals("value1", result.get("my-key"));
+            assertEquals("value2", result.get("my key.with spaces"));
+            assertEquals("value3", result.get("my@special#key"));
+
+            // Verify that the keys set contains the original keys
+            final java.util.Set<String> keys = (java.util.Set<String>) result.get("keys");
+            assertNotNull(keys);
+            assertEquals(true, keys.contains("my-key"));
+            assertEquals(true, keys.contains("my key.with spaces"));
+            assertEquals(true, keys.contains("my@special#key"));
+
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Helper method to create a key-value field
+     * @param fieldName
+     * @param contentTypeId
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Field createKeyValueField(final String fieldName, final String contentTypeId)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(KeyValueField.class).name(fieldName)
+                .contentTypeId(contentTypeId).build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} applied on a text field whose value ends with a bare dollar sign.
+     * Given Scenario: A contentlet title is set to "Title $". Without the fix, Velocity throws a
+     *                 ParseException when merging the .field.vm template, ContentMap returns null,
+     *                 and the caller's $urlMapContent.title renders as a literal expression string.
+     * ExpectedResult: The field value is returned as-is with the dollar sign preserved ("Title $").
+     * @see <a href="https://github.com/dotCMS/core/issues/32951">Issue #32951</a>
+     */
+    @Test
+    public void testGet_textField_withTrailingDollarSign_preservesDollarSign()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            contentType = createContentType("testTrailingDollar" + System.currentTimeMillis());
+            createTextField("title", contentType.id());
+
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .host(defaultHost)
+                    .setProperty("title", "Title $")
+                    .nextPersisted();
+            ContentletDataGen.publish(contentlet);
+
+            // A real VelocityContext with EscapeTool is required so that $esc.d
+            // in the generated .field.vm resolves to a literal "$" during merge.
+            final Context velocityContext = new VelocityContext();
+            velocityContext.put("esc", new EscapeTool());
+
+            final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                    PageMode.LIVE, defaultHost, velocityContext);
+
+            final Object result = contentMap.get("title");
+            assertNotNull("Field value must not be null when title ends with $", result);
+            assertEquals("Title $", result.toString());
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} applied on a request on context recycled
+     * Given Scenario: Tries to recover a property, but the request is already recycled
+     * ExpectedResult: The recycled request should not broke the get
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGetRecycledRequest() throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> contentlets = ContentletDataGen.findAllContent(1, 5);
+        if(contentlets.isEmpty()) {
+            throw new DotDataException("No contentlets found");
+        }
+
+        final Contentlet content = contentlets.get(0);
+        final User user = APILocator.systemUser();
+        final boolean EDIT_OR_PREVIEW_MODE = true;
+        final Host host = APILocator.systemHost();
+        final Context context = new VelocityContext(Map.of("request", new RecycledHttpServletRequest(new MockAttributeRequest(mock(HttpServletRequest.class)))));
+        final ContentMap contentMap = new ContentMap(content, user, EDIT_OR_PREVIEW_MODE, host, context);
+
+        final Object title = contentMap.get("title");
+        Assert.assertNotNull(title);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} with "dotStyleProperties"
+     * Given Scenario: Contentlet has dotStyleProperties in its map (from UVE style editor / MultiTree)
+     * ExpectedResult: get("dotStyleProperties") returns the style properties map
+     */
+    @Test
+    public void testGetDotStyleProperties_WhenPresent() throws DotDataException, DotSecurityException {
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(defaultHost)
+                .setProperty("title", "Test")
+                .nextPersisted();
+
+        final Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("fontSize", "18px");
+        styleProperties.put("color", "#333");
+        contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
+
+        final Context velocityContext = mock(Context.class);
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                PageMode.LIVE, defaultHost, velocityContext);
+
+        final Map<String, Object> result = (Map<String, Object>) contentMap.get(Contentlet.STYLE_PROPERTIES_KEY);
+        assertNotNull(result);
+        assertEquals("18px", result.get("fontSize"));
+        assertEquals("#333", result.get("color"));
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} with "dotStyleProperties"
+     * Given Scenario: Contentlet has no dotStyleProperties (not on a page container or no styles set)
+     * ExpectedResult: get("dotStyleProperties") returns null
+     */
+    @Test
+    public void testGetDotStyleProperties_WhenAbsent() throws DotDataException, DotSecurityException {
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(defaultHost)
+                .setProperty("title", "Test")
+                .nextPersisted();
+
+        final Context velocityContext = mock(Context.class);
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                PageMode.LIVE, defaultHost, velocityContext);
+
+        Assert.assertNull(contentMap.get(Contentlet.STYLE_PROPERTIES_KEY));
     }
 
 }

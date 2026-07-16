@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { of } from 'rxjs';
 
@@ -7,11 +5,10 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotIconModule } from '@dotcms/ui';
+import { DotFieldService } from '@dotcms/data-access';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
-
-import { FieldService } from '../service';
 
 const itemsData = [
     {
@@ -58,17 +55,15 @@ describe('ContentTypesFieldsListComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [ContentTypesFieldsListComponent],
-            imports: [DragulaModule, DotIconModule],
+            imports: [ContentTypesFieldsListComponent, DragulaModule, DotIconComponent],
             providers: [
                 DragulaService,
                 {
-                    provide: FieldService,
+                    provide: DotFieldService,
                     useValue: {
                         loadFieldTypes() {
                             return of(itemsData);
-                        },
-                        getIcon() {}
+                        }
                     }
                 }
             ]
@@ -112,8 +107,10 @@ describe('ContentTypesFieldsListComponent', () => {
 
         it('should add dragula attr', () => {
             const ulElement = de.query(By.css('ul'));
-            expect('fields-bag').toEqual(ulElement.attributes['ng-reflect-dragula']);
-            expect('source').toEqual(ulElement.attributes['data-drag-type']);
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the dragula attribute directly on the native element
+            expect(ulElement.nativeElement.getAttribute('dragula')).toBe('fields-bag');
+            expect(ulElement.nativeElement.getAttribute('data-drag-type')).toBe('source');
         });
     });
 

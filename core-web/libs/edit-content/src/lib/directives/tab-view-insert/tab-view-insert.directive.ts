@@ -8,23 +8,31 @@ import {
     ViewContainerRef
 } from '@angular/core';
 
-import { TabView } from 'primeng/tabview';
-
+import { Tabs } from 'primeng/tabs';
+/**
+ * Directive to insert content into the tab view.
+ * @deprecated Use the new Tabs API instead.
+ */
 @Directive({
-    selector: '[dotTabViewAppend]',
-    standalone: true
+    selector: '[dotTabViewAppend]'
 })
 export class TabViewInsertDirective implements AfterViewInit {
     $prependTpl = input<TemplateRef<unknown> | null>(null, { alias: 'dotTabViewPrepend' });
     $appendTpl = input<TemplateRef<unknown> | null>(null, { alias: 'dotTabViewAppend' });
+    $prependContext = input<Record<string, unknown> | null>(null, {
+        alias: 'dotTabViewPrependContext'
+    });
+    $appendContext = input<Record<string, unknown> | null>(null, {
+        alias: 'dotTabViewAppendContext'
+    });
 
     #viewContainer = inject(ViewContainerRef);
     #renderer = inject(Renderer2);
-    #tabView = inject(TabView, { optional: true });
+    #tabView = inject(Tabs, { optional: true });
 
     ngAfterViewInit() {
         if (!this.#tabView) {
-            console.warn('TabViewAppendDirective is for use with PrimeNG TabView');
+            console.warn('TabViewAppendDirective is for use with PrimeNG Tabs');
 
             return;
         }
@@ -34,7 +42,10 @@ export class TabViewInsertDirective implements AfterViewInit {
 
     private insertContent() {
         const tabViewElement = this.#tabView.el.nativeElement;
-        const tabViewNavContent = tabViewElement.querySelector('.p-tabview-nav-content');
+        // Try new tabs API structure first (.p-tablist), fallback to old (.p-tabview-nav-content)
+        const tabViewNavContent =
+            tabViewElement.querySelector('.p-tablist') ||
+            tabViewElement.querySelector('.p-tabview-nav-content');
 
         if (!tabViewNavContent) {
             console.warn('TabView nav content not found');
@@ -43,20 +54,31 @@ export class TabViewInsertDirective implements AfterViewInit {
         }
 
         if (this.$prependTpl()) {
-            this.insertTemplate(this.$prependTpl(), tabViewNavContent, true);
+            this.insertTemplate(
+                this.$prependTpl()!,
+                tabViewNavContent,
+                true,
+                this.$prependContext()
+            );
         }
 
         if (this.$appendTpl()) {
-            this.insertTemplate(this.$appendTpl(), tabViewNavContent, false);
+            this.insertTemplate(
+                this.$appendTpl()!,
+                tabViewNavContent,
+                false,
+                this.$appendContext()
+            );
         }
     }
 
     private insertTemplate(
         template: TemplateRef<unknown>,
         tabViewNavContent: Element,
-        isPrepend: boolean
+        isPrepend: boolean,
+        context: Record<string, unknown> | null = null
     ) {
-        const viewRef = this.#viewContainer.createEmbeddedView(template);
+        const viewRef = this.#viewContainer.createEmbeddedView(template, context ?? undefined);
         viewRef.detectChanges();
 
         const wrapper = this.#renderer.createElement('div');

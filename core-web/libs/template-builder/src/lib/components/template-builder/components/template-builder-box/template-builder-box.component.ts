@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { CommonModule, NgClass } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,14 +8,16 @@ import {
     EventEmitter,
     Input,
     OnChanges,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
+import { SelectModule } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { CONTAINER_SOURCE, DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
@@ -28,23 +30,24 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
 @Component({
     selector: 'dotcms-template-builder-box',
     templateUrl: './template-builder-box.component.html',
-    styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
-        NgClass,
         ButtonModule,
+        CardModule,
         ScrollPanelModule,
         RemoveConfirmDialogComponent,
         DialogModule,
-        DropdownModule,
+        SelectModule,
         DotContainerOptionsDirective,
         ReactiveFormsModule,
-        CommonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        NgTemplateOutlet
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
+    private el = inject(ElementRef);
+    private dotMessage = inject(DotMessageService);
+
     @Output()
     editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
@@ -63,11 +66,6 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     boxVariant = TemplateBuilderBoxSize.small;
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
-
-    constructor(
-        private el: ElementRef,
-        private dotMessage: DotMessageService
-    ) {}
 
     private _dropdownLabel: string | null = null;
 
@@ -92,6 +90,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     requestColumnDelete() {
+        // TODO: The 'emit' function requires a mandatory void argument
         this.deleteColumn.emit();
     }
 

@@ -2,11 +2,11 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 public class IndexAjaxAction extends AjaxAction {
 
 	private final ESIndexHelper indexHelper;
-	private final ESIndexAPI indexAPI;
+	private final IndexAPI indexAPI;
 
 	public IndexAjaxAction(){
 		this(ESIndexHelper.getInstance(), APILocator.getESIndexAPI(), new WebResource());
@@ -45,7 +45,7 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 
 	@VisibleForTesting
-	protected IndexAjaxAction(ESIndexHelper indexHelper, ESIndexAPI indexAPI,
+	protected IndexAjaxAction(ESIndexHelper indexHelper, IndexAPI indexAPI,
 			final WebResource webResource) {
 		super(webResource);
 		this.indexHelper = indexHelper;
@@ -139,11 +139,23 @@ public class IndexAjaxAction extends AjaxAction {
 
 	}
 
-	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-		if(UtilMethods.isSet(indexName))
-		    APILocator.getESIndexAPI().delete(indexName);
+		if(UtilMethods.isSet(indexName)) {
+			// Site-search indices go through the site-search subsystem (like activate/deactivate),
+			// not the content delete path — they are OS-aware with their own naming (issue #35640).
+			if(IndexType.SITE_SEARCH.is(indexName)){
+				APILocator.getSiteSearchAPI().deleteIndex(indexName);
+			} else {
+				// Content indices route through ContentletIndexAPI.delete (same as the REST
+				// endpoint) so this legacy AJAX path inherits the active-index guard, the
+				// bidirectional ES/OS cascade, and the indicies-table pointer cleanup. It
+				// previously called ESIndexAPI.delete and bypassed all three, leaving TC-018 open
+				// here and orphaning the .os twin (issue #35640).
+				APILocator.getContentletIndexAPI().delete(indexName);
+			}
+		}
 	}
 
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
@@ -259,7 +271,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 		for (String index : indices) {
 			try {
-				if(APILocator.getESIndexAPI().getIndexStatus(index) == ESIndexAPI.Status.INACTIVE) {
+				if(APILocator.getESIndexAPI().getIndexStatus(index) == IndexAPI.Status.INACTIVE) {
 					inactives.add(index);
 				}
 			} catch (DotDataException e) {

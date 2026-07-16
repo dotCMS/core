@@ -15,6 +15,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +36,7 @@ import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER
  * Expose the Browser functionality such as get the contents in a folder
  * @author jsanca
  */
+@Tag(name = "Browser Tree")
 @Path("/v1/browser")
 public class BrowserResource {
 
@@ -146,7 +148,7 @@ public class BrowserResource {
 
         Logger.debug(this, "Getting folder contents, browser query form: " + browserQueryForm);
 
-        return Response.ok(new ResponseEntityView(this.browserAPI.getFolderContent(
+        return Response.ok(new ResponseEntityView<>(this.browserAPI.getFolderContent(
                 BrowserQuery.builder()
                         .showDotAssets(browserQueryForm.isShowDotAssets())
                         .showLinks(browserQueryForm.isShowLinks())

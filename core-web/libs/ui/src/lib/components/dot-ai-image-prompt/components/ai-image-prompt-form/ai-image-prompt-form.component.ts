@@ -19,20 +19,18 @@ import {
     Validators
 } from '@angular/forms';
 
-import { AccordionModule } from 'primeng/accordion';
-import { SelectItem } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { RadioButtonModule } from 'primeng/radiobutton';
-import { TooltipModule } from 'primeng/tooltip';
+import { Accordion, AccordionPanel, AccordionHeader, AccordionContent } from 'primeng/accordion';
+import { Button } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { RadioButton } from 'primeng/radiobutton';
+import { Textarea } from 'primeng/textarea';
 
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     AIImagePrompt,
-    DotAIImageOrientation,
+    DEFAULT_IMAGE_SIZE,
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
@@ -44,17 +42,18 @@ import { DotValidators } from './../../../../validators/dotValidators';
 
 @Component({
     selector: 'dot-ai-image-prompt-form',
-    standalone: true,
     templateUrl: './ai-image-prompt-form.component.html',
     imports: [
-        ButtonModule,
-        AccordionModule,
-        TooltipModule,
-        RadioButtonModule,
+        Button,
+        Accordion,
+        AccordionPanel,
+        AccordionHeader,
+        AccordionContent,
+        RadioButton,
         ReactiveFormsModule,
         FormsModule,
-        DropdownModule,
-        InputTextareaModule,
+        InputTextModule,
+        Textarea,
         DotFieldRequiredDirective,
         DotMessagePipe,
         DotCopyButtonComponent
@@ -95,24 +94,6 @@ export class AiImagePromptFormComponent implements OnChanges {
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
     requiredPrompt = true;
     tooltipText: string = null;
-    orientationOptions: SelectItem<DotAIImageOrientation>[] = [
-        {
-            value: DotAIImageOrientation.HORIZONTAL,
-            label: this.dotMessageService.get(
-                'block-editor.extension.ai-image.orientation.horizontal'
-            )
-        },
-        {
-            value: DotAIImageOrientation.SQUARE,
-            label: this.dotMessageService.get('block-editor.extension.ai-image.orientation.square')
-        },
-        {
-            value: DotAIImageOrientation.VERTICAL,
-            label: this.dotMessageService.get(
-                'block-editor.extension.ai-image.orientation.vertical'
-            )
-        }
-    ];
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
 
@@ -134,7 +115,10 @@ export class AiImagePromptFormComponent implements OnChanges {
         this.form = new FormGroup({
             text: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
             type: new FormControl(PromptType.INPUT, Validators.required),
-            size: new FormControl(DotAIImageOrientation.HORIZONTAL, Validators.required)
+            size: new FormControl(DEFAULT_IMAGE_SIZE, [
+                Validators.required,
+                Validators.pattern(/^[1-9]\d{1,3}x[1-9]\d{1,3}$/)
+            ])
         });
 
         const typeControl = this.form.get('type');

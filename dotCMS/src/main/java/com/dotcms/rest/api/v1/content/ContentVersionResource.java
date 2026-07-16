@@ -3,11 +3,19 @@ package com.dotcms.rest.api.v1.content;
 import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
 
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.ContentHistoryPaginator;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Identifier;
@@ -23,10 +31,18 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,8 +52,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -46,16 +67,22 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.JSONP;
 
+/**
+ * This REST Endpoint allows you to retrieve information related to versions of Contentlets in
+ * dotCMS, as well as their History data.
+ *
+ * @author Fabrizzio Araya
+ * @since Dec 18th, 2018
+ */
+@SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/content/versions")
+@Tag(name = "Content")
 public class ContentVersionResource {
 
     private static final String FIND_BY_ID_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-id";
     private static final String FIND_BY_INODE_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-inode";
-    private static final String DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
+    private static final String DATATYPE_MISMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
     private static final String BAD_REQUEST_ERROR_MESSAGE_KEY = "Bad-Request";
 
     private static final String VERSIONS = "versions";
@@ -92,6 +119,25 @@ public class ContentVersionResource {
      * @throws DotStateException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Find content versions",
+        description = "Retrieves all versions for content by identifier or inodes, with optional grouping by language"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Content versions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - missing identifier/inodes or invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Not found - content not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -99,8 +145,14 @@ public class ContentVersionResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findVersions(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
+                                 @Parameter(description = "Comma-separated list of content inodes")
                                  @QueryParam("inodes") final String inodes,
-            @QueryParam("identifier") final String identifier, @QueryParam("groupByLang")final String groupByLangParam, @QueryParam("limit") final int limit)
+            @Parameter(description = "Content identifier (takes precedence over inodes)")
+            @QueryParam("identifier") final String identifier,
+            @Parameter(description = "Group results by language (true/1 or false/0)", example = "false")
+            @QueryParam("groupByLang")final String groupByLangParam,
+            @Parameter(description = "Maximum number of results (min: 20, max: 100)", example = "20")
+            @QueryParam("limit") final int limit)
             throws DotDataException, DotStateException, DotSecurityException {
 
         final boolean groupByLang = "1".equals(groupByLangParam) || BooleanUtils.toBoolean(groupByLangParam);
@@ -121,12 +173,12 @@ public class ContentVersionResource {
                if(groupByLang){
                    final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(contentletAPI
                            .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
+                   responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versionsByLang));
                } else {
                    final List<Map<String, Object>> versions = mapVersions(contentletAPI
                             .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
 
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
+                   responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versions));
                }
            } else {
                final Set<String> inodesSet =
@@ -140,10 +192,10 @@ public class ContentVersionResource {
 
                    if(groupByLang){
                        final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
+                       responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versionsByLang));
                    } else {
                        final Map<String,Map<String,Object>> versions = mapVersionsByInode(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
+                       responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versions));
                    }
 
 
@@ -161,6 +213,89 @@ public class ContentVersionResource {
             return ResponseUtil.mapExceptionResponse(ex);
         }
 
+    }
+
+    @Operation(
+            summary = "Contentlet History",
+            description = "Returns the history of a contentlet with the minimum expected information, " +
+                    "as seen in the History tab in the Content Edition page."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "History data retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+            @ApiResponse(responseCode = "400", description = "The identifier path parameter was not specified, or one " +
+                    "of the specified parameters is invalid.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "The specified identifier does not match any contentlet.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "An internal dotCMS error has occurred.",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/id/{identifier}/history")
+    @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
+    @NoCache
+    public ResponseEntityPaginatedDataView history(@Context final HttpServletRequest request,
+                                                   @Context final HttpServletResponse response,
+                                                   @Parameter(description = "The Identifier of the Contentlet whose history will be retrieved", required = true)
+                                                       @PathParam("identifier") final String identifier,
+                                                   @Parameter(description = "The Language ID that the history will be filtered by", required = true)
+                                                       @QueryParam("languageId") final String languageId,
+                                                   @Parameter(description = "Specified whether the history must be grouped by language or not")
+                                                       @QueryParam("groupByLang") @DefaultValue("false") final boolean groupByLanguage,
+                                                   @Parameter(description = "Specified whether the history must include old versions or not")
+                                                       @QueryParam("bringOldVersions") @DefaultValue("true") final boolean bringOldVersions,
+                                                   @Parameter(description = "Sort direction: Choose between ascending or descending.",
+                                                           schema = @Schema(
+                                                                   type = "string",
+                                                                   allowableValues = {"ASC", "DESC"},
+                                                                   defaultValue = "DESC"))
+                                                       @QueryParam(PaginationUtil.DIRECTION) @DefaultValue("DESC") final String direction,
+                                                   @Parameter(description = "Maximum number or results being returned, for pagination purposes.")
+                                                       @QueryParam("limit") final int limit,
+                                                   @Parameter(description = "Page number of the results being returned, for pagination purposes.")
+                                                       @QueryParam("offset") final int offset)
+            throws DotDataException, DotStateException, DotSecurityException {
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initDataObject.getUser();
+        if (null == identifier) {
+            throw new BadRequestException(getFormattedMessage(user.getLocale(),
+                    BAD_REQUEST_ERROR_MESSAGE_KEY));
+        }
+        final Identifier identifierObj = this.getIdentifier(identifier, user);
+        if (null == identifierObj) {
+            throw new NotFoundException(getFormattedMessage(user.getLocale(),
+                    BAD_REQUEST_ERROR_MESSAGE_KEY));
+        }
+        final Optional<Language> languageOpt = APILocator.getLanguageAPI().getLanguageByIdOrIsoCode(languageId);
+        if (UtilMethods.isSet(languageId) && languageOpt.isEmpty()) {
+            throw new BadRequestException(getFormattedMessage(user.getLocale(), String.format("Language ID " +
+                    "'%s' was not found", languageId)));
+        }
+        final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;
+        final PaginationUtil paginationUtil = new PaginationUtil(new ContentHistoryPaginator());
+        final Map<String, Object> extraParams = Map.of(
+                ContentHistoryPaginator.IDENTIFIER, identifierObj,
+                ContentHistoryPaginator.LANGUAGE_ID, languageOpt.map(Language::getId).orElse(-1L),
+                ContentHistoryPaginator.RESPECT_FRONTEND_ROLES, respectFrontendRoles,
+                ContentHistoryPaginator.GROUP_BY_LANG, groupByLanguage,
+                ContentHistoryPaginator.BRING_OLD_VERSIONS, bringOldVersions);
+        final PaginationUtilParams<Map<String, Object>, PaginatedArrayList<?>> params = new PaginationUtilParams.Builder<Map<String, Object>, PaginatedArrayList<?>>()
+                .withRequest(request)
+                .withResponse(response)
+                .withUser(user)
+                .withPage(offset)
+                .withPerPage(limit)
+                .withDirection(OrderDirection.valueOf(direction))
+                .withExtraParams(extraParams)
+                .build();
+        return paginationUtil.getPageView(params);
     }
 
     /**
@@ -267,6 +402,25 @@ public class ContentVersionResource {
      * @return A ServletResponse
      * @throws DotStateException
      */
+    @Operation(
+        summary = "Find content by inode",
+        description = "Retrieves a specific content version by its inode"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Content found successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid inode format",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Not found - content with inode not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -274,6 +428,7 @@ public class ContentVersionResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Content inode", required = true)
             @PathParam("inode") final String inode)
             throws DotStateException {
         final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;
@@ -289,7 +444,7 @@ public class ContentVersionResource {
 
             if (shorty.type != ShortType.INODE) {
                 throw new BadRequestException(
-                        getFormattedMessage(user.getLocale(), DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY));
+                        getFormattedMessage(user.getLocale(), DATATYPE_MISMATCH_ERROR_MESSAGE_KEY));
             }
 
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, respectFrontendRoles);
@@ -299,7 +454,7 @@ public class ContentVersionResource {
                                 inode));
             }
             final Response.ResponseBuilder responseBuilder = Response.ok(
-                    new ResponseEntityView(contentletToMap(contentlet))
+                    new ResponseEntityView<>(contentletToMap(contentlet))
             );
             return responseBuilder.build();
         } catch (Exception ex) {

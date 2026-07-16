@@ -180,10 +180,13 @@ public class ContentletLoader implements DotLoader {
                 contFieldValueObject = conAPI.getFieldValue(content, field);
                 if (UtilMethods.isSet(contFieldValueObject)) {
                     if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
+                        // Replace empty relationship collections with $contents.getEmptyList()
+                        final String jsonStr = contFieldValueObject.toString()
+                                .replaceAll(":\\s*\\[\\s*\\]", ":\\$contents.getEmptyList()");
                         sb.append("#set($")
                                 .append(field.variable())
                                 .append("= $json.generate(")
-                                .append(contFieldValueObject)
+                                .append(jsonStr)
                                 .append("))");
                     } else {
                         Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +

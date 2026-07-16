@@ -1,4 +1,4 @@
-import { ErrorMessages } from '../models';
+import { DotGraphQLApiResponse, DotHttpClient } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -42,15 +42,17 @@ const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
 export const buildPageQuery = ({
     page,
     fragments,
-    additionalQueries
+    additionalQueries,
+    verbose = false
 }: {
     page?: string;
     fragments?: string[];
     additionalQueries?: string;
-}) => {
-    if (!page) {
+    verbose?: boolean;
+}): string => {
+    if (!page && verbose) {
         console.warn(
-            'No page query provided. The query will be used by fetching all content with _map. This may mean poor performance in the query. We suggest you provide a detailed query on page attribute.'
+            "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
         );
     }
 
@@ -72,6 +74,7 @@ export const buildPageQuery = ({
     friendlyName
     workingInode
     url
+    pageURI
     hasLiveVersion
     deleted
     pageUrl
@@ -98,6 +101,26 @@ export const buildPageQuery = ({
     canEdit
     canLock
     canRead
+    runningExperimentId
+    lockedBy
+    lockedByName
+    numberContents
+    styleEditorSchemas
+    urlContentMap {
+      _map
+    }
+    host {
+      identifier
+      hostName
+     	googleMap
+      archived
+      contentType
+    }
+    vanityUrl {
+      action
+      forwardTo
+      uri
+    }
     conLanguage {
       id
       language
@@ -105,6 +128,9 @@ export const buildPageQuery = ({
     }
     template {
       drawed
+      anonymous
+      theme
+      identifier
     }
     containers {
       path
@@ -130,10 +156,17 @@ export const buildPageQuery = ({
       footer
       body {
         rows {
+          styleClass
+          metadata {
+            name
+          }
           columns {
             leftOffset
             styleClass
             width
+            metadata {
+              name
+            }
             left
             containers {
               identifier
@@ -144,9 +177,27 @@ export const buildPageQuery = ({
       }
     }
     viewAs {
+      variantId
       visitor {
         persona {
+          modDate
+          inode
           name
+          identifier
+          keyTag
+          photo {
+            versionPath
+          }
+        }
+      }
+      persona {
+        modDate
+        inode
+        name
+        identifier
+        keyTag
+        photo {
+         versionPath
         }
       }
       language {
@@ -163,8 +214,8 @@ export const buildPageQuery = ({
 
   ${fragments ? fragments.join('\n\n') : ''}
 
-  query PageContent($url: String!, $languageId: String, $mode: String) {
-    page: page(url: $url, languageId: $languageId, pageMode: $mode) {
+  query PageContent($url: String!, $languageId: String, $mode: String, $personaId: String, $fireRules: Boolean, $publishDate: String, $siteId: String, $variantName: String) {
+    page: page(url: $url, languageId: $languageId, pageMode: $mode, persona: $personaId, fireRules: $fireRules, publishDate: $publishDate, site: $siteId, variantName: $variantName) {
       ...DotCMSPage
       ${page ? '...ClientPage' : ''}
     }
@@ -191,24 +242,41 @@ export function buildQuery(queryData: Record<string, string>): string {
 /**
  * Filters response data to include only specified keys.
  *
- * @param {Record<string, string>} responseData - Original response data object
+ * @param {Record<string, unknown> | undefined} responseData - Original response data object
  * @param {string[]} keys - Array of keys to extract from the response data
- * @returns {Record<string, string>} New object containing only the specified keys
+ * @returns {Record<string, unknown> | undefined} New object containing only the specified keys
  */
-export function mapResponseData(
-    responseData: Record<string, string>,
+export function mapContentResponse(
+    responseData: Record<string, unknown> | undefined,
     keys: string[]
-): Record<string, string> {
+): Record<string, unknown> | undefined {
+    if (!responseData) {
+        return undefined;
+    }
+
     return keys.reduce(
         (accumulator, key) => {
             if (responseData[key] !== undefined) {
                 accumulator[key] = responseData[key];
             }
-
             return accumulator;
         },
-        {} as Record<string, string>
+        {} as Record<string, unknown>
     );
+}
+
+/**
+ * Returns a shallow copy of the object with every key whose value is `undefined` removed.
+ *
+ * `undefined` is not valid JSON, so keeping such keys breaks consumers that serialize the value
+ * (e.g. Next.js Pages Router `getServerSideProps`/`getStaticProps`). `null` and other falsy values
+ * are preserved since they serialize fine.
+ *
+ * @param {Record<string, unknown>} object - Source object to clean
+ * @returns {Record<string, unknown>} New object without `undefined` values
+ */
+export function removeUndefinedValues(object: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined));
 }
 
 /**
@@ -217,35 +285,28 @@ export function mapResponseData(
  * @param {Object} options - Options for the fetch request
  * @param {string} options.body - GraphQL query string
  * @param {Record<string, string>} options.headers - HTTP headers for the request
- * @returns {Promise<any>} Parsed JSON response from the GraphQL API
- * @throws {Error} If the HTTP response is not successful
+ * @param {DotHttpClient} options.httpClient - HTTP client for making requests
+ * @returns {Promise<DotGraphQLApiResponse>} Parsed JSON response from the GraphQL API
+ * @throws {DotHttpError} If the HTTP request fails (non-2xx status or network error)
  */
 export async function fetchGraphQL({
     baseURL,
     body,
-    headers
+    headers,
+    httpClient
 }: {
     baseURL: string;
     body: string;
-    headers: Record<string, string>;
-}) {
+    headers?: HeadersInit;
+    httpClient: DotHttpClient;
+}): Promise<DotGraphQLApiResponse> {
     const url = new URL(baseURL);
     url.pathname = '/api/v1/graphql';
 
-    const response = await fetch(url.toString(), {
+    // httpClient.request throws DotHttpError on failure, so we just return the response directly
+    return await httpClient.request<DotGraphQLApiResponse>(url.toString(), {
         method: 'POST',
         body,
         headers
-    });
-
-    if (!response.ok) {
-        const error = {
-            status: response.status,
-            message: ErrorMessages[response.status] || response.statusText
-        };
-
-        throw error;
-    }
-
-    return await response.json();
+    } as RequestInit);
 }

@@ -11,10 +11,12 @@ import com.dotmarketing.exception.DotDataException;
 import io.vavr.control.Try;
 
 /**
+ * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
  * An API to store and retrieve information about current Elastic Search Indicies
- * 
+ * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
  * @author Jorge Urdaneta
  */
+@Deprecated(forRemoval = true)
 public interface IndiciesAPI {
 
     /**

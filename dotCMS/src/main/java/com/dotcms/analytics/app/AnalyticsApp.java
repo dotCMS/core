@@ -1,8 +1,8 @@
 package com.dotcms.analytics.app;
 
-import com.dotcms.analytics.model.AnalyticsProperties;
-import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
+import com.dotcms.analytics.model.AnalyticsKey;
+import com.dotcms.analytics.model.AnalyticsProperties;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-
 /**
  * Holds configuration for Analytics App from secrets.
  *
@@ -31,10 +30,12 @@ import java.util.stream.Stream;
  */
 public class AnalyticsApp {
 
-    public static final String ANALYTICS_APP_KEY = "dotAnalytics-config";
+    public static final String ANALYTICS_APP_KEY = "dotExperiments-config";
     public static final String ANALYTICS_APP_CONFIG_URL_KEY = "analytics.app.config.url";
     public static final String ANALYTICS_APP_WRITE_URL_KEY = "analytics.app.write.url";
     public static final String ANALYTICS_APP_READ_URL_KEY = "analytics.app.read.url";
+    public static final String ANALYTICS_APP_CLIENT_ID_KEY = "analytics.app.client.id";
+    public static final String ANALYTICS_APP_CLIENT_SECRET_KEY = "analytics.app.client.secret";
     public static final String ANALYTICS_APP_OVERRIDE_NOT_ALLOWED_KEY = "analytics.app.override.not.allowed";
 
     private final Host host;
@@ -86,7 +87,7 @@ public class AnalyticsApp {
         final Optional<Secret> secret = AppsUtil.paramSecret(
                 ANALYTICS_APP_KEY,
                 name,
-                analyticsKey.jsKey().toCharArray(),
+                analyticsKey.m2mKey().toCharArray(),
                 paramDescriptor);
 
         APILocator.getAppsAPI().saveSecret(

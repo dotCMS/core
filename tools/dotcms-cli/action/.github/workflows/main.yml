@@ -13,13 +13,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install xmllint
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils        
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
       - name: Get dotCLI runner
         id: dotcli-runner
         run: |
           echo "::group::Get dotCLI runner"
-       
+          
           curl -o maven-metadata.xml "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/maven-metadata.xml"
           LATEST_VERSION=$(xmllint --xpath "string(//versioning/latest)" maven-metadata.xml)
           URL="https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/${LATEST_VERSION}/dotcms-cli-${LATEST_VERSION}-runner.jar"
@@ -42,16 +42,37 @@ jobs:
       DOT_CREATE_WORKSPACE: ${{ vars.DOT_CREATE_WORKSPACE || 'true' }}
       # This is the CLI version to use, but we can always override this value
       DOT_CLI_JAR_DOWNLOAD_URL: ${{ vars.DOT_CLI_JAR_DOWNLOAD_URL || needs.dotcli-runner.outputs.url }}
+      # Support for version number only
+      DOT_CLI_VERSION: ${{ vars.DOT_CLI_VERSION }}
       # In case we want to force the download of the CLI jar
       DOT_FORCE_DOWNLOAD: ${{ vars.DOT_FORCE_DOWNLOAD || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Load .env file
         uses: aarcangeli/load-dotenv@v1.0.0
         with:
           if-file-not-found: 'warn'
+
+      - name: Resolve CLI URL
+        id: resolve-cli-url
+        run: |
+          # Check if DOT_CLI_VERSION is set (version number only)
+          if [ -n "${{ env.DOT_CLI_VERSION }}" ]; then
+            VERSION="${{ env.DOT_CLI_VERSION }}"
+            RESOLVED_URL="https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/${VERSION}/dotcms-cli-${VERSION}-runner.jar"
+            echo "::notice::Using specified version: $VERSION"
+            echo "::notice::Resolved URL: $RESOLVED_URL"
+            echo "resolved-url=$RESOLVED_URL" >> "$GITHUB_OUTPUT"
+          else
+            # Use the original URL (either from DOT_CLI_JAR_DOWNLOAD_URL or latest)
+            RESOLVED_URL="${{ env.DOT_CLI_JAR_DOWNLOAD_URL }}"
+            echo "::notice::Using configured or latest URL: $RESOLVED_URL"
+            echo "resolved-url=$RESOLVED_URL" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Print env vars
         run: |
@@ -59,7 +80,28 @@ jobs:
 
       - name: Get changes
         run: |
-          git diff --name-only ${{ github.event.before }} ${{ github.event.after }} > changed_files.txt
+          echo "::group::Detecting changed files"
+    
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.event.after }}"
+          
+          echo "Before: $BEFORE"
+          echo "After: $AFTER"
+          
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+          echo "::notice::First push - all files considered changed"
+          git ls-tree --name-only -r HEAD > changed_files.txt
+          elif git cat-file -e "$BEFORE" 2>/dev/null && git cat-file -e "$AFTER" 2>/dev/null; then
+          echo "::notice::Normal diff between valid commits"
+          git diff --name-only "$BEFORE" "$AFTER" > changed_files.txt
+          else
+          echo "::warning::One or both commits not accessible, falling back to current commit files"
+          git ls-tree --name-only -r HEAD > changed_files.txt
+          fi
+          
+          FILE_COUNT=$(wc -l < changed_files.txt)
+          echo "::notice::Files detected: $FILE_COUNT"
+          echo "::endgroup::"
 
       - name: List changed files
         run: |
@@ -111,14 +153,22 @@ jobs:
       - name: Run dotCMS CLI
         id: dot-push
         run: |
+          set -e  # Fail on any error
+          
           chmod +x ./.github/workflows/scripts/run-push.sh
           source ./.github/workflows/scripts/run-push.sh
-          install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}"
+          
+          # Use resolved URL from previous step
+          CLI_URL="${{ steps.resolve-cli-url.outputs.resolved-url }}"
+          echo "Installing CLI from: $CLI_URL"
+          
+          install_cli "$CLI_URL" "${{env.DOT_FORCE_DOWNLOAD}}"
+          
+          # Run the CLI push and capture exit code
           run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ env.DOT_CLI_OPTS }}"
-          echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
+          
+          # If we reach here, the command succeeded
+          echo "exit-code=0" >> "$GITHUB_OUTPUT"
           print_log
-          if [ $exit_code -ne 0 ]; then
-            echo "Error running dotCMS CLI"
-            exit 1
-          fi
+          echo "dotCMS CLI push completed successfully"
         shell: bash

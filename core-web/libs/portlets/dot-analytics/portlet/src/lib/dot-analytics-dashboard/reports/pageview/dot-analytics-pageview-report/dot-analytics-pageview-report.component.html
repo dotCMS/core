@@ -1,0 +1,61 @@
+<!--
+  12-column grid at md+:
+  - Row 1: each metric card md:col-span-4 (3 × 4 = 12).
+  - Row 2: timeline md:col-span-12.
+  - Row 3: browser + device bar charts md:col-span-6 each.
+  - Row 4: top pages table md:col-span-12.
+  Below md: grid-cols-1, stacked.
+-->
+<div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
+    @for (metric of $metricsData(); track metric.name) {
+        <div class="min-w-0 md:col-span-4">
+            <dot-analytics-metric
+                [title]="metric.name"
+                [value]="metric.value"
+                [subtitle]="metric.subtitle"
+                [icon]="metric.icon"
+                [status]="metric.status"
+                data-testid="analytics-metric-card" />
+        </div>
+    }
+
+    <div class="min-w-0 md:col-span-12">
+        <dot-analytics-chart
+            [title]="'analytics.charts.pageviews-timeline.title'"
+            type="line"
+            [data]="$pageViewTimeLineData()"
+            [status]="$pageViewTimeLineStatus()"
+            data-testid="analytics-timeline-chart" />
+    </div>
+
+    <div class="flex h-full min-h-0 min-w-0 flex-col self-stretch md:col-span-6">
+        <dot-analytics-bar-chart
+            [title]="'analytics.charts.browser-breakdown.title'"
+            [data]="$browserBreakdownBarData()"
+            [status]="$pageViewBrowserBreakdownStatus()"
+            [detailsEnabled]="true"
+            detailsDimensionHeaderKey="analytics.pageview.table.headers.browser"
+            data-testid="analytics-browser-chart" />
+    </div>
+
+    <div class="flex h-full min-h-0 min-w-0 flex-col self-stretch md:col-span-6">
+        <dot-analytics-bar-chart
+            [title]="'analytics.charts.device-breakdown.title'"
+            [data]="$deviceBreakdownBarData()"
+            [status]="$pageViewDeviceBreakdownStatus()"
+            [detailsEnabled]="true"
+            detailsDimensionHeaderKey="analytics.pageview.table.headers.device"
+            data-testid="analytics-device-chart" />
+    </div>
+    <div class="min-w-0 md:col-span-12">
+        <p-card class="h-full flex-1">
+            <ng-template #title>
+                {{ 'analytics.dashboard.table.top-pages.title' | dm }}
+            </ng-template>
+            <dot-analytics-top-pages-table
+                class="flex-1"
+                [tableState]="$topPagesTable()"
+                data-testid="analytics-table" />
+        </p-card>
+    </div>
+</div>

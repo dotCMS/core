@@ -1,10 +1,28 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -45,20 +63,26 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -67,14 +91,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba Date: 4/18/13
@@ -93,7 +109,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     private static ContentletAPI contentletAPI;
     private static ContentletIndexAPI indexAPI;
 
-    private static ESIndexAPI esIndexAPI;
+    private static IndexAPI esIndexAPI;
     private static ContentTypeAPI contentTypeAPI;
 
     private static FieldAPI fieldAPI;
@@ -203,8 +219,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         generateTestContentlets();
 
-        final List<Contentlet> contentlets = contentletAPI.findAllContent(0, 100)
-                .stream().filter(Objects::nonNull).collect(Collectors.toList());
+        final List<Contentlet> contentlets = ContentletDataGen.findAllContent(0, 100);
 
         assertNotNull(contentlets);
         assertTrue("The number of contentlet returned is: " + contentlets.size(),
@@ -414,6 +429,100 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         // restore old active index
         indexAPI.activateIndex(oldActiveWorking);
         indexAPI.activateIndex(oldActiveLive);
+    }
+
+    /**
+     * Guard for issue #35640 (TC-018): {@link ContentletIndexAPI#delete(String)} must refuse
+     * to delete the currently active index (the maintenance UI hides Delete for active indices,
+     * but a direct REST/AJAX call previously bypassed that and could wipe the only index). The
+     * refusal is enforced via a {@link DotStateException} and can be overridden with the
+     * {@code ALLOW_ACTIVE_INDEX_DELETE} config property.
+     *
+     * @see ContentletIndexAPIImpl#delete(String)
+     */
+    @Test
+    public void delete_activeIndex_isRejected_unlessFeatureFlagOverrides() throws Exception {
+
+        final String timeStamp = String.valueOf(new Date().getTime());
+        final String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+
+        final String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+
+        assertTrue(indexAPI.createContentIndex(workingIndex));
+        indexAPI.activateIndex(workingIndex);
+
+        try {
+            // The active index is reported by getCurrentIndex(): delete must be rejected and
+            // the index must survive.
+            assertThrows(DotStateException.class, () -> indexAPI.delete(workingIndex));
+            assertTrue("Active index must survive a rejected delete",
+                    indexAPI.listDotCMSIndices().contains(workingIndex));
+
+            // Feature-flag bypass: the same delete now goes through.
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
+            try {
+                assertTrue(indexAPI.delete(workingIndex));
+                assertFalse(indexAPI.listDotCMSIndices().contains(workingIndex));
+            } finally {
+                Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
+            }
+        } finally {
+            // Restore the prior active working pointer (best effort).
+            try {
+                if (oldActiveWorking != null) {
+                    indexAPI.activateIndex(oldActiveWorking);
+                }
+            } catch (final Exception e) {
+                Logger.warn(this, "Unable to restore active working index after test", e);
+            }
+        }
+    }
+
+    /**
+     * Issue #35640: deleting an index must also remove its pointer row from the {@code indicies}
+     * DB table, so no row is left dangling at a deleted index. Uses the feature-flag bypass to
+     * delete an active index (whose pointer exists in the store) and asserts the pointer is gone.
+     *
+     * @see ContentletIndexAPIImpl#delete(String)
+     */
+    @Test
+    public void delete_clearsDbPointer() throws Exception {
+
+        final String timeStamp = String.valueOf(new Date().getTime());
+        final String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+
+        final String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+
+        assertTrue(indexAPI.createContentIndex(workingIndex));
+        indexAPI.activateIndex(workingIndex);
+
+        // Sanity: the working pointer now references the new index.
+        final IndiciesInfo before = APILocator.getIndiciesAPI().loadIndicies();
+        assertTrue("Pre: working pointer must reference the new index",
+                before.getWorking() != null && before.getWorking().endsWith(workingIndex));
+
+        // Delete it, bypassing the active-index guard — the DB pointer must be cleared too.
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
+        try {
+            assertTrue(indexAPI.delete(workingIndex));
+        } finally {
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
+        }
+
+        final IndiciesInfo after = APILocator.getIndiciesAPI().loadIndicies();
+        assertTrue("Working pointer must no longer reference the deleted index",
+                after.getWorking() == null || !after.getWorking().endsWith(workingIndex));
+        assertFalse("Deleted index must be gone from the cluster",
+                indexAPI.listDotCMSIndices().contains(workingIndex));
+
+        // Restore the prior active working pointer (best effort).
+        try {
+            if (oldActiveWorking != null) {
+                indexAPI.activateIndex(oldActiveWorking);
+            }
+        } catch (final Exception e) {
+            Logger.warn(this, "Unable to restore active working index after test", e);
+        }
     }
 
     /**
@@ -1207,8 +1316,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
 
-        final BulkRequest bulk = indexAPI.createBulkRequest();
-        bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+        final IndexBulkRequest bulk = indexAPI.createBulkRequest();
+        indexAPI.setRefreshPolicy(bulk, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
 

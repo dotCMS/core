@@ -4,7 +4,7 @@ import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
-import com.dotcms.repackage.javax.validation.constraints.Size;
+import org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -18,9 +18,9 @@ import java.util.List;
 
 @JsonDeserialize(builder = ExperimentForm.Builder.class)
 public class ExperimentForm extends Validated {
-    @Size(min=1, max = 255)
+    @Length(min=1, max = 255)
     private final String name;
-    @Size(max = 255)
+    @Length(max = 255)
     private final String description;
     private final String pageId;
     private final float trafficAllocation;

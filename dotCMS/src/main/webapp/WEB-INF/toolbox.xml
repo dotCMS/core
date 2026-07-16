@@ -208,6 +208,11 @@
 		<class>com.dotcms.rendering.velocity.viewtools.XssWebAPI</class>
 	</tool>
 	<tool>
+		<key>owasp</key>
+		<scope>application</scope>
+		<class>com.dotcms.rendering.velocity.viewtools.OwaspEncoderTool</class>
+	</tool>
+	<tool>
 		<key>xmltool</key>
 		<scope>application</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.XmlTool</class>
@@ -251,6 +256,11 @@
 		<key>dotExperiment</key>
 		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.experiment.ExperimentCodeInjecterViewTool</class>
+	</tool>
+	<tool>
+		<key>dotAnalytics</key>
+		<scope>request</scope>
+		<class>com.dotcms.analytics.viewtool.AnalyticsCodeInjecterViewTool</class>
 	</tool>
 	<tool>
 		<key>filetool</key>
@@ -326,5 +336,10 @@
 		<key>analytics</key>
 		<scope>request</scope>
 		<class>com.dotcms.analytics.viewtool.AnalyticsTool</class>
+	</tool>
+	<tool>
+		<key>googleAnalytics</key>
+		<scope>request</scope>
+		<class>com.dotcms.analytics.viewtool.GoogleAnalyticsTool</class>
 	</tool>
 </toolbox>

@@ -1,8 +1,8 @@
 import { v4 as uuid } from 'uuid';
 
-import { Component, ElementRef } from '@angular/core';
+import { Component, ElementRef, inject } from '@angular/core';
 
-import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayoutBody, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
@@ -57,6 +57,51 @@ export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
 export const DEFAULT_CONTAINER_IDENTIFIER = '//demo.dotcms.com/application/containers/default/';
 
 export const BANNER_CONTAINER_IDENTIFIER = '//demo.dotcms.com/application/containers/banner/';
+
+// Mock containers for defaultContainer tests
+export const mockDefaultContainerWithPath: DotContainer = {
+    identifier: 'default-container-id',
+    name: 'Default Container',
+    type: 'containers',
+    source: CONTAINER_SOURCE.FILE,
+    live: true,
+    working: true,
+    deleted: false,
+    locked: false,
+    title: 'Default Container Title',
+    path: '/default/container/path',
+    archived: false,
+    categoryId: 'default-category'
+};
+
+export const mockDefaultContainerWithoutPath: DotContainer = {
+    identifier: 'default-container-id',
+    name: 'Default Container',
+    type: 'containers',
+    source: CONTAINER_SOURCE.FILE,
+    live: true,
+    working: true,
+    deleted: false,
+    locked: false,
+    title: 'Default Container Title',
+    archived: false,
+    categoryId: 'default-category'
+};
+
+export const mockTempContainer: DotContainer = {
+    identifier: 'temp-container-id',
+    name: 'Temp Container',
+    type: 'containers',
+    source: CONTAINER_SOURCE.FILE,
+    live: true,
+    working: true,
+    deleted: false,
+    locked: false,
+    title: 'Temp Container Title',
+    path: '/temp/container/path',
+    archived: false,
+    categoryId: 'temp-category'
+};
 
 export const CONTAINERS_DATA_MOCK = [
     {
@@ -237,7 +282,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: 'bg-white py-5'
+            styleClass: 'bg-white py-8'
         },
         {
             columns: [
@@ -393,7 +438,7 @@ export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: 'bg-white py-5'
+            styleClass: 'bg-white py-8'
         },
         {
             columns: [
@@ -459,18 +504,18 @@ export const MOCK_TEXT = 'Header';
 
 export const MOCK_SELECTED_STYLE_CLASSES = [
     'd-flex',
-    'flex-column',
-    'justify-content-center',
-    'align-items-center',
-    'justify-content-start',
-    'justify-content-end',
-    'justify-content-center',
-    'justify-content-between',
-    'justify-content-around',
-    'justify-content-evenly',
-    'align-items-start',
-    'align-items-end',
-    'align-items-center'
+    'flex-col',
+    'justify-center',
+    'items-center',
+    'justify-start',
+    'justify-end',
+    'justify-center',
+    'justify-between',
+    'justify-around',
+    'justify-evenly',
+    'items-start',
+    'items-end',
+    'items-center'
 ];
 
 export const MOCK_STYLE_CLASSES_FILE = {
@@ -489,30 +534,30 @@ export const MOCK_STYLE_CLASSES_FILE = {
         'd-sm-inline',
         'd-sm-inline-block',
         'flex-row',
-        'flex-column',
+        'flex-col',
         'flex-row-reverse',
-        'flex-column-reverse',
-        'flex-grow-0',
-        'flex-grow-1',
-        'flex-shrink-0',
-        'flex-shrink-1',
+        'flex-col-reverse',
+        'grow-0',
+        'grow',
+        'shrink-0',
+        'shrink',
         'flex-fill',
-        'justify-content-start',
-        'justify-content-end',
-        'justify-content-center',
-        'justify-content-between',
-        'justify-content-around',
-        'justify-content-evenly',
-        'align-items-start',
-        'align-items-end',
-        'align-items-center',
-        'align-items-baseline',
-        'align-items-stretch',
-        'align-self-start',
-        'align-self-end',
-        'align-self-center',
-        'align-self-baseline',
-        'align-self-stretch',
+        'justify-start',
+        'justify-end',
+        'justify-center',
+        'justify-between',
+        'justify-around',
+        'justify-evenly',
+        'items-start',
+        'items-end',
+        'items-center',
+        'items-baseline',
+        'items-stretch',
+        'self-start',
+        'self-end',
+        'self-center',
+        'self-baseline',
+        'self-stretch',
         'flex-nowrap',
         'flex-wrap',
         'flex-wrap-reverse',
@@ -876,10 +921,13 @@ export const BOX_MOCK = {
  */
 @Component({
     selector: 'dotcms-grid-stack-element',
-    template: '<div>Element</div>'
+    template: '<div>Element</div>',
+    standalone: false
 })
 export class MockGridStackElementComponent {
-    constructor(public el: ElementRef) {
+    el = inject(ElementRef);
+
+    constructor() {
         this.el.nativeElement.ddElement = {
             on: () => {
                 /* noop */

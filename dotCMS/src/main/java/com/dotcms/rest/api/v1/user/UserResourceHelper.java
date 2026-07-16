@@ -6,7 +6,7 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
@@ -109,6 +109,33 @@ public class UserResourceHelper implements Serializable {
 		this.permissionAPI = APILocator.getPermissionAPI();
 		this.userProxyAPI = APILocator.getUserProxyAPI();
 		this.loginService = APILocator.getLoginServiceAPI();
+	}
+
+	/**
+	 * Loads user by ID or email, trying ID first.
+	 * 
+	 * @param userIdOrEmail The user ID or email address to search for
+	 * @param systemUser The system user for email lookup authentication
+	 * @param requestingUser The user making the request (for logging purposes)
+	 * @return The found user
+	 * @throws DotDataException if the user is not found by either ID or email
+	 * @throws DotSecurityException if there's a security error during lookup
+	 */
+	public User loadUserByIdOrEmail(final String userIdOrEmail, 
+	                               final User systemUser, 
+	                               final User requestingUser) 
+	        throws DotDataException, DotSecurityException {
+	    try {
+	        return this.userAPI.loadUserById(userIdOrEmail);
+	    } catch (NoSuchUserException e) {
+	        try {
+	            return this.userAPI.loadByUserByEmail(userIdOrEmail, systemUser, false);
+	        } catch (NoSuchUserException ex) {
+	            Logger.warn(this, String.format("User not found: %s (requested by %s)", 
+	                userIdOrEmail, requestingUser.getUserId()));
+	            throw new DotDataException("User not found: " + userIdOrEmail);
+	        }
+	    }
 	}
 
 	/**
@@ -345,7 +372,7 @@ public class UserResourceHelper implements Serializable {
 			mapResponse.put("nUsers", countUsersByNameOrEmail);
 		}
 
-		return new ResponseEntityView(mapResponse );
+		return new ResponseEntityView<>(mapResponse );
 	}
 
 	/**
@@ -417,4 +444,14 @@ public class UserResourceHelper implements Serializable {
 
 		return userToSave;
 	}
+
+    /**
+     * Remove the roles associated to the user
+     * @param user User
+     */
+    public void removeRoles(User user) throws DotDataException {
+
+        Logger.debug(this, ()-> "removing the roles for the user:" + user.getUserId());
+        APILocator.getRoleAPI().removeAllRolesFromUser(user);
+    }
 }

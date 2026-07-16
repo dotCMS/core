@@ -26,7 +26,8 @@ public class SessionMonitorTest {
     @Test
     public void testSessionDestroyedWithoutLogout() throws DotDataException {
         final HttpSession httpSession = mock(HttpSession.class);
-        when(httpSession.getAttribute("USER_ID")).thenReturn("user_id");
+        when(httpSession.getAttribute(com.liferay.portal.util.WebKeys.USER_ID)).thenReturn("user_id");
+        when(httpSession.getAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION)).thenReturn(true);
         when(httpSession.getId()).thenReturn("session_id");
 
         final HttpSessionEvent event =  mock(HttpSessionEvent.class);
@@ -51,10 +52,10 @@ public class SessionMonitorTest {
     @Test
     public void testSessionDestroyedWithLogout() throws DotDataException {
         final HttpSession httpSession = mock(HttpSession.class);
-        when(httpSession.getAttribute("USER_ID")).thenReturn("user_id");
+        when(httpSession.getAttribute(com.liferay.portal.util.WebKeys.USER_ID)).thenReturn("user_id");
         when(httpSession.getId()).thenReturn("session_id");
         when(httpSession.getAttribute(LOG_OUT_ATTRIBUTE)).thenReturn(true);
-
+        when(httpSession.getAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION)).thenReturn(true);
         final HttpSessionEvent event =  mock(HttpSessionEvent.class);
         when(event.getSession()).thenReturn(httpSession);
 

@@ -8,12 +8,13 @@ import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
+
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 
 describe('ContentTypeFieldsAddRowComponent', () => {
     let comp: ContentTypeFieldsAddRowComponent;
@@ -32,15 +33,29 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     beforeEach(() => {
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: jest.fn().mockImplementation((query) => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: jest.fn(),
+                removeListener: jest.fn(),
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn(),
+                dispatchEvent: jest.fn()
+            }))
+        });
+
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsAddRowComponent],
             imports: [
                 TooltipModule,
                 BrowserAnimationsModule,
                 ButtonModule,
                 SplitButtonModule,
                 RouterTestingModule,
-                DotMessagePipe
+                DotMessagePipe,
+                ContentTypeFieldsAddRowComponent
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
@@ -52,69 +67,58 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should render disabled input', () => {
-        comp.disabled = true;
+        fixture.componentRef.setInput('disabled', true);
 
         fixture.detectChanges();
 
-        const buttonElement = de.query(By.css('button'));
+        const buttonElement = de.query(By.css('p-splitbutton button'));
 
         expect(buttonElement.nativeElement.disabled).toEqual(true);
     });
 
     it('should render columns input', () => {
-        comp.columns = [1, 2, 3];
+        fixture.componentRef.setInput('columns', [1, 2, 3]);
         comp.rowState = 'select';
 
         fixture.detectChanges();
-        const columnSelectionList = de.query(By.css('.dot-add-rows-columns-list__container'));
-        expect(columnSelectionList.children.length).toEqual(3);
+        const columnSelectionList = de.queryAll(By.css('ul li'));
+        expect(columnSelectionList.length).toEqual(3);
     });
 
     it('should display the add rows button by default', () => {
         comp.rowState = 'add';
         fixture.detectChanges();
-        const addRowContainer = de.query(By.css('.dot-add-rows-button__container'));
-        const buttonsElement = de.queryAll(By.css('button'));
-        expect(addRowContainer.nativeElement.classList.contains('dot-add-rows__add')).toEqual(true);
-        expect(buttonsElement[0].nativeElement.textContent).toBe('Add Row');
-        buttonsElement[1].nativeElement.click();
-        fixture.detectChanges();
-        const splitOptionsBtn = de.queryAll(By.css('p-splitbutton .p-menuitem-text'));
-        expect(splitOptionsBtn.length).toBe(2);
-        expect(splitOptionsBtn[0].nativeElement.innerText).toBe('Add Row');
-        expect(splitOptionsBtn[1].nativeElement.innerText).toBe('Add Tab');
+        const addRowContainer = de.query(By.css('.dot-add-rows__add'));
+        const buttonsElement = de.queryAll(By.css('p-splitbutton button'));
+        expect(addRowContainer).toBeTruthy();
+        expect(buttonsElement[0].nativeElement.textContent).toContain('Add Row');
+        expect(comp.actions.map((action) => action.label)).toEqual(['Add Row', 'Add Tab']);
     });
 
     it('should display row selection after click on Add Rows button and focus the first column selection', () => {
         comp.rowState = 'add';
+        comp.setColumnSelect();
         fixture.detectChanges();
-        const addButton = de.nativeElement.querySelector('.dot-add-rows-button__container button');
-        addButton.click();
-        fixture.detectChanges();
-        const addRowContainer = de.query(By.css('.dot-add-rows-columns-list__container'));
-        const firstColumRowContainer = de.query(By.css('.dot-add-rows-columns-list')).children[0];
+        const addRowContainer = de.query(By.css('ul'));
+        const firstColumRowContainer = de.query(By.css('li.active'));
         expect(addRowContainer).toBeTruthy();
-        expect(firstColumRowContainer.nativeElement.classList.contains('active')).toEqual(true);
+        expect(firstColumRowContainer).toBeTruthy();
     });
 
     it('should bind send notification after click on Add Tab button', () => {
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(dotEventsService, 'notify');
         fixture.detectChanges();
-        de.queryAll(By.css('button'))[1].nativeElement.click();
-        fixture.detectChanges();
-        de.queryAll(By.css('p-splitbutton .p-menuitem-link'))[1].nativeElement.click();
-        fixture.detectChanges();
+        comp.actions[1].command();
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
+        expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
     });
 
     it('should select columns number after click on li', () => {
-        fixture.detectChanges();
         let colsToEmit: number;
-        const addButton = de.nativeElement.querySelector('.dot-add-rows-button__container button');
-        addButton.click();
+        comp.rowState = 'select';
         fixture.detectChanges();
-        const lis = de.queryAll(By.css('li'));
-        comp.selectColums.subscribe((cols) => (colsToEmit = cols));
+        const lis = de.queryAll(By.css('ul li'));
+        comp.$selectColums.subscribe((cols) => (colsToEmit = cols));
         lis[0].nativeElement.click();
         expect(colsToEmit).toEqual(1);
     });
@@ -130,10 +134,24 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should call setColumnSelect when "add-row" event received', fakeAsync(() => {
+        // Set up the component to show the select state so ViewChild is available
+        comp.rowState = 'select';
         fixture.detectChanges();
-        spyOn(comp, 'setColumnSelect');
+
+        jest.spyOn(comp, 'setColumnSelect');
         dotEventsService.notify('add-row');
-        tick();
+        tick(201); // Wait for the setTimeout in setColumnSelect
+
         expect(comp.setColumnSelect).toHaveBeenCalled();
+    }));
+
+    it('should handle ViewChild properly when in select state', fakeAsync(() => {
+        jest.spyOn(comp, 'setFocus');
+
+        comp.setColumnSelect();
+        fixture.detectChanges();
+        tick(201);
+
+        expect(comp.setFocus).toHaveBeenCalled();
     }));
 });

@@ -1,33 +1,46 @@
 /// <reference types="jest" />
 
+import {
+    DotRequestOptions,
+    DotCMSClientConfig,
+    DotHttpError,
+    DotErrorContent
+} from '@dotcms/types';
+
 import { CollectionBuilder } from './collection';
 
-import { ClientOptions } from '../../../../deprecated/sdk-js-client';
+import { FetchHttpClient } from '../../../adapters/fetch-http-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortBy } from '../../shared/types';
 import { Equals } from '../query/lucene-syntax';
 
-global.fetch = jest.fn().mockReturnValue(
-    Promise.resolve({
-        ok: true,
-        json: () =>
-            Promise.resolve({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: []
-                    },
-                    resultsSize: 0
-                }
-            })
-    })
-);
+// Mock the FetchHttpClient
+jest.mock('../../../adapters/fetch-http-client');
 
 describe('CollectionBuilder', () => {
-    const requestOptions: ClientOptions = {
+    const mockRequest = jest.fn();
+    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+
+    const requestOptions: DotRequestOptions = {
         cache: 'no-cache' // To simulate a valid request
     };
 
-    const serverUrl = 'http://localhost:8080';
+    const config: DotCMSClientConfig = {
+        dotcmsUrl: 'http://localhost:8080',
+        authToken: 'test-token',
+        siteId: 'test-site'
+    };
+
+    const createCollectionBuilder = (
+        contentType: string,
+        customConfig: DotCMSClientConfig = config
+    ) =>
+        new CollectionBuilder({
+            requestOptions,
+            config: customConfig,
+            contentType,
+            httpClient: new FetchHttpClient()
+        });
 
     const baseRequest = {
         method: 'POST',
@@ -37,40 +50,58 @@ describe('CollectionBuilder', () => {
         ...requestOptions
     };
 
-    const requestURL = `${serverUrl}${CONTENT_API_URL}`;
+    const requestURL = `${config.dotcmsUrl}${CONTENT_API_URL}`;
+
+    const mockResponseData = {
+        entity: {
+            jsonObjectView: {
+                contentlets: []
+            },
+            resultsSize: 0
+        }
+    };
 
     beforeEach(() => {
-        (fetch as jest.Mock).mockClear();
+        mockRequest.mockReset();
+        MockedFetchHttpClient.mockImplementation(
+            () =>
+                ({
+                    request: mockRequest
+                }) as Partial<FetchHttpClient> as FetchHttpClient
+        );
+
+        mockRequest.mockResolvedValue(mockResponseData);
     });
 
     it('should initialize with valid configuration', async () => {
         const contentType = 'my-content-type';
-        const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+        const collectionBuilder = createCollectionBuilder(contentType);
         expect(collectionBuilder).toBeDefined();
     });
 
     describe('successful requests', () => {
         it('should build a query for a basic collection', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder;
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:song +languageId:1 +live:true',
+                    query: '+contentType:song +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should return the contentlets in the mapped response', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             const response = await collectionBuilder;
 
@@ -84,7 +115,7 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response with sort', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             const sortBy: SortBy[] = [
                 {
@@ -108,45 +139,71 @@ describe('CollectionBuilder', () => {
             });
         });
 
+        it('should handle onfulfilled callback returning void', async () => {
+            const contentType = 'song';
+            const collectionBuilder = createCollectionBuilder(contentType);
+
+            const onfulfilledCallback = jest.fn((_data) => {
+                // Callback with no return statement (returns void)
+            });
+
+            const result = await collectionBuilder.then(onfulfilledCallback);
+
+            expect(onfulfilledCallback).toHaveBeenCalledWith({
+                contentlets: [],
+                page: 1,
+                size: 0,
+                total: 0
+            });
+            expect(result).toEqual({
+                contentlets: [],
+                page: 1,
+                size: 0,
+                total: 0
+            });
+        });
+
         it('should build a query for a collection with a specific language', async () => {
             const contentType = 'ringsOfPower';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.language(13);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ringsOfPower +languageId:13 +live:true',
+                    query: '+contentType:ringsOfPower +languageId:13 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 13
                 })
             });
         });
 
         it('should build a query for a collection with render on true', async () => {
             const contentType = 'boringContentType';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.render();
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:boringContentType +languageId:1 +live:true',
+                    query: '+contentType:boringContentType +languageId:1 +live:true +conhost:test-site',
                     render: true,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it("should build a query with multiply sortBy's", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.sortBy([
                 {
@@ -163,58 +220,61 @@ describe('CollectionBuilder', () => {
                 }
             ]);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:jedi +languageId:1 +live:true',
+                    query: '+contentType:jedi +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     sort: 'name asc,force desc,midichlorians desc',
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query with a specific depth', async () => {
             const contentType = 'droid';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.depth(2);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:droid +languageId:1 +live:true',
+                    query: '+contentType:droid +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 2
+                    depth: 2,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query with a specific limit and page', async () => {
             const contentType = 'ship';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.limit(20).page(3);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ship +languageId:1 +live:true',
+                    query: '+contentType:ship +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 20,
                     offset: 40,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query with an specific query with main fields and custom fields of the content type', async () => {
             const contentType = 'lightsaber';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder
                 .query(
@@ -224,21 +284,22 @@ describe('CollectionBuilder', () => {
                 )
                 .query('+modDate:2024-05-28'); // modDate is a main field so it doesn't need to specify the content type
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +modDate:2024-05-28',
+                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +conhost:test-site +modDate:2024-05-28',
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it("should throw an error if the query doesn't end in an instance of Equals", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -251,12 +312,12 @@ describe('CollectionBuilder', () => {
                 );
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should throw an error if the parameter for query is not a function or string', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -269,12 +330,12 @@ describe('CollectionBuilder', () => {
                 );
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should throw an error if the depth is out of range (positive value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -283,12 +344,12 @@ describe('CollectionBuilder', () => {
                 expect(error).toEqual(new Error('Depth value must be between 0 and 3'));
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should throw an error if the depth is out of range (negative value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -297,48 +358,50 @@ describe('CollectionBuilder', () => {
                 expect(error).toEqual(new Error('Depth value must be between 0 and 3'));
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should build a query for draft content', async () => {
             const contentType = 'draftContent';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.draft();
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:draftContent +languageId:1 +live:false',
+                    query: '+contentType:draftContent +languageId:1 +(live:false AND working:true AND deleted:false) +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query for a collection with a specific variant', async () => {
             const contentType = 'adventure';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.variant('dimension-1334-adventure');
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true',
+                    query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should handle all the query methods on GetCollection', async () => {
             const contentType = 'forceSensitive';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             // be sure that this test is updated when new methods are added
             let methods = Object.getOwnPropertyNames(
@@ -348,7 +411,15 @@ describe('CollectionBuilder', () => {
             // Remove the constructor and the methods that are not part of the query builder.
             // Fetch method is removed because it is the one that makes the request and we already test that
             // For example: ["constructor", "thisMethodIsPrivate", "thisMethodIsNotAQueryMethod", "formatQuery"]
-            const methodsToIgnore = ['constructor', 'formatResponse', 'fetchContentApi'];
+            const methodsToIgnore = [
+                'constructor',
+                // Internal implementation details (not part of the fluent query API)
+                'buildFinalQuery',
+                'getLanguageId',
+                'wrapError',
+                'formatResponse',
+                'fetchContentApi'
+            ];
 
             // Filter to take only the methods that are part of the query builder
             methods = methods.filter((method) => {
@@ -399,18 +470,20 @@ describe('CollectionBuilder', () => {
                 )
                 .draft() // To retrieve the draft content
                 .variant('legends-forceSensitive') // Variant of the content
-                .query('+modDate:2024-05-28 +conhost:MyCoolSite'); // Raw query to append to the main query // Fetch the content
+                .query('+modDate:2024-05-28 +conhost:MyCoolSite') // Raw query to append to the main query
+                .includeSystemHost(); // Include System Host content
 
             // Check that the request was made with the correct query
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +modDate:2024-05-28 +conhost:MyCoolSite',
+                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +(live:false AND working:true AND deleted:false) +modDate:2024-05-28 +(conhost:test-site conhost:MyCoolSite conhost:SYSTEM_HOST)',
                     render: true,
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
                     offset: 40,
-                    depth: 2
+                    depth: 2,
+                    languageId: 13
                 })
             });
 
@@ -421,95 +494,418 @@ describe('CollectionBuilder', () => {
         });
     });
 
+    describe('host/site constraint handling', () => {
+        it('should add default host to query when siteId is configured', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
+
+            await collectionBuilder;
+
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0,
+                    languageId: 1
+                })
+            });
+        });
+
+        it('should use user-set host in addition to default when user specifies conhost in raw query', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
+
+            await collectionBuilder.query('+conhost:user-specified-site');
+
+            // The current implementation adds both the default site constraint and the user-specified one
+            // because the raw query is appended after the site constraint decision is made
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site +conhost:user-specified-site',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0,
+                    languageId: 1
+                })
+            });
+        });
+
+        it('should not add any host constraint when no siteId is configured and user does not specify one', async () => {
+            const contentType = 'blog';
+            const configWithoutSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token'
+                // No siteId configured
+            };
+            const collectionBuilder = createCollectionBuilder(contentType, configWithoutSite);
+
+            await collectionBuilder;
+
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0,
+                    languageId: 1
+                })
+            });
+        });
+
+        it('should not add default host when user specifies conhost via query builder', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
+
+            await collectionBuilder.query((qb) =>
+                qb.field('conhost').equals('user-specified-site')
+            );
+
+            // When using the query builder, the conhost constraint is part of the base query
+            // so the shouldAddSiteIdConstraint function will detect it and not add the default
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+conhost:user-specified-site +contentType:blog +languageId:1 +live:true',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0,
+                    languageId: 1
+                })
+            });
+        });
+
+        it('should still add default host even when it is explicitly excluded in raw query', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
+
+            await collectionBuilder.query('-conhost:my-default-site');
+
+            // The current implementation still adds the default site constraint because
+            // the exclusion is in the raw query which is processed after the site constraint decision
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site -conhost:my-default-site',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0,
+                    languageId: 1
+                })
+            });
+        });
+    });
+
+    describe('includeSystemHost', () => {
+        it('should group configured siteId with SYSTEM_HOST when called with no arguments', async () => {
+            const collectionBuilder = createCollectionBuilder('Blog');
+
+            await collectionBuilder.includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:test-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should add +conhost:SYSTEM_HOST alone when no siteId is configured', async () => {
+            const configWithoutSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token'
+            };
+            const collectionBuilder = createCollectionBuilder('Blog', configWithoutSite);
+
+            await collectionBuilder.includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +conhost:SYSTEM_HOST',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should not touch negative conhost exclusions (-conhost) when grouping', async () => {
+            const collectionBuilder = createCollectionBuilder('Blog');
+
+            // Raw query contains a negative conhost exclusion — it must be preserved as-is
+            await collectionBuilder.query('-conhost:excluded-site').includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true -conhost:excluded-site +(conhost:test-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should be idempotent — calling multiple times does not duplicate the constraint', async () => {
+            const collectionBuilder = createCollectionBuilder('Blog');
+
+            await collectionBuilder.includeSystemHost().includeSystemHost().includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:test-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should include all raw-path conhosts and SYSTEM_HOST in the group', async () => {
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder('Blog', configWithSite);
+
+            // Raw conhost is appended after the siteId decision — includeSystemHost must
+            // see both and group them correctly
+            await collectionBuilder.query('+conhost:extra-site').includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:my-default-site conhost:extra-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should group builder-path conhost with SYSTEM_HOST when user sets conhost via query builder', async () => {
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder('Blog', configWithSite);
+
+            // Builder-path conhost prevents siteId auto-injection; includeSystemHost
+            // must still group the explicit conhost with SYSTEM_HOST
+            await collectionBuilder
+                .query((qb) => qb.field('conhost').equals('user-specified-site'))
+                .includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:user-specified-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+    });
+
     describe('fetch is rejected', () => {
         it('should trigger onrejected callback', (done) => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                serverUrl,
-                contentType
-            ).language(13);
+            const collectionBuilder = createCollectionBuilder(contentType).language(13);
 
-            // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockRejectedValue(new Error('URL is invalid'));
+            // Mock the request to return a rejected promise
+            mockRequest.mockRejectedValue(new Error('URL is invalid'));
 
             collectionBuilder.then(
-                () => {
+                (response) => {
                     /* */
+                    return response;
                 },
                 (error) => {
-                    expect(error).toEqual(new Error('URL is invalid'));
+                    expect(error).toBeInstanceOf(DotErrorContent);
+                    if (error instanceof DotErrorContent) {
+                        expect(error.contentType).toBe('song');
+                        expect(error.operation).toBe('fetch');
+                        expect(error.message).toBe(
+                            "Content API failed for 'song' (fetch): URL is invalid"
+                        );
+                        expect(error.query).toBeDefined();
+                    }
                     done();
+                    return error;
                 }
             );
         });
 
         it('should trigger catch method', (done) => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                serverUrl,
-                contentType
-            ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
+            const collectionBuilder = createCollectionBuilder(contentType).query((dotQuery) =>
+                dotQuery.field('author').equals('Linkin Park')
+            );
 
-            // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockRejectedValue(new Error('DNS are not resolving'));
+            // Mock the request to return a rejected promise
+            mockRequest.mockRejectedValue(new Error('DNS are not resolving'));
 
             collectionBuilder.then().catch((error) => {
-                expect(error).toEqual(new Error('DNS are not resolving'));
+                expect(error).toBeInstanceOf(DotErrorContent);
+                if (error instanceof DotErrorContent) {
+                    expect(error.contentType).toBe('song');
+                    expect(error.operation).toBe('fetch');
+                    expect(error.message).toBe(
+                        "Content API failed for 'song' (fetch): DNS are not resolving"
+                    );
+                    expect(error.query).toBeDefined();
+                }
                 done();
             });
         });
 
         it('should trigger catch of try catch block', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                serverUrl,
-                contentType
-            ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
+            const collectionBuilder = createCollectionBuilder(contentType).query((dotQuery) =>
+                dotQuery.field('author').equals('Linkin Park')
+            );
 
             // Mock a network error
-            (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+            mockRequest.mockRejectedValue(new Error('Network error'));
 
             try {
                 await collectionBuilder;
             } catch (e) {
-                expect(e).toEqual(new Error('Network error'));
+                expect(e).toBeInstanceOf(DotErrorContent);
+                if (e instanceof DotErrorContent) {
+                    expect(e.contentType).toBe('song');
+                    expect(e.operation).toBe('fetch');
+                    expect(e.message).toBe("Content API failed for 'song' (fetch): Network error");
+                    expect(e.query).toBeDefined();
+                }
             }
         });
-    });
 
-    describe('fetch resolves on error', () => {
-        it('should have the error content on then', async () => {
+        it('should throw HttpError when HTTP request fails', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                serverUrl,
-                contentType
-            ).limit(10);
+            const collectionBuilder = createCollectionBuilder(contentType).limit(10);
 
-            const error = {
-                message: 'Internal server error',
-                buffer: {
-                    stacktrace: 'Some really long server stacktrace'
-                }
-            };
-
-            // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockReturnValue(
-                Promise.resolve({
-                    status: 500,
-                    json: () => Promise.resolve(error)
-                })
-            );
-
-            collectionBuilder.then((response) => {
-                expect(response).toEqual({
-                    status: 500,
-                    ...error
-                });
+            const httpError = new DotHttpError({
+                status: 404,
+                statusText: 'Not Found',
+                message: 'Content not found',
+                data: { error: 'Content type does not exist' }
             });
+
+            // Mock the request to throw an HttpError
+            mockRequest.mockRejectedValue(httpError);
+
+            try {
+                await collectionBuilder;
+                fail('Expected DotCMSContentError to be thrown');
+            } catch (error) {
+                expect(error).toBeInstanceOf(DotErrorContent);
+                if (error instanceof DotErrorContent) {
+                    expect(error.contentType).toBe('song');
+                    expect(error.operation).toBe('fetch');
+                    expect(error.httpError).toBe(httpError);
+                    expect(error.message).toBe(
+                        "Content API failed for 'song' (fetch): Content not found"
+                    );
+                    expect(error.query).toBeDefined();
+                }
+            }
+        });
+
+        it('should handle HttpError in onrejected callback', (done) => {
+            const contentType = 'song';
+            const collectionBuilder = createCollectionBuilder(contentType).language(13);
+
+            const httpError = new DotHttpError({
+                status: 500,
+                statusText: 'Internal Server Error',
+                message: 'Server error occurred',
+                data: { error: 'Internal server error' }
+            });
+
+            // Mock the request to throw an HttpError
+            mockRequest.mockRejectedValue(httpError);
+
+            collectionBuilder.then(
+                (response) => {
+                    fail('Expected onrejected callback to be called');
+                    return response;
+                },
+                (error) => {
+                    expect(error).toBeInstanceOf(DotErrorContent);
+                    if (error instanceof DotErrorContent) {
+                        expect(error.contentType).toBe('song');
+                        expect(error.operation).toBe('fetch');
+                        expect(error.httpError).toBe(httpError);
+                        expect(error.message).toBe(
+                            "Content API failed for 'song' (fetch): Server error occurred"
+                        );
+                        expect(error.query).toBeDefined();
+                    }
+                    done();
+                    return error;
+                }
+            );
         });
     });
 });

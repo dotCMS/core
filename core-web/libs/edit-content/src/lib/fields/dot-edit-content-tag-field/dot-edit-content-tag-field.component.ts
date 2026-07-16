@@ -1,67 +1,57 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
-import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotSelectItemDirective } from '@dotcms/ui';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { AutoCompleteCompleteEvent } from '../../models/dot-edit-content-tag.interface';
-import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotTagFieldComponent } from './components/tag-field/tag-field.component';
 
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
+
+/**
+ * Component that handles tag field input using PrimeNG's AutoComplete.
+ * It provides tag suggestions as the user types with a minimum of 2 characters.
+ * Implements ControlValueAccessor for seamless form integration.
+ */
 @Component({
     selector: 'dot-edit-content-tag-field',
-    standalone: true,
-    imports: [CommonModule, AutoCompleteModule, ReactiveFormsModule, DotSelectItemDirective],
+    imports: [
+        AutoCompleteModule,
+        FormsModule,
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        DotTagFieldComponent,
+        DotMessagePipe
+    ],
+    templateUrl: './dot-edit-content-tag-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
+            useFactory: () => inject(ControlContainer, { skipSelf: true, optional: true })
         }
     ],
-    template: `
-        <p-autoComplete
-            (completeMethod)="getTags($event)"
-            [formControlName]="$field().variable"
-            [id]="'tag-id-' + $field().variable"
-            [inputId]="$field().variable"
-            [attr.data-testId]="$field().variable"
-            [suggestions]="$options()"
-            [multiple]="true"
-            [unique]="true"
-            [showClear]="true"
-            dotSelectItem />
-    `
+    host: {
+        class: 'block'
+    }
 })
-export class DotEditContentTagFieldComponent {
+export class DotEditContentTagFieldComponent extends BaseWrapperField {
+    /**
+     * Required input that defines the field configuration
+     */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-    $options = signal<string[] | null>(null);
-    private readonly editContentService = inject(DotEditContentService);
-    private readonly controlContainer = inject(ControlContainer);
 
     /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
+     * Required input that defines the contentlet
      */
-    get formControl() {
-        const field = this.$field();
-
-        return this.controlContainer.control.get(field.variable) as AbstractControl<string>;
-    }
-
-    /**
-     * Retrieves tags based on the provided query.
-     * @param event - The AutoCompleteCompleteEvent object containing the query.
-     */
-    getTags({ query }: AutoCompleteCompleteEvent) {
-        if (query.length < 3) {
-            return;
-        }
-
-        this.editContentService.getTags(query).subscribe((tags) => {
-            this.$options.set(tags);
-        });
-    }
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 }

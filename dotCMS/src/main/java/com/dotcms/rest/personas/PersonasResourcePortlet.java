@@ -13,7 +13,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.BaseRestPortlet;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Personalization")
 @Path("/personas")
 public class PersonasResourcePortlet extends BaseRestPortlet{
 

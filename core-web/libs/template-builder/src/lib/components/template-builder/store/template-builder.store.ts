@@ -11,18 +11,17 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties,
-    SYSTEM_CONTAINER_IDENTIFIER
+    DotTemplateLayoutProperties
 } from '../models/models';
 import {
-    getIndexRowInItems,
+    createDotGridStackWidgetFromNode,
     createDotGridStackWidgets,
     getColumnByID,
-    removeColumnByID,
-    createDotGridStackWidgetFromNode,
+    getIndexRowInItems,
+    getRemainingSpaceForBox,
     parseMovedNodeToWidget,
-    willBoxFitInRow,
-    getRemainingSpaceForBox
+    removeColumnByID,
+    willBoxFitInRow
 } from '../utils/gridstack-utils';
 
 /**
@@ -47,14 +46,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     }));
 
     // Rows Updaters
-
     /**
      * @description This Method adds a new row to the grid
      *
      * @memberof DotTemplateBuilderStore
      */
     readonly addRow = this.updater((state, newRow: DotGridStackWidget) => {
-        const { rows } = state;
+        const { rows, defaultContainer } = state;
+        const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
+        const containers = identifier ? [{ identifier }] : [];
+        const newRowId = uuid();
 
         return {
             ...state,
@@ -66,7 +67,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     h: 1,
                     w: 12,
                     x: 0,
-                    id: uuid(),
+                    id: newRowId,
                     subGridOpts: {
                         children: [
                             {
@@ -75,13 +76,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                                 h: 1,
                                 x: 0,
                                 y: 0,
-                                containers: [
-                                    {
-                                        identifier: SYSTEM_CONTAINER_IDENTIFIER
-                                    }
-                                ],
-                                parentId: newRow.id,
-                                styleClass: null
+                                containers,
+                                parentId: newRowId,
+                                styleClass: undefined
                             }
                         ]
                     }
@@ -91,7 +88,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     });
 
     /**
-     * @description This Method updates the position of the rows
+     * @description This Method updates the position ofme sigue the rows
      *
      * @memberof DotTemplateBuilderStore
      */
@@ -158,7 +155,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly addColumn = this.updater((state, column: DotGridStackNode) => {
         const { rows } = state;
-        const newColumn = createDotGridStackWidgetFromNode(column);
+        const newColumn = createDotGridStackWidgetFromNode(column, state.defaultContainer);
 
         return {
             ...state,
@@ -236,7 +233,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly updateColumnGridStackData = this.updater(
         (state, affectedColumns: DotGridStackNode[]) => {
             const { rows } = state;
-            affectedColumns = createDotGridStackWidgets(affectedColumns);
+            affectedColumns = createDotGridStackWidgets(affectedColumns, state.defaultContainer);
 
             return {
                 ...state,
@@ -426,7 +423,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
                                   return {
                                       ...newChild, // We want the data from the backend
-                                      id: oldChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                                      id: oldChild?.id ?? newChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
                                       containers: newChild.containers
                                   };
                               })
@@ -554,6 +551,19 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         themeId,
         shouldEmit: true
     }));
+
+    /**
+     * @description This method updates the defaultContainer
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateDefaultContainer = this.updater(
+        (state, defaultContainer: DotContainer | null) => ({
+            ...state,
+            defaultContainer,
+            shouldEmit: true
+        })
+    );
 
     // Utils methods
 

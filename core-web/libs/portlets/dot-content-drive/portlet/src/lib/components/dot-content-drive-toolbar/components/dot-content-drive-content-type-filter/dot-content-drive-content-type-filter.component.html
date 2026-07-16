@@ -1,0 +1,136 @@
+<dot-chip-filter
+    [title]="'content-drive.type-filter.title' | dm"
+    [selections]="$chipSelections()"
+    (clicked)="popover.toggle($event)"
+    (removed)="onClearAll()"
+    data-testid="content-type-filter-chip" />
+
+<p-popover #popover [pt]="popoverPt" (onShow)="$popoverOpen.set(true)" (onHide)="onPanelHide()">
+    @if ($popoverOpen()) {
+        <div
+            class="grid w-160 grid-cols-[repeat(2,1fr)] grid-rows-[min-content] overflow-hidden"
+            [style.height]="POPOVER_MAX_HEIGHT"
+            data-testid="content-type-filter-panel">
+            <div class="flex flex-1 flex-col border-r border-slate-200 bg-white">
+                <div class="px-4 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
+                    {{ 'content-drive.type-filter.column.base-type' | dm }}
+                </div>
+                <p-listbox
+                    class="min-h-0 flex-1"
+                    [options]="$leftOptions()"
+                    [ngModel]="$focusedBaseType()"
+                    (ngModelChange)="onFocusChange($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    optionLabel="label"
+                    optionValue="name"
+                    [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                    [pt]="listboxPt"
+                    data-testid="base-type-listbox">
+                    <ng-template let-item pTemplate="item">
+                        @if (item.name === ALL_CONTENT) {
+                            <!--
+                                Absolute-positioned divider extends 1rem past each side to
+                                cover the option's horizontal padding (from
+                                CHIP_FILTER_LISTBOX_PT), without shrinking the content width
+                                and truncating the label.
+                            -->
+                            <div class="relative flex w-full min-w-0 items-center gap-2">
+                                <i class="pi pi-list text-sm text-slate-500"></i>
+                                <dot-filter-list-item [label]="item.label" />
+                                <span
+                                    class="pointer-events-none absolute -inset-x-4 bottom-0 h-px bg-slate-200"></span>
+                            </div>
+                        } @else {
+                            @let partial = isBaseTypePartial(item.name);
+                            <div class="flex w-full min-w-0 items-center gap-2">
+                                <p-checkbox
+                                    [ngModel]="isBaseTypeSelected(item.name)"
+                                    [indeterminate]="partial"
+                                    [pt]="partial ? partialCheckboxPt : null"
+                                    (onChange)="onBaseTypeToggle(item.name)"
+                                    (mousedown)="$event.stopPropagation()"
+                                    (click)="$event.stopPropagation()"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    [binary]="true"
+                                    [attr.data-testid]="'base-type-checkbox-' + item.name" />
+                                <dot-filter-list-item [label]="item.label" />
+                                <i class="pi pi-chevron-right text-xs text-slate-400"></i>
+                            </div>
+                        }
+                    </ng-template>
+                </p-listbox>
+            </div>
+
+            <div class="flex flex-1 flex-col bg-white">
+                <div class="px-4 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
+                    {{ 'content-drive.type-filter.column.content-type' | dm }}
+                </div>
+                <div class="px-3 pb-2">
+                    <p-iconfield class="w-full">
+                        <p-inputicon class="pi pi-search" />
+                        <input
+                            pInputText
+                            type="text"
+                            class="w-full"
+                            [placeholder]="'search' | dm"
+                            [ngModel]="$state.contentTypeFilter()"
+                            (ngModelChange)="onSearchInput($event)"
+                            [attr.aria-label]="'search' | dm"
+                            data-testid="content-type-search" />
+                    </p-iconfield>
+                </div>
+                @if ($showAllBanner()) {
+                    <div
+                        class="flex items-center gap-2 border-y border-emerald-100 bg-emerald-50 px-4 text-emerald-800"
+                        [style.height]="LISTBOX_BANNER_HEIGHT_PX"
+                        data-testid="content-type-all-banner">
+                        <i class="pi pi-check text-sm"></i>
+                        <span class="text-sm font-semibold">
+                            {{ 'content-drive.type-filter.all-content-types-selected' | dm }}
+                        </span>
+                    </div>
+                }
+                <p-listbox
+                    #contentTypeListbox
+                    class="min-h-0 flex-1"
+                    [ngModel]="$selectedContentTypes()"
+                    (ngModelChange)="onContentTypeChange($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [options]="$state.contentTypes()"
+                    [multiple]="true"
+                    [checkbox]="true"
+                    [showToggleAll]="false"
+                    [virtualScroll]="true"
+                    [virtualScrollItemSize]="LISTBOX_ITEM_HEIGHT"
+                    [scrollHeight]="$rightScrollHeight()"
+                    [lazy]="true"
+                    (onLazyLoad)="onLazyLoad($event)"
+                    [pt]="listboxPt"
+                    optionLabel="name"
+                    dataKey="variable"
+                    data-testid="content-type-listbox">
+                    <ng-template let-item pTemplate="item">
+                        <dot-filter-list-item [label]="item.name" data-testid="content-type-item" />
+                    </ng-template>
+                    <ng-template pTemplate="empty">
+                        <div
+                            class="flex flex-col items-center justify-center gap-2 py-1 text-slate-500"
+                            [style.height]="$rightScrollHeight()"
+                            data-testid="content-type-empty">
+                            @if ($state.loading()) {
+                                <i
+                                    class="pi pi-spin pi-spinner text-2xl"
+                                    data-testid="content-type-loading"></i>
+                            } @else {
+                                <i class="pi pi-search-minus text-2xl text-slate-400"></i>
+                                <span class="text-sm">
+                                    {{ 'content-drive.content-type-field.empty-state' | dm }}
+                                </span>
+                            }
+                        </div>
+                    </ng-template>
+                </p-listbox>
+            </div>
+        </div>
+    }
+</p-popover>

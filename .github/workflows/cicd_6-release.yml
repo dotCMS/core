@@ -1,0 +1,374 @@
+#
+# Release Workflow
+#
+# This workflow handles the complete release process for dotCMS following the established
+# phase pattern: initialize -> build -> deployment -> finalize
+#
+# Key features:
+# - Release preparation (branch creation, version setting)
+# - Standard build phase for artifact generation
+# - Release-specific deployment (Artifactory, Javadocs, plugins)
+# - Docker image deployment via standard deployment phase
+# - SBOM generation
+# - GitHub label management
+# - Release notifications
+#
+# This workflow follows the modular phase pattern established in the CICD architecture
+# and replaces the legacy-release_maven-release-process.yml workflow
+#
+
+name: '-6 Release Process'
+run-name: "Release ${{ inputs.release_version }}${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
+        required: true
+      release_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+      deploy_artifact:
+        description: 'Deploy Artifact to Artifactory'
+        type: boolean
+        default: true
+        required: false
+      update_plugins:
+        description: 'Update Plugins'
+        type: boolean
+        default: true
+        required: false
+      upload_javadocs:
+        description: 'Upload Javadocs to S3'
+        type: boolean
+        default: true
+        required: false
+      update_github_labels:
+        description: 'Update GitHub labels'
+        type: boolean
+        default: true
+        required: false
+      skip_latest:
+        description: 'Leave BLANK to update the "latest" Docker tag (default). To skip moving latest, type exactly: DO NOT UPDATE LATEST. Any other value fails the run.'
+        type: string
+        default: ''
+        required: false
+      notify_slack:
+        description: 'Notify Slack'
+        type: boolean
+        default: true
+        required: false
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open). Compiler release auto-defaults to Java major version.'
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        type: string
+        required: false
+        default: ''
+
+# No concurrency control - releases should complete without interruption
+concurrency:
+  group: release-${{ github.event.inputs.release_version }}
+  cancel-in-progress: false
+
+jobs:
+  # Enforce that releases are only ever cut from main. The workflow_dispatch
+  # branch selector cannot be hidden, so we fail fast on any non-main ref.
+  verify-branch:
+    name: Verify Branch
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Fail if not triggered from main
+        if: github.ref_name != 'main'
+        run: |
+          echo "::error::The Release workflow must be run from the 'main' branch. Selected: ${{ github.ref_name }}"
+          exit 1
+      # Reject typos in skip_latest. Only blank (update latest) or the exact
+      # phrase (skip latest) are valid — anything else fails the release so the
+      # operator must re-run with a deliberate value, rather than silently
+      # falling through to "update latest" on a near-miss like "do not update latest".
+      - name: Validate skip_latest input
+        env:
+          SKIP_LATEST: ${{ github.event.inputs.skip_latest }}
+        run: |
+          if [ -n "${SKIP_LATEST}" ] && [ "${SKIP_LATEST}" != "DO NOT UPDATE LATEST" ]; then
+            echo "::error::skip_latest must be blank (update the latest tag) or exactly 'DO NOT UPDATE LATEST' (skip it). Got: '${SKIP_LATEST}'. Re-run with a valid value."
+            exit 1
+          fi
+
+  # Initialize - standard initialization phase (always first)
+  initialize:
+    name: Initialize
+    needs: [ verify-branch ]
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    # Release builds everything - no change detection needed
+    with:
+      change-detection: 'disabled'
+
+  # Release Prepare - validates version, creates release branch, sets version
+  release-prepare:
+    name: Release Prepare
+    needs: [ verify-branch, initialize ]
+    uses: ./.github/workflows/cicd_comp_release-prepare-phase.yml
+    with:
+      release_version: ${{ github.event.inputs.release_version }}
+      release_commit: ${{ github.event.inputs.release_commit }}
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+
+  # Build - standard build phase for artifact generation
+  build:
+    name: Build
+    needs: [ release-prepare, initialize ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      ref: ${{ needs.release-prepare.outputs.release_tag }}
+      validate: false
+      version: ${{ needs.release-prepare.outputs.release_version }}
+      generate-docker: true
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+    permissions:
+      contents: read
+      packages: write
+
+  # Deployment - standard deployment phase for Docker images and NPM
+  deployment:
+    name: Deployment
+    needs: [ release-prepare, initialize, build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      environment: 'release'
+      tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
+      omit-environment-prefix: true
+      artifact-run-id: ${{ github.run_id }}
+      # `latest` is no longer moved here. evergreen-tracks is the single controller
+      # of the floating latest/standard/trailing tags; the promote-latest job below
+      # repoints `latest` on-demand once the release images are published.
+      latest: false
+      deploy-cli: true
+      deploy-dev-image: true
+      publish-npm-cli: false
+      publish-npm-sdk-libs: false
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Promote latest - move the floating `latest` Docker tag to this GA release.
+  #
+  # evergreen-tracks (cicd/evergreen-tracks) is the single controller of the
+  # latest/standard/trailing tags. Its daily cron ages standard/trailing, but
+  # `latest` must move the instant a GA ships — so the release pipeline invokes
+  # the same engine on-demand, scoped to the latest track only (--tracks latest).
+  # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
+  #
+  # Runs for every GA release from main on dotcms/core by default — moving latest
+  # is not optional via an easy-to-miss checkbox. To intentionally skip it, the
+  # operator must type the exact phrase "DO NOT UPDATE LATEST" in the skip_latest
+  # input; blank moves latest, and any other value is rejected up front by the
+  # verify-branch "Validate skip_latest input" step (no silent fall-through).
+  # Back-patches of older lines need no opt-out: the engine is forward-only, so
+  # promoting latest on an older release is a no-op. For a runtime freeze, use the
+  # admin workflow's `hold latest` action.
+  promote-latest:
+    name: Promote latest tag
+    # Default success() gate: only runs when release-prepare AND deployment both
+    # succeeded, so the release images are guaranteed to exist before we repoint.
+    needs: [ release-prepare, deployment ]
+    if: >-
+      needs.release-prepare.outputs.is_latest == 'true'
+      && github.ref_name == 'main'
+      && github.repository == 'dotcms/core'
+      && github.event.inputs.skip_latest != 'DO NOT UPDATE LATEST'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+    # Share the registry-mutation lock with the promote/admin workflows so this
+    # on-demand promote can never race the daily cron or an admin run.
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Move latest to ${{ needs.release-prepare.outputs.release_version }}
+        working-directory: cicd/evergreen-tracks
+        run: |
+          for repo in dotcms/dotcms dotcms/dotcms-dev; do
+            echo "--- promoting latest on ${repo} ---"
+            uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
+          done
+
+  # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
+  # Waits for deployment to complete to safely update labels only if both succeed
+  release:
+    name: Release
+    needs: [ release-prepare, initialize, build, deployment ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_release-phase.yml
+    with:
+      release_version: ${{ needs.release-prepare.outputs.release_version }}
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      artifact_run_id: ${{ github.run_id }}
+      deploy_artifact: ${{ github.event.inputs.deploy_artifact == 'true' }}
+      upload_javadocs: ${{ github.event.inputs.upload_javadocs == 'true' }}
+      update_plugins: ${{ github.event.inputs.update_plugins == 'true' }}
+      update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' && github.ref_name == 'main' }}
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+    secrets:
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Release Notes - AI-generated changelog for the GitHub release description
+  # Runs after the release job succeeds; non-blocking for finalize/report
+  release-notes:
+    name: Release Notes
+    needs: [ release-prepare, release ]
+    if: success()
+    uses: ./.github/workflows/cicd_comp_ai-release-notes-phase.yml
+    with:
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      allow_failure: true
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Finalize - standard finalization phase (required for phase pattern)
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, deployment, release ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ github.run_id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Report - send release notification to Slack
+  report:
+    name: Report
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    needs: [ release-prepare, deployment, release, finalize ]
+    if: always()
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      # Compute QA-coverage warning for the Slack message. Every step here is
+      # best-effort (continue-on-error: true) so a transient failure cannot
+      # block the release announcement; the Slack step renders the
+      # announcement with no QA section if `qa_warning` is empty.
+      #
+      # Skips non-standard releases (LTS / CLI / non-v-prefixed) to match the
+      # behavior of the AI release-notes phase. These releases don't have a
+      # reliable previous-tag for comparison.
+      - name: Setup Node.js
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install QA-status script dependencies
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        working-directory: .github/scripts/release-qa-status
+        run: npm ci
+
+      - name: Compute QA-coverage warning
+        id: qa
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        working-directory: .github/scripts/release-qa-status
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          RELEASE_TAG: ${{ needs.release-prepare.outputs.release_tag }}
+          # Full markdown report lands on the workflow run summary; the
+          # Slack counts link here.
+          DETAIL_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MAPPINGS_PATH: ${{ github.workspace }}/.github/data/slack-mappings.json
+        run: |
+          set +e
+          # 1) Full markdown report → workflow run summary
+          npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format markdown 2>>/tmp/qa-stderr.log >> "${GITHUB_STEP_SUMMARY}"
+          rc_md=$?
+          if [ $rc_md -ne 0 ]; then
+            echo "::warning::release-qa-status (markdown) exited with ${rc_md}; report summary may be incomplete"
+          fi
+
+          # 2) Compact Slack snippet → step output for the next step
+          output=$(npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format slack \
+            --mappings "${MAPPINGS_PATH}" \
+            --detail-url "${DETAIL_URL}" 2>>/tmp/qa-stderr.log)
+          rc_slack=$?
+          if [ $rc_slack -ne 0 ]; then
+            echo "::warning::release-qa-status (slack) exited with ${rc_slack}; omitting QA section from Slack message"
+            cat /tmp/qa-stderr.log || true
+            output=""
+          fi
+          {
+            echo 'qa_warning<<__RELEASE_QA_WARNING_EOF__'
+            if [ -n "${output}" ]; then
+              printf '%s\n' "${output}"
+            fi
+            echo '__RELEASE_QA_WARNING_EOF__'
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Important news!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release-prepare.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.deployment.outputs.formatted_tags || needs.deployment.outputs.docker_tags }}]${{ steps.qa.outputs.qa_warning }}"
+        if: success() && github.event.inputs.notify_slack == 'true'

@@ -1,6 +1,6 @@
 package com.dotcms.rest.exception;
 
-import com.dotcms.repackage.javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolation;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.Validated;
 

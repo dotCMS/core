@@ -1,9 +1,14 @@
-import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { Spectator, createComponentFactory, mockProvider, byTestId } from '@openng/spectator/jest';
+import { of, NEVER } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { Table } from 'primeng/table';
 
 import {
@@ -11,6 +16,7 @@ import {
     DotLanguagesService,
     DotMessageService
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { MockDotMessageService, mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
 import { DotLocalesListComponent } from './dot-locales-list.component';
@@ -38,59 +44,70 @@ describe('DotLocalesListComponent', () => {
                 }
             },
             {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+            mockProvider(DotHttpErrorManagerService),
+            ConfirmationService,
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
+        componentProviders: [
+            DotLocalesListStore,
+            mockProvider(DialogService, {
+                open: jest.fn().mockReturnValue({ onClose: NEVER })
+            }),
+            MessageService,
+            mockProvider(DotPushPublishDialogService),
+            {
                 provide: DotLanguagesService,
                 useValue: {
                     get: () => of([...mockLocales]),
                     getISO: () => of(mockLanguagesISO)
                 }
-            },
-
-            DotLocalesListStore,
-            {
-                provide: DotMessageService,
-                useValue: messageServiceMock
-            },
-            mockProvider(DotHttpErrorManagerService),
-            ConfirmationService
+            }
         ]
     });
 
     beforeEach(() => (spectator = createComponent()));
 
-    it('should display locales when component is initialized', () => {
+    it('should display locales when component is initialized', fakeAsync(() => {
         spectator.detectChanges();
+        tick();
 
         const localeElements = spectator.queryAll(byTestId('locale-cell'));
         expect(localeElements.length).toEqual(2);
         expect(localeElements[0]).toHaveText('English (en-US)');
-    });
+    }));
 
     it('should filter locale when using the filer input', () => {
-        const table = spectator.query(Table);
-        jest.spyOn(table, 'filterGlobal');
-
         spectator.detectChanges();
 
-        spectator.typeInElement('Spanish', byTestId('input-search'));
+        const tableDe = spectator.debugElement.query(By.directive(Table));
+        const table = tableDe?.componentInstance as Table;
+        jest.spyOn(table, 'filterGlobal');
+
+        spectator.typeInElement('Spanish', byTestId('locale-search-input'));
 
         expect(table.filterGlobal).toHaveBeenCalledWith('Spanish', 'contains');
     });
 
-    it('should display default tag for default locale', () => {
+    it('should display default tag for default locale', fakeAsync(() => {
         spectator.detectChanges();
+        tick();
 
-        expect(spectator.query('.p-tag-success')).toHaveText('Default');
-    });
+        expect(spectator.query('p-chip')).toHaveText('Default');
+    }));
 
-    it('should open AddEditDialog with locale id when row is clicked', () => {
+    it('should open edit dialog when row is clicked', fakeAsync(() => {
         spectator.detectChanges();
+        tick();
 
-        jest.spyOn(spectator.component.store, 'openAddEditDialog');
+        const dialogService = spectator.inject(DialogService, true);
 
         const row = spectator.query(byTestId('locale-row'));
-
         spectator.click(row);
 
-        expect(spectator.component.store.openAddEditDialog).toHaveBeenCalled();
-    });
+        expect(dialogService.open).toHaveBeenCalled();
+    }));
 });

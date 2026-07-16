@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -19,10 +19,10 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *  }
  */
 @Injectable()
-export class DotFeatureFlagResolver
-    implements Resolve<Observable<Record<string, boolean | string>> | Observable<boolean | string>>
-{
-    constructor(private readonly dotConfigurationService: DotPropertiesService) {}
+export class DotFeatureFlagResolver implements Resolve<
+    Observable<Record<string, boolean | string>> | Observable<boolean | string>
+> {
+    private readonly dotConfigurationService = inject(DotPropertiesService);
 
     resolve(route: ActivatedRouteSnapshot) {
         if (route.data.featuredFlagsToCheck) {

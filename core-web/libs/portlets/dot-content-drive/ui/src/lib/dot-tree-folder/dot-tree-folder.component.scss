@@ -1,0 +1,62 @@
+:host ::ng-deep {
+    .p-tree-node-content:has(span.active) {
+        pointer-events: none;
+        background-color: var(--color-palette-primary-200);
+    }
+
+    .p-tree {
+        /* First-only mode: show folder icon only on first root node */
+        &.first-only {
+            .toggler-first {
+                display: none;
+            }
+
+            .p-tree-root-children > p-treenode:first-of-type {
+                .toggler-first {
+                    display: block;
+                }
+
+                .toggler-regular {
+                    display: none;
+                }
+            }
+        }
+
+        /* All-folder mode: show folder icon on all nodes */
+        &.folder-all {
+            .toggler-first {
+                display: block;
+            }
+
+            .toggler-regular {
+                display: none;
+            }
+        }
+    }
+}
+
+/* Pulse animation for loading state  */
+.pulse-container::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6.5rem;
+    height: 6.5rem;
+    border-radius: 50%;
+    background-color: var(--color-palette-secondary-300);
+    animation: pulse 2s infinite cubic-bezier(0.66, 0, 0.34, 1);
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+}

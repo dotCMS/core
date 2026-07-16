@@ -11,6 +11,8 @@ import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 import { AssetFormComponent } from './asset-form.component';
 import { bubbleAssetFormPlugin } from './plugins/bubble-asset-form.plugin';
 
+import { getEditorElement } from '../../shared/utils';
+
 export const BUBBLE_ASSET_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 
 declare module '@tiptap/core' {
@@ -37,7 +39,7 @@ const tippyOptions: Partial<Props> = {
     popperOptions: {
         modifiers: [
             {
-                name: 'flip',
+                name: 'animate-flip',
                 options: { fallbackPlacements: ['top-start'] }
             }
         ]
@@ -90,14 +92,14 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     }
 
     function setUpTippy(editor: Editor) {
-        const { element } = editor.options;
-        const editorIsAttached = !!element.parentElement;
+        const element = getEditorElement(editor);
+        const editorIsAttached = !!element?.parentElement;
 
-        if (formTippy || !editorIsAttached) {
+        if (formTippy || !element || !editorIsAttached) {
             return;
         }
 
-        formTippy = tippy(element.parentElement, tippyOptions);
+        formTippy = tippy(element.parentElement, tippyOptions) as Instance;
     }
 
     function setUpComponent(editor: Editor, type: EditorAssetTypes) {

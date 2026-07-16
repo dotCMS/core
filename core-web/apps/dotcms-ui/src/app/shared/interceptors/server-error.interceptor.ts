@@ -1,30 +1,28 @@
-import { Observable } from 'rxjs';
+import { EMPTY, throwError } from 'rxjs';
 
-import {
-    HttpErrorResponse,
-    HttpEvent,
-    HttpHandler,
-    HttpInterceptor,
-    HttpRequest
-} from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject, Injector } from '@angular/core';
 
-import { catchError, map, take } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { HttpCode, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
 
-@Injectable()
-export class ServerErrorInterceptor implements HttpInterceptor {
-    constructor(private httpErrorManagerService: DotHttpErrorManagerService) {}
+export const serverErrorInterceptor: HttpInterceptorFn = (req, next) => {
+    const injector = inject(Injector);
 
-    intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-        return next.handle(request).pipe(
-            catchError((error: HttpErrorResponse) => {
-                return this.httpErrorManagerService.handle(error).pipe(
-                    take(1),
-                    map(() => null)
-                );
-            })
-        );
-    }
-}
+    return next(req).pipe(
+        catchError((error: HttpErrorResponse) => {
+            if (error.status === HttpCode.UNAUTHORIZED) {
+                const loginService = injector.get(LoginService);
+
+                if (loginService.auth?.user) {
+                    window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
+
+                    return EMPTY;
+                }
+            }
+
+            return throwError(() => error);
+        })
+    );
+};

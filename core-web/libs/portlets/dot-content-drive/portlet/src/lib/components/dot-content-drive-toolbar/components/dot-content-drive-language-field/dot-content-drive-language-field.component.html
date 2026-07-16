@@ -1,0 +1,30 @@
+<dot-chip-filter
+    [title]="'content-drive.language-selector.placeholder' | dm"
+    [selections]="$selectedLanguageNames()"
+    (clicked)="popover.toggle($event)"
+    (removed)="onRemoveAll()"
+    data-testid="language-chip" />
+
+<p-popover #popover [pt]="popoverPt" (onHide)="listbox.resetFilter()">
+    <p-listbox
+        #listbox
+        [(ngModel)]="$selectedLanguages"
+        [ngModelOptions]="{ standalone: true }"
+        [options]="$state.languages()"
+        [multiple]="true"
+        [checkbox]="true"
+        [filter]="true"
+        [filterPlaceHolder]="'search' | dm"
+        [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+        [pt]="listboxPt"
+        optionLabel="language"
+        optionValue="id"
+        (onChange)="onChange()">
+        <ng-template let-item pTemplate="item">
+            <dot-filter-list-item
+                [label]="item.language"
+                [secondary]="item.isoCode ?? item.countryCode"
+                data-testid="language-item" />
+        </ng-template>
+    </p-listbox>
+</p-popover>

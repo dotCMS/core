@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
-
-
     <Properties>
         <Property name="DOTCMS_LOG_FILE">${sys:catalina.home}/logs/dotcms.log</Property>
         <Property name="DOTCMS_FILENAME_PATTERN">${sys:catalina.home}/logs/archive/dotcms-%i.log.gz</Property>
-        <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
+        <!-- Pattern layouts come from env vars whose defaults are set by
+             /srv/35-set-logging-defaults.sh (this file is only installed alongside it, by
+             20-copy-overriden-files.sh). Filtered framework packages collapse in stack
+             traces to "... suppressed NN lines"; all com.dotcms/com.dotmarketing frames
+             and exception messages remain visible. -->
+        <Property name="MESSAGE_PATTERN">${env:CMS_LOG4J_MESSAGE_PATTERN}</Property>
+        <Property name="CONSOLE_PATTERN">${env:CMS_LOG4J_CONSOLE_PATTERN}</Property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2} - %msg%n" />
+            <PatternLayout pattern="${CONSOLE_PATTERN}" />
         </Console>
-       <Async name="generic">
-            <AppenderRef ref="GENERIC-FILE"/>
-        </Async>
-
         <!--  Generic Logging File -->
-        <RollingFile name="GENERIC-FILE"
+        <RollingFile name="Generic-File"
                      fileName="${DOTCMS_LOG_FILE}"
                      filePattern="${DOTCMS_FILENAME_PATTERN}"
                      immediateFlush="false">
@@ -26,12 +26,11 @@
             </Policies>
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
-
     </Appenders>
     <Loggers>
         <Root level="info">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="generic"/>
+            <AppenderRef ref="Generic-File"/>
         </Root>
     </Loggers>
 </Configuration> 

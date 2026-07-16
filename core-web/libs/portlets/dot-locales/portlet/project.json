@@ -3,24 +3,24 @@
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-locales/portlet/src",
     "prefix": "dot",
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:locales"],
     "projectType": "library",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:locales"],
     "targets": {
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}",
+                "{workspaceRoot}/target/core-web-reports"
+            ],
             "options": {
-                "jestConfig": "libs/portlets/dot-locales/portlet/jest.config.ts"
+                "passWithNoTests": true
             },
             "configurations": {
                 "ci": {
-                    "verbose": false
+                    "ci": true,
+                    "verbose": false,
+                    "coverage": true
                 }
             }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
         }
     }
 }

@@ -2,6 +2,12 @@ package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.DotRestInstanceProvider;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.UserPaginator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -18,8 +24,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import static org.junit.Assert.*;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -37,7 +44,14 @@ public class UserResourceIntegrationTest {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        resource = new UserResource();
+        // Create resource with 4-parameter constructor
+        resource = new UserResource(new WebResource(new ApiProvider()), UserResourceHelper.getInstance(),
+                new PaginationUtil(new UserPaginator()), new DotRestInstanceProvider()
+                        .setUserAPI(APILocator.getUserAPI())
+                        .setHostAPI(APILocator.getHostAPI())
+                        .setRoleAPI(APILocator.getRoleAPI())
+                        .setErrorHelper(ErrorResponseHelper.INSTANCE));
+
         adminUser = TestUserUtils.getAdminUser();
         host = new SiteDataGen().nextPersisted();
         user = TestUserUtils.getChrisPublisherUser(host);
@@ -53,7 +67,6 @@ public class UserResourceIntegrationTest {
         final Permission readPermissionsPermission = new Permission( host.getPermissionId(),
                 APILocator.getRoleAPI().getUserRole(user).getId(), PermissionAPI.PERMISSION_READ, true );
         APILocator.getPermissionAPI().save(readPermissionsPermission,host,adminUser,false);
-
     }
 
     private static HttpServletRequest mockRequest() {
@@ -64,7 +77,7 @@ public class UserResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());
@@ -98,6 +111,4 @@ public class UserResourceIntegrationTest {
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertNull(request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
     }
-
-
 }

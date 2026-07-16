@@ -1,5 +1,5 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -9,14 +9,14 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="org.apache.commons.lang.StringUtils"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
+<%@ page import="com.dotcms.content.index.domain.IndexStats" %>
 <%@ include file="/html/common/init.jsp"%>
 
 <%
 
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
-ESIndexAPI esapi = APILocator.getESIndexAPI();
+IndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 try {
@@ -135,12 +135,12 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<td><%=UtilMethods.webifyString(myDate) %></td>
 
 			<td align="center">
-				<%=status !=null ? status.getDocumentCount() : "n/a"%>
+				<%=status !=null ? status.documentCount() : "n/a"%>
 			</td>
-			<td align="center"><%=(health !=null) ? health.getNumberOfShards() : "n/a"%></td>
-			<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
-			<td align="center"><%=status !=null ? status.getSize(): "n/a"%></td>
-			<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
+			<td align="center"><%=(health !=null) ? health.numberOfShards() : "n/a"%></td>
+			<td align="center"><%=(health !=null) ? health.numberOfReplicas(): "n/a"%></td>
+			<td align="center"><%=status !=null ? status.size(): "n/a"%></td>
+			<td align="center"><div  style='background:<%=(health !=null) ? health.status().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
 		</tr>
 	<%} %>
 	

@@ -27,6 +27,16 @@
 		<filter-class>com.dotcms.filters.NormalizationFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
+    <filter>
+        <filter-name>RequestCostFilter</filter-name>
+        <filter-class>com.dotcms.cost.RequestCostFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+	<filter>
+		<filter-name>RequestTrackingFilter</filter-name>
+		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
@@ -60,13 +70,17 @@
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+	<filter>
+		<filter-name>InfrastructureManagementFilter</filter-name>
+		<filter-class>com.dotcms.management.filters.InfrastructureManagementFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<filter>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
@@ -112,6 +126,11 @@
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
 		<async-supported>true</async-supported>
     </filter>
+	<filter>
+		<filter-name>ScssQueryParamFilter</filter-name>
+		<filter-class>com.dotcms.csspreproc.ScssQueryParamFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -123,34 +142,64 @@
  	<!-- END FILTER-MAPPINGS -->
  	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
+	<!-- Essential security and HTTP compliance filters run first -->
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+
     <filter-mapping>
-        <filter-name>HttpHeaderSecurityFilter</filter-name>
+        <filter-name>RequestCostFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
+
+
+    <!-- Request tracking filter runs early to capture all requests for metrics and shutdown coordination -->
 	<filter-mapping>
-		<filter-name>InterceptorFilter</filter-name>
+		<filter-name>RequestTrackingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    
+
+	<filter-mapping>
+		<filter-name>ScssQueryParamFilter</filter-name>
+		<url-pattern>*.scss</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+			<filter-name>HttpHeaderSecurityFilter</filter-name>
+			<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>CookiesFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- CRITICAL: InfrastructureManagementFilter runs after essential security filters but before expensive ones
+	     Pattern must match InfrastructureConstants.MANAGEMENT_PATH_PREFIX + "/*" = "/dotmgt/*"
+	     Filter is service-agnostic - handles ANY service under /dotmgt prefix -->
+	<filter-mapping>
+		<filter-name>InfrastructureManagementFilter</filter-name>
+		<url-pattern>/dotmgt/*</url-pattern>
+	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
-	<filter-mapping>
-		<filter-name>CookiesFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
+
 	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
+	<filter-mapping>
+		<filter-name>InterceptorFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -219,6 +268,11 @@
 	<listener>
 		<listener-class>com.dotcms.listeners.SwitchSiteListener</listener-class>
 	</listener>
+    <listener>
+        <listener-class>com.dotcms.cost.RequestCostRequestListener</listener-class>
+    </listener>
+
+
     <listener>
       <listener-class>com.dotcms.api.web.RequestThreadLocalListener</listener-class>
     </listener>
@@ -385,6 +439,13 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
 	</servlet>
+
+	<servlet>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<servlet-class>com.dotcms.health.servlet.HealthProbeServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -516,6 +577,29 @@
 		<url-pattern>/api/v1/graphql</url-pattern>
 	</servlet-mapping>
 
+	<!-- Health service endpoint mappings
+	     These paths must match HealthEndpointConstants.Endpoints values:
+	     - LIVENESS  = /dotmgt/livez  (Kubernetes liveness probe)
+	     - READINESS = /dotmgt/readyz (Kubernetes readiness probe) 
+	     - HEALTH    = /dotmgt/health (Detailed health status)
+	     
+	     See: com.dotcms.health.config.HealthEndpointConstants for validation -->
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/dotmgt/livez</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/dotmgt/readyz</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/dotmgt/health</url-pattern>
+	</servlet-mapping>
+
+
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
@@ -561,31 +645,31 @@
 	</welcome-file-list>
 	
 	<error-page>
-	   <error-code>404</error-code>
+      <error-code>404</error-code>
+      <location>/html/error/custom-error-page.jsp</location>
+  </error-page>
+
+    <error-page>
+        <error-code>401</error-code>
+        <location>/html/error/custom-error-page.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/html/error/custom-error-page.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/html/error/custom-error-page.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>503</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-	
-	<error-page>
-	   <error-code>401</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<error-page>
-	   <error-code>403</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<error-page>
-	   <error-code>500</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<error-page>
-	   <error-code>503</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<jsp-config>
+
+    <jsp-config>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
 			<el-ignored>true</el-ignored>

@@ -12,16 +12,20 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
@@ -48,16 +52,21 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
 /**
  * Encapsulate helper method for the {@link com.dotcms.rest.ContentResource}
@@ -189,8 +198,36 @@ public class ContentHelper {
      */
     public String getUrl (final Contentlet contentlet) {
 
+        if(hasUrlField(contentlet)){
+            if(IsNeitherPageOrFileAsset(contentlet)){
+                return contentlet.getStringProperty(URL_FIELD);
+            }
+        }
         return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
     } // getUrl.
+
+    /**
+     * Determines if a contentlet is a regular content (neither a file asset nor an HTML page).
+     * This method is used to check the type of a contentlet when processing URLs.
+     *
+     * @param contentlet The contentlet to check
+     * @return boolean True if the contentlet is regular content (neither a file asset nor an HTML page), false otherwise
+     */
+    private static boolean IsNeitherPageOrFileAsset(Contentlet contentlet) {
+        return !contentlet.isFileAsset() && !contentlet.isHTMLPage();
+    }
+
+    /**
+     * Checks if a contentlet has a URL field in its content type and if that URL field has a non-null value.
+     * This method is used to determine if a contentlet has a valid URL property that can be accessed.
+     *
+     * @param contentlet The contentlet to check
+     * @return boolean True if the contentlet has a URL field with a non-null value, false otherwise
+     */
+    private static boolean hasUrlField(Contentlet contentlet) {
+        return contentlet.getContentType().fieldMap((key) -> URL_FIELD) != null &&
+                contentlet.getStringProperty(URL_FIELD) != null;
+    }
 
 
     /**
@@ -327,7 +364,7 @@ public class ContentHelper {
                 //we need to add relationships fields
                 if (depth != -1){
                     addRelationshipsToJSON(request, response, render, user, depth,
-                            respectFrontendRoles, contentlet, contentAsJson, null, language, live, allCategoriesInfo);
+                            respectFrontendRoles, contentlet, contentAsJson, null, contentlet.getLanguageId(), live, allCategoriesInfo);
                 }
             } catch (final Exception e) {
                 final String errorMsg = String.format("An error occurred when converting Contentlet '%s' into JSON: " +
@@ -497,6 +534,33 @@ public class ContentHelper {
                                                     final boolean live, final boolean allCategoriesInfo, final boolean hydrateRelated)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
+        return addRelationshipsToJSON(request, response, render, user, depth, respectFrontendRoles,
+                contentlet, jsonObject, addedRelationships, language, live, allCategoriesInfo,
+                hydrateRelated, false);
+    }
+
+    /**
+     * Adds relationship field records to the JSON contentlet.
+     * <p>
+     * When {@code languageFallback} is {@code true}, the top-level relationship fields are resolved
+     * <b>language-agnostically</b> — one row per related identifier, preferring the version in the
+     * requested {@code language} and falling back to any available version when none exists in that
+     * language (issue #35862). This mirrors how the legacy edit screen ({@code ContentletAjax})
+     * listed related content and is intended for the content editor read path only. It is
+     * {@code false} for all other callers (page render, GraphQL, frontend pull), which keep the
+     * existing per-language filtering. The flag is intentionally NOT propagated into nested
+     * relationship serialization (depth 2/3).
+     */
+    public JSONObject addRelationshipsToJSON(final HttpServletRequest request,
+                                                    final HttpServletResponse response,
+                                                    final String render, final User user, final int depth,
+                                                    final boolean respectFrontendRoles,
+                                                    final Contentlet contentlet,
+                                                    final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
+                                                    final boolean live, final boolean allCategoriesInfo, final boolean hydrateRelated,
+                                                    final boolean languageFallback)
+            throws DotDataException, JSONException, IOException, DotSecurityException {
+
         Relationship relationship;
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
@@ -536,7 +600,7 @@ public class ContentHelper {
             JSONArray jsonArray = addRelatedContentToJsonArray(request, response,
                     render, user, depth, respectFrontendRoles,
                     contentlet, addedRelationships, language, live, field, isChildField,
-                    allCategoriesInfo, hydrateRelated);
+                    allCategoriesInfo, hydrateRelated, languageFallback);
 
             jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
 
@@ -564,7 +628,8 @@ public class ContentHelper {
                     jsonArray = addRelatedContentToJsonArray(request, response,
                             render, user, depth, respectFrontendRoles,
                             contentlet, addedRelationships, language, live,
-                            otherSideField, !isChildField, allCategoriesInfo, hydrateRelated);
+                            otherSideField, !isChildField, allCategoriesInfo, hydrateRelated,
+                            languageFallback);
 
                     jsonObject.put(otherSideField.variable(),
                             getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
@@ -680,14 +745,30 @@ public class ContentHelper {
                                                           boolean respectFrontendRoles, Contentlet contentlet,
                                                           Set<Relationship> addedRelationships, long language, boolean live,
                                                           com.dotcms.contenttype.model.field.Field field, final boolean isParent,
-                                                          final boolean allCategoriesInfo, final boolean hydrateRelated)
+                                                          final boolean allCategoriesInfo, final boolean hydrateRelated,
+                                                          final boolean languageFallback)
             throws JSONException, IOException, DotDataException, DotSecurityException {
 
 
         final JSONArray jsonArray = new JSONArray();
 
-        for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live)) {
+        final List<Contentlet> relatedContentlets = languageFallback
+                ? resolveRelatedLanguageAgnostic(contentlet, field, isParent, language, live, user, respectFrontendRoles)
+                : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live);
+
+        for (Contentlet relatedContent : relatedContentlets) {
+
+
+            Object originalValue = relatedContent.get(field.name());
+
             relatedContent.setProperty(field.name(), null);
+
+            if (relatedContent.getContentType() != null &&
+                relatedContent.getContentType().fields().stream().anyMatch(f ->
+                f.variable().equals(field.variable()) && !f.type().equals(RelationshipField.class) && !f.type().equals(StoryBlockField.class))) {
+                relatedContent.setProperty(field.name(), originalValue);
+            }
+
 
             switch (depth) {
                 //returns a list of identifiers
@@ -725,5 +806,64 @@ public class ContentHelper {
 
         return jsonArray;
     }
+
+    /**
+     * Resolves the related contentlets for a relationship field the way the legacy edit screen did
+     * ({@code ContentletAjax}) — one row per related identifier, regardless of language (issue
+     * #35862). Relationships are stored per identifier in the {@code tree} table, so every related
+     * item is listed even when it has no version in the currently-viewed language.
+     * <p>
+     * Each related identifier is resolved to its version in the requested {@code language} when one
+     * exists (working or live as requested), otherwise to any available version via the
+     * language-agnostic pull. The result is filtered by {@code READ} permission, mirroring
+     * {@code ESContentletAPIImpl.getRelatedContent(...)}, so the any-language fallback cannot
+     * surface content the user is not allowed to read. {@code tree_order} is preserved.
+     */
+    private List<Contentlet> resolveRelatedLanguageAgnostic(final Contentlet contentlet,
+            final com.dotcms.contenttype.model.field.Field field, final boolean isParent,
+            final long language, final boolean live, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(field, user);
+
+        // Language-agnostic pull, preserving tree_order — the same path the legacy ContentletAjax
+        // edit screen used. NOTE: dbRelatedContent reads from contentlet_version_info, so a
+        // multilingual related contentlet comes back once PER language version. Collapse to one
+        // entry per identifier (preserving order) so multilingual items are not listed more than
+        // once, mirroring the distinct-by-identifier step the language-aware path performs.
+        final List<Contentlet> relatedRows = contentletAPI
+                .getRelatedContent(contentlet, relationship, isParent, user, respectFrontendRoles);
+
+        final Map<String, Contentlet> distinctByIdentifier = new LinkedHashMap<>();
+        for (final Contentlet related : relatedRows) {
+            distinctByIdentifier.putIfAbsent(related.getIdentifier(), related);
+        }
+
+        final List<Contentlet> resolved = new ArrayList<>(distinctByIdentifier.size());
+        for (final Contentlet related : distinctByIdentifier.values()) {
+            Contentlet versionToShow = null;
+            if (language > 0) {
+                try {
+                    // Prefer the version in the viewed language (working/live as requested)
+                    versionToShow = contentletAPI.findContentletByIdentifier(
+                            related.getIdentifier(), live, language, user, respectFrontendRoles);
+                } catch (final DotContentletStateException | DotSecurityException e) {
+                    Logger.debug(this, () -> "No " + (live ? "live" : "working")
+                            + " version in language " + language + " for related identifier "
+                            + related.getIdentifier() + "; using fallback version.");
+                }
+            }
+            // Fallback to the any-language version already pulled for this identifier
+            resolved.add(versionToShow != null ? versionToShow : related);
+        }
+
+        // Mirror the READ-permission filtering applied by the language-aware path so the
+        // any-language fallback cannot expose content the user lacks read access to.
+        return APILocator.getPermissionAPI().filterCollection(resolved,
+                PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+    }
+
 
 }

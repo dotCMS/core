@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { NgClass, AsyncPipe, DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -27,12 +27,7 @@ import {
     StepStatus,
     Variant
 } from '@dotcms/dotcms-models';
-import {
-    DotCopyButtonComponent,
-    DotDynamicDirective,
-    DotIconModule,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotCopyButtonComponent, DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import {
@@ -44,17 +39,11 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
-    standalone: true,
     imports: [
-        CommonModule,
         DotMessagePipe,
-        DotIconModule,
-        DotExperimentsConfigurationVariantsAddComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
-
-        //PrimeNg
         CardModule,
         InplaceModule,
         ButtonModule,
@@ -62,19 +51,27 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         TooltipModule,
         ConfirmPopupModule,
         AutoFocusModule,
-        DotExperimentsInlineEditTextComponent
+        DotExperimentsInlineEditTextComponent,
+        AsyncPipe,
+        DecimalPipe,
+        NgClass
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
-    styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
             tap(({ status }) => this.handleSidebar(status))
         );
     dotPageMode = DotPageMode;
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     protected readonly statusList = ComponentStatus;
     protected readonly maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
@@ -82,14 +79,6 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly DotExperimentStatusList = DotExperimentStatus;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
     protected readonly url = this.getUrl();
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute
-    ) {}
 
     /**
      * Edit the name of the selected variant
@@ -176,16 +165,22 @@ export class DotExperimentsConfigurationVariantsComponent {
     }
 
     private loadSidebarComponent(): void {
-        this.sidebarHost.viewContainerRef.clear();
-        this.componentRef =
-            this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationVariantsAddComponent>(
-                DotExperimentsConfigurationVariantsAddComponent
-            );
+        const sidebarHostRef = this.sidebarHost();
+        if (sidebarHostRef) {
+            sidebarHostRef.viewContainerRef.clear();
+            this.componentRef =
+                sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationVariantsAddComponent>(
+                    DotExperimentsConfigurationVariantsAddComponent
+                );
+        }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 
@@ -223,8 +218,11 @@ export class DotExperimentsConfigurationVariantsComponent {
             );
         } catch {
             // Fallback to relative URL using window.location.origin
+            const cleanProcessedUrl = processedUrl.startsWith('/')
+                ? processedUrl.substring(1)
+                : processedUrl;
             url = new URL(
-                `${window.location.origin}/${processedUrl}${
+                `${window.location.origin}/${cleanProcessedUrl}${
                     processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );

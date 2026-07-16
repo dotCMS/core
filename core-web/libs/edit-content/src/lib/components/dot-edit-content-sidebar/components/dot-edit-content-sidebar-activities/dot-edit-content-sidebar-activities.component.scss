@@ -1,0 +1,18 @@
+/* PrimeNG/Lara + Tailwind handle all styling for this component. */
+
+/* p-dataview defaults to a white background; let the panel surface show
+ * through so the activity cards sit on the same gray as the rest of the tab.
+ */
+:host ::ng-deep .p-dataview,
+:host ::ng-deep .p-dataview-content {
+    background: transparent !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

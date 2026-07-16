@@ -38,6 +38,13 @@ Type: `Promise<void>`
 
 
 
+#### Parameters
+
+| Name | Type     | Description |
+| ---- | -------- | ----------- |
+| `x`  | `number` |             |
+| `y`  | `number` |             |
+
 #### Returns
 
 Type: `Promise<void>`

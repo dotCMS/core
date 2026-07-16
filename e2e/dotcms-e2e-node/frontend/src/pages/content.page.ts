@@ -311,7 +311,9 @@ export class ContentPage {
         );
         await iframe.getByRole("link", { name: "Advanced" }).click();
         await iframe.locator("#widget_showingSelect div").first().click();
-        const dropDownMenu = iframe.getByRole("option", { name: "Archived" });
+        const dropDownMenu = iframe.getByRole("option", {
+          name: "Archived",
+        });
         await waitForVisibleAndCallback(dropDownMenu, () =>
           dropDownMenu.click(),
         );
@@ -429,7 +431,12 @@ export class ContentPage {
     if (sortOrder) await dotIframe.locator("#sortOrder").fill(sortOrder);
     if (cacheTTL)
       await dotIframe.locator("#cachettlbox").fill(cacheTTL.toString());
-    if (action) await dotIframe.getByText(action).first().click();
+    if (action) {
+      await dotIframe.getByText(action).first().click();
+      await expect(dotIframe.locator("#savingContentDialog")).toBeHidden({
+        timeout: 10000,
+      });
+    }
   }
 
   /**

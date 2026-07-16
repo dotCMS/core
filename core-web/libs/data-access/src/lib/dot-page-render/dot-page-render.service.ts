@@ -1,12 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 import { Params } from '@angular/router';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    DotCMSResponse,
     DotPageMode,
     DotPersona,
     DotDevice,
@@ -26,10 +27,8 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
  */
 @Injectable()
 export class DotPageRenderService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private readonly dotSessionStorageService: DotSessionStorageService
-    ) {}
+    private http = inject(HttpClient);
+    private readonly dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
      * Verifies if a use can access a page based on the path param
@@ -39,15 +38,11 @@ export class DotPageRenderService {
      * @memberof DotPageRenderService
      */
     checkPermission(queryParams: Params): Observable<boolean> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    ...queryParams
-                },
-                method: 'POST',
-                url: `v1/page/_check-permission`
+        return this.http
+            .post<DotCMSResponse<boolean>>('/api/v1/page/_check-permission', {
+                ...queryParams
             })
-            .pipe(pluck('entity'));
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -63,12 +58,25 @@ export class DotPageRenderService {
     ): Observable<DotPageRenderParameters> {
         const params: DotPageRenderRequestParams = this.getOptionalViewAsParams(viewAs, mode);
 
-        return this.coreWebService
-            .requestView({
-                url: `v1/page/render/${url?.replace(/^\//, '')}`,
-                params: { ...extraParams, ...params }
-            })
-            .pipe(pluck('entity'));
+        const httpParams = this.toStringRecord({ ...extraParams, ...params });
+
+        return this.http
+            .get<
+                DotCMSResponse<DotPageRenderParameters>
+            >(`/api/v1/page/render/${url?.replace(/^\//, '')}`, { params: httpParams })
+            .pipe(map((response) => response.entity));
+    }
+
+    private toStringRecord(source: Record<string, unknown>): Record<string, string> {
+        const result: Record<string, string> = {};
+
+        for (const [key, value] of Object.entries(source)) {
+            if (value != null) {
+                result[key] = String(value);
+            }
+        }
+
+        return result;
     }
 
     private getOptionalViewAsParams(
@@ -90,7 +98,7 @@ export class DotPageRenderService {
         return mode ? { mode } : {};
     }
 
-    private getPersonaParam(persona: DotPersona): { [key: string]: string } {
+    private getPersonaParam(persona?: DotPersona): { [key: string]: string } {
         return persona
             ? {
                   'com.dotmarketing.persona.id': persona.identifier || ''
@@ -98,7 +106,7 @@ export class DotPageRenderService {
             : {};
     }
 
-    private getDeviceParam(device: DotDevice): { [key: string]: string } {
+    private getDeviceParam(device?: DotDevice): { [key: string]: string } {
         return device
             ? {
                   device_inode: device.inode
@@ -106,7 +114,7 @@ export class DotPageRenderService {
             : {};
     }
 
-    private getLanguageParam(language: number): { [key: string]: string } {
+    private getLanguageParam(language?: number): { [key: string]: string } {
         return language
             ? {
                   language_id: language.toString()

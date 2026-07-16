@@ -1,35 +1,39 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 
 import { take } from 'rxjs/operators';
 
-import { DotCreatePersonaFormComponent } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotDialogActions, DotPersona } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotCreatePersonaFormComponent } from './dot-create-persona-form/dot-create-persona-form.component';
 
 const PERSONA_CONTENT_TYPE = 'persona';
 
 @Component({
     selector: 'dot-add-persona-dialog',
     templateUrl: './dot-add-persona-dialog.component.html',
-    styleUrls: ['./dot-add-persona-dialog.component.scss']
+    styleUrls: ['./dot-add-persona-dialog.component.scss'],
+    imports: [DialogModule, ButtonModule, DotCreatePersonaFormComponent, DotMessagePipe]
 })
 export class DotAddPersonaDialogComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+    dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+
     @Input() visible = false;
     @Input() personaName: string;
     @Output() createdPersona: EventEmitter<DotPersona> = new EventEmitter();
     @ViewChild('personaForm') personaForm: DotCreatePersonaFormComponent;
 
     dialogActions: DotDialogActions;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        public dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
-    ) {}
 
     ngOnInit() {
         this.setDialogActions();

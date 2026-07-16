@@ -3,19 +3,23 @@ import { Subject } from 'rxjs';
 import {
     Component,
     ElementRef,
-    EventEmitter,
-    Input,
     OnDestroy,
     OnInit,
-    Output,
-    ViewChild
+    inject,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Display select columns row
@@ -27,29 +31,32 @@ import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
-    templateUrl: './content-type-fields-add-row.component.html'
+    templateUrl: './content-type-fields-add-row.component.html',
+    imports: [ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe]
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
+    private dotEventsService = inject(DotEventsService);
+    private dotMessageService = inject(DotMessageService);
+
     rowState = 'add';
     selectedColumnIndex = 0;
     actions: MenuItem[];
 
-    @Input() columns: number[] = [1, 2, 3, 4];
-    @Input() disabled = false;
-    @Input()
-    toolTips: string[] = [
-        'contenttypes.content.single_column',
-        'contenttypes.content.many_columns',
-        'contenttypes.content.add_column_title'
-    ];
-    @Output() selectColums: EventEmitter<number> = new EventEmitter<number>();
-    @ViewChild('colContainer') colContainerElem: ElementRef;
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    readonly $columns = input<number[]>([1, 2, 3, 4], { alias: 'columns' });
+    readonly $disabled = input<boolean>(false, { alias: 'disabled' });
+    readonly $toolTips = input<string[]>(
+        [
+            'contenttypes.content.single_column',
+            'contenttypes.content.many_columns',
+            'contenttypes.content.add_column_title'
+        ],
+        { alias: 'toolTips' }
+    );
 
-    constructor(
-        private dotEventsService: DotEventsService,
-        private dotMessageService: DotMessageService
-    ) {}
+    readonly $selectColums = output<number>();
+    readonly $colContainerElem = viewChild<ElementRef>('colContainer');
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
         this.loadActions();
@@ -85,7 +92,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * @memberof ContentTypeFieldsAddRowComponent
      */
     emitColumnNumber(): void {
-        this.selectColums.emit(this.getNumberColumnsSelected());
+        this.$selectColums.emit(this.getNumberColumnsSelected());
         this.resetState();
     }
 
@@ -153,7 +160,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     private getElementSelected(): HTMLElement {
-        return this.colContainerElem.nativeElement.children[this.selectedColumnIndex];
+        return this.$colContainerElem().nativeElement.children[this.selectedColumnIndex];
     }
 
     private loadActions(): void {
@@ -174,7 +181,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     private getNumberColumnsSelected() {
-        return this.columns[this.selectedColumnIndex];
+        return this.$columns()[this.selectedColumnIndex];
     }
 
     private resetState(): void {

@@ -1,31 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { DotSessionStorageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, mockDotLayout } from '@dotcms/utils-testing';
+import { mockDotLayout } from '@dotcms/utils-testing';
 
 import { DotPageLayoutService } from './dot-page-layout.service';
 
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
+
 describe('DotPageLayoutService', () => {
-    let injector: TestBed;
     let dotPageLayoutService: DotPageLayoutService;
     let httpMock: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotPageLayoutService,
                 DotSessionStorageService
             ]
         });
-        injector = getTestBed();
-        dotPageLayoutService = injector.get(DotPageLayoutService);
-        httpMock = injector.get(HttpTestingController);
+        dotPageLayoutService = TestBed.inject(DotPageLayoutService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should post data and return an entity', () => {
@@ -46,7 +45,7 @@ describe('DotPageLayoutService', () => {
             });
 
         const req = httpMock.expectOne(
-            'v1/page/test38923-82393842-23823/layout?variantName=DEFAULT'
+            '/api/v1/page/test38923-82393842-23823/layout?variantName=DEFAULT'
         );
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(mockDotLayout());
@@ -73,7 +72,7 @@ describe('DotPageLayoutService', () => {
             });
 
         const req = httpMock.expectOne(
-            'v1/page/test38923-82393842-23823/layout?variantName=variantTesting'
+            '/api/v1/page/test38923-82393842-23823/layout?variantName=variantTesting'
         );
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(mockDotLayout());

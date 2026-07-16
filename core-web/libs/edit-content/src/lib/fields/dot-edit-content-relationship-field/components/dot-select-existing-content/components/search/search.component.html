@@ -1,0 +1,63 @@
+<form [formGroup]="form" #formElement>
+    <p-inputgroup>
+        <div
+            class="p-inputtext flex min-w-0 flex-1 items-center gap-1 rounded-none! rounded-l-md! px-2 py-0.5!">
+            <i class="pi pi-search mr-1 shrink-0 text-muted-color"></i>
+            @for (filter of $activeFilters(); track filter.value) {
+                <p-chip
+                    [label]="filter.label"
+                    [removable]="true"
+                    (onRemove)="removeFilter(filter.type)"
+                    class="shrink-0 gap-1! px-2! text-xs" />
+            }
+
+            <input
+                type="text"
+                class="min-w-24 flex-1 border-0 bg-transparent px-1 py-0.5 text-sm outline-none"
+                [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
+                formControlName="query"
+                data-testid="relationship-dialog-search-query" />
+        </div>
+
+        <p-inputgroup-addon styleClass="!p-0">
+            <p-button
+                (onClick)="popover.toggle($event, formElement)"
+                data-testid="open-filters-button"
+                size="small"
+                type="button"
+                icon="pi pi-sliders-h"
+                styleClass="!rounded-l-none"
+                [text]="true" />
+        </p-inputgroup-addon>
+    </p-inputgroup>
+
+    <p-popover #popover [style]="{ width: formElement.offsetWidth + 'px' }">
+        <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6" formGroupName="systemSearchableFields">
+                <dot-language-field formControlName="languageId" />
+                <dot-site-field formControlName="siteOrFolderId" [siteContext]="$siteContext()" />
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <p-button
+                    (onClick)="clearForm()"
+                    data-testid="clear-button"
+                    [label]="'dot.file.relationship.dialog.search.btn.clear' | dm"
+                    type="button"
+                    size="small"
+                    text="true"
+                    severity="primary"
+                    outline="true" />
+
+                <p-button
+                    [loading]="$isLoading()"
+                    (onClick)="doSearch()"
+                    data-testid="search-button"
+                    [label]="'dot.file.relationship.dialog.search.btn.search' | dm"
+                    size="small"
+                    type="submit"
+                    severity="primary" />
+            </div>
+        </div>
+    </p-popover>
+</form>

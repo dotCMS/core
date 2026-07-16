@@ -1,31 +1,28 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotPageContainer } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditPageService } from './dot-edit-page.service';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 describe('DotEditPageService', () => {
-    let injector: TestBed;
     let dotEditPageService: DotEditPageService;
     let httpMock: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotEditPageService,
                 DotSessionStorageService
             ]
         });
-        injector = getTestBed();
-        dotEditPageService = injector.get(DotEditPageService);
-        httpMock = injector.get(HttpTestingController);
+        dotEditPageService = TestBed.inject(DotEditPageService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should do a request for save content', () => {
@@ -45,7 +42,7 @@ describe('DotEditPageService', () => {
 
         dotEditPageService.save(pageId, model).subscribe();
 
-        const req = httpMock.expectOne(`v1/page/${pageId}/content?variantName=DEFAULT`);
+        const req = httpMock.expectOne(`/api/v1/page/${pageId}/content?variantName=DEFAULT`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toBe(model);
         req.flush({});
@@ -57,7 +54,9 @@ describe('DotEditPageService', () => {
 
         dotEditPageService.whatChange(pageId, languageId).subscribe();
 
-        const req = httpMock.expectOne(`v1/page/${pageId}/render/versions?langId=${languageId}`);
+        const req = httpMock.expectOne(
+            `/api/v1/page/${pageId}/render/versions?langId=${languageId}`
+        );
         expect(req.request.method).toBe('GET');
         req.flush({});
     });
@@ -86,7 +85,7 @@ describe('DotEditPageService', () => {
 
             dotEditPageService.save(pageId, model).subscribe();
 
-            const req = httpMock.expectOne(`v1/page/${pageId}/content?variantName=Testing`);
+            const req = httpMock.expectOne(`/api/v1/page/${pageId}/content?variantName=Testing`);
             expect(req.request.method).toBe('POST');
             expect(req.request.body).toBe(model);
             req.flush({});

@@ -1,10 +1,15 @@
 package com.dotcms.rest.api.v1.taillog;
 
+import static com.dotmarketing.util.FileUtil.isValidFilePath;
+import static com.dotmarketing.util.FileUtil.sanitizeFilePath;
+
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.taillog.Tailer;
 import com.dotmarketing.util.Config;
@@ -13,6 +18,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.Portlet;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -21,6 +33,7 @@ import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -30,9 +43,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * This resource provides the endpoint used by the LogViewer functionality to display backend server logs
@@ -44,11 +61,99 @@ public class TailLogResource {
 
     public static final int LINES_PER_PAGE = Config.getIntProperty("TAIL_LOG_LINES_PER_PAGE",10);
 
-    //This is in secodns
+    //This is in seconds
     public static final int KEEP_ALIVE_EVENT_INTERVAL = Config.getIntProperty("KEEP_ALIVE_EVENT_INTERVAL",20);
 
+    /**
+     * Lists the names of log files available in the configured log folder, sorted alphabetically.
+     * <p>
+     * The folder is resolved from the {@code TAIL_LOG_LOG_FOLDER} property (default
+     * {@code ./dotsecure/logs/}) and files are filtered by the regex configured in
+     * {@code TAIL_LOG_FILE_REGEX} (default {@code .*\.log$|.*\.out$}, matching the regex used
+     * by {@link #getLogs}).
+     * <p>
+     * The returned names are paths relative to the log folder and are intended to be used as
+     * the {@code fileName} path parameter for {@code GET /api/v1/logs/{fileName}/_tail} and
+     * the {@code GET /api/v1/maintenance/_downloadLog/{fileName}} download endpoints.
+     * <p>
+     * <strong>Auth note:</strong> this listing requires admin + Maintenance portlet access, which
+     * is stricter than {@link #getLogs} (back-end user only). The stricter check preserves the
+     * security perimeter of the legacy JSP scriptlet in {@code tail_log.jsp} that this endpoint
+     * replaces.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return a {@link ResponseEntityListStringView} wrapping the sorted list of log file names
+     */
+    @Operation(
+            summary = "List available log files",
+            description = "Returns log file names from the configured log folder (TAIL_LOG_LOG_FOLDER), "
+                    + "filtered by TAIL_LOG_FILE_REGEX and sorted alphabetically. The names are used as "
+                    + "the {fileName} path parameter for the tail and download endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Sorted list of log file names",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityListStringView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role and Maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
-    @Path("/{fileName}/_tail")
+    @Path("/")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityListStringView listLogFiles(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder(new WebResource())
+                .requiredBackendUser(true)
+                .requireAdmin(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(Portlet.MAINTENANCE)
+                .init();
+
+        final String regex = Config.getStringProperty(
+                "TAIL_LOG_FILE_REGEX", ".*\\.log$|.*\\.out$");
+
+        String logPath = Config.getStringProperty(
+                "TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
+        logPath = FileUtil.getAbsolutlePath(logPath);
+        if (!logPath.endsWith(File.separator)) {
+            logPath = logPath + File.separator;
+        }
+
+        final File logFolder = new File(logPath);
+        if (!logFolder.isDirectory()) {
+            Logger.debug(this, "Log folder does not exist or is not a directory: " + logPath);
+            return new ResponseEntityListStringView(new ArrayList<>());
+        }
+
+        final Pattern pattern = Pattern.compile(regex);
+        final String basePath = logPath;
+
+        final List<String> fileNames = com.liferay.util.FileUtil
+                .getFilesByPattern(logFolder, "*.*").stream()
+                .filter(f -> pattern.matcher(f.getName()).matches())
+                .sorted(File::compareTo)
+                .map(f -> f.getPath().substring(basePath.length()))
+                .collect(Collectors.toList());
+
+        Logger.debug(this, () -> String.format(
+                "Listing %d log file(s) from '%s' matching regex '%s'",
+                fileNames.size(), basePath, regex));
+
+        return new ResponseEntityListStringView(fileNames);
+    }
+
+    @GET
+    @Path("/{fileName:.+}/_tail")
     @JSONP
     @NoCache
     @Produces(SseFeature.SERVER_SENT_EVENTS)
@@ -67,8 +172,12 @@ public class TailLogResource {
             return sendError("Empty File name param");
         }
 
+        //This prevents any evil attack attempt allowing for paths including subfolders
+        if(!isValidFilePath(fileName)){
+            return sendError("Invalid File name param");
+        }
 
-        final String sanitizedFileName = FileUtil.sanitizeFileName(fileName);
+        final String sanitizedFileName = sanitizeFilePath(fileName);
         String tailLogLofFolder = Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
         if (!tailLogLofFolder.endsWith(File.separator)) {
             tailLogLofFolder = tailLogLofFolder + File.separator;
@@ -78,7 +187,7 @@ public class TailLogResource {
         final File logFile 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder + sanitizedFileName));
 
 
-        // if the logFile is outside of the logFolder, die
+        // if the logFile is outside the logFolder, die
         if ( !logFolder.exists() || !logFolder.canRead()
                 ||   !logFile.getCanonicalPath().startsWith(logFolder.getCanonicalPath())) {
 
@@ -184,7 +293,7 @@ public class TailLogResource {
                 int pageNumber = 1;
                 while (!eventOutput.isClosed()) {
                     final String write = listener.getThenDispose();
-                    if (write.length() > 0) {
+                    if (!write.isEmpty()) {
                         final String prepWrite = String.format(
                                 "<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>",
                                 pageNumber, pageNumber, logNumber, write);

@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.ARCHIVED_CONTENT;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.FOLDER_ID;
 import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.GLOBAL_SEARCH;
 import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.LANGUAGE;
 import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.LIVE_CONTENT;
@@ -122,7 +123,7 @@ public class LuceneQueryBuilder {
                                     final String query = handler.apply(fieldContextBuilder.build());
                                     if (field instanceof RelationshipField && UtilMethods.isSet(query) && !query.contains(COLON)) {
                                         // For Relationships fields, we need to track the related IDs from
-                                        // all of them first, and add them to the Lucene query in the end
+                                        // all of them first and add them to the Lucene query in the end
                                         relatedContentIDs.addAll(Arrays.asList(query.split(COMMA)));
                                     } else {
                                         queryTerms.add(query);
@@ -158,7 +159,8 @@ public class LuceneQueryBuilder {
         final Optional<Object> fieldValueOpt = this.contentSearchForm
                 .searchableFieldsByContentTypeAndField(contentType.id(), fieldVarName);
         return fieldValueOpt.orElseGet(() ->
-                this.contentSearchForm.searchableFieldsByContentTypeAndField(contentType.variable(), fieldVarName).orElse(BLANK));
+                this.contentSearchForm.searchableFieldsByContentTypeAndField(contentType.variable(), fieldVarName)
+                        .orElse(BLANK));
     }
 
     /**
@@ -215,8 +217,7 @@ public class LuceneQueryBuilder {
      */
     private List<String> getSystemSearchableQueryTerms() {
         final List<String> systemSearchableQueryTerms = Stream.of(
-                        this.createQuery(ESMappingConstants.CONTENTLET_HOST, contentSearchForm.siteId(), SITE_ID,
-                                Map.of("systemHostContent", contentSearchForm.systemHostContent())),
+                        this.createSiteOrFolderQuery(),
                         this.createQuery(ESMappingConstants.LANGUAGE_ID, contentSearchForm.languageId(), LANGUAGE),
                         this.createQuery(ESMappingConstants.WORKFLOW_SCHEME, contentSearchForm.workflowSchemeId(), WORKFLOW_SCHEME),
                         this.createQuery(ESMappingConstants.WORKFLOW_STEP, contentSearchForm.workflowStepId(), WORKFLOW_STEP),
@@ -227,6 +228,24 @@ public class LuceneQueryBuilder {
         return systemSearchableQueryTerms;
     }
 
+     /**
+      * Determines whether the Lucene query must add a term to search for a Site ID, or a Folder ID.
+      * Both terms are exclusive, which means only one of them can be added to the query. The
+      * presence of the Site ID attribute will take precedence over the Folder ID.
+      *
+      * @return The Lucene query for the Site ID or the Folder ID.
+      */
+    private String createSiteOrFolderQuery() {
+        String query = "";
+        if (UtilMethods.isSet(contentSearchForm.siteId())) {
+            // Passing down the 'systemHostContent' as an extra param to the SiteAttributeStrategy
+            // to determine if the query should include System Host content or not
+            query = this.createQuery(ESMappingConstants.CONTENTLET_HOST, contentSearchForm.siteId(), SITE_ID,
+                    Map.of("systemHostContent", contentSearchForm.systemHostContent())) + SPACE;
+        }
+        query += this.createQuery(ESMappingConstants.CONTENTLET_FOLDER, contentSearchForm.folderId(), FOLDER_ID);
+        return query.trim();
+    }
 
      /**
       * Generates the Lucene query for the content status attributes specified in the
@@ -329,11 +348,10 @@ public class LuceneQueryBuilder {
             return Optional.ofNullable(api.find(contentTypeId));
         } catch (final DotSecurityException e) {
             Logger.error(this, String.format("User '%s' is not authorized for Content Type ID '%s'", user.getUserId(), contentTypeId), e);
-            return Optional.empty();
         } catch (final DotDataException e) {
             Logger.error(this, String.format("Error retrieving Content Type ID '%s'", contentTypeId), e);
-            return Optional.empty();
         }
+        return Optional.empty();
     }
 
     /**

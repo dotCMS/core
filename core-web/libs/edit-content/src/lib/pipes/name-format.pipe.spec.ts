@@ -1,10 +1,11 @@
-import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator/jest';
+import { createPipeFactory, SpectatorPipe } from '@openng/spectator/jest';
 
 import { Component, Input } from '@angular/core';
 
 import { DotNameFormatPipe } from './name-format.pipe';
 
 @Component({
+    standalone: false,
     template: `
         <div>{{ value | dotNameFormat }}</div>
     `

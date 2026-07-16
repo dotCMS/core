@@ -11,13 +11,22 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { AutoFocusModule } from 'primeng/autofocus';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -26,16 +35,42 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
+
+import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
+import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 
 @Component({
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
-    styleUrls: ['./dot-push-publish-form.component.scss']
+    styleUrls: ['./dot-push-publish-form.component.scss'],
+    imports: [
+        AutoFocusModule,
+        FormsModule,
+        DatePickerModule,
+        PushPublishEnvSelectorComponent,
+        ReactiveFormsModule,
+        SelectModule,
+        DotFieldValidationMessageComponent,
+        SelectButtonModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
 {
+    private dotPushPublishFiltersService = inject(DotPushPublishFiltersService);
+    private dotParseHtmlService = inject(DotParseHtmlService);
+    private dotcmsConfigService = inject(DotcmsConfigService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    fb = inject(UntypedFormBuilder);
+
     readonly #dotMessageService = inject(DotMessageService);
 
     dateFieldMinDate = new Date();
@@ -59,14 +94,6 @@ export class DotPushPublishFormComponent
     private defaultFilterKey: string;
     private _filterOptions: SelectItem[] = null;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotPushPublishFiltersService: DotPushPublishFiltersService,
-        private dotParseHtmlService: DotParseHtmlService,
-        private dotcmsConfigService: DotcmsConfigService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        public fb: UntypedFormBuilder
-    ) {}
 
     ngOnInit() {
         if (this.data) {

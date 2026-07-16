@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { CanActivate } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -11,7 +11,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class PagesGuardService implements CanActivate {
-    constructor(private dotConfigurationService: DotPropertiesService) {}
+    private dotConfigurationService = inject(DotPropertiesService);
 
     /**
      * Guard checks if DOTFAVORITEPAGE_FEATURE_ENABLE flag is true in dotmarketing-config.properties.

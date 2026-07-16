@@ -1,0 +1,32 @@
+@let field = $field();
+@let showLabel = $showLabel();
+@let fieldHasError = $hasError();
+
+<dot-card-field [hasError]="fieldHasError">
+    @if (showLabel) {
+        <dot-card-field-label
+            [variableName]="field.variable"
+            [isRequired]="isRequired"
+            [hint]="field.hint">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        @if (isNewBlockEditorEnabled()) {
+            <dot-block-editor
+                [languageId]="$languageId()"
+                [formControlName]="field.variable"
+                [contentlet]="$contentlet()"
+                [hasError]="fieldHasError"
+                [field]="field" />
+        } @else {
+            <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
+            <dot-old-block-editor
+                [languageId]="$languageId()"
+                [formControlName]="field.variable"
+                [contentlet]="$contentlet()"
+                [hasFieldError]="fieldHasError"
+                [field]="field" />
+        }
+    </dot-card-field-content>
+</dot-card-field>

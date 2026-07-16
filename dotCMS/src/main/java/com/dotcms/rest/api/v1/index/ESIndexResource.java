@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.index;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,16 +29,18 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ClusterStats;
+import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.NodeStats;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -46,6 +48,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.reindex.IndexResourceHelper;
@@ -55,11 +58,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 /**
@@ -67,6 +72,7 @@ import io.vavr.control.Try;
  *
  */
 @Path("/v1/esindex")
+@Tag(name = "Search Index", description = "Elasticsearch index management and operations")
 public class ESIndexResource {
 
     private enum IndexAction{
@@ -93,7 +99,7 @@ public class ESIndexResource {
     
     
     
-	private final ESIndexAPI indexAPI;
+	private final IndexAPI indexAPI;
 	private final ESIndexHelper indexHelper;
     private final ContentletIndexAPI idxApi;
 
@@ -107,7 +113,7 @@ public class ESIndexResource {
 	}
 
 	@VisibleForTesting
-	ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper,
+	ESIndexResource(IndexAPI indexAPI, ESIndexHelper indexHelper,
 			WebResource webResource, LayoutAPI layoutAPI, IndiciesAPI indiciesAPI) {
 		this.indexAPI = indexAPI;
 		this.indexHelper = indexHelper;
@@ -142,27 +148,25 @@ public class ESIndexResource {
     @NoCache
     @Path("/cluster")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response getClusterStats(@Context final HttpServletRequest request, @Context final HttpServletResponse response)
-                    throws DotDataException {
+    public Response getClusterStats(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
 
         auth(request, response);
 
 
-        final ESIndexAPI esIndexAPI = new ESIndexAPI();
-        final ClusterStats clusterStats = esIndexAPI.getClusterStats();
+        final ClusterStats clusterStats = APILocator.getESIndexAPI().getClusterStats();
 
         Builder<String, Object> builder =
-                        ImmutableMap.<String, Object>builder().put("clusterName", clusterStats.getClusterName());
+                        ImmutableMap.<String, Object>builder().put("clusterName", clusterStats.clusterName());
 
-        for (NodeStats stats : clusterStats.getNodeStats()) {
-            builder.put("name", stats.getName())
-                .put("master", stats.isMaster())
-                .put("host", stats.getHost())
-                .put("address", stats.getTransportAddress())
-                .put("size", stats.getSize())
-                .put("count", stats.getDocCount());
+        for (NodeStats stats : clusterStats.nodeStats()) {
+            builder.put("name", stats.name())
+                .put("master", stats.master())
+                .put("host", stats.host())
+                .put("address", stats.transportAddress())
+                .put("size", stats.size())
+                .put("count", stats.docCount());
         }
-        return Response.ok(new ResponseEntityView(builder.build())).build();
+        return Response.ok(new ResponseEntityView<>(builder.build())).build();
     }
     
     @CloseDBIfOpened
@@ -253,7 +257,7 @@ public class ESIndexResource {
         message=message.replace("{0}", String.valueOf(data.get("successfulShards")));
         message=message.replace("{1}", String.valueOf(data.get("failedShards")));
         sendAdminMessage(message, MessageSeverity.INFO, init.getUser(),5000);
-        return Response.ok(new ResponseEntityView(data)).build();
+        return Response.ok(new ResponseEntityView<>(data)).build();
 
     }
 
@@ -264,14 +268,20 @@ public class ESIndexResource {
     @Produces("text/plain")
     public Response createIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(httpServletRequest, httpServletResponse);
+            InitDataObject init=auth(httpServletRequest, httpServletResponse, params);
 
-            int shards=Integer.parseInt(init.getParamsMap().get("shards"));
+            final String shardsParam = init.getParamsMap().get("shards");
+            if (!UtilMethods.isSet(shardsParam) || !Try.of(() -> Integer.parseInt(shardsParam)).isSuccess()) {
+                Logger.warn(this, "createIndex called with missing/invalid 'shards' param. URI: " + httpServletRequest.getRequestURI());
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Missing or invalid required 'shards' parameter").build();
+            }
+            final int shards = Integer.parseInt(shardsParam);
             boolean live = init.getParamsMap().containsKey("live") ? Boolean.parseBoolean(init.getParamsMap().get("live")) : false;
             String indexName = init.getParamsMap().get("index");
 
             if(indexName == null)
-                indexName=ContentletIndexAPIImpl.timestampFormatter.format(new Date());
+                indexName=ContentletIndexAPIImpl.threadSafeTimestampFormatter.format(LocalDateTime.now());
             indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
             APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
@@ -296,7 +306,7 @@ public class ESIndexResource {
     @Path("/clear/{params:.*}")
     public Response clearIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
 
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.CLEAR.name());
     }
@@ -324,10 +334,9 @@ public class ESIndexResource {
     @NoCache
     @Path("/reindex")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @QueryParam("shards") int shards, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
+    public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
         final InitDataObject init = auth(request, response);
-        shards = (shards <= 0) ? Config.getIntProperty("es.index.number_of_shards", 2) : shards;
+        int shards = Config.getIntProperty("es.index.number_of_shards", 1) ;
 
         System.setProperty("es.index.number_of_shards", String.valueOf(shards));
         Logger.info(this, "Running Contentlet Reindex");
@@ -343,7 +352,6 @@ public class ESIndexResource {
         }
 
         return getReindexationProgress(request, response);
-
 
     }
     
@@ -381,17 +389,57 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        if(indexExists(indexName) ){
-            return Response.status(404).build();
-        }
-        
-        idxApi.delete(indexName);
+        // Accept either the short name (as the UI sends it) or the full physical name with the
+        // cluster prefix (as `_cat/indices` reports it): normalize to the cluster-stripped form
+        // that listDotCMSIndices()/delete() expect, so a full physical name no longer 404s
+        // (issue #35640, TC-016).
+        final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
 
-        String message = "Index:" + indexName + " deleted";
-        
+        // Site-search indices are a separate subsystem (their own OS-aware router, plain names,
+        // own siteSearch DB slot) and are NOT in listDotCMSIndices() — route them to the site-search
+        // API instead of the content delete path, which would mis-tag the OS name and orphan it
+        // (issue #35640).
+        if (IndexType.SITE_SEARCH.is(resolvedName)) {
+            return deleteSiteSearchIndex(request, response, init, resolvedName, indexName);
+        }
+
+        if(indexDoesNotExist(resolvedName) ){
+            // Readable 404 body (no stack trace) so a mistyped/nonexistent name is clear
+            // (issue #35640, TC-017).
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + indexName)))).build();
+        }
+
+        // delete() throws on a primary-provider failure and returns false on an unacknowledged
+        // delete — neither may be reported as success (issue #36430). A DotStateException means
+        // the index is active/building and stays a readable 400 (issue #35640, TC-018).
+        final boolean deleted;
+        try {
+            deleted = idxApi.delete(resolvedName);
+        } catch (final DotStateException e) {
+            Logger.warn(this, "Rejected deletion of index '" + resolvedName + "': " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_DELETABLE", e.getMessage())))).build();
+        } catch (final Exception e) {
+            // Primary-provider delete failure — error toast + 500, not a success report (#36430).
+            Logger.error(this, "Error deleting index " + resolvedName + ": " + e.getMessage(), e);
+            sendAdminMessage("Index:" + resolvedName + " could not be deleted",
+                    MessageSeverity.ERROR, init.getUser(), 5000);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+        if (!deleted) {
+            // Unacknowledged delete — surface as an error toast + 500 (#36430).
+            sendAdminMessage("Index:" + resolvedName + " could not be deleted",
+                    MessageSeverity.ERROR, init.getUser(), 5000);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+
+        String message = "Index:" + resolvedName + " deleted";
+
+
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
-        
-        
+
+
         return getIndexStatus(request, response);
 
     }
@@ -406,7 +454,7 @@ public class ESIndexResource {
     @PUT
     @Path("/activate/{params:.*}")
     public Response activateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.ACTIVATE.name());
     }
@@ -423,7 +471,7 @@ public class ESIndexResource {
     @PUT
     @Path("/deactivate/{params:.*}")
     public Response deactivateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.DEACTIVATE.name());
     }
@@ -439,7 +487,7 @@ public class ESIndexResource {
     @PUT
     @Path("/close/{params:.*}")
     public Response closeIndex(@Context HttpServletRequest httpServletRequest,@Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.CLOSE.name());
     }
@@ -456,7 +504,7 @@ public class ESIndexResource {
     @Path("/open/{params:.*}")
     public Response openIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(httpServletRequest, httpServletResponse);
+            InitDataObject init=auth(httpServletRequest, httpServletResponse, params);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             APILocator.getESIndexAPI().openIndex(indexName);
 
@@ -536,30 +584,45 @@ public class ESIndexResource {
 
         final InitDataObject init = auth(request, response);
         final IndexAction indexAction = IndexAction.fromString(action);
-        
-        if(indexExists(indexName) ){
-            return Response.status(404).build();
+
+        // Same normalization as deleteIndex: accept both the short name and the full physical
+        // name (with cluster prefix) so this endpoint stays consistent and does not 404 on the
+        // latter (issue #35640, TC-016).
+        final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
+
+        if(indexDoesNotExist(resolvedName) ){
+            // Readable 404 body, consistent with deleteIndex (issue #35640, TC-017).
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + indexName)))).build();
         }
-        
-        
-        switch(indexAction){
-            case DEACTIVATE:
-                APILocator.getContentletIndexAPI().deactivateIndex(indexName);
-                break;
-            case CLEAR:
-                APILocator.getESIndexAPI().clearIndex(indexName);
-                break;
-            case OPEN:
-                APILocator.getESIndexAPI().openIndex(indexName);
-                break;
-            case CLOSE:
-                APILocator.getESIndexAPI().closeIndex(indexName);
-                break;
-            default:
-                APILocator.getContentletIndexAPI().activateIndex(indexName);
-            
+
+
+        try {
+            switch(indexAction){
+                case DEACTIVATE:
+                    APILocator.getContentletIndexAPI().deactivateIndex(resolvedName);
+                    break;
+                case CLEAR:
+                    APILocator.getESIndexAPI().clearIndex(resolvedName);
+                    break;
+                case OPEN:
+                    APILocator.getESIndexAPI().openIndex(resolvedName);
+                    break;
+                case CLOSE:
+                    APILocator.getESIndexAPI().closeIndex(resolvedName);
+                    break;
+                default:
+                    APILocator.getContentletIndexAPI().activateIndex(resolvedName);
+
+            }
+        } catch (final DotStateException e) {
+            // CLEAR is delete + recreate, so it is guarded like delete: an active/building index
+            // is rejected with a readable 400 instead of a stack trace (issue #35640, TC-018).
+            Logger.warn(this, "Rejected '" + action + "' on index '" + resolvedName + "': " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_MODIFIABLE", e.getMessage())))).build();
         }
-        String message = indexAction.name().toLowerCase() + " " + indexName;
+        String message = indexAction.name().toLowerCase() + " " + resolvedName;
         
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
         
@@ -580,11 +643,54 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView<>(IndexResourceHelper.getInstance().indexStatsList())).build();
+        return Response.ok(new ResponseEntityView<>(
+                IndexResourceHelper.getInstance().indexStatsList(init.getUser()))).build();
 
     }
     
-    private boolean indexExists(final String indexName) {
+    /**
+     * Returns {@code true} when the given index name is present in neither the open nor the
+     * closed dotCMS index list — i.e. the index does <strong>not</strong> exist. Named for the
+     * caller's guard ({@code if (indexDoesNotExist(...)) return 404}).
+     */
+    private boolean indexDoesNotExist(final String indexName) {
         return !idxApi.listDotCMSIndices().contains(indexName) && !idxApi.listDotCMSClosedIndices().contains(indexName) ;
+    }
+
+    /**
+     * Deletes a site-search index through the site-search subsystem (its own ES/OS-aware router),
+     * translating its outcome to REST responses consistently with the content delete path:
+     * 404 when the index is unknown, 400 when it is the active index (deactivate first),
+     * 500 on an engine error. See issue #35640.
+     */
+    private Response deleteSiteSearchIndex(final HttpServletRequest request,
+            final HttpServletResponse response, final InitDataObject init,
+            final String resolvedName, final String requestedName) throws DotDataException {
+
+        final com.dotmarketing.sitesearch.business.SiteSearchAPI siteSearchAPI =
+                APILocator.getSiteSearchAPI();
+
+        if (!siteSearchAPI.listIndices().contains(resolvedName)) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + requestedName)))).build();
+        }
+
+        try {
+            siteSearchAPI.deleteIndex(resolvedName);
+        } catch (final DotStateException e) {
+            Logger.warn(this, "Rejected deletion of site-search index '" + resolvedName + "': " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("INDEX_NOT_DELETABLE", e.getMessage())))).build();
+        } catch (final IOException | DotDataException e) {
+            Logger.error(this, "Error deleting site-search index '" + resolvedName + "': " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("INDEX_DELETE_ERROR", "Could not delete index: " + requestedName)))).build();
+        }
+
+        sendAdminMessage("Index:" + resolvedName + " deleted", MessageSeverity.INFO, init.getUser(), 5000);
+        return getIndexStatus(request, response);
     }
 }

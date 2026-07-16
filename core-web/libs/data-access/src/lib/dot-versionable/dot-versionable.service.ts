@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { map } from 'rxjs/operators';
 
 export interface DotVersionable {
     inode: string;
@@ -12,7 +11,7 @@ export interface DotVersionable {
 
 @Injectable()
 export class DotVersionableService {
-    constructor(private coreWebService: CoreWebService) {}
+    private httpClient = inject(HttpClient);
 
     /**
      * Bring back specific version of based on the inode.
@@ -22,11 +21,21 @@ export class DotVersionableService {
      * @memberof DotVersionableService
      */
     bringBack(inode: string): Observable<DotVersionable> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `/api/v1/versionables/${inode}/_bringback`
-            })
-            .pipe(pluck('entity'));
+        return this.httpClient
+            .put<{ entity: DotVersionable }>(`/api/v1/versionables/${inode}/_bringback`, {})
+            .pipe(map((x) => x?.entity));
+    }
+
+    /**
+     * Delete specific version based on the inode.
+     *
+     * @param string inode
+     * @returns Observable<unknown>
+     * @memberof DotVersionableService
+     */
+    deleteVersion(inode: string): Observable<unknown> {
+        return this.httpClient
+            .delete<{ entity: unknown }>(`/api/v1/versionables/${inode}`)
+            .pipe(map((x) => x?.entity));
     }
 }

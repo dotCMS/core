@@ -1,6 +1,6 @@
 package com.dotmarketing.util;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -8,9 +8,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.StringPool;
 import io.vavr.Function0;
-import java.time.temporal.TemporalUnit;
-import org.apache.commons.lang.StringUtils;
-
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -29,9 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import static com.dotcms.util.DotPreconditions.checkNotNull;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Provides utility methods to interact with {@link Date} objects, date formats,
@@ -259,6 +255,19 @@ public class DateUtil {
 		return convertDate(date, companyTimeZone.get(), formats);
 	}
 
+    /**
+     * This method try to parse a string into a Date object using an array with
+     * @param date - the string to be parsed
+     * @param lenient - We instruct the Formater to be permissive or stricter
+     * @param formats - the valid format to parse the string
+     * @return return the Date object that represent the string
+     * @throws java.text.ParseException
+     */
+    public static Date convertDate(final String date, final boolean lenient,
+            final String[] formats) throws java.text.ParseException {
+        return convertDate(date, companyTimeZone.get(), lenient, formats);
+    }
+
 	/**
 	 * This method try to parse a string into a Date object using an array with
 	 * the valid formats
@@ -272,12 +281,29 @@ public class DateUtil {
 	 * @return return the Date object that represent the string
 	 * @throws java.text.ParseException
 	 */
+    public static Date convertDate(final String date,
+            final TimeZone timeZone,
+            final String... formats
+    ) throws java.text.ParseException {
+        return convertDate(date, timeZone, true, formats);
+    }
+
+    /**
+     * This method try to parse a string into a Date object using an array with
+     * @param date - the string to be parsed
+     * @param timeZone - time zone
+     * @param lenient - We instruct the Formater to be permissive or stricter
+     * @param formats - the valid format to parse the string
+     * @return return the Date object that represent the string
+     * @throws java.text.ParseException
+     */
 	public static Date convertDate(final String date,
 								   final TimeZone timeZone,
+                                   final boolean lenient,
 								   final String... formats
 								   ) throws java.text.ParseException {
 		Date ret = null;
-		for (final String pattern : formats) { // todo: usually the formaters are cached and thread-safe
+		for (final String pattern : formats) {
 
 			try {
 
@@ -285,12 +311,12 @@ public class DateUtil {
 				if (null != timeZone) {
 					format.setTimeZone(timeZone);
 				}
-
+                format.setLenient(lenient);
 				ret = format.parse(date);
+                Logger.debug(DateUtil.class, "Converted date: " + date + " using pattern: " + pattern + " ret: " + ret);
 				break;
 			} catch (java.text.ParseException e) {
 				// quiet
-				//e.printStackTrace();
 			}
 		}
 
@@ -581,7 +607,7 @@ public class DateUtil {
 
 			return returnValue;
 		} catch (Exception ex) {
-			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			Logger.error(DateUtil.class, ex.toString());
 			return ERROR_DATE;
 		}
 	}
@@ -597,7 +623,7 @@ public class DateUtil {
 			String returnValue = LUCENE_DATE_FORMAT.format(date);
 			return returnValue;
 		} catch (Exception ex) {
-			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			Logger.error(DateUtil.class, ex.toString());
 			return ERROR_DATE;
 		}
 	}
@@ -613,7 +639,7 @@ public class DateUtil {
 			String returnValue = LUCENE_DATE_TIME_FORMAT.format(date);
 			return returnValue.replaceAll(StringPool.COLON, "\\\\:");
 		} catch (Exception ex) {
-			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			Logger.error(DateUtil.class, ex.toString());
 			return ERROR_DATE;
 		}
 	}
@@ -694,7 +720,7 @@ public class DateUtil {
 			Date time = sdf.parse(dateString);
 			return toLuceneDateTime(time);
 		} catch (Exception ex) {
-			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			Logger.error(DateUtil.class, ex.toString());
 			return ERROR_DATE;
 		}
 	}
@@ -712,7 +738,7 @@ public class DateUtil {
 
 			return returnValue;
 		} catch (Exception ex) {
-			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			Logger.error(DateUtil.class, ex.toString());
 			return ERROR_DATE;
 		}
 	}
@@ -751,6 +777,18 @@ public class DateUtil {
 	public static Date toDate (final Instant instant) {
 
 		return new Date(instant.toEpochMilli());
+	}
+
+	/**
+	 * Coerces a value that may already be a {@link Date} (e.g. a JDBC {@code Timestamp} returned
+	 * in a SQL result row) to a {@link Date}. Returns null when the value is not a Date.
+	 *
+	 * @param value the value to coerce
+	 * @return the Date, or null
+	 */
+	public static Date asDate (final Object value) {
+
+		return value instanceof Date ? (Date) value : null;
 	}
 
 	/**

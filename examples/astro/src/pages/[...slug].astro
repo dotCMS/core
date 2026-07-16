@@ -1,30 +1,39 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Error from '../components/Error.astro';
-import { getPageData } from '@utils/client';
-import { MyPage } from '@react/myPage';
+import "@/styles/global.css";
+import Layout from "@/components/common/Layout.astro";
+import Error from "@/components/common/Error.astro";
+import { getDotCMSPage } from "@/dotcms-integration";
+import { DotCMSPage } from "@/views/DotCMSPage";
 
 const params = Astro.params;
 
-const { pageAsset, nav, error } = await getPageData(params?.slug, Astro.url.searchParams);
+const pageResponse = await getDotCMSPage(params?.slug ?? "");
 
+if ("error" in pageResponse) {
+  const { error } = pageResponse;
+  if (error.status === 404) {
+    return Astro.redirect("/404", 404);
+  }
+}
+
+const pageAsset = "pageAsset" in pageResponse ? pageResponse.pageAsset : undefined;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-    return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+  return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
 }
 
-const title = pageAsset ? pageAsset.page.title : 'Error';
+const title = pageAsset ? pageAsset.page.title : "Error";
 ---
 
 {
-    (
-        <Layout title={title}>
-            {error ? (
-                <Error error={error} />
-            ) : (
-                <MyPage client:only="react" pageAsset={pageAsset} nav={nav?.children} />
-            )}
-        </Layout>
-    )
+  (
+    <Layout title={title}>
+      {"error" in pageResponse ? (
+        <Error error={pageResponse.error} />
+      ) : (
+        <DotCMSPage client:only="react" pageResponse={pageResponse} />
+      )}
+    </Layout>
+  )
 }

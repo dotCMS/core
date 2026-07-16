@@ -5,4 +5,5 @@ export interface DotLayoutColumn {
     leftOffset: number;
     width: number;
     styleClass?: string;
+    metadata?: Record<string, unknown>;
 }

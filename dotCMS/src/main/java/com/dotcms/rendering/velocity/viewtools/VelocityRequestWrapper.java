@@ -11,6 +11,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Xss;
+import io.vavr.Lazy;
 
 /**
  * This class wraps the incoming HttpServletRequest to provide security and to allow uris to be
@@ -28,6 +29,9 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
                     Config.getBooleanProperty("VELOCITY_PREVENT_SETTING_USER_ID", true)
                                     ? ImmutableSet.of(WebKeys.USER_ID, WebKeys.USER)
                                     : ImmutableSet.of();
+
+    private static final Lazy<Boolean> USE_OWASP_ENCODING_FOR_XSS_PARAMS =
+            Lazy.of(() -> Config.getBooleanProperty("USE_OWASP_ENCODING_FOR_XSS_PARAMS", true));
 
     private VelocityRequestWrapper(final HttpServletRequest req) {
         super(req);
@@ -82,8 +86,10 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
     @Override
     public String getParameter(final String param) {
         String ret = super.getParameter(param);
-        if (UtilMethods.isSet(ret) && Xss.URLHasXSS(ret)) {
-            ret = UtilMethods.htmlifyString(ret);
+        if (UtilMethods.isSet(ret) && Xss.urlHasXSS(ret)) {
+            ret = USE_OWASP_ENCODING_FOR_XSS_PARAMS.get()
+                    ? Xss.encodeForHTML(ret)
+                    : UtilMethods.htmlifyString(ret);
         }
         return ret;
     }
@@ -94,8 +100,11 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
     }
 
     @Override
-    public void removeAttribute(String arg0) {
-        // do nothing
+    public void removeAttribute(String key) {
+        if (SET_VALUE_BLACKLIST.contains(key)) {
+            return;
+        }
+        super.removeAttribute(key);
     }
 
     @Override

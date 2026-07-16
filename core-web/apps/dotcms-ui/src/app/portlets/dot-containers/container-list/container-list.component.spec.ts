@@ -1,13 +1,19 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    EventEmitter,
+    Input,
+    NO_ERRORS_SCHEMA,
+    Output
+} from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
@@ -18,9 +24,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { Table, TableModule } from 'primeng/table';
 
-import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import {
     DotAlertConfirmService,
     DotFormatDateService,
@@ -32,12 +35,7 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -45,26 +43,51 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
 import {
-    DotActionMenuButtonComponent,
+    CONTAINER_SOURCE,
+    DotActionBulkResult,
+    DotContainer,
+    DotSite
+} from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import {
     DotAddToBundleComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
 import {
+    createFakeEvent,
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotMessageService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
-import { ContainerListRoutingModule } from './container-list-routing.module';
 import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
+
+import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
+import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
+import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
+
+// Mock window.matchMedia (required by PrimeNG ContextMenu)
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
 
 const containersMock: DotContainer[] = [
     {
@@ -75,9 +98,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Published',
         live: true,
         name: 'movie',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'movie',
@@ -92,9 +113,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Unpublish',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -109,9 +128,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Archived',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -126,9 +143,7 @@ const containersMock: DotContainer[] = [
         identifier: 'SYSTEM_CONTAINER',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -143,10 +158,9 @@ const containersMock: DotContainer[] = [
         identifier: 'FILE_CONTAINER',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: '//demo.dotcms.com/application/containers/default/',
+        pathName: '//demo.dotcms.com/application/containers/default/',
         source: CONTAINER_SOURCE.FILE,
         title: 'test',
         type: 'containers',
@@ -221,30 +235,46 @@ describe('ContainerListComponent', () => {
 
     let dotRouterService: DotRouterService;
 
-    let unPublishContainer: DotActionMenuButtonComponent;
-    let publishContainer: DotActionMenuButtonComponent;
-    let archivedContainer: DotActionMenuButtonComponent;
     let contentTypesSelector: MockDotContentTypeSelectorComponent;
-    let dotContainersService: DotContainersService;
-    let dotSiteBrowserService: DotSiteBrowserService;
     let siteService: SiteServiceMock;
     let store: DotContainerListStore;
     let paginatorService: PaginatorService;
+    let switchSiteSubject: Subject<DotSite>;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
+        switchSiteSubject = new Subject<DotSite>();
+
         await TestBed.configureTestingModule({
-            declarations: [ContainerListComponent, MockDotContentTypeSelectorComponent],
+            declarations: [],
+            imports: [
+                ContainerListComponent,
+                MockDotContentTypeSelectorComponent,
+                ActionHeaderComponent,
+                ButtonModule,
+                CheckboxModule,
+                CommonModule,
+                DotAddToBundleComponent,
+                DotContentletStatusBadgeComponent,
+                DotEmptyStateComponent,
+                DotMessagePipe,
+                DotPortletBaseComponent,
+                DotRelativeDatePipe,
+                InputTextModule,
+                MenuModule,
+                TableModule
+            ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
                 ConfirmationService,
                 DialogService,
                 DotAlertConfirmService,
                 DotcmsConfigService,
-                DotcmsEventsService,
                 DotContainerListStore,
                 DotContainersService,
-                DotEventsSocket,
                 DotHttpErrorManagerService,
                 DotSiteBrowserService,
                 HttpClient,
@@ -267,48 +297,37 @@ describe('ContainerListComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToEditContainer: jest.fn(),
+                        goToSiteBrowser: jest.fn()
                     }
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
+                },
+                {
+                    provide: GlobalStore,
+                    useValue: {
+                        switchSiteEvent$: () => switchSiteSubject.asObservable()
+                    }
                 }
             ],
-            imports: [
-                ActionHeaderModule,
-                ButtonModule,
-                CheckboxModule,
-                CommonModule,
-                ContainerListRoutingModule,
-                DotActionMenuButtonComponent,
-                DotAddToBundleComponent,
-                DotEmptyStateModule,
-                DotMessagePipe,
-                DotPortletBaseModule,
-                DotRelativeDatePipe,
-                HttpClientTestingModule,
-                InputTextModule,
-                MenuModule,
-                TableModule,
-                BrowserAnimationsModule
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
-        }).compileComponents();
+            schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
+        })
+            .overrideComponent(ContainerListComponent, {
+                remove: { imports: [DotContentTypeSelectorComponent] },
+                add: { imports: [MockDotContentTypeSelectorComponent], schemas: [NO_ERRORS_SCHEMA] }
+            })
+            .compileComponents();
 
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         dotRouterService = TestBed.inject(DotRouterService);
-        dotContainersService = TestBed.inject(DotContainersService);
-        dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
         paginatorService = TestBed.inject(PaginatorService);
-        spyOn(paginatorService, 'get').and.returnValue(of(containersMock));
+        jest.spyOn(paginatorService, 'get').mockReturnValue(of(containersMock));
 
         fixture = TestBed.createComponent(ContainerListComponent);
         comp = fixture.componentInstance;
@@ -322,7 +341,7 @@ describe('ContainerListComponent', () => {
             tick(2);
             fixture.detectChanges();
 
-            spyOn(dotPushPublishDialogService, 'open');
+            jest.spyOn(dotPushPublishDialogService, 'open');
             table = fixture.debugElement.query(
                 By.css('[data-testId="container-list-table"]')
             ).componentInstance;
@@ -330,7 +349,7 @@ describe('ContainerListComponent', () => {
 
         it('should clicked on row and emit dotRouterService', () => {
             fixture.detectChanges();
-            comp.tableRows.get(0).nativeElement.click();
+            comp.tableRows()[0].nativeElement.click();
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith(
                 containersMock[0].identifier
@@ -338,63 +357,60 @@ describe('ContainerListComponent', () => {
         });
 
         it('should set actions to publish template', () => {
-            publishContainer = fixture.debugElement.query(
-                By.css('[data-testid="123Published"]')
-            ).componentInstance;
+            const publishedContainer = containersMock.find((c) => c.identifier === '123Published');
             const actions = setBasicOptions();
             actions.push({
-                menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+                menuItem: { label: 'Unpublish', command: expect.any(Function) }
             });
             actions.push({
-                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+                menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
-            expect(publishContainer.actions).toEqual(actions);
+            expect(comp.setContainerActions(publishedContainer)).toEqual(actions);
         });
 
         it('should set actions to unPublish template', () => {
-            unPublishContainer = fixture.debugElement.query(
-                By.css('[data-testid="123Unpublish"]')
-            ).componentInstance;
+            const unpublishedContainer = containersMock.find(
+                (c) => c.identifier === '123Unpublish'
+            );
             const actions = setBasicOptions();
             actions.push({
-                menuItem: { label: 'Archive', command: jasmine.any(Function) }
+                menuItem: { label: 'Archive', command: expect.any(Function) }
             });
             actions.push({
-                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+                menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
-            expect(unPublishContainer.actions).toEqual(actions);
+            expect(comp.setContainerActions(unpublishedContainer)).toEqual(actions);
         });
 
         it('should set actions to archived template', () => {
-            archivedContainer = fixture.debugElement.query(
-                By.css('[data-testid="123Archived"]')
-            ).componentInstance;
+            const archivedContainer = containersMock.find((c) => c.identifier === '123Archived');
 
             const actions = [
-                { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
-                { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
+                { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
+                { menuItem: { label: 'Delete', command: expect.any(Function) } }
             ];
-            expect(archivedContainer.actions).toEqual(actions);
+            expect(comp.setContainerActions(archivedContainer)).toEqual(actions);
         });
 
         it('should select all except system and file container', () => {
-            const menu: Menu = fixture.debugElement.query(
-                By.css('.container-listing__header-options p-menu')
-            ).componentInstance;
-            spyOn(dotContainersService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
-
-            comp.selectedContainers = containersMock;
+            const menu: Menu = fixture.debugElement.query(By.directive(Menu)).componentInstance;
+            // Spy on the store's dotContainersService since it's now using component-level providers
+            jest.spyOn(store['dotContainersService'], 'publish').mockReturnValue(
+                of(mockBulkResponseSuccess)
+            );
 
             fixture.detectChanges();
+
+            comp.selectedContainers = containersMock;
 
             comp.handleActionMenuOpen({} as MouseEvent);
 
             menu.model[0].command({
                 originalEvent: createFakeEvent('click')
             });
-            expect(dotContainersService.publish).toHaveBeenCalledWith([
+            expect(store['dotContainersService'].publish).toHaveBeenCalledWith([
                 '123Published',
                 '123Unpublish',
                 '123Archived'
@@ -415,19 +431,26 @@ describe('ContainerListComponent', () => {
         });
 
         it('should click on file container and move on Browser Screen', () => {
-            spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of(null));
-            fixture.debugElement
-                .query(By.css('[data-testrowid="FILE_CONTAINER"]'))
-                .triggerEventHandler('click', null);
+            const fileContainer = containersMock.find((c) => c.identifier === 'FILE_CONTAINER');
+            // Spy on the store's methods since it's now using component-level providers
+            jest.spyOn(store['dotSiteBrowserService'], 'setSelectedFolder').mockReturnValue(
+                of(null)
+            );
+            jest.spyOn(store['dotRouterService'], 'goToSiteBrowser');
+
+            // Call the method directly instead of triggering the event
+            comp.handleRowClick(fileContainer);
 
             fixture.detectChanges();
-            const path = new URL(`http:${containersMock[4].path}`).pathname;
-            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(path);
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+            expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledWith(
+                fileContainer.pathName
+            );
+            expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledTimes(1);
+            expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when content types selector changes', () => {
-            spyOn(store, 'getContainersByContentType');
+            jest.spyOn(store, 'getContainersByContentType');
             fixture.detectChanges();
 
             contentTypesSelector = fixture.debugElement.query(
@@ -437,10 +460,11 @@ describe('ContainerListComponent', () => {
             contentTypesSelector.selected.emit('test');
 
             expect(store.getContainersByContentType).toHaveBeenCalledWith('test');
+            expect(store.getContainersByContentType).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when archive state change', () => {
-            spyOn(store, 'getContainersByArchiveState');
+            jest.spyOn(store, 'getContainersByArchiveState');
 
             const headerCheckbox = fixture.debugElement.query(
                 By.css('[data-testId="archiveCheckbox"]')
@@ -449,10 +473,11 @@ describe('ContainerListComponent', () => {
             headerCheckbox.onChange.emit({ checked: true });
 
             expect(store.getContainersByArchiveState).toHaveBeenCalledWith(true);
+            expect(store.getContainersByArchiveState).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when query change', () => {
-            spyOn(store, 'getContainersByQuery');
+            jest.spyOn(store, 'getContainersByQuery');
 
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
@@ -464,32 +489,33 @@ describe('ContainerListComponent', () => {
             fixture.detectChanges();
 
             expect(store.getContainersByQuery).toHaveBeenCalledWith('test');
+            expect(store.getContainersByQuery).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers with offset when table emits onPage', () => {
-            spyOn(store, 'getContainersWithOffset');
+            jest.spyOn(store, 'getContainersWithOffset');
 
             table.onPage.emit({ first: 10, rows: 10 });
 
             expect(store.getContainersWithOffset).toHaveBeenCalledWith(10);
+            expect(store.getContainersWithOffset).toHaveBeenCalledTimes(1);
         });
 
         it('should update selectedContainers in store when actions button is clicked', () => {
-            spyOn(store, 'updateSelectedContainers');
-            comp.selectedContainers = [containersMock[0]];
+            jest.spyOn(store, 'updateSelectedContainers');
+
             fixture.detectChanges();
 
-            const bulkButton = fixture.debugElement.query(
-                By.css('[data-testId="bulkActions"]')
-            ).nativeElement;
+            comp.selectedContainers = [containersMock[0]];
 
-            bulkButton.click();
+            comp.handleActionMenuOpen({} as MouseEvent);
 
             expect(store.updateSelectedContainers).toHaveBeenCalledWith([containersMock[0]]);
+            expect(store.updateSelectedContainers).toHaveBeenCalledTimes(1);
         });
 
         it('should focus first row when you press arrow down in query input', () => {
-            spyOn(comp, 'focusFirstRow');
+            jest.spyOn(comp, 'focusFirstRow');
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
             ).nativeElement;
@@ -502,9 +528,10 @@ describe('ContainerListComponent', () => {
         });
 
         it("should fetch containers when site is changed and it's not the first time", () => {
-            spyOn(paginatorService, 'setExtraParams').and.callThrough();
+            jest.spyOn(paginatorService, 'setExtraParams');
+            jest.spyOn(paginatorService, 'getFirstPage').mockReturnValue(of(containersMock));
 
-            siteService.setFakeCurrentSite(mockSites[1]);
+            switchSiteSubject.next(mockSites[1] as unknown as DotSite);
 
             fixture.detectChanges();
 
@@ -512,16 +539,16 @@ describe('ContainerListComponent', () => {
                 'host',
                 mockSites[1].identifier
             );
-            expect(paginatorService.get).toHaveBeenCalled();
+            expect(paginatorService.getFirstPage).toHaveBeenCalled();
         });
     });
 
     function setBasicOptions() {
         return [
-            { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Push Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Add To Bundle', command: jasmine.any(Function) } }
+            { menuItem: { label: 'Edit', command: expect.any(Function) } },
+            { menuItem: { label: 'Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Push Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Add To Bundle', command: expect.any(Function) } }
         ];
     }
 });

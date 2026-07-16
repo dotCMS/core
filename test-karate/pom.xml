@@ -12,9 +12,9 @@
     <artifactId>dotcms-test-karate</artifactId>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.source>${dotcms.core.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${dotcms.core.compiler.release}</maven.compiler.target>
+        <maven.compiler.release>${dotcms.core.compiler.release}</maven.compiler.release>
 
         <license.use>true</license.use>
         <clean.docker.volumes>true</clean.docker.volumes>
@@ -22,10 +22,12 @@
         <postman.test.skip>true</postman.test.skip>
         <!-- Some tests e.g. in ApiToken_Resource.postman_collection currently fail unless docker external port is same as internal -->
         <tomcat.port>8080</tomcat.port>
+        <management.port>8090</management.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
         <karate.version>1.5.0</karate.version>
         <karate.test.skip>true</karate.test.skip>
         <karate.base.url>http://localhost:${tomcat.port}</karate.base.url>
+        <karate.management.url>http://localhost:${management.port}</karate.management.url>
         <it.test>KarateCITests#defaults</it.test>
     </properties>
 
@@ -72,6 +74,7 @@
                                 <env>
                                     <CATALINA_OPTS>-XX:+PrintFlagsFinal</CATALINA_OPTS>
                                     <DB_MAX_TOTAL>15</DB_MAX_TOTAL>
+                                    <DB_MAX_WAIT>120000</DB_MAX_WAIT>
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
@@ -127,6 +130,9 @@
                     <skip>${karate.test.skip}</skip>
                     <systemPropertyVariables>
                         <karate.base.url>${karate.base.url}</karate.base.url>
+                        <karate.management.url>${karate.management.url}</karate.management.url>
+                        <karate.regular.port>${tomcat.port}</karate.regular.port>
+                        <karate.management.port>${management.port}</karate.management.port>
                     </systemPropertyVariables>
                     <includes>
                         <include>**/*.java</include>

@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -26,7 +25,7 @@ import {
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
 import { DotTemplateDesigner } from '@dotcms/dotcms-models';
-import { TemplateBuilderModule } from '@dotcms/template-builder';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
@@ -35,11 +34,14 @@ export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-ema-layout',
-    standalone: true,
-    imports: [CommonModule, TemplateBuilderModule],
+    imports: [TemplateBuilderComponent],
     templateUrl: './edit-ema-layout.component.html',
     styleUrls: ['./edit-ema-layout.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    // Note: Needed because gridstack is using the window:mousemove event to scroll the page when dragging an element
+    host: {
+        class: 'overflow-hidden'
+    }
 })
 export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     private readonly dotRouterService = inject(DotRouterService);
@@ -54,7 +56,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     readonly $handleCanEditLayout = effect(() => {
         // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
-        if (this.uveStore.$canEditLayout()) {
+        if (this.uveStore.editorCanEditLayout()) {
             return;
         }
 
@@ -170,7 +172,8 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             summary: 'Success',
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
-        this.uveStore.reloadCurrentPage({ isClientReady: false });
+        this.uveStore.pageReload();
+        this.uveStore.setIsClientReady(false);
     }
 
     /**

@@ -1,12 +1,12 @@
 package com.dotcms.timemachine.ajax;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.util.I18NMessage;
@@ -60,7 +60,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
     }
 
     @VisibleForTesting
-    public TimeMachineAjaxAction(final NotificationAPI notificationAPI, ESIndexHelper indexHelper, ESIndexAPI indexAPI,
+    public TimeMachineAjaxAction(final NotificationAPI notificationAPI, ESIndexHelper indexHelper, IndexAPI indexAPI,
             final WebResource webResource) {
         super(indexHelper, indexAPI, webResource);
         this.notificationAPI = notificationAPI;

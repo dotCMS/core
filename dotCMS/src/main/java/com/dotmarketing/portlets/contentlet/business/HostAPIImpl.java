@@ -123,7 +123,15 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     @CloseDBIfOpened
-    public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public Host resolveHostName(final String serverName,
+                                final User user,
+                                final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        if (Host.SYSTEM_HOST.equals(serverName)) {
+            // No recursion, no permission check needed during startup
+            return APILocator.systemHost();
+        }
+
         User systemUser = APILocator.systemUser();
         Host host;
         try {

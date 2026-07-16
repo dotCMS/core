@@ -1,6 +1,6 @@
 import { fromEvent, merge, Subject } from 'rxjs';
 
-import { Directive, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
+import { Directive, ElementRef, Input, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { delay, filter, takeUntil, tap } from 'rxjs/operators';
 
@@ -12,12 +12,12 @@ import { delay, filter, takeUntil, tap } from 'rxjs/operators';
     selector: '[dotMaxlength]'
 })
 export class DotMaxlengthDirective implements OnInit, OnDestroy {
+    private el = inject(ElementRef);
+
     private _maxLength: number;
     private events = ['paste', 'keypress'];
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedEvents = ['Backspace', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
-
-    constructor(private el: ElementRef) {}
 
     ngOnInit() {
         const eventStreams = this.events.map((ev) => fromEvent(this.el.nativeElement, ev));

@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    // Astro development
+    "astro-build.astro-vscode",
+
+    // Code quality
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // EditorConfig support
+    "editorconfig.editorconfig"
+  ]
+}

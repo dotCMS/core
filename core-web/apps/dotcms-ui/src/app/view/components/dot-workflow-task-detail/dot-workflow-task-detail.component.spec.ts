@@ -1,66 +1,70 @@
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ActivatedRoute } from '@angular/router';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
-import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
 
 describe('DotWorkflowTaskDetailComponent', () => {
-    let component: DotWorkflowTaskDetailComponent;
-    let de: DebugElement;
-    let fixture: ComponentFixture<DotWorkflowTaskDetailComponent>;
-
-    let dotIframeDialog: DebugElement;
-    let dotIframeDialogComponent: DotIframeDialogComponent;
-
+    let spectator: Spectator<DotWorkflowTaskDetailComponent>;
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
 
-    beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotWorkflowTaskDetailComponent],
-            providers: [
-                DotWorkflowTaskDetailService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotMenuService,
-                    useValue: {
-                        getDotMenuId() {
-                            return observableOf('999');
-                        }
+    const createComponent = createComponentFactory({
+        component: DotWorkflowTaskDetailComponent,
+        imports: [DotIframeDialogComponent],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            DotWorkflowTaskDetailService,
+            DotIframeService,
+            DotUiColorsService,
+            IframeOverlayService,
+            DotcmsConfigService,
+            LoggerService,
+            StringUtils,
+            { provide: LoginService, useClass: LoginServiceMock },
+            { provide: DotRouterService, useClass: MockDotRouterService },
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        queryParams: {}
                     }
                 }
-            ],
-            imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
-        });
-    }));
+            },
+            {
+                provide: DotMenuService,
+                useValue: {
+                    getDotMenuId() {
+                        return observableOf('999');
+                    }
+                }
+            }
+        ],
+        detectChanges: false
+    });
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotWorkflowTaskDetailComponent);
-        de = fixture.debugElement;
-        component = de.componentInstance;
-        dotWorkflowTaskDetailService = de.injector.get(DotWorkflowTaskDetailService);
-        fixture.detectChanges();
-
-        dotIframeDialog = de.query(By.css('dot-iframe-dialog'));
-        dotIframeDialogComponent = dotIframeDialog.componentInstance;
+        spectator = createComponent();
+        dotWorkflowTaskDetailService = spectator.debugElement.injector.get(
+            DotWorkflowTaskDetailService
+        );
+        spectator.detectChanges();
     });
 
     it('should have dot-iframe-dialog', () => {
+        const dotIframeDialog = spectator.query('dot-iframe-dialog');
         expect(dotIframeDialog).toBeTruthy();
     });
 
@@ -70,14 +74,15 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 id: '123'
             });
 
-            spyOn(component, 'onClose').and.callThrough();
-            spyOn(dotWorkflowTaskDetailService, 'clear');
-            spyOn(component.shutdown, 'emit');
-            spyOn(component.custom, 'emit');
-            fixture.detectChanges();
+            jest.spyOn(spectator.component, 'onClose');
+            jest.spyOn(dotWorkflowTaskDetailService, 'clear');
+            jest.spyOn(spectator.component.shutdown, 'emit');
+            jest.spyOn(spectator.component.custom, 'emit');
+            spectator.detectChanges();
         });
 
         it('should have dot-iframe-dialog url set', () => {
+            const dotIframeDialogComponent = spectator.query(DotIframeDialogComponent);
             expect(dotIframeDialogComponent.url).toEqual(
                 [
                     `/c/portal/layout`,
@@ -95,9 +100,9 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
         describe('events', () => {
             it('should call clear and emit close', () => {
-                dotIframeDialog.triggerEventHandler('shutdown', {});
+                spectator.triggerEventHandler('dot-iframe-dialog', 'shutdown', {});
                 expect(dotWorkflowTaskDetailService.clear).toHaveBeenCalledTimes(1);
-                expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+                expect(spectator.component.shutdown.emit).toHaveBeenCalledTimes(1);
             });
 
             it('should call clear and emit close', () => {
@@ -107,8 +112,9 @@ describe('DotWorkflowTaskDetailComponent', () => {
                     }
                 });
 
-                dotIframeDialog.triggerEventHandler('custom', customEvent);
-                expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
+                spectator.triggerEventHandler('dot-iframe-dialog', 'custom', customEvent);
+                expect(spectator.component.custom.emit).toHaveBeenCalledWith(customEvent);
+                expect(spectator.component.custom.emit).toHaveBeenCalledTimes(1);
             });
         });
     });

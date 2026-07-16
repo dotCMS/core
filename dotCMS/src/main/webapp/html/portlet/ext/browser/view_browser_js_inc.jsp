@@ -19,6 +19,23 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 %>
 
+<style type="text/css" media="all">
+    .nameTD {
+        max-width: 200px;
+        overflow: hidden;
+    }
+    .nameTD .assetRef {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .nameTD .assetName {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
 
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
@@ -667,13 +684,16 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         //Showing the loading message
         Element.show('loadingContentListing');
 
-        //Calling ajax
-        BrowserAjax.openFolderContent (inode, '', showArchived, lang, selectFolderContentCallBack);
 
-        //Opening folder at the left side
-        if(!openFolders.contains(inode)) {
-            treeFolderSignSelected(inode);
-        }
+        var needsTreeExpansion = !openFolders.contains(inode);
+
+        BrowserAjax.openFolderContent(inode, '', showArchived, lang, function(content) {
+            selectFolderContentCallBack(content);
+            // Opening folder at the left side - sequential to avoid race condition
+            if(needsTreeExpansion) {
+                treeFolderSignSelected(inode);
+            }
+        });
 
     }
 
@@ -744,7 +764,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '    <td class="nameTD" id="' + asset.inode + '-NameTD">\n' +
                     '    <a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                     '        <span class="folderIcon" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                    '        &nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + shortenString(asset.name, 30) + '</span>\n' +
+                    '        <span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + asset.name + '</span>\n' +
                     '    </a>\n' +
                     '    </td>\n' +
                     '    <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -817,8 +837,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 var assetFullName = name;
 
                 //processing asset description and name to avoid long words that break the column width
-                name = shortenLongWords(name, 30)
-                name = shortenString(name, 30)
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
@@ -835,7 +853,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                         '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -845,7 +863,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
                         '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span style="pointer-events: none" class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -1513,6 +1531,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function showFileAssetPopUp(folderMap, fileAssetTypeMap, isMultiple){
+        currentFileAssetFolderMap = folderMap;
         hidePopUp('context_menu_popup_'+folderMap.inode);
         var faDialog = dijit.byId("addFileAssetDialog");
         if (faDialog) {
@@ -1544,7 +1563,11 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
+    var currentPageAssetFolderMap = null;
+    var currentFileAssetFolderMap = null;
+
     function showPageAssetPopUp(folderMap){
+        currentPageAssetFolderMap = folderMap;
         hidePopUp('context_menu_popup_'+folderMap.inode);
         var faDialog = dijit.byId("addPageAssetDialog");
         if (faDialog) {
@@ -1582,15 +1605,19 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
-    function createContentlet(url, contentType) {
+    function createContentlet(url, contentType, folderPath) {
         url = url + "&lang=" + selectedLang;
+        var eventData = {
+            url: url,
+            contentType: contentType
+        };
+        if (folderPath) {
+            eventData.folderPath = folderPath;
+        }
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
-            data: {
-                url,
-                contentType
-            }
+            data: eventData
         });
         document.dispatchEvent(customEvent);
         var dialog = dijit.byId("addPageAssetDialog") || dijit.byId("addFileAssetDialog");
@@ -1605,10 +1632,19 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!selected){
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
+            return;
+        }
+
+        var folderPath = '';
+        if (currentPageAssetFolderMap && currentPageAssetFolderMap.fullPath) {
+            var hostName = currentPageAssetFolderMap.fullPath.split(':')[0];
+            var cmsFolderPath = currentPageAssetFolderMap.folderPath || '/';
+            folderPath = cmsFolderPath === '/' ? hostName : hostName + cmsFolderPath;
         }
 
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-        createContentlet(loc, selected.item.velocityVarName);
+
+        createContentlet(loc, selected.item.velocityVarName, folderPath);
     }
 
 
@@ -1622,7 +1658,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-            createContentlet(loc, selected.item.velocityVarName);
+            var folderPath = '';
+            if (currentFileAssetFolderMap && currentFileAssetFolderMap.fullPath) {
+                var hostName = currentFileAssetFolderMap.fullPath.split(':')[0];
+                var cmsFolderPath = currentFileAssetFolderMap.folderPath || '/';
+                folderPath = cmsFolderPath === '/' ? hostName : hostName + cmsFolderPath;
+            }
+            createContentlet(loc, selected.item.velocityVarName, folderPath);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
         }

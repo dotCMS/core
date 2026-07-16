@@ -6,7 +6,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -18,6 +18,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -350,14 +351,19 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
               final String hostName =
                       UUIDUtil.isUUID(host) ?
                               hostAPI.find(host, APILocator.systemUser(), false).getHostname() :
-                              hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+                              resolveHostNameOrSystemHost(host, hostAPI);
               final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
               return String.format("%s%s%s", hostName, StringPool.COLON, path);
             }
     ).getOrNull();
   }
 
-  /**
+    private static String resolveHostNameOrSystemHost(final String host, final HostAPI hostAPI) throws DotDataException, DotSecurityException {
+        return Host.SYSTEM_HOST.equals(host) ?
+                Host.SYSTEM_HOST_SITENAME : hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+    }
+
+    /**
    * The code below serves as
    * @return
    */
@@ -471,19 +477,23 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return ImmutableList.of();
   }
 
-  private final static Map<BaseContentType, Boolean> languageFallbackMap =
-          CollectionsUtils.imap(
-                  BaseContentType.CONTENT,   Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false),
-                  BaseContentType.WIDGET,    Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false),
-                  BaseContentType.FILEASSET, Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",false),
-                  BaseContentType.PERSONA,   Config.getBooleanProperty("DEFAULT_PERSONA_TO_DEFAULT_LANGUAGE",false)
-                  );
-
   @JsonIgnore
   @Value.Lazy
   public boolean languageFallback() {
+      // Read Config properties at runtime to ensure the fallback behavior reflects the current Config values
+      final BaseContentType type = baseType();
 
-      return languageFallbackMap.getOrDefault(baseType(), false);
+      if (type == BaseContentType.CONTENT) {
+          return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+      } else if (type == BaseContentType.WIDGET) {
+          return Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false);
+      } else if (type == BaseContentType.FILEASSET) {
+          return Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);
+      } else if (type == BaseContentType.PERSONA) {
+          return Config.getBooleanProperty("DEFAULT_PERSONA_TO_DEFAULT_LANGUAGE", false);
+      }
+
+      return false;
   }
 
   @JsonIgnore

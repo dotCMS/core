@@ -1,40 +1,12 @@
+import { consola } from 'consola';
+
+import { DotCMSClientConfig, DotRequestOptions, DotHttpClient } from '@dotcms/types';
+
+import { FetchHttpClient } from './adapters/fetch-http-client';
+import { AIClient } from './ai/ai-api';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';
-
-/**
- * Options for configuring fetch requests, excluding body and method properties.
- */
-export type RequestOptions = Omit<RequestInit, 'body' | 'method'>;
-
-/**
- * Configuration options for the DotCMS client.
- */
-export interface DotCMSClientConfig {
-    /**
-     * The URL of the dotCMS instance.
-     * Ensure to include the protocol (http or https).
-     * @example `https://demo.dotcms.com`
-     */
-    dotcmsUrl: string;
-
-    /**
-     * The authentication token for requests.
-     * Obtainable from the dotCMS UI.
-     */
-    authToken: string;
-
-    /**
-     * The id of the site you want to interact with. Defaults to the default site if not provided.
-     */
-    siteId?: string;
-
-    /**
-     * Additional options for the fetch request.
-     * @example `{ headers: { 'Content-Type': 'application/json' } }`
-     */
-    requestOptions?: RequestOptions;
-}
 
 /**
  * Parses a string into a URL object.
@@ -46,7 +18,7 @@ function parseURL(url: string): URL | undefined {
     try {
         return new URL(url);
     } catch {
-        console.error('Invalid URL:', url);
+        consola.error('[DotCMS Client]: Invalid URL:', url);
 
         return undefined;
     }
@@ -67,7 +39,8 @@ const defaultConfig: DotCMSClientConfig = {
  */
 class DotCMSClient {
     private config: DotCMSClientConfig;
-    private requestOptions!: RequestOptions;
+    private requestOptions!: DotRequestOptions;
+    private httpClient: DotHttpClient;
 
     /**
      * Client for content-related operations.
@@ -85,6 +58,12 @@ class DotCMSClient {
     nav: NavigationClient;
 
     /**
+     * Client for AI-related operations.
+     * @experimental This client is experimental and may be subject to change.
+     */
+    ai: AIClient;
+
+    /**
      * Creates a new DotCMS client instance.
      *
      * @param config - Configuration options for the client
@@ -92,12 +71,14 @@ class DotCMSClient {
      */
     constructor(config: DotCMSClientConfig = defaultConfig) {
         this.config = config;
+        this.httpClient = config.httpClient || new FetchHttpClient();
         this.requestOptions = this.createAuthenticatedRequestOptions(this.config);
 
-        // Initialize clients
-        this.page = new PageClient(this.config, this.requestOptions);
-        this.nav = new NavigationClient(this.config, this.requestOptions);
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
+        // Initialize clients with httpClient
+        this.page = new PageClient(this.config, this.requestOptions, this.httpClient);
+        this.nav = new NavigationClient(this.config, this.requestOptions, this.httpClient);
+        this.content = new Content(this.config, this.requestOptions, this.httpClient);
+        this.ai = new AIClient(this.config, this.requestOptions, this.httpClient);
     }
 
     /**
@@ -106,7 +87,7 @@ class DotCMSClient {
      * @param config - The client configuration
      * @returns Request options with authorization headers
      */
-    private createAuthenticatedRequestOptions(config: DotCMSClientConfig): RequestOptions {
+    private createAuthenticatedRequestOptions(config: DotCMSClientConfig): DotRequestOptions {
         return {
             ...config.requestOptions,
             headers: {

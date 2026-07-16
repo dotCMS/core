@@ -1,8 +1,8 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.HttpRequestDataUtil;

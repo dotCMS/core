@@ -1,0 +1,3 @@
+@if ($status()) {
+    <p-tag [severity]="$bucket()" [value]="$labelKey() | dm" data-testid="pq-status-chip" />
+}

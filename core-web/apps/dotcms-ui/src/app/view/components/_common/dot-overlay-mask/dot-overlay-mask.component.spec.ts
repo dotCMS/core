@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
-
 import { DotOverlayMaskComponent } from './dot-overlay-mask.component';
 
 describe('DotOverlayMaskComponent', () => {
@@ -11,7 +9,7 @@ describe('DotOverlayMaskComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [],
-            imports: [DotOverlayMaskModule]
+            imports: [DotOverlayMaskComponent]
         }).compileComponents();
         fixture = TestBed.createComponent(DotOverlayMaskComponent);
         component = fixture.componentInstance;

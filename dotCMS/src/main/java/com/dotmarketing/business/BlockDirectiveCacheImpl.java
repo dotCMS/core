@@ -1,10 +1,11 @@
 package com.dotmarketing.business;
 
-import java.io.Serializable;
-import java.util.Map;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.Serializable;
+import java.time.Duration;
+import java.util.Map;
 
 public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 
@@ -14,12 +15,11 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
     private final DotCacheAdministrator cache;
 
     private final String group = "BlockDirectiveCache";
-    private final String secondaryGroup = "BlockDirectiveHTMLPageCache";
+
 
     // regions name for the cache
     private final String[] groupNames = {
-            group,
-            secondaryGroup};
+            group};
 
     public BlockDirectiveCacheImpl() {
         this(CacheLocator.getCacheAdministrator(), (LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level));
@@ -35,11 +35,10 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
     public void clearCache() {
         // clear the cache
         cache.flushGroup(group);
-        cache.flushGroup(secondaryGroup);
     }
 
     @Override
-    public void add(String key, Map<String, Serializable> value, int ttl) {
+    public void add(String key, Map<String, Serializable> value, Duration ttl) {
         if (key == null || value == null || !canCache) {
             return;
         }
@@ -70,17 +69,26 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
             return EMPTY_MAP;
         }
 
-        BlockDirectiveCacheObject cto = (BlockDirectiveCacheObject) cache.getNoThrow(key, group);
-        if (cto == null) {
+        Object o = cache.getNoThrow(key, group);
+        if (o == null) {
+            return EMPTY_MAP;
+        }
+        if (o instanceof Map) {
+            return (Map<String, Serializable>) o;
+        }
+
+        if (!(o instanceof BlockDirectiveCacheObject)) {
             return EMPTY_MAP;
         }
 
-        if ((cto.getTtl() * 1000) +  cto.getCreated() > System.currentTimeMillis()) {
-            return cto.getMap();
-        }
+        BlockDirectiveCacheObject bdco = (BlockDirectiveCacheObject) o;
 
-        cache.removeLocalOnly(key, group, true);
-        return EMPTY_MAP;
+        if(bdco.isExpired()){
+            cache.removeLocalOnly(key, group, false);
+            return EMPTY_MAP;
+        }
+        return bdco.getMap();
+
     }
     
 

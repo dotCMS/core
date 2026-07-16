@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -11,36 +12,28 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotEventsSocket as DotEventsSocketDataAccess,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -48,15 +41,15 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import {
-    CoreWebServiceMock,
-    LoginServiceMock,
-    MockDotRouterService,
-    SiteServiceMock
-} from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotDownloadBundleDialogComponent } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IFrameModule } from '../index';
 
 const routeDatamock = {
@@ -92,13 +85,10 @@ xdescribe('IframePortletLegacyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [],
-            imports: [
-                IFrameModule,
-                RouterTestingModule,
-                DotDownloadBundleDialogModule,
-                HttpClientTestingModule
-            ],
+            imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogComponent],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypeService,
                 DotCustomEventHandlerService,
                 DotPushPublishDialogService,
@@ -112,7 +102,6 @@ xdescribe('IframePortletLegacyComponent', () => {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotContentletEditorService,
@@ -125,9 +114,10 @@ xdescribe('IframePortletLegacyComponent', () => {
                 StringUtils,
                 DotCurrentUserService,
                 DotMessageDisplayService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                {
+                    provide: DotEventsSocketDataAccess,
+                    useValue: { on: jest.fn().mockReturnValue(EMPTY) }
+                },
                 DotcmsConfigService,
                 DotFormatDateService,
                 DotWizardService,
@@ -167,7 +157,7 @@ xdescribe('IframePortletLegacyComponent', () => {
         route.queryParams = of({});
         route.params = of({ id: 'portlet-id' });
 
-        spyOn(dotMenuService, 'getUrlById').and.returnValue(of('fake-url'));
+        jest.spyOn(dotMenuService, 'getUrlById').mockReturnValue(of('fake-url'));
 
         let src: string;
 
@@ -178,13 +168,14 @@ xdescribe('IframePortletLegacyComponent', () => {
         fixture.detectChanges();
 
         expect(dotMenuService.getUrlById).toHaveBeenCalledWith('portlet-id');
+        expect(dotMenuService.getUrlById).toHaveBeenCalledTimes(1);
         expect(src).toEqual('fake-url');
     });
 
     it('should handle custom events', () => {
         route.queryParams = of({ url: 'hello/world' });
         route.params = of({ id: 'portlet-id' });
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle');
         fixture.detectChanges();
 
         dotIframe = de.query(By.css('dot-iframe'));
@@ -211,7 +202,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     it('should call reloadIframePortlet once', () => {
         fixture.detectChanges();
         comp.url.next('test');
-        spyOn(comp, 'reloadIframePortlet');
+        jest.spyOn(comp, 'reloadIframePortlet');
         siteServiceMock.setFakeCurrentSite({
             identifier: '1',
             hostname: 'Site 1',

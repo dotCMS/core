@@ -1,11 +1,24 @@
-import { useContext, useRef, useMemo } from 'react';
+'use client';
+
+import { useContext, useMemo, useRef } from 'react';
+
+import { DotCMSBasicContentlet } from '@dotcms/types';
+import {
+    CUSTOM_NO_COMPONENT,
+    getAnalyticsContentletAttributes,
+    getDotContentletAttributes
+} from '@dotcms/uve/internal';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
+import { useIsAnalyticsActive } from '../../hooks/useIsAnalyticsActive';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
-import { DotCMSContentlet } from '../../types';
-import { getDotContentletAttributes } from '../../utils';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
+
+/**
+ * CSS class name for contentlet elements
+ */
+export const CONTENTLET_CLASS = 'dotcms-contentlet';
 
 /**
  * @internal
@@ -16,7 +29,7 @@ import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
  * @property {string} container - The container identifier where the contentlet is placed
  */
 interface DotCMSContentletRendererProps {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSBasicContentlet;
     container: string;
 }
 
@@ -26,7 +39,7 @@ interface DotCMSContentletRendererProps {
  * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered
  */
 interface CustomComponentProps {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSBasicContentlet;
 }
 
 /**
@@ -49,19 +62,34 @@ interface CustomComponentProps {
 export function Contentlet({ contentlet, container }: DotCMSContentletRendererProps) {
     const ref = useRef<HTMLDivElement | null>(null);
     const isDevMode = useIsDevMode();
+    const isAnalyticsActive = useIsAnalyticsActive();
     const haveContent = useCheckVisibleContent(ref);
 
     const style = useMemo(
         () => (isDevMode ? { minHeight: haveContent ? undefined : '4rem' } : {}),
         [isDevMode, haveContent]
     );
-    const dotAttributes = useMemo(
-        () => (isDevMode ? getDotContentletAttributes(contentlet, container) : {}),
-        [isDevMode, contentlet, container]
-    );
+
+    // In edit mode we emit the full set of editor metadata. In live mode we
+    // strip it to avoid leaking internal identifiers, keeping only the minimal
+    // set Analytics needs (and only while Analytics is active).
+    const dotAttributes = useMemo(() => {
+        if (isDevMode) {
+            return {
+                ...getDotContentletAttributes(contentlet, container),
+                'data-dot-object': 'contentlet'
+            };
+        }
+
+        if (isAnalyticsActive) {
+            return getAnalyticsContentletAttributes(contentlet);
+        }
+
+        return {};
+    }, [isDevMode, isAnalyticsActive, contentlet, container]);
 
     return (
-        <div {...dotAttributes} data-dot-object="contentlet" ref={ref} style={style}>
+        <div {...dotAttributes} className={CONTENTLET_CLASS} ref={ref} style={style}>
             <CustomComponent contentlet={contentlet} />
         </div>
     );
@@ -78,14 +106,21 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
  * @internal
  */
 function CustomComponent({ contentlet }: CustomComponentProps) {
-    const { userComponents } = useContext(DotCMSPageContext);
+    const { userComponents, slots } = useContext(DotCMSPageContext);
+
+    const slotNode = contentlet?.identifier ? slots?.[contentlet.identifier] : undefined;
+
+    if (slotNode !== undefined) {
+        return <>{slotNode}</>;
+    }
+
     const UserComponent = userComponents[contentlet?.contentType];
 
     if (UserComponent) {
         return <UserComponent {...contentlet} />;
     }
 
-    const UserNoComponent = userComponents['CustomNoComponent'];
+    const UserNoComponent = userComponents[CUSTOM_NO_COMPONENT];
 
     return <FallbackComponent UserNoComponent={UserNoComponent} contentlet={contentlet} />;
 }

@@ -6,14 +6,17 @@ import {
     OnDestroy,
     OnInit,
     QueryList,
-    ViewChildren
+    ViewChildren,
+    inject
 } from '@angular/core';
+
+import { DialogModule, Dialog } from 'primeng/dialog';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotDialogComponent } from '@dotcms/ui';
+import { DotEventsSocket } from '@dotcms/data-access';
+
+import { DotParseHtmlService } from '../../../api/services/dot-parse-html/dot-parse-html.service';
 
 interface DotLargeMessageDisplayParams {
     title: string;
@@ -30,19 +33,28 @@ interface DotLargeMessageDisplayParams {
 @Component({
     selector: 'dot-large-message-display',
     templateUrl: './dot-large-message-display.component.html',
-    styleUrls: ['./dot-large-message-display.component.scss']
+    styleUrls: ['./dot-large-message-display.component.scss'],
+    imports: [DialogModule],
+    providers: [DotParseHtmlService]
 })
 export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, AfterViewInit {
-    @ViewChildren(DotDialogComponent) dialogs: QueryList<DotDialogComponent>;
+    private dotEventsSocket = inject(DotEventsSocket);
+    private dotParseHtmlService = inject(DotParseHtmlService);
+
+    @ViewChildren(Dialog) dialogs: QueryList<Dialog>;
 
     messages: DotLargeMessageDisplayParams[] = [];
+    messageVisibility: Map<DotLargeMessageDisplayParams, boolean> = new Map();
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private recentlyDialogAdded: boolean;
 
-    constructor(
-        private dotcmsEventsService: DotcmsEventsService,
-        private dotParseHtmlService: DotParseHtmlService
-    ) {}
+    getMessageVisibility(message: DotLargeMessageDisplayParams): boolean {
+        return this.messageVisibility.get(message) ?? false;
+    }
+
+    setMessageVisibility(message: DotLargeMessageDisplayParams, visible: boolean): void {
+        this.messageVisibility.set(message, visible);
+    }
 
     ngAfterViewInit() {
         this.dialogs.changes
@@ -50,7 +62,7 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
                 takeUntil(this.destroy$),
                 filter(() => this.recentlyDialogAdded)
             )
-            .subscribe((dialogs: QueryList<DotDialogComponent>) => {
+            .subscribe((dialogs: QueryList<Dialog>) => {
                 this.createContent(dialogs.last, this.messages[this.messages.length - 1]);
                 this.recentlyDialogAdded = false;
             });
@@ -62,6 +74,7 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
             .subscribe((content: DotLargeMessageDisplayParams) => {
                 this.recentlyDialogAdded = true;
                 this.messages.push(content);
+                this.messageVisibility.set(content, !!content.title);
             });
     }
 
@@ -77,23 +90,32 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
      * @memberof DotLargeMessageDisplayComponent
      */
     close(messageToRemove: DotLargeMessageDisplayParams) {
+        this.messageVisibility.delete(messageToRemove);
         this.messages.splice(this.messages.indexOf(messageToRemove), 1);
     }
 
-    private createContent(
-        dialogComponent: DotDialogComponent,
-        content: DotLargeMessageDisplayParams
-    ): void {
-        const target = dialogComponent.dialog.nativeElement.querySelector('.dialog-message__body');
-        this.dotParseHtmlService.parse(content.body, target, true);
-        if (content.script) {
-            this.dotParseHtmlService.parse(`<script>${content.script}</script>`, target, false);
+    onVisibilityChange(message: DotLargeMessageDisplayParams, visible: boolean): void {
+        this.setMessageVisibility(message, visible);
+        if (!visible) {
+            this.close(message);
+        }
+    }
+
+    private createContent(dialogComponent: Dialog, content: DotLargeMessageDisplayParams): void {
+        // Access the dialog container element - container is a WritableSignal<HTMLElement> in PrimeNG v21
+        const dialogElement = dialogComponent.container();
+        const target = dialogElement?.querySelector('.dialog-message__body') as HTMLElement;
+        if (target) {
+            this.dotParseHtmlService.parse(content.body, target, true);
+            if (content.script) {
+                this.dotParseHtmlService.parse(`<script>${content.script}</script>`, target, false);
+            }
         }
     }
 
     private getMessages(): Observable<DotLargeMessageDisplayParams> {
-        return this.dotcmsEventsService
-            .subscribeTo<DotLargeMessageDisplayParams>('LARGE_MESSAGE')
+        return this.dotEventsSocket
+            .on<DotLargeMessageDisplayParams>('LARGE_MESSAGE')
             .pipe(filter((data: DotLargeMessageDisplayParams) => !!data));
     }
 }

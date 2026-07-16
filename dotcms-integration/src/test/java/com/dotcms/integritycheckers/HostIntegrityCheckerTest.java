@@ -1,12 +1,7 @@
 package com.dotcms.integritycheckers;
 
-import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
-
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.LicenseTestUtil;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.util.IntegrationTestInitService;
@@ -19,43 +14,42 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import io.vavr.Tuple2;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.sql.Connection;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import io.vavr.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Host integrity checker which tests the main functionality of this integrity checker.
  */
 @RunWith(DataProviderRunner.class)
 public class HostIntegrityCheckerTest extends IntegrationTestBase {
+
     private HostIntegrityChecker integrityChecker;
     private User user;
     private HostAPI hostAPI;
     private String endpointId;
-    private String testHost;
+    private String testSiteName;
 
     @Before
     public void setup() throws Exception {
@@ -66,7 +60,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         user = APILocator.getUserAPI().getSystemUser();
         hostAPI = APILocator.getHostAPI();
         endpointId = UUID.randomUUID().toString();
-        testHost = "test-host-" + System.currentTimeMillis() + ".dotcms.com";
+        testSiteName = "test-host-" + System.currentTimeMillis() + ".dotcms.com";
     }
 
     /**
@@ -83,9 +77,9 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     @Test
     public void test_generateCSVFile() throws Exception {
         final String endpointFolder = prepareResources();
-        final Host host = addHost(testHost);
+        final Host host = addSite(testSiteName);
         final File generatedCsv = integrityChecker.generateCSVFile(endpointFolder);
-        Assert.assertNotNull(generatedCsv);
+        assertNotNull(generatedCsv);
         final CsvReader hosts = new CsvReader(
                 ConfigUtils.getIntegrityPath() +
                         File.separator +
@@ -96,12 +90,12 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
                 StandardCharsets.UTF_8);
         boolean hostFound = false;
         while(hosts.readRecord()) {
-            if (testHost.equals(HostIntegrityChecker.getStringIfNotBlank("text1", hosts.get(5)))) {
+            if (testSiteName.equals(HostIntegrityChecker.getStringIfNotBlank("text1", hosts.get(5)))) {
                 hostFound = true;
                 break;
             }
         }
-        Assert.assertTrue(hostFound);
+        assertTrue(hostFound);
 
         HibernateUtil.startTransaction();
         removeHost(new DotConnect(), host.getInode());
@@ -113,32 +107,24 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
      * designated table,
      */
     @Test
-    @UseDataProvider("getUseJsonTestCases")
-    public void test_generateIntegrityResults(final Boolean useJson) throws Exception {
+    public void test_generateIntegrityResults() throws Exception {
+        final String endpointFolder = prepareResources();
+        final Host testSite = addSite(testSiteName);
+        final File generatedCsv = integrityChecker.generateCSVFile(endpointFolder);
+        Host duplicateSite = addDup();
+        duplicateSite = this.updateDuplicateSite(duplicateSite);
+        assertNotNull(generatedCsv);
 
-        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
-        Config.setProperty(SAVE_CONTENTLET_AS_JSON, useJson);
-        try {
-            final String endpointFolder = prepareResources();
-            final Host host = addHost(testHost);
-            final File generatedCsv = integrityChecker.generateCSVFile(endpointFolder);
-            Assert.assertNotNull(generatedCsv);
-            final Host dup = addDup();
+        assertTrue("", integrityChecker.generateIntegrityResults(endpointId));
+        final DotConnect dc = new DotConnect();
+        assertEquals("", 1L,
+                dc.getRecordCount("hosts_ir", "WHERE host = '" + testSite.getName() + "'")
+                        .longValue());
 
-            Assert.assertTrue(integrityChecker.generateIntegrityResults(endpointId));
-            final DotConnect dc = new DotConnect();
-            Assert.assertEquals(1L,
-                    dc.getRecordCount("hosts_ir", "WHERE host = '" + host.getName() + "'")
-                            .longValue());
-
-
-            HibernateUtil.startTransaction();
-            removeHost(dc, host.getInode());
-            removeHost(dc, dup.getInode());
-            HibernateUtil.closeAndCommitTransaction();
-        }finally {
-            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
-        }
+        HibernateUtil.startTransaction();
+        removeHost(dc, testSite.getInode());
+        removeHost(dc, duplicateSite.getInode());
+        HibernateUtil.closeAndCommitTransaction();
     }
 
     /**
@@ -146,39 +132,33 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
      * This means that remote is persisted and local is deleted.
      */
     @Test
-    @UseDataProvider("getUseJsonTestCases")
-    public void test_executeFix(final Boolean useJson) throws Exception {
-        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
-        Config.setProperty(SAVE_CONTENTLET_AS_JSON, useJson);
-        try {
-            final String endpointFolder = prepareResources();
+    public void test_executeFix() throws Exception {
+        final String endpointFolder = prepareResources();
 
-            HibernateUtil.startTransaction();
-            final Host host = addHost(testHost);
-            integrityChecker.generateCSVFile(endpointFolder);
-            final Host dup = addDup();
-            integrityChecker.generateIntegrityResults(endpointId);
+        HibernateUtil.startTransaction();
+        final Host host = addSite(testSiteName);
+        integrityChecker.generateCSVFile(endpointFolder);
+        Host duplicateSite = addDup();
+        duplicateSite = this.updateDuplicateSite(duplicateSite);
+        integrityChecker.generateIntegrityResults(endpointId);
 
-            final DotConnect dc = new DotConnect();
-            Assert.assertEquals(1L,
-                    dc.getRecordCount("hosts_ir", "WHERE host = '" + host.getName() + "'")
-                            .longValue());
+        final DotConnect dc = new DotConnect();
+        assertEquals(1L,
+                dc.getRecordCount("hosts_ir", "WHERE host = '" + host.getName() + "'")
+                        .longValue());
 
-            // Some hack in order to simulate remote integrity
-            removeRemoteResults(dc);
-            HibernateUtil.closeAndCommitTransaction();
+        // Some hack in order to simulate remote integrity
+        removeRemoteResults(dc);
+        HibernateUtil.closeAndCommitTransaction();
 
-            integrityChecker.executeFix(endpointId);
-            assertHostsFix(dc);
-            assertHostHasContentletAsJson(dc, host.getInode());
+        integrityChecker.executeFix(endpointId);
+        assertHostsFix(dc);
+        assertHostHasContentletAsJson(dc, host.getInode());
 
-            HibernateUtil.startTransaction();
-            removeHost(dc, host.getInode());
-            removeHost(dc, dup.getInode());
-            HibernateUtil.closeAndCommitTransaction();
-        }finally {
-            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
-        }
+        HibernateUtil.startTransaction();
+        removeHost(dc, host.getInode());
+        removeHost(dc, duplicateSite.getInode());
+        HibernateUtil.closeAndCommitTransaction();
     }
 
     @NotNull
@@ -187,7 +167,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         final String endpointFolder = assetRealPath + "/integrity/" + endpointId;
         final File outputFolder = new File(endpointFolder);
         if (!outputFolder.exists()) {
-            Assert.assertTrue(outputFolder.mkdirs());
+            assertTrue(outputFolder.mkdirs());
         }
         return endpointFolder;
     }
@@ -208,7 +188,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
                             String value,
                             long expected)
             throws Exception {
-        Assert.assertEquals(
+        assertEquals(
                 expected,
                 dc.getRecordCount(table,"WHERE " + column + " = '" + result.get(value) + "'").longValue());
     }
@@ -232,27 +212,74 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     }
 
     private void assertHostHasContentletAsJson(DotConnect dc, String inode) throws Exception {
-        Assert.assertEquals(
+        assertEquals(
                 1L,
                 dc.getRecordCount("contentlet", "WHERE inode = '" + inode + "' AND contentlet_as_json IS NOT NULL").longValue());
     }
 
-    @NotNull
+    /**
+     * Adds a duplicate site (host) with the name "updated-test-host" and saves it to the database.
+     * This method is used to create a site that will later be updated to create a conflict. But,
+     * before being able to do that, we need to create with a different name to avoid validation
+     * errors.
+     *
+     * @return the created and saved Host object
+     *
+     * @throws Exception if there is an error accessing the data layer or saving the host
+     */
     private Host addDup() throws Exception {
-        final Host dup = addHost(testHost);
-        final DotConnect dc = new DotConnect();
-        dc.setSQL("UPDATE contentlet SET text1 = ? WHERE inode = ?")
-                .addParam(testHost)
-                .addParam(dup.getInode());
-        return dup;
+        return addSite("updated-" + testSiteName);
     }
 
-    private Host addHost(final String name) throws DotDataException, DotSecurityException {
-        final Host host = new Host();
-        host.setHostname(name);
-        host.setDefault(false);
+    /**
+     * Updates the duplicate site (host) by changing its hostname back to the expected test site
+     * name. This will then create the expected integrity conflict. The important part here is that:
+     * <ul>
+     *     <li>We need to FORCE the elasticsearch indexation.</li>
+     *     <li>DO NOT validate the updated Site so that the conflict can be introduced</li>
+     *     <li>Set the {@code forceExecution} property to {@code true} so that the Site name can be
+     *     updated.</li>
+     * </ul>
+     *
+     * @param duplicateSite the host to be updated
+     *
+     * @return the updated Host object
+     *
+     * @throws DotDataException     if there is an error accessing the data layer
+     * @throws DotSecurityException if the operation is not permitted due to security restrictions
+     */
+    private Host updateDuplicateSite(final Host duplicateSite) throws DotDataException, DotSecurityException {
+        duplicateSite.setHostname(testSiteName);
+        duplicateSite.setDefault(false);
+        duplicateSite.setIndexPolicy(IndexPolicy.FORCE);
+        duplicateSite.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+        duplicateSite.setProperty("forceExecution", true);
+        duplicateSite.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         HibernateUtil.startTransaction();
-        final Host saved = hostAPI.save(host, user, false);
+        final Host saved = hostAPI.save(duplicateSite, user, false);
+        HibernateUtil.closeAndCommitTransaction();
+        return saved;
+    }
+
+    /**
+     * Adds a new site (host) with the specified name and saves it to the database. The created
+     * host will not be set as the default.
+     *
+     * @param name the name of the host to be created
+     *
+     * @return the created and saved Host object
+     *
+     * @throws DotDataException     if there is an error accessing the data layer
+     * @throws DotSecurityException if the operation is not permitted due to security restrictions
+     */
+    private Host addSite(final String name) throws DotDataException, DotSecurityException {
+        final Host site = new Host();
+        site.setHostname(name);
+        site.setDefault(false);
+        site.setIndexPolicy(IndexPolicy.FORCE);
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        HibernateUtil.startTransaction();
+        final Host saved = hostAPI.save(site, user, false);
         HibernateUtil.closeAndCommitTransaction();
         return saved;
     }
@@ -271,19 +298,6 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    /**
-     * Make sure test are executed under a contentlet stored as json and contentlet stored in column scenarios
-     * @return
-     * @throws Exception
-     */
-    @DataProvider
-    public static Object[] getUseJsonTestCases() throws Exception {
-        return new Object[]{
-                true,
-                false
-        };
     }
 
     /**
@@ -314,17 +328,17 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
             boolean assetSubtypeNotNull = results.stream()
                     .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
 
-            Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
+            assertTrue("Asset_SubType is null", assetSubtypeNotNull);
 
             boolean createDateNotNull = results.stream()
                     .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
 
-            Assert.assertTrue("Create Date is null", createDateNotNull);
+            assertTrue("Create Date is null", createDateNotNull);
 
             boolean ownerNotNull = results.stream()
                     .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
 
-            Assert.assertTrue("Owner is null", ownerNotNull);
+            assertTrue("Owner is null", ownerNotNull);
         } catch (DotDataException e) {
             Logger.error(this, e);
         } finally {

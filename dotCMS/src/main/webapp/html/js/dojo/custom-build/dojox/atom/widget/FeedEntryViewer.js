@@ -389,7 +389,7 @@ var FeedEntryViewer = declare("dojox.atom.widget.FeedEntryViewer", [_Widget, _Te
 		//		Function to set the contents of the updated node in the template to some value from the entry.
 		//		This exists specifically so users can over-ride how the title data is filled out from an entry.
 		// updatedAnchorNode:
-		//		The DOM node to attach the udpated data to.
+		//		The DOM node to attach the updated data to.
 		// editMode:
 		//		Boolean to indicate if the display should be in edit mode or not.
 		// entry:

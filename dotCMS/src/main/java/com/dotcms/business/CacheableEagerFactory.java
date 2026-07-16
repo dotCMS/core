@@ -6,7 +6,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,9 +96,33 @@ public interface CacheableEagerFactory<K, V> {
 
             value = this.getCache().get(key);
             if (Objects.isNull(value) && Objects.isNull((getCache().get(this.getLoadedKey())))) {
-
-                this.findAll();
-                return find(key);
+                
+                // Check if shutdown is in progress - avoid database operations during shutdown
+                boolean shutdownInProgress = false;
+                try {
+                    shutdownInProgress = com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted();
+                } catch (Exception e) {
+                    // If we can't check shutdown status, assume not shutting down
+                }
+                
+                if (shutdownInProgress) {
+                    // During shutdown, don't attempt database operations that might fail
+                    // Return empty result to avoid infinite recursion
+                    return Optional.empty();
+                }
+                
+                try {
+                    this.findAll();
+                    // Only retry if findAll() succeeded - check if cache is now loaded
+                    if (Objects.nonNull(getCache().get(this.getLoadedKey()))) {
+                        value = this.getCache().get(key);
+                    }
+                } catch (Exception e) {
+                    // If findAll() fails (e.g., database not available), don't retry recursively
+                    // This prevents infinite recursion during shutdown or database issues
+                    com.dotmarketing.util.Logger.debug(this, "Failed to load all records from database, returning empty result: " + e.getMessage());
+                    return Optional.empty();
+                }
             }
         }
 
@@ -112,6 +135,21 @@ public interface CacheableEagerFactory<K, V> {
      * @throws DotDataException
      */
     default Map<K, V> findAll() throws DotDataException {
+
+        // Check if shutdown is in progress - avoid database operations during shutdown
+        boolean shutdownInProgress = false;
+        try {
+            shutdownInProgress = com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted();
+        } catch (Exception e) {
+            // If we can't check shutdown status, assume not shutting down
+        }
+        
+        if (shutdownInProgress) {
+            // During shutdown, don't attempt database operations that might fail
+            // Return empty map to avoid database connectivity issues
+            com.dotmarketing.util.Logger.debug(this, "Skipping database operations during shutdown - returning empty result");
+            return new HashMap<>();
+        }
 
         final Map<K, V> records = new HashMap<>();
 
@@ -143,6 +181,20 @@ public interface CacheableEagerFactory<K, V> {
     default void saveOrUpdate(final K key, final V value) throws DotDataException {
 
         if (Objects.nonNull(key) && Objects.nonNull(value)) {
+            
+            // Check if shutdown is in progress - avoid database operations during shutdown
+            boolean shutdownInProgress = false;
+            try {
+                shutdownInProgress = com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted();
+            } catch (Exception e) {
+                // If we can't check shutdown status, assume not shutting down
+            }
+            
+            if (shutdownInProgress) {
+                // During shutdown, don't attempt database operations that might fail
+                com.dotmarketing.util.Logger.debug(this, "Skipping database save/update operation during shutdown");
+                throw new DotDataException("Database operations not available during shutdown");
+            }
 
             saveOrUpdateInternal (key, value);
 
@@ -161,6 +213,20 @@ public interface CacheableEagerFactory<K, V> {
     default void delete(final K key) throws DotDataException {
 
         if (Objects.nonNull(key)) {
+            
+            // Check if shutdown is in progress - avoid database operations during shutdown
+            boolean shutdownInProgress = false;
+            try {
+                shutdownInProgress = com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted();
+            } catch (Exception e) {
+                // If we can't check shutdown status, assume not shutting down
+            }
+            
+            if (shutdownInProgress) {
+                // During shutdown, don't attempt database operations that might fail
+                com.dotmarketing.util.Logger.debug(this, "Skipping database delete operation during shutdown");
+                throw new DotDataException("Database operations not available during shutdown");
+            }
 
             deleteInternal(key);
             this.clearCache();

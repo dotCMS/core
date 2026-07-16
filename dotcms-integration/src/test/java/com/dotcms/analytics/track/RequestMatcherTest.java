@@ -16,6 +16,7 @@ import com.dotcms.visitor.filter.characteristics.CharacterWebAPI;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.Constants;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test class for RequestMatcher
  */
+@Ignore("Data Collectors have been disabled in favor of creating events via REST")
 public class RequestMatcherTest {
 
     @BeforeClass

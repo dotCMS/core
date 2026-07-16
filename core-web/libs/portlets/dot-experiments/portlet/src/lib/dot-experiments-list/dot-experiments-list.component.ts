@@ -1,8 +1,8 @@
 import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -36,11 +36,10 @@ import { DotExperimentsListStore, VmListExperiments } from './store/dot-experime
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-list',
     imports: [
         AsyncPipe,
-        NgIf,
+        NgTemplateOutlet,
         DotExperimentsListSkeletonComponent,
         DotExperimentsStatusFilterComponent,
         DotExperimentsListTableComponent,
@@ -53,12 +52,18 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-experiments-list.component.html',
-    styleUrls: ['./dot-experiments-list.component.scss'],
     providers: [provideComponentStore(DotExperimentsListStore)],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'h-full w-full flex flex-col pb-12'
+    }
 })
 export class DotExperimentsListComponent {
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    private readonly dotExperimentsListStore = inject(DotExperimentsListStore);
+    private readonly router = inject(Router);
+    private readonly dotMessageService = inject(DotMessageService);
+
+    sidebarHost = viewChild.required(DotDynamicDirective);
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$.pipe(
         tap(({ sidebar }) => this.handleSidebar(sidebar))
     );
@@ -70,12 +75,6 @@ export class DotExperimentsListComponent {
         icon: 'pi-filter-fill rotate-180'
     };
     private componentRef: ComponentRef<DotExperimentsCreateComponent>;
-
-    constructor(
-        private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly router: Router,
-        private readonly dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Update the list of selected statuses
@@ -150,16 +149,22 @@ export class DotExperimentsListComponent {
     }
 
     private loadSidebarComponent(): void {
-        this.sidebarHost.viewContainerRef.clear();
-        this.componentRef =
-            this.sidebarHost.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
-                DotExperimentsCreateComponent
-            );
+        const sidebarHostRef = this.sidebarHost();
+        if (sidebarHostRef) {
+            sidebarHostRef.viewContainerRef.clear();
+            this.componentRef =
+                sidebarHostRef.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
+                    DotExperimentsCreateComponent
+                );
+        }
     }
 
     private removeSidebarComponent(): void {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 }

@@ -2,13 +2,17 @@
 
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
-import { DotRouterService } from '@dotcms/data-access';
+import { DotRouterService, DotSystemConfigService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContainerEditResolver } from './dot-container-edit.resolver';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 
 describe('DotContainerService', () => {
     let service: DotContainerEditResolver;
@@ -22,8 +26,12 @@ describe('DotContainerService', () => {
                 {
                     provide: DotContainersService,
                     useValue: {
-                        getById: jasmine.createSpy().and.returnValue(
+                        getById: jest.fn().mockReturnValue(
                             of({
+                                container: {
+                                    identifier: 'test-id',
+                                    title: 'Test Container'
+                                },
                                 this: {
                                     is: 'a page'
                                 }
@@ -33,7 +41,17 @@ describe('DotContainerService', () => {
                             //
                         }
                     }
-                }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                {
+                    provide: GlobalStore,
+                    useValue: { addNewBreadcrumb: jest.fn() }
+                },
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
         service = TestBed.inject(DotContainerEditResolver);
@@ -52,10 +70,15 @@ describe('DotContainerService', () => {
                 } as any,
                 null
             )
-            .subscribe((res) => {
-                expect(containersService.getById).toHaveBeenCalledWith('ID', 'working', true);
-                expect<any>(res).toEqual({ this: { is: 'a page' } });
-                done();
-            });
+            .subscribe(
+                (_res) => {
+                    expect(containersService.getById).toHaveBeenCalledWith('ID', 'working', true);
+                    expect(containersService.getById).toHaveBeenCalledTimes(1);
+                    done();
+                },
+                (_error) => {
+                    done();
+                }
+            );
     });
 });

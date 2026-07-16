@@ -1,0 +1,30 @@
+@if ($showMask()) {
+    <div (click)="hide()" class="dot-mask"></div>
+}
+
+<div class="relative inline-block">
+    <button
+        (click)="overlayPanel.toggle($event)"
+        [icon]="$icon()"
+        [rounded]="true"
+        [text]="true"
+        [class.p-highlight]="$showMask()"
+        pButton
+        class="overlay-btn p-button-text flex size-10 items-center justify-center p-0 transition-colors hover:bg-primary-50 focus:ring-0 focus:outline-none"
+        data-testid="btn-overlay"></button>
+
+    @if ($showBadge()) {
+        <span
+            class="absolute top-0.5 left-7 size-2.5 rounded-full bg-fuchsia-600"
+            data-testid="overlay-badge"></span>
+    }
+</div>
+
+<p-popover
+    #overlayPanel
+    [styleClass]="$overlayStyleClass()"
+    [appendTo]="'body'"
+    (onShow)="handlerShow()"
+    (onHide)="handlerHide()">
+    <ng-content />
+</p-popover>

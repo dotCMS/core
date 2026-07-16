@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -10,14 +11,10 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
-import { CalendarModule } from 'primeng/calendar';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { Select, SelectModule } from 'primeng/select';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
-import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
-import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
@@ -27,7 +24,7 @@ import {
     DotRouterService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import {
     DotDialogModule,
@@ -36,7 +33,6 @@ import {
     DotSafeHtmlPipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     DotcmsConfigServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -45,6 +41,10 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
+
+import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
+import { PushPublishServiceMock } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',
@@ -58,7 +58,8 @@ const messageServiceMock = new MockDotMessageService({
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-push-publish-form *ngIf="data" (valid)="valid = $event" (value)="value = $event" [data]="data"></dot-push-publish-form>'
+        '@if (data) {<dot-push-publish-form (valid)="valid = $event" (value)="value = $event" [data]="data"></dot-push-publish-form>}',
+    standalone: false
 })
 class TestHostComponent {
     @Input() data: DotPushPublishDialogData;
@@ -123,11 +124,12 @@ xdescribe('DotPushPublishFormComponent', () => {
     beforeEach(() => {
         pushPublishServiceMock = new PushPublishServiceMock();
         TestBed.configureTestingModule({
-            declarations: [DotPushPublishFormComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
@@ -138,48 +140,48 @@ xdescribe('DotPushPublishFormComponent', () => {
                 ConfirmationService
             ],
             imports: [
+                DotPushPublishFormComponent,
                 AutoFocusModule,
                 FormsModule,
-                CalendarModule,
+                DatePickerModule,
                 DotDialogModule,
-                PushPublishEnvSelectorModule,
+                PushPublishEnvSelectorComponent,
                 ReactiveFormsModule,
-                DropdownModule,
+                SelectModule,
                 DotFieldValidationMessageComponent,
                 SelectButtonModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule
+                DotMessagePipe
             ]
         }).compileComponents();
     });
 
     beforeEach(() => {
-        spyOn<any>(Intl, 'DateTimeFormat').and.returnValue({
+        jest.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
             resolvedOptions: () => ({ timeZone: localTZ })
         });
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
+        jest.useFakeTimers();
+        jest.setSystemTime(mockDate);
         fixture = TestBed.createComponent(TestHostComponent);
         dotPushPublishFiltersService = fixture.debugElement.injector.get(
             DotPushPublishFiltersService
         );
         hostComponent = fixture.componentInstance;
-        spyOn(dotPushPublishFiltersService, 'get').and.returnValue(of(mockFilters));
+        jest.spyOn(dotPushPublishFiltersService, 'get').mockReturnValue(of(mockFilters));
         hostComponent.data = mockPublishFormData;
         fixture.detectChanges();
         pushPublishForm = fixture.debugElement.query(
             By.css('dot-push-publish-form')
         ).componentInstance;
-        pushActionsSelect = fixture.debugElement.query(By.css('p-selectButton')).componentInstance;
+        pushActionsSelect = fixture.debugElement.query(By.css('p-selectbutton')).componentInstance;
     });
 
     afterEach(() => {
-        jasmine.clock().uninstall();
+        jest.useRealTimers();
     });
 
     it('should load filters on load', () => {
-        const filterDropDown = fixture.debugElement.query(By.css('p-dropdown'));
+        const filterDropDown = fixture.debugElement.query(By.css('p-select'));
 
         expect(filterDropDown.attributes['ng-reflect-autofocus']).toBe('true');
         expect(filterDropDown.componentInstance.options).toEqual(optionsLabels);
@@ -198,7 +200,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         const timezoneDropDownContainer = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelectContainer"]')
         );
-        const timezoneDropDown: Dropdown = fixture.debugElement.query(
+        const timezoneDropDown: Select = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelect"]')
         ).componentInstance;
         const timeZoneLabel = fixture.debugElement.query(
@@ -217,7 +219,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         ).nativeElement;
         changeTZLink.click();
         fixture.detectChanges();
-        const timezoneDropDown: Dropdown = fixture.debugElement.query(
+        const timezoneDropDown: Select = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelect"]')
         ).componentInstance;
         const timezoneDropDownContainer = fixture.debugElement.query(
@@ -268,7 +270,7 @@ xdescribe('DotPushPublishFormComponent', () => {
 
     describe('Push Action scenarios', () => {
         beforeEach(() => {
-            selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
+            selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         });
 
         it('should disable publish date on select remove', () => {
@@ -325,7 +327,7 @@ xdescribe('DotPushPublishFormComponent', () => {
 
     it('should load custom code', () => {
         const dotParseHtmlService = fixture.debugElement.injector.get(DotParseHtmlService);
-        spyOn(dotParseHtmlService, 'parse').and.callThrough();
+        jest.spyOn(dotParseHtmlService, 'parse');
         const mockCustomCode: DotPushPublishDialogData = {
             customCode: '<h1>Code</h1>',
             ...mockPublishFormData
@@ -355,7 +357,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     it('should show error messages', () => {
-        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
+        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         selectActionButtons[2].triggerEventHandler('click', {});
         pushPublishForm.form.get('environment').setValue(null);
         pushPublishForm.form.get('environment').markAsDirty();
@@ -372,9 +374,9 @@ xdescribe('DotPushPublishFormComponent', () => {
         fixture.detectChanges();
         const errorMessages = fixture.debugElement.queryAll(By.css('.p-invalid'));
 
-        expect(errorMessages[0].nativeElement.innerText).toEqual('Publish Date is required');
-        expect(errorMessages[1].nativeElement.innerText).toEqual('Expire Date is required');
-        expect(errorMessages[2].nativeElement.innerText).toContain(
+        expect(errorMessages[0].nativeElement.textContent).toEqual('Publish Date is required');
+        expect(errorMessages[1].nativeElement.textContent).toEqual('Expire Date is required');
+        expect(errorMessages[2].nativeElement.textContent).toContain(
             'Must add at least one Environment'
         );
     });

@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -19,10 +19,8 @@ import { Product } from './Product.interface';
     `
 })
 export class DynamicDialogButtonComponent implements OnDestroy {
-    constructor(
-        public dialogService: DialogService,
-        public messageService: MessageService
-    ) {}
+    dialogService = inject(DialogService);
+    messageService = inject(MessageService);
 
     ref: DynamicDialogRef;
 

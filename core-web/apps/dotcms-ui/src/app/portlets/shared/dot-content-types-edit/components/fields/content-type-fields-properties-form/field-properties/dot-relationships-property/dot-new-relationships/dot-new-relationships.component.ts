@@ -1,27 +1,35 @@
-import { Observable } from 'rxjs';
-
 import {
     Component,
     EventEmitter,
     Input,
     OnChanges,
-    OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
-import { DotContentTypeService, PaginatorService } from '@dotcms/data-access';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotContentTypeComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
+import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
 @Component({
-    providers: [PaginatorService],
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',
-    styleUrls: ['./dot-new-relationships.component.scss']
+    imports: [
+        DotContentTypeComponent,
+        DotCardinalitySelectorComponent,
+        FormsModule,
+        DotMessagePipe,
+        DotFieldRequiredDirective
+    ]
 })
-export class DotNewRelationshipsComponent implements OnInit, OnChanges {
+export class DotNewRelationshipsComponent implements OnChanges {
+    private contentTypeService = inject(DotContentTypeService);
+
     @Input() cardinality: number;
 
     @Input() velocityVar: string;
@@ -30,19 +38,8 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
 
     @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    contentTypeCurrentPage: Observable<DotCMSContentType[]>;
-
     contentType: DotCMSContentType;
     currentCardinalityIndex: number;
-
-    constructor(
-        public paginatorService: PaginatorService,
-        private contentTypeService: DotContentTypeService
-    ) {}
-
-    ngOnInit() {
-        this.paginatorService.url = 'v1/contenttype';
-    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.velocityVar) {
@@ -55,13 +52,32 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     }
 
     /**
+     * Handle content type change from dot-content-type component
+     * Note: onChange event emits the variable (string), so we need to look up the full contentType object
+     *
+     * @param variable The selected content type variable or null
+     * @memberof DotNewRelationshipsComponent
+     */
+    onContentTypeChange(variable: string | null): void {
+        if (variable) {
+            this.contentTypeService.getContentType(variable).subscribe((contentType) => {
+                this.contentType = contentType;
+                this.triggerChanged();
+            });
+        } else {
+            this.contentType = null;
+            this.triggerChanged();
+        }
+    }
+
+    /**
      * Trigger a change event, it send a object with the current content type's variable and
      * the current candinality's index.
      *
      * @memberof DotNewRelationshipsComponent
      */
     triggerChanged(): void {
-        this.switch.next({
+        this.switch.emit({
             velocityVar:
                 this.velocityVar || (this.contentType ? this.contentType.variable : undefined),
             cardinality: this.currentCardinalityIndex
@@ -77,20 +93,6 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     cardinalityChanged(cardinalityIndex: number): void {
         this.currentCardinalityIndex = cardinalityIndex;
         this.triggerChanged();
-    }
-
-    /**
-     *Load content types by pagination
-     *
-     * @param {string} [filter=''] content types's filter
-     * @param {number} [offset=0] pagination index
-     * @memberof DotNewRelationshipsComponent
-     */
-    getContentTypeList(filter = '', offset = 0): void {
-        if (!this.editing) {
-            this.paginatorService.filter = filter;
-            this.contentTypeCurrentPage = this.paginatorService.getWithOffset(offset);
-        }
     }
 
     private loadContentType(velocityVar: string) {

@@ -2,11 +2,10 @@
 
 import { of } from 'rxjs';
 
-import { waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentletLockerService,
     DotESContentService,
@@ -29,22 +28,22 @@ import {
 
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 
-const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
 
-const state: any = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+const route: any = { queryParams: {} };
+
+const state: any = { url: '' };
 
 route.queryParams = {};
 
 describe('DotIframePorletLegacyResolver', () => {
     let dotPageStateService: DotPageStateService;
-    let dotPageStateServiceRequestPageSpy: jasmine.Spy;
+    let dotPageStateServiceRequestPageSpy: jest.SpyInstance;
     let resolver: DotIframePortletLegacyResolver;
     let dotLicenseService: DotLicenseService;
 
     beforeEach(waitForAsync(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             providers: [
                 DotSessionStorageService,
                 DotPageStateService,
@@ -75,17 +74,17 @@ describe('DotIframePorletLegacyResolver', () => {
             imports: [RouterTestingModule]
         });
 
-        dotPageStateService = testbed.get(DotPageStateService);
-        dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
-        resolver = testbed.get(DotIframePortletLegacyResolver);
-        dotLicenseService = testbed.get(DotLicenseService);
+        dotPageStateService = TestBed.inject(DotPageStateService);
+        dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
+        resolver = TestBed.inject(DotIframePortletLegacyResolver);
+        dotLicenseService = TestBed.inject(DotLicenseService);
         state.url = '/rules';
     }));
 
     it('should return if user can access url to be rendered with current license', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
-        dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
-        spyOn(dotLicenseService, 'canAccessEnterprisePortlet').and.returnValue(of(true));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
+        jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(true));
 
         resolver.resolve(route, state).subscribe((canAccess: boolean) => {
             expect(canAccess).toEqual(true);

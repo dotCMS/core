@@ -1,9 +1,13 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: flex;
     flex-wrap: wrap;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     padding-top: 0.15rem;
 
     p-skeleton {
@@ -16,10 +20,10 @@
 
             &:has(.default)::after {
                 content: "";
-                background-color: $color-accessible-text-fuchsia;
-                border-radius: $notification-dot-badge-size;
-                width: $notification-dot-badge-size;
-                height: $notification-dot-badge-size;
+                background-color: colors.$color-accessible-text-fuchsia;
+                border-radius: common.$notification-dot-badge-size;
+                width: common.$notification-dot-badge-size;
+                height: common.$notification-dot-badge-size;
                 position: absolute;
                 top: -2px;
                 right: -4px;
@@ -30,7 +34,7 @@
             }
 
             .p-chip-white {
-                color: $color-palette-primary-500;
+                color: colors.$color-palette-primary-500;
             }
         }
     }

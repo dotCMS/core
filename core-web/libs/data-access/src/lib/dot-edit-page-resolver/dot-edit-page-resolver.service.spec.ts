@@ -2,32 +2,16 @@
 
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import {
-    DotAlertConfirmService,
-    DotContentletLockerService,
-    DotESContentService,
-    DotFavoritePageService,
-    DotHttpErrorManagerService,
-    DotLicenseService,
-    DotMessageDisplayService,
-    DotPageRenderService,
-    DotRouterService,
-    DotSessionStorageService,
-    DotFormatDateService,
-    DotExperimentsService,
-    DotPageStateService
-} from '@dotcms/data-access';
-import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     DotLicenseServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -40,6 +24,20 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
+
+import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotContentletLockerService } from '../dot-contentlet-locker/dot-contentlet-locker.service';
+import { DotESContentService } from '../dot-es-content/dot-es-content.service';
+import { DotExperimentsService } from '../dot-experiments/dot-experiments.service';
+import { DotFavoritePageService } from '../dot-favorite-page/dot-favorite-page.service';
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotLicenseService } from '../dot-license/dot-license.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotPageRenderService } from '../dot-page-render/dot-page-render.service';
+import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 const route: any = jest.spyOn(ActivatedRouteSnapshot, 'toString');
 
@@ -58,10 +56,10 @@ describe('DotEditPageResolver', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
@@ -143,7 +141,7 @@ describe('DotEditPageResolver', () => {
     it('should redirect to site-browser when request fail', () => {
         const fake403Response = mockResponseView(403);
 
-        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(fake403Response));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(() => fake403Response));
 
         dotEditPageResolver.resolve(route).subscribe();
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);

@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vavr.control.Try;
 
@@ -97,6 +98,12 @@ public class FileAssetContainer extends Container {
         this.containerStructuresAssets = containerStructuresAssets.stream().map(f->f.getInode()).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    // we override it, in order to do the permissionable behind a contentlet object
+    @Override
+    public String getPermissionType() {
+        return Contentlet.class.getCanonicalName();
+    }
+
     public void addMetaData(final String key, final Object value) {
 
         this.metaDataMap.put (key, value);
@@ -165,9 +172,12 @@ public class FileAssetContainer extends Container {
         return host;
     }
 
+    @Override
     public String getHostId() {
         return host.getIdentifier();
     }
+
+    @Override
     public String getHostName() {
         return host.getHostname();
     }

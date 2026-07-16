@@ -1,10 +1,10 @@
-import { ReflectiveInjector } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 
-import { NoHttpCoreWebServiceMock } from './no-http-core-web.service.mock';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import {
     ConfigParams,
-    CoreWebService,
     DotcmsConfigService,
     DotTimeZone,
     LoggerService,
@@ -31,6 +31,7 @@ export const mockDotTimeZones: DotTimeZone[] = [
 
 describe('DotcmsConfigService', () => {
     let service: DotcmsConfigService;
+    let httpMock: HttpTestingController;
 
     const configParams = {
         config: {
@@ -90,16 +91,24 @@ describe('DotcmsConfigService', () => {
     };
 
     beforeEach(() => {
-        const coreWebService: NoHttpCoreWebServiceMock = new NoHttpCoreWebServiceMock(configParams);
-
-        const injector = ReflectiveInjector.resolveAndCreate([
-            { provide: CoreWebService, useValue: coreWebService },
-            DotcmsConfigService,
-            LoggerService,
-            StringUtils
-        ]);
-
-        service = injector.get(DotcmsConfigService);
+        TestBed.configureTestingModule({
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                DotcmsConfigService,
+                LoggerService,
+                StringUtils
+            ]
+        });
+        service = TestBed.inject(DotcmsConfigService);
+        httpMock = TestBed.inject(HttpTestingController);
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
+        req.flush({
+            entity: {
+                config: configParams.config,
+                menu: []
+            }
+        });
     });
 
     it('should get the next config', (done) => {
@@ -141,12 +150,26 @@ describe('DotcmsConfigService', () => {
             expect(result).toEqual(expectedResult);
             done();
         });
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
+        req.flush({
+            entity: {
+                config: configParams.config,
+                menu: []
+            }
+        });
     });
 
     it('should get system timezone', (done) => {
         service.getSystemTimeZone().subscribe((result) => {
             expect(result).toEqual(configParams.config.systemTimezone);
             done();
+        });
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
+        req.flush({
+            entity: {
+                config: configParams.config,
+                menu: []
+            }
         });
     });
 });

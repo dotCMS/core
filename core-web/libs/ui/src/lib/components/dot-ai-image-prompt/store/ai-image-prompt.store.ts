@@ -11,7 +11,7 @@ import { DotAiService } from '@dotcms/data-access';
 import {
     AIImagePrompt,
     ComponentStatus,
-    DotAIImageOrientation,
+    DEFAULT_IMAGE_SIZE,
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
@@ -34,7 +34,7 @@ const initialState: AiImagePromptdState = {
     formValue: {
         text: '',
         type: PromptType.INPUT,
-        size: DotAIImageOrientation.HORIZONTAL
+        size: DEFAULT_IMAGE_SIZE
     }
 };
 
@@ -107,20 +107,18 @@ export const DotAiImagePromptStore = signalStore(
                         return dotAiService
                             .generateAndPublishImage(finalPrompt, formValue.size)
                             .pipe(
-                                tapResponse(
-                                    (response) => {
+                                tapResponse({
+                                    next: (response) => {
                                         const newImage: DotGeneratedAIImage = {
                                             request: formValue,
                                             response: response,
                                             error: null
                                         };
-
                                         if (isImageWithError) {
                                             imagesArray[galleryActiveIndex] = newImage;
                                         } else {
                                             imagesArray.push(newImage);
                                         }
-
                                         patchState(store, {
                                             status: ComponentStatus.IDLE,
                                             images: imagesArray,
@@ -129,13 +127,28 @@ export const DotAiImagePromptStore = signalStore(
                                                 : imagesArray.length - 1
                                         });
                                     },
-                                    (error: string) => {
+                                    error: (error: string) => {
+                                        const errorImage: DotGeneratedAIImage = {
+                                            request: formValue,
+                                            response: null,
+                                            error: error
+                                        };
+                                        const errorImagesArray = [...imagesArray];
+                                        if (isImageWithError) {
+                                            errorImagesArray[galleryActiveIndex] = errorImage;
+                                        } else {
+                                            errorImagesArray.push(errorImage);
+                                        }
                                         patchState(store, {
                                             status: ComponentStatus.ERROR,
-                                            error: error
+                                            error: error,
+                                            images: errorImagesArray,
+                                            galleryActiveIndex: isImageWithError
+                                                ? galleryActiveIndex
+                                                : errorImagesArray.length - 1
                                         });
                                     }
-                                )
+                                })
                             );
                     })
                 )

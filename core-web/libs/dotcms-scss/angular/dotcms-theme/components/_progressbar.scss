@@ -1,3 +1,5 @@
+@use "../../../shared/colors";
+
 @use "variables" as *;
 .p-progressbar {
     border: 0 none;
@@ -8,9 +10,9 @@
 .p-progressbar .p-progressbar-value {
     border: 0 none;
     margin: 0;
-    background: $color-palette-primary;
+    background: colors.$color-palette-primary;
 }
 .p-progressbar .p-progressbar-label {
-    color: $black;
+    color: colors.$black;
     line-height: 4px;
 }

@@ -1,0 +1,120 @@
+{
+  "id": null,
+  "uid": "dotcms-logs",
+  "title": "dotCMS Logs Dashboard",
+  "tags": [
+    "dotcms",
+    "logs",
+    "loki",
+    "opentelemetry"
+  ],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Recent dotCMS Logs",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{service_name=\"dotcms\"}",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Log Levels Over Time",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum by (level) (count_over_time({service_name=\"dotcms\"} |= \"INFO\" [5m]))",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "legendFormat": "INFO"
+        },
+        {
+          "expr": "sum by (level) (count_over_time({service_name=\"dotcms\"} |= \"ERROR\" [5m]))",
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "legendFormat": "ERROR"
+        },
+        {
+          "expr": "sum by (level) (count_over_time({service_name=\"dotcms\"} |= \"WARN\" [5m]))",
+          "refId": "C",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "legendFormat": "WARN"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "id": 3,
+      "title": "Error Logs",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{service_name=\"dotcms\"} |= \"ERROR\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 16,
+        "x": 8,
+        "y": 12
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "enableLogDetails": true
+      }
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true
+}

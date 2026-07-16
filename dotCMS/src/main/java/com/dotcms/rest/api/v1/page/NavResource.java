@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavTool;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -21,7 +21,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.ResponseEntityMapView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +47,7 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 
 @Path("/v1/nav")
-@Tag(name = "Navigation")
+@Tag(name = "Navigation", description = "Site navigation tree endpoints")
 public class NavResource {
 
 
@@ -79,12 +86,42 @@ public class NavResource {
      * @param depth - an int for how many levels to include
      * @return a json representation of the navigation
      */
+    @Operation(
+            operationId = "getNavigationTree",
+            summary = "Get site navigation tree",
+            description = "Returns the dotCMS site navigation tree starting at the given **folder** URI, up to the specified depth. "
+                    + "Only objects marked as 'show on menu' are included. "
+                    + "The URI must resolve to a folder — page URIs (e.g., '/index', '/about-us/team') will return 404. "
+                    + "Use '/' to fetch the navigation tree for the site root."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Navigation tree retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid depth or languageId parameter"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Navigation path not found")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{uri: .*}")
     public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("uri") final String uri, @QueryParam("depth") final String depth, @QueryParam("languageId") final String languageId) {
+            @Parameter(description = "Starting folder URI for the navigation tree (e.g., '/about-us', '/blog', or '/' for the site root). "
+                    + "Must resolve to a folder — page URIs return 404.", required = true)
+            @PathParam("uri") final String uri,
+            @Parameter(description = "Total number of levels to include, counting the starting node as level 1. "
+                    + "depth=1 returns only the starting node with no children; depth=2 returns the node plus its direct children. "
+                    + "Values exceeding the actual tree depth return the full subtree. Values less than 1 are treated as 1. (default: 1)",
+                    schema = @Schema(type = "integer", format = "int32"))
+            @QueryParam("depth") final String depth,
+            @Parameter(description = "Tags each returned node with this language ID. "
+                    + "Note: folder names are language-neutral in dotCMS and are not translated — "
+                    + "this parameter only affects the 'languageId' attribute on each node, not the visible 'title'. "
+                    + "Defaults to the language of the current request.",
+                    schema = @Schema(type = "integer", format = "int64"))
+            @QueryParam("languageId") final String languageId) {
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
@@ -119,7 +156,7 @@ public class NavResource {
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
             //Force NavTool to behave as Live when rendering items
-            PageMode.setPageMode(request, PageMode.LIVE);
+            PageMode.setPageMode(request, PageMode.LIVE, false);
             final NavTool tool = new NavTool();
             tool.init(ctx);
             final NavResult nav = tool.getNav(path, langId);
@@ -142,7 +179,7 @@ public class NavResource {
     }
 
 
-    private Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
+    public static Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
 
         final Map<String, Object> navMap = new HashMap<>();
         navMap.put("title", nav.getTitle());

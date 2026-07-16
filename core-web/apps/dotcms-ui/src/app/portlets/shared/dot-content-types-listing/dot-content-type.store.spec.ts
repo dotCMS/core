@@ -1,20 +1,16 @@
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    mockResponseView
-} from '@dotcms/utils-testing';
-import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
+import { dotcmsContentTypeBasicMock, mockResponseView } from '@dotcms/utils-testing';
+
+import { DotContentTypeStore } from './dot-content-type.store';
 
 describe('DotContentTypeComponentStore', () => {
     let store: DotContentTypeStore;
@@ -24,15 +20,16 @@ describe('DotContentTypeComponentStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, RouterTestingModule],
+            imports: [RouterTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypeService,
                 DotContentTypeStore,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn().mockReturnValue(of({}))
                     }
                 }
             ]
@@ -61,7 +58,7 @@ describe('DotContentTypeComponentStore', () => {
 
     describe('effects', () => {
         it('should save Content Type Copy values', () => {
-            spyOn(dotContentTypeService, 'saveCopyContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
                 of({
                     ...dotcmsContentTypeBasicMock,
                     id: '1234567890',
@@ -71,7 +68,7 @@ describe('DotContentTypeComponentStore', () => {
                 })
             );
 
-            spyOn(router, 'navigate');
+            jest.spyOn(router, 'navigate');
 
             store.setAssetSelected('content-type-id');
 
@@ -104,7 +101,9 @@ describe('DotContentTypeComponentStore', () => {
 
         it('should handler error on update template', (done) => {
             const error = new HttpErrorResponse(mockResponseView(400));
-            spyOn(dotContentTypeService, 'saveCopyContentType').and.returnValue(throwError(error));
+            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
+                throwError(() => error)
+            );
 
             store.saveCopyDialog({
                 name: 'new-name',
@@ -115,6 +114,7 @@ describe('DotContentTypeComponentStore', () => {
             });
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
 
             store.isSaving$.subscribe((resp) => {
                 expect(resp).toBe(false);

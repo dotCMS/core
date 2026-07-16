@@ -1,34 +1,42 @@
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
 
+import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
 import { DotContentCompareState, DotContentCompareStore } from './store/dot-content-compare.store';
 
 @Component({
     selector: 'dot-content-compare',
     templateUrl: './dot-content-compare.component.html',
     styleUrls: ['./dot-content-compare.component.scss'],
-    providers: [DotContentCompareStore]
+    providers: [DotContentCompareStore],
+    imports: [DotContentCompareTableComponent, AsyncPipe]
 })
 export class DotContentCompareComponent {
+    store = inject(DotContentCompareStore);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotIframeService = inject(DotIframeService);
+
     @Input() set data(data: DotContentCompareEvent) {
         if (data != null) {
             this.store.loadData(data);
         }
     }
+    $showActions = input<boolean>(true, { alias: 'showActions' });
+    /**
+     * Forwards to `dot-content-compare-table`'s `reverseColumns` input.
+     * When `true`, the previous (compare) version renders on the LEFT and
+     * the current (working) version on the RIGHT.
+     */
+    readonly $reverseColumns = input<boolean>(false, { alias: 'reverseColumns' });
     @Output() shutdown = new EventEmitter<boolean>();
     @Output() letMeBringBack = new EventEmitter<{ name: string; args: string[] }>();
     vm$: Observable<DotContentCompareState> = this.store.vm$;
-
-    constructor(
-        public store: DotContentCompareStore,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotIframeService: DotIframeService
-    ) {}
 
     /**
      * Confirm if the user want to bring back to specific version.

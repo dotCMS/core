@@ -1,16 +1,25 @@
 package com.dotcms.cms.login;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
+
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
@@ -19,15 +28,14 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
@@ -49,13 +57,6 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
 import io.vavr.Lazy;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -67,11 +68,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
-import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
-import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Login Service Factory that allows developers to inject custom login services.
@@ -267,6 +269,7 @@ public class LoginServiceAPIFactory implements Serializable {
         
         @CloseDBIfOpened
         @Override
+        @RequestCost(Price.LOGIN_USERNAME_PASS)
         public boolean doActionLogin(String userId,
                                      final String password,
                                      final boolean rememberMe,
@@ -324,6 +327,14 @@ public class LoginServiceAPIFactory implements Serializable {
                 if (Config.getBooleanProperty("show.lts.eol.message", false)) {
                     messageLTSVersionEOL(logInUser);
                 }
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    messageTokensToExpire(logInUser);
+                }).start();
             }
 
             if (authResult != Authenticator.SUCCESS) {
@@ -368,6 +379,10 @@ public class LoginServiceAPIFactory implements Serializable {
             if (null != userSelectedLocale) {
 
                 user.setLanguageId(userSelectedLocale.toString());
+            }
+
+            if(UtilMethods.isEmpty(user.getRememberMeToken())){
+               user.setRememberMeToken(UUIDGenerator.uuid());
             }
 
             user.setLastLoginDate(new Date());
@@ -693,6 +708,69 @@ public class LoginServiceAPIFactory implements Serializable {
             return this.getLoggedInUser(request);
         }
     }
+
+    /**
+     * This function notifies API Tokens that are about to expire within the configured number of days.
+     * Uses EXPIRING_TOKEN_LOOKAHEAD_DAYS configuration (default: 7 days).
+     * Can be disabled using DISPLAY_EXPIRING_TOKEN_ALERTS configuration (default: true).
+     * If the user is an admin, shows all expiring tokens with link to REST API.
+     * If the user is not an admin, shows only their own tokens with notification to contact admin.
+     */
+    @CloseDBIfOpened
+    private void messageTokensToExpire(User logInUser) {
+
+        if (!Config.getBooleanProperty("DISPLAY_EXPIRING_TOKEN_ALERTS", true)) {
+            return;
+        }
+
+        final int daysLookahead = Config.getIntProperty("EXPIRING_TOKEN_LOOKAHEAD_DAYS", 7);
+
+        if (daysLookahead < 0) {
+            Logger.error(this, "Invalid EXPIRING_TOKEN_LOOKAHEAD_DAYS configuration: " + daysLookahead);
+            return;
+        }
+
+        try {
+            ApiTokenAPI apiTokenAPI = APILocator.getApiTokenAPI();
+            List<ApiToken> expiringTokens = apiTokenAPI.findExpiringTokens(daysLookahead, logInUser);
+
+            if (!expiringTokens.isEmpty()) {
+                SystemMessageBuilder message;
+
+                if (logInUser.isAdmin()) {
+
+                    String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.admin.message");
+                    message = new SystemMessageBuilder()
+                            .setMessage(msg)
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(86400000);
+                } else {
+
+                    String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.user.message");
+                    message = new SystemMessageBuilder()
+                            .setMessage(msg)
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(86400000);
+                }
+
+                sendMessage(message, logInUser);
+            }
+        } catch (Exception e) {
+            Logger.error(this, "Error checking for expiring tokens: " + e.getMessage(), e);
+        }
+    }
+
+    private void sendMessage(SystemMessageBuilder message, User user) {
+        try {
+            SystemMessageEventUtil.getInstance().pushMessage(message.create(), list(user.getUserId()));
+            Logger.info("", message.create().getMessage().toString());
+        } catch (Exception e) {
+            Logger.error(this, "Error sending message: " + e.getMessage(), e);
+        }
+    }
+    
 
     /**
      * Message to show LTS version is reaching or already reached EOL.

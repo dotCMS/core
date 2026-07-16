@@ -1,5 +1,5 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createFakeEvent } from '@openng/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
 
@@ -10,7 +10,6 @@ import { DotEmptyContainerComponent } from '@dotcms/ui';
 import { DotCategoryFieldSearchListComponent } from './dot-category-field-search-list.component';
 
 import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
-import { MockResizeObserver } from '../../../../utils/mocks';
 import { CATEGORY_MOCK_TRANSFORMED } from '../../mocks/category-field.mocks';
 
 const mockMessageService = {
@@ -35,10 +34,6 @@ describe('DotCategoryFieldSearchListComponent', () => {
                 state: ComponentStatus.LOADED
             } as unknown
         });
-    });
-
-    beforeAll(() => {
-        global.ResizeObserver = MockResizeObserver;
     });
 
     it('should show the skeleton if the component is loading', () => {

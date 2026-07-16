@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-/** @author Hibernate CodeGenerator */
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		Parentable, ManifestItem {
@@ -64,7 +64,6 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	private String type;
 
     private String title;
-    /** default constructor */
 
     private String filesMasks;
 
@@ -126,10 +125,10 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
     }
     
     public boolean isSystemFolder() {
-        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(inode)).getOrElse(false);
+        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(identifier)).getOrElse(false);
     }
-    
-    
+
+
     
     
     
@@ -251,6 +250,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	}
 	public void setIdentifier(String identifier) {
 	   this.identifier = identifier;
+	   this.inode = UtilMethods.isSet(this.inode) ? this.inode : identifier;
 	}
 
 	public void copy (Folder template) {
@@ -308,6 +308,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 
     //Methods from permissionable and parent permissionable
 
+	@JsonIgnore
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
 		List<PermissionSummary> accepted = new ArrayList<>();
@@ -317,12 +318,13 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		accepted.add(new PermissionSummary("edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 		return accepted;
 	}
-
+	@JsonIgnore
 	@Override
 	public String getPermissionId() {
 		return getInode();
 	}
 
+	@JsonIgnore
 	@Override
 	public boolean isParentPermissionable() {
 		return true;
@@ -352,7 +354,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-
+	@JsonIgnore
 	public List<RelatedPermissionableGroup> permissionDependencies(
 			int requiredPermission) {
 		return null;

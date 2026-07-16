@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/dA/:path*",
+      "destination": "https://staging-latest.dotcms.cloud/dA/:path*"
+    }
+  ]
+}

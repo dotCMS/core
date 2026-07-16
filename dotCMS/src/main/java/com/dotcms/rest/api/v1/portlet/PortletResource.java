@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.portlet;
 
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -24,6 +24,7 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.QueryParam;
 import org.glassfish.jersey.server.JSONP;
 
@@ -56,6 +57,7 @@ import static com.liferay.util.StringPool.BLANK;
  * or content (content types or base types).
  */
 @Path("/v1/portlet")
+@Tag(name = "Portlets")
 public class PortletResource implements Serializable {
 
     private final WebResource webResource;

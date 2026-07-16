@@ -1,0 +1,340 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Publishing Resource",
+		"description": "Tests for GET /api/v1/publishing - List publishing jobs endpoint. Tests validate API behavior and response structure.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "List Publishing Jobs",
+			"item": [
+				{
+					"name": "List Publishing Jobs - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is JSON\", function () {",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+									"});",
+									"",
+									"pm.test(\"Response has entity array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('entity');",
+									"    pm.expect(jsonData.entity).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Response has pagination object with required fields\", function () {",
+									"    var pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination).to.be.an('object');",
+									"    pm.expect(pagination).to.have.property('currentPage');",
+									"    pm.expect(pagination).to.have.property('perPage');",
+									"    pm.expect(pagination).to.have.property('totalEntries');",
+									"    pm.expect(pagination.currentPage).to.be.a('number');",
+									"    pm.expect(pagination.perPage).to.be.a('number');",
+									"    pm.expect(pagination.totalEntries).to.be.a('number');",
+									"});",
+									"",
+									"pm.test(\"Pagination reflects requested parameters\", function () {",
+									"    var pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.currentPage).to.eql(1);",
+									"    pm.expect(pagination.perPage).to.eql(10);",
+									"});",
+									"",
+									"pm.test(\"Each job has required fields\", function () {",
+									"    var jobs = pm.response.json().entity;",
+									"    jobs.forEach(function(job) {",
+									"        pm.expect(job).to.have.property('bundleId');",
+									"        pm.expect(job).to.have.property('status');",
+									"        pm.expect(job).to.have.property('assetCount');",
+									"        pm.expect(job).to.have.property('assetPreview');",
+									"        pm.expect(job).to.have.property('environmentCount');",
+									"        pm.expect(job).to.have.property('createDate');",
+									"        pm.expect(job).to.have.property('numTries');",
+									"        ",
+									"        pm.expect(job.bundleId).to.be.a('string');",
+									"        pm.expect(job.status).to.be.a('string');",
+									"        pm.expect(job.assetCount).to.be.a('number');",
+									"        pm.expect(job.assetPreview).to.be.an('array');",
+									"        pm.expect(job.environmentCount).to.be.a('number');",
+									"        pm.expect(job.numTries).to.be.a('number');",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Asset preview has correct structure\", function () {",
+									"    var jobs = pm.response.json().entity;",
+									"    jobs.forEach(function(job) {",
+									"        job.assetPreview.forEach(function(asset) {",
+									"            pm.expect(asset).to.have.property('id');",
+									"            pm.expect(asset).to.have.property('title');",
+									"            pm.expect(asset).to.have.property('type');",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Status values are valid\", function () {",
+									"    var validStatuses = [",
+									"        'BUNDLE_REQUESTED', 'WAITING_FOR_PUBLISHING', 'BUNDLING',",
+									"        'SENDING_TO_ENDPOINTS', 'PUBLISHING_BUNDLE', 'BUNDLE_SENT_SUCCESSFULLY',",
+									"        'RECEIVED_BUNDLE', 'BUNDLE_SAVED_SUCCESSFULLY', 'SUCCESS',",
+									"        'SUCCESS_WITH_WARNINGS', 'FAILED_TO_BUNDLE', 'FAILED_TO_SENT',",
+									"        'FAILED_TO_SEND_TO_ALL_GROUPS', 'FAILED_TO_SEND_TO_SOME_GROUPS',",
+									"        'FAILED_TO_PUBLISH', 'FAILED_INTEGRITY_CHECK', 'INVALID_TOKEN', 'LICENSE_REQUIRED'",
+									"    ];",
+									"    var jobs = pm.response.json().entity;",
+									"    jobs.forEach(function(job) {",
+									"        pm.expect(validStatuses).to.include(job.status);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/publishing?page=1&per_page=10",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"publishing"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Publishing Jobs - Filter by Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"All returned jobs have filtered status\", function () {",
+									"    var jobs = pm.response.json().entity;",
+									"    jobs.forEach(function(job) {",
+									"        pm.expect(['SUCCESS', 'FAILED_TO_PUBLISH']).to.include(job.status);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/publishing?status=SUCCESS,FAILED_TO_PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"publishing"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "SUCCESS,FAILED_TO_PUBLISH"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Publishing Jobs - Invalid Status Returns 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/publishing?status=INVALID_STATUS_XYZ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"publishing"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "INVALID_STATUS_XYZ"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Publishing Jobs - Unauthorized Returns 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/publishing",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"publishing"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for GET /api/v1/publishing endpoint"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL');",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`;",
+					"    const username = pm.environment.get('user') || 'admin@dotcms.com';",
+					"    const password = pm.environment.get('password') || 'admin';",
+					"    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"    pm.sendRequest({",
+					"        url: apiUrl,",
+					"        method: 'POST',",
+					"        header: {",
+					"            'accept': '*/*',",
+					"            'content-type': 'application/json',",
+					"            'Authorization': `Basic ${basicAuth}`",
+					"        },",
+					"        body: {",
+					"            mode: 'raw',",
+					"            raw: JSON.stringify({",
+					"                'expirationSeconds': 7200,",
+					"                'userId': 'dotcms.org.1',",
+					"                'network': '0.0.0.0/0',",
+					"                'claims': {'label': 'postman-tests'}",
+					"            })",
+					"        }",
+					"    }, function (err, response) {",
+					"        if (!err && response.json().entity) {",
+					"            pm.environment.set('jwt', response.json().entity.jwt);",
+					"        }",
+					"    });",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

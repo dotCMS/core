@@ -71,7 +71,9 @@ public interface JWToken extends Serializable {
     default Optional<User> getActiveUser() {
         String subjectString = getUserId();
 
-        String userIdString = Try.of(()-> PublicEncryptionFactory.decryptString(subjectString)).onFailure(e-> Logger.warnAndDebug(JWToken.class,"Subject Not Encrypted:" + e,e)).getOrElse(subjectString);
+        String userIdString = (this instanceof ApiToken)
+                ? subjectString
+                : Try.of(()-> PublicEncryptionFactory.decryptString(subjectString)).onFailure(e-> Logger.debug(JWToken.class,"Subject Not Encrypted:" + e,e)).getOrElse(subjectString);
         User user = Try.of(() -> APILocator.getUserAPI().loadUserById(userIdString)).getOrNull();
         if (user != null && user.isActive()) {
             return Optional.of(user);

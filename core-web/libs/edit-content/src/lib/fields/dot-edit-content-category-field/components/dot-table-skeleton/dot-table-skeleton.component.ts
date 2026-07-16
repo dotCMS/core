@@ -10,7 +10,6 @@ import { TableModule } from 'primeng/table';
  */
 @Component({
     selector: 'dot-table-skeleton',
-    standalone: true,
     imports: [SkeletonModule, TableModule],
     templateUrl: './dot-table-skeleton.component.html',
     styleUrl: './dot-table-skeleton.component.scss',

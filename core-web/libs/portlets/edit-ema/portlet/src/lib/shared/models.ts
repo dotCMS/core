@@ -1,21 +1,14 @@
-import { CLIENT_ACTIONS } from '@dotcms/client';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSUVEAction, StyleEditorProperties } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 
 export interface MessagePipeOptions {
     message: string;
     args: string[];
-}
-
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-    info: MessagePipeOptions;
-    disabled: boolean;
 }
 
 export interface InfoOptions {
@@ -53,11 +46,33 @@ export interface ActionPayload extends PositionPayload {
     newContentletId?: string;
 }
 
+export interface StyleEditorContentletPayload extends ActionPayload {
+    contentlet: ContentletPayload;
+}
+
+/**
+ * The currently-selected contentlet in the editor: bounds + payload.
+ * Bounds drive the floating overlay; payload feeds the side panel /
+ * style editor / pencil dialog. Both travel together because every
+ * selection arrives with bounds (you got there by clicking somewhere).
+ *
+ * Replaces the historical split between `editorSelectedContentletArea`
+ * (had bounds) and `editorActiveContentlet` (had payload). They were
+ * always set/cleared in lockstep; the split was vestigial.
+ */
+export interface SelectedContentlet {
+    bounds: { x: number; y: number; width: number; height: number };
+    payload: ActionPayload;
+}
+
 export interface PageContainer {
     personaTag?: string;
     identifier: string;
     uuid: string;
     contentletsId: string[];
+    acceptTypes?: string;
+    maxContentlets?: number;
+    variantId?: string;
 }
 
 export interface ContainerPayload {
@@ -65,7 +80,6 @@ export interface ContainerPayload {
     identifier: string;
     contentletsId?: string[];
     maxContentlets: number;
-    variantId: string;
     uuid: string;
 }
 
@@ -76,6 +90,7 @@ export interface ContentletPayload {
     contentType: string;
     baseType?: string;
     onNumberOfPages?: number;
+    dotStyleProperties?: StyleEditorProperties;
 }
 
 export interface SetUrlPayload {
@@ -89,9 +104,16 @@ export interface SavePagePayload {
     whenSaved?: () => void;
 }
 
+export interface SaveStylePropertiesPayload {
+    pageId: string;
+    containerUUID: string;
+    containerIdentifier: string;
+    contentletIdentifier: string;
+    styleProperties: StyleEditorProperties;
+}
+
 export interface NavigationBarItem {
-    icon?: string;
-    iconURL?: string;
+    materialIcon: string;
     label: string;
     href?: string;
     id: string;
@@ -209,15 +231,23 @@ export interface EditEmaDialogState {
     status: DialogStatus;
     url: string;
     type: DialogType;
+    /**
+     * Represent the action payload of the dialog, with the edited contentlet or the new contentlet
+     * that is being created, both inside PageAsset.
+     *
+     * Can be null when the dialog is opened outside of PageAsset, like from the Content API.
+     */
     actionPayload?: ActionPayload;
     form: DialogForm;
-    clientAction: CLIENT_ACTIONS;
+    clientAction: DotCMSUVEAction;
 }
 
 export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
 
-export interface DialogAction
-    extends Pick<EditEmaDialogState, 'actionPayload' | 'form' | 'clientAction'> {
+export interface DialogAction extends Pick<
+    EditEmaDialogState,
+    'actionPayload' | 'form' | 'clientAction'
+> {
     event: CustomEvent;
 }
 
@@ -244,7 +274,7 @@ export interface AddContentletAction extends DialogActionPayload {
 }
 
 export interface PostMessage {
-    action: CLIENT_ACTIONS;
+    action: DotCMSUVEAction;
     payload: unknown;
 }
 
@@ -254,3 +284,14 @@ export interface ReorderMenuPayload {
 }
 
 export type DotPageAssetParams = DotPageApiParams;
+
+export type DotUVEPaletteListType =
+    | DotCMSBaseTypesContentTypes.CONTENT
+    | DotCMSBaseTypesContentTypes.WIDGET
+    | 'FAVORITES';
+
+export interface DotUVEPaletteListParams {
+    pagePathOrId: string;
+    language: string;
+    type: DotUVEPaletteListType;
+}

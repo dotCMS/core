@@ -1,10 +1,13 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
 
-import { Inplace } from 'primeng/inplace';
+import { SharedModule } from 'primeng/api';
+import { Inplace, InplaceModule } from 'primeng/inplace';
 
 @Component({
     selector: 'dot-inline-edit',
-    templateUrl: './dot-inline-edit.component.html'
+    templateUrl: './dot-inline-edit.component.html',
+    imports: [InplaceModule, SharedModule, NgTemplateOutlet]
 })
 export class DotInlineEditComponent {
     @Input()

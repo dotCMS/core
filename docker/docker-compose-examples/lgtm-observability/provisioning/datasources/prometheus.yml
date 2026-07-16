@@ -1,0 +1,24 @@
+apiVersion: 1
+
+datasources:
+  # Default Mimir/Prometheus datasource (already configured by LGTM)
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://localhost:9009/prometheus
+    isDefault: true
+    editable: false
+    
+  # Additional scrape configs for dotCMS metrics
+  # Note: This extends the default LGTM Prometheus configuration
+  - name: dotCMS-Metrics
+    type: prometheus  
+    access: proxy
+    url: http://localhost:9009/prometheus
+    isDefault: false
+    editable: false
+    jsonData:
+      # Additional configuration for dotCMS-specific metrics
+      timeInterval: "30s"
+      queryTimeout: "60s"
+      httpMethod: "POST"

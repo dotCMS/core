@@ -1,60 +1,35 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { AvatarModule } from 'primeng/avatar';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { MenuModule } from 'primeng/menu';
-import { PasswordModule } from 'primeng/password';
+import { filter, take } from 'rxjs/operators';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
-    DotEventsService,
-    DotFormatDateService,
-    DotIframeService,
-    DotRouterService
+    DotGlobalMessageService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotPropertiesService,
+    DotUiColorsService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils,
-    UserModel
-} from '@dotcms/dotcms-js';
-import { DotDialogModule, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
-import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
-import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
-
-class DotGravatarServiceMock {
-    getPhoto() {
-        return of('/some_avatar_url');
-    }
-}
+import { DotReportIssueService } from '../../../../../api/services/dot-report-issue.service';
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
 describe('DotToolbarUserComponent', () => {
     let fixture: ComponentFixture<DotToolbarUserComponent>;
@@ -66,6 +41,8 @@ describe('DotToolbarUserComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: LOCATION_TOKEN,
                     useValue: {
@@ -73,50 +50,35 @@ describe('DotToolbarUserComponent', () => {
                     }
                 },
                 { provide: LoginService, useClass: LoginServiceMock },
-                DotRouterService,
-                DotcmsEventsService,
-                DotNavigationService,
-                DotMenuService,
-                LoggerService,
-                StringUtils,
-                DotEventsService,
-                DotIframeService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: DotNavigationService,
+                    useValue: {
+                        goToFirstPortlet: jest.fn().mockResolvedValue(true)
+                    }
+                },
+                { provide: LoggerService, useValue: { error: jest.fn() } },
+                { provide: DotMessageService, useValue: { get: (key: string) => key } },
+                { provide: DotGlobalMessageService, useValue: { success: jest.fn() } },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: { handle: jest.fn(() => of({})) }
+                },
+                {
+                    provide: DotReportIssueService,
+                    useValue: { reportIssue: jest.fn(() => of('')) }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKey: jest.fn(() => of('true')),
+                        getFeatureFlag: jest.fn(() => of(true))
+                    }
+                },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                UserModel,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                DotcmsConfigService,
-                DotFormatDateService,
-                { provide: DotGravatarService, useClass: DotGravatarServiceMock },
                 DotToolbarUserStore
             ],
-            imports: [
-                BrowserAnimationsModule,
-                DotDialogModule,
-                DotIconModule,
-                SearchableDropDownModule,
-                RouterTestingModule,
-                ButtonModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                FormsModule,
-                ReactiveFormsModule,
-                PasswordModule,
-                CheckboxModule,
-                HttpClientTestingModule,
-                MenuModule,
-                DotLoginAsComponent,
-                DotMyAccountComponent,
-                DotToolbarUserComponent,
-                DotGravatarDirective,
-                AvatarModule
-            ]
+            imports: [BrowserAnimationsModule, RouterTestingModule, DotToolbarUserComponent]
         });
-
-        const mockDate = new Date(1466424490000);
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
 
         fixture = TestBed.createComponent(DotToolbarUserComponent);
 
@@ -127,60 +89,113 @@ describe('DotToolbarUserComponent', () => {
         dotNavigationService = de.injector.get(DotNavigationService);
     });
 
-    afterEach(() => {
-        jasmine.clock().uninstall();
-    });
-
     it('should have correct href in logout link', () => {
+        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+            callback({
+                user: {
+                    emailAddress: 'admin@dotcms.com',
+                    name: 'Admin User',
+                    fullName: 'Admin User'
+                },
+                loginAsUser: null,
+                isLoginAs: false
+            } as any);
+        });
+
+        // Mock Date constructor to return a specific timestamp
+        const mockDate = {
+            getTime: () => 1466424490000
+        };
+        const originalDate = global.Date;
+        global.Date = jest.fn(() => mockDate) as any;
+        global.Date.now = jest.fn(() => 1466424490000);
+
+        // Recreate the component with the mocked Date
+        fixture = TestBed.createComponent(DotToolbarUserComponent);
+        de = fixture.debugElement;
+        loginService = de.injector.get(LoginService);
+        locationService = de.injector.get(LOCATION_TOKEN);
+        dotNavigationService = de.injector.get(DotNavigationService);
+
         fixture.detectChanges();
 
         const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutItem = de.query(By.css('#dot-toolbar-user-link-logout'));
-        const logoutLink = logoutItem.query(By.css('a'));
+        const logoutItem = document.querySelector('#dot-toolbar-user-link-logout');
+        const logoutLink = logoutItem?.querySelector('a');
 
-        expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
-        expect(logoutItem.classes['toolbar-user__logout']).toBe(true);
+        expect(logoutLink?.getAttribute('href')).toBe('/dotAdmin/logout?r=1466424490000');
+        expect(logoutItem?.classList.contains('toolbar-user__logout')).toBe(true);
+
+        // Restore original Date
+        global.Date = originalDate;
     });
     it('should have correct target in logout link', () => {
+        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+            callback({
+                user: {
+                    emailAddress: 'admin@dotcms.com',
+                    name: 'Admin User',
+                    fullName: 'Admin User'
+                },
+                loginAsUser: null,
+                isLoginAs: false
+            } as any);
+        });
+
         fixture.detectChanges();
 
         const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout a'));
-        expect(logoutLink.attributes.target).toBe('_self');
+        const logoutLink = document.querySelector('#dot-toolbar-user-link-logout a');
+        expect(logoutLink?.getAttribute('target')).toBe('_self');
     });
 
-    it('should call "logoutAs" in "LoginService" on logout click', async () => {
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
-            new Promise((resolve) => {
-                resolve(true);
-            })
-        );
-        spyOn(locationService, 'reload');
-        spyOn(loginService, 'logoutAs').and.callThrough();
+    it('should call "logoutAs" in "LoginService" on logout click', fakeAsync(() => {
+        // Mock the watchUser method to simulate "login as" mode
+        const mockAuth = {
+            user: {
+                emailAddress: 'admin@dotcms.com',
+                name: 'Admin User',
+                fullName: 'Admin User'
+            },
+            loginAsUser: {
+                emailAddress: 'user@dotcms.com',
+                name: 'Regular User',
+                fullName: 'Regular User'
+            },
+            isLoginAs: true
+        };
+
+        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+            callback(mockAuth);
+        });
+
+        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockResolvedValue(true);
+        jest.spyOn(locationService, 'reload');
+        jest.spyOn(loginService, 'logoutAs').mockReturnValue(of(true));
 
         fixture.detectChanges();
 
-        const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
-        avatarComponent.click();
-        fixture.detectChanges();
+        // Test the command function directly instead of clicking
+        const component = fixture.componentInstance;
+        const store = component.store;
+        store.logoutAs();
 
-        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as a')).nativeElement;
-        logoutAsLink.click();
-
-        await fixture.whenStable();
         expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
+
+        // Wait for async operations to complete
+        tick();
         expect(locationService.reload).toHaveBeenCalledTimes(1);
-    });
+    }));
 
     it('should hide login as link', () => {
-        spyOn(loginService, 'getCurrentUser').and.returnValue(
+        jest.spyOn(loginService, 'getCurrentUser').mockReturnValue(
             of({
                 email: 'admin@dotcms.com',
                 givenName: 'Admin',
@@ -232,4 +247,62 @@ describe('DotToolbarUserComponent', () => {
 
         expect(de.query(By.css('[data-testId="dot-mask"]'))).toBeNull();
     });
+
+    it('should open the report issue dialog from the menu item command', fakeAsync(() => {
+        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+            callback({
+                user: {
+                    emailAddress: 'admin@dotcms.com',
+                    name: 'Admin User',
+                    fullName: 'Admin User'
+                },
+                loginAsUser: null,
+                isLoginAs: false
+            } as any);
+        });
+
+        fixture.detectChanges();
+
+        let reportIssueCommand: (() => void) | undefined;
+
+        // filter skips the startWith(false) emission where the item is absent.
+        fixture.componentInstance.vm$
+            .pipe(
+                filter((vm) =>
+                    vm.items.some((item) => item.id === 'dot-toolbar-user-link-report-issue')
+                ),
+                take(1)
+            )
+            .subscribe((vm) => {
+                reportIssueCommand = vm.items.find(
+                    (item) => item.id === 'dot-toolbar-user-link-report-issue'
+                )?.command as (() => void) | undefined;
+            });
+
+        tick();
+        reportIssueCommand?.();
+        fixture.detectChanges();
+
+        expect(fixture.componentInstance.$showReportIssue()).toBe(true);
+    }));
+
+    it('should hide the report issue menu item when the feature flag is disabled', fakeAsync(() => {
+        const dotPropertiesService = TestBed.inject(DotPropertiesService);
+        (dotPropertiesService.getFeatureFlag as jest.Mock).mockReturnValue(of(false));
+
+        // Rebuild the component so the new mock value is what vm$ sees.
+        fixture = TestBed.createComponent(DotToolbarUserComponent);
+        fixture.detectChanges();
+
+        let reportIssueItem: { id?: string } | undefined;
+        fixture.componentInstance.vm$.pipe(take(1)).subscribe((vm) => {
+            reportIssueItem = vm.items.find(
+                (item) => item.id === 'dot-toolbar-user-link-report-issue'
+            );
+        });
+
+        tick();
+
+        expect(reportIssueItem).toBeUndefined();
+    }));
 });

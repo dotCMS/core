@@ -50,6 +50,10 @@
 		padding:4px ;
 		color: rgb(85,85,85);
 	}
+
+	#userRolesSelect option:checked{
+		background: light-dark(rgb(206, 206, 206), rgb(84, 84, 84));
+	}
 	
 	.tokenDivClass{
 		background:#eeeeee;

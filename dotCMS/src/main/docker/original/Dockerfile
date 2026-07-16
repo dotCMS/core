@@ -33,7 +33,7 @@ RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat && \
 # ----------------------------------------------
 # Stage 2: Final stage for minimal runtime image
 # ----------------------------------------------
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 LABEL com.dotcms.contact="support@dotcms.com" \
       com.dotcms.vendor="dotCMS LLC" \
@@ -52,19 +52,40 @@ RUN apt update && \
         libtcnative-1 \
         tzdata \
         ca-certificates \
+        libmimalloc2.0 \
         libjemalloc2 \
         openssl \
         libapr1 \
-        libpq-dev && \
+        libarchive-tools \
+        libpq-dev \
+        libvips42 \
+        libheif-plugin-aomenc \
+        apt-transport-https && \
     rm -rf /var/lib/apt/lists/*
 
-# Install PostgreSQL client and pg_dump
-RUN apt update && \
-    apt install -y --no-install-recommends postgresql-common && \
+# libvips42 (Ubuntu 24.04 = libvips 8.15.1) backs the optional libvips image engine
+# (IMAGE_API_USE_LIBVIPS=true). The stock package bundles the PDF (poppler), HEIC/AVIF
+# decode (libheif), SVG (rsvg), WebP and JPEG-XL delegates. AVIF *encode* additionally
+# needs an AV1 encoder, supplied by libheif-plugin-aomenc (a Recommends that
+# --no-install-recommends would otherwise drop). The engine is off by default; when off
+# these libraries are simply unused.
+
+# Install PostgreSQL client, pg_dump and MS jaz (java launcher).
+# postgresql-common is installed and purged in the same layer so it does not
+# bloat the final image (it is only needed as a script runner for pgdg setup).
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends postgresql-common && \
     /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
-    apt install -y --no-install-recommends postgresql-client-16 && \
-    apt purge -y postgresql-common gnupg && \
-    /usr/bin/pg_dump --version || exit 1 && \
+    wget -q "https://packages.microsoft.com/config/ubuntu/$(. /etc/os-release; echo $VERSION_ID)/packages-microsoft-prod.deb" -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        postgresql-client-18 \
+        jaz && \
+    /usr/bin/pg_dump --version && \
+    apt-get purge -y postgresql-common && \
+    apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"
@@ -92,6 +113,10 @@ CMD ["dotcms"]
 EXPOSE 4000
 # Java Debugging - must be configured via CMS_JAVA_OPTS
 EXPOSE 8000
+# JMX Remote Monitoring - must be configured via CMS_JAVA_OPTS
+EXPOSE 9999
+# JMX RMI Port - must be configured via CMS_JAVA_OPTS  
+EXPOSE 9998
 # Direct connect
 EXPOSE 8080
 # Connect from proxy, HTTP/80, non-secure

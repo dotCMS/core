@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotSpinnerComponent } from './dot-spinner.component';
-import { DotSpinnerModule } from './dot-spinner.module';
 
 describe('DotSpinnerComponent', () => {
     let component: DotSpinnerComponent;
@@ -10,8 +9,7 @@ describe('DotSpinnerComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [],
-            imports: [DotSpinnerModule]
+            imports: [DotSpinnerComponent]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotSpinnerComponent);
@@ -28,9 +26,9 @@ describe('DotSpinnerComponent', () => {
         component.borderSize = '2px';
         component.size = '20px';
         fixture.detectChanges();
-        const innerElement = fixture.debugElement.query(By.css('div'));
-        expect(innerElement.styles.cssText).toEqual(
-            'border-width: 2px; width: 20px; height: 20px;'
-        );
+        const nativeDiv: HTMLElement = fixture.debugElement.query(By.css('div')).nativeElement;
+        expect(nativeDiv.style.borderWidth).toEqual('2px');
+        expect(nativeDiv.style.width).toEqual('20px');
+        expect(nativeDiv.style.height).toEqual('20px');
     });
 });

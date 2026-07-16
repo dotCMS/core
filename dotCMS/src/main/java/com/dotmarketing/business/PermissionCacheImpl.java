@@ -6,19 +6,24 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.cache.Expirable;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.util.Logger;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
+import io.vavr.Lazy;
 
 /**
  *
@@ -28,7 +33,10 @@ import javax.validation.constraints.NotNull;
  */
 public class PermissionCacheImpl extends PermissionCache {
 
-	private DotCacheAdministrator cache;
+	static final Lazy<Integer> EMPTY_PERMISSIONS_TTL =
+			Lazy.of(() -> Config.getIntProperty("EMPTY_PERMISSIONS_TTL", 300)); // 5 minutes default
+
+	private final DotCacheAdministrator cache;
 
 	private final String primaryGroup = "PermissionCache";
 	private final String shortLivedGroup = "PermissionShortLived";
@@ -36,19 +44,24 @@ public class PermissionCacheImpl extends PermissionCache {
     private final String[] groupNames = {primaryGroup,shortLivedGroup};
 
 	protected PermissionCacheImpl() {
-        cache = CacheLocator.getCacheAdministrator();
+		this(CacheLocator.getCacheAdministrator());
+	}
+
+	PermissionCacheImpl(final DotCacheAdministrator cacheAdministrator) {
+		this.cache = cacheAdministrator;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionCache#addToPermissionCache(java.lang.String, java.util.List)
 	 */
 	protected List<Permission> addToPermissionCache(final String key, List<Permission> permissions) {
-	    if(permissions!=null && permissions.isEmpty()) {
-	        Logger.warn(this.getClass(), ()->" !!! Putting an empty list of permissions in the cache for asset:" + key +". Every asset should have at least 1 permission (or inherited permission) associated with it");
-	    }
+		if (permissions != null && permissions.isEmpty()) {
+			cache.put(primaryGroup + key, new EmptyPermissionsCacheEntry(EMPTY_PERMISSIONS_TTL.get()), primaryGroup);
+			return Collections.emptyList();
+		}
 
         // Add the key to the cache
-        cache.put(primaryGroup + key, permissions,primaryGroup);
+        cache.put(primaryGroup + key, permissions, primaryGroup);
 
         return permissions;
     }
@@ -58,22 +71,36 @@ public class PermissionCacheImpl extends PermissionCache {
 	 */
     @SuppressWarnings("unchecked")
 	protected List<Permission> getPermissionsFromCache(String key) {
-    	key = primaryGroup + key;
-    	List<Permission> perms = null;
+    	final String cacheKey = primaryGroup + key;
+    	Object cachedObject = null;
     	try{
-    		perms = (List<Permission>) cache.get(key, primaryGroup);
+    		cachedObject = cache.get(cacheKey, primaryGroup);
     	}catch (DotCacheException e) {
 			Logger.debug(this,"Cache Entry not found", e);
 		}
-        return perms;
+
+		if (cachedObject instanceof EmptyPermissionsCacheEntry) {
+			final EmptyPermissionsCacheEntry entry = (EmptyPermissionsCacheEntry) cachedObject;
+			if (entry.isExpired()) {
+				cache.remove(cacheKey, primaryGroup);
+				return null;
+			}
+
+			return Collections.emptyList();
+		}
+
+        return (List<Permission>) cachedObject;
     }
 
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionCache#clearCache()
 	 */
     public void clearCache() {
-        // clear the cache
+        // Both groups must be flushed. shortLivedGroup caches boolean
+        // doesUserHavePermission() decisions; leaving it here means role
+        // revocations do not propagate until a full Flush All.
         cache.flushGroup(primaryGroup);
+        cache.flushGroup(shortLivedGroup);
     }
 
     /* (non-Javadoc)
@@ -171,5 +198,25 @@ public class PermissionCacheImpl extends PermissionCache {
 	@Override
 	public void flushShortTermCache() {
 		cache.flushGroup(shortLivedGroup);
+	}
+
+	/**
+	 * Cache entry for empty permissions with TTL expiration.
+	 * Implements the 404 strategy - cache empty results for a limited time to avoid repeated lookups.
+	 */
+	private static class EmptyPermissionsCacheEntry implements Serializable, Expirable {
+		private static final long serialVersionUID = 1L;
+
+		private final long ttl;
+		private final LocalDateTime since;
+
+		EmptyPermissionsCacheEntry(final long ttl) {
+			this.ttl = ttl;
+			this.since = LocalDateTime.now();
+		}
+
+		public boolean isExpired() {
+			return LocalDateTime.now().isAfter(since.plusSeconds(ttl));
+		}
 	}
 }

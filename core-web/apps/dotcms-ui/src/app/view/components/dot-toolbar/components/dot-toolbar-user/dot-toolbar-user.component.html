@@ -3,9 +3,12 @@
         <div (click)="toggleMenu($event)" class="dot-mask" data-testId="dot-mask"></div>
     }
     <p-avatar
+        size="normal"
         (click)="toggleMenu($event)"
         [email]="vm.userData.email"
         data-testId="avatar"
+        shape="circle"
+        class="cursor-pointer"
         dotGravatar />
     <p-menu
         [model]="vm.items"
@@ -19,9 +22,11 @@
         <dot-my-account (shutdown)="store.showMyAccount(false)" [visible]="vm.showMyAccount" />
     }
 
-    @if (vm.showLoginAs) {
-        @defer (when vm.showLoginAs) {
-            <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs" />
-        }
+    @defer (when vm.showLoginAs) {
+        <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs" />
+    }
+
+    @defer (when $showReportIssue()) {
+        <dot-report-issue (shutdown)="closeReportIssue()" [visible]="$showReportIssue()" />
     }
 }

@@ -66,6 +66,12 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public void init() {
+        // Prevent reinitialization during shutdown
+        if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+            Logger.info(this.getClass(), "Shutdown in progress - skipping cache initialization");
+            return;
+        }
+        
         if(!isInitialized.getAndSet(true)){
             groups.invalidateAll();
             Logger.info(this.getClass(), "===== Initializing [" + getName() + "].");
@@ -212,6 +218,12 @@ public class CaffineCache extends CacheProvider {
     private DynamicTTLCache<String, Object> getCache(String cacheName) {
         if (cacheName == null) {
             throw new DotStateException("Null cache region passed in");
+        }
+
+        // Prevent cache reinitialization during shutdown
+        if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+            Logger.debug(this.getClass(), "Shutdown in progress - returning null cache for: " + cacheName);
+            return new DynamicTTLCache<>(1, 1000); // Return minimal cache to prevent NPE
         }
 
         DynamicTTLCache<String, Object> cache = groups.getIfPresent(cacheName);

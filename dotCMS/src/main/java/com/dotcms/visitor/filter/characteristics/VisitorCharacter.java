@@ -4,6 +4,7 @@ import com.dotcms.visitor.domain.Visitor.AccruedTag;
 
 import com.dotmarketing.portlets.personas.model.IPersona;
 
+import com.dotmarketing.util.WebKeys;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class VisitorCharacter extends AbstractCharacter {
         final String remoteIp = visitor.getIpAddress().getHostAddress();
 
         getMap().put("ipHash", DigestUtils.sha1Hex(remoteIp));
-        getMap().put("dmid", dmid);
+        getMap().put(WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE, dmid);
         getMap().put("device", device);
         getMap().put("weightedTags", ImmutableList.copyOf(tags));
         getMap().put("persona", (persona != null) ? persona.getKeyTag() : null);

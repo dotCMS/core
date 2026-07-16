@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 /**
  * Router service with common routing methods
@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
  */
 @Injectable()
 export class DotRouterService {
-    constructor(private router: Router) {}
+    private router = inject(Router);
 
     public goToMain(): void {
         this.router.navigate(['/c']);

@@ -2,7 +2,7 @@ package com.dotmarketing.util;
 
 import static org.apache.commons.lang.StringUtils.split;
 
-import com.dotcms.repackage.com.google.common.base.CaseFormat;
+import com.google.common.base.CaseFormat;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
@@ -548,5 +548,27 @@ public class StringUtils {
             result = result.replace(":" + entry.getKey(), entry.getValue());
         }
         return result;
+    }
+
+    /**
+     * Masks a sensitive value for safe logging: returns a fixed-width mask plus the final
+     * character so the value can be sanity-checked against its source without exposing it
+     * (e.g. {@code "s3cret"} → {@code "****t"}).
+     *
+     * <p>The fixed-width mask intentionally does not reveal the secret's real length. A
+     * single-character secret is masked entirely so its only character is never leaked, and an
+     * unset (null/empty) value is rendered as {@code "(not set)"}.</p>
+     *
+     * @param value the sensitive value (password, token, etc.); may be {@code null}
+     * @return the masked representation, never {@code null}
+     */
+    public static String maskSecret(final String value) {
+        if (!UtilMethods.isSet(value)) {
+            return "(not set)";
+        }
+        if (value.length() == 1) {
+            return "****";
+        }
+        return "****" + value.charAt(value.length() - 1);
     }
 }

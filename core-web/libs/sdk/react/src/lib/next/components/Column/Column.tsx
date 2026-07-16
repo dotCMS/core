@@ -1,7 +1,8 @@
+import { DotPageAssetLayoutColumn } from '@dotcms/types';
+import { combineClasses, getColumnPositionClasses } from '@dotcms/uve/internal';
+
 import styles from './Column.module.css';
 
-import { DotPageAssetLayoutColumn } from '../../types';
-import { combineClasses, getColumnPositionClasses } from '../../utils';
 import { Container } from '../Container/Container';
 
 /**

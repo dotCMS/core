@@ -1,9 +1,63 @@
-<textarea
-    [id]="field.variable"
-    [formControlName]="field.variable"
-    [attr.data-testId]="field.variable"
-    [style]="{
-        'min-height': '9.375rem',
-        resize: 'vertical'
-    }"
-    pInputTextarea></textarea>
+@let field = $field();
+@let showLabel = $showLabel();
+@let fieldHasError = $hasError();
+
+<dot-card-field [hasError]="fieldHasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap justify-between gap-2">
+                <p-select
+                    class="min-w-40"
+                    [class.ng-invalid]="fieldHasError"
+                    [class.ng-dirty]="fieldHasError"
+                    [options]="textAreaEditorOptions"
+                    [(ngModel)]="$selectedEditorDropdown"
+                    [ngModelOptions]="{ standalone: true }"
+                    (onChange)="onEditorChange($event.value)"
+                    data-testId="editor-selector" />
+                <dot-language-variable-selector
+                    (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+            </div>
+
+            <div class="flex min-h-0 flex-col">
+                @if ($displayedEditor() === editorTypes.PlainText) {
+                    <textarea
+                        #textarea
+                        class="min-h-37.5 w-full resize-y"
+                        [id]="field.variable"
+                        [formControlName]="field.variable"
+                        [class.ng-invalid]="fieldHasError"
+                        [class.ng-dirty]="fieldHasError"
+                        [attr.data-testId]="field.variable"
+                        pInputTextarea></textarea>
+                } @else {
+                    <dot-edit-content-monaco-editor-control
+                        #monaco
+                        [hasError]="fieldHasError"
+                        [field]="field" />
+                }
+            </div>
+        </div>
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (fieldHasError) {
+            <div class="text-red-500">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
+        }
+        @if (!fieldHasError && field.hint) {
+            <div class="text-gray-600">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

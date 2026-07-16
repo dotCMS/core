@@ -1,29 +1,46 @@
-import { Observable, forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
-    DotSiteService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotTagsService,
+    DotContentletService,
+    DotSiteService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
-
 import {
+    DotCMSContentType,
+    DotCMSContentlet,
+    DotCMSContentletVersion,
+    DotContentletDepth,
+    DotCMSResponse,
+    PaginationParams,
     CustomTreeNode,
     DotFolder,
-    TreeNodeItem
-} from '../models/dot-edit-content-host-folder-field.interface';
-import { createPaths } from '../utils/functions.util';
+    TreeNodeItem,
+    ContentByFolderParams,
+    DotCMSAPIResponse
+} from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
+
+import {
+    Activity,
+    DotContentReference,
+    DotPushPublishHistoryItem
+} from '../models/dot-edit-content.model';
 
 @Injectable()
 export class DotEditContentService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
-    readonly #siteService = inject(DotSiteService);
+    readonly #dotContentletService = inject(DotContentletService);
+    readonly #dotBrowsingService = inject(DotBrowsingService);
+    readonly #dotTagsService = inject(DotTagsService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #siteService = inject(DotSiteService);
     readonly #http = inject(HttpClient);
 
     /**
@@ -50,9 +67,9 @@ export class DotEditContentService {
             httpParams = httpParams.set('depth', depth);
         }
 
-        return this.#http
-            .get(`/api/v1/content/${id}`, { params: httpParams })
-            .pipe(pluck('entity'));
+        return this.#dotContentletService
+            .getContentletByInode(id, httpParams)
+            .pipe(map((contentlet) => contentlet));
     }
 
     /**
@@ -67,17 +84,14 @@ export class DotEditContentService {
     }
 
     /**
-     * Retrieves tags based on the provided name.
-     * @param name - The name of the tags to retrieve.
+     * Retrieves tags based on the provided filter.
+     * @param filter - The filter term to search tags by.
      * @returns An Observable that emits an array of tag labels.
      */
-    getTags(name: string): Observable<string[]> {
-        const params = new HttpParams().set('name', name);
-
-        return this.#http.get<string[]>('/api/v2/tags', { params }).pipe(
-            pluck('entity'),
-            map((res) => Object.values(res).map((obj) => obj.label))
-        );
+    getTags(filter: string): Observable<string[]> {
+        return this.#dotTagsService
+            .getTags(filter)
+            .pipe(map((tags) => tags.map((tag) => tag.label)));
     }
     /**
      * Saves a contentlet with the provided data.
@@ -107,9 +121,9 @@ export class DotEditContentService {
     }): Observable<TreeNodeItem[]> {
         const { filter, perPage, page } = data;
 
-        return this.#siteService.getSites(filter, perPage, page).pipe(
-            map((sites) => {
-                return sites.map((site) => ({
+        return this.#siteService.getSites({ filter, per_page: perPage, page }).pipe(
+            map(({ sites }) =>
+                sites.map((site) => ({
                     key: site.identifier,
                     label: site.hostname,
                     data: {
@@ -121,8 +135,8 @@ export class DotEditContentService {
                     expandedIcon: 'pi pi-folder-open',
                     collapsedIcon: 'pi pi-folder',
                     leaf: false
-                }));
-            })
+                }))
+            )
         );
     }
 
@@ -134,7 +148,7 @@ export class DotEditContentService {
      * @memberof DotEditContentService
      */
     getFolders(path: string): Observable<DotFolder[]> {
-        return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
+        return this.#dotBrowsingService.getFolders(path);
     }
 
     /**
@@ -145,76 +159,25 @@ export class DotEditContentService {
      * @returns {Observable<{ parent: DotFolder; folders: TreeNodeItem[] }>} Observable that emits an object containing the parent folder and child folders as TreeNodeItems
      */
     getFoldersTreeNode(path: string): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
-        return this.getFolders(`//${path}`).pipe(
-            map((folders) => {
-                const parent = folders.shift();
-
-                return {
-                    parent,
-                    folders: folders.map((folder) => ({
-                        key: folder.id,
-                        label: `${folder.hostName}${folder.path}`,
-                        data: {
-                            id: folder.id,
-                            hostname: folder.hostName,
-                            path: folder.path,
-                            type: 'folder'
-                        },
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder',
-                        leaf: false
-                    }))
-                };
-            })
-        );
+        return this.#dotBrowsingService.getFoldersTreeNode(path);
     }
 
     /**
-     * Builds a hierarchical tree structure based on the provided path.
-     * Splits the path into segments and creates a nested tree structure
-     * by making multiple API calls for each path segment.
+     * Builds a hierarchical tree structure for a preselected folder path using the
+     * paginated `/folder/search` endpoint so each node gets a correct `leaf` from
+     * `hasChildren`.
      *
-     * @param {string} path - The full path to build the tree from (e.g., 'hostname/folder1/folder2')
-     * @returns {Observable<CustomTreeNode>} Observable that emits a CustomTreeNode containing the complete tree structure and the target node
+     * @param {string} siteId - Site identifier for folder search scoping
+     * @param {string} hostname - Hostname used to build folder labels/paths
+     * @param {string} folderPath - Folder path within the site (e.g. `/level1/level2/`)
+     * @returns {Observable<CustomTreeNode>} Observable that emits the resolved tree and target node
      */
-    buildTreeByPaths(path: string): Observable<CustomTreeNode> {
-        const paths = createPaths(path);
-
-        const requests = paths.reverse().map((path) => {
-            const split = path.split('/');
-            const [hostName] = split;
-            const subPath = split.slice(1).join('/');
-
-            const fullPath = `${hostName}/${subPath}`;
-
-            return this.getFoldersTreeNode(fullPath);
-        });
-
-        return forkJoin(requests).pipe(
-            map((response) => {
-                const [mainNode] = response;
-
-                return response.reduce(
-                    (rta, node, index, array) => {
-                        const next = array[index + 1];
-                        if (next) {
-                            const folder = next.folders.find((item) => item.key === node.parent.id);
-                            if (folder) {
-                                folder.children = node.folders;
-                                if (mainNode.parent.id === folder.key) {
-                                    rta.node = folder;
-                                }
-                            }
-                        }
-
-                        rta.tree = node;
-
-                        return rta;
-                    },
-                    { tree: null, node: null }
-                );
-            })
-        );
+    buildTreeByPaths(
+        siteId: string,
+        hostname: string,
+        folderPath: string
+    ): Observable<CustomTreeNode> {
+        return this.#dotBrowsingService.buildTreeByPaths(siteId, hostname, folderPath);
     }
 
     /**
@@ -224,21 +187,7 @@ export class DotEditContentService {
      * @returns {Observable<TreeNodeItem>} Observable that emits the current site as a TreeNodeItem
      */
     getCurrentSiteAsTreeNodeItem(): Observable<TreeNodeItem> {
-        return this.#siteService.getCurrentSite().pipe(
-            map((site) => ({
-                key: site.identifier,
-                label: site.hostname,
-                data: {
-                    id: site.identifier,
-                    hostname: site.hostname,
-                    path: '',
-                    type: 'site'
-                },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
-                leaf: false
-            }))
-        );
+        return this.#dotBrowsingService.getCurrentSiteAsTreeNodeItem();
     }
 
     /**
@@ -253,26 +202,127 @@ export class DotEditContentService {
     }
 
     /**
+     * Get the list of pages that reference a contentlet
+     * @param identifier - The identifier of the contentlet
+     * @returns An observable that emits the list of content references
+     */
+    getContentletReferences(identifier: string): Observable<DotContentReference[]> {
+        return this.#http
+            .get<{ entity: DotContentReference[] }>(`/api/v1/content/${identifier}/references`)
+            .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
      * Get content by folder
      *
      * @param {{ folderId: string; mimeTypes?: string[] }} { folderId, mimeTypes }
      * @return {*}
      * @memberof DotEditContentService
      */
-    getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
-        const params = {
-            hostFolderId: folderId,
-            showLinks: false,
-            showDotAssets: true,
-            showPages: false,
-            showFiles: true,
-            showFolders: false,
-            showWorking: true,
-            showArchived: false,
-            sortByDesc: true,
-            mimeTypes: mimeTypes || []
-        };
+    getContentByFolder(params: ContentByFolderParams) {
+        return this.#dotBrowsingService.getContentByFolder(params);
+    }
 
-        return this.#siteService.getContentByFolder(params);
+    /**
+     * Get activities (comments) for a content
+     * @param identifier Content identifier
+     * @returns Observable of activities
+     */
+    getActivities(identifier: string): Observable<Activity[]> {
+        return this.#http
+            .get<{ entity: Activity[] }>(`/api/v1/workflow/tasks/history/comments/${identifier}`)
+            .pipe(map((x) => x?.entity));
+    }
+
+    /**
+     * Create a new activity (comment) for a content
+     * @param identifier Content identifier
+     * @param comment Comment text
+     * @returns Observable of the created activity
+     */
+    createActivity(identifier: string, comment: string): Observable<Activity> {
+        return this.#http
+            .post<
+                DotCMSAPIResponse<Activity>
+            >(`/api/v1/workflow/${identifier}/comments`, { comment })
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Creates HTTP parameters for pagination requests.
+     * Handles the logic for setting offset and limit parameters with proper defaults.
+     *
+     * @private
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters
+     * @returns {HttpParams} Configured HTTP parameters
+     */
+    private buildPaginationParams(paginationParams?: PaginationParams): HttpParams {
+        let httpParams = new HttpParams();
+
+        if (paginationParams?.limit) {
+            const offset = paginationParams.offset || 1;
+            httpParams = httpParams
+                .set('offset', offset.toString())
+                .set('limit', paginationParams.limit.toString());
+        }
+
+        return httpParams;
+    }
+
+    /**
+     * Retrieves the version history for a content item by its identifier.
+     * Returns all versions of the content including live, working, and archived versions.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
+     * @param {number} [languageId] - Optional language ID to filter versions for a specific language
+     * @returns {Observable<DotCMSResponse<DotCMSContentletVersion[]>>} Observable that emits DotCMS response with contentlet version history
+     */
+    getVersions(
+        identifier: string,
+        paginationParams?: PaginationParams,
+        languageId?: number
+    ): Observable<DotCMSResponse<DotCMSContentletVersion[]>> {
+        let httpParams = this.buildPaginationParams(paginationParams);
+
+        if (languageId) {
+            httpParams = httpParams.set('languageId', languageId.toString());
+        }
+
+        return this.#http.get<DotCMSResponse<DotCMSContentletVersion[]>>(
+            `/api/v1/content/versions/id/${identifier}/history`,
+            { params: httpParams }
+        );
+    }
+
+    /**
+     * Retrieves the push publish history for a content item by its identifier.
+     * Returns all push publish operations for the content.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
+     * @returns {Observable<DotCMSResponse<DotPushPublishHistoryItem[]>>} Observable that emits DotCMS response with push publish history
+     */
+    getPushPublishHistory(
+        identifier: string,
+        paginationParams?: PaginationParams
+    ): Observable<DotCMSResponse<DotPushPublishHistoryItem[]>> {
+        const httpParams = this.buildPaginationParams(paginationParams);
+
+        return this.#http.get<DotCMSResponse<DotPushPublishHistoryItem[]>>(
+            `/api/v1/content/${identifier}/push/history`,
+            { params: httpParams }
+        );
+    }
+
+    /**
+     * Deletes all push publish history for a content item by its identifier.
+     * Calls the /api/bundle/deletepushhistory/assetid/{identifier} endpoint.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @returns {Observable<any>} Observable that emits the deletion response
+     */
+    deletePushPublishHistory(identifier: string): Observable<unknown> {
+        return this.#http.get(`/api/bundle/deletepushhistory/assetid/${identifier}`);
     }
 }

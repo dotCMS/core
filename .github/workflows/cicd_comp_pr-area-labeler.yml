@@ -1,0 +1,155 @@
+# PR Area Labeler Component
+#
+# Applies Area : labels to PRs based on changed file paths.
+# Uses the 'changes' output from dorny/paths-filter and maps to labels
+# via the config file at .github/area-labels.yml
+#
+# Only filters with mappings in area-labels.yml will have labels applied.
+#
+# To add a new area label:
+# 1. Add filter pattern to .github/filters.yaml
+# 2. Add mapping to .github/area-labels.yml
+# That's it!
+
+name: PR Area Labeler
+
+on:
+  workflow_call:
+    inputs:
+      changes:
+        description: 'JSON array of filter names that matched (from dorny/paths-filter)'
+        type: string
+        required: true
+
+jobs:
+  apply-labels:
+    name: Apply Area Labels
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout for config
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/area-labels.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Apply Area Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Only run for pull requests
+            if (!context.payload.pull_request) {
+              console.log('Not a pull request, skipping labeling');
+              return;
+            }
+
+            const prNumber = context.payload.pull_request.number;
+
+            // Read and parse simple YAML config (key: value format)
+            // Format: filterName: "Label Name"
+            let labelMapping = {};
+            try {
+              const configContent = fs.readFileSync('.github/area-labels.yml', 'utf8');
+              const lines = configContent.split('\n');
+              for (const line of lines) {
+                // Skip comments and empty lines
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+
+                // Parse key: value or key: "value"
+                const match = trimmed.match(/^(\w+):\s*["']?([^"'#]+)["']?\s*(?:#.*)?$/);
+                if (match) {
+                  labelMapping[match[1]] = match[2].trim();
+                }
+              }
+              console.log('Label mapping:', JSON.stringify(labelMapping, null, 2));
+            } catch (e) {
+              console.error('Failed to read area-labels.yml:', e.message);
+              return;
+            }
+
+            // Parse changes array from dorny/paths-filter
+            let changes;
+            try {
+              const changesInput = '${{ inputs.changes }}';
+              // Handle empty, null, or undefined input
+              if (!changesInput || changesInput === 'null' || changesInput === '') {
+                console.log('No changes input provided, skipping labeling');
+                return;
+              }
+              changes = JSON.parse(changesInput);
+              // Ensure we have an array
+              if (!Array.isArray(changes)) {
+                console.log('Changes is not an array, skipping labeling');
+                return;
+              }
+              console.log('Changed filters:', changes);
+            } catch (e) {
+              console.error('Failed to parse changes JSON:', e.message);
+              return;
+            }
+
+            // Configuration: Set to false to keep labels even when areas are no longer changed
+            const removeStaleLabels = true;
+
+            // Get all possible area labels from config
+            const allAreaLabels = Object.values(labelMapping);
+
+            // Determine labels that should be applied based on current changes
+            const labelsToApply = [];
+            for (const filterKey of changes) {
+              if (labelMapping[filterKey]) {
+                labelsToApply.push(labelMapping[filterKey]);
+              }
+            }
+
+            console.log(`Area labels for current changes: ${labelsToApply.length > 0 ? labelsToApply.join(', ') : '(none)'}`);
+
+            // Get current PR labels
+            const { data: prData } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            const existingLabels = prData.labels.map(l => l.name);
+
+            // Determine labels to add (not already present)
+            const labelsToAdd = labelsToApply.filter(l => !existingLabels.includes(l));
+
+            // Determine stale area labels to remove (area labels that no longer apply)
+            const labelsToRemove = removeStaleLabels
+              ? existingLabels.filter(l => allAreaLabels.includes(l) && !labelsToApply.includes(l))
+              : [];
+
+            if (labelsToAdd.length === 0 && labelsToRemove.length === 0) {
+              console.log('Area labels are up to date');
+              return;
+            }
+
+            // Add new labels
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: labelsToAdd
+              });
+              console.log(`Added labels: ${labelsToAdd.join(', ')}`);
+            }
+
+            // Remove stale labels
+            for (const label of labelsToRemove) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                name: label
+              });
+              console.log(`Removed stale label: ${label}`);
+            }

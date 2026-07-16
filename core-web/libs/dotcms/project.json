@@ -3,9 +3,10 @@
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/dotcms/src",
     "projectType": "library",
+    "tags": ["skip:test", "skip:lint", "skip:build"],
     "targets": {
         "build": {
-            "executor": "@nrwl/js:tsc",
+            "executor": "@nx/js:tsc",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/dotcms",
@@ -16,27 +17,30 @@
         },
         "publish": {
             "executor": "nx:run-commands",
-            "options": {
-                "command": "node tools/scripts/publish.mjs dotcms {args.ver} {args.tag}"
-            },
             "dependsOn": [
                 {
                     "projects": "self",
                     "target": "build"
                 }
-            ]
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
+            ],
+            "options": {
+                "command": "node tools/scripts/publish.mjs dotcms {args.ver} {args.tag}"
+            }
         },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/libs/dotcms"],
+            "outputs": [
+                "{workspaceRoot}/coverage/libs/dotcms",
+                "{workspaceRoot}/target/core-web-reports"
+            ],
             "options": {
-                "jestConfig": "libs/dotcms/jest.config.ts"
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }

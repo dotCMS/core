@@ -1,7 +1,15 @@
-import { differenceInCalendarDays, format, formatDistanceStrict, isValid, parse } from 'date-fns';
-import { format as formatTZ, utcToZonedTime } from 'date-fns-tz';
+import { tz, TZDate } from '@date-fns/tz';
+import {
+    differenceInCalendarDays,
+    format,
+    formatDistanceStrict,
+    isValid,
+    Locale,
+    parse
+} from 'date-fns';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotcmsConfigService, DotTimeZone, LoginService } from '@dotcms/dotcms-js';
 import { DotLocaleOptions } from '@dotcms/dotcms-models';
@@ -13,12 +21,12 @@ const INVALID_DATE_MSG = 'Invalid date';
 export function _isValid(date: string, formatPattern: string) {
     return isValid(parse(date, formatPattern, new Date()));
 }
-
 @Injectable({
     providedIn: 'root'
 })
 export class DotFormatDateService {
-    private loginService: LoginService = inject(LoginService);
+    private loginService = inject(LoginService);
+    private dotcmsConfigService = inject(DotcmsConfigService);
 
     private defaultDateFormatOptions: Intl.DateTimeFormatOptions = {
         year: 'numeric',
@@ -29,13 +37,12 @@ export class DotFormatDateService {
         hour12: true
     };
 
-    private _systemTimeZone!: DotTimeZone;
-
-    constructor(dotcmsConfigService: DotcmsConfigService) {
-        dotcmsConfigService
-            .getSystemTimeZone()
-            .subscribe((timezone) => (this._systemTimeZone = timezone));
-    }
+    private $systemTimeZone: Signal<DotTimeZone | null> = toSignal(
+        this.dotcmsConfigService.getSystemTimeZone(),
+        {
+            initialValue: null
+        }
+    );
 
     private _localeOptions!: DotLocaleOptions;
 
@@ -48,28 +55,52 @@ export class DotFormatDateService {
     }
 
     /**
-     * @deprecated
-     * please do not use more date-fns use instead Intl.DateTimeFormat
      * @param languageId
      */
     async setLang(languageId: string) {
         let [langCode, countryCode] = languageId.replace('_', '-').split('-');
-        let localeLang;
 
         langCode = langCode?.toLowerCase() || 'en';
-        countryCode = countryCode?.toLocaleUpperCase() || 'US';
+        countryCode = countryCode?.toUpperCase() || 'US';
+
+        // Convert locale format from 'en-US' to 'enUS' for date-fns
+        const formatLocaleCode = (lang: string, country?: string) => {
+            if (country) {
+                return lang + country;
+            }
+            return lang;
+        };
 
         try {
-            localeLang = await import(`date-fns/locale/${langCode}-${countryCode}/index.js`);
-        } catch (error) {
-            try {
-                localeLang = await import(`date-fns/locale/${langCode}/index.js`);
-            } catch (error) {
-                localeLang = await import(`date-fns/locale/en-US`);
-            }
-        }
+            // Try with full locale code (e.g., 'enUS')
+            const fullLocaleCode = formatLocaleCode(langCode, countryCode);
+            const localeModule = (await import('date-fns/locale')) as unknown as Record<
+                string,
+                Locale
+            >;
 
-        this.localeOptions = { locale: localeLang.default };
+            if (fullLocaleCode in localeModule) {
+                this.localeOptions = { locale: localeModule[fullLocaleCode] };
+                return;
+            }
+
+            // Try with just language code (e.g., 'en')
+            if (langCode in localeModule) {
+                this.localeOptions = { locale: localeModule[langCode] };
+                return;
+            }
+
+            // Fallback to enUS
+            this.localeOptions = { locale: localeModule['enUS'] };
+        } catch (error) {
+            console.warn('Failed to load date locale, falling back to enUS:', error);
+            // Final fallback
+            const localeModule = (await import('date-fns/locale')) as unknown as Record<
+                string,
+                Locale
+            >;
+            this.localeOptions = { locale: localeModule['enUS'] };
+        }
     }
 
     /**
@@ -140,7 +171,7 @@ export class DotFormatDateService {
     }
 
     /**
-     * Format a date based on a pattern and in the serverTime
+     * Format a date based on a pattern and in the serverTime using date-fns v4.0 TZDate
      *
      * @param {Date} date
      * @param {string} formatPattern
@@ -148,9 +179,23 @@ export class DotFormatDateService {
      * @memberof DotFormatDateService
      */
     formatTZ(date: Date, formatPattern: string): string {
-        const zonedDate = utcToZonedTime(date, this._systemTimeZone.id);
+        const systemTimeZone = this.$systemTimeZone();
 
-        return formatTZ(zonedDate, formatPattern, { timeZone: this._systemTimeZone.id });
+        if (!systemTimeZone) {
+            return INVALID_DATE_MSG;
+        }
+
+        try {
+            // Using TZDate from @date-fns/tz with date-fns v4.0
+            const tzDate = new TZDate(date, systemTimeZone.id);
+            return format(tzDate, formatPattern, {
+                in: tz(systemTimeZone.id),
+                ...this.localeOptions
+            });
+        } catch (error) {
+            console.error('Error formatting date with timezone:', error);
+            return INVALID_DATE_MSG;
+        }
     }
 
     /**

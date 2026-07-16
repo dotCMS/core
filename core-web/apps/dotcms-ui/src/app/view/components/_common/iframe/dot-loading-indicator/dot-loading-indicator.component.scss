@@ -1,7 +1,9 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+
 @use "variables" as *;
 
 .loader__overlay {
-    background: $color-palette-white-op-70;
+    background: colors.$color-palette-white-op-70;
     bottom: 0;
     left: 0;
     position: absolute;

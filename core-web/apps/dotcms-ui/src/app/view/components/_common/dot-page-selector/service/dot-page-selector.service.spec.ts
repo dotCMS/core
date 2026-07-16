@@ -1,16 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
-import {
-    DotFolder,
-    DotPageSelectorItem
-} from '@components/_common/dot-page-selector/models/dot-page-selector.models';
-import { CoreWebService, Site } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { Site } from '@dotcms/dotcms-js';
 
 import { DotPageAsset, DotPageSelectorService } from './dot-page-selector.service';
+
+import { DotFolder, DotPageSelectorItem } from '../models/dot-page-selector.models';
 
 const MAX_RESULTS_SIZE = 20;
 
@@ -118,21 +116,15 @@ export const expectedPagesMap: DotPageSelectorItem[] = [
 ];
 
 describe('DotPageSelectorService', () => {
-    let injector: TestBed;
     let dotPageSelectorService: DotPageSelectorService;
     let httpMock: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPageSelectorService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotPageSelectorService]
         });
-        injector = getTestBed();
-        dotPageSelectorService = injector.get(DotPageSelectorService);
-        httpMock = injector.get(HttpTestingController);
+        dotPageSelectorService = TestBed.inject(DotPageSelectorService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get a page by identifier', () => {
@@ -165,7 +157,7 @@ describe('DotPageSelectorService', () => {
         });
 
         const req = httpMock.expectOne(
-            `v1/page/search?path=about-us&onlyLiveSites=true&live=false`
+            `/api/v1/page/search?path=about-us&onlyLiveSites=true&live=false`
         );
 
         req.flush(mockGetPagedResponse);

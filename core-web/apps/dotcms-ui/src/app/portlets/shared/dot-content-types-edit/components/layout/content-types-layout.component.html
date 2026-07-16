@@ -1,113 +1,98 @@
-<dot-secondary-toolbar>
-    <div class="main-toolbar-left flex align-items-center">
-        <div class="content-type__title">
-            <header>
-                <dot-icon name="{{ contentType.icon }}"></dot-icon>
-                <ng-template #inlineEditDisplayTemplate>
-                    <h4 (click)="editInlineActivate($event)">{{ contentType.name }}</h4>
-                </ng-template>
-                <ng-template #inlineEditContentTemplate>
-                    <input
-                        (keyup)="inputValueHandler($event)"
-                        [style.width.px]="contentTypeNameInputSize"
-                        [value]="contentType.name"
-                        #contentTypeNameInput
-                        dotAutofocus
-                        pInputText
-                        type="text" />
-                </ng-template>
-                <dot-inline-edit
-                    [inlineEditContentTemplate]="inlineEditContentTemplate"
-                    [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
-                    #dotEditInline></dot-inline-edit>
-            </header>
-        </div>
+<div class="h-full min-h-0 flex flex-col">
+    <p-tabs
+        [value]="$activeTab()"
+        (valueChange)="onTabChange($event)"
+        class="flex flex-col grow min-h-0">
+        <p-tablist
+            class="shrink-0"
+            [pt]="{ root: { class: '!bg-surface-50 border-b border-gray-200' } }">
+            <p-tab value="fields">
+                {{ 'contenttypes.tab.fields.header' | dm }}
+            </p-tab>
+            @if ($contentType() && $showStyleEditorTab()) {
+                <p-tab value="style-editor" data-testid="style-editor-tab">
+                    {{ 'contenttypes.tab.style.editor.header' | dm }}
+                </p-tab>
+            }
+            @if ($contentType() && $showPermissionsTab()) {
+                <p-tab value="permissions">
+                    {{ 'contenttypes.tab.permissions.header' | dm }}
+                </p-tab>
+            }
+            @if ($contentType()) {
+                <p-tab value="push-history">
+                    {{ 'contenttypes.tab.publisher.push.history.header' | dm }}
+                </p-tab>
+            }
 
-        <div class="content-type__info">
-            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
-            <dot-copy-button
-                [copy]="contentType.id"
-                [tooltipText]="contentType.id"
-                label="Copy ID"
-                data-testId="copyIdentifier"></dot-copy-button>
-            <dot-copy-button
-                [copy]="contentType.variable"
-                label="{{ 'contenttypes.content.variable' | dm }}: {{ contentType.variable }}"
-                data-testId="copyVariableName"></dot-copy-button>
-        </div>
-    </div>
-    <div class="main-toolbar-right">
-        <button
-            (click)="addContentInMenu()"
-            class="p-button-outlined content-type__add-to-menu"
-            id="add-to-menu-button"
-            label="{{ 'contenttypes.content.add_to_menu' | dm }}"
-            pButton
-            type="button"></button>
-        <button
-            (click)="openEditDialog.next()"
-            class="p-button-outlined"
-            id="form-edit-button"
-            icon="pi pi-pencil"
-            label="{{ 'contenttypes.action.edit' | dm }}"
-            pButton
-            type="button"></button>
-    </div>
-</dot-secondary-toolbar>
-<p-tabView>
-    <p-tabPanel
-        class="content-type__properties"
-        header="{{ 'contenttypes.tab.fields.header' | dm }}">
-        <div class="content-type__fields-layout" id="content-type-form-layout">
-            <div class="content-type__fields-main" id="content-type-form-main">
-                <ng-content></ng-content>
+            <!-- Actions: Settings + context menu -->
+            <div class="ml-auto flex items-center gap-4 self-center px-4">
+                <p-button
+                    data-testid="settings-btn"
+                    size="small"
+                    [label]="'contenttypes.content.settings' | dm"
+                    severity="primary"
+                    [outlined]="true"
+                    (onClick)="openEditDialog.emit($event)" />
+                <p-button
+                    type="button"
+                    icon="pi pi-ellipsis-v"
+                    severity="secondary"
+                    [rounded]="true"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="contextMenu.toggle($event)" />
+                <p-menu #contextMenu [model]="$menuItems()" [popup]="true" appendTo="body" />
             </div>
-            <div class="content-type__fields-sidebar">
-                <p-splitButton
-                    (onClick)="fireAddRowEvent()"
-                    [model]="actions"
-                    icon="pi pi-plus"
-                    label="{{ 'contenttypes.content.row' | dm }}"></p-splitButton>
-                <dot-content-types-fields-list
-                    [baseType]="contentType.baseType"></dot-content-types-fields-list>
-            </div>
-        </div>
-    </p-tabPanel>
-    <p-tabPanel
-        *ngIf="contentType"
-        [cache]="false"
-        class="content-type__relationships"
-        header="{{ 'contenttypes.tab.relationship.header' | dm }}">
-        <ng-template pTemplate="content">
-            <dot-portlet-box>
-                <dot-iframe [src]="relationshipURL"></dot-iframe>
-            </dot-portlet-box>
-        </ng-template>
-    </p-tabPanel>
-    <p-tabPanel
-        *ngIf="contentType && showPermissionsTab | async"
-        [cache]="false"
-        class="content-type__permissions"
-        header="{{ 'contenttypes.tab.permissions.header' | dm }}">
-        <ng-template pTemplate="content">
-            <dot-portlet-box>
-                <dot-iframe [src]="permissionURL"></dot-iframe>
-            </dot-portlet-box>
-        </ng-template>
-    </p-tabPanel>
-    <p-tabPanel
-        *ngIf="contentType"
-        [cache]="false"
-        class="content-type__push_history"
-        header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}">
-        <ng-template pTemplate="content">
-            <dot-portlet-box>
-                <dot-iframe [src]="pushHistoryURL"></dot-iframe>
-            </dot-portlet-box>
-        </ng-template>
-    </p-tabPanel>
-</p-tabView>
-<dot-add-to-menu
-    *ngIf="addToMenuContentType"
-    (cancel)="addToMenuContentType = false"
-    [contentType]="contentType"></dot-add-to-menu>
+        </p-tablist>
+        <p-tabpanels class="grow basis-0 min-h-0 p-0!">
+            <p-tabpanel value="fields" class="h-full min-h-0">
+                <div class="flex h-full min-h-0" id="content-type-form-layout">
+                    <div
+                        class="flex flex-col grow min-h-0 overflow-x-hidden overflow-y-auto bg-gray-200 p-6"
+                        id="content-type-form-main">
+                        <ng-content />
+                    </div>
+                    <div
+                        class="items-center w-64 flex flex-col px-3.5 min-h-0 overflow-y-auto border-l border-gray-200">
+                        <p-splitButton
+                            (onClick)="fireAddRowEvent()"
+                            [model]="actions"
+                            icon="pi pi-plus"
+                            label="{{ 'contenttypes.content.row' | dm }}" />
+                        <dot-content-types-fields-list [baseType]="$contentType().baseType" />
+                    </div>
+                </div>
+            </p-tabpanel>
+            @if ($contentType() && $showStyleEditorTab()) {
+                <p-tabpanel
+                    value="style-editor"
+                    class="h-full min-h-0"
+                    data-testid="style-editor-panel">
+                    <dot-style-editor-builder [contentType]="$contentType()" />
+                </p-tabpanel>
+            }
+            @if ($contentType() && $showPermissionsTab()) {
+                <p-tabpanel value="permissions" class="h-full">
+                    <div class="h-full">
+                        <dot-portlet-box class="h-full">
+                            <dot-iframe class="h-full" [src]="permissionURL" />
+                        </dot-portlet-box>
+                    </div>
+                </p-tabpanel>
+            }
+            @if ($contentType()) {
+                <p-tabpanel value="push-history" class="h-full">
+                    <div class="h-full">
+                        <dot-portlet-box class="h-full">
+                            <dot-iframe class="h-full" [src]="pushHistoryURL" />
+                        </dot-portlet-box>
+                    </div>
+                </p-tabpanel>
+            }
+        </p-tabpanels>
+    </p-tabs>
+</div>
+@if (addToMenuContentType) {
+    <dot-add-to-menu (cancel)="addToMenuContentType = false" [contentType]="$contentType()" />
+}

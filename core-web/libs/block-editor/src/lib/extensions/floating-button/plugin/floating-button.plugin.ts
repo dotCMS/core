@@ -13,7 +13,7 @@ import { DotUploadFileService, FileStatus } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { ImageNode } from '../../../nodes';
-import { getNodeCoords } from '../../bubble-menu/utils';
+import { getEditorElement, getNodeCoords } from '../../../shared';
 import { FloatingButtonComponent } from '../floating-button.component';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
@@ -115,10 +115,10 @@ export class DotFloatingButtonPluginView {
     }
 
     createTooltip() {
-        const { element: editorElement } = this.editor.options;
-        const editorIsAttached = !!editorElement.parentElement;
+        const editorElement = getEditorElement(this.editor);
+        const editorIsAttached = !!editorElement?.parentElement;
 
-        if (this.tippy || !editorIsAttached) {
+        if (this.tippy || !editorElement || !editorIsAttached) {
             return;
         }
 
@@ -132,7 +132,7 @@ export class DotFloatingButtonPluginView {
             placement: 'bottom-end',
             offset: [-this.offset, 0],
             hideOnClick: 'toggle'
-        });
+        }) as Instance;
     }
 
     show() {

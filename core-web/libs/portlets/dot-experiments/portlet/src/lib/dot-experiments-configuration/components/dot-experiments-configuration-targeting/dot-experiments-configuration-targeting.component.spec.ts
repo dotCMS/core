@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
@@ -89,7 +89,9 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('targeting-add-button'))).toHaveAttribute('disabled');
+        const addButton = spectator.query(byTestId('targeting-add-button'));
+        const button = addButton.querySelector('button') || addButton;
+        expect(button.hasAttribute('disabled')).toBe(true);
         expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 });

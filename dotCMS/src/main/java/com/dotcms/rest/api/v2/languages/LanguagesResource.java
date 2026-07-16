@@ -4,7 +4,7 @@ import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
@@ -35,6 +35,7 @@ import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -75,6 +76,7 @@ import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
  * Language endpoint for the v2 API
  */
 @Path("/v2/languages")
+@Tag(name = "Internationalization")
 public class LanguagesResource {
 
     private final LanguageAPI languageAPI;
@@ -218,8 +220,12 @@ public class LanguagesResource {
     public final Response saveLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final LanguageForm languageForm) throws AlreadyExistException {
-        this.webResource.init(null, request, response,
-                true, PortletID.LANGUAGES.toString());
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.LANGUAGES.toString(), PortletID.LOCALES.toString())
+                .init();
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = validateLanguageExists(languageForm);
         if(null != language && language != LanguageCacheImpl.LANG_404){
@@ -241,8 +247,12 @@ public class LanguagesResource {
             @PathParam("languageTag") final String languageTag,
             @DefaultValue("false") @QueryParam("strict") final boolean strict) throws AlreadyExistException {
         DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
-        this.webResource.init(null, request, response,
-                true, PortletID.LANGUAGES.toString());
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.LANGUAGES.toString(), PortletID.LOCALES.toString())
+                .init();
 
         final LanguageForm languageForm = this.getLanguageData(languageTag, strict);
 
@@ -341,8 +351,12 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("languageId") final String languageId,
             final LanguageForm languageForm) throws AlreadyExistException {
-        this.webResource.init(null, request, response,
-                true, PortletID.LANGUAGES.toString());
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.LANGUAGES.toString(), PortletID.LOCALES.toString())
+                .init();
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
@@ -367,8 +381,12 @@ public class LanguagesResource {
     public final Response deleteLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("languageId") final String languageId) {
-        this.webResource.init(null, request, response,
-                true, PortletID.LANGUAGES.toString());
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.LANGUAGES.toString(), PortletID.LOCALES.toString())
+                .init();
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         final Language language = languageAPI.getLanguage(languageId);
@@ -516,7 +534,7 @@ public class LanguagesResource {
                 new WebResource.InitBuilder(webResource)
                         .requiredBackendUser(true)
                         .requiredFrontendUser(true)
-                        .requiredPortlet(PortletID.LANGUAGES.toString())
+                        .requiredPortlet(PortletID.LANGUAGES.toString(), PortletID.LOCALES.toString())
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .init();
@@ -590,7 +608,7 @@ public class LanguagesResource {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet(PortletID.LANGUAGES.toString())
+                .requiredPortlet(PortletID.LANGUAGES.toString(), PortletID.LOCALES.toString())
                 .init().getUser();
 
         Logger.info(LanguagesResource.class, String.format("Switching to a new default language with id `%s`. ",languageId));

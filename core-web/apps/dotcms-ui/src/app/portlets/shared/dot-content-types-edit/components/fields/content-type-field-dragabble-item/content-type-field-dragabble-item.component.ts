@@ -1,20 +1,21 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
     HostListener,
-    Input,
     OnInit,
-    Output,
-    ViewChild
+    inject,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 
-import { OverlayPanel } from 'primeng/overlaypanel';
+import { Popover } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { camelCase } from '@dotcms/utils';
 
-import { FieldService } from '../service';
+import { getFieldIcon } from '../content-types-fields-list/content-types-fields-icon-map';
 
 /**
  * This display field after being dropped into a Content Type Drop zone
@@ -23,22 +24,28 @@ import { FieldService } from '../service';
  */
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
-    styleUrls: ['./content-type-field-dragabble-item.component.scss'],
     templateUrl: './content-type-field-dragabble-item.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false,
+    host: {
+        class: 'bg-white hover:shadow-md cursor-move flex flex-row items-center gap-3  min-h-18 transition-shadow duration-200 rounded-md border border-gray-400 mb-1 w-full box-border relative hover:z-10 group'
+    }
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
-    @Input()
-    isSmall = false;
-    @Input()
+    private dotMessageService = inject(DotMessageService);
+
+    readonly $isSmall = input<boolean>(false, { alias: 'isSmall' });
+    readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+
+    readonly remove = output<DotCMSContentTypeField>();
+    readonly edit = output<DotCMSContentTypeField>();
+
+    readonly $overlayPanel = viewChild.required<Popover>('op');
+
+    /** Local copy of field for access */
     field: DotCMSContentTypeField;
-    @Output()
-    remove: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    @Output()
-    edit: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
 
-    @ViewChild('op') overlayPanel: OverlayPanel;
-
+    isDragging = false;
     open = false;
 
     fieldAttributesArray: string[];
@@ -47,12 +54,13 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     fieldAttributesString: string;
     icon: string;
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        public fieldService: FieldService
-    ) {}
+    get variableToShow(): string {
+        const field = this.$field();
+        return field?.variable || camelCase(field?.name || '');
+    }
 
     ngOnInit(): void {
+        this.field = this.$field();
         this.fieldTypeLabel = this.field.fieldTypeLabel ? this.field.fieldTypeLabel : null;
 
         this.fieldAttributesArray = [
@@ -74,7 +82,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
 
         this.fieldAttributesString = this.fieldAttributesArray.join(', ');
 
-        this.icon = this.fieldService.getIcon(this.field.clazz);
+        this.icon = getFieldIcon(this.field.clazz);
     }
 
     /**
@@ -96,7 +104,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     onClick($event: MouseEvent) {
         $event.stopPropagation();
         this.edit.emit(this.field);
-        this.overlayPanel.hide();
+        this.$overlayPanel().hide();
     }
 
     /**
@@ -105,7 +113,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
      */
     @HostListener('mousedown')
     onMouseDown() {
-        this.overlayPanel.hide();
+        this.$overlayPanel().hide();
     }
 
     /**
@@ -116,7 +124,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     @HostListener('window:click', ['$event'])
     onWindowClick($event: MouseEvent) {
         $event.stopPropagation();
-        this.overlayPanel.hide();
+        this.$overlayPanel().hide();
     }
 
     /**
@@ -126,10 +134,10 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
      */
     openAttr($event: MouseEvent) {
         $event.stopPropagation();
-        this.overlayPanel.show($event, $event.target);
+        this.$overlayPanel().show($event, $event.target);
 
         setTimeout(() => {
-            this.overlayPanel.hide();
+            this.$overlayPanel().hide();
         }, 2000);
     }
 

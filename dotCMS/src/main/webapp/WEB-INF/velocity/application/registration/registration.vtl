@@ -2,6 +2,14 @@
 #set($theCategories = $categories.getCategoriesByEntityName("category","Preferences","$!{dotRegistrationForm.category}",true,true,3,false))
 <!-- SCRIPT FOR AJAX MANAGEMENT -->
 <script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+<!-- DWR Cookie Security Configuration -->
+<script type="text/javascript">
+	window.dwrCookieSecurityConfig = {
+		secure: $config.getBooleanProperty("DWRSESSIONID_SECURE", false),
+		sameSite: '$config.getStringProperty("DWRSESSIONID_SAMESITE", "")'
+	};
+</script>
+<script type='text/javascript' src='/html/js/dwr-cookie-security.js'></script>
 <script type='text/javascript' src='/dwr/engine.js'></script>
 <script type='text/javascript' src='/dwr/util.js'></script>
 <!-- END SCRIPT FOR AJAX MANAGEMENT -->

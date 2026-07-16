@@ -1,0 +1,130 @@
+<div class="col-span-3 row-start-1 w-full">
+    @if ($showMessage()) {
+        <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
+            <div class="flex w-full items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-info-circle"></i>
+                    <span data-testid="message-content">
+                        {{ 'content-drive.feature.state' | dm }}
+                        <b>{{ 'development' | dm }}</b>
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a
+                        href="https://community.dotcms.com/t/check-out-an-early-version-of-our-content-drive/242?u=marcboutillette"
+                        target="_blank"
+                        data-testid="learn-more-link">
+                        {{ 'content-drive.feature.learn-more' | dm }}
+                    </a>
+                    <p-button
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        type="button"
+                        icon="pi pi-times"
+                        data-testid="close-message"
+                        (click)="onCloseMessage()" />
+                </div>
+            </div>
+        </p-message>
+    }
+</div>
+
+<dot-content-drive-toolbar (upload)="onUpload()" data-testid="toolbar" />
+
+<div
+    class="col-start-1 row-span-2 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
+    [class]="$treeExpanded() ? 'w-66' : 'w-0'"
+    data-testid="tree-selector">
+    <dot-content-drive-sidebar
+        data-testid="sidebar"
+        (uploadFiles)="onRequestUpload($event)"
+        (moveItems)="onMoveItems($event)" />
+</div>
+
+<dot-content-drive-dropzone
+    data-testid="dropzone"
+    (uploadFiles)="onRequestUpload($event)"
+    class="col-start-2 row-start-3 overflow-auto">
+    <dot-folder-list-view
+        [items]="$items()"
+        [loading]="$loading()"
+        [totalItems]="$totalItems()"
+        [offset]="$offset()"
+        (paginate)="onPaginate($event)"
+        (sort)="onSort($event)"
+        (selectionChange)="onSelectItems($event)"
+        (rightClick)="onContextMenu($event)"
+        (doubleClick)="onDoubleClick($event)"
+        (dragStart)="onDragStart($event)"
+        (dragEnd)="onDragEnd()"
+        (drop)="onTableDrop($event)"
+        (scroll)="onTableScroll()"
+        #listView />
+</dot-content-drive-dropzone>
+<dot-folder-list-context-menu />
+
+<p-toast position="top-center" data-testId="content-drive-toast">
+    <ng-template let-message pTemplate="message">
+        <span
+            class="p-toast-message-icon"
+            [attr.aria-hidden]="true"
+            [attr.data-pc-section]="'icon'">
+            <dot-severity-icon [severity]="message.severity" />
+        </span>
+        <div class="p-toast-message-text">
+            <span class="p-toast-summary" innerHtml="{{ message.summary }}"></span>
+            <span class="p-toast-detail" innerHtml="{{ message.detail }}"></span>
+        </div>
+    </ng-template>
+</p-toast>
+
+@if ($contextMenuData()?.showAddToBundle) {
+    <dot-add-to-bundle
+        (cancel)="cancelAddToBundle()"
+        [assetIdentifier]="$contextMenuData().contentlet.identifier" />
+}
+
+<!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
+<div
+    class="col-start-3 row-span-2 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
+<p-dialog
+    [visible]="$dialogVisible()"
+    [header]="$activeDialog()?.header"
+    [draggable]="false"
+    [resizable]="false"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    appendTo="body"
+    data-testId="dialog"
+    [pt]="{ content: { class: $dialogContentClass() } }"
+    (visibleChange)="onVisibleChange($event)"
+    (onHide)="onDialogHidden()">
+    @switch ($activeDialog()?.type) {
+        @case (DIALOG_TYPE.FOLDER) {
+            <dot-content-drive-dialog-folder
+                data-testId="dialog-folder"
+                [folder]="$folderPayload()" />
+        }
+        @case (DIALOG_TYPE.CONTENT_TYPE_SELECTOR) {
+            @if ($contentTypeSelectorListType(); as listType) {
+                <dot-content-drive-dialog-content-type-selector
+                    data-testId="dialog-content-type-selector"
+                    [listType]="listType" />
+            }
+        }
+        @case (DIALOG_TYPE.UPLOAD_SELECTOR) {
+            @if ($uploadSelectorPayload(); as payload) {
+                <dot-content-drive-dialog-upload-selector
+                    data-testId="dialog-upload-selector"
+                    [targetFolder]="payload.targetFolder"
+                    [files]="payload.files"
+                    (selectUploadType)="onUploadTypeSelected($event)" />
+            }
+        }
+    }
+</p-dialog>
+
+<!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
+<input type="file" (change)="onFileChange($event)" #fileInput hidden />

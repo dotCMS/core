@@ -15,10 +15,13 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang.RandomStringUtils;
@@ -255,6 +258,92 @@ public class FileUtilTest {
         Assert.assertEquals(1, files1.length);
         final File[] files2 = FileUtil.listFileHandles(sourceDir.toFile(),false);
         Assert.assertEquals(1, files2.length);
+    }
+
+    /**
+     * Test to validate FileUtil.getFilesByPattern with nested directory structure.
+     * Verifies that files within multiple levels of subfolders are retrieved correctly
+     * using pattern matching instead of the deprecated listFileHandles method.
+     * @throws Exception
+     */
+    @Test
+    public void testGetFilesByPatternRecursive() throws Exception {
+        final Path rootDir = Files.createTempDirectory("test-listFileHandles-recursive");
+        try {
+            // Create nested directory structure
+            final Path level1Dir = Files.createDirectory(rootDir.resolve("level1"));
+            final Path level2Dir = Files.createDirectory(level1Dir.resolve("level2"));
+            final Path level3Dir = Files.createDirectory(level2Dir.resolve("level3"));
+
+            // Create files at root level
+            final Path rootFile1 = Files.createFile(rootDir.resolve("root_file1.txt"));
+            final Path rootFile2 = Files.createFile(rootDir.resolve("root_file2.log"));
+            Files.write(rootFile1, "Root file 1 content".getBytes());
+            Files.write(rootFile2, "Root file 2 content".getBytes());
+
+            // Create files at level 1
+            final Path level1File1 = Files.createFile(level1Dir.resolve("level1_file1.txt"));
+            final Path level1File2 = Files.createFile(level1Dir.resolve("level1_file2.json"));
+            Files.write(level1File1, "Level 1 file 1 content".getBytes());
+            Files.write(level1File2, "{\"test\": \"level 1 file 2\"}".getBytes());
+
+            // Create files at level 2
+            final Path level2File1 = Files.createFile(level2Dir.resolve("level2_file1.xml"));
+            final Path level2File2 = Files.createFile(level2Dir.resolve("level2_file2.properties"));
+            Files.write(level2File1, "<xml>Level 2 file 1</xml>".getBytes());
+            Files.write(level2File2, "key=level2file2".getBytes());
+
+            // Create files at level 3
+            final Path level3File1 = Files.createFile(level3Dir.resolve("level3_file1.txt"));
+            final Path level3File2 = Files.createFile(level3Dir.resolve("level3_file2.csv"));
+            Files.write(level3File1, "Level 3 file 1 content".getBytes());
+            Files.write(level3File2, "header1,header2\nvalue1,value2".getBytes());
+
+            // Test pattern matching for all files (*)
+            final Collection<File> allFiles = FileUtil.getFilesByPattern(rootDir.toFile(), "*");
+
+            // Should find all 8 files across all directory levels
+            Assert.assertEquals("Should find all 8 files with * pattern", 8, allFiles.size());
+
+            // Convert to file names for easier verification
+            Set<String> fileNames = allFiles.stream()
+                .map(File::getName)
+                .collect(Collectors.toSet());
+
+            // Verify files from each level are included
+            Assert.assertTrue("Should contain root level txt file", fileNames.contains("root_file1.txt"));
+            Assert.assertTrue("Should contain root level log file", fileNames.contains("root_file2.log"));
+            Assert.assertTrue("Should contain level 1 txt file", fileNames.contains("level1_file1.txt"));
+            Assert.assertTrue("Should contain level 1 json file", fileNames.contains("level1_file2.json"));
+            Assert.assertTrue("Should contain level 2 xml file", fileNames.contains("level2_file1.xml"));
+            Assert.assertTrue("Should contain level 2 properties file", fileNames.contains("level2_file2.properties"));
+            Assert.assertTrue("Should contain level 3 txt file", fileNames.contains("level3_file1.txt"));
+            Assert.assertTrue("Should contain level 3 csv file", fileNames.contains("level3_file2.csv"));
+
+            // Test pattern matching for specific file types
+            final Collection<File> txtFiles = FileUtil.getFilesByPattern(rootDir.toFile(), "*.txt");
+
+            // Should find 3 txt files across all directory levels
+            Assert.assertEquals("Should find 3 txt files with *.txt pattern", 3, txtFiles.size());
+
+            Set<String> txtFileNames = txtFiles.stream()
+                .map(File::getName)
+                .collect(Collectors.toSet());
+
+            // Should only contain txt files
+            Assert.assertTrue("Should contain root txt file", txtFileNames.contains("root_file1.txt"));
+            Assert.assertTrue("Should contain level 1 txt file", txtFileNames.contains("level1_file1.txt"));
+            Assert.assertTrue("Should contain level 3 txt file", txtFileNames.contains("level3_file1.txt"));
+
+            // Should not contain non-txt files
+            Assert.assertFalse("Should not contain log files", txtFileNames.contains("root_file2.log"));
+            Assert.assertFalse("Should not contain json files", txtFileNames.contains("level1_file2.json"));
+            Assert.assertFalse("Should not contain xml files", txtFileNames.contains("level2_file1.xml"));
+
+        } finally {
+            // Clean up
+            FileUtil.deltree(rootDir.toFile());
+        }
     }
 
     /**

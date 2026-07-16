@@ -1,30 +1,53 @@
-<dot-content-type-layout
-    *ngIf="isEditMode()"
-    (openEditDialog)="startFormDialog()"
-    (changeContentTypeName)="editContentTypeName($event)"
-    [contentType]="data">
-    <dot-content-type-fields-drop-zone
-        *ngIf="data.id"
-        (saveFields)="saveFields($event)"
-        (removeFields)="removeFields($event)"
-        (editField)="editField($event)"
-        [layout]="layout"
-        [loading]="loadingFields"
-        [contentType]="data"
-        #fieldsDropZone></dot-content-type-fields-drop-zone>
-</dot-content-type-layout>
+<router-outlet />
+@if (isEditMode()) {
+    <dot-content-type-layout
+        (openEditDialog)="startFormDialog()"
+        (changeContentTypeName)="editContentTypeName($event)"
+        [contentType]="data">
+        @if (data.id) {
+            <dot-content-type-fields-drop-zone
+                (saveFields)="saveFields($event)"
+                (removeFields)="removeFields($event)"
+                (editField)="editField($event)"
+                [layout]="layout"
+                [loading]="loadingFields()"
+                [contentType]="data"
+                #fieldsDropZone />
+        }
+    </dot-content-type-layout>
+}
 
-<dot-dialog
-    (hide)="onDialogHide()"
-    [(visible)]="show"
-    [actions]="dialogActions"
-    [closeable]="dialogCloseable"
-    [header]="templateInfo.header">
-    <dot-content-types-form
-        *ngIf="show"
-        (valid)="setDialogOkButtonState($event)"
-        (send)="handleFormSubmit($event)"
-        [layout]="layout"
-        [data]="data"
-        #form></dot-content-types-form>
-</dot-dialog>
+<p-dialog
+    [visible]="show()"
+    [header]="templateInfo.header"
+    [modal]="true"
+    [closable]="dialogCloseable"
+    [style]="{ width: '50rem' }"
+    (visibleChange)="show.set($event)"
+    (onHide)="onDialogHide()">
+    @if ($renderForm()) {
+        <dot-content-types-form
+            ($valid)="setDialogOkButtonState($event)"
+            ($send)="handleFormSubmit($event)"
+            [contentType]="data"
+            #form />
+    }
+    <ng-template pTemplate="footer">
+        @if (dialogActions?.cancel) {
+            <p-button
+                [label]="dialogActions.cancel.label"
+                [disabled]="dialogActions.cancel.disabled"
+                severity="secondary"
+                (click)="dialogActions.cancel.action?.()"
+                data-testId="dotDialogCancelAction" />
+        }
+        @if (dialogActions?.accept) {
+            <p-button
+                [label]="dialogActions.accept.label"
+                [disabled]="dialogActions.accept.disabled || savingContentType()"
+                [loading]="savingContentType()"
+                (click)="dialogActions.accept.action?.()"
+                data-testId="dotDialogAcceptAction" />
+        }
+    </ng-template>
+</p-dialog>

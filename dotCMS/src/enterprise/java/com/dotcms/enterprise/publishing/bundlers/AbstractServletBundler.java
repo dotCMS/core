@@ -25,6 +25,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.WebKeys;
 
+import com.liferay.portal.model.User;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
@@ -139,7 +140,7 @@ public abstract class AbstractServletBundler implements IBundler {
 		for(String url : bins.keySet()){
 			BinFileExportStruc binFile = bins.get(url);
 			try {
-				writeBinFile(binFile, output);
+				writeBinFile(binFile, output, APILocator.getUserAPI().getSystemUser());
 			} catch (Exception e) {
 				Logger.error(AbstractServletBundler.class,e.getMessage(), e);
 			}
@@ -307,10 +308,12 @@ public abstract class AbstractServletBundler implements IBundler {
 	 * this method takes a URI as a String from the dotCMS and then writes the output to
 	 * the file specified on the destPath
 	 * @param binFile
+	 * @param bundleOutput
+	 * @param user
 	 * @throws IOException
 	 * @throws ServletException
 	 */
-	private void writeBinFile(final BinFileExportStruc binFile, final BundleOutput bundleOutput) throws IOException {
+	private void writeBinFile(final BinFileExportStruc binFile, final BundleOutput bundleOutput, final User user) throws IOException {
 
 		if(binFile.getUri() ==null || binFile.getBinFile() ==null || binFile.getBinFile().exists() ){
 			return;
@@ -325,6 +328,7 @@ public abstract class AbstractServletBundler implements IBundler {
 		request.setRequestURI(uri);
 		request.setAttribute(WebKeys.CURRENT_HOST, binFile.getHost());
 		request.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, binFile.getLanguage());
+		request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
 
 		try (final OutputStream outputStream = bundleOutput.addFile(binFile.getBinFile().getPath())) {
 			response.setOutputStream(

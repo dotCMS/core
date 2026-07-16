@@ -1,0 +1,36 @@
+@let item = $item();
+<div data-testid="pushpublish-item" class="block w-full pb-3">
+    <div
+        data-testid="content-wrapper"
+        class="flex min-w-0 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white py-2.5 pr-2.5 pl-3">
+        <div class="flex w-full min-w-0 flex-1 flex-col gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <span
+                    data-testid="time-display"
+                    class="text-sm leading-tight font-bold text-gray-900">
+                    {{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}
+                </span>
+                <dot-copy-button
+                    [copy]="item.bundleId"
+                    [label]="'edit.content.sidebar.pushpublish.bundle.id.label' | dm"
+                    [tooltipText]="'edit.content.sidebar.pushpublish.copy.bundle.id' | dm"
+                    customClass="p-0! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case"
+                    data-testid="copy-bundle-id" />
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div
+                    class="size-6 shrink-0 overflow-hidden rounded-full [&_img]:size-full [&_img]:object-cover">
+                    <p-avatar
+                        dotGravatar
+                        [label]="item.pushedBy.charAt(0).toUpperCase()"
+                        styleClass="w-6! h-6! text-[11px]! leading-none! [&_.p-avatar-text]:leading-none!"
+                        data-testid="user-avatar" />
+                </div>
+                <span data-testid="pushpublish-user" class="min-w-0 truncate text-xs text-gray-700">
+                    {{ item.pushedBy }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

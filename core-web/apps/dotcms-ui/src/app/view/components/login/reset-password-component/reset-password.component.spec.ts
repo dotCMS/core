@@ -1,27 +1,27 @@
 import { throwError } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-
-import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
-import { ResetPasswordComponent } from '@components/login/reset-password-component/reset-password.component';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
+import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import {
+    DotcmsEventsServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
 } from '@dotcms/utils-testing';
+
+import { ResetPasswordComponent } from './reset-password.component';
+
+import { MockDotLoginPageStateService } from '../dot-login-page-resolver.service.spec';
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 const messageServiceMock = new MockDotMessageService({
     required: 'Required'
@@ -37,16 +37,7 @@ describe('ResetPasswordComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [ResetPasswordComponent],
-            imports: [
-                BrowserAnimationsModule,
-                FormsModule,
-                ReactiveFormsModule,
-                ButtonModule,
-                InputTextModule,
-                DotFieldValidationMessageComponent,
-                RouterTestingModule
-            ],
+            imports: [ResetPasswordComponent, BrowserAnimationsModule, RouterTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -61,7 +52,7 @@ describe('ResetPasswordComponent', () => {
         activatedRoute = TestBed.inject(ActivatedRoute);
         loginService = TestBed.inject(LoginService);
         dotRouterService = TestBed.inject(DotRouterService);
-        spyOn(activatedRoute.snapshot.paramMap, 'get').and.returnValue('test@test.com');
+        jest.spyOn(activatedRoute.snapshot.paramMap, 'get').mockReturnValue('test@test.com');
 
         fixture.detectChanges();
     });
@@ -85,7 +76,7 @@ describe('ResetPasswordComponent', () => {
 
     it('should display message if passwords do not match', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
-        spyOn(loginService, 'changePassword').and.callThrough();
+        jest.spyOn(loginService, 'changePassword');
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test2'
@@ -95,20 +86,21 @@ describe('ResetPasswordComponent', () => {
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testid="errorMessage"]'));
 
-        expect(errorMessage.nativeElement.innerText).toBe('password do not match');
+        expect(errorMessage.nativeElement.textContent).toBe('password do not match');
         expect(loginService.changePassword).not.toHaveBeenCalled();
     });
 
     it('should call the change password service and redirect to loging page', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
-        spyOn(loginService, 'changePassword').and.callThrough();
+        jest.spyOn(loginService, 'changePassword');
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test'
         });
         changePasswordButton.triggerEventHandler('click', {});
         expect(loginService.changePassword).toHaveBeenCalledWith('test', 'test@test.com');
+        expect(loginService.changePassword).toHaveBeenCalledTimes(1);
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
             queryParams: {
                 changedPassword: true
@@ -119,8 +111,8 @@ describe('ResetPasswordComponent', () => {
     it('should show error message form the service', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
-        spyOn(loginService, 'changePassword').and.returnValue(
-            throwError({ error: { errors: [{ message: 'error message' }] } })
+        jest.spyOn(loginService, 'changePassword').mockReturnValue(
+            throwError(() => ({ error: { errors: [{ message: 'error message' }] } }))
         );
         component.resetPasswordForm.setValue({
             password: 'test',
@@ -129,7 +121,7 @@ describe('ResetPasswordComponent', () => {
         changePasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
 
         expect(errorMessage).toEqual('error message');
     });
@@ -146,8 +138,81 @@ describe('ResetPasswordComponent', () => {
         fixture.detectChanges();
 
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
 
         expect(errorMessage).toEqual('password do not match');
+    });
+});
+
+describe('ResetPasswordComponent — HTTP contract', () => {
+    // Uses the real LoginService (not mocked) so the outgoing HTTP request
+    // is exercised. Regression guard for #35269: Angular HttpClient auto-sets
+    // Content-Type based on the body's runtime type — an object gets
+    // application/json, a string gets text/plain. The backend only accepts
+    // application/json, so the body MUST be an object.
+    let fixture: ComponentFixture<ResetPasswordComponent>;
+    let component: ResetPasswordComponent;
+    let httpMock: HttpTestingController;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [ResetPasswordComponent, BrowserAnimationsModule, RouterTestingModule],
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
+                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
+                { provide: DotRouterService, useClass: MockDotRouterService }
+            ]
+        });
+
+        fixture = TestBed.createComponent(ResetPasswordComponent);
+        component = fixture.componentInstance;
+        httpMock = TestBed.inject(HttpTestingController);
+        jest.spyOn(TestBed.inject(ActivatedRoute).snapshot.paramMap, 'get').mockReturnValue(
+            'reset-token'
+        );
+        fixture.detectChanges();
+    });
+
+    afterEach(() => httpMock.verify());
+
+    it('should POST /api/v1/changePassword with a plain-object body (not a stringified JSON)', () => {
+        component.resetPasswordForm.setValue({ password: 'new-pass', confirmPassword: 'new-pass' });
+        fixture.detectChanges();
+        fixture.debugElement
+            .query(By.css('[data-testId="submitButton"]'))
+            .triggerEventHandler('click', {});
+
+        const req = httpMock.expectOne('/api/v1/changePassword');
+
+        expect(req.request.method).toBe('POST');
+        // If the body were a string, Angular would set Content-Type: text/plain and
+        // the backend (@Consumes APPLICATION_JSON) would respond 415.
+        expect(typeof req.request.body).toBe('object');
+        expect(req.request.body).toEqual({ password: 'new-pass', token: 'reset-token' });
+
+        req.flush({ entity: 'ok' });
+    });
+
+    it('should not crash when the error body has no "errors" array', () => {
+        component.resetPasswordForm.setValue({ password: 'new-pass', confirmPassword: 'new-pass' });
+        fixture.detectChanges();
+        fixture.debugElement
+            .query(By.css('[data-testId="submitButton"]'))
+            .triggerEventHandler('click', {});
+
+        const req = httpMock.expectOne('/api/v1/changePassword');
+        // Simulate the 415 body shape observed in production (no `errors` array).
+        req.flush(
+            { message: 'HTTP 415 Unsupported Media Type' },
+            { status: 415, statusText: 'Unsupported Media Type' }
+        );
+        fixture.detectChanges();
+
+        // Component must survive without throwing "Cannot read properties of undefined (reading '0')"
+        // AND should surface the backend's fallback `message` so the user isn't left with a blank state.
+        expect(component.message).toBe('HTTP 415 Unsupported Media Type');
     });
 });

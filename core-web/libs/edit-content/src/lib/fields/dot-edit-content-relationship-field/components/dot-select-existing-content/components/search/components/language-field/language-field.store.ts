@@ -21,6 +21,7 @@ import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
 interface LanguageState {
     languages: DotLanguage[];
     selectedLanguageId: number | null;
+    pendingLanguageId: number | null;
     error: string | null;
     status: ComponentStatus;
 }
@@ -31,6 +32,7 @@ interface LanguageState {
 const initialState: LanguageState = {
     languages: [],
     selectedLanguageId: null,
+    pendingLanguageId: null,
     error: null,
     status: ComponentStatus.INIT
 };
@@ -83,6 +85,15 @@ export const LanguageFieldStore = signalStore(
         },
 
         /**
+         * Sets a pending language ID to be applied once languages are loaded.
+         * Used when writeValue is called before languages have been fetched.
+         * @param {number | null} languageId - Language ID to apply after load
+         */
+        setPendingLanguageId(languageId: number | null) {
+            patchState(store, { pendingLanguageId: languageId });
+        },
+
+        /**
          * Loads available languages from the server.
          * Updates store state with loading status and handles success/error cases.
          */
@@ -95,10 +106,18 @@ export const LanguageFieldStore = signalStore(
                     languagesService.get().pipe(
                         tapResponse({
                             next: (languages) => {
+                                const pendingId = store.pendingLanguageId();
+                                const selectedId =
+                                    pendingId && languages.find((l) => l.id === pendingId)
+                                        ? pendingId
+                                        : store.selectedLanguageId();
+
                                 patchState(store, {
                                     languages,
                                     status: ComponentStatus.LOADED,
-                                    error: null
+                                    error: null,
+                                    selectedLanguageId: selectedId,
+                                    pendingLanguageId: null
                                 });
                             },
                             error: () => {

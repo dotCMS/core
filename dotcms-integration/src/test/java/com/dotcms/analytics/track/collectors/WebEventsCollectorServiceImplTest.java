@@ -34,6 +34,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDUtil;
 import io.vavr.control.Try;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.mock;
  */
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
+@Ignore("Data Collectors have been disabled in favor of creating events via REST")
 public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
 
     private static final String PARENT_FOLDER_1_NAME = "parent-folder";

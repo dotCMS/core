@@ -1,25 +1,18 @@
 import { Observable } from 'rxjs';
 
-import {
-    AsyncPipe,
-    LowerCasePipe,
-    NgClass,
-    NgIf,
-    PercentPipe,
-    TitleCasePipe
-} from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsExperimentSummaryComponent } from './components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
@@ -30,39 +23,38 @@ import {
     VmReportExperiment
 } from './store/dot-experiments-reports-store';
 
-import { DotExperimentsDetailsTableComponent } from '../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @Component({
     selector: 'dot-experiments-reports',
-    standalone: true,
     imports: [
         AsyncPipe,
-        NgIf,
-        LowerCasePipe,
-        PercentPipe,
-        NgClass,
         DotExperimentsUiHeaderComponent,
-        DotSafeHtmlPipe,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,
         DotExperimentsReportsChartComponent,
-        DotExperimentsDetailsTableComponent,
         DotDynamicDirective,
         DotMessagePipe,
         DotExperimentsReportDailyDetailsComponent,
         TagModule,
         ButtonModule,
-        TitleCasePipe,
         ConfirmPopupModule,
-        TabViewModule
+        TabsModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
-    styleUrls: ['./dot-experiments-reports.component.scss'],
     providers: [DotExperimentsReportsStore],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col w-full h-full'
+    }
 })
 export class DotExperimentsReportsComponent implements OnInit {
+    private readonly store = inject(DotExperimentsReportsStore);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
+
     vm$: Observable<VmReportExperiment> = this.store.vm$;
     readonly axisLabelsProbabilityChart: { xAxisLabel: string; yAxisLabel: string } = {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
@@ -72,14 +64,6 @@ export class DotExperimentsReportsComponent implements OnInit {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel.bayesian'),
         yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel.bayesian')
     };
-
-    constructor(
-        private readonly store: DotExperimentsReportsStore,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit(): void {
         this.loadExperimentsResults();

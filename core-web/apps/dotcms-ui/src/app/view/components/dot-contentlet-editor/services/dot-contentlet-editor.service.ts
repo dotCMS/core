@@ -1,13 +1,12 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { catchError, filter, map, mergeMap, pluck, take } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType, DotCMSResponse } from '@dotcms/dotcms-models';
 
 interface DotAddEditEvents {
     load?: ($event: Event) => void;
@@ -28,8 +27,13 @@ export interface DotEditorAction {
  * @export
  * @class DotContentletEditorService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotContentletEditorService {
+    private http = inject(HttpClient);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+
     close$: Subject<boolean> = new Subject<boolean>();
     draggedContentType$: Subject<DotCMSContentType | DotCMSContentlet> = new Subject<
         DotCMSContentType | DotCMSContentlet
@@ -39,11 +43,6 @@ export class DotContentletEditorService {
     private _header: Subject<string> = new Subject();
     private _load: ($event: unknown) => void;
     private _keyDown: ($event: KeyboardEvent) => void;
-
-    constructor(
-        private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
 
     get addUrl$(): Observable<string> {
         return this.data.pipe(
@@ -151,12 +150,10 @@ export class DotContentletEditorService {
      * @memberof DotContentletEditorService
      */
     getActionUrl(contentTypeVariable: string): Observable<string> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/portlet/_actionurl/${contentTypeVariable}`
-            })
+        return this.http
+            .get<DotCMSResponse<string>>(`/api/v1/portlet/_actionurl/${contentTypeVariable}`)
             .pipe(
-                pluck('entity'),
+                map((response) => response.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),

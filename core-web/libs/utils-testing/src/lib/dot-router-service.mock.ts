@@ -1,7 +1,6 @@
-import { of, NEVER } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
-import {} from 'jasmine';
 
 @Injectable()
 export class MockDotRouterService {
@@ -40,33 +39,33 @@ export class MockDotRouterService {
     _currentSavedURL = '';
     pageLeaveRequest$ = NEVER;
     canDeactivateRoute$ = of(true);
-    replaceQueryParams = jasmine.createSpy('replaceQueryParams');
-    getPortletId = jasmine.createSpy('getPortletId').and.returnValue('test');
-    goToEditContentType = jasmine.createSpy('goToEditContentType');
-    goToEditContentlet = jasmine.createSpy('goToEditContentlet');
-    goToEditPage = jasmine.createSpy('goToEditPage');
-    goToEditTask = jasmine.createSpy('goToEditTask');
-    goToForgotPassword = jasmine.createSpy('goToForgotPassword');
-    goToLogin = jasmine.createSpy('goToLogin');
-    goToContent = jasmine.createSpy('goToContent');
-    goToCreateContent = jasmine.createSpy('goToCreateContent');
-    goToPreviousUrl = jasmine.createSpy('goToPreviousUrl');
-    goToStarter = jasmine.createSpy('goToStarter');
-    doLogOut = jasmine.createSpy('doLogOut');
-    goToMain = jasmine.createSpy('goToMain');
-    goToURL = jasmine.createSpy('goToURL');
-    gotoPortlet = jasmine
-        .createSpy('gotoPortlet')
-        .and.callFake(() => new Promise((resolve) => resolve(true)));
-    goToAppsConfiguration = jasmine.createSpy('goToAppsConfiguration');
-    goToUpdateAppsConfiguration = jasmine.createSpy('goToUpdateAppsConfiguration');
-    goToSiteBrowser = jasmine.createSpy('goToSiteBrowser');
-    isCurrentPortletCustom = jasmine.createSpy('isCurrentPortletCustom');
-    isJSPPortlet = jasmine.createSpy('isJSPPortlet');
-    reloadCurrentPortlet = jasmine.createSpy('reloadCurrentPortlet');
-    goToEditTemplate = jasmine.createSpy('goToEditTemplate');
-    allowRouteDeactivation = jasmine.createSpy('allowRouteDeactivation');
-    forbidRouteDeactivation = jasmine.createSpy('forbidRouteDeactivation');
+    replaceQueryParams = jest.fn();
+    getPortletId = jest.fn().mockReturnValue('test');
+    goToEditContentType = jest.fn();
+    goToEditContentlet = jest.fn();
+    goToEditPage = jest.fn();
+    goToEditTask = jest.fn();
+    goToForgotPassword = jest.fn();
+    goToLogin = jest.fn();
+    goToContent = jest.fn();
+    goToCreateContent = jest.fn();
+    goToPreviousUrl = jest.fn();
+    goToStarter = jest.fn();
+    doLogOut = jest.fn();
+    goToMain = jest.fn();
+    goToURL = jest.fn();
+    gotoPortlet = jest.fn().mockImplementation(() => new Promise((resolve) => resolve(true)));
+    goToAppsConfiguration = jest.fn();
+    goToUpdateAppsConfiguration = jest.fn();
+    goToSiteBrowser = jest.fn();
+    isCurrentPortletCustom = jest.fn();
+    isCustomPortlet = jest.fn().mockReturnValue(false);
+    isJSPPortlet = jest.fn();
+    reloadCurrentPortlet = jest.fn();
+    goToEditTemplate = jest.fn();
+    allowRouteDeactivation = jest.fn();
+    forbidRouteDeactivation = jest.fn();
+    goToEditContainer = jest.fn();
     isEditPage() {
         /* */
     }

@@ -1,6 +1,6 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
@@ -140,13 +140,13 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
         }
 
         if (direction == OrderDirection.ASC) {
-            systemContainers.stream().sorted(Comparator.comparing(this::hostname));
-            dbContainers.stream().sorted(Comparator.comparing(this::hostname));
-            fileContainers.stream().sorted(Comparator.comparing(this::hostname));
+            systemContainers.sort(Comparator.comparing(this::hostname));
+            dbContainers.sort(Comparator.comparing(this::hostname));
+            fileContainers.sort(Comparator.comparing(this::hostname));
         } else {
-            systemContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
-            dbContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
-            fileContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
+            systemContainers.sort(Comparator.comparing(this::hostname).reversed());
+            dbContainers.sort(Comparator.comparing(this::hostname).reversed());
+            fileContainers.sort(Comparator.comparing(this::hostname).reversed());
         }
 
         final PaginatedArrayList<Container> sortedByHostContainers = new PaginatedArrayList<>();

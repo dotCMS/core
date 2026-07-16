@@ -1,3 +1,5 @@
+@use "../../../../shared/colors";
+
 @use "variables" as *;
 
 $slider-core-transition:
@@ -7,7 +9,7 @@ $slider-core-transition:
     box-shadow 0.2s;
 
 .p-slider {
-    background: $color-palette-gray-300;
+    background: colors.$color-palette-gray-300;
     border: 0 none;
     border-radius: 6px;
 }
@@ -28,23 +30,23 @@ $slider-core-transition:
 .p-slider .p-slider-handle {
     height: 1.143rem;
     width: 1.143rem;
-    background: $white;
-    border: 2px solid $color-palette-primary;
+    background: colors.$white;
+    border: 2px solid colors.$color-palette-primary;
     border-radius: 50%;
     transition: $slider-core-transition;
 }
 .p-slider .p-slider-handle:focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: 0 0 0 0.2rem $color-palette-primary-400;
+    box-shadow: 0 0 0 0.2rem colors.$color-palette-primary-400;
 }
 .p-slider .p-slider-range {
-    background: $color-palette-primary;
+    background: colors.$color-palette-primary;
 }
 
 .p-slider:not(.p-disabled) .p-slider-handle:hover {
-    background: $color-palette-primary;
-    border-color: $color-palette-primary;
+    background: colors.$color-palette-primary;
+    border-color: colors.$color-palette-primary;
 }
 .p-slider.p-slider-animate.p-slider-horizontal .p-slider-handle {
     transition:

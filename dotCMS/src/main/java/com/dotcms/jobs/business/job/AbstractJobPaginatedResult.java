@@ -9,14 +9,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = JobPaginatedResult.class)
 @JsonDeserialize(as = JobPaginatedResult.class)
-public interface AbstractJobPaginatedResult {
+public interface AbstractJobPaginatedResult extends JobPaginatedResultContract<Job> {
 
     List<Job> jobs();
-
-    long total();
-
-    int page();
-
-    int pageSize();
 
 }

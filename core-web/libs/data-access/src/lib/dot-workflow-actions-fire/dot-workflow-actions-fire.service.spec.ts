@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
 import { HttpHeaders } from '@angular/common/http';
 
@@ -102,6 +102,66 @@ describe('DotWorkflowActionsFireService', () => {
         req.flush({
             entity: [mockResult]
         });
+    });
+
+    it('should fire NEW with a baseType (no contentType) in the body', (done) => {
+        const mockResult = { name: 'test' };
+
+        const requestBody = {
+            contentlet: {
+                baseType: 'FILEASSET',
+                name: 'Test'
+            }
+        };
+
+        spectator.service
+            .newContentletByBaseType('FILEASSET', { name: 'Test' })
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/NEW',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body).toEqual(requestBody);
+        expect(req.request.body.contentlet.contentType).toBeUndefined();
+        expect(req.request.headers).toEqual(defaultHeaders);
+
+        req.flush({ entity: [mockResult] });
+    });
+
+    it('should fire NEW with a baseType and FormData', (done) => {
+        const mockResult = { name: 'test' };
+        const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+
+        const requestBody = {
+            contentlet: {
+                baseType: 'FILEASSET',
+                file: file.name
+            }
+        };
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        spectator.service
+            .newContentletByBaseType('FILEASSET', { file: file.name }, formData)
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/NEW',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
+
+        req.flush({ entity: [mockResult] });
     });
 
     it('should EDIT and return the updated contentlet', (done) => {

@@ -17,7 +17,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -1144,6 +1144,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			if(populateaccept){
 				contentlet = sibbling;
+				// Load tag associations from tag_inode table BEFORE clearing the inode,
+				// otherwise setTags() (called later) cannot find them via an empty inode.
+				try {
+					contentlet.setTags();
+				} catch (Exception e) {
+					Logger.warn(this, "Could not load tags for sibling " + sib, e);
+				}
 				contentlet.setInode("");
 				Structure structure = contentlet.getStructure();
 				List<Field> list = FieldsCache.getFieldsByStructureInode(structure.getInode());

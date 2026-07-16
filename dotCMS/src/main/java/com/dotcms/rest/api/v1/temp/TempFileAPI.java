@@ -17,6 +17,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -266,15 +267,16 @@ public class TempFileAPI {
       Logger.error(this, "URL does not starts with http or https");
       return false;
     }
-    try {
+      String done;
+      try {
       final CircuitBreakerUrl urlGetter =
               CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
-      urlGetter.doString();
+       done = urlGetter.doString();
     } catch (IOException | BadRequestException e) {//If response is not 200, CircuitBreakerUrl throws BadRequestException
       return false;
     }
 
-    return true;
+    return StringUtils.isSet(done);
   }
 
   private String resolveFileName(final String desiredName, final URL url) {

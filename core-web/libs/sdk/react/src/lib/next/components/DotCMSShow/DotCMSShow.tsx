@@ -1,4 +1,4 @@
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import { useDotCMSShowWhen } from '../../hooks/useDotCMSShowWhen';
 

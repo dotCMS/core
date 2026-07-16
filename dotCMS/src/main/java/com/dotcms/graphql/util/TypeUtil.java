@@ -125,12 +125,14 @@ public class TypeUtil {
         return builder.build();
     }
 
+    final static String COLLECTION="Collection";
+
     public static String collectionizedName(final String typeName) {
-        return typeName + "Collection";
+        return typeName + COLLECTION;
     }
 
     public static String singularizeCollectionName(final String collectionName) {
-        return collectionName.replaceAll("Collection", "");
+        return collectionName.endsWith(COLLECTION) ? collectionName.substring(0,collectionName.lastIndexOf(COLLECTION)) : collectionName;
     }
 
     public static String singularizeBaseTypeCollectionName(final String baseTypeCollectionName) {

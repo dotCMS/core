@@ -1,5 +1,5 @@
 import { expect, describe, it } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -7,15 +7,14 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ConfirmationService } from 'primeng/api';
 import { Paginator } from 'primeng/paginator';
 
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { EditEmaPersonaSelectorComponent } from './edit-ema-persona-selector.component';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../../../shared/consts';
 
-export const CUSTOM_PERSONA: DotPersona = {
-    hostFolder: 'CUSTOM_HOST',
+export const CUSTOM_PERSONA: DotCMSViewAsPersona = {
     inode: 'unique-inode-id',
     host: 'CUSTOM_HOST',
     locked: true,
@@ -44,6 +43,12 @@ export const CUSTOM_PERSONA: DotPersona = {
     modUser: 'customAdmin'
 };
 
+const TEST_DEFAULT_PERSONA: DotCMSViewAsPersona = {
+    ...DEFAULT_PERSONA,
+    photo: { versionPath: '/dA/198-23423-234' },
+    url: 'example.defaultsite.com'
+};
+
 describe('EditEmaPersonaSelectorComponent', () => {
     let spectator: Spectator<EditEmaPersonaSelectorComponent>;
     let component: EditEmaPersonaSelectorComponent;
@@ -60,7 +65,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
                 useValue: {
                     getPersonas() {
                         return of({
-                            data: [DEFAULT_PERSONA, CUSTOM_PERSONA],
+                            data: [TEST_DEFAULT_PERSONA, CUSTOM_PERSONA],
                             pagination: {
                                 totalEntries: 1,
                                 page: 1,
@@ -76,9 +81,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                value: {
-                    ...DEFAULT_PERSONA
-                },
+                value: TEST_DEFAULT_PERSONA,
                 pageId: '123'
             }
         });
@@ -90,15 +93,15 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
     describe('dom', () => {
         describe('button', () => {
-            it('should not have selected class', () => {
-                expect(button.classList.contains('selected')).toBe(false);
+            it('should render the selected persona name in the button', () => {
+                expect(button.textContent).toContain(TEST_DEFAULT_PERSONA.name);
             });
 
-            it('should have selected class', () => {
+            it('should update the button label when value changes', () => {
                 component.value = CUSTOM_PERSONA;
                 spectator.detectComponentChanges();
 
-                expect(button.classList.contains('selected')).toBe(true);
+                expect(button.textContent).toContain(CUSTOM_PERSONA.name);
             });
         });
 
@@ -107,22 +110,25 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should have p-listbox hidden', () => {
-            expect(spectator.query(byTestId('persona-listbox'))).toBeNull();
+            // Popover content is appended to <body>, not the component fixture.
+            expect(document.querySelector('[data-testid="persona-listbox"]')).toBeNull();
         });
 
         it('should show p-listbox on button click', () => {
             spectator.click(button);
-            expect(spectator.query(byTestId('persona-listbox'))).not.toBeNull();
+            spectator.detectChanges();
+            expect(document.querySelector('[data-testid="persona-listbox"]')).not.toBeNull();
         });
 
         it('should set the value to the listbox', () => {
-            expect(component.listbox.value).toEqual(DEFAULT_PERSONA);
+            expect(component.listbox.value).toEqual(TEST_DEFAULT_PERSONA);
         });
 
         it('should add the chip to the personalized persona', () => {
             spectator.click(button);
+            spectator.detectChanges();
 
-            const chip = spectator.query(byTestId('persona-chip'));
+            const chip = document.querySelector('[data-testid="persona-chip"]');
 
             expect(chip).not.toBeNull();
         });
@@ -135,8 +141,9 @@ describe('EditEmaPersonaSelectorComponent', () => {
             });
 
             spectator.click(button);
+            spectator.detectChanges();
 
-            expect(spectator.query(byTestId('persona-paginator'))).not.toBeNull();
+            expect(document.querySelector('[data-testid="persona-paginator"]')).not.toBeNull();
         });
 
         it('should not show a paginator when there are less than 10 personas', () => {
@@ -147,8 +154,9 @@ describe('EditEmaPersonaSelectorComponent', () => {
             });
 
             spectator.click(button);
+            spectator.detectChanges();
 
-            expect(spectator.query(byTestId('persona-paginator'))).toBeNull();
+            expect(document.querySelector('[data-testid="persona-paginator"]')).toBeNull();
         });
     });
 
@@ -185,7 +193,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
             const onRemoveSpy = jest.spyOn(component, 'onRemove');
 
-            const removeIcon = spectator.query(byTestId('persona-chip-remove'));
+            const removeIcon = spectator.query('.p-chip-remove-icon');
             spectator.click(removeIcon);
 
             expect(onRemoveSpy).toHaveBeenCalledWith(
@@ -203,7 +211,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
             const onRemoveSpy = jest.spyOn(component, 'onRemove');
 
-            const removeIcon = spectator.query(byTestId('persona-chip-remove'));
+            const removeIcon = spectator.query('.p-chip-remove-icon');
             spectator.click(removeIcon);
 
             expect(onRemoveSpy).toHaveBeenCalledWith(

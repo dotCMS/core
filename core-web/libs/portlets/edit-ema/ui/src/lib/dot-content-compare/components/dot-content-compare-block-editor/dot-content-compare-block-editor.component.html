@@ -1,21 +1,32 @@
-<div
-    *ngIf="showAsCompare; else compareValue"
-    [innerHTML]="
-        htmlWorkingValue$ | async | dotDiff: (htmlCompareValue$ | async) : showDiff | safeHtml
-    "
-    data-testId="div-compare"></div>
+@if (showAsCompare()) {
+    <div
+        [innerHTML]="htmlWorkingValue() | dotDiff: htmlCompareValue() : showDiff() | safeHtml"
+        data-testId="div-compare"></div>
+} @else {
+    <div [innerHTML]="htmlWorkingValue() | safeHtml" data-testId="div-working"></div>
+}
 
-<ng-template #compareValue>
-    <div [innerHTML]="htmlWorkingValue$ | async | safeHtml" data-testId="div-working"></div>
-</ng-template>
-
-<dot-block-editor
-    [value]="data.working[field]"
-    [ngStyle]="{ display: 'none' }"
-    id="blockEditor"
-    #blockEditor></dot-block-editor>
-<dot-block-editor
-    [value]="data.compare[field]"
-    [ngStyle]="{ display: 'none' }"
-    id="blockEditorCompare"
-    #blockEditorCompare></dot-block-editor>
+@if (isNewBlockEditorEnabled()) {
+    <dot-block-editor
+        [value]="data().working[field()]"
+        [style.display]="'none'"
+        id="blockEditor"
+        #blockEditor />
+    <dot-block-editor
+        [value]="data().compare[field()]"
+        [style.display]="'none'"
+        id="blockEditorCompare"
+        #blockEditorCompare />
+} @else {
+    <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
+    <dot-old-block-editor
+        [value]="data().working[field()]"
+        [style.display]="'none'"
+        id="blockEditor"
+        #blockEditor />
+    <dot-old-block-editor
+        [value]="data().compare[field()]"
+        [style.display]="'none'"
+        id="blockEditorCompare"
+        #blockEditorCompare />
+}

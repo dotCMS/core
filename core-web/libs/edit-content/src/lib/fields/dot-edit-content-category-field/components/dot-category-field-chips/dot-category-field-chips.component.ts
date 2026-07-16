@@ -26,12 +26,12 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
  */
 @Component({
     selector: 'dot-category-field-chips',
-    standalone: true,
     imports: [ButtonModule, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-chips.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'dot-category-field__categories'
+        class: 'dot-category-field__categories',
+        '[class.dot-category-field__categories--disabled]': '$disabled()'
     }
 })
 export class DotCategoryFieldChipsComponent {
@@ -53,6 +53,12 @@ export class DotCategoryFieldChipsComponent {
      * @memberof DotCategoryFieldChipsComponent
      */
     $categories = input<DotCategoryFieldKeyValueObj[]>([], { alias: 'categories' });
+    /**
+     * Represents whether the component is disabled.
+     *
+     * @memberof DotCategoryFieldChipsComponent
+     */
+    $disabled = input<boolean>(false, { alias: 'disabled' });
     /**
      * Represents the variable 'label' which is of type 'string'.
      *
@@ -121,6 +127,24 @@ export class DotCategoryFieldChipsComponent {
      * @memberof DotCategoryFieldChipsComponent
      */
     toogleShowAll(): void {
+        if (this.$disabled()) {
+            return;
+        }
+
         this.$showAll.update((showAll) => !showAll);
+    }
+
+    /**
+     * Handles the remove action for a category chip.
+     *
+     * @param {string} key - The key of the category to remove
+     * @memberof DotCategoryFieldChipsComponent
+     */
+    onRemove(key: string): void {
+        if (this.$disabled()) {
+            return;
+        }
+
+        this.remove.emit(key);
     }
 }

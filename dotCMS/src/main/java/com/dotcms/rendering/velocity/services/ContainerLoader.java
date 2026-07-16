@@ -1,10 +1,14 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import javax.servlet.http.HttpServletRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -12,6 +16,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+
 import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -164,6 +169,9 @@ public class ContainerLoader implements DotLoader {
                                       final PageMode mode,
                                       final String filePath) throws DotDataException, DotSecurityException {
 
+        
+        final String transformedUUID = ContainerUUID.UUID_LEGACY_VALUE.equals(uuid) ? ContainerUUID.UUID_START_VALUE : uuid;
+
         final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         final StringBuilder velocityCodeBuilder = new StringBuilder();
         final List<ContainerStructure> containerContentTypeList = APILocator.getContainerAPI()
@@ -175,7 +183,7 @@ public class ContainerLoader implements DotLoader {
             .append(container.getIdentifier())
             .append("')");
         velocityCodeBuilder.append("#set ($CONTAINER_UNIQUE_ID = '")
-            .append(uuid)
+            .append(transformedUUID)
             .append("')");
         velocityCodeBuilder.append("#set ($CONTAINER_INODE = '")
             .append(container.getInode())
@@ -221,7 +229,7 @@ public class ContainerLoader implements DotLoader {
             }
 
 
-            if (mode == PageMode.EDIT_MODE) {
+            if (mode == PageMode.EDIT_MODE ) {
                 final StringWriter editWrapperDiv = new StringWriter();
 
                 editWrapperDiv.append("<div")
@@ -232,7 +240,7 @@ public class ContainerLoader implements DotLoader {
                     .append(" data-dot-identifier=")
                     .append("\"" + this.getDataDotIdentifier(container) + "\"")
                     .append(" data-dot-uuid=")
-                    .append("\"" + uuid + "\"")
+                    .append("\"" + transformedUUID + "\"")
                     .append(" data-max-contentlets=")
                     .append("\"" + container.getMaxContentlets() + "\"")
                     .append(" data-dot-accept-types=")
@@ -323,8 +331,12 @@ public class ContainerLoader implements DotLoader {
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
 
-                if (mode == PageMode.EDIT_MODE) {
+                final boolean trackingWrapperEnabled =
+                        mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled());
+
+                if (trackingWrapperEnabled) {
                     velocityCodeBuilder.append("<div")
+                        .append(" class=\"dotcms-contentlet\"")
                         .append(" data-dot-object=")
                         .append("\"contentlet\"")
                         .append(" data-dot-on-number-of-pages=")
@@ -349,6 +361,11 @@ public class ContainerLoader implements DotLoader {
                         .append("\"$CONTENT_TYPE_ID\"")
                         .append(" data-dot-has-page-lang-version=")
                         .append("\"$HAVE_A_VERSION\"")
+                        // Append dotStyleProperties
+                        .append("#if($dotContentMap.dotStyleProperties)")
+                            .append(" data-dot-style-properties=")
+                            .append("\"$esc.html($json.generate($dotContentMap.dotStyleProperties))\"")
+                        .append("#end")
                         .append(">");
                 }
                 
@@ -389,7 +406,7 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
 
                // end content dot-data-content
-                if (mode == PageMode.EDIT_MODE) {
+                if (trackingWrapperEnabled) {
                     velocityCodeBuilder.append("</div>");
                 }
 
@@ -426,8 +443,24 @@ public class ContainerLoader implements DotLoader {
         return writeOutVelocity(filePath, containerCode);
     }
 
+    private boolean isAnalyticsTrackingEnabled() {
+        try {
 
-
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost();
+            if (!UtilMethods.isSet(host)) {
+                Logger.debug(this, () -> "Analytics tracking disabled: no current host resolved from request");
+                return false;
+            }
+            final boolean enabled = ContentAnalyticsUtil.isContentTrackingEnabled(host);
+            Logger.debug(this, () -> String.format(
+                    "Analytics tracking for host '%s' (id '%s'): enabled=%s",
+                    host.getHostname(), host.getIdentifier(), enabled));
+            return enabled;
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Could not check Content Analytics app for current host: " + e.getMessage());
+            return false;
+        }
+    }
 
 
 

@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LoginAsAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -52,7 +52,7 @@ class AuthenticationHelper {
     * @throws DotDataException
     * @throws DotSecurityException
     */
-    public Map<String, Map> getUsers(final HttpServletRequest request) throws DotDataException, DotSecurityException,
+    public Map<String, Map<String,Object>> getUsers(final HttpServletRequest request) throws DotDataException, DotSecurityException,
             IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         User principalUser = loginAsAPI.getPrincipalUser( WebSessionContext.getInstance( request ));
         User loginAsUser = null;
@@ -63,7 +63,7 @@ class AuthenticationHelper {
             loginAsUser = this.loginService.getLoggedInUser( request );
         }
 
-        final Map<String, Map> resultMap = new HashMap<>();
+        final Map<String, Map<String,Object>> resultMap = new HashMap<>();
         resultMap.put(AuthenticationResource.USER, principalUser != null ? principalUser.toMap() : null);
         resultMap.put(AuthenticationResource.LOGIN_AS_USER, loginAsUser != null ? loginAsUser.toMap() : null);
         return resultMap;

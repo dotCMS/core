@@ -1,0 +1,21 @@
+{
+    "name": "global-store",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/global-store/src",
+    "prefix": "lib",
+    "projectType": "library",
+    "tags": ["type:state", "scope:global", "app:dotcms-ui"],
+    "targets": {
+        "test": {
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
+            }
+        }
+    }
+}

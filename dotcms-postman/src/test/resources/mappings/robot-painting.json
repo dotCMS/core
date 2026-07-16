@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/i",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -14,7 +13,8 @@
       {
         "matchesJsonPath": "$[?(@.prompt == 'Image of a robot painting the sixteen chapel')]"
       }
-    ]
+    ],
+    "urlPathPattern": "/images/generations"
   },
   "response": {
     "status": 200,

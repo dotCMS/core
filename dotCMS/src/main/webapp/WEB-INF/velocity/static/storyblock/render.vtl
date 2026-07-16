@@ -49,20 +49,44 @@
                 *##renderContentBlock($element.content)#*
             *#</blockquote>#*
         *##elseif( $element.type == "table" )
-#*          *#<table>#renderContentBlock($element.content)</table>
+#*          *#<table#if($!element.attrs.ariaLabel) aria-label="$esc.html($!element.attrs.ariaLabel)"#end#if($!element.attrs.ariaLabelledby) aria-labelledby="$esc.html($!element.attrs.ariaLabelledby)"#end>#if($!element.attrs.caption)<caption>$esc.html($!element.attrs.caption)</caption>#end#renderContentBlock($element.content)</table>
 #*      *##elseif( $element.type == "tableRow" )
 #*        *#  <tr>
 #*        *##renderContentBlock($element.content)
 #*        *#  </tr>
 #*      *##elseif( $element.type == "tableHeader" )
-#*      *#    <th colspan="$!element.attrs.colspan" rowspan="$!element.attrs.rowspan" colwidth="$!element.attrs.colwidth" >#renderContentBlock($element.content)</th>
+#*      *#    <th colspan="$!element.attrs.colspan" rowspan="$!element.attrs.rowspan" colwidth="$!element.attrs.colwidth"#if($!element.attrs.scope) scope="$!element.attrs.scope"#end>#renderContentBlock($element.content)</th>
 #*      *##elseif( $element.type == "tableCell" )
 #*      *#    <td colspan="$!element.attrs.colspan" rowspan="$!element.attrs.rowspan" colwidth="$!element.attrs.colwidth" >#renderContentBlock($element.content)</td>
 #*      *##elseif( $element.type == "hardBreak" )#*
             *#<br />
 #*      *##elseif( $element.type == "horizontalRule" )
 #*          *#<hr />
-#*      *##elseif( $element.type == "text" )#*
+#*      *##elseif( $element.type == "dotImage" )#*
+            *##if($dotStoryBlockRenderHelper)#*
+                *#$dotStoryBlockRenderHelper.render($element)#*
+            *##else#*
+                *##set($item = $element)#*
+                *##parse("static/storyblock/dotImage.vtl")#*
+            *##end#*
+        *##elseif( $element.type == "dotContent" )#*
+            *##if($dotStoryBlockRenderHelper)#*
+                *#$dotStoryBlockRenderHelper.render($element)#*
+            *##else#*
+                *##set($item = $element)#*
+                *##parse("static/storyblock/dotContent.vtl")#*
+            *##end#*
+        *##elseif( $element.type == "dotVideo" )#*
+            *##if($dotStoryBlockRenderHelper)#*
+                *#$dotStoryBlockRenderHelper.render($element)#*
+            *##else#*
+                *##set($item = $element)#*
+                *##parse("static/storyblock/dotVideo.vtl")#*
+            *##end#*
+        *##elseif( $element.type == "gridBlock" )#*
+            *##set($item = $element)#*
+            *##parse("static/storyblock/gridBlock.vtl")#*
+        *##elseif( $element.type == "text" )#*
             *##renderMarks($element)#*
         *##end#*
     *##end#*

@@ -1,12 +1,16 @@
+import { DragulaModule } from 'ng2-dragula';
+
 import { Component, inject, Input, OnInit, signal } from '@angular/core';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
-import { FieldUtil } from '@dotcms/utils-testing';
-import { FIELD_ICONS } from '@portlets/shared/dot-content-types-edit/components/fields/content-types-fields-list/content-types-fields-icon-map';
+import { DotFieldService } from '@dotcms/data-access';
+import { DotCMSClazz, DotCMSClazzes } from '@dotcms/dotcms-models';
+import { FieldUtil } from '@dotcms/utils';
+
+import { FIELD_ICONS } from './content-types-fields-icon-map';
 
 import { FieldType } from '..';
-import { FieldService } from '../service';
 /**
  * Show all the Field Types
  *
@@ -15,8 +19,8 @@ import { FieldService } from '../service';
  */
 @Component({
     selector: 'dot-content-types-fields-list',
-    styleUrls: ['./content-types-fields-list.component.scss'],
-    templateUrl: './content-types-fields-list.component.html'
+    templateUrl: './content-types-fields-list.component.html',
+    imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {
     @Input() baseType: string;
@@ -24,24 +28,24 @@ export class ContentTypesFieldsListComponent implements OnInit {
     $fieldTypes = signal<{ clazz: string; name: string }[]>([]);
     fieldIcons = FIELD_ICONS;
 
-    #dotFormFields = [
-        'com.dotcms.contenttype.model.field.ImmutableBinaryField',
-        'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
-        'com.dotcms.contenttype.model.field.ImmutableDateField',
-        'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-        'com.dotcms.contenttype.model.field.ImmutableTimeField',
-        'com.dotcms.contenttype.model.field.ImmutableKeyValueField',
-        'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
-        'com.dotcms.contenttype.model.field.ImmutableRadioField',
-        'com.dotcms.contenttype.model.field.ImmutableSelectField',
-        'com.dotcms.contenttype.model.field.ImmutableTagField',
-        'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
-        'com.dotcms.contenttype.model.field.ImmutableTextField'
+    #dotFormFields: DotCMSClazz[] = [
+        DotCMSClazzes.BINARY,
+        DotCMSClazzes.CHECKBOX,
+        DotCMSClazzes.DATE,
+        DotCMSClazzes.DATE_AND_TIME,
+        DotCMSClazzes.TIME,
+        DotCMSClazzes.KEY_VALUE,
+        DotCMSClazzes.MULTI_SELECT,
+        DotCMSClazzes.RADIO,
+        DotCMSClazzes.SELECT,
+        DotCMSClazzes.TAG,
+        DotCMSClazzes.TEXTAREA,
+        DotCMSClazzes.TEXT
     ];
 
     #backListFields = ['relationships_tab', 'permissions_tab', 'tab_divider'];
 
-    readonly #fieldService = inject(FieldService);
+    readonly #fieldService = inject(DotFieldService);
 
     ngOnInit(): void {
         this.#fieldService
@@ -53,9 +57,6 @@ export class ContentTypesFieldsListComponent implements OnInit {
                 take(1)
             )
             .subscribe((fields: FieldType[]) => {
-                const LIVE_DIVIDER_CLAZZ =
-                    'com.dotcms.contenttype.model.field.ImmutableLineDividerField';
-
                 const mappedFields = fields.map((fieldType: FieldType) => {
                     return {
                         clazz: fieldType.clazz,
@@ -63,14 +64,14 @@ export class ContentTypesFieldsListComponent implements OnInit {
                     };
                 });
                 let fieldsFiltered = mappedFields.filter(
-                    (field) => field.clazz !== LIVE_DIVIDER_CLAZZ
+                    (field) => field.clazz !== DotCMSClazzes.LINE_DIVIDER
                 );
                 if (this.baseType === 'FORM') {
                     fieldsFiltered = fieldsFiltered.filter((field) => this.isFormField(field));
                 }
 
                 const LINE_DIVIDER = mappedFields.find(
-                    (field) => field.clazz === LIVE_DIVIDER_CLAZZ
+                    (field) => field.clazz === DotCMSClazzes.LINE_DIVIDER
                 );
 
                 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
@@ -79,6 +80,6 @@ export class ContentTypesFieldsListComponent implements OnInit {
     }
 
     private isFormField(field: { clazz: string; name: string }): boolean {
-        return this.#dotFormFields.includes(field.clazz);
+        return this.#dotFormFields.includes(field.clazz as DotCMSClazz);
     }
 }

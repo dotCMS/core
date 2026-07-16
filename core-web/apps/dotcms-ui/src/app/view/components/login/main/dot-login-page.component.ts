@@ -1,25 +1,33 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
-import { pluck, take } from 'rxjs/operators';
+import { CardModule } from 'primeng/card';
 
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
+import { map, take } from 'rxjs/operators';
+
 import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
+
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
     selector: 'dot-login-page-component',
     styleUrls: ['./dot-login-page.component.scss'],
-    templateUrl: 'dot-login-page.component.html'
+    templateUrl: 'dot-login-page.component.html',
+    imports: [RouterOutlet, CardModule]
 })
 /**
  * The login component allows set the background image and background color.
  */
 export class DotLoginPageComponent implements OnInit {
-    constructor(public loginPageStateService: DotLoginPageStateService) {}
+    loginPageStateService = inject(DotLoginPageStateService);
 
     ngOnInit(): void {
         this.loginPageStateService
             .get()
-            .pipe(take(1), pluck('entity'))
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            )
             .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
                 document.body.style.backgroundColor =
                     dotLoginUserSystemInformation.backgroundColor || '';
@@ -27,6 +35,9 @@ export class DotLoginPageComponent implements OnInit {
                     dotLoginUserSystemInformation.backgroundPicture
                         ? `url('${dotLoginUserSystemInformation.backgroundPicture}')`
                         : '';
+                document.body.style.backgroundPosition = 'top center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundSize = 'cover';
             });
     }
 }

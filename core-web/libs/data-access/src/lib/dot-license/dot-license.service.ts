@@ -1,9 +1,9 @@
 import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck, map, take, tap } from 'rxjs/operators';
+import { map, take, tap } from 'rxjs/operators';
 
 import { ResponseView } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
@@ -84,19 +84,16 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
  */
 @Injectable()
 export class DotLicenseService {
+    private readonly http = inject(HttpClient);
+
     unlicenseData: Subject<DotUnlicensedPortletData> = new BehaviorSubject({
         icon: '',
         titleKey: '',
         url: ''
     });
-    private licenseURL: string;
+    private licenseURL = '/api/v1/appconfiguration';
 
     private license?: DotLicense;
-
-    constructor(private readonly http: HttpClient) {
-        this.licenseURL = '/api/v1/appconfiguration';
-    }
-
     /**
      * Gets if current user has an enterprise license
      *
@@ -130,7 +127,7 @@ export class DotLicenseService {
             return url.indexOf(item.url) === 0;
         });
         if (urlMatch.length) {
-            this.unlicenseData.next(...urlMatch);
+            this.unlicenseData.next(urlMatch[0]);
         }
 
         return !!urlMatch.length;
@@ -140,7 +137,7 @@ export class DotLicenseService {
         if (this.license) return of(this.license);
 
         return this.http.get<ResponseView>(this.licenseURL).pipe(
-            pluck('entity', 'config', 'license'),
+            map((x) => x?.entity?.config?.license),
             tap((license) => {
                 this.setLicense(license);
             })
@@ -155,7 +152,7 @@ export class DotLicenseService {
     updateLicense(): void {
         this.http
             .get<ResponseView>(this.licenseURL)
-            .pipe(pluck('entity', 'config', 'license'))
+            .pipe(map((x) => x?.entity?.config?.license))
             .subscribe((license) => {
                 this.setLicense(license);
             });

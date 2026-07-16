@@ -3,6 +3,9 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+
+import { DotContentletStatusBadgeComponent, DotContentThumbnailComponent } from '@dotcms/ui';
 
 // Shared
 import {
@@ -17,7 +20,15 @@ import {
 import { SuggestionsService } from './services';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, ButtonModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        ButtonModule,
+        TagModule,
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent
+    ],
     declarations: [
         SuggestionsComponent,
         SuggestionListComponent,

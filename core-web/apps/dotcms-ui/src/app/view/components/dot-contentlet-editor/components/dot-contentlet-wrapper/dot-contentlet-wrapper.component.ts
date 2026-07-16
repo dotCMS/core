@@ -1,14 +1,18 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotIframeService,
     DotMessageService,
-    DotRouterService,
-    DotIframeService
+    DotRouterService
 } from '@dotcms/data-access';
+import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
+import { DotCustomEventHandlerService } from './../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 export interface DotCMSEditPageEvent {
@@ -32,9 +36,18 @@ interface DotCSMSavePageEvent {
 @Component({
     selector: 'dot-contentlet-wrapper',
     templateUrl: './dot-contentlet-wrapper.component.html',
-    styleUrls: ['./dot-contentlet-wrapper.component.scss']
+    styleUrls: ['./dot-contentlet-wrapper.component.scss'],
+    imports: [DotIframeDialogComponent]
 })
 export class DotContentletWrapperComponent {
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotEventsService = inject(DotEventsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotRouterService = inject(DotRouterService);
+    private dotIframeService = inject(DotIframeService);
+    private titleService = inject(Title);
+
     @Input()
     header = '';
 
@@ -51,15 +64,9 @@ export class DotContentletWrapperComponent {
     private _appMainTitle = '';
     private readonly customEventsHandler;
 
-    constructor(
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotEventsService: DotEventsService,
-        private dotMessageService: DotMessageService,
-        private dotRouterService: DotRouterService,
-        private dotIframeService: DotIframeService,
-        private titleService: Title
-    ) {
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+
+    constructor() {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
                 close: ({ detail: { data } }: CustomEvent) => {
@@ -149,6 +156,19 @@ export class DotContentletWrapperComponent {
         this.isContentletModified = false;
         this.header = '';
         this.shutdown.emit();
+
+        const searchParams = new URL(
+            this.dotRouterService.currentPortlet.url,
+            window.location.origin
+        ).searchParams;
+
+        const contentDriveParams = mapParamsFromEditContentlet(searchParams);
+
+        if (Object.keys(contentDriveParams).length) {
+            this.dotRouterService.gotoPortlet('content-drive', {
+                queryParams: contentDriveParams
+            });
+        }
     }
 
     /**
@@ -160,6 +180,10 @@ export class DotContentletWrapperComponent {
     onCustomEvent($event: CustomEvent): void {
         if (this.customEventsHandler[$event.detail.name]) {
             this.customEventsHandler[$event.detail.name]($event);
+        } else {
+            // Some custom event is not handled by the customEventsHandler.
+            // Let's handle it with the dotCustomEventHandlerService.
+            this.dotCustomEventHandlerService.handle($event);
         }
 
         this.custom.emit($event);

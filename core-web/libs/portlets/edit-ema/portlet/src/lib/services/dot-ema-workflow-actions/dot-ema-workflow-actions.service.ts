@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -52,14 +52,12 @@ export const WORKFLOW_STEP_MAP: { [key in DotWizardComponentEnum]: boolean } = {
 
 @Injectable()
 export class DotEmaWorkflowActionsService {
-    constructor(
-        private pushPublishService: PushPublishService,
-        private dotMessageService: DotMessageService,
-        private messageService: MessageService,
-        private dotWizardService: DotWizardService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotFormatDateService: DotFormatDateService
-    ) {}
+    private pushPublishService = inject(PushPublishService);
+    private dotMessageService = inject(DotMessageService);
+    private messageService = inject(MessageService);
+    private dotWizardService = inject(DotWizardService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotFormatDateService = inject(DotFormatDateService);
 
     /**
      * Handle the workflow action, open the wizard and fire the action.

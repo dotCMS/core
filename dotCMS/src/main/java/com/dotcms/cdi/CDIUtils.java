@@ -1,13 +1,25 @@
 package com.dotcms.cdi;
 
 import com.dotmarketing.util.Logger;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
+import org.jboss.weld.bean.builtin.BeanManagerProxy;
+import org.jboss.weld.bootstrap.api.ServiceRegistry;
+import org.jboss.weld.manager.BeanManagerImpl;
+import org.jboss.weld.resources.ClassTransformer;
+import org.jboss.weld.resources.ReflectionCache;
+import org.jboss.weld.resources.SharedObjectCache;
 
 /**
  * Utility class to get beans from CDI container
  */
 public class CDIUtils {
+
+    private static final AtomicBoolean cleanupFlag = new AtomicBoolean(false);
 
     /**
      * Private constructor to avoid instantiation
@@ -43,6 +55,95 @@ public class CDIUtils {
             String errorMessage = String.format("Unable to find bean of class [%s]: %s", clazz, e.getMessage());
             Logger.error(CDIUtils.class, errorMessage);
             throw new IllegalStateException(errorMessage, e);
+        }
+    }
+
+    /**
+     * Get all beans of a given type from CDI container
+     * @param clazz the class of the beans
+     * @return a List containing all beans of the given type
+     * @param <T> the type of the beans
+     */
+    public static <T> List<T> getBeans(Class<T> clazz) {
+        try {
+            return CDI.current().select(clazz).stream()
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            String errorMessage = String.format("Unable to find beans of class [%s]: %s", clazz, e.getMessage());
+            Logger.error(CDIUtils.class, errorMessage);
+            throw new IllegalStateException(errorMessage, e);
+        }
+    }
+
+    /**
+     * Get BeanManager implementation
+     * @return BeanManagerImpl
+     */
+    private static Optional<BeanManagerImpl> getBeanManagerImpl() {
+        final BeanManager beanManager = CDI.current().getBeanManager();
+        if (beanManager instanceof BeanManagerImpl) {
+            return Optional.of ((BeanManagerImpl) beanManager);
+        }
+        if (beanManager instanceof BeanManagerProxy) {
+            BeanManagerProxy proxy = (BeanManagerProxy) beanManager;
+            return Optional.of(proxy.delegate());
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * This method cleans the internal cache of the bean manager
+     * CDI will continue to work But use with caution
+     */
+    public static void cleanUpCache() {
+        if (!cleanupFlag.compareAndSet(false, true)) {
+            Logger.debug(CDIUtils.class,"Cleanup already performed");
+            return;
+        }
+        try {
+            internalCleanUp();
+        } finally {
+            cleanupFlag.set(false);
+        }
+    }
+
+    /**
+     * internal method
+     */
+    private static void internalCleanUp() {
+        final Optional<BeanManagerImpl> beanManager = getBeanManagerImpl();
+        if (beanManager.isEmpty()) {
+            Logger.warn(CDIUtils.class, "BeanManager not available");
+            return;
+        }
+
+        final ServiceRegistry services = beanManager.get().getServices();
+        if (services == null) {
+            Logger.warn(CDIUtils.class, "ServiceRegistry not available");
+            return;
+        }
+
+        final ClassTransformer classTransformer = services.get(ClassTransformer.class);
+        if (classTransformer == null) {
+            Logger.warn(CDIUtils.class, "ClassTransformer not available");
+            return;
+        }
+
+        try {
+            classTransformer.cleanup();
+
+            if (classTransformer.getSharedObjectCache() != null) {
+                classTransformer.getSharedObjectCache().cleanup();
+            }
+
+            if (classTransformer.getReflectionCache() != null) {
+                classTransformer.getReflectionCache().cleanup();
+            }
+
+            Logger.info(CDIUtils.class, "BeanManager cache cleared");
+        } catch (Exception e) {
+            Logger.error(CDIUtils.class, "Cache cleanup failed", e);
+            throw e;
         }
     }
 

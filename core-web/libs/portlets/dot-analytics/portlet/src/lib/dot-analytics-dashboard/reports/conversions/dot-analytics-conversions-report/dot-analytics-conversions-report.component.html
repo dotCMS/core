@@ -1,0 +1,61 @@
+<!--
+  12-column grid (md+):
+  - Row 1: each of the 3 metrics col-span-4 (3 × 4 = 12).
+  - Row 2: conversion trend col-span-6 + traffic vs conversions col-span-6.
+  - Row 3: content conversions table col-span-12.
+  - Row 4: conversions overview table col-span-12.
+  Below md: grid-cols-1, stacked.
+-->
+<div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
+    @for (metric of $metricsData(); track metric.name) {
+        <div class="min-w-0 md:col-span-4">
+            <dot-analytics-metric
+                [title]="metric.name"
+                [value]="metric.value"
+                [format]="metric.format ?? 'number'"
+                [subtitle]="metric.subtitle"
+                [icon]="metric.icon"
+                [status]="metric.status"
+                data-testid="analytics-metric-card" />
+        </div>
+    }
+
+    <div class="min-w-0 md:col-span-6">
+        <dot-analytics-chart
+            [title]="'analytics.charts.conversion-trend.title'"
+            type="line"
+            [data]="$conversionTrendData()"
+            [status]="$conversionTrendStatus()"
+            data-testid="analytics-conversion-trend-chart" />
+    </div>
+    <div class="min-w-0 md:col-span-6">
+        <dot-analytics-chart
+            [title]="$trafficVsConversionsTitle()"
+            type="bar"
+            [data]="$trafficVsConversionsData()"
+            [status]="$trafficVsConversionsStatus()"
+            data-testid="analytics-traffic-conversions-chart" />
+    </div>
+
+    <div class="min-w-0 md:col-span-12">
+        <p-card>
+            <ng-template #title>
+                {{ 'analytics.table.content-conversions.title' | dm }}
+            </ng-template>
+            <dot-analytics-content-conversions-table
+                [data]="$contentConversionsData()"
+                [status]="$contentConversionsStatus()" />
+        </p-card>
+    </div>
+
+    <div class="min-w-0 md:col-span-12">
+        <p-card>
+            <ng-template #title>
+                {{ 'analytics.table.conversions-overview.title' | dm }}
+            </ng-template>
+            <dot-analytics-conversions-overview-table
+                [data]="$conversionsOverviewData()"
+                [status]="$conversionsOverviewStatus()" />
+        </p-card>
+    </div>
+</div>

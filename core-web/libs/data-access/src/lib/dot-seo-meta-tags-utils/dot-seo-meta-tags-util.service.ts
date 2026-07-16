@@ -1,14 +1,14 @@
 import { Observable, from, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import {
     DotCMSTempFile,
     IMG_NOT_FOUND_KEY,
     ImageMetaData,
+    SEO_FOR_SOCIAL_MEDIA,
     SEO_MEDIA_TYPES,
     SEO_RULES_COLORS,
     SEO_RULES_ICONS,
@@ -20,12 +20,13 @@ import {
     SeoRulesResult
 } from '@dotcms/dotcms-models';
 
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotUploadService } from '../dot-upload/dot-upload.service';
+
 @Injectable()
 export class DotSeoMetaTagsUtilService {
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotUploadService: DotUploadService
-    ) {}
+    private dotMessageService = inject(DotMessageService);
+    private dotUploadService = inject(DotUploadService);
 
     /**
      * Get meta tags from the document
@@ -34,17 +35,17 @@ export class DotSeoMetaTagsUtilService {
      */
     getMetaTags(pageDocument: Document): SeoMetaTags {
         const metaTags = pageDocument.getElementsByTagName('meta');
-        const metaTagsObject = {};
+        const metaTagsObject: SeoMetaTags = {};
 
-        for (const metaTag of metaTags) {
+        for (const metaTag of Array.from(metaTags)) {
             const name = metaTag.getAttribute('name');
             const property = metaTag.getAttribute('property');
             const content = metaTag.getAttribute('content');
 
-            const key = name ?? property;
+            const key = (name ?? property) as keyof SeoMetaTags;
 
             if (key) {
-                metaTagsObject[key] = content;
+                metaTagsObject[key] = content as never;
             }
         }
 
@@ -65,7 +66,7 @@ export class DotSeoMetaTagsUtilService {
 
         metaTagsObject['faviconElements'] = favicon;
         metaTagsObject['titleElements'] = title;
-        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href || null;
+        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href || undefined;
         metaTagsObject['title'] = title[0]?.innerText;
         metaTagsObject['titleOgElements'] = titleOgElements;
         metaTagsObject['imageOgElements'] = imagesOgElements;
@@ -181,7 +182,7 @@ export class DotSeoMetaTagsUtilService {
      * @param values
      * @returns
      */
-    areAllFalsyOrEmpty(values: (string | NodeListOf<Element>)[]): boolean {
+    areAllFalsyOrEmpty(values: (string | NodeListOf<Element> | null | undefined)[]): boolean {
         return values.every(
             (value) => value === null || value === undefined || value?.length === 0
         );
@@ -201,13 +202,11 @@ export class DotSeoMetaTagsUtilService {
                 return of({
                     status: 404,
                     url: IMG_NOT_FOUND_KEY
-                });
+                }) as unknown as Response;
             })
         ).pipe(
-            switchMap((response) => {
-                const res = response as Response;
-
-                return res.clone().blob();
+            switchMap((response: Response) => {
+                return response.clone().blob();
             }),
             map(({ size }) => {
                 return {
@@ -274,7 +273,9 @@ export class DotSeoMetaTagsUtilService {
     ): SeoMetaTagsResult[] {
         return results
             .filter((result) =>
-                SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
+                SeoMediaKeys[seoMedia.toLowerCase() as SEO_FOR_SOCIAL_MEDIA].includes(
+                    result.key.toLowerCase()
+                )
             )
             .sort((a, b) => a.sort - b.sort);
     }

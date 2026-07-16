@@ -1,0 +1,148 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    AnalyticsChartColors,
+    DotAnalyticsDashboardStore,
+    getComparisonLabel,
+    PieChartEntry,
+    toEngagementBreakdownPieEntries,
+    toEngagementBreakdownPieScheme
+} from '@dotcms/portlets/dot-analytics/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotAnalyticsBarEngagementChartComponent } from '../../../shared/components/dot-analytics-bar-engagement-chart/dot-analytics-bar-engagement-chart.component';
+import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
+import {
+    DotAnalyticsSparklineComponent,
+    SparklineDataset
+} from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
+
+/**
+ * DotAnalyticsEngagementReportComponent displays the engagement dashboard.
+ * It includes KPIs, breakdown doughnut, browser/device/language stacked engagement charts.
+ * Each block (KPIs, breakdown, platforms) has independent loading and error state.
+ */
+@Component({
+    selector: 'dot-analytics-engagement-report',
+    imports: [
+        ButtonModule,
+        DialogModule,
+        DotMessagePipe,
+        DotAnalyticsPieChartComponent,
+        DotAnalyticsMetricComponent,
+        DotAnalyticsBarEngagementChartComponent,
+        DotAnalyticsSparklineComponent
+    ],
+    templateUrl: './dot-analytics-engagement-report.component.html',
+    styleUrl: './dot-analytics-engagement-report.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col gap-6 w-full'
+    }
+})
+export default class DotAnalyticsEngagementReportComponent {
+    /** Analytics dashboard store providing engagement data and actions */
+    protected readonly store = inject(DotAnalyticsDashboardStore);
+
+    readonly #messageService = inject(DotMessageService);
+
+    /** Controls visibility of the "How it's calculated" dialog */
+    readonly $showCalculationDialog = signal(false);
+
+    /** Comparison label derived from the current time range (e.g., "from previous 7 days") */
+    readonly $comparisonLabel = computed(() => {
+        const { key, args } = getComparisonLabel(this.store.timeRange());
+
+        return this.#messageService.get(key, ...args);
+    });
+
+    /** KPIs slice: data and status for the metric cards */
+    readonly $kpis = computed(() => this.store.engagementKpis().data);
+    readonly $kpisStatus = computed(
+        () => this.store.engagementKpis().status ?? ComponentStatus.INIT
+    );
+
+    /** Breakdown slice: doughnut chart data and status */
+    readonly $breakdown = computed(() => this.store.engagementBreakdown().data);
+    readonly $breakdownStatus = computed(
+        () => this.store.engagementBreakdown().status ?? ComponentStatus.INIT
+    );
+
+    /** D3 pie entries derived from engagement breakdown ChartData */
+    readonly $breakdownPieResults = computed<PieChartEntry[]>(() =>
+        toEngagementBreakdownPieEntries(this.store.engagementBreakdown().data)
+    );
+
+    /** Matches Chart.js doughnut colors when present */
+    readonly $breakdownPieScheme = computed(() =>
+        toEngagementBreakdownPieScheme(this.store.engagementBreakdown().data)
+    );
+
+    /** Platforms slice: device/browser/language and status */
+    readonly $platforms = computed(() => this.store.engagementPlatforms().data);
+    readonly $platformsStatus = computed(
+        () => this.store.engagementPlatforms().status ?? ComponentStatus.INIT
+    );
+
+    /** Sparkline: current + optional previous period as datasets for the sparkline component */
+    readonly $sparklineDatasets = computed<SparklineDataset[]>(() => {
+        const slice = this.store.engagementSparkline().data;
+        if (!slice?.current?.length) return [];
+
+        const current: SparklineDataset = {
+            data: slice.current,
+            label: 'analytics.engagement.sparkline.period-current',
+            color: AnalyticsChartColors.primary.line,
+            dashed: false
+        };
+
+        if (slice.previous?.length) {
+            const len = slice.current.length;
+            const previousData =
+                slice.previous.length >= len ? slice.previous.slice(0, len) : slice.previous;
+            const previous: SparklineDataset = {
+                data: previousData,
+                label: 'analytics.engagement.sparkline.period-previous',
+                color: AnalyticsChartColors.neutralDark.line,
+                dashed: true,
+                borderWidth: 1,
+                fillOpacity: 0.35
+            };
+            return [current, previous];
+        }
+
+        return [current];
+    });
+
+    readonly $sparklineStatus = computed(
+        () => this.store.engagementSparkline().status ?? ComponentStatus.INIT
+    );
+
+    /** Whether KPIs have finished loading successfully */
+    readonly $isKpisLoaded = computed(() => this.$kpisStatus() === ComponentStatus.LOADED);
+
+    /** Calculate total sessions from platforms data */
+    readonly $totalSessions = computed(() => {
+        const platforms = this.$platforms();
+        if (!platforms?.device) return 0;
+
+        return platforms.device.reduce((sum, item) => sum + item.views, 0);
+    });
+
+    /**
+     * True when data is loaded but there are no sessions (empty state).
+     * Used to show a clear "no data" banner and avoid showing raw zeros everywhere.
+     */
+    readonly $hasNoData = computed(() => {
+        if (this.$kpisStatus() !== ComponentStatus.LOADED) return false;
+        if (this.$breakdownStatus() !== ComponentStatus.LOADED) return false;
+        const breakdown = this.$breakdown();
+        return !breakdown?.labels?.length && !breakdown?.datasets?.length;
+    });
+}

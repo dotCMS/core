@@ -1,8 +1,7 @@
-/* eslint-disable */
 export default {
     displayName: 'sdk-angular',
     preset: '../../../jest.preset.js',
-    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts', '<rootDir>/next/test-setup.ts'],
+    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     coverageDirectory: '../../../coverage/libs/sdk/angular',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [

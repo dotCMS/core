@@ -7,6 +7,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.analytics.metrics.*;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +22,7 @@ import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Util class to calculate the regex pattern for a given {@link HTMLPageAsset}
@@ -51,6 +53,25 @@ public enum ExperimentUrlPatternCalculator {
      * If the page use inside the Experiment isuse as Detail Page on any Content Type then is even
      * more complicated.
      *
+     * <p><b>Security note:</b> The returned pattern is serialized to the
+     * Experiments Analytics SDK and evaluated client-side via
+     * {@code new RegExp(...).test(...)}. Because Vanity URL URIs can contain
+     * admin-authored regex, the assembled pattern is NOT protected by
+     * {@link com.dotcms.regex.MatcherTimeoutFactory} (which only guards the
+     * server-side Vanity URL resolver). Client-side ReDoS protection is tracked
+     * as a follow-up in <a href="https://github.com/dotCMS/core/issues/35379">#35379</a>.
+     *
+     * <p><b>Case folding:</b> The returned pattern is emitted entirely in
+     * lowercase — both the experiment-page alternative and every Vanity URL
+     * alternative — to match the SDK tracker, which lowercases the incoming
+     * URL path before calling {@code test}. As a side effect, any admin-authored
+     * vanity URI that relies on uppercase characters or uppercase-only
+     * character classes (e.g. {@code [A-Z]+}) is folded to lowercase in this
+     * path; such patterns are unsupported here. This is consistent with the
+     * server-side resolver, which already compiles vanity patterns with
+     * {@link java.util.regex.Pattern#CASE_INSENSITIVE} so case-sensitive regex
+     * constructs do not influence vanity matching in any consumer.
+     *
      * @param experiment
      * @return
      */
@@ -80,12 +101,46 @@ public enum ExperimentUrlPatternCalculator {
     private static String getVanityUrlsRegex(final Host host, final Language language,
                                              final HTMLPageAsset htmlPageAsset) throws DotDataException {
 
-        final String vanityUrlRegex = APILocator.getVanityUrlAPI()
-                .findByForward(host, language, htmlPageAsset.getURI(), 200)
-                .stream()
-                .map(vanitysUrls -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanitysUrls.pattern))
-                .collect(Collectors.joining(StringPool.PIPE));
-        return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex);
+        // includeSystemHost=true: a /cmsHomePage vanity forwarding to the
+        // experiment page may be published on SYSTEM_HOST (site-wide), so we
+        // need those matches as well. Mirrors resolveVanityUrl's host fallback.
+        final List<CachedVanityUrl> vanityUrls = APILocator.getVanityUrlAPI()
+                .findByForward(host, language, htmlPageAsset.getURI(), 200, true);
+
+        // Exact match is intentional — regex-based cmsHomePage URIs (e.g. "/cmsHome.*")
+        // are unsupported here. VanityUrlAPIImpl.resolveVanityUrl's legacy fallback
+        // looks up the literal LEGACY_CMS_HOME_PAGE string, so only vanities whose
+        // URI equals it (case-insensitive) actually participate in the "/" fallback.
+        final boolean hasCmsHomePageVanity = vanityUrls.stream()
+                .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equalsIgnoreCase(vanity.url));
+
+        // When a /cmsHomePage vanity forwards to the experiment page, visitors
+        // reach it at "/" (see VanityUrlAPIImpl.resolveVanityUrl legacy fallback)
+        // — add "/" as an extra alternative so the regex still matches.
+        final String vanityUrlRegex = Stream.concat(
+                vanityUrls.stream()
+                        // Skip vanities whose URI failed CachedVanityUrl.normalize
+                        // (VanityUrlUtil.isValidRegex returned false) — their
+                        // compiled Pattern's source is "", which would otherwise
+                        // expand the URL template into a catch-all.
+                        .filter(vanity -> !vanity.pattern.pattern().isEmpty())
+                        .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern.pattern())),
+                hasCmsHomePageVanity
+                        ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
+                        : Stream.empty()
+        ).collect(Collectors.joining(StringPool.PIPE));
+
+        // Lowercase the ENTIRE assembled vanity regex — this affects every
+        // vanity pattern joined above, not just the /cmsHomePage fallback. The
+        // SDK (parser.ts#verifyRegex) lowercases the incoming URL path before
+        // calling RegExp.test, so a mixed-case vanity URI stored by the admin
+        // would otherwise never match. Consequence: any admin-authored regex
+        // construct that depends on uppercase characters (e.g. "[A-Z]+") is
+        // folded to lowercase here and is unsupported in this path. This is
+        // consistent with CachedVanityUrl, which compiles each vanity's URI
+        // pattern with Pattern.CASE_INSENSITIVE — server-side vanity matching
+        // is already case-insensitive, so no consumer loses functionality.
+        return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex).toLowerCase();
     }
 
     private HTMLPageAsset getHtmlPageAsset(final Experiment experiment) {

@@ -34,6 +34,7 @@ public class TomcatDataSourceStrategy implements DotDataSourceStrategy {
             final InitialContext ctx = new InitialContext();
             final HikariConfig config = new HikariConfig();
             config.setDataSource((DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE));
+            config.setRegisterMbeans(com.dotmarketing.util.Config.getBooleanProperty("hikari.register.mbeans", true));
             return new HikariDataSource(config);
         } catch (NamingException e) {
             Logger.error(TomcatDataSourceStrategy.class,

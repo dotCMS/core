@@ -18,6 +18,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -122,6 +123,7 @@ public class AnalyticsTrackWebInterceptorTest {
      * ExpectedResult: The test matcher should be  called
      */
     @Test
+    @Ignore("Data Collectors have been disabled in favor of creating events via REST")
     public void test_intercept_feature_flag_turn_on_and_with_analytics_app() throws IOException, DotDataException, DotSecurityException {
 
         Config.CONTEXT = Mockito.mock(ServletContext.class);

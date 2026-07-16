@@ -1,17 +1,21 @@
+@use "../../../shared/colors";
+@use "../../../shared/shadows";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-sidebar {
-    background: $white;
+    background: colors.$white;
     border: 0 none;
-    box-shadow: $shadow-xs;
+    box-shadow: shadows.$shadow-xs;
 }
 .p-sidebar .p-sidebar-header {
     padding: 0;
 }
 .p-sidebar .p-sidebar-header .p-sidebar-close,
 .p-sidebar .p-sidebar-header .p-sidebar-icon {
-    width: $spacing-5;
-    height: $spacing-5;
+    width: spacing.$spacing-5;
+    height: spacing.$spacing-5;
     border: 0 none;
     background: transparent;
     border-radius: 50%;
@@ -31,7 +35,7 @@
 }
 
 .p-sidebar .p-sidebar-content {
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
     height: 100%;
 }
 
@@ -52,12 +56,12 @@
         background-color: transparent;
     }
     to {
-        background-color: $color-palette-black-op-80;
+        background-color: colors.$color-palette-black-op-80;
     }
 }
 @keyframes p-component-overlay-leave-animation {
     from {
-        background-color: $color-palette-black-op-80;
+        background-color: colors.$color-palette-black-op-80;
     }
     to {
         background-color: transparent;

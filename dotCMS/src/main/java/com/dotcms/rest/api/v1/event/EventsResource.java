@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.event;
 
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.web.WebSessionContext;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -29,6 +29,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
  * @since Jul 7, 2016
  */
 @SuppressWarnings("serial")
+@Tag(name = "Administration")
 @Path("/ws/v1/system")
 public class EventsResource implements Serializable {
 

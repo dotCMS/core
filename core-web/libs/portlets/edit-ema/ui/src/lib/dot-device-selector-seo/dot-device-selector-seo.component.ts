@@ -1,30 +1,29 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    Inject,
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
-import { DropdownModule } from 'primeng/dropdown';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
+import { Popover, PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 
-import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
+import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
-import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import {
-    DotCurrentUser,
     DotDevice,
     DotDeviceListItem,
     SocialMediaOption,
@@ -34,18 +33,18 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
 @Component({
-    standalone: true,
     imports: [
-        CommonModule,
-        DropdownModule,
+        SelectModule,
         FormsModule,
         ButtonModule,
-        OverlayPanelModule,
+        PopoverModule,
         PanelModule,
         DividerModule,
         DotMessagePipe,
         RouterLink,
-        DividerModule
+        DividerModule,
+        AsyncPipe,
+        DecimalPipe
     ],
     providers: [
         DotDevicesService,
@@ -60,12 +59,21 @@ import { WINDOW } from '@dotcms/utils';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDeviceSelectorSeoComponent implements OnInit {
+    private dotDevicesService = inject(DotDevicesService);
+    private dotMessageService = inject(DotMessageService);
+    private window = inject<Window>(WINDOW);
+
     @Input() value: DotDevice;
     @Input() hideSocialMedia = false;
+
+    /**
+     * Current user from store (e.g. UVEStore.uveCurrentUser()). When not provided, isCMSAdmin is false.
+     */
+    @Input() currentUser?: { admin?: boolean } | null;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
-    @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
+    @ViewChild('deviceSelector') overlayPanel: Popover;
     previewUrl: string;
 
     protected linkToAddDevice = '/c/content';
@@ -74,8 +82,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     };
 
     options$: Observable<DotDevice[]>;
-    isCMSAdmin$: Observable<boolean>;
     SOCIAL_MEDIA_TILES: SocialMediaOption[];
+
+    protected get isCMSAdmin(): boolean {
+        return !!this.currentUser?.admin;
+    }
 
     defaultOptions: DotDeviceListItem[] = [
         {
@@ -128,16 +139,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         }
     ];
 
-    constructor(
-        private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService,
-        private dotCurrentUser: DotCurrentUserService,
-        @Inject(WINDOW) private window: Window
-    ) {}
-
     ngOnInit() {
         this.options$ = this.getOptions();
-        this.isCMSAdmin$ = this.checkIfCMSAdmin();
         this.SOCIAL_MEDIA_TILES = Object.values(SOCIAL_MEDIA_TILES);
     }
 
@@ -185,21 +188,10 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     }
 
     /**
-     * Check if current user is CMS Admin
-     * @returns Observable<boolean>
-     */
-    checkIfCMSAdmin(): Observable<boolean> {
-        return this.dotCurrentUser.getCurrentUser().pipe(
-            map((user: DotCurrentUser) => {
-                return user.admin;
-            })
-        );
-    }
-
-    /**
      * Hide the overlay panel
      */
     onHideDeviceSelector() {
+        // TODO: The 'emit' function requires a mandatory string argument
         this.hideOverlayPanel.emit();
     }
 

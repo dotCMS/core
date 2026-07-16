@@ -1,39 +1,24 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextModule } from 'primeng/inputtext';
-import { RadioButtonModule } from 'primeng/radiobutton';
+import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotMenuServiceMock } from '@components/dot-navigation/services/dot-navigation.service.spec';
+import { DotAddToMenuComponent } from './dot-add-to-menu.component';
+
 import {
     DotAddToMenuService,
     DotCreateCustomTool
-} from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import {
-    DotDialogModule,
-    DotFieldValidationMessageComponent,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
-import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
-
-import { DotAddToMenuComponent } from './dot-add-to-menu.component';
+} from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
 
 const contentTypeVar = {
     ...dotcmsContentTypeBasicMock,
@@ -53,13 +38,14 @@ const contentTypeVar = {
     selector: 'dot-test-host-component',
     template: `
         <dot-add-to-menu [contentType]="contentType"></dot-add-to-menu>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     contentType = contentTypeVar;
 }
 
-export class DotAddToMenuServiceMock {
+class DotAddToMenuServiceMock {
     cleanUpPorletId(_portletName: string) {
         /* */
     }
@@ -70,6 +56,41 @@ export class DotAddToMenuServiceMock {
 
     addToLayout(_portletName: string, _layoutId: string) {
         /* */
+    }
+}
+
+class DotMenuServiceMock {
+    loadMenu(_force?: boolean) {
+        return of([
+            {
+                id: '123',
+                name: 'Menu 1',
+                label: 'Menu 1',
+                tabName: 'Name',
+                tabDescription: 'Description',
+                tabIcon: 'icon',
+                url: '/url/index',
+                active: false,
+                isOpen: false,
+                menuItems: []
+            },
+            {
+                id: '456',
+                name: 'Menu 2',
+                label: 'Menu 2',
+                tabName: 'Name 2',
+                tabDescription: 'Description 2',
+                tabIcon: 'icon2',
+                url: '/url/456',
+                active: false,
+                isOpen: false,
+                menuItems: []
+            }
+        ]);
+    }
+
+    getDotMenuId(_portletId: string) {
+        return of('123');
     }
 }
 
@@ -94,26 +115,20 @@ describe('DotAddToMenuComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAddToMenuComponent, TestHostComponent],
-            imports: [
-                BrowserAnimationsModule,
-                DotFormSelectorModule,
-                DotDialogModule,
-                DropdownModule,
-                InputTextModule,
-                ButtonModule,
-                RadioButtonModule,
-                ReactiveFormsModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule,
-                DotFieldValidationMessageComponent
-            ],
+            declarations: [TestHostComponent],
+            imports: [DotAddToMenuComponent, BrowserAnimationsModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
-                { provide: DotMenuService, useClass: DotMenuServiceMock }
+                { provide: DotMenuService, useClass: DotMenuServiceMock },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                DotNavigationService
             ]
         }).compileComponents();
 
@@ -123,10 +138,37 @@ describe('DotAddToMenuComponent', () => {
         dotAddToMenuService = TestBed.inject(DotAddToMenuService);
         dotMenuService = TestBed.inject(DotMenuService);
 
-        dotdialog = de.query(By.css('dot-dialog'));
-        spyOn(dotMenuService, 'loadMenu').and.callThrough();
+        jest.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
+            of([
+                {
+                    id: '123',
+                    name: 'Menu 1',
+                    label: 'Menu 1',
+                    tabName: 'Name',
+                    tabDescription: 'Description',
+                    tabIcon: 'icon',
+                    url: '/url/index',
+                    active: false,
+                    isOpen: false,
+                    menuItems: []
+                },
+                {
+                    id: '456',
+                    name: 'Menu 2',
+                    label: 'Menu 2',
+                    tabName: 'Name 2',
+                    tabDescription: 'Description 2',
+                    tabIcon: 'icon2',
+                    url: '/url/456',
+                    active: false,
+                    isOpen: false,
+                    menuItems: []
+                }
+            ])
+        );
 
         fixture.detectChanges();
+        dotdialog = de.query(By.css('p-dialog'));
     });
 
     it('should have a form', () => {
@@ -136,39 +178,40 @@ describe('DotAddToMenuComponent', () => {
     });
 
     it('should load labels and data when init', () => {
-        expect(dotdialog.componentInstance.header).toBe(
-            messageServiceMock.get('contenttypes.content.add_to_menu.header')
-        );
+        // Check title label
         expect(
-            dotdialog.query(By.css('[data-testId="titleMenuLabel"]')).nativeElement.innerHTML.trim()
-        ).toBe(messageServiceMock.get('contenttypes.content.add_to_menu.name'));
+            dotdialog.query(By.css('[data-testId="titleMenuLabel"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.name'));
+        // Check menu option label
         expect(
-            dotdialog
-                .query(By.css('[data-testId="menuOptionLabel"]'))
-                .nativeElement.innerHTML.trim()
-        ).toBe(messageServiceMock.get('contenttypes.content.add_to_menu.show_under'));
+            dotdialog.query(By.css('[data-testId="menuOptionLabel"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.show_under'));
+        // Check view mode label
         expect(
-            dotdialog.query(By.css('[data-testId="ViewModeLabel"]')).nativeElement.innerHTML.trim()
-        ).toBe(messageServiceMock.get('contenttypes.content.add_to_menu.default_view'));
+            dotdialog.query(By.css('[data-testId="ViewModeLabel"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.default_view'));
+        // Check radio button labels (they are in sibling <label> elements inside .form-radio div)
         expect(
-            dotdialog.query(By.css('[data-testId="cardViewMode"]')).componentInstance.label
-        ).toBe(messageServiceMock.get('custom.content.portlet.dataViewMode.card'));
+            dotdialog.query(By.css('.form-radio label[for="cardViewMode"]')).nativeElement
+                .textContent
+        ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.card'));
         expect(
-            dotdialog.query(By.css('[data-testId="listViewMode"]')).componentInstance.label
-        ).toBe(messageServiceMock.get('custom.content.portlet.dataViewMode.list'));
+            dotdialog.query(By.css('.form-radio label[for="listViewMode"]')).nativeElement
+                .textContent
+        ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.list'));
 
         expect(dotdialog.query(By.css('[data-testId="titleMenu"]')).nativeElement.value).toBe(
             contentTypeVar.name
         );
+        // Check buttons text
         expect(
-            dotdialog.query(By.css('[data-testId="menuOption"]')).componentInstance.options.length
-        ).toBe(2);
+            dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement
+                .textContent
+        ).toContain(messageServiceMock.get('add'));
         expect(
-            dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement.innerText
-        ).toBe(messageServiceMock.get('Add'));
-        expect(
-            dotdialog.query(By.css('[data-testId="dotDialogCancelAction"]')).nativeElement.innerText
-        ).toBe(messageServiceMock.get('Cancel'));
+            dotdialog.query(By.css('[data-testId="dotDialogCancelAction"]')).nativeElement
+                .textContent
+        ).toContain(messageServiceMock.get('cancel'));
     });
 
     it('should load form values when init', () => {
@@ -177,6 +220,7 @@ describe('DotAddToMenuComponent', () => {
         expect(component.form.get('title').value).toEqual(contentTypeVar.name);
         expect(component.form.valid).toEqual(true);
         expect(dotMenuService.loadMenu).toHaveBeenCalledWith(true);
+        expect(dotMenuService.loadMenu).toHaveBeenCalledTimes(1);
     });
 
     it('should invalidate form and set Add button disabled, when name empty', () => {
@@ -184,9 +228,8 @@ describe('DotAddToMenuComponent', () => {
             title: null
         });
         fixture.detectChanges();
-        expect(
-            dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement.disabled
-        ).toBe(true);
+        const acceptButton = dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]'));
+        expect(acceptButton.componentInstance.disabled).toBe(true);
         expect(component.form.valid).toEqual(false);
     });
 
@@ -195,9 +238,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogAcceptAction"]')
         );
 
-        spyOn(dotAddToMenuService, 'createCustomTool').and.returnValue(of(''));
-        spyOn(dotAddToMenuService, 'addToLayout').and.returnValue(of(''));
-        spyOn(component.cancel, 'emit');
+        jest.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
+        jest.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
+        jest.spyOn(component.$cancel, 'emit');
 
         addButton.nativeElement.click();
 
@@ -211,7 +254,7 @@ describe('DotAddToMenuComponent', () => {
             dataViewMode: 'list',
             layoutId: component.form.get('menuOption').value
         });
-        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should emit Cancel event on close button click', () => {
@@ -219,9 +262,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogCancelAction"]')
         );
 
-        spyOn(component.cancel, 'emit');
+        jest.spyOn(component.$cancel, 'emit');
         cancelButton.nativeElement.click();
 
-        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
     });
 });

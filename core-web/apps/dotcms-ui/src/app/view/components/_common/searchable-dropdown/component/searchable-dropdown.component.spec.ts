@@ -1,24 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Component, DebugElement, Input } from '@angular/core';
-import {
-    ComponentFixture,
-    fakeAsync,
-    flush,
-    TestBed,
-    tick,
-    waitForAsync
-} from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { SharedModule } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
-
-import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 
 @Component({
     selector: 'dot-host-component',
@@ -38,7 +31,8 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
             [overlayWidth]="overlayWidth"
             [width]="width"
             [disabled]="disabled" />
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input()
@@ -95,17 +89,17 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
 
-        TestBed.configureTestingModule({
-            declarations: [SearchableDropdownComponent, HostTestComponent],
+        await TestBed.configureTestingModule({
+            declarations: [HostTestComponent],
             imports: [
-                ...SEARCHABLE_NGFACES_MODULES,
+                SearchableDropdownComponent,
                 BrowserAnimationsModule,
-                DotIconModule,
+                DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe
             ],
@@ -122,9 +116,7 @@ describe('SearchableDropdownComponent', () => {
                 id: i,
                 label: `site-${i}`,
                 name: `site-${i}`,
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             };
         }
 
@@ -134,7 +126,7 @@ describe('SearchableDropdownComponent', () => {
         hostComp.totalRecords = NROWS;
         hostComp.rows = rows;
         hostComp.pageLinkSize = pageLinkSize;
-    }));
+    });
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';
@@ -145,7 +137,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should have placeholder set', () => {
-        expect(mainButton.nativeElement.innerText).toBe('placeholder');
+        expect(mainButton.componentInstance.label).toBe('placeholder');
     });
 
     it('should disabled', () => {
@@ -208,11 +200,21 @@ describe('SearchableDropdownComponent', () => {
         hostFixture.detectChanges();
         tick();
 
-        const overlay = de.query(By.css('.p-overlaypanel'));
-        expect(comp.cssClass).toContain('searchable-dropdown paginator');
+        // Mock the searchPanelRef to avoid getBoundingClientRect error
+        comp.searchPanelRef = {
+            container: {
+                getBoundingClientRect: () => ({ height: 200 })
+            }
+        } as any;
 
-        expect(overlay.componentInstance.styleClass).toBe('testClass');
-        expect(overlay.componentInstance.style.width).toEqual('650px');
+        // Trigger the overlay show to update cssClass
+        comp.showOverlayHandler();
+
+        // Assert component state passed to p-popover ([styleClass]="cssClass" [style]="{ width: overlayWidth }")
+        // Overlay is appendTo="body" so we don't query it in the fixture DOM
+        expect(comp.cssClass).toContain('searchable-dropdown paginator');
+        expect(comp.cssClass).toContain('testClass');
+        expect(comp.overlayWidth).toEqual('650px');
         flush();
     }));
 
@@ -248,7 +250,7 @@ describe('SearchableDropdownComponent', () => {
 
     it('should render a string array of properties in p-dataview', () => {
         hostComp.data = data;
-        hostComp.labelPropertyName = ['name', 'parentPermissionable.hostname'];
+        hostComp.labelPropertyName = ['name', 'hostName'];
 
         hostFixture.detectChanges();
 
@@ -297,7 +299,7 @@ describe('SearchableDropdownComponent', () => {
         beforeEach(() => {
             hostComp.data = data;
             hostComp.labelPropertyName = 'name';
-            spyOn(comp.switch, 'emit');
+            jest.spyOn(comp.switch, 'emit');
 
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
@@ -309,6 +311,7 @@ describe('SearchableDropdownComponent', () => {
         it('should change the value', () => {
             items[0].triggerEventHandler('click', null);
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit the same value twice when multiple equal true', () => {
@@ -327,6 +330,7 @@ describe('SearchableDropdownComponent', () => {
 
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
             expect(comp.switch.emit).toHaveBeenCalledTimes(1);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -344,9 +348,7 @@ describe('SearchableDropdownComponent', () => {
                     id: 1,
                     label: `label`,
                     name: `label`,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    },
+                    hostName: 'demo.dotcms.com',
                     default: true
                 }
             ];
@@ -366,9 +368,7 @@ describe('SearchableDropdownComponent', () => {
                     id: 1,
                     label: `label`,
                     name: `label`,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    },
+                    hostName: 'demo.dotcms.com',
                     default: false
                 }
             ];
@@ -416,7 +416,8 @@ describe('SearchableDropdownComponent', () => {
                 </div>
             </ng-template>
         </dot-searchable-dropdown>
-    `
+    `,
+    standalone: false
 })
 class HostTestExternalTemplateComponent {
     @Input() data: any[];
@@ -469,17 +470,18 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
 
-        TestBed.configureTestingModule({
-            declarations: [SearchableDropdownComponent, HostTestExternalTemplateComponent],
+        await TestBed.configureTestingModule({
+            declarations: [HostTestExternalTemplateComponent],
             imports: [
-                ...SEARCHABLE_NGFACES_MODULES,
+                SearchableDropdownComponent,
                 BrowserAnimationsModule,
-                DotIconModule,
+                SharedModule,
+                DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe
             ],
@@ -496,9 +498,7 @@ describe('SearchableDropdownComponent', () => {
                 id: i,
                 label: `site-${i}`,
                 name: `site-${i}`,
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             };
         }
 
@@ -508,7 +508,7 @@ describe('SearchableDropdownComponent', () => {
         hostComp.totalRecords = NROWS;
         hostComp.rows = rows;
         hostComp.pageLinkSize = pageLinkSize;
-    }));
+    });
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';
@@ -549,7 +549,7 @@ describe('SearchableDropdownComponent', () => {
 
     it('should allow keyboad nav on filter Input - Enter', () => {
         comp.selectedOptionIndex = 3;
-        spyOn(comp, 'handleClick');
+        jest.spyOn(comp, 'handleClick');
 
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
@@ -557,6 +557,7 @@ describe('SearchableDropdownComponent', () => {
         searchInput.nativeElement.dispatchEvent(keyboardEvent);
 
         expect(comp.handleClick).toHaveBeenCalledWith(data[3]);
+        expect(comp.handleClick).toHaveBeenCalledTimes(1);
     });
 
     it('should render external listItem template', () => {

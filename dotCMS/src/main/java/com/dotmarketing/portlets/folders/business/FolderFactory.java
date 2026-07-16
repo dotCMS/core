@@ -10,11 +10,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
-
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 /**
@@ -50,7 +51,7 @@ public abstract class FolderFactory {
 		return false;
 	}
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz) throws DotStateException, DotDataException{
+	protected <T> List<T> getChildrenClass(Folder parent, Class<T> clazz) throws DotStateException, DotDataException{
 		return null;
 	}
 
@@ -87,13 +88,13 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	abstract void copy(Folder folder, Host destination) throws DotDataException, DotSecurityException, DotStateException, IOException;
+	abstract Folder copy(Folder folder, Host destination) throws DotDataException, DotSecurityException, DotStateException, IOException;
 
-	abstract void copy(Folder folder, Folder destination) throws DotDataException, DotStateException, DotSecurityException, IOException;
+	abstract Folder copy(Folder folder, Folder destination) throws DotDataException, DotStateException, DotSecurityException, IOException;
 
-    abstract boolean move(Folder folder, Host destination) throws DotDataException, DotSecurityException;
+    abstract Optional<Folder> move(Folder folder, Host destination) throws DotDataException, DotSecurityException;
 
-	abstract boolean move(Folder folder, Folder destination) throws DotDataException, DotSecurityException;
+	abstract Optional<Folder> move(Folder folder, Folder destination) throws DotDataException, DotSecurityException;
 
 	protected boolean renameFolder(Folder folder, String newName, User ser, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		return false;
@@ -107,13 +108,43 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	abstract void updateMovedFolderAssets(Folder folder) throws DotDataException, DotStateException, DotSecurityException;
-
 	protected List<Folder> getFoldersByParent(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException{
 		return null;
 	}
 	protected List<Folder> findFoldersByHost(Host host) {
 		return null;
+	}
+
+	/**
+	 * Returns all direct child folders whose {@code identifier.parent_path} matches any of the
+	 * given paths. Fetched in a single SQL query; permission filtering is the caller's
+	 * responsibility.
+	 *
+	 * @param hostInode  site identifier
+	 * @param parentPaths set of full folder paths (e.g. {@code "/content/blog/"}) to check
+	 * @return direct child folders — may be empty, never {@code null}
+	 * @throws DotDataException on database error
+	 */
+	protected List<Folder> findDirectChildFolders(final String hostInode,
+			final Collection<String> parentPaths) throws DotDataException {
+		return List.of();
+	}
+
+	/**
+	 * Searches for folders within a site using an optional name filter and optional path scope.
+	 * SQL is built dynamically based on which parameters are provided.
+	 * {@code params.orderBy()} must be {@code "folder.name"} or {@code "folder.mod_date"};
+	 * invalid values fall back to {@code folder.name}.
+	 * The factory uses only the search-scoping fields ({@code name}, {@code path},
+	 * {@code recursive}, {@code siteId}, {@code orderBy}, {@code orderDirection});
+	 * pagination and security fields are handled at the API layer.
+	 *
+	 * @param params search parameters built via {@link FolderSearchParams#builder()}
+	 * @return matching folders in the requested order
+	 * @throws DotDataException on database error
+	 */
+	protected List<Folder> searchFolders(final FolderSearchParams params) throws DotDataException {
+		return List.of();
 	}
 	protected List<Folder> findThemesByHost(Host host) {
 		return null;
@@ -135,9 +166,6 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond, String orderby) throws DotStateException,DotDataException{
-		return null;
-	}
 
 	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond) throws DotStateException,DotDataException{
 		return null;

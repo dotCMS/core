@@ -14,6 +14,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
@@ -107,6 +108,8 @@ public class ApiTokenAPI {
 
             throw new DotStateException("API token is either revoked or expired " + apiToken);
         }
+
+        logApiTokenOperation("Generating JWT", apiToken, user);
 
         return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateApiToken(apiToken);
     }
@@ -218,6 +221,7 @@ public class ApiTokenAPI {
         
         if(this.checkPerms(token, user)) {
 
+            logApiTokenOperation("Deleting", token, user);
             return this.deleteToken(token.id);
         }
 
@@ -242,6 +246,7 @@ public class ApiTokenAPI {
 
         if(checkPerms(token, user)){
             SecurityLogger.logInfo(this.getClass(), "Revoking token " + token  );
+            logApiTokenOperation("Revoking", token, user);
             return this.revokeTokenDb(token.getSubject());
         }
         
@@ -326,6 +331,8 @@ public class ApiTokenAPI {
     @WrapInTransaction
     public ApiToken persistApiToken(final ApiToken apiToken, final User user) {
 
+        logApiTokenOperation("Persisting", apiToken, user);
+
         final ApiToken tokenRequested = ApiToken.from(apiToken).withRequestingUserId(user.getUserId()).build();
 
         if(checkPerms(tokenRequested, user)) {
@@ -334,6 +341,25 @@ public class ApiTokenAPI {
         }
         
         throw new DotStateException("User :" + user.getUserId() + " does not have permission to token " + tokenRequested);
+    }
+
+    private void logApiTokenOperation(final String operationType, final ApiToken apiToken, final User user) {
+        final String userInfo = (user != null)
+                ? user.getUserId() + " (" + user.getEmailAddress() + ")"
+                : null;
+
+        final String apiTokenInfo = String.format("id: %s, userId: %s, requestingUserId: %s, requestingIp: %s, expiresDate: %s, allowNetwork: %s, issueDate: %s, claims: %s, issuer: %s",
+                apiToken.getId(),
+                apiToken.getUserId(),
+                apiToken.requestingUserId,
+                apiToken.requestingIp,
+                apiToken.getExpiresDate(),
+                apiToken.getAllowNetwork(),
+                apiToken.issueDate,
+                apiToken.getClaims(),
+                apiToken.getIssuer());
+
+        Logger.info(this, operationType + "API Token by user: " + userInfo + " - " + apiTokenInfo + " at " + new Date());
     }
 
     /**
@@ -494,6 +520,48 @@ public class ApiTokenAPI {
             return true;
         }
 
+    }
+
+    /**
+     * Retrieves API tokens that are about to expire within the specified number of days.
+     * For admin users, returns all expiring tokens from all users.
+     * For limited users, returns only their own expiring tokens.
+     * 
+     * @param daysLookahead Number of days to look ahead for expiring tokens
+     * @param requestingUser User making the request
+     * @return List of ApiToken objects that will expire within the specified days
+     */
+    @CloseDBIfOpened
+    public List<ApiToken> findExpiringTokens(final int daysLookahead, final User requestingUser) {
+        List<ApiToken> allTokens = new ArrayList<>();
+        
+        try {
+            if (requestingUser.isAdmin()) {
+                // Admin users get all tokens from all users
+                final List<User> allUsers = APILocator.getUserAPI().findAllUsers();
+                for (User user : allUsers) {
+                    List<ApiToken> userTokens = this.findApiTokensByUserId(user.getUserId(), false, requestingUser);
+                    allTokens.addAll(userTokens);
+                }
+            } else {
+                // Limited users get only their own tokens
+                allTokens = this.findApiTokensByUserId(requestingUser.getUserId(), false, requestingUser);
+            }
+            
+            // Filter tokens that will expire within the specified days
+            return allTokens.stream()
+                    .filter(Objects::nonNull)
+                    .filter(token -> !token.isExpired() && !token.isRevoked())
+                    .filter(token -> {
+                        final long daysLeftToExpire = DateUtil.diffDates(new Date(), token.getExpiresDate()).get("diffDays");
+                        return daysLeftToExpire >= 0 && daysLeftToExpire <= daysLookahead;
+                    })
+                    .collect(Collectors.toList());
+                    
+        } catch (Exception e) {
+            Logger.error(this, "Error retrieving expiring tokens: " + e.getMessage(), e);
+            return Collections.emptyList();
+        }
     }
 
 }

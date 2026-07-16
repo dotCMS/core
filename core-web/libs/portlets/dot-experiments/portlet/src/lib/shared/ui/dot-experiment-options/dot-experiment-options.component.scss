@@ -1,67 +1,29 @@
-@use "variables" as *;
+/* PrimeNG/Lara + Tailwind handle styling for this component. */
 
-:host {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-3;
+// Angular's animation DSL (`trigger`, `transition`, etc.) is deprecated in Angular 21.
+// We use a small CSS transition for the expand/collapse content instead.
+.dot-option-content {
+    display: grid;
+    transition:
+        grid-template-rows 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98),
+        opacity 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98),
+        visibility 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98);
+    will-change: grid-template-rows, opacity;
+}
 
-    .dot-options__item {
-        border: 1px solid $color-palette-gray-200;
-        border-radius: $border-radius-sm;
-        display: flex;
-        flex-direction: column;
-        transition-duration: $basic-speed;
+.dot-option-content__inner {
+    min-height: 0;
+    overflow: hidden;
+}
 
-        header {
-            padding: $spacing-4;
-            gap: $spacing-1;
-            align-items: baseline;
-            display: flex;
-            cursor: pointer;
+.dot-option-content--expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+}
 
-            h2,
-            p {
-                margin: 0;
-                color: $color-palette-gray-800;
-            }
-
-            h2 {
-                font-size: $font-size-lmd;
-                font-weight: $font-weight-bold;
-            }
-
-            p {
-                font-size: $font-size-md;
-                color: $color-palette-gray-700;
-            }
-
-            i {
-                font-size: $font-size-md;
-                color: $color-palette-secondary;
-            }
-        }
-
-        .option-item__content {
-            padding: 0 $spacing-4 0 $spacing-4;
-
-            &.expanded {
-                padding-bottom: $spacing-4;
-            }
-        }
-
-        &.active {
-            background-color: $color-palette-primary-100;
-
-            header {
-                h2,
-                p {
-                    color: $black;
-                }
-            }
-        }
-
-        &:hover {
-            background-color: $color-palette-primary-100;
-        }
-    }
+.dot-option-content--collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
 }

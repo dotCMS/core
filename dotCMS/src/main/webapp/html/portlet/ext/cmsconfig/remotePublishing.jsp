@@ -186,7 +186,7 @@ function checkIntegrity(identifier) {
             }
 
             showDotCMSSystemMessage(data.message, false);
-            //Lets start checking every 30 seconds the status of this integrity check
+            //Let's start checking the status of the integrity job every 5 seconds
             displayLoadingOnly(identifier);
             checkIntegrityProcessStatus(identifier);
         },
@@ -254,13 +254,11 @@ function checkIntegrityProcessStatus(identifier, callback) {
             }
 
             var status = data.status;
-            if (status == "processing") {//Still processing, check again in 30 seconds
-                //Verify again in 30 seconds
+            if (status == "processing") {
+                // Still processing, check again in 5 seconds
                 setTimeout(function () {
                     checkIntegrityProcessStatus(identifier, callback)
-                }, 10000);
-                //Verify again in 30 seconds
-
+                }, 5000);
             } else if (status == "finished") {//Process finished so show the show results button
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');

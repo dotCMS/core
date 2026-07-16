@@ -438,7 +438,7 @@ export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
     modUser: 'dotcms.org.1',
     modUserName: 'Admin User',
     owner: 'dotcms.org.1',
-    ownerName: 'Admin User',
+    ownerUserName: 'Admin User',
     publishDate: '1729024086674',
     publishUser: 'dotcms.org.1',
     publishUserName: 'Admin User',
@@ -454,7 +454,14 @@ export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
     title: '2978bb3b66e372b1ffffa9376f33c37b',
     titleImage: 'TITLE_IMAGE_NOT_FOUND',
     url: '/content.7af6259d-51b0-4c49-9e08-67cbc74100d6',
-    working: true
+    working: true,
+    disabledWYSIWYG: ['wysiwygField1', 'wysiwygField2'] // WYSIWYG fields disabled for code editor
+};
+
+// Mock contentlet without disabledWYSIWYG for testing new content scenarios
+export const MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG: DotCMSContentlet = {
+    ...MOCK_CONTENTLET_1_TAB,
+    disabledWYSIWYG: undefined
 };
 
 // ContentType with 2 tabs
@@ -1036,12 +1043,12 @@ export const MOCK_CONTENTTYPE_2_TABS: DotCMSContentType = {
 
 /**
  * Fields allowed to be used in form controls from the MOCK_CONTENTTYPE_2_TABS Content Type.
- * 
+ *
  * This array contains a subset of fields from MOCK_CONTENTTYPE_2_TABS that are suitable
  * for form controls. It excludes fields of types defined in NON_FORM_CONTROL_FIELD_TYPES,
  * such as Row, Column, Tab_divider, Constant-Field, and Hidden-Field.
 
- * 
+ *
  * @see MOCK_CONTENTTYPE_2_TABS
  * @see NON_FORM_CONTROL_FIELD_TYPES
  */

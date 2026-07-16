@@ -6,6 +6,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -41,6 +42,12 @@ public class SystemContainer extends Container {
         super.setFriendlyName(SYSTEM_CONTAINER_NAME);
         super.setNotes(SYSTEM_CONTAINER_NAME);
         super.setMaxContentlets(DEFAULT_MAX_CONTENTS);
+    }
+
+    // we override it, in order to do the permissionable behind a container object
+    @Override
+    public String getPermissionType() {
+        return Container.class.getCanonicalName();
     }
 
     @Override
@@ -110,5 +117,17 @@ public class SystemContainer extends Container {
     public boolean isLive()  {
         return true;
     }
+
+
+    @Override
+    public String getHostId() {
+        return Host.SYSTEM_HOST;
+    }
+
+    @Override
+    public String getHostName() {
+        return Host.SYSTEM_HOST;
+    }
+
 
 }

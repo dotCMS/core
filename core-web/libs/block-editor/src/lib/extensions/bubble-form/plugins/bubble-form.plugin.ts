@@ -1,7 +1,7 @@
 import { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
@@ -11,8 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
-import { BASIC_TIPPY_OPTIONS } from '../../../shared';
-import { getNodePosition } from '../../bubble-menu/utils';
+import { BASIC_TIPPY_OPTIONS, getEditorElement, getNodePosition } from '../../../shared';
 import { BubbleFormComponent } from '../bubble-form.component';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { imageFormControls } from '../utils';
@@ -45,15 +44,18 @@ export class BubbleFormView extends BubbleMenuView {
 
     public override view: EditorView;
 
-    public override tippy: Instance | undefined;
+    // v3 removed `tippy` and `tippyOptions` from BubbleMenuView; declared locally as instance fields.
+    public tippy: Instance | undefined;
 
-    public override tippyOptions?: Partial<Props>;
+    public tippyOptions?: Partial<Props>;
 
     public pluginKey: PluginKey;
 
     public component?: ComponentRef<BubbleFormComponent>;
 
     private $destroy = new Subject<boolean>();
+
+    private formValuesSubscription: Subscription;
 
     constructor(props: BubbleFormViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
@@ -73,9 +75,11 @@ export class BubbleFormView extends BubbleMenuView {
 
         this.component.instance.buildForm(imageFormControls);
 
-        this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
-            this.editor.commands.updateValue(data);
-        });
+        this.formValuesSubscription = this.component.instance.formValues
+            .pipe(takeUntil(this.$destroy))
+            .subscribe((data) => {
+                this.editor.commands.updateValue(data);
+            });
 
         this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeForm();
@@ -134,11 +138,12 @@ export class BubbleFormView extends BubbleMenuView {
         next.open ? this.show() : this.hide();
     }
 
-    override createTooltip() {
-        const { element: editorElement } = this.editor.options;
-        const editorIsAttached = !!editorElement.parentElement;
+    // v3 removed `createTooltip` from BubbleMenuView; called manually from `update()`.
+    createTooltip() {
+        const editorElement = getEditorElement(this.editor);
+        const editorIsAttached = !!editorElement?.parentElement;
 
-        if (this.tippy || !editorIsAttached) {
+        if (this.tippy || !editorElement || !editorIsAttached) {
             return;
         }
 
@@ -155,7 +160,7 @@ export class BubbleFormView extends BubbleMenuView {
                     }
                 });
             }
-        });
+        }) as Instance;
     }
 
     override focusHandler = () => {
@@ -170,10 +175,6 @@ export class BubbleFormView extends BubbleMenuView {
 
     override destroy() {
         this.tippy?.destroy();
-        this.editor.off('focus', this.focusHandler);
-        this.$destroy.next(true);
-        this.component.destroy();
-        this.component.instance.formValues.unsubscribe();
     }
 
     private hanlderScroll(e: Event) {

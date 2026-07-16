@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
@@ -8,8 +8,12 @@ import {
     DotMessageService,
     DotUnlicensedPortletData
 } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotNotLicenseComponent } from './dot-not-license.component';
+
+import { DotIconComponent } from '../../dot-icon/dot-icon.component';
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const messageServiceMock = new MockDotMessageService({
     'portlet.title': 'Enterprise Portlet',
@@ -31,7 +35,7 @@ describe('DotNotLicenseComponent', () => {
     let spectator: Spectator<DotNotLicenseComponent>;
     const createComponent = createComponentFactory({
         component: DotNotLicenseComponent,
-        imports: [ButtonModule, DotIconModule, DotMessagePipe],
+        imports: [ButtonModule, DotIconComponent, DotMessagePipe],
         providers: [
             {
                 provide: DotMessageService,

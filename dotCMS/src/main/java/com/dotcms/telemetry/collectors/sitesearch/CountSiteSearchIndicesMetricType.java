@@ -1,14 +1,19 @@
 package com.dotcms.telemetry.collectors.sitesearch;
 
-import com.dotcms.content.elasticsearch.business.IndexStats;
+import com.dotcms.content.index.domain.IndexStats;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.Collection;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collect the count of Site Search indices
  */
+@MetricsProfile(ProfileType.FULL)
+@ApplicationScoped
 public class CountSiteSearchIndicesMetricType extends IndicesSiteSearchMetricType {
 
 

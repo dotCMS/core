@@ -1,44 +1,13 @@
 package com.dotmarketing.filters;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
+import static com.dotcms.vanityurl.business.VanityUrlAPI.LEGACY_CMS_HOME_PAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.FilterChain;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionContext;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.FolderDataGen;
@@ -69,8 +38,39 @@ import com.dotmarketing.servlets.SpeedyAssetServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.FilterChain;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionContext;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class FiltersTest {
 
@@ -662,7 +662,7 @@ public class FiltersTest {
      * This tests the demo site for its 404 image
      */
     @Test
-    public void shouldRedirect401() throws IOException {
+    public void shouldRedirect401() throws Exception {
 
         HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
         MockResponseWrapper response = new MockResponseWrapper(res);
@@ -671,7 +671,8 @@ public class FiltersTest {
         when(response.getOutputStream()).thenReturn(servletOutputStream);
 
         FilterChain chain = Mockito.mock(FilterChain.class);
-        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/", APILocator.systemUser());
+        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/",
+                APILocator.getUserAPI().getAnonymousUser());
 
         try {
             new CMSFilter().doFilter(request, response, chain);
@@ -726,6 +727,57 @@ public class FiltersTest {
 
 
 
+    }
+
+    /**
+     * Tests that a page requested with a trailing slash (e.g. /about-us/index/) still resolves
+     * as a page and the CMS_FILTER_URI_OVERRIDE is set to the path without the trailing slash.
+     */
+    @Test
+    public void shouldResolvePageWithTrailingSlash() throws Exception {
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site)
+                .name("trailing-slash-test")
+                .title("trailing-slash-test")
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
+                .friendlyName("my-test-page")
+                .pageURL("my-test-page")
+                .title("my-test-page")
+                .nextPersisted();
+        HTMLPageDataGen.publish(page);
+
+        // Assign anonymous read permission
+        APILocator.getPermissionAPI().save(
+                new Permission(page.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                page, APILocator.systemUser(), false);
+
+        final FilterChain chain = Mockito.mock(FilterChain.class);
+
+        // Request page WITHOUT trailing slash — should resolve normally
+        HttpServletRequest request = getMockRequest(site.getHostname(),
+                "/trailing-slash-test/my-test-page");
+        MockResponseWrapper response = getMockResponse();
+
+        new CMSFilter().doFilter(request, response, chain);
+        assertEquals(200, response.getStatus());
+        assertEquals("/trailing-slash-test/my-test-page",
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+
+        // Request page WITH trailing slash — should also resolve as a page
+        // with the trailing slash stripped from CMS_FILTER_URI_OVERRIDE
+        request = getMockRequest(site.getHostname(),
+                "/trailing-slash-test/my-test-page/");
+        response = getMockResponse();
+
+        new CMSFilter().doFilter(request, response, chain);
+        assertEquals(200, response.getStatus());
+        assertEquals("/trailing-slash-test/my-test-page",
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
     }
 
     class MockRequestWrapper extends HttpServletRequestWrapper {

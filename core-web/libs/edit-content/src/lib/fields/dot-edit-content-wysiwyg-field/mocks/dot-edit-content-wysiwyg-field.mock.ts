@@ -1,11 +1,9 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { COMMENT_TINYMCE } from '../dot-edit-content-wysiwyg-field.constant';
-
 export const WYSIWYG_VARIABLE_NAME = 'variable';
 
 export const WYSIWYG_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
     fieldType: 'WYSIWYG',
@@ -48,7 +46,7 @@ export const WYSIWYG_FIELD_CONTENTLET_MOCK_NO_CONTENT: DotCMSContentlet = {
     modUser: 'dotcms.org.1',
     modUserName: 'Admin User',
     owner: 'dotcms.org.1',
-    ownerName: 'Admin User',
+    ownerUserName: 'Admin User',
     sortOrder: 0,
     stInode: 'fbe4e03c0f4154e8e4fdc8d483fedcc0',
     title: '415d8f589845d8d1d32bc4b955d47b9e',
@@ -62,7 +60,7 @@ export const WYSIWYG_FIELD_CONTENTLET_MOCK_WITH_WYSIWYG_CONTENT: DotCMSContentle
     baseType: 'CONTENT',
     contentType: 'Test2',
     creationDate: 1727121715503,
-    [WYSIWYG_VARIABLE_NAME]: `${COMMENT_TINYMCE}<p>contenido</p>`,
+    [WYSIWYG_VARIABLE_NAME]: '<p>contenido</p>',
     folder: 'SYSTEM_FOLDER',
     hasLiveVersion: false,
     hasTitleImage: false,
@@ -77,7 +75,7 @@ export const WYSIWYG_FIELD_CONTENTLET_MOCK_WITH_WYSIWYG_CONTENT: DotCMSContentle
     modUser: 'dotcms.org.1',
     modUserName: 'Admin User',
     owner: 'dotcms.org.1',
-    ownerName: 'Admin User',
+    ownerUserName: 'Admin User',
     sortOrder: 0,
     stInode: 'fbe4e03c0f4154e8e4fdc8d483fedcc0',
     title: '415d8f589845d8d1d32bc4b955d47b9e',

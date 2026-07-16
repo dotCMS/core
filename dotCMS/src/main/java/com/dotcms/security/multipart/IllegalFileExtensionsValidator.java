@@ -17,8 +17,9 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
     private final Set<String> illegalExtensionLowerSet =
             new HashSet<>(Arrays.asList(
                     Config.getCustomArrayProperty("MULTI_PART_ILLEGAL_FILE_EXTENSIONS",
-                        s -> s.toLowerCase(), String.class,
-                            ()-> new String [] {".bat",".exe",".sh",".bin",".jsp",".swf"})));
+                            String::toLowerCase, String.class,
+                            ()-> new String [] {".bat",".exe",".sh",".bin",".jsp",".swf"}))
+            );
 
     @Override
     public void validate(final String fileName) {

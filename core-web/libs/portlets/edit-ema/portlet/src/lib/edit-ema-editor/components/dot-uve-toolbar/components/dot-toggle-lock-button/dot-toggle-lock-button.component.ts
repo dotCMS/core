@@ -1,0 +1,68 @@
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { DotMessagePipe } from '@dotcms/ui';
+
+export interface ToggleLockButtonOptions {
+    inode: string;
+    isLocked: boolean;
+    isLockedByCurrentUser: boolean;
+    canLock: boolean;
+    loading: boolean;
+    disabled: boolean;
+    message: string;
+    args: string[];
+}
+
+export interface ToggleLockEvent {
+    inode: string;
+    isLocked: boolean;
+    isLockedByCurrentUser: boolean;
+}
+
+@Component({
+    selector: 'dot-toggle-lock-button',
+    templateUrl: './dot-toggle-lock-button.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ButtonModule, TooltipModule, DotMessagePipe]
+})
+export class DotToggleLockButtonComponent {
+    // Inputs - data down from container
+    toggleLockOptions = input.required<ToggleLockButtonOptions>();
+
+    // Outputs - events up to container
+    toggleLockClick = output<ToggleLockEvent>();
+
+    // Local computed - button label based on lock state
+    $buttonLabel = computed(() => {
+        const isLocked = this.toggleLockOptions()?.isLocked;
+        return isLocked
+            ? 'uve.editor.toggle.lock.button.locked'
+            : 'uve.editor.toggle.lock.button.unlocked';
+    });
+
+    // Computeds consumed by template
+    $lockOptions = this.toggleLockOptions;
+    $workflowLockIsLoading = computed(() => this.toggleLockOptions().loading);
+
+    /**
+     * Toggles the lock state of the current page.
+     * Emits event to parent container to handle the actual toggle.
+     */
+    toggleLock() {
+        const { inode, isLocked, isLockedByCurrentUser, canLock } = this.toggleLockOptions();
+
+        if (!canLock) {
+            return;
+        }
+
+        // Emit event instead of directly calling store
+        this.toggleLockClick.emit({
+            inode,
+            isLocked,
+            isLockedByCurrentUser
+        });
+    }
+}

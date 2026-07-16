@@ -1,5 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
+
+import { LazyLoadEvent } from 'primeng/api';
+
+import { delay, take } from 'rxjs/operators';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentTypeFieldCategories } from '@dotcms/dotcms-models';
@@ -17,24 +21,26 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     providers: [PaginatorService],
     selector: 'dot-categories-property',
-    templateUrl: './categories-property.component.html'
+    templateUrl: './categories-property.component.html',
+    standalone: false
 })
 export class CategoriesPropertyComponent implements OnInit {
-    categoriesCurrentPage: DotCMSContentTypeFieldCategories[];
+    private dotMessageService = inject(DotMessageService);
+    paginationService = inject(PaginatorService);
+
+    categoriesCurrentPage: DotCMSContentTypeFieldCategories[] = [];
+    loading = false;
+    filterValue = '';
     property: FieldProperty;
     group: UntypedFormGroup;
     placeholder: string;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        public paginationService: PaginatorService
-    ) {}
 
     ngOnInit(): void {
         this.placeholder = !this.property.value
             ? this.dotMessageService.get('contenttypes.field.properties.category.label')
             : (this.property.value as string);
         this.paginationService.url = 'v1/categories';
+        this.getCategoriesList();
     }
 
     /**
@@ -42,8 +48,9 @@ export class CategoriesPropertyComponent implements OnInit {
      * @param any filter
      * @memberof CategoriesPropertyComponent
      */
-    handleFilterChange(filter): void {
-        this.getCategoriesList(filter);
+    handleFilterChange(filter: string): void {
+        this.filterValue = filter || '';
+        this.getCategoriesList(this.filterValue, 0);
     }
 
     /**
@@ -55,13 +62,25 @@ export class CategoriesPropertyComponent implements OnInit {
         this.getCategoriesList(event.filter, event.first);
     }
 
+    handleLazyLoad(event: LazyLoadEvent): void {
+        const offset = event.first || 0;
+        this.getCategoriesList(this.filterValue, offset);
+    }
+
     private getCategoriesList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
+        this.loading = true;
         this.paginationService
             .getWithOffset<DotCMSContentTypeFieldCategories[]>(offset)
-            .subscribe((items: DotCMSContentTypeFieldCategories[]) => {
-                // items.splice(0) is used to return a new object and trigger the change detection in angular
-                this.categoriesCurrentPage = items.splice(0);
-            });
+            .pipe(take(1), delay(0))
+            .subscribe(
+                (items: DotCMSContentTypeFieldCategories[]) => {
+                    this.categoriesCurrentPage = items.slice(0);
+                    this.loading = false;
+                },
+                () => {
+                    this.loading = false;
+                }
+            );
     }
 }

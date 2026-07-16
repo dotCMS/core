@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -21,7 +21,9 @@ export const ProductsTableTemplate = `
               <td>{{product.price}}</td>
               <td><span [class]="'product-badge status-'+product.inventoryStatus.toLowerCase()">{{product.inventoryStatus}}</span></td>
               <td>
-                  <button type="button" pButton icon="pi pi-search" (click)="selectProduct(product)"></button>
+                  <button type="button" pButton (click)="selectProduct(product)">
+                      <i class="pi pi-search" pButtonIcon></i>
+                  </button>
               </td>
           </tr>
       </ng-template>
@@ -33,13 +35,11 @@ export const ProductsTableTemplate = `
     template: ProductsTableTemplate
 })
 export class DynamicDialogProductsComponent implements OnInit {
-    products: Product[];
+    private productService = inject(ProductService);
+    ref = inject(DynamicDialogRef);
+    config = inject(DynamicDialogConfig);
 
-    constructor(
-        private productService: ProductService,
-        public ref: DynamicDialogRef,
-        public config: DynamicDialogConfig
-    ) {}
+    products: Product[];
 
     ngOnInit() {
         this.productService.getProductsSmall().then((products) => (this.products = products));

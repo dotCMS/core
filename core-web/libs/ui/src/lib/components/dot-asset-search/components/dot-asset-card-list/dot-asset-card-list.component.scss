@@ -1,3 +1,5 @@
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -7,14 +9,14 @@
     flex-direction: column;
 
     .wrapper {
-        padding: 0 $spacing-5;
+        padding: 0 spacing.$spacing-5;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
         flex-grow: 1;
         height: 250px;
-        gap: 0 $spacing-3;
+        gap: 0 spacing.$spacing-3;
         overflow: hidden;
     }
 
@@ -23,18 +25,18 @@
     }
 
     p {
-        margin: $spacing-3 0;
+        margin: spacing.$spacing-3 0;
         font-size: 1.125 * $dot-editor-size;
     }
 
     &::ng-deep {
         dot-asset-card,
         dot-asset-card-skeleton {
-            width: calc(50% - $spacing-1);
+            width: calc(50% - spacing.$spacing-1);
         }
 
         .p-scroller-content {
-            padding: 0 $spacing-5;
+            padding: 0 spacing.$spacing-5;
             max-width: 100%;
         }
 
@@ -43,7 +45,7 @@
             justify-content: space-between;
             width: 100%;
             min-height: 110px;
-            gap: $spacing-3;
+            gap: spacing.$spacing-3;
         }
     }
 }

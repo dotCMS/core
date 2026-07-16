@@ -1,10 +1,13 @@
 package com.dotcms.util;
 
+import static com.dotmarketing.util.LuceneQueryUtils.isLuceneQuery;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -12,13 +15,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -30,11 +32,13 @@ import java.util.stream.Collectors;
  */
 public class RelationshipUtil {
 
-    private final static ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
     private static final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
-    private final static RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+    private static final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+    private static final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 
     /**
@@ -53,10 +57,18 @@ public class RelationshipUtil {
     public static List<Contentlet> getRelatedContentFromQuery(
             final Relationship relationship, final ContentType contentType, final long language,
             final String query, final User user) throws DotDataException, DotSecurityException {
-        List<Contentlet> relatedContentlets = Collections.EMPTY_LIST;
+        List<Contentlet> relatedContentlets = List.of();
 
         if (UtilMethods.isSet(query)) {
-            relatedContentlets = filterContentlet(language, query, user, true);
+            // Resolve related content as read-only references only. This path just needs the
+            // related contentlets to write the parent's relationship (Tree) records
+            relatedContentlets = filterContentlet(language, query, user, false);
+            // filterContentlet resolves identifiers via the system user internally, so enforce READ
+            // for the acting user here — on the import path only — to avoid relating content the
+            // user cannot see (#35222). Batch-filter in a single round-trip (JAVA_STANDARDS:
+            // permission checks batch vs scalar).
+            relatedContentlets = permissionAPI.filterCollection(
+                    relatedContentlets, PermissionAPI.PERMISSION_READ, user, false);
             validateRelatedContent(relationship, contentType, relatedContentlets);
         }
 
@@ -82,22 +94,39 @@ public class RelationshipUtil {
         //LinkedHashMap to preserve the order of the contentlets
         final Map<String, Contentlet> relatedContentlets = new LinkedHashMap<>();
 
-        boolean isLuceneQuery = UtilMethods.isLuceneQuery(filter);
+        final boolean isLuceneQuery = isLuceneQuery(filter);
 
         //Filter can be an identifier or a lucene query (comma separated)
         for (final String elem : filter.split(StringPool.COMMA)) {
             if (!filter.isEmpty()) {
                 final boolean isUUID = UUIDUtil.isUUID(elem.trim());
                 if (!isUUID && !isLuceneQuery) {
-                    throw new DotValidationException("The field has a value (" + filter + ") that is not an identifier or a lucene query");
+                    throw DotValidationException.relationshipInvalidFilterValue(filter);
                 }
                 if (isUUID && !relatedContentlets.containsKey(elem.trim())) {
                     final Identifier identifier = identifierAPI.find(elem.trim());
-                    final Contentlet relatedContentlet = contentletAPI
-                            .findContentletForLanguage(language, identifier);
-                    relatedContentlets.put(relatedContentlet.getIdentifier(), isCheckout ? contentletAPI
-                            .checkout(relatedContentlet.getInode(), user, respectFrontendRoles)
-                            : relatedContentlet);
+                    if (identifier != null && UtilMethods.isSet(identifier.getId())) {
+                        // Relationships are stored at the identifier level in the Tree table,
+                        // not per-language. If the contentlet has no version in the requested
+                        // language (e.g. an article translated to Spanish referencing a related
+                        // contentlet that only exists in English), fall back to the working
+                        // version in any language so the identifier can still be resolved.
+                        Contentlet relatedContentlet = contentletAPI
+                                .findContentletForLanguage(language, identifier);
+                        if (relatedContentlet == null) {
+                            relatedContentlet = contentletAPI
+                                    .findContentletByIdentifierAnyLanguage(identifier.getId());
+                        }
+                        if (relatedContentlet != null) {
+                            relatedContentlets.put(relatedContentlet.getIdentifier(),
+                                    isCheckout ? contentletAPI.checkout(relatedContentlet.getInode(),
+                                            user, respectFrontendRoles) : relatedContentlet);
+                        } else {
+                            Logger.warn(RelationshipUtil.class, "No contentlet found for identifier '"
+                                    + identifier.getId() + "' in language " + language
+                                    + " or any other language; skipping from relationship filter.");
+                        }
+                    }
                 } else {
                     relatedContentlets
                             .putAll((isCheckout ? contentletAPI.checkoutWithQuery(elem, user, false)
@@ -143,9 +172,8 @@ public class RelationshipUtil {
             for (final Contentlet relatedContentlet : relatedContentlets) {
                 final Structure relatedStructure = relatedContentlet.getStructure();
                 if (!(relationshipAPI.isChild(relationship, relatedStructure))) {
-                    throw new DotValidationException(
-                            "The structure does not match the relationship" + relationship
-                                    .getRelationTypeValue());
+                    throw DotValidationException.nonMatchingRelationship(
+                             relationship, true, contentType, relatedContentlet.getContentType());
                 }
             }
         }
@@ -153,9 +181,8 @@ public class RelationshipUtil {
             for (final Contentlet relatedContentlet : relatedContentlets) {
                 final Structure relatedStructure = relatedContentlet.getStructure();
                 if (!(relationshipAPI.isParent(relationship, relatedStructure))) {
-                    throw new DotValidationException(
-                            "The structure does not match the relationship " + relationship
-                                    .getRelationTypeValue());
+                    throw DotValidationException.nonMatchingRelationship(
+                            relationship, false, contentType, relatedContentlet.getContentType());
                 }
             }
         }

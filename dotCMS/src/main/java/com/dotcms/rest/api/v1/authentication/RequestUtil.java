@@ -42,4 +42,22 @@ public class RequestUtil {
 
         return statelessRequest;
     }
+
+    /**
+     * Determine if the request is recycled
+     * @param request
+     * @return
+     */
+    public boolean isRecycledRequest (final HttpServletRequest request) {
+
+        try {
+
+            request.getHeader("X-Requested-With"); // just testing anything to see if valid
+        } catch (IllegalStateException e) {
+            // if throws this exception means it is recycled
+            return true;
+        }
+
+        return false;
+    }
 }

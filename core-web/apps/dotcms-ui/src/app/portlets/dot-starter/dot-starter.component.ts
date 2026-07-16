@@ -1,69 +1,53 @@
-import { Observable } from 'rxjs';
-
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
-import { map, pluck, take } from 'rxjs/operators';
+import { DotColorIconComponent } from '@dotcms/ui';
 
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
-import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
+import { DotOnboardingAuthorComponent } from './components/onboarding-author/onboarding-author.component';
+import { DotOnboardingDevComponent } from './components/onboarding-dev/onboarding-dev.component';
+
+export type UserProfile = 'developer' | 'marketer';
 
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
-    styleUrls: ['./dot-starter.component.scss']
+    imports: [DotColorIconComponent, DotOnboardingDevComponent, DotOnboardingAuthorComponent]
 })
 export class DotStarterComponent implements OnInit {
-    userData$: Observable<{
-        username: string;
-        showCreateContentLink: boolean;
-        showCreateDataModelLink: boolean;
-        showCreatePageLink: boolean;
-        showCreateTemplateLink: boolean;
-    }>;
-    username: string;
-    showCreateContentLink: boolean;
-    showCreateDataModelLink: boolean;
-    showCreatePageLink: boolean;
-    showCreateTemplateLink: boolean;
+    public profile: UserProfile = localStorage.getItem('user_profile') as UserProfile;
+    public showProfileSelection = true;
+    public showDeveloperGuide = false;
+    public showMarketerGuide = false;
 
-    constructor(
-        private route: ActivatedRoute,
-        private dotAccountService: DotAccountService
-    ) {}
+    ngOnInit(): void {
+        if (this.profile !== null && this.profile === 'developer') {
+            this.showDeveloperGuide = true;
+            this.showProfileSelection = false;
+        }
 
-    ngOnInit() {
-        this.userData$ = this.route.data.pipe(
-            pluck('userData'),
-            take(1),
-            map(
-                ({
-                    user,
-                    permissions
-                }: {
-                    user: DotCurrentUser;
-                    permissions: DotPermissionsType;
-                }) => {
-                    return {
-                        username: user.givenName,
-                        showCreateContentLink: permissions[PermissionsType.CONTENTLETS].canWrite,
-                        showCreateDataModelLink: permissions[PermissionsType.STRUCTURES].canWrite,
-                        showCreatePageLink: permissions[PermissionsType.HTMLPAGES].canWrite,
-                        showCreateTemplateLink: permissions[PermissionsType.TEMPLATES].canWrite
-                    };
-                }
-            )
-        );
+        if (this.profile !== null && this.profile === 'marketer') {
+            this.showMarketerGuide = true;
+            this.showProfileSelection = false;
+        }
     }
 
-    /**
-     * Hit the endpoint to show/hide the tool group in the menu.
-     * @param {boolean} hide
-     * @memberof DotStarterComponent
-     */
-    handleVisibility(hide: boolean): void {
-        hide
-            ? this.dotAccountService.removeStarterPage().subscribe()
-            : this.dotAccountService.addStarterPage().subscribe();
+    public setUserProfile(selectedProfile: UserProfile) {
+        localStorage.setItem('user_profile', selectedProfile);
+        this.showProfileSelection = false;
+        this.showMarketerGuide = false;
+        this.showDeveloperGuide = false;
+
+        if (selectedProfile === 'marketer') {
+            this.showMarketerGuide = true;
+        }
+
+        if (selectedProfile === 'developer') {
+            this.showDeveloperGuide = true;
+        }
+    }
+
+    public onUserProfileReset(): void {
+        this.showProfileSelection = true;
+        this.showDeveloperGuide = false;
+        this.showMarketerGuide = false;
     }
 }

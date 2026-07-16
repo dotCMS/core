@@ -15,8 +15,7 @@ const enum StorageType {
 }
 
 @Directive({
-    selector: '[dotStateRestore]',
-    standalone: true
+    selector: '[dotStateRestore]'
 })
 export class DotStateRestoreDirective implements AfterViewInit {
     readonly #table = inject(Table);

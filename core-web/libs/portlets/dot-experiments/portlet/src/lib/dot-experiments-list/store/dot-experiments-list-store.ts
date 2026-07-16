@@ -1,14 +1,14 @@
 import { ComponentStore, OnStateInit } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
-import { EMPTY, Observable, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import {
     DotExperimentsService,
@@ -86,6 +86,16 @@ export class DotExperimentsListStore
     extends ComponentStore<DotExperimentsState>
     implements OnStateInit
 {
+    private readonly dotExperimentsStore = inject(DotExperimentsStore);
+    private readonly dotExperimentsService = inject(DotExperimentsService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly messageService = inject(MessageService);
+    private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
+
     readonly isLoading$: Observable<boolean> = this.select(
         (state) => state.status === ComponentStatus.LOADING || state.status === ComponentStatus.INIT
     );
@@ -211,11 +221,14 @@ export class DotExperimentsListStore
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((pageId) =>
                 this.dotExperimentsService.getAll(pageId).pipe(
-                    tapResponse(
-                        (experiments) => this.setExperiments(experiments),
-                        (error: HttpErrorResponse) => throwError(error),
-                        () => this.setComponentStatus(ComponentStatus.LOADED)
-                    )
+                    tapResponse({
+                        next: (experiments) => this.setExperiments(experiments),
+                        error: (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.setComponentStatus(ComponentStatus.LOADED);
+                        },
+                        complete: () => this.setComponentStatus(ComponentStatus.LOADED)
+                    })
                 )
             )
         );
@@ -232,8 +245,8 @@ export class DotExperimentsListStore
                 ),
                 switchMap((experiment) =>
                     this.dotExperimentsService.add(experiment).pipe(
-                        tapResponse(
-                            (experiment) => {
+                        tapResponse({
+                            next: (experiment) => {
                                 this.messageService.add({
                                     severity: 'info',
                                     summary: this.dotMessageService.get(
@@ -245,7 +258,6 @@ export class DotExperimentsListStore
                                     )
                                 });
                                 this.addExperiment(experiment);
-
                                 this.router.navigate(
                                     [
                                         '/edit-page/experiments/',
@@ -258,14 +270,14 @@ export class DotExperimentsListStore
                                     }
                                 );
                             },
-                            (error: HttpErrorResponse) => {
+                            error: (error: HttpErrorResponse) => {
                                 this.setSidebarStatus({
                                     status: ComponentStatus.IDLE,
                                     isOpen: true
                                 });
                                 this.dotHttpErrorManagerService.handle(error);
                             }
-                        )
+                        })
                     )
                 )
             );
@@ -277,8 +289,8 @@ export class DotExperimentsListStore
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experiment) =>
                 this.dotExperimentsService.delete(experiment.id).pipe(
-                    tapResponse(
-                        () => {
+                    tapResponse({
+                        next: () => {
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
@@ -291,10 +303,12 @@ export class DotExperimentsListStore
                             });
                             this.deleteExperimentById(experiment.id);
                         },
-                        (error) => throwError(error),
-                        () => this.setComponentStatus(ComponentStatus.LOADED)
-                    ),
-                    catchError(() => EMPTY)
+                        error: (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.setComponentStatus(ComponentStatus.LOADED);
+                        },
+                        complete: () => this.setComponentStatus(ComponentStatus.LOADED)
+                    })
                 )
             )
         );
@@ -305,8 +319,8 @@ export class DotExperimentsListStore
             tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
             switchMap((experiment) =>
                 this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
-                    tapResponse(
-                        () => {
+                    tapResponse({
+                        next: () => {
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
@@ -319,9 +333,10 @@ export class DotExperimentsListStore
                             });
                             this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
-                    )
+                        error: (error: HttpErrorResponse) =>
+                            this.dotHttpErrorManagerService.handle(error),
+                        complete: () => this.setComponentStatus(ComponentStatus.IDLE)
+                    })
                 )
             )
         );
@@ -332,8 +347,8 @@ export class DotExperimentsListStore
             tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
             switchMap((experiment) =>
                 this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
-                    tapResponse(
-                        () => {
+                    tapResponse({
+                        next: () => {
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
@@ -346,9 +361,10 @@ export class DotExperimentsListStore
                             });
                             this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
-                    )
+                        error: (error: HttpErrorResponse) =>
+                            this.dotHttpErrorManagerService.handle(error),
+                        complete: () => this.setComponentStatus(ComponentStatus.IDLE)
+                    })
                 )
             )
         );
@@ -359,8 +375,8 @@ export class DotExperimentsListStore
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experiment) =>
                 this.dotExperimentsService.archive(experiment.id).pipe(
-                    tapResponse(
-                        () => {
+                    tapResponse({
+                        next: () => {
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
@@ -373,10 +389,12 @@ export class DotExperimentsListStore
                             });
                             this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
-                        (error) => throwError(error),
-                        () => this.setComponentStatus(ComponentStatus.LOADED)
-                    ),
-                    catchError(() => EMPTY)
+                        error: (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.setComponentStatus(ComponentStatus.LOADED);
+                        },
+                        complete: () => this.setComponentStatus(ComponentStatus.LOADED)
+                    })
                 )
             )
         );
@@ -387,8 +405,8 @@ export class DotExperimentsListStore
             tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
             switchMap((experiment) =>
                 this.dotExperimentsService.stop(experiment.id).pipe(
-                    tapResponse(
-                        () => {
+                    tapResponse({
+                        next: () => {
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
@@ -401,9 +419,10 @@ export class DotExperimentsListStore
                             });
                             this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
-                    )
+                        error: (error: HttpErrorResponse) =>
+                            this.dotHttpErrorManagerService.handle(error),
+                        complete: () => this.setComponentStatus(ComponentStatus.IDLE)
+                    })
                 )
             )
         );
@@ -445,17 +464,8 @@ export class DotExperimentsListStore
         })
     );
 
-    constructor(
-        private readonly dotExperimentsStore: DotExperimentsStore,
-        private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly messageService: MessageService,
-        private readonly route: ActivatedRoute,
-        private readonly router: Router,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotPushPublishDialogService: DotPushPublishDialogService
-    ) {
+    constructor() {
+        const route = inject(ActivatedRoute);
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
         super({

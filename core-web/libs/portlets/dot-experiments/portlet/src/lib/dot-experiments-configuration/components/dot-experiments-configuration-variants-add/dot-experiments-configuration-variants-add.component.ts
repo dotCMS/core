@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { ComponentStatus, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import {
@@ -17,7 +17,8 @@ import {
     DotSidebarDirective,
     DotSidebarHeaderComponent,
     DotTrimInputDirective,
-    DotValidators
+    DotValidators,
+    SIDEBAR_SIZES
 } from '@dotcms/ui';
 
 import {
@@ -27,38 +28,32 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',
-    standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
-
         DotSidebarHeaderComponent,
         DotMessagePipe,
         DotFieldValidationMessageComponent,
         DotSidebarDirective,
-
-        //PrimeNg
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         InputTextModule,
         AutoFocusModule,
         DotAutofocusDirective,
-        DotTrimInputDirective
+        DotTrimInputDirective,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-variants-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-variants-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     stepStatus = ComponentStatus;
     form: FormGroup;
+    sidebarSizes = SIDEBAR_SIZES;
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     ngOnInit(): void {
         this.initForm();

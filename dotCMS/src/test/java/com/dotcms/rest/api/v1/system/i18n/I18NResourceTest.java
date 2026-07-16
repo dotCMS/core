@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.system.i18n;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;

@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Card, CardModule } from 'primeng/card';
 
@@ -6,6 +6,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotAssetCardComponent } from './dot-asset-card.component';
+
+import { DotContentletStatusBadgeComponent } from '../../../dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 
 const contentlet: DotCMSContentlet = {
     ...EMPTY_CONTENTLET,
@@ -19,7 +21,7 @@ describe('DotAssetCardComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAssetCardComponent,
-        imports: [CardModule]
+        imports: [CardModule, DotContentletStatusBadgeComponent]
     });
 
     beforeEach(() => {
@@ -30,20 +32,21 @@ describe('DotAssetCardComponent', () => {
         });
     });
 
-    it('should use the dot-contentlet-thumbnail', () => {
+    it('should use the dot-content-thumbnail', () => {
         const card = spectator.query(Card);
-        const thumbnail = spectator.query('dot-contentlet-thumbnail');
-        expect(thumbnail).toBeDefined();
+        const thumbnail = spectator.query('dot-content-thumbnail');
+        expect(thumbnail).toBeTruthy();
         expect(card).toBeDefined();
     });
 
     it('should display the contentlet file name and language', () => {
+        spectator.detectChanges();
         const title = spectator.query('[data-testId="dot-card-title"]');
         const language = spectator.query('[data-testId="dot-card-language"]');
 
-        expect(title.innerHTML.trim()).toBe(contentlet.fileName);
+        expect(title?.textContent?.trim()).toBe(contentlet.fileName);
         const languageContent = contentlet.language as string;
-        expect(language.innerHTML.trim()).toBe(languageContent);
+        expect(language?.textContent?.trim()).toBe(languageContent);
     });
 
     it('should display the contentlet title when the fileName property is empty', () => {
@@ -55,6 +58,6 @@ describe('DotAssetCardComponent', () => {
         spectator.detectChanges();
 
         const title = spectator.query('[data-testId="dot-card-title"]');
-        expect(title.innerHTML.trim()).toBe(contentlet.title);
+        expect(title?.textContent?.trim()).toBe(contentlet.title);
     });
 });

@@ -1,0 +1,31 @@
+@let variable = $variableName();
+@let hasError = $hasError();
+
+<p-autoComplete
+    #autocomplete
+    styleClass="w-full"
+    [attr.data-testid]="'tag-field-container-' + variable"
+    [id]="'tag-id-' + variable"
+    [inputId]="variable"
+    [suggestions]="$suggestions()"
+    [class.ng-invalid]="hasError"
+    [class.ng-dirty]="hasError"
+    [(ngModel)]="$values"
+    [ngModelOptions]="{ standalone: true }"
+    [multiple]="true"
+    [fluid]="true"
+    [forceSelection]="false"
+    [unique]="AUTO_COMPLETE_UNIQUE"
+    [minLength]="AUTO_COMPLETE_MIN_LENGTH"
+    [delay]="AUTO_COMPLETE_DELAY"
+    [disabled]="$isDisabled()"
+    [placeholder]="'edit.content.form.field.tags.placeholder' | dm"
+    (ngModelChange)="onTagsChange($event)"
+    (completeMethod)="onSearch($event)"
+    (keydown.enter)="onEnterKey($event)">
+    <ng-template pTemplate="removetokenicon">
+        <span class="flex items-center leading-none">
+            <i class="pi pi-times text-xs"></i>
+        </span>
+    </ng-template>
+</p-autoComplete>

@@ -1,20 +1,20 @@
 import { faker } from '@faker-js/faker';
 
-import { Site } from '@dotcms/dotcms-js';
+import { DotSite } from '@dotcms/dotcms-models';
 
 /**
  * Create a fake Site object.
  *
  * @export
- * @param {Partial<Site>} [overrides={}]
- * @return {*}  {Site}
+ * @param {Partial<DotSite>} [overrides={}]
+ * @return {*}  {DotSite}
  */
-export function createFakeSite(overrides: Partial<Site> = {}): Site {
+export function createFakeSite(overrides: Partial<DotSite> = {}): DotSite {
     return {
         identifier: faker.string.uuid(),
         hostname: faker.internet.domainName(),
-        type: 'site',
+        aliases: null,
         archived: faker.datatype.boolean(),
         ...overrides
-    };
+    } as DotSite;
 }

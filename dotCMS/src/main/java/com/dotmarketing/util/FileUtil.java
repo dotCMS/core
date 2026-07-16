@@ -9,6 +9,8 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mozilla.universalchardet.UniversalDetector;
@@ -81,17 +83,27 @@ public class FileUtil {
 	private static Set<String> getEditableAsTextFileTypes() {
 		final Set<String> editableTypes = new HashSet<>();
 		editableTypes.addAll(Set.of(
-				"text/plain",
-				"text/css",
-				"text/javascript",
-				"text/markdown",
-				"text/xml",
-				"text/csv",
-				"text/html",
-				"application/xml",
+				// Scripts and source code
+				"application/javascript",
+				"application/ecmascript",
+				"application/x-typescript",
+				"application/x-sh",              // Shell script
+				"application/x-httpd-php",       // PHP scripts
+				"application/x-latex",           // LaTeX documents
+
+				// Structured data formats
 				"application/json",
+				"application/xml",
 				"application/x-yaml",
-				"application/x-sql"));
+				"application/toml",
+				"application/x-toml",
+				"application/x-www-form-urlencoded",
+				"application/x-sql",
+
+				// React/TSX extensions
+				"application/jsx",
+				"application/tsx"
+		));
 		editableTypes.addAll(new HashSet<>(Arrays.asList(Config.getStringArrayProperty(
 				"EDITABLE_AS_TEXT_FILE_TYPES", new String[]{}))));
 		return editableTypes;
@@ -214,20 +226,75 @@ public class FileUtil {
       return illegalCharacters;
   });
 
+    /**
+     * Validates if a file path is safe and follows acceptable patterns
+     * Accepts: "file.log", "subfolder/file.log", "folder/subfolder/file.log"
+     * Rejects: "../attack", "/etc/passwd", "folder//file", etc.
+     *
+     * @param filePath The file path to validate
+     * @return true if the path is safe
+     */
+    public static boolean isValidFilePath(final String filePath) {
+
+        if (UtilMethods.isNotSet(filePath)) {
+            return false;
+        }
+
+        // Reject directory traversal
+        if (filePath.contains("..")) {
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Directory traversal detected in path: " + filePath);
+            return false;
+        }
+
+        // Reject absolute paths
+        if (filePath.startsWith("/") || filePath.startsWith("\\") ||
+                filePath.matches("^[a-zA-Z]:.*")) {  // Windows drive letter
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Absolute path detected: " + filePath);
+            return false;
+        }
+
+        // Reject double slashes
+        if (filePath.contains("//") || filePath.contains("\\\\")) {
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Double slash detected in path: " + filePath);
+            return false;
+        }
+
+        // Only allow alphanumeric, dash, underscore, dot, and single forward slash
+        // Examples: "file.log", "logs/file.log", "app-logs/server_01/tomcat.2024.log"
+        if (!filePath.matches("^[a-zA-Z0-9._-]+(/[a-zA-Z0-9._-]+)*$")) {
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Invalid characters in path: " + filePath);
+            return false;
+        }
+
+        // Optional: limit path depth
+        final int depth = filePath.split("/").length;
+        if (depth > 10) {  // Max 10 levels
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Excessive path depth (" + depth + "): " + filePath);
+            return false;
+        }
+
+        return true;
+    }
+
   /**
    * cleans filenames and allows unicode- taken from
    * https://stackoverflow.com/questions/1155107/is-there-a-cross-platform-java-method-to-remove-filename-special-chars
    * 
-   * @param badFileName
+   * @param badFileNameIncoming
    * @return
    */
   public static String sanitizeFileName(final String badFileNameIncoming) {
-      
-      
+
+
       final String fileExtention = UtilMethods.isSet(UtilMethods.getFileExtension(badFileNameIncoming)) 
                       ? UtilMethods.getFileExtension(badFileNameIncoming)
                           : "ukn";
-      
+
 
       final String replacementFileName = RandomStringUtils.randomAlphabetic(10) + "." + fileExtention;
       final String badFileName= Try.of(()-> Paths.get(badFileNameIncoming).getFileName().toString())
@@ -237,7 +304,7 @@ public class FileUtil {
                           })
                           .getOrElse(replacementFileName);
 
-      
+
       // remove non-valid characters
       final StringBuilder cleanName = new StringBuilder();
       int len = badFileName.codePointCount(0, badFileName.length());
@@ -247,15 +314,45 @@ public class FileUtil {
               cleanName.appendCodePoint(c);
           }
       }
-      
+
       //Stripts leading peroids from filename
       final String cleanFileName = StringUtils.stripStart( cleanName.toString(), ".");
-      
+
       return (cleanFileName.length() > 0) ? cleanFileName : replacementFileName;
-      
-      
+
+
 
   }
+
+    /**
+     * Sanitizes a file path by decomposing it into individual components and sanitizing each part separately.
+     * This provides enhanced security by ensuring that both directory names and file names are properly cleaned
+     * to prevent directory traversal attacks and other malicious file path manipulations.
+     *
+     * @param fileName the file path to sanitize can include directory components
+     * @return the sanitized file path with all components individually cleaned
+     */
+    public static String sanitizeFilePath(final String fileName) {
+        // Decompose fileName into directory parts and file name, sanitize each individually
+        final java.nio.file.Path filePath = Paths.get(fileName);
+
+        if (filePath.getParent() != null) {
+            // Has directory components - sanitize each part individually
+            final StringBuilder sanitizedPath = new StringBuilder();
+
+            for (java.nio.file.Path part : filePath) {
+                if (sanitizedPath.length() > 0) {
+                    sanitizedPath.append(File.separator);
+                }
+                sanitizedPath.append(FileUtil.sanitizeFileName(part.toString()));
+            }
+
+            return sanitizedPath.toString();
+        } else {
+            // No directory components - sanitize as a single file name
+            return FileUtil.sanitizeFileName(fileName);
+        }
+    }
 
 	/**
 	 * This will write the given InputStream to a new File in the given location
@@ -286,7 +383,7 @@ public class FileUtil {
         }
 
 	}
-	
+
 
 	/**
 	 * This method will figure out if the passed in path is relative meaning relative to the WAR and will

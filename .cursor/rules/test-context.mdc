@@ -1,0 +1,36 @@
+---
+description: "Testing with Spectator, Jest, data-testid, integration tests. Use when writing or editing *.spec.ts, *Test.java, or test files."
+globs: **/*.spec.ts, **/*.test.ts, **/test/**/*, **/*Test.java
+alwaysApply: false
+---
+
+# Testing Context
+
+## Frontend (Spectator)
+- Selectors: `byTestId('id')` only; never CSS classes for behavior.
+- Inputs: `spectator.setInput('prop', value)`; never `spectator.component.prop = value`.
+- CSS: `expect(el).toHaveClass('pi', 'pi-update')` (separate strings); not object form.
+- Test user flows: type, click, assert visible content; avoid testing internals or mock call counts.
+- **Mocks**: Use `@dotcms/utils-testing` createFake functions; never create manual mocks for domain objects.
+
+## data-testid
+- Component: `data-testid="user-profile"`. Controls: `user-profile-name-input`, `user-profile-save-button`. States: `loading-spinner`, `error-message`, `success-message`.
+
+## Backend (Java)
+- DotConnect for DB; APILocator for services. Structure: *Test.java (unit), *IT.java (integration).
+
+## Commands
+```bash
+# Backend (from repo root)
+./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
+
+# Frontend (Nx, from repo root)
+cd core-web && yarn nx run <project>:test
+cd core-web && yarn nx run <project>:test -t MyComponent
+```
+Replace `<project>` with the Nx project (e.g. `dotcms-ui`, `sdk-angular`, `edit-content`).
+
+## On-demand
+- `@docs/frontend/TESTING_FRONTEND.md`
+- `@docs/testing/BACKEND_UNIT_TESTS.md`
+- `@docs/testing/INTEGRATION_TESTS.md`

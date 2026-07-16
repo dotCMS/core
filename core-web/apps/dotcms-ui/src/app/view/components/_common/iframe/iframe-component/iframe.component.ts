@@ -1,9 +1,12 @@
-import { Subject } from 'rxjs';
+import { merge, Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
+    inject,
+    input,
     Input,
     NgZone,
     OnDestroy,
@@ -12,27 +15,54 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { debounceTime, filter, takeUntil } from 'rxjs/operators';
+import { debounceTime, filter, map, takeUntil } from 'rxjs/operators';
 
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotRouterService, DotIframeService } from '@dotcms/data-access';
-import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
+import {
+    DotEventsSocket,
+    DotIframeService,
+    DotRouterService,
+    DotUiColorsService
+} from '@dotcms/data-access';
+import { DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotOverlayMaskComponent } from '../../dot-overlay-mask/dot-overlay-mask.component';
+import { DotLoadingIndicatorComponent } from '../dot-loading-indicator/dot-loading-indicator.component';
+import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-iframe',
-    styleUrls: ['./iframe.component.scss'],
-    templateUrl: 'iframe.component.html'
+    templateUrl: 'iframe.component.html',
+    styles: [
+        `
+            :host {
+                display: block;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+        `
+    ],
+    imports: [DotLoadingIndicatorComponent, DotOverlayMaskComponent, DotSafeUrlPipe]
 })
 export class IframeComponent implements OnInit, OnDestroy {
+    private dotIframeService = inject(DotIframeService);
+    private dotRouterService = inject(DotRouterService);
+    private dotUiColorsService = inject(DotUiColorsService);
+    private dotEventsSocket = inject(DotEventsSocket);
+    private ngZone = inject(NgZone);
+    private cdr = inject(ChangeDetectorRef);
+    dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    iframeOverlayService = inject(IframeOverlayService);
+    loggerService = inject(LoggerService);
+
     @ViewChild('iframeElement') iframeElement: ElementRef;
 
     @Input() src: string;
 
-    @Input() isLoading = false;
+    $isLoading = input(false, { alias: 'isLoading' });
 
     @Output() charge: EventEmitter<unknown> = new EventEmitter();
 
@@ -44,21 +74,15 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotIframeService: DotIframeService,
-        private dotRouterService: DotRouterService,
-        private dotUiColorsService: DotUiColorsService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private ngZone: NgZone,
-        public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        public iframeOverlayService: IframeOverlayService,
-        public loggerService: LoggerService
-    ) {}
-
     ngOnInit(): void {
         this.iframeOverlayService.overlay
             .pipe(takeUntil(this.destroy$))
-            .subscribe((val: boolean) => (this.showOverlay = val));
+            .subscribe((val: boolean) => {
+                queueMicrotask(() => {
+                    this.showOverlay = val;
+                    this.cdr.markForCheck();
+                });
+            });
 
         this.dotIframeService
             .reloaded()
@@ -158,23 +182,29 @@ export class IframeComponent implements OnInit, OnDestroy {
             'PAGE_RELOAD'
         ];
 
-        const webSocketEvents$ = this.dotcmsEventsService
-            .subscribeToEvents<unknown>(events)
-            .pipe(takeUntil(this.destroy$));
+        const webSocketEvents$ = merge(
+            ...events.map((eventType) =>
+                this.dotEventsSocket
+                    .on<unknown>(eventType)
+                    .pipe(
+                        map((data) => ({ data, name: eventType }) as DotEventTypeWrapper<unknown>)
+                    )
+            )
+        ).pipe(takeUntil(this.destroy$));
 
         webSocketEvents$
             .pipe(filter(() => this.dotRouterService.currentPortlet.id === 'site-browser'))
-            .subscribe((event: DotEventTypeWrapper<unknown>) => {
+            .subscribe((event) => {
                 this.loggerService.debug('Capturing Site Browser event', event.name, event.data);
             });
 
         webSocketEvents$
             .pipe(
                 filter(
-                    (event: DotEventTypeWrapper<unknown>) =>
+                    (event) =>
                         (this.iframeElement.nativeElement.contentWindow &&
                             event.name === 'DELETE_BUNDLE') ||
-                        event.name === 'PAGE_RELOAD' // Provinding this event so backend devs can reload the jsp easily
+                        event.name === 'PAGE_RELOAD' // Providing this event so backend devs can reload the jsp easily
                 )
             )
             .subscribe(() => {
@@ -183,12 +213,12 @@ export class IframeComponent implements OnInit, OnDestroy {
 
         /**
          * The debouncetime is required because when the websocket event is received,
-         * the list of plugins still cannot be updated, thi is because the framework (OSGI)
+         * the list of plugins still cannot be updated, this is because the framework (OSGI)
          * needs to restart before the list can be refreshed.
          * Currently, an event cannot be emitted when the framework finishes restarting.
          */
-        this.dotcmsEventsService
-            .subscribeTo('OSGI_BUNDLES_LOADED')
+        this.dotEventsSocket
+            .on<void>('OSGI_BUNDLES_LOADED')
             .pipe(takeUntil(this.destroy$), debounceTime(4000))
             .subscribe(() => {
                 this.dotIframeService.run({ name: 'getBundlesData' });
@@ -253,10 +283,8 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private isIframeHaveContent(): boolean {
-        return (
-            this.iframeElement &&
-            this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length
-        );
+        return !!this.iframeElement?.nativeElement?.contentWindow?.document?.body?.innerHTML
+            ?.length;
     }
 
     private setArgs(args: unknown[]): unknown[] {

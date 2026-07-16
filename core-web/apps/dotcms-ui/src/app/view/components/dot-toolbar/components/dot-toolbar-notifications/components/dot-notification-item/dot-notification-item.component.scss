@@ -1,0 +1,69 @@
+@use "variables" as *;
+@use "mixins";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
+$notification-icon-size: 16px;
+
+:host {
+    display: block;
+}
+
+dot-custom-time {
+    color: colors.$color-palette-gray-700;
+    display: block;
+    font-size: fonts.$font-size-sm;
+}
+
+a {
+    color: colors.$black;
+}
+
+.notification-item {
+    border-top: solid 1px colors.$color-palette-gray-200;
+}
+
+.notification-item__icon {
+    padding-top: spacing.$spacing-0;
+    color: colors.$color-palette-primary;
+}
+
+.notification-item__title {
+    font-size: fonts.$font-size-sm;
+}
+
+.notification-item__title,
+.notification-item__message {
+    margin: 0;
+}
+
+.notification-item__message {
+    line-height: 1.5rem;
+}
+
+.notification-item__wrapper {
+    display: flex;
+    flex-direction: row;
+    padding: spacing.$spacing-3 0;
+    align-items: self-start;
+    gap: spacing.$spacing-3;
+}
+
+.warning {
+    .notification-item__icon,
+    .notification-item__link,
+    .notification-item__title,
+    .notification-item__title a {
+        color: colors.$color-palette-primary;
+    }
+}
+
+.error {
+    .notification-item__icon,
+    .notification-item__link,
+    .notification-item__title,
+    .notification-item__title a {
+        color: colors.$color-palette-secondary;
+    }
+}

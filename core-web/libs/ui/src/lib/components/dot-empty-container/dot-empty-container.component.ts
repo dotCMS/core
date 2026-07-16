@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -17,11 +16,12 @@ export interface PrincipalConfiguration {
  */
 @Component({
     selector: 'dot-empty-container',
-    standalone: true,
-    imports: [ButtonModule, NgClass, DotMessagePipe],
+    imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-empty-container.component.html',
-    styleUrls: ['./dot-empty-container.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'h-full flex justify-center content-center flex-wrap'
+    }
 })
 export class DotEmptyContainerComponent {
     //Todo: change to input signal when ui migrated to jest

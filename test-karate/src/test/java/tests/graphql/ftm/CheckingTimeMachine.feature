@@ -15,6 +15,7 @@ Feature: Test Time Machine functionality
     * def URL_CONTENT_MAP_TITLE_V1 = 'url-content-map-test-1-v1'
     * def URL_CONTENT_MAP_TITLE_V2 = 'url-content-map-test-1-v2'
 
+    * callonce read('classpath:common/utils.feature')
     * callonce read('classpath:graphql/ftm/setup.feature')
 
   @smoke @positive @ftm
@@ -169,7 +170,9 @@ Feature: Test Time Machine functionality
   Scenario: Test Time Machine functionality in UrlContentMap when a publish date is provided expect urlContentMap
   title to match rendered one.
 
-    Given url baseUrl + '/api/v1/page/render/'+urlMapContentPieceOneUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
+    * def fullUrl = baseUrl + '/api/v1/page/render/'+urlMapContentPieceOneUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
+    * def cleanedUrl = cleanUrl(fullUrl)
+    Given url cleanedUrl
     And headers commonHeaders
     When method GET
     Then status 200
@@ -214,3 +217,29 @@ Feature: Test Time Machine functionality
     * def contentlets = contentletsFromGraphQlResponse(response)
     * karate.log('contentlets:', contentlets)
     * match contentlets contains CONTENTLET_ONE_V2
+
+  @positive @ftm
+  Scenario: Test Time Machine functionality in UrlContentMap when mode is LIVE and a publish date is NOT provided expect 404
+  title to match rendered one.
+
+    * def fullUrl = baseUrl + '/api/v1/page/render/'+urlUnpublishedContentMap+'?language_id=1&mode=LIVE'
+    * def cleanedUrl = cleanUrl(fullUrl)
+    Given url cleanedUrl
+    And headers commonHeaders
+    When method GET
+    Then status 404
+
+  @smoke @positive @graphql @ftm
+  Scenario: Send GraphQL query to fetch page details on a unpublished UrlContentMap,
+  No publish date is sent expect 404 since the urlMap is unpublished
+
+    * def fullUrl = baseUrl + '/'+urlUnpublishedContentMap+'?language_id=1&mode=LIVE'
+    * def cleanedUrl = cleanUrl(fullUrl)
+    * karate.log('pageUrl:', cleanedUrl)
+    * def graphQLRequestPayLoad = buildGraphQLRequestPayload (cleanedUrl)
+    Given url baseUrl + '/api/v1/graphql'
+    And headers commonHeaders
+    And request graphQLRequestPayLoad
+    When method post
+    Then status 200
+    * match response.data.page == null

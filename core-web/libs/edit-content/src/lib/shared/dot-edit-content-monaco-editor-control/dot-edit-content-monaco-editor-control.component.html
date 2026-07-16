@@ -1,0 +1,13 @@
+@let hasError = $hasError();
+
+<div
+    class="dot-wysiwyg-monaco__container"
+    [class.ng-invalid]="hasError"
+    [class.ng-dirty]="hasError">
+    <ngx-monaco-editor
+        (init)="onEditorInit($event)"
+        [options]="$monacoOptions()"
+        #editorRef
+        data-testId="code-editor"
+        [formControl]="formControl" />
+</div>

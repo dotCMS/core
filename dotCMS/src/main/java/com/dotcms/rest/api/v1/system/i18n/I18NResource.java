@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.system.i18n;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -17,6 +17,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
@@ -28,6 +29,7 @@ import org.apache.commons.lang.StringUtils;
  * @author Geoff M. Granum
  */
 @Path("/v1/system/i18n")
+@Tag(name = "Internationalization")
 public class I18NResource {
 
     public I18NResource() {

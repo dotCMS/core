@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
 
 /**
@@ -13,16 +13,13 @@ import com.dotcms.rest.api.Validated;
 @JsonDeserialize(builder = UpdateCurrentUserForm.Builder.class)
 public final class UpdateCurrentUserForm extends Validated  {
 
-    @NotNull
     @NotBlank
     private final String userId;
 
-    @NotNull
     @NotBlank
     private final String givenName;
     private final String email;
 
-    @NotNull
     @NotBlank
     private final String surname;
     private final String currentPassword;

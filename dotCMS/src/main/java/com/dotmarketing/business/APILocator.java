@@ -1,9 +1,13 @@
 package com.dotmarketing.business;
 
+import com.dotcms.ai.api.AIVisionAPI;
 import com.dotcms.ai.api.DotAIAPI;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
+import com.dotcms.ai.api.OpenAIVisionAPIImpl;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsAPIImpl;
+import com.dotcms.analytics.attributes.CustomAttributeAPI;
+import com.dotcms.analytics.attributes.CustomAttributeAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.BayesianAPIImpl;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
@@ -22,14 +26,19 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
+import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexAPIImpl;
+import com.dotcms.content.index.VersionedIndicesAPI;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -42,6 +51,7 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.business.StoryBlockAPIImpl;
+import com.dotcms.cost.RequestCostApi;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -57,11 +67,13 @@ import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchAPIImpl;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
+import com.dotcms.health.api.HealthService;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
@@ -83,7 +95,7 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -172,7 +184,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -314,7 +325,11 @@ public class APILocator extends Locator<APIIndex> {
 		return (StoryBlockAPI)getInstance(APIIndex.STORY_BLOCK_API);
 	}
 
-	@VisibleForTesting
+	public static CustomAttributeAPI getAnalyticsCustomAttribute() {
+		return (CustomAttributeAPI) getInstance(APIIndex.ANALYTICS_CUSTOM_ATTRIBUTE_API);
+	}
+
+    @VisibleForTesting
 	protected CompanyAPI getCompanyAPIImpl() {
 		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
 	}
@@ -445,6 +460,15 @@ public class APILocator extends Locator<APIIndex> {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
 
+
+   /**
+    * Retrieves an instance of the AIVisionAPI.
+    *
+    * @return An instance of AIVisionAPI obtained from the API index.
+    */
+   public static AIVisionAPI getAiVisionAPI() {
+      return (AIVisionAPI) getInstance(APIIndex.AI_VISION_API);
+   }
     /**
      * This is the contentletAPI which an application should use to do ALL
      * normal {@link ContentletAPI} logic.
@@ -691,12 +715,21 @@ public class APILocator extends Locator<APIIndex> {
 
 	/**
 	 * Creates a single instance of the {@link IndiciesAPI} class.
-	 *
+	 * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
 	 * @return The {@link IndiciesAPI} class.
 	 */
+    @Deprecated(forRemoval = true)
 	public static IndiciesAPI getIndiciesAPI() {
 	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
 	}
+
+    /**
+     * Get the modern index Manger
+     * @return {@link VersionedIndicesAPI}
+     */
+    public static VersionedIndicesAPI getVersionedIndicesAPI() {
+        return (VersionedIndicesAPI)getInstance(APIIndex.VERSIONED_INDICES_API);
+    }
 
 	/**
 	 * Creates a single instance of the {@link ContentletIndexAPI} class.
@@ -708,12 +741,21 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
-	 * Creates a single instance of the {@link ESIndexAPI} class.
+	 * Returns the vendor-neutral {@link IndexAPI} instance backed by {@link IndexAPIImpl}.
 	 *
-	 * @return The {@link ESIndexAPI} class.
+	 * @return The {@link IndexAPI} instance.
 	 */
-	public static ESIndexAPI getESIndexAPI() {
-	    return (ESIndexAPI) getInstance(APIIndex.ES_INDEX_API);
+	public static IndexAPI getESIndexAPI() {
+	    return (IndexAPI) getInstance(APIIndex.ES_INDEX_API);
+	}
+
+	/**
+	 * Returns the singleton {@link ContentMappingAPI} instance.
+	 *
+	 * @return The {@link ContentMappingAPI} instance.
+	 */
+	public static ContentMappingAPI getContentMappingAPI() {
+	    return (ContentMappingAPI) getInstance(APIIndex.CONTENT_MAPPING_API);
 	}
 
 	/**
@@ -865,9 +907,24 @@ public class APILocator extends Locator<APIIndex> {
 	 * Creates a single instance of the {@link ESSeachAPI} class.
 	 *
 	 * @return The {@link ESSeachAPI} class.
+	 * @deprecated Use {@link #getSearchAPI()} for vendor-neutral search access.
 	 */
+	@Deprecated
 	public static ESSeachAPI getEsSearchAPI () {
 		return (ESSeachAPI) getInstance( APIIndex.ES_SEARCH_API );
+	}
+
+	/**
+	 * Returns the vendor-neutral {@link com.dotcms.content.index.SearchAPI} router.
+	 *
+	 * <p>Routes search operations to the active provider (Elasticsearch or OpenSearch)
+	 * based on the current migration phase.  Prefer this over the deprecated
+	 * {@link #getEsSearchAPI()} for all new call sites.</p>
+	 *
+	 * @return the {@link com.dotcms.content.index.SearchAPI} instance.
+	 */
+	public static com.dotcms.content.index.SearchAPI getSearchAPI() {
+		return (com.dotcms.content.index.SearchAPI) getInstance(APIIndex.SEARCH_API);
 	}
 
 	/**
@@ -1209,6 +1266,29 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
+	 * Returns the Health Service for programmatic access to health check status
+	 * from non-CDI aware code. This provides convenient methods for querying
+	 * health status, individual checks, and overall system health.
+	 * 
+	 * @return The {@link HealthService} CDI bean instance
+	 */
+	public static HealthService getHealthService() {
+		return CDIUtils.getBeanThrows(HealthService.class);
+	}
+
+    /**
+     * Retrieves an instance of RequestCostApi using CDI (Contexts and Dependency Injection). This method ensures that
+     * the instance is obtained through the CDI container and throws an exception if the bean cannot be found.
+     *
+     * @return an instance of RequestCostApi obtained from the CDI container
+     */
+    public static RequestCostApi getRequestCostAPI() {
+        return (RequestCostApi) getInstance(APIIndex.REQUEST_COST_API);
+
+    }
+
+
+    /**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1365,7 +1445,15 @@ enum APIIndex
 	SYSTEM_API,
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
-	JOB_QUEUE_MANAGER_API;
+	JOB_QUEUE_MANAGER_API,
+    AI_VISION_API,
+    REQUEST_COST_API,
+    ANALYTICS_CUSTOM_ATTRIBUTE_API,
+    VERSIONED_INDICES_API,
+    OPENSEARCH_INDEX_API,
+    CONTENT_MAPPING_API,
+    SEARCH_API
+    ;
 
 	Object create() {
 		switch(this) {
@@ -1396,7 +1484,7 @@ enum APIIndex
     		case FORM_API: return new FormAPIImpl();
     		case MENULINK_API: return new MenuLinkAPIImpl();
     		case DASHBOARD_API: return new DashboardAPIImpl();
-    		case SITESEARCH_API: return new ESSiteSearchAPI();
+    		case SITESEARCH_API: return new SiteSearchAPIImpl();
     		case FILEASSET_API: return new FileAssetAPIImpl();
     		case VERSIONABLE_API: return new VersionableAPIImpl();
     		case WORKFLOW_API : return new WorkflowAPIImpl();
@@ -1404,7 +1492,7 @@ enum APIIndex
     		case TAG_API: return new TagAPIImpl();
     		case INDICIES_API: return new IndiciesAPIImpl();
     		case CONTENLET_INDEX_API: return new ContentletIndexAPIImpl();
-    		case ES_INDEX_API: return new ESIndexAPI();
+    		case ES_INDEX_API: return new IndexAPIImpl();
     		case PUBLISHER_API: return new PublisherAPIImpl();
     		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
     		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
@@ -1460,6 +1548,15 @@ enum APIIndex
 			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: return CDIUtils.getBeanThrows(ContentAnalyticsAPI.class);
 			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBeanThrows(JobQueueManagerAPI.class);
+            case REQUEST_COST_API:
+                return CDIUtils.getBeanThrows(RequestCostApi.class);
+            case AI_VISION_API:
+                return new OpenAIVisionAPIImpl();
+            case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
+            case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
+            case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
+            case CONTENT_MAPPING_API: return new ESMappingAPIImpl();
+            case SEARCH_API: return new com.dotcms.content.index.SearchAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

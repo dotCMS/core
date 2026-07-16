@@ -1,8 +1,5 @@
 package com.dotcms.telemetry.util;
 
-import com.dotcms.cdi.CDIUtils;
-import com.dotcms.telemetry.collectors.api.ApiMetricAPI;
-
 import java.util.Arrays;
 
 /**
@@ -10,8 +7,7 @@ import java.util.Arrays;
  */
 public enum MetricCaches {
 
-    SITE_SEARCH_INDICES(new MetricCache<>(IndicesSiteSearchUtil.INSTANCE::getESIndices)),
-    TEMPORARY_TABLA_DATA(new MetricCache<>(() -> CDIUtils.getBeanThrows(ApiMetricAPI.class).getMetricTemporaryTableData()));
+    SITE_SEARCH_INDICES(new MetricCache<>(IndicesSiteSearchUtil.INSTANCE::getESIndices));
 
     private final MetricCache<?> metricCache;
 

@@ -285,7 +285,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
         if (null != contentType) {
             try {
-                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+                APILocator.getContentTypeAPI(APILocator.systemUser()).deleteSync(contentType);
             } catch (Exception e) {
                 if (failSilently) {
                     Logger.error(ContentTypeDataGen.class, "Unable to remove ContentType.", e);

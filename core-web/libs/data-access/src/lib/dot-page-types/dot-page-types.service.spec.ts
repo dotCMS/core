@@ -1,9 +1,10 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotPageTypesService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+
+import { DotPageTypesService } from './dot-page-types.service';
 
 const fakeResponse = {
     entity: [{ ...dotcmsContentTypeBasicMock }]
@@ -15,11 +16,7 @@ describe('DotPageTypesService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPageTypesService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotPageTypesService]
         });
         service = TestBed.inject(DotPageTypesService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -29,7 +26,7 @@ describe('DotPageTypesService', () => {
         const key = 'key1';
         expect(service).toBeTruthy();
 
-        service.getPages(key).subscribe((response) => {
+        service.getPageContentTypes(key).subscribe((response) => {
             expect(response).toEqual(fakeResponse.entity);
         });
         const req = httpMock.expectOne(`/api/v1/page/types?filter=${key}`);

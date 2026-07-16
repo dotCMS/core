@@ -68,18 +68,16 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
         
 
         config.setIdleTimeout(
-                Integer.parseInt(
+                Long.parseLong(
                         systemEnvironmentProperties.getVariable(CONNECTION_DB_IDLE_TIMEOUT) != null
                                 ? systemEnvironmentProperties.getVariable(CONNECTION_DB_IDLE_TIMEOUT)
-                                : "10")
-                        * 1000);
+                                : "600000"));
 
         config.setConnectionTimeout(
                 Integer.parseInt(
                         systemEnvironmentProperties.getVariable(CONNECTION_DB_CONNECTION_TIMEOUT) != null
                                 ? systemEnvironmentProperties.getVariable(CONNECTION_DB_CONNECTION_TIMEOUT)
-                                : "5")
-                        * 1000);
+                                : "5000"));
 
         config.setMaxLifetime(Integer.parseInt(
                 systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_WAIT) != null
@@ -105,6 +103,8 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
                 systemEnvironmentProperties.getVariable(CONNECTION_DB_VALIDATION_TIMEOUT)
                         != null ? systemEnvironmentProperties
                         .getVariable(CONNECTION_DB_VALIDATION_TIMEOUT) : "5000"));
+
+        config.setRegisterMbeans(com.dotmarketing.util.Config.getBooleanProperty("hikari.register.mbeans", true));
 
         return new HikariDataSource(config);
     }

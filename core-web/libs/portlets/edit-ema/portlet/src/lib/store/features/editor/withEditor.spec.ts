@@ -1,20 +1,30 @@
 import { describe, expect } from '@jest/globals';
-import { SpyObject } from '@ngneat/spectator';
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
-import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
+import {
+    DotContentletLockerService,
+    DotLanguagesService,
+    DotPropertiesService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
+import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
 
+import { withView } from './toolbar/withView';
 import { withEditor } from './withEditor';
 
-import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
-import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import {
+    DotPageApiParams,
+    DotPageApiService
+} from '../../../services/dot-page-api/dot-page-api.service';
+import { PERSONA_KEY } from '../../../shared/consts';
+import { EDITOR_STATE } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -24,47 +34,51 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
+import { ActionPayload, SelectedContentlet } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
-import { UVEState } from '../../models';
+import { PageType, UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
+import { withFlags } from '../flags/withFlags';
+import { withPage } from '../page/withPage';
+import { withWorkflow } from '../workflow/withWorkflow';
 
 const emptyParams = {} as DotPageApiParams;
 
-const initialState: UVEState = {
-    isEnterprise: true,
-    languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
+const initialState = createInitialUVEState({
     pageParams: {
         ...emptyParams,
         url: 'test-url',
         language_id: '1',
         [PERSONA_KEY]: 'dot:persona',
         variantName: 'DEFAULT',
-        clientHost: 'http://localhost:3000'
-    },
-    status: UVE_STATUS.LOADED,
-    isTraditionalPage: false,
-    canEditPage: true,
-    pageIsLocked: true,
-    isClientReady: false,
-    viewParams: {
-        orientation: undefined,
-        seo: undefined,
-        device: undefined
+        clientHost: 'http://localhost:3000',
+        mode: UVE_MODE.EDIT
     }
+});
+
+/** patchState type assertion - Spectator store type doesn't satisfy WritableStateSource but runtime works */
+const patchStoreState = (store: unknown, state: Partial<UVEState>) => {
+    patchState(store as Parameters<typeof patchState>[0], state);
 };
+
+/** Wrap an ActionPayload in the SelectedContentlet shape used by editorSelected. */
+const toSelected = (payload: ActionPayload): SelectedContentlet => ({
+    bounds: { x: 0, y: 0, width: 0, height: 0 },
+    payload
+});
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
+    withFlags([]),
+    withPage(),
+    withWorkflow(),
+    withView(),
     withEditor()
 );
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
-    let dotPageApiService: SpyObject<DotPageApiService>;
     let store: InstanceType<typeof uveStoreMock>;
 
     const createService = createServiceFactory({
@@ -72,89 +86,61 @@ describe('withEditor', () => {
         providers: [
             mockProvider(Router),
             mockProvider(ActivatedRoute),
-            mockProvider(Router),
-            mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of({});
-                    },
-                    getClientPage() {
-                        return of({});
-                    },
+                    get: () => of({}),
+                    getClientPage: () => of({}),
+                    getGraphQLPage: () => of({}),
                     save: jest.fn()
                 }
-            }
+            },
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: { getByInode: () => of(mockWorkflowsActions) }
+            },
+            {
+                provide: DotContentletLockerService,
+                useValue: { unlock: () => of({}), lock: () => of({}) }
+            },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            { provide: WINDOW, useValue: window }
         ]
     });
 
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        dotPageApiService = spectator.inject(DotPageApiService);
-        patchState(store, initialState);
+        patchStoreState(store, initialState);
+        store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
-    describe('withUVEToolbar', () => {
-        describe('withComputed', () => {
-            describe('$toolbarProps', () => {
-                it('should return the base info', () => {
-                    expect(store.$uveToolbar()).toEqual({
-                        editor: {
-                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
-                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                            copyUrl:
-                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
-                        },
-                        preview: null,
-                        currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
-                        urlContentMap: null,
-                        runningExperiment: null,
-                        unlockButton: null
-                    });
-                });
-            });
-        });
-    });
-
-    describe('withSave', () => {
-        describe('withMethods', () => {
-            describe('savePage', () => {
-                it('should perform a save and patch the state', () => {
-                    const saveSpy = jest
-                        .spyOn(dotPageApiService, 'save')
-                        .mockImplementation(() => of({}));
-
-                    // It's impossible to get a VTL when we are in Headless
-                    // but I just want to check the state is being patched
-                    const getClientPageSpy = jest
-                        .spyOn(dotPageApiService, 'getClientPage')
-                        .mockImplementation(() => of(MOCK_RESPONSE_VTL));
-
-                    const payload = {
-                        pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
-                        pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                        params: store.pageParams()
-                    };
-
-                    store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
-
-                    expect(saveSpy).toHaveBeenCalledWith(payload);
-
-                    expect(getClientPageSpy).toHaveBeenCalledWith(
-                        store.pageParams(),
-                        store.clientRequestProps()
-                    );
-
-                    expect(store.status()).toBe(UVE_STATUS.LOADED);
-                    expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
-                });
-            });
-        });
-    });
+    // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
 
     describe('withComputed', () => {
+        describe('$areaContentType', () => {
+            it('should return empty string when contentArea is null', () => {
+                patchStoreState(store, {
+                    editorContentArea: null
+                });
+
+                expect(store.$areaContentType()).toBe('');
+            });
+
+            it('should return the content type of the current contentArea', () => {
+                patchStoreState(store, {
+                    editorContentArea: MOCK_CONTENTLET_AREA
+                });
+
+                expect(store.$areaContentType()).toBe(
+                    MOCK_CONTENTLET_AREA.payload.contentlet.contentType
+                );
+            });
+        });
+
         describe('$pageData', () => {
             it('should return the expected data', () => {
                 expect(store.$pageData()).toEqual({
@@ -171,30 +157,291 @@ describe('withEditor', () => {
 
         describe('$reloadEditorContent', () => {
             it('should return the expected data for Headless', () => {
-                patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
-                    isTraditionalPage: false
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+                patchStoreState(store, {
+                    pageType: PageType.HEADLESS
                 });
 
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_HEADLESS.page.rendered,
-                    isTraditionalPage: false,
+                    pageType: PageType.HEADLESS,
                     enableInlineEdit: true,
-                    isClientReady: false
+                    pageAssetRef: store.pageAsset()
                 });
             });
             it('should return the expected data for VTL', () => {
-                patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true,
-                    isClientReady: true
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_VTL });
+                patchStoreState(store, {
+                    pageType: PageType.TRADITIONAL
                 });
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_VTL.page.rendered,
-                    isTraditionalPage: true,
+                    pageType: PageType.TRADITIONAL,
                     enableInlineEdit: true,
-                    isClientReady: true
+                    pageAssetRef: store.pageAsset()
                 });
+            });
+        });
+
+        // $editorProps tests removed : this computed was moved/removed during refactoring
+
+        describe('$showContentletControls', () => {
+            it('should return false when contentArea is null', () => {
+                patchStoreState(store, {
+                    editorContentArea: null,
+                    editorState: EDITOR_STATE.IDLE
+                });
+
+                expect(store.$showContentletControls()).toBe(false);
+            });
+
+            it('should return false when canEditPage is false', () => {
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false
+                        }
+                    }
+                });
+                patchStoreState(store, {
+                    editorContentArea: MOCK_CONTENTLET_AREA,
+                    editorState: EDITOR_STATE.IDLE
+                });
+
+                expect(store.$showContentletControls()).toBe(false);
+            });
+
+            it('should return false when state is not IDLE', () => {
+                patchStoreState(store, {
+                    editorContentArea: MOCK_CONTENTLET_AREA,
+                    editorState: EDITOR_STATE.DRAGGING
+                });
+
+                expect(store.$showContentletControls()).toBe(false);
+            });
+
+            it('should return true when contentArea exists, canEditPage is true, and state is IDLE', () => {
+                patchStoreState(store, {
+                    editorContentArea: MOCK_CONTENTLET_AREA,
+                    editorState: EDITOR_STATE.IDLE
+                });
+
+                expect(store.$showContentletControls()).toBe(true);
+            });
+
+            it('should return false when scrolling', () => {
+                patchStoreState(store, {
+                    editorContentArea: MOCK_CONTENTLET_AREA,
+                    editorState: EDITOR_STATE.SCROLLING
+                });
+
+                expect(store.$showContentletControls()).toBe(false);
+            });
+        });
+
+        describe('$styleSchema', () => {
+            it('should return undefined when no activeContentlet', () => {
+                patchStoreState(store, {
+                    editorSelected: null,
+                    editorStyleSchemas: []
+                });
+
+                expect(store.$styleSchema()).toBeUndefined();
+            });
+
+            it('should return undefined when styleSchemas is empty', () => {
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testType'
+                        }
+                    }),
+                    editorStyleSchemas: []
+                });
+
+                expect(store.$styleSchema()).toBeUndefined();
+            });
+
+            it('should return matching schema when contentType matches', () => {
+                const mockSchema = {
+                    contentType: 'testContentType',
+                    sections: []
+                };
+
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testContentType'
+                        }
+                    }),
+                    editorStyleSchemas: [mockSchema]
+                });
+
+                expect(store.$styleSchema()).toEqual(mockSchema);
+            });
+
+            it('should return correct schema when multiple schemas exist', () => {
+                const schema1 = { contentType: 'type1', sections: [] };
+                const schema2 = { contentType: 'type2', sections: [] };
+                const schema3 = { contentType: 'type3', sections: [] };
+
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'type2'
+                        }
+                    }),
+                    editorStyleSchemas: [schema1, schema2, schema3]
+                });
+
+                expect(store.$styleSchema()).toEqual(schema2);
+            });
+
+            it('should return undefined when contentType does not match any schema', () => {
+                const mockSchema = {
+                    contentType: 'differentType',
+                    sections: []
+                };
+
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testType'
+                        }
+                    }),
+                    editorStyleSchemas: [mockSchema]
+                });
+
+                expect(store.$styleSchema()).toBeUndefined();
+            });
+
+            it('should use schemas seeded from page load (via setPageAsset)', () => {
+                const mockSchema = { contentType: 'testContentType', sections: [] };
+
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            styleEditorSchemas: [mockSchema]
+                        }
+                    }
+                });
+
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testContentType'
+                        }
+                    })
+                });
+
+                expect(store.$styleSchema()).toEqual(mockSchema);
+            });
+
+            it('should prefer editorStyleSchemas over pageAsset schemas when both exist', () => {
+                // pageSchema uses a different contentType than the active contentlet.
+                // If editorStyleSchemas were bypassed in favour of pageAsset schemas,
+                // nothing would match and the result would be undefined.
+                const pageSchema = { contentType: 'pageOnlyType', sections: [] };
+                const iframeSchema = { contentType: 'iframeType', sections: [] };
+
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            styleEditorSchemas: [pageSchema]
+                        }
+                    }
+                });
+
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'iframeType'
+                        }
+                    }),
+                    editorStyleSchemas: [iframeSchema]
+                });
+
+                // editorStyleSchemas is non-empty so it is used exclusively;
+                // the pageAsset schemas (which only have 'pageOnlyType') are ignored.
+                expect(store.$styleSchema()).toEqual(iframeSchema);
             });
         });
 
@@ -214,37 +461,61 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
             });
 
+            // There is an issue with Signal Store when you try to spy on a signal called from a computed property
+            // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
+            describe.skip('page dependency', () => {
+                it('should call page when it is a headless page', () => {
+                    const spy = jest.spyOn(store, 'pageAsset');
+                    patchStoreState(store, { pageType: PageType.HEADLESS });
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
+
+                it('should call page when it is a traditional page', () => {
+                    const spy = jest.spyOn(store, 'pageAsset');
+
+                    patchStoreState(store, { pageType: PageType.TRADITIONAL });
+
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
+            });
+
             it('should be an instance of String in src when the page is traditional', () => {
-                patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_VTL });
+                patchStoreState(store, {
+                    pageType: PageType.TRADITIONAL
                 });
 
                 expect(store.$iframeURL()).toBeInstanceOf(String);
             });
 
             it('should be an empty string in src when the page is traditional', () => {
-                patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_VTL });
+                patchStoreState(store, {
+                    pageType: PageType.TRADITIONAL
                 });
 
                 expect(store.$iframeURL().toString()).toBe('');
             });
 
             it('should contain the right url when the page is a vanity url  ', () => {
-                patchState(store, {
-                    pageAPIResponse: {
+                store.setPageAsset({
+                    pageAsset: {
                         ...MOCK_RESPONSE_HEADLESS,
                         vanityUrl: {
                             ...MOCK_RESPONSE_HEADLESS.vanityUrl,
                             url: 'first'
                         }
-                    },
+                    }
+                });
+                patchStoreState(store, {
                     pageParams: {
                         language_id: '1',
                         variantName: 'DEFAULT',
@@ -254,328 +525,40 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona&dotCMSHost=http://localhost'
+                );
+            });
+
+            it('should set the right iframe url when the clientHost is present', () => {
+                patchStoreState(store, {
+                    pageParams: {
+                        ...emptyParams,
+                        url: 'test-url',
+                        clientHost: 'http://localhost:3000'
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url&dotCMSHost=http://localhost'
+                );
+            });
+
+            it('should set the right iframe url when the clientHost is present with a aditional path', () => {
+                patchStoreState(store, {
+                    pageParams: {
+                        ...emptyParams,
+                        url: 'test-url',
+                        clientHost: 'http://localhost:3000/test'
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test/test-url&dotCMSHost=http://localhost'
                 );
             });
         });
 
-        describe('$editorProps', () => {
-            it('should return the expected data on init', () => {
-                expect(store.$editorProps()).toEqual({
-                    showDialogs: true,
-                    showBlockEditorSidebar: true,
-                    iframe: {
-                        opacity: '0.5',
-                        pointerEvents: 'auto',
-                        wrapper: {
-                            width: '100%',
-                            height: '100%'
-                        }
-                    },
-                    progressBar: true,
-                    contentletTools: null,
-                    dropzone: null,
-                    palette: {
-                        variantId: DEFAULT_VARIANT_ID,
-                        languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers
-                    },
-                    seoResults: null
-                });
-            });
-
-            it('should set iframe opacity to 1 when client is Ready', () => {
-                store.setIsClientReady(true);
-
-                expect(store.$editorProps().iframe.opacity).toBe('1');
-            });
-
-            it('should not have opacity or progressBar in preview mode', () => {
-                patchState(store, {
-                    pageParams: { ...emptyParams, mode: UVE_MODE.PREVIEW }
-                });
-
-                expect(store.$editorProps().iframe.opacity).toBe('1');
-                expect(store.$editorProps().progressBar).toBe(false);
-            });
-
-            describe('showDialogs', () => {
-                it('should have the value of false when we cannot edit the page', () => {
-                    patchState(store, { canEditPage: false });
-
-                    expect(store.$editorProps().showDialogs).toBe(false);
-                });
-
-                it('should have the value of false when we are not on edit state', () => {
-                    patchState(store, { isEditState: false });
-
-                    expect(store.$editorProps().showDialogs).toBe(false);
-                });
-            });
-
-            describe('editorContentStyles', () => {
-                it('should have display block when there is not social media', () => {
-                    expect(store.$editorContentStyles()).toEqual({
-                        display: 'block'
-                    });
-                });
-
-                it('should have display none when there is social media', () => {
-                    patchState(store, { socialMedia: 'facebook' });
-
-                    expect(store.$editorContentStyles()).toEqual({
-                        display: 'none'
-                    });
-                });
-            });
-
-            describe('iframe', () => {
-                it('should have an opacity of 0.5 when loading', () => {
-                    patchState(store, { status: UVE_STATUS.LOADING });
-
-                    expect(store.$editorProps().iframe.opacity).toBe('0.5');
-                });
-
-                it('should have pointerEvents as none when dragging', () => {
-                    patchState(store, { state: EDITOR_STATE.DRAGGING });
-
-                    expect(store.$editorProps().iframe.pointerEvents).toBe('none');
-                });
-
-                it('should have pointerEvents as none when scroll-drag', () => {
-                    patchState(store, { state: EDITOR_STATE.SCROLL_DRAG });
-
-                    expect(store.$editorProps().iframe.pointerEvents).toBe('none');
-                });
-
-                it('should have a wrapper when a device is present', () => {
-                    const device = mockDotDevices[0] as DotDeviceListItem;
-
-                    patchState(store, { device });
-
-                    expect(store.$editorProps().iframe.wrapper).toEqual({
-                        width: device.cssWidth + BASE_IFRAME_MEASURE_UNIT,
-                        height: device.cssHeight + BASE_IFRAME_MEASURE_UNIT
-                    });
-                });
-            });
-
-            describe('progressBar', () => {
-                it('should have progressBar as true when the status is loading', () => {
-                    patchState(store, { status: UVE_STATUS.LOADING });
-
-                    expect(store.$editorProps().progressBar).toBe(true);
-                });
-
-                it('should have progressBar as true when the status is loaded but client is not ready', () => {
-                    patchState(store, { status: UVE_STATUS.LOADED, isClientReady: false });
-
-                    expect(store.$editorProps().progressBar).toBe(true);
-                });
-
-                it('should have progressBar as false when the status is loaded and client is ready', () => {
-                    patchState(store, { status: UVE_STATUS.LOADED, isClientReady: true });
-
-                    expect(store.$editorProps().progressBar).toBe(false);
-                });
-            });
-
-            describe('contentletTools', () => {
-                it('should have contentletTools when contentletArea are present, can edit the page, is in edit state and not scrolling', () => {
-                    patchState(store, {
-                        isEditState: true,
-                        canEditPage: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        state: EDITOR_STATE.IDLE
-                    });
-
-                    expect(store.$editorProps().contentletTools).toEqual({
-                        isEnterprise: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: false,
-                        disableDeleteButton: null
-                    });
-                });
-
-                it('should have disableDeleteButton message when there is only one content and a non-default persona', () => {
-                    patchState(store, {
-                        isEditState: true,
-                        canEditPage: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        state: EDITOR_STATE.IDLE,
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            numberContents: 1,
-                            viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                persona: {
-                                    ...MOCK_RESPONSE_HEADLESS.viewAs.persona,
-                                    identifier: 'non-default-persona'
-                                }
-                            }
-                        }
-                    });
-
-                    expect(store.$editorProps().contentletTools).toEqual({
-                        isEnterprise: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: false,
-                        disableDeleteButton: 'uve.disable.delete.button.on.personalization'
-                    });
-                });
-
-                it('should have hide as true when dragging', () => {
-                    patchState(store, {
-                        isEditState: true,
-                        canEditPage: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        state: EDITOR_STATE.DRAGGING
-                    });
-
-                    expect(store.$editorProps().contentletTools).toEqual({
-                        isEnterprise: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: true,
-                        disableDeleteButton: null
-                    });
-                });
-
-                it('should be null when scrolling', () => {
-                    patchState(store, {
-                        isEditState: true,
-                        canEditPage: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        state: EDITOR_STATE.SCROLLING
-                    });
-
-                    expect(store.$editorProps().contentletTools).toEqual(null);
-                });
-
-                it("should not have contentletTools when the page can't be edited", () => {
-                    patchState(store, {
-                        isEditState: true,
-                        canEditPage: false,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        state: EDITOR_STATE.IDLE
-                    });
-
-                    expect(store.$editorProps().contentletTools).toBe(null);
-                });
-
-                it('should not have contentletTools when the contentletArea is not present', () => {
-                    patchState(store, {
-                        isEditState: true,
-                        canEditPage: true,
-                        state: EDITOR_STATE.IDLE
-                    });
-
-                    expect(store.$editorProps().contentletTools).toBe(null);
-                });
-
-                it('should not have contentletTools when the we are not in edit state', () => {
-                    patchState(store, {
-                        isEditState: false,
-                        canEditPage: true,
-                        contentletArea: MOCK_CONTENTLET_AREA,
-                        state: EDITOR_STATE.IDLE
-                    });
-
-                    expect(store.$editorProps().contentletTools).toBe(null);
-                });
-
-                it('should have contentletTools when the page can be edited and is in preview mode', () => {
-                    patchState(store, {
-                        isEditState: true,
-                        canEditPage: true,
-                        pageParams: {
-                            ...emptyParams,
-                            mode: UVE_MODE.PREVIEW
-                        },
-                        state: EDITOR_STATE.IDLE
-                    });
-
-                    expect(store.$editorProps().contentletTools).toEqual(null);
-                });
-            });
-            describe('dropzone', () => {
-                const bounds = getBoundsMock(ACTION_MOCK);
-
-                it('should have dropzone when the state is dragging and the page can be edited', () => {
-                    patchState(store, {
-                        state: EDITOR_STATE.DRAGGING,
-                        canEditPage: true,
-                        dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
-                        bounds
-                    });
-
-                    expect(store.$editorProps().dropzone).toEqual({
-                        dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
-                        bounds
-                    });
-                });
-
-                it("should not have dropzone when the page can't be edited", () => {
-                    patchState(store, {
-                        state: EDITOR_STATE.DRAGGING,
-                        canEditPage: false,
-                        dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
-                        bounds
-                    });
-
-                    expect(store.$editorProps().dropzone).toBe(null);
-                });
-            });
-
-            describe('palette', () => {
-                it('should be null if is not enterprise', () => {
-                    patchState(store, { isEnterprise: false });
-
-                    expect(store.$editorProps().palette).toBe(null);
-                });
-
-                it('should be null if canEditPage is false', () => {
-                    patchState(store, { canEditPage: false });
-
-                    expect(store.$editorProps().palette).toBe(null);
-                });
-
-                it('should be null if isEditState is false', () => {
-                    patchState(store, { isEditState: false });
-
-                    expect(store.$editorProps().palette).toBe(null);
-                });
-            });
-
-            describe('seoResults', () => {
-                it('should have the expected data when ogTags and socialMedia is present', () => {
-                    patchState(store, {
-                        ogTags: seoOGTagsMock,
-                        socialMedia: 'facebook'
-                    });
-
-                    expect(store.$editorProps().seoResults).toEqual({
-                        ogTags: seoOGTagsMock,
-                        socialMedia: 'facebook'
-                    });
-                });
-
-                it('should be null when ogTags is not present', () => {
-                    patchState(store, {
-                        socialMedia: 'facebook'
-                    });
-
-                    expect(store.$editorProps().seoResults).toBe(null);
-                });
-
-                it('should be null when socialMedia is not present', () => {
-                    patchState(store, {
-                        ogTags: seoOGTagsMock
-                    });
-
-                    expect(store.$editorProps().seoResults).toBe(null);
-                });
-            });
-        });
+        // $editorProps tests removed : this computed was moved/removed during refactoring
     });
 
     describe('withMethods', () => {
@@ -583,8 +566,8 @@ describe('withEditor', () => {
             it("should update the editor's scroll state and remove bounds when there is no drag item", () => {
                 store.updateEditorScrollState();
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editorState()).toEqual(EDITOR_STATE.SCROLLING);
+                expect(store.editorBounds()).toEqual([]);
             });
 
             it("should update the editor's scroll drag state and remove bounds when there is drag item", () => {
@@ -593,16 +576,30 @@ describe('withEditor', () => {
 
                 store.updateEditorScrollState();
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editorState()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                expect(store.editorBounds()).toEqual([]);
             });
 
-            it('should set the contentletArea to null when we are scrolling', () => {
+            it('should set the contentArea to null when we are scrolling', () => {
                 store.setEditorState(EDITOR_STATE.SCROLLING);
 
                 store.updateEditorScrollState();
 
-                expect(store.contentletArea()).toBe(null);
+                expect(store.editorContentArea()).toBe(null);
+            });
+        });
+
+        describe('setPaletteOpen', () => {
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(true);
+
+                expect(store.editorPaletteOpen()).toBe(true);
+            });
+
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(false);
+
+                expect(store.editorPaletteOpen()).toBe(false);
             });
         });
 
@@ -610,7 +607,7 @@ describe('withEditor', () => {
             it("should update the editor's drag state when there is no drag item", () => {
                 store.updateEditorOnScrollEnd();
 
-                expect(store.state()).toEqual(EDITOR_STATE.IDLE);
+                expect(store.editorState()).toEqual(EDITOR_STATE.IDLE);
             });
 
             it("should update the editor's drag state when there is drag item", () => {
@@ -618,7 +615,7 @@ describe('withEditor', () => {
 
                 store.updateEditorOnScrollEnd();
 
-                expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
+                expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
             });
         });
 
@@ -626,8 +623,8 @@ describe('withEditor', () => {
             it('should update the store correctly', () => {
                 store.updateEditorScrollDragState();
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editorState()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                expect(store.editorBounds()).toEqual([]);
             });
         });
 
@@ -635,7 +632,7 @@ describe('withEditor', () => {
             it('should update the state correctly', () => {
                 store.setEditorState(EDITOR_STATE.SCROLLING);
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
+                expect(store.editorState()).toEqual(EDITOR_STATE.SCROLLING);
             });
         });
 
@@ -643,30 +640,56 @@ describe('withEditor', () => {
             it('should update the store correctly', () => {
                 store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
 
-                expect(store.dragItem()).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
-                expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
+                expect(store.editorDragItem()).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
             });
         });
 
-        describe('setEditorContentletArea', () => {
+        describe('setContentletArea', () => {
             it("should update the store's contentlet area", () => {
-                store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+                store.setContentletArea(MOCK_CONTENTLET_AREA);
 
-                expect(store.contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
-                expect(store.state()).toEqual(EDITOR_STATE.IDLE);
+                expect(store.editorContentArea()).toEqual(MOCK_CONTENTLET_AREA);
+                expect(store.editorState()).toEqual(EDITOR_STATE.IDLE);
             });
 
-            it('should not update contentletArea if it is the same', () => {
-                store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+            it('should not update contentArea if it is the same', () => {
+                store.setContentletArea(MOCK_CONTENTLET_AREA);
 
-                // We can have contentletArea and state at the same time we are inline editing
+                // We can have contentArea and state at the same time we are inline editing
                 store.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
-                store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+                store.setContentletArea(MOCK_CONTENTLET_AREA);
 
-                expect(store.contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
+                expect(store.editorContentArea()).toEqual(MOCK_CONTENTLET_AREA);
                 // State should not change
-                expect(store.state()).toEqual(EDITOR_STATE.INLINE_EDITING);
+                expect(store.editorState()).toEqual(EDITOR_STATE.INLINE_EDITING);
+            });
+        });
+
+        describe('setSelected', () => {
+            it('should set the selected contentlet', () => {
+                const mockContentlet: ActionPayload = {
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: '123',
+                    container: {
+                        identifier: 'test-container-id',
+                        uuid: 'test-container-uuid',
+                        acceptTypes: 'test',
+                        maxContentlets: 1
+                    },
+                    contentlet: {
+                        identifier: 'test-contentlet-id',
+                        inode: 'test-inode',
+                        title: 'Test Contentlet',
+                        contentType: 'testType'
+                    }
+                };
+
+                store.setSelected(toSelected(mockContentlet));
+
+                expect(store.editorSelected()?.payload).toEqual(mockContentlet);
             });
         });
 
@@ -676,23 +699,23 @@ describe('withEditor', () => {
             it('should update the store correcly', () => {
                 store.setEditorBounds(bounds);
 
-                expect(store.bounds()).toEqual(bounds);
+                expect(store.editorBounds()).toEqual(bounds);
             });
         });
 
         describe('resetEditorProperties', () => {
-            it('should reset the editor props corretcly', () => {
+            it('should reset the editor props correctly', () => {
                 store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
                 store.setEditorState(EDITOR_STATE.SCROLLING);
-                store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+                store.setContentletArea(MOCK_CONTENTLET_AREA);
                 store.setEditorBounds(getBoundsMock(ACTION_MOCK));
 
                 store.resetEditorProperties();
 
-                expect(store.dragItem()).toBe(null);
-                expect(store.state()).toEqual(EDITOR_STATE.IDLE);
-                expect(store.contentletArea()).toBe(null);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editorDragItem()).toBe(null);
+                expect(store.editorState()).toEqual(EDITOR_STATE.IDLE);
+                expect(store.editorContentArea()).toBe(null);
+                expect(store.editorBounds()).toEqual([]);
             });
         });
         describe('getPageSavePayload', () => {
@@ -703,8 +726,7 @@ describe('withEditor', () => {
                         contentletsId: [],
                         identifier: 'container-identifier-123',
                         maxContentlets: 1,
-                        uuid: 'uuid-123',
-                        variantId: '123'
+                        uuid: 'uuid-123'
                     },
                     contentlet: {
                         contentType: 'test',
@@ -744,9 +766,10 @@ describe('withEditor', () => {
         });
 
         describe('getCurrentTreeNode', () => {
-            it('should return the current TreeNode', () => {
+            it('should return the current TreeNode with variantId from store.$variantId()', () => {
                 const { container, contentlet } = ACTION_PAYLOAD_MOCK;
 
+                // When variantId is not set in pageParams, $variantId() returns DEFAULT_VARIANT_ID
                 expect(store.getCurrentTreeNode(container, contentlet)).toEqual({
                     containerId: 'container-identifier-123',
                     contentId: 'contentlet-identifier-123',
@@ -754,7 +777,33 @@ describe('withEditor', () => {
                     personalization: 'dot:persona:dot:persona',
                     relationType: 'uuid-123',
                     treeOrder: '-1',
-                    variantId: '123'
+                    variantId: DEFAULT_VARIANT_ID
+                });
+            });
+
+            it('should use variantId from store.$variantId() when variantId is set in pageParams', () => {
+                const { container, contentlet } = ACTION_PAYLOAD_MOCK;
+                const testVariantName = 'test-variant-name-123';
+
+                // Set variantName in pageParams
+                patchStoreState(store, {
+                    pageParams: {
+                        ...store.pageParams(),
+                        variantName: testVariantName
+                    }
+                });
+
+                const result = store.getCurrentTreeNode(container, contentlet);
+
+                expect(result.variantId).toBe(testVariantName);
+                expect(result).toEqual({
+                    containerId: 'container-identifier-123',
+                    contentId: 'contentlet-identifier-123',
+                    pageId: '123',
+                    personalization: 'dot:persona:dot:persona',
+                    relationType: 'uuid-123',
+                    treeOrder: '-1',
+                    variantId: testVariantName
                 });
             });
         });
@@ -771,7 +820,7 @@ describe('withEditor', () => {
 
                 store.setOgTags(ogTags);
 
-                expect(store.ogTags()).toEqual(ogTags);
+                expect(store.editorOgTags()).toEqual(ogTags);
             });
         });
     });

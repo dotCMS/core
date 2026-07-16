@@ -271,7 +271,7 @@ public class BinaryMap {
             return meta.get().getHeight();
         }
 
-        return ImageFilterAPI.apiInstance.apply().getWidthHeight(getFile()).height;
+        return com.dotmarketing.image.ImageEngine.resolve().getWidthHeight(getFile()).height;
     }
     
     public float getFpx() {
@@ -316,7 +316,7 @@ public class BinaryMap {
             return meta.get().getWidth();
         }
 
-        return ImageFilterAPI.apiInstance.apply().getWidthHeight(getFile()).width;
+        return com.dotmarketing.image.ImageEngine.resolve().getWidthHeight(getFile()).width;
         
 
     }

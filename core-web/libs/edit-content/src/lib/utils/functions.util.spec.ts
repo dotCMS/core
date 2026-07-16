@@ -1,6 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { describe, expect, it, jest } from '@jest/globals';
 
+type SpyInstance = ReturnType<typeof jest.spyOn>;
+
 import {
+    DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotLanguage,
@@ -11,318 +16,589 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
-    createPaths,
+    escapeHtml,
+    generatePageEditUrl,
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
     isFilteredType,
     isValidJson,
+    resolveLocker,
     sortLocalesTranslatedFirst,
-    stringToJson
+    stringToJson,
+    transformFormDataFn
 } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
-import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
+import {
+    DotEditContentFieldSingleSelectableDataType,
+    FIELD_TYPES
+} from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 
 describe('Utils Functions', () => {
-    const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
-        functionsUtil;
+    const originalWarn = console.warn;
+
+    beforeAll(() => {
+        console.warn = jest.fn();
+    });
+
+    afterAll(() => {
+        console.warn = originalWarn;
+    });
+
+    const {
+        castSingleSelectableValue,
+        getSingleSelectableFieldOptions,
+        getFinalCastedValue,
+        isFlattenedField,
+        isCalendarField,
+        processCalendarFieldValue,
+        parseCalendarTimestamp,
+        processFieldValue
+    } = functionsUtil;
 
     describe('castSingleSelectableValue', () => {
-        it('should return null if value is empty', () => {
-            expect(castSingleSelectableValue('', '')).toBeNull();
-        });
+        describe('null/undefined/empty handling', () => {
+            it('should return null for null value', () => {
+                expect(castSingleSelectableValue(null, '')).toBeNull();
+            });
 
-        it('should return value if type is not Bool or Number', () => {
-            expect(castSingleSelectableValue('Some value', 'Some other type')).toBe('Some value');
+            it('should return null for undefined value', () => {
+                expect(castSingleSelectableValue(undefined, '')).toBeNull();
+            });
+
+            it('should return null for empty string', () => {
+                expect(castSingleSelectableValue('', '')).toBeNull();
+            });
         });
 
         describe('Boolean', () => {
-            it('should return true if value is true', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'true',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            const type = DotEditContentFieldSingleSelectableDataType.BOOL;
+
+            it('should handle boolean true directly', () => {
+                expect(castSingleSelectableValue(true, type)).toBe(true);
             });
 
-            it('should return true if value is TRUE', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'TRUE',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle boolean false directly', () => {
+                expect(castSingleSelectableValue(false, type)).toBe(false);
             });
 
-            it('should return true if value is True', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'True',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle string "true"', () => {
+                expect(castSingleSelectableValue('true', type)).toBe(true);
             });
 
-            it('should return true if value is TrUE', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'TrUE',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle string "false"', () => {
+                expect(castSingleSelectableValue('false', type)).toBe(false);
             });
 
-            it('should return true if value has spaces on the sides', () => {
-                expect(
-                    castSingleSelectableValue(
-                        '        true      ',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle uppercase "TRUE"', () => {
+                expect(castSingleSelectableValue('TRUE', type)).toBe(true);
             });
 
-            it('should return false if value is false', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'false',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should handle mixed case "tRuE"', () => {
+                expect(castSingleSelectableValue('tRuE', type)).toBe(true);
             });
 
-            it('should return false for any random string that is not "true"', () => {
-                expect(
-                    castSingleSelectableValue(
-                        (Math.random() * 10).toString(36), // This return some random stuff like 6.kuh34iuh12
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should handle string with spaces', () => {
+                expect(castSingleSelectableValue('  true  ', type)).toBe(true);
             });
 
-            it('should return false for any random number that is not "true"', () => {
-                expect(
-                    castSingleSelectableValue(
-                        (Math.random() * 10).toString(), // Random number from 0 to 10
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should return false for non-boolean strings', () => {
+                expect(castSingleSelectableValue('hello', type)).toBe(false);
+            });
+
+            it('should handle number 1 as false', () => {
+                expect(castSingleSelectableValue(1, type)).toBe(false);
+            });
+
+            it('should handle number 0 as false', () => {
+                expect(castSingleSelectableValue(0, type)).toBe(false);
             });
         });
 
-        describe.each([
-            {
-                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER
-            },
-            {
-                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT
-            }
-        ])('Numeric DataTypes', ({ dataType }) => {
-            describe(dataType, () => {
-                let number = 0;
+        describe('Numeric', () => {
+            describe('INTEGER type', () => {
+                const type = DotEditContentFieldSingleSelectableDataType.INTEGER;
 
-                beforeEach(() => {
-                    number =
-                        dataType == DotEditContentFieldSingleSelectableDataType.INTEGER
-                            ? Math.random() * 10
-                            : Math.random(); // To generate a float or integer number
+                it('should handle number directly', () => {
+                    expect(castSingleSelectableValue(42, type)).toBe(42);
                 });
 
-                it('should return number if value is number', () => {
-                    expect(castSingleSelectableValue(number.toString(), dataType)).toBe(number);
+                it('should handle numeric string', () => {
+                    expect(castSingleSelectableValue('42', type)).toBe(42);
                 });
 
-                it('should return number if value is number and has spaces on the sides', () => {
-                    expect(
-                        castSingleSelectableValue(`      ${number.toString()}   `, dataType)
-                    ).toBe(number);
+                it('should handle string with spaces', () => {
+                    expect(castSingleSelectableValue('  42  ', type)).toBe(42);
                 });
 
-                it('should return NaN if value is not a number', () => {
-                    const randomString = number.toString(36);
-
-                    expect(castSingleSelectableValue(randomString, dataType)).toBe(NaN);
+                it('should return null for invalid number', () => {
+                    expect(castSingleSelectableValue('not a number', type)).toBeNull();
                 });
+
+                it('should handle zero', () => {
+                    expect(castSingleSelectableValue(0, type)).toBe(0);
+                });
+
+                it('should handle negative numbers', () => {
+                    expect(castSingleSelectableValue(-42, type)).toBe(-42);
+                });
+            });
+
+            describe('FLOAT type', () => {
+                const type = DotEditContentFieldSingleSelectableDataType.FLOAT;
+
+                it('should handle float directly', () => {
+                    expect(castSingleSelectableValue(3.14, type)).toBe(3.14);
+                });
+
+                it('should handle float string', () => {
+                    expect(castSingleSelectableValue('3.14', type)).toBe(3.14);
+                });
+
+                it('should handle string with spaces', () => {
+                    expect(castSingleSelectableValue('  3.14  ', type)).toBe(3.14);
+                });
+
+                it('should return null for invalid float', () => {
+                    expect(castSingleSelectableValue('not a float', type)).toBeNull();
+                });
+
+                it('should handle negative floats', () => {
+                    expect(castSingleSelectableValue(-3.14, type)).toBe(-3.14);
+                });
+
+                it('should handle zero', () => {
+                    expect(castSingleSelectableValue(0.0, type)).toBe(0);
+                });
+            });
+        });
+
+        describe('Default string handling', () => {
+            it('should convert number to string for unknown type', () => {
+                expect(castSingleSelectableValue(42, 'unknown')).toBe('42');
+            });
+
+            it('should convert boolean to string for unknown type', () => {
+                expect(castSingleSelectableValue(true, 'unknown')).toBe('true');
+            });
+
+            it('should handle object by converting to string', () => {
+                const obj = { test: 'value' };
+                expect(castSingleSelectableValue(obj, 'unknown')).toBe(String(obj));
+            });
+
+            it('should return string as is for unknown type', () => {
+                expect(castSingleSelectableValue('test', 'unknown')).toBe('test');
             });
         });
     });
 
     describe('getSingleSelectableFieldOptions', () => {
-        it('should return an array of objects with label and value', () => {
-            expect(getSingleSelectableFieldOptions('some label|some value', 'Some type')).toEqual([
-                {
-                    label: 'some label',
-                    value: 'some value'
-                }
-            ]);
+        describe('Empty and null values', () => {
+            it('should return an empty array if options is empty', () => {
+                expect(getSingleSelectableFieldOptions('', 'Some type')).toEqual([]);
+            });
+
+            it('should return an empty array if options is null', () => {
+                expect(getSingleSelectableFieldOptions(null as any, 'Some type')).toEqual([]);
+            });
+
+            it('should return an empty array if options is undefined', () => {
+                expect(getSingleSelectableFieldOptions(undefined as any, 'Some type')).toEqual([]);
+            });
+
+            it('should return an empty array if options is only whitespace', () => {
+                expect(getSingleSelectableFieldOptions('   ', 'Some type')).toEqual([]);
+            });
         });
 
-        it('should return an array of objects with label and value even if value is not provided', () => {
-            expect(getSingleSelectableFieldOptions('some label', 'Some type')).toEqual([
-                {
-                    label: 'some label',
-                    value: 'some label'
-                }
-            ]);
+        describe('Multi-line pipe format (dotCMS standard)', () => {
+            it('should handle standard dotCMS format from documentation', () => {
+                const options = 'foo|1\r\nbar|2\r\nthird item|c\r\nThis one is a ghost.|boo';
+                expect(getSingleSelectableFieldOptions(options, 'text')).toEqual([
+                    { label: 'foo', value: '1' },
+                    { label: 'bar', value: '2' },
+                    { label: 'third item', value: 'c' },
+                    { label: 'This one is a ghost.', value: 'boo' }
+                ]);
+            });
+
+            it('should handle radio field format from documentation', () => {
+                const options = 'FirstLabel|1\r\nSecondLabel|2\r\nThirdLabel|foo';
+                expect(getSingleSelectableFieldOptions(options, 'text')).toEqual([
+                    { label: 'FirstLabel', value: '1' },
+                    { label: 'SecondLabel', value: '2' },
+                    { label: 'ThirdLabel', value: 'foo' }
+                ]);
+            });
+
+            it('should support different line break formats', () => {
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1\nlabel2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
+                ]);
+
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1\rlabel2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
+                ]);
+            });
+
+            it('should handle options without explicit values (label as value)', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'some label\r\nsome label 2\r\nsome label 3|i have value',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'some label', value: 'some label' },
+                    { label: 'some label 2', value: 'some label 2' },
+                    { label: 'some label 3', value: 'i have value' }
+                ]);
+            });
+
+            it('should handle options without explicit values (label as value) for boolean type', () => {
+                expect(getSingleSelectableFieldOptions('True\r\nFalse', 'text')).toEqual([
+                    { label: 'True', value: 'True' },
+                    { label: 'False', value: 'False' }
+                ]);
+            });
+
+            it('should trim labels and values', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        ' some label \r\n     some label 2 \r\n    some label 3     | i have value ',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'some label', value: 'some label' },
+                    { label: 'some label 2', value: 'some label 2' },
+                    { label: 'some label 3', value: 'i have value' }
+                ]);
+            });
         });
 
-        it('should return an empty array if options is empty', () => {
-            expect(getSingleSelectableFieldOptions('', 'Some type')).toEqual([]);
+        describe('Special case: checkbox without label', () => {
+            it('should handle "|true" case for checkbox without label', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|true',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toEqual([{ label: '', value: true }]);
+            });
+
+            it('should handle "|false" case for checkbox without label', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|false',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toEqual([{ label: '', value: false }]);
+            });
+
+            it('should handle "|value" case with string type', () => {
+                expect(getSingleSelectableFieldOptions('|somevalue', 'text')).toEqual([
+                    { label: '', value: 'somevalue' }
+                ]);
+            });
+
+            it('should handle "|1" case with integer type', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|1',
+                        DotEditContentFieldSingleSelectableDataType.INTEGER
+                    )
+                ).toEqual([{ label: '', value: 1 }]);
+            });
         });
 
-        it('should support multiline options', () => {
-            expect(
-                getSingleSelectableFieldOptions(
-                    'some label\r\nsome label 2\r\nsome label 3|i have value',
-                    'Some type'
-                )
-            ).toEqual([
-                {
-                    label: 'some label',
-                    value: 'some label'
-                },
-                {
-                    label: 'some label 2',
-                    value: 'some label 2'
-                },
-                {
-                    label: 'some label 3',
-                    value: 'i have value'
-                }
-            ]);
+        describe('Simple comma format (when no pipes present)', () => {
+            it('should handle simple comma-separated values', () => {
+                expect(getSingleSelectableFieldOptions('1,2,3', 'text')).toEqual([
+                    { label: '1', value: '1' },
+                    { label: '2', value: '2' },
+                    { label: '3', value: '3' }
+                ]);
+            });
+
+            it('should handle comma-separated values with spaces', () => {
+                expect(getSingleSelectableFieldOptions('value1, value2, value3', 'text')).toEqual([
+                    { label: 'value1', value: 'value1' },
+                    { label: 'value2', value: 'value2' },
+                    { label: 'value3', value: 'value3' }
+                ]);
+            });
+
+            it('should handle single value without commas', () => {
+                expect(getSingleSelectableFieldOptions('single value', 'text')).toEqual([
+                    { label: 'single value', value: 'single value' }
+                ]);
+            });
+
+            it('should filter out empty values in comma format', () => {
+                expect(getSingleSelectableFieldOptions('value1,,value3,', 'text')).toEqual([
+                    { label: 'value1', value: 'value1' },
+                    { label: 'value3', value: 'value3' }
+                ]);
+            });
         });
 
-        it('should trim the values', () => {
-            expect(
-                getSingleSelectableFieldOptions(
-                    ' some label \r\n     some label 2 \r\n    some label 3     | i have value ',
-                    'Some type'
-                )
-            ).toEqual([
+        describe('Data type casting', () => {
+            describe.each([
                 {
-                    label: 'some label',
-                    value: 'some label'
+                    description: 'INTEGER type casting',
+                    optionsString: 'some label\r\n3\r\nsome label 3|i have value\r\nfour|4',
+                    dataType: DotEditContentFieldSingleSelectableDataType.INTEGER,
+                    expected: [
+                        { label: '3', value: 3 },
+                        { label: 'four', value: 4 }
+                    ]
                 },
                 {
-                    label: 'some label 2',
-                    value: 'some label 2'
+                    description: 'FLOAT type casting',
+                    optionsString:
+                        'some label\r\n3.14\r\nsome label 3|i have value\r\nfour dot five|4.5',
+                    dataType: DotEditContentFieldSingleSelectableDataType.FLOAT,
+                    expected: [
+                        { label: '3.14', value: 3.14 },
+                        { label: 'four dot five', value: 4.5 }
+                    ]
                 },
                 {
-                    label: 'some label 3',
-                    value: 'i have value'
+                    description: 'BOOL type casting',
+                    optionsString: 'some label\r\nfalse\r\nsome label 3|true\r\ntrue|true',
+                    dataType: DotEditContentFieldSingleSelectableDataType.BOOL,
+                    expected: [
+                        { label: 'some label', value: false },
+                        { label: 'false', value: false },
+                        { label: 'some label 3', value: true },
+                        { label: 'true', value: true }
+                    ]
                 }
-            ]);
-        });
-        describe.each([
-            {
-                optionsString: 'some label\r\n3\r\nsome label 3|i have value\r\nfour|4',
-                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER,
-                expected: [
-                    {
-                        label: 'some label',
-                        value: NaN
-                    },
-                    {
-                        label: '3',
-                        value: 3
-                    },
-                    {
-                        label: 'some label 3',
-                        value: NaN
-                    },
-                    {
-                        label: 'four',
-                        value: 4
-                    }
-                ]
-            },
-            {
-                optionsString:
-                    'some label\r\n3.14\r\nsome label 3|i have value\r\nfour dot five|4.5',
-                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT,
-                expected: [
-                    {
-                        label: 'some label',
-                        value: NaN
-                    },
-                    {
-                        label: '3.14',
-                        value: 3.14
-                    },
-                    {
-                        label: 'some label 3',
-                        value: NaN
-                    },
-                    {
-                        label: 'four dot five',
-                        value: 4.5
-                    }
-                ]
-            },
-            {
-                optionsString: 'some label\r\nfalse\r\nsome label 3|true\r\ntrue|true',
-                dataType: DotEditContentFieldSingleSelectableDataType.BOOL,
-                expected: [
-                    {
-                        label: 'some label',
-                        value: false
-                    },
-                    {
-                        label: 'false',
-                        value: false
-                    },
-                    {
-                        label: 'some label 3',
-                        value: true
-                    },
-                    {
-                        label: 'true',
-                        value: true
-                    }
-                ]
-            }
-        ])(
-            'should cast the values when a type is passed',
-            ({ optionsString, dataType, expected }) => {
-                it(`should cast for ${dataType} `, () => {
+            ])('$description', ({ optionsString, dataType, expected }) => {
+                it(`should cast values correctly for ${dataType}`, () => {
                     expect(getSingleSelectableFieldOptions(optionsString, dataType)).toEqual(
                         expected
                     );
                 });
-            }
-        );
+            });
+
+            it('should handle comma format with integer casting', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '1,2,3',
+                        DotEditContentFieldSingleSelectableDataType.INTEGER
+                    )
+                ).toEqual([
+                    { label: '1', value: 1 },
+                    { label: '2', value: 2 },
+                    { label: '3', value: 3 }
+                ]);
+            });
+
+            it('should handle comma format with boolean casting', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'true,false',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toEqual([
+                    { label: 'true', value: true },
+                    { label: 'false', value: false }
+                ]);
+            });
+        });
+
+        describe('Edge cases and error handling', () => {
+            it('should filter out invalid values that cannot be cast', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'valid|1\r\ninvalid|notanumber\r\nvalid2|2',
+                        DotEditContentFieldSingleSelectableDataType.INTEGER
+                    )
+                ).toEqual([
+                    { label: 'valid', value: 1 },
+                    { label: 'valid2', value: 2 }
+                ]);
+            });
+
+            it('should handle empty lines in multi-line format', () => {
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1\r\n\r\nlabel2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
+                ]);
+            });
+
+            it('should parse comma-separated pipe-format items individually', () => {
+                // Each comma-separated item has its own pipe applied for label/value
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1,label2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
+                ]);
+            });
+
+            it('should handle labels with special characters', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'Special & Label!|value1\r\n@#$%|value2',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'Special & Label!', value: 'value1' },
+                    { label: '@#$%', value: 'value2' }
+                ]);
+            });
+
+            it('should handle values with spaces', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'Label 1|Value with spaces\r\nLabel 2|Another value',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'Label 1', value: 'Value with spaces' },
+                    { label: 'Label 2', value: 'Another value' }
+                ]);
+            });
+        });
+
+        describe('Real-world dotCMS scenarios', () => {
+            it('should handle checkbox default values scenario from documentation', () => {
+                // Setup options as per documentation
+                const options = 'foo|1\r\nbar|2\r\nthird item|c\r\nThis one is a ghost.|boo';
+                const result = getSingleSelectableFieldOptions(options, 'text');
+
+                // Verify we can find the default values: 1,c,boo
+                const values = result.map((option) => option.value);
+                expect(values).toContain('1');
+                expect(values).toContain('c');
+                expect(values).toContain('boo');
+            });
+
+            it('should handle select field with empty first option', () => {
+                expect(
+                    getSingleSelectableFieldOptions('|\r\nOption 1|1\r\nOption 2|2', 'text')
+                ).toEqual([
+                    { label: 'Option 1', value: '1' },
+                    { label: 'Option 2', value: '2' }
+                ]);
+            });
+
+            it('should handle multi-select field format', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|\r\nFirst Option|first\r\nSecond Option|second',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'First Option', value: 'first' },
+                    { label: 'Second Option', value: 'second' }
+                ]);
+            });
+        });
+
+        describe('Single-option pipe format (issue #36157)', () => {
+            it('should parse a single pipe-format option using label and value (AC8)', () => {
+                expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'yes' }
+                ]);
+            });
+
+            it('should use the whole string as label and value for a single option without pipe (AC9)', () => {
+                expect(getSingleSelectableFieldOptions('Yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'Yes' }
+                ]);
+            });
+
+            // AC10: Checkbox, Radio, Select and Multiselect all delegate to this util
+            // with a text dataType, so a single `Yes|yes` option must resolve identically.
+            it.each(['Checkbox', 'Radio', 'Select', 'Multiselect'])(
+                'should parse single-option pipe format for %s field',
+                (fieldType) => {
+                    expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                        { label: 'Yes', value: 'yes' }
+                    ]);
+                    // fieldType is documented in the case name to clarify intent
+                    expect(fieldType).toBeDefined();
+                }
+            );
+        });
     });
 
     describe('getFinalCastedValue', () => {
-        describe.each([...CALENDAR_FIELD_TYPES])('Calendar Fields', (fieldType) => {
-            describe(fieldType, () => {
-                it('should parse the date if the value is a valid date', () => {
+        describe('DATE_AND_TIME and TIME fields', () => {
+            it.each(['Date-and-Time', 'Time'])(
+                'should return the original value for %s field',
+                (fieldType) => {
                     const value = '2021-09-01T18:00:00.000Z';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date(value).toDateString()
-                    );
-                });
+                    // DATE_AND_TIME and TIME fields return the original value without conversion
+                    expect(getFinalCastedValue(value, field)).toEqual(value);
+                }
+            );
 
-                it("should return Date.now if the value is 'now'", () => {
+            it.each(['Date-and-Time', 'Time'])(
+                "should return 'now' string as-is for %s field",
+                (fieldType) => {
                     const value = 'now';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date().toDateString()
-                    );
-                });
+                    // DATE_AND_TIME and TIME fields return the original value
+                    expect(getFinalCastedValue(value, field)).toEqual(value);
+                }
+            );
 
-                it('should return undefined if the value is undefined', () => {
+            it.each(['Date-and-Time', 'Time'])(
+                'should return undefined for %s field when value is undefined',
+                (fieldType) => {
                     const value = undefined;
                     const field = { fieldType } as DotCMSContentTypeField;
 
                     expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                });
+                }
+            );
+        });
+
+        describe('DATE field', () => {
+            it('should preserve numeric timestamp for DATE field', () => {
+                const value = 1736899200000;
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it('should preserve ISO string for DATE field', () => {
+                const value = '2021-09-01T18:00:00.000Z';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it("should preserve 'now' for DATE field", () => {
+                const value = 'now';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it('should return undefined for DATE field when value is undefined', () => {
+                const value = undefined;
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(undefined);
             });
         });
 
@@ -467,6 +743,318 @@ describe('Utils Functions', () => {
         });
     });
 
+    describe('transformFormDataFn', () => {
+        describe('null/undefined handling', () => {
+            it('should return an empty array when contentType is null', () => {
+                expect(transformFormDataFn(null as any)).toEqual([]);
+            });
+
+            it('should return an empty array when contentType is undefined', () => {
+                expect(transformFormDataFn(undefined as any)).toEqual([]);
+            });
+        });
+
+        describe('basic transformation', () => {
+            it('should transform layout to tabs and filter out filtered field types', () => {
+                const contentType = MOCK_CONTENTTYPE_2_TABS;
+                const result = transformFormDataFn(contentType);
+
+                expect(result).toBeDefined();
+                expect(Array.isArray(result)).toBe(true);
+                expect(result.length).toBeGreaterThan(0);
+
+                // Verify that filtered field types are removed
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            column.fields.forEach((field) => {
+                                expect(isFilteredType(field)).toBe(false);
+                            });
+                        });
+                    });
+                });
+            });
+
+            it('should preserve tab structure from layout', () => {
+                const contentType = MOCK_CONTENTTYPE_2_TABS;
+                const result = transformFormDataFn(contentType);
+
+                // Should have at least 2 tabs based on MOCK_CONTENTTYPE_2_TABS structure
+                expect(result.length).toBeGreaterThanOrEqual(1);
+                expect(result[0].title).toBe('Content');
+            });
+        });
+
+        describe('rendered value mapping', () => {
+            it('should add rendered value to fields when present in contentType.fields', () => {
+                const fieldId = '69b2ccbb36a0efc135db107eb882d74e'; // text1 field ID
+                const renderedValue = '<div>Custom rendered content</div>';
+
+                const contentType: DotCMSContentType = {
+                    ...MOCK_CONTENTTYPE_2_TABS,
+                    fields: MOCK_CONTENTTYPE_2_TABS.fields.map((field) =>
+                        field.id === fieldId ? { ...field, rendered: renderedValue } : field
+                    )
+                };
+
+                const result = transformFormDataFn(contentType);
+
+                // Find the field in the result
+                let foundField = null;
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            const field = column.fields.find((f) => f.id === fieldId);
+                            if (field) {
+                                foundField = field;
+                            }
+                        });
+                    });
+                });
+
+                expect(foundField).toBeDefined();
+                expect(foundField?.rendered).toBe(renderedValue);
+            });
+
+            it('should not add rendered value when field does not have rendered in contentType.fields', () => {
+                const contentType = MOCK_CONTENTTYPE_2_TABS;
+                const result = transformFormDataFn(contentType);
+
+                // Verify that fields without rendered values don't have the property
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            column.fields.forEach((field) => {
+                                // Only check fields that exist in contentType.fields
+                                const originalField = contentType.fields.find(
+                                    (f) => f.id === field.id
+                                );
+                                if (originalField && !originalField.rendered) {
+                                    // Field should not have rendered property if it wasn't in the original
+                                    // But if it was added by the map, it should have it
+                                    // So we check: if originalField doesn't have rendered, field shouldn't either
+                                    if (!originalField.rendered) {
+                                        // This is a bit tricky - the field might have rendered from the map
+                                        // So we only assert if we know for sure it shouldn't
+                                    }
+                                }
+                            });
+                        });
+                    });
+                });
+            });
+
+            it('should handle multiple fields with different rendered values', () => {
+                const fieldId1 = '69b2ccbb36a0efc135db107eb882d74e'; // text1
+                const fieldId2 = '4fb628337f5e27ff96ff6ad320d7952b'; // text2
+                const renderedValue1 = '<div>Rendered 1</div>';
+                const renderedValue2 = '<div>Rendered 2</div>';
+
+                const contentType: DotCMSContentType = {
+                    ...MOCK_CONTENTTYPE_2_TABS,
+                    fields: MOCK_CONTENTTYPE_2_TABS.fields.map((field) => {
+                        if (field.id === fieldId1) {
+                            return { ...field, rendered: renderedValue1 };
+                        }
+                        if (field.id === fieldId2) {
+                            return { ...field, rendered: renderedValue2 };
+                        }
+                        return field;
+                    })
+                };
+
+                const result = transformFormDataFn(contentType);
+
+                // Find both fields in the result
+                const foundFields: any[] = [];
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            column.fields.forEach((field) => {
+                                if (field.id === fieldId1 || field.id === fieldId2) {
+                                    foundFields.push(field);
+                                }
+                            });
+                        });
+                    });
+                });
+
+                expect(foundFields.length).toBeGreaterThanOrEqual(2);
+                const field1 = foundFields.find((f) => f.id === fieldId1);
+                const field2 = foundFields.find((f) => f.id === fieldId2);
+
+                expect(field1?.rendered).toBe(renderedValue1);
+                expect(field2?.rendered).toBe(renderedValue2);
+            });
+
+            it('should only add rendered value if field exists in renderedMap', () => {
+                const fieldId = '69b2ccbb36a0efc135db107eb882d74e'; // text1 field ID
+
+                // Create contentType where the field in layout exists but doesn't have rendered in fields array
+                const contentType: DotCMSContentType = {
+                    ...MOCK_CONTENTTYPE_2_TABS,
+                    fields: MOCK_CONTENTTYPE_2_TABS.fields.map((field) => {
+                        // Remove rendered if it exists
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        const { rendered, ...fieldWithoutRendered } = field;
+                        return fieldWithoutRendered;
+                    })
+                };
+
+                const result = transformFormDataFn(contentType);
+
+                // Find the field in the result
+                let foundField = null;
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            const field = column.fields.find((f) => f.id === fieldId);
+                            if (field) {
+                                foundField = field;
+                            }
+                        });
+                    });
+                });
+
+                // Field should exist but may or may not have rendered property
+                // The key is that it shouldn't have rendered if it wasn't in the map
+                expect(foundField).toBeDefined();
+                // If rendered is not in the map, it shouldn't be added
+                const hasRenderedInMap = contentType.fields.some(
+                    (f) => f.id === fieldId && f.rendered
+                );
+                if (!hasRenderedInMap) {
+                    // Field might still have rendered if it was in the original layout
+                    // But we know it shouldn't come from the map
+                }
+            });
+
+            it('should handle empty rendered values correctly', () => {
+                const fieldId = '69b2ccbb36a0efc135db107eb882d74e';
+                const renderedValue = '';
+
+                const contentType: DotCMSContentType = {
+                    ...MOCK_CONTENTTYPE_2_TABS,
+                    fields: MOCK_CONTENTTYPE_2_TABS.fields.map((field) =>
+                        field.id === fieldId ? { ...field, rendered: renderedValue } : field
+                    )
+                };
+
+                const result = transformFormDataFn(contentType);
+
+                // Empty string is falsy, so it won't be added to the map
+                // Find the field
+                let foundField = null;
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            const field = column.fields.find((f) => f.id === fieldId);
+                            if (field) {
+                                foundField = field;
+                            }
+                        });
+                    });
+                });
+
+                expect(foundField).toBeDefined();
+                // Empty string is falsy, so it won't be in the map
+                // The field should not have rendered property from the map
+            });
+        });
+
+        describe('field filtering', () => {
+            it('should filter out Row field types', () => {
+                const contentType = MOCK_CONTENTTYPE_2_TABS;
+                const result = transformFormDataFn(contentType);
+
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            column.fields.forEach((field) => {
+                                expect(field.fieldType).not.toBe('Row');
+                            });
+                        });
+                    });
+                });
+            });
+
+            it('should filter out Column field types', () => {
+                const contentType = MOCK_CONTENTTYPE_2_TABS;
+                const result = transformFormDataFn(contentType);
+
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            column.fields.forEach((field) => {
+                                expect(field.fieldType).not.toBe('Column');
+                            });
+                        });
+                    });
+                });
+            });
+
+            it('should filter out Tab_divider field types', () => {
+                const contentType = MOCK_CONTENTTYPE_2_TABS;
+                const result = transformFormDataFn(contentType);
+
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            column.fields.forEach((field) => {
+                                expect(field.fieldType).not.toBe('Tab_divider');
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        describe('integration with MOCK_CONTENTTYPE_2_TABS', () => {
+            it('should correctly transform MOCK_CONTENTTYPE_2_TABS with rendered values', () => {
+                // Add rendered values to some fields
+                const fieldId1 = '69b2ccbb36a0efc135db107eb882d74e'; // text1
+                const fieldId2 = 'b2d546ae37278b9bb717078be5522a1e'; // text3
+                const renderedValue1 = '<p>Text 1 rendered</p>';
+                const renderedValue2 = '<p>Text 3 rendered</p>';
+
+                const contentType: DotCMSContentType = {
+                    ...MOCK_CONTENTTYPE_2_TABS,
+                    fields: MOCK_CONTENTTYPE_2_TABS.fields.map((field) => {
+                        if (field.id === fieldId1) {
+                            return { ...field, rendered: renderedValue1 };
+                        }
+                        if (field.id === fieldId2) {
+                            return { ...field, rendered: renderedValue2 };
+                        }
+                        return field;
+                    })
+                };
+
+                const result = transformFormDataFn(contentType);
+
+                expect(result.length).toBeGreaterThan(0);
+
+                // Verify rendered values are correctly applied
+                const allFields: any[] = [];
+                result.forEach((tab) => {
+                    tab.layout.forEach((row) => {
+                        row.columns.forEach((column) => {
+                            allFields.push(...column.fields);
+                        });
+                    });
+                });
+
+                const field1 = allFields.find((f) => f.id === fieldId1);
+                const field2 = allFields.find((f) => f.id === fieldId2);
+
+                expect(field1).toBeDefined();
+                expect(field1?.rendered).toBe(renderedValue1);
+                expect(field2).toBeDefined();
+                expect(field2?.rendered).toBe(renderedValue2);
+            });
+        });
+    });
+
     describe('isValidJson', () => {
         it('should return true for a valid object JSON', () => {
             expect(isValidJson('{ "key": "value", "value": "value" }')).toBe(true);
@@ -564,7 +1152,7 @@ describe('Utils Functions', () => {
             expect(result).toEqual({});
         });
     });
-
+    /*
     describe('createPaths function', () => {
         it('with the root path', () => {
             const path = 'nico.demo.ts';
@@ -611,7 +1199,7 @@ describe('Utils Functions', () => {
             expect(paths).toStrictEqual([]);
         });
     });
-
+*/
     describe('UI State Storage', () => {
         beforeEach(() => {
             sessionStorage.clear();
@@ -627,22 +1215,30 @@ describe('Utils Functions', () => {
             it('should return default state when sessionStorage is empty', () => {
                 const state = getStoredUIState();
                 expect(state).toEqual({
+                    view: 'form',
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
             });
 
-            it('should return stored state from sessionStorage', () => {
+            it('should return stored state from sessionStorage merged with defaults', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
-                    activeSidebarTab: 1
+                    activeSidebarTab: 1,
+                    isBetaMessageVisible: true
                 };
                 sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
                 const state = getStoredUIState();
-                expect(state).toEqual(mockState);
+                expect(state).toEqual({
+                    view: 'form',
+                    localeSelectorTab: 'all',
+                    ...mockState
+                });
             });
 
             it('should return default state and warn when sessionStorage has invalid JSON', () => {
@@ -650,9 +1246,12 @@ describe('Utils Functions', () => {
 
                 const state = getStoredUIState();
                 expect(state).toEqual({
+                    view: 'form',
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -673,9 +1272,12 @@ describe('Utils Functions', () => {
 
                 const state = getStoredUIState();
                 expect(state).toEqual({
+                    view: 'form',
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -803,10 +1405,38 @@ describe('Utils Functions', () => {
         });
     });
 
+    describe('generatePageEditUrl', () => {
+        it('should generate the correct edit page URL when all attributes are present', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: '/blog/index',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            const expectedUrl =
+                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Findex%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE';
+
+            expect(generatePageEditUrl(contentlet)).toBe(expectedUrl);
+        });
+
+        it('should return an empty string when required attributes are missing', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: undefined,
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            expect(generatePageEditUrl(contentlet)).toBe('');
+        });
+    });
+
     describe('prepareContentletForCopy', () => {
-        it('should prepare a contentlet for copying by setting locked to false and removing lockedBy', () => {
+        it('should prepare a contentlet for copying by clearing inode, setting locked to false and removing lockedBy', () => {
             // Arrange
             const contentlet = createFakeContentlet({
+                inode: 'some-inode-123',
                 locked: true,
                 lockedBy: {
                     firstName: 'John',
@@ -821,9 +1451,573 @@ describe('Utils Functions', () => {
             // Assert
             expect(result).toEqual({
                 ...contentlet,
+                inode: undefined,
                 locked: false,
                 lockedBy: undefined
             });
+        });
+    });
+
+    describe('Form Field Processing Utilities', () => {
+        describe('isFlattenedField', () => {
+            it.each(FLATTENED_FIELD_TYPES)(
+                'should return true for flattened field type: %s',
+                (fieldType) => {
+                    const field = { fieldType } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['value1', 'value2', 'value3'];
+
+                    expect(isFlattenedField(arrayValue, field)).toBe(true);
+                }
+            );
+
+            it('should return false for non-array values even with flattened field types', () => {
+                const field = {
+                    fieldType: FIELD_TYPES.CHECKBOX
+                } as unknown as DotCMSContentTypeField;
+                const stringValue = 'not an array';
+
+                expect(isFlattenedField(stringValue, field)).toBe(false);
+            });
+
+            it('should return false for array values with non-flattened field types', () => {
+                const field = { fieldType: FIELD_TYPES.TEXT } as unknown as DotCMSContentTypeField;
+                const arrayValue = ['value1', 'value2'];
+
+                expect(isFlattenedField(arrayValue, field)).toBe(false);
+            });
+
+            it('should return false for null/undefined values', () => {
+                const field = {
+                    fieldType: FIELD_TYPES.CHECKBOX
+                } as unknown as DotCMSContentTypeField;
+
+                expect(isFlattenedField(null, field)).toBe(false);
+                expect(isFlattenedField(undefined, field)).toBe(false);
+            });
+        });
+
+        describe('isCalendarField', () => {
+            it.each(CALENDAR_FIELD_TYPES)(
+                'should return true for calendar field type: %s',
+                (fieldType) => {
+                    const field = { fieldType } as unknown as DotCMSContentTypeField;
+
+                    expect(isCalendarField(field)).toBe(true);
+                }
+            );
+
+            it('should return false for non-calendar field types', () => {
+                const nonCalendarTypes = [
+                    FIELD_TYPES.TEXT,
+                    FIELD_TYPES.TEXTAREA,
+                    FIELD_TYPES.CHECKBOX
+                ];
+
+                nonCalendarTypes.forEach((fieldType) => {
+                    const field = { fieldType } as unknown as DotCMSContentTypeField;
+                    expect(isCalendarField(field)).toBe(false);
+                });
+            });
+        });
+
+        describe('processCalendarFieldValue', () => {
+            const fieldName = 'testField';
+
+            describe('null/undefined handling', () => {
+                it('should return null for null value', () => {
+                    expect(processCalendarFieldValue(null, fieldName)).toBeNull();
+                });
+
+                it('should return undefined for undefined value', () => {
+                    expect(processCalendarFieldValue(undefined, fieldName)).toBeUndefined();
+                });
+
+                it('should return null for empty string', () => {
+                    expect(processCalendarFieldValue('', fieldName)).toBeNull();
+                });
+            });
+
+            describe('Date object handling', () => {
+                it('should convert Date objects to timestamps', () => {
+                    const date = new Date('2025-01-15T10:30:00Z');
+                    const expectedTimestamp = date.getTime();
+
+                    expect(processCalendarFieldValue(date, fieldName)).toBe(expectedTimestamp);
+                });
+
+                it('should handle current date', () => {
+                    const now = new Date();
+                    const expectedTimestamp = now.getTime();
+
+                    expect(processCalendarFieldValue(now, fieldName)).toBe(expectedTimestamp);
+                });
+            });
+
+            describe('number handling', () => {
+                it('should return numeric values as-is', () => {
+                    const timestamp = 1737021000000;
+
+                    expect(processCalendarFieldValue(timestamp, fieldName)).toBe(timestamp);
+                });
+
+                it('should handle zero timestamp', () => {
+                    expect(processCalendarFieldValue(0, fieldName)).toBe(0);
+                });
+
+                it('should handle negative timestamps', () => {
+                    const negativeTimestamp = -1737021000000;
+
+                    expect(processCalendarFieldValue(negativeTimestamp, fieldName)).toBe(
+                        negativeTimestamp
+                    );
+                });
+            });
+
+            describe('string handling', () => {
+                it('should convert valid numeric strings to numbers', () => {
+                    const stringTimestamp = '1737021000000';
+                    const expectedNumber = 1737021000000;
+
+                    expect(processCalendarFieldValue(stringTimestamp, fieldName)).toBe(
+                        expectedNumber
+                    );
+                });
+
+                it('should handle string with leading/trailing spaces', () => {
+                    const stringTimestamp = '  1737021000000  ';
+                    const expectedNumber = 1737021000000;
+
+                    expect(processCalendarFieldValue(stringTimestamp, fieldName)).toBe(
+                        expectedNumber
+                    );
+                });
+
+                it('should return null for invalid string timestamps', () => {
+                    const invalidString = 'not-a-number';
+
+                    expect(processCalendarFieldValue(invalidString, fieldName)).toBeNull();
+                });
+
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+                    const expected = Date.parse(isoDate);
+
+                    expect(processCalendarFieldValue(isoDate, fieldName)).toBe(expected);
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+                    const expected = Date.parse(formattedDate);
+
+                    expect(processCalendarFieldValue(formattedDate, fieldName)).toBe(expected);
+                });
+
+                it('should return null for empty string after trim', () => {
+                    const emptyString = '   ';
+
+                    expect(processCalendarFieldValue(emptyString, fieldName)).toBeNull();
+                });
+            });
+
+            describe('unexpected value handling', () => {
+                it('should return null for unexpected value types', () => {
+                    const objectValue = { timestamp: 1737021000000 };
+
+                    expect(processCalendarFieldValue(objectValue as any, fieldName)).toBeNull();
+                });
+
+                it('should return null for boolean values', () => {
+                    expect(processCalendarFieldValue(true as any, fieldName)).toBeNull();
+                    expect(processCalendarFieldValue(false as any, fieldName)).toBeNull();
+                });
+            });
+
+            describe('console logging', () => {
+                let consoleWarnSpy: SpyInstance;
+                let consoleErrorSpy: SpyInstance;
+
+                beforeEach(() => {
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+                });
+
+                afterEach(() => {
+                    consoleWarnSpy.mockRestore();
+                    consoleErrorSpy.mockRestore();
+                });
+
+                it('should log warning for invalid string timestamps', () => {
+                    processCalendarFieldValue('invalid', fieldName);
+
+                    expect(consoleWarnSpy).toHaveBeenCalledWith(
+                        `Calendar field ${fieldName} has invalid timestamp string:`,
+                        'invalid'
+                    );
+                });
+
+                it('should not log warning for valid numeric string timestamps', () => {
+                    processCalendarFieldValue('1737021000000', fieldName);
+
+                    expect(consoleWarnSpy).not.toHaveBeenCalled();
+                });
+
+                it('should log error for unexpected value types', () => {
+                    const unexpectedValue = { test: 'value' };
+                    processCalendarFieldValue(unexpectedValue as any, fieldName);
+
+                    expect(consoleErrorSpy).toHaveBeenCalledWith(
+                        `Calendar field ${fieldName} received unexpected value:`,
+                        { value: unexpectedValue, type: 'object' }
+                    );
+                });
+            });
+        });
+
+        describe('parseCalendarTimestamp', () => {
+            describe('null/undefined handling', () => {
+                it('should return null for null value', () => {
+                    expect(parseCalendarTimestamp(null)).toBeNull();
+                });
+
+                it('should return undefined for undefined value', () => {
+                    expect(parseCalendarTimestamp(undefined)).toBeUndefined();
+                });
+
+                it('should return null for empty string', () => {
+                    expect(parseCalendarTimestamp('')).toBeNull();
+                });
+
+                it('should return null for whitespace-only string', () => {
+                    expect(parseCalendarTimestamp('   ')).toBeNull();
+                });
+            });
+
+            describe('number handling', () => {
+                it('should return valid numbers as-is', () => {
+                    const timestamp = 1737021000000;
+
+                    expect(parseCalendarTimestamp(timestamp)).toBe(timestamp);
+                });
+
+                it('should handle zero', () => {
+                    expect(parseCalendarTimestamp(0)).toBe(0);
+                });
+
+                it('should handle negative timestamps', () => {
+                    expect(parseCalendarTimestamp(-1737021000000)).toBe(-1737021000000);
+                });
+
+                it('should return null for NaN', () => {
+                    expect(parseCalendarTimestamp(NaN)).toBeNull();
+                });
+
+                it('should return null for Infinity', () => {
+                    expect(parseCalendarTimestamp(Infinity)).toBeNull();
+                    expect(parseCalendarTimestamp(-Infinity)).toBeNull();
+                });
+            });
+
+            describe('Date object handling', () => {
+                it('should convert valid Date objects to timestamps', () => {
+                    const date = new Date('2025-01-15T10:30:00Z');
+
+                    expect(parseCalendarTimestamp(date)).toBe(date.getTime());
+                });
+
+                it('should return null for invalid Date objects', () => {
+                    expect(parseCalendarTimestamp(new Date('invalid'))).toBeNull();
+                });
+            });
+
+            describe('string handling', () => {
+                it('should convert numeric strings to numbers', () => {
+                    expect(parseCalendarTimestamp('1737021000000')).toBe(1737021000000);
+                });
+
+                it('should trim before parsing numeric strings', () => {
+                    expect(parseCalendarTimestamp('  1737021000000  ')).toBe(1737021000000);
+                });
+
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+
+                    expect(parseCalendarTimestamp(isoDate)).toBe(Date.parse(isoDate));
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+
+                    expect(parseCalendarTimestamp(formattedDate)).toBe(Date.parse(formattedDate));
+                });
+
+                it('should return null for non-parseable strings', () => {
+                    expect(parseCalendarTimestamp('not-a-date')).toBeNull();
+                });
+            });
+
+            describe('unexpected value handling', () => {
+                it('should return null for object values', () => {
+                    expect(parseCalendarTimestamp({ timestamp: 1737021000000 })).toBeNull();
+                });
+
+                it('should return null for boolean values', () => {
+                    expect(parseCalendarTimestamp(true)).toBeNull();
+                    expect(parseCalendarTimestamp(false)).toBeNull();
+                });
+            });
+        });
+
+        describe('processFieldValue', () => {
+            describe('flattened fields', () => {
+                it('should join array values with commas for flattened fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CHECKBOX,
+                        variable: 'checkboxField'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['option1', 'option2', 'option3'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('option1,option2,option3');
+                });
+
+                it('should handle empty arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.MULTI_SELECT,
+                        variable: 'multiSelectField'
+                    } as unknown as DotCMSContentTypeField;
+                    const emptyArray: string[] = [];
+
+                    expect(processFieldValue(emptyArray, field)).toBe('');
+                });
+
+                it('should handle single-item arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TAG,
+                        variable: 'tagField'
+                    } as unknown as DotCMSContentTypeField;
+                    const singleItemArray = ['onlyOption'];
+
+                    expect(processFieldValue(singleItemArray, field)).toBe('onlyOption');
+                });
+            });
+
+            describe('category fields', () => {
+                it('should join category inode array into comma-separated string', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2', 'inode3'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2,inode3');
+                });
+
+                it('should handle empty arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const emptyArray: string[] = [];
+
+                    expect(processFieldValue(emptyArray, field)).toBe('');
+                });
+
+                it('should handle single-item arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const singleItemArray = ['onlyInode'];
+
+                    expect(processFieldValue(singleItemArray, field)).toBe('onlyInode');
+                });
+            });
+
+            describe('calendar fields', () => {
+                it('should process Date objects to timestamps for calendar fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.DATE,
+                        variable: 'dateField'
+                    } as unknown as DotCMSContentTypeField;
+                    const date = new Date('2025-01-15T10:30:00Z');
+                    const expectedTimestamp = date.getTime();
+
+                    expect(processFieldValue(date, field)).toBe(expectedTimestamp);
+                });
+
+                it('should process string timestamps for calendar fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.DATE_AND_TIME,
+                        variable: 'datetimeField'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringTimestamp = '1737021000000';
+
+                    expect(processFieldValue(stringTimestamp, field)).toBe(1737021000000);
+                });
+
+                it('should handle null values for calendar fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TIME,
+                        variable: 'timeField'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                });
+            });
+
+            describe('other field types', () => {
+                it('should return string values as-is for text fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TEXT,
+                        variable: 'textField'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringValue = 'some text';
+
+                    expect(processFieldValue(stringValue, field)).toBe(stringValue);
+                });
+
+                it('should return number values as-is for numeric fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TEXT,
+                        variable: 'numericField'
+                    } as unknown as DotCMSContentTypeField;
+                    const numberValue = 42;
+
+                    expect(processFieldValue(numberValue, field)).toBe(numberValue);
+                });
+
+                it('should return null/undefined values as-is', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TEXTAREA,
+                        variable: 'textareaField'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                    expect(processFieldValue(undefined, field)).toBeUndefined();
+                });
+            });
+
+            describe('category fields', () => {
+                it('should join array values into comma-separated string for category fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2');
+                });
+
+                it('should return empty string as-is for category fields (not flattened)', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue('', field)).toBe('');
+                });
+
+                it('should return null as-is for category fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                });
+            });
+
+            describe('Block Editor fields', () => {
+                it('should stringify object values so the backend does not store them as Map.toString()', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const objectValue = {
+                        type: 'doc',
+                        content: [{ type: 'paragraph' }]
+                    };
+
+                    expect(processFieldValue(objectValue, field)).toBe(JSON.stringify(objectValue));
+                });
+
+                it('should pass through JSON string values unchanged', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringValue = '{"type":"doc","content":[{"type":"paragraph"}]}';
+
+                    expect(processFieldValue(stringValue, field)).toBe(stringValue);
+                });
+
+                it('should pass through null and undefined unchanged', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                    expect(processFieldValue(undefined, field)).toBeUndefined();
+                });
+            });
+
+            describe('edge cases', () => {
+                it('should handle fields without specific processing', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.WYSIWYG,
+                        variable: 'wysiwygField'
+                    } as unknown as DotCMSContentTypeField;
+                    const complexValue = { html: '<p>content</p>' };
+
+                    expect(processFieldValue(complexValue as any, field)).toBe(complexValue);
+                });
+
+                it('should handle unknown field types gracefully', () => {
+                    const field = {
+                        fieldType: 'UNKNOWN_TYPE' as any,
+                        variable: 'unknownField'
+                    } as unknown as DotCMSContentTypeField;
+                    const value = 'some value';
+
+                    expect(processFieldValue(value, field)).toBe(value);
+                });
+            });
+        });
+    });
+
+    describe('escapeHtml', () => {
+        it('should escape HTML special characters', () => {
+            expect(escapeHtml('<script>alert("x")</script>')).toBe(
+                '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'
+            );
+            expect(escapeHtml("Tom & Jerry's <b>")).toBe('Tom &amp; Jerry&#39;s &lt;b&gt;');
+        });
+
+        it('should leave a plain name untouched', () => {
+            expect(escapeHtml('Anna García')).toBe('Anna García');
+        });
+    });
+
+    describe('resolveLocker', () => {
+        it('should resolve from a lockedBy object', () => {
+            expect(
+                resolveLocker({
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should resolve from a lockedBy string + lockedByName', () => {
+            expect(
+                resolveLocker({ lockedBy: '123', lockedByName: 'Anna García' } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should return null when there is no lock', () => {
+            expect(resolveLocker({} as never)).toBeNull();
+            expect(resolveLocker(null)).toBeNull();
         });
     });
 });

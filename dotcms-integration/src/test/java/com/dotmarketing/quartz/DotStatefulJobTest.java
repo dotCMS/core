@@ -69,6 +69,7 @@ public class DotStatefulJobTest extends IntegrationTestBase {
 
         //in order to avoid conflicts clean any reference that could have been left.
         removeAnyExistingJob();
+        MyStatefulJob.init(); // Reset static state
 
         //Now enqueue a few jos .. They will sleep randomly to simulate work.
         for (int i = 1; i <= MyStatefulJob.MAX_THREADS; i++) {
@@ -140,18 +141,9 @@ public class DotStatefulJobTest extends IntegrationTestBase {
 
         boolean overlaps(final LocalTimeRange other) {
             requireNonNull(other, "other must not be null");
-            return isBetween(other.from, this.from, this.to)
-                    || isBetween(other.to, this.from, this.to)
-                    || isBetween(this.from, other.from, other.to)
-                    || isBetween(this.to, other.from, other.to);
-        }
-
-        private static boolean isBetween(final LocalTime time, final LocalTime from, final LocalTime to) {
-            if (from.isBefore(to)) { // same day
-                return from.isBefore(time) && time.isBefore(to);
-            } else { // spans to the next day.
-                return from.isBefore(time) || time.isBefore(to);
-            }
+            // Two ranges overlap if one starts before the other ends (and vice versa)
+            // Using !isAfter instead of isBefore to handle equal times correctly
+            return !this.to.isBefore(other.from) && !other.to.isBefore(this.from);
         }
 
         public static LocalTimeRange of(final LocalTime from, final LocalTime to){

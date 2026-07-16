@@ -1,14 +1,24 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-convert-wysiwyg-to-block',
     templateUrl: './dot-convert-wysiwyg-to-block.component.html',
-    styleUrls: ['./dot-convert-wysiwyg-to-block.component.scss']
+    standalone: true,
+    host: {
+        class: 'mt-6 block border border-gray-300 p-4 rounded-sm'
+    },
+    imports: [FormsModule, ButtonModule, CheckboxModule, DotMessagePipe]
 })
 export class DotConvertWysiwygToBlockComponent {
-    @Input() currentFieldType;
+    readonly $currentFieldType = input({ alias: 'currentFieldType' });
 
-    @Output() convert = new EventEmitter<MouseEvent>();
+    readonly $convert = output<MouseEvent>();
 
     accept = false;
 }

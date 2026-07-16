@@ -13,7 +13,7 @@ describe('DotLoginPageStateServiceService', () => {
     let loginService: LoginService;
 
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotLoginPageStateService,
                 { provide: LoginService, useClass: LoginServiceMock }
@@ -21,14 +21,15 @@ describe('DotLoginPageStateServiceService', () => {
             imports: []
         });
 
-        dotloginPageStateService = testbed.get(DotLoginPageStateService);
-        loginService = testbed.get(LoginService);
-        spyOn(loginService, 'getLoginFormInfo').and.returnValue(of(mockLoginFormResponse));
+        dotloginPageStateService = TestBed.inject(DotLoginPageStateService);
+        loginService = TestBed.inject(LoginService);
+        jest.spyOn(loginService, 'getLoginFormInfo').mockReturnValue(of(mockLoginFormResponse));
     });
 
     it('should set new value to dotLoginInformation$ and call service correctly', () => {
         dotloginPageStateService.set('es_ES').subscribe();
         expect(loginService.getLoginFormInfo).toHaveBeenCalledWith('es_ES', LOGIN_LABELS);
+        expect(loginService.getLoginFormInfo).toHaveBeenCalledTimes(1);
         dotloginPageStateService.get().subscribe((loginInfo: DotLoginInformation) => {
             expect(loginInfo.entity).toEqual(mockLoginFormResponse.entity);
             expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toEqual('Email Address');

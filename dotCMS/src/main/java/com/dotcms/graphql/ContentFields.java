@@ -42,6 +42,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_DATE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_USER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STYLE_PROPERTIES_KEY;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
@@ -97,6 +98,13 @@ public final class ContentFields {
                                 : "")));
         contentFields.put(PUBLISH_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(USER.getTypeName()),
                 new UserDataFetcher()));
+
+        contentFields.put(STYLE_PROPERTIES_KEY, new TypeFetcher(ExtendedScalars.Json, PropertyDataFetcher
+                .fetching((Function<Contentlet, Object>) contentlet ->
+                        UtilMethods.isSet(contentlet.get(STYLE_PROPERTIES_KEY))
+                                ? contentlet.get(STYLE_PROPERTIES_KEY)
+                                : null)));
+
         return contentFields;
     }
 

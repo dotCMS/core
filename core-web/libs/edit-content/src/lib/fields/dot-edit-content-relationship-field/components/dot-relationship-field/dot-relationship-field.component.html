@@ -1,0 +1,222 @@
+@let pagination = store.pagination();
+@let showPagination = store.totalPages() > 1;
+@let data = store.paginatedData();
+@let isDisabled = $isDisabled();
+@let isEmpty = store.data().length === 0;
+@let showThumbnail = store.showThumbnail();
+
+<p-table
+    [value]="data"
+    [columns]="store.columns()"
+    data-testid="relationship-field-table"
+    class="dot-relationship-field-table overflow-hidden rounded-lg border border-solid [&_tr:last-child_td]:border-b-0!"
+    [rowHover]="true"
+    [paginator]="false"
+    [first]="pagination.offset"
+    [rows]="pagination.rowsPerPage"
+    [scrollable]="true"
+    [reorderableColumns]="false"
+    (onRowReorder)="onRowReorder($event)">
+    <ng-template pTemplate="header" let-columns>
+        <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
+
+        <tr class="bg-gray-100 font-bold">
+            <th scope="col" class="w-12 min-w-12"></th>
+
+            @for (column of columns; track $index) {
+                @switch (column.type) {
+                    @case ('title') {
+                        <th scope="col" class="min-w-0 flex-1" [class.text-right!]="$last">
+                            {{ 'dot.file.relationship.field.table.title' | dm }}
+                        </th>
+                    }
+                    @case ('language') {
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32"
+                            [class.text-right!]="$last"
+                            data-testid="relationship-locale-header">
+                            {{ 'dot.file.relationship.field.table.language' | dm }}
+                        </th>
+                    }
+                    @case ('status') {
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32"
+                            [class.text-right!]="$last"
+                            data-testid="relationship-status-header">
+                            {{ 'dot.file.relationship.field.table.status' | dm }}
+                        </th>
+                    }
+                    @case ('image') {
+                        <th scope="col" class="w-24 max-w-24 min-w-24" [class.text-right!]="$last">
+                            <p class="truncate capitalize">{{ column.header }}</p>
+                        </th>
+                    }
+                    @default {
+                        <th scope="col" class="w-32 max-w-32 min-w-32" [class.text-right!]="$last">
+                            <span class="capitalize">{{ column.header }}</span>
+                        </th>
+                    }
+                }
+            }
+
+            <th scope="col" class="w-10 min-w-10" alignFrozen="right" pFrozenColumn [frozen]="true">
+                <p-button
+                    (onClick)="menu.toggle($event)"
+                    size="small"
+                    icon="pi pi-plus"
+                    [text]="true"
+                    [disabled]="isDisabled"
+                    data-testid="relationship-add-button" />
+            </th>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td [colSpan]="$totalColumns()">
+                <div
+                    class="flex items-center justify-center gap-2 p-2"
+                    data-testid="relationship-field-empty">
+                    <i class="pi pi-folder-open"></i>
+                    <span class="text-gray-600">
+                        {{ 'dot.file.relationship.field.empty.message' | dm }}
+                        @if (!isDisabled) {
+                            <button
+                                type="button"
+                                class="cursor-pointer border-0 bg-transparent p-0 text-blue-600 underline hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-hidden"
+                                (click)="showExistingContentDialog()"
+                                data-testid="relationship-empty-relate-link">
+                                {{ 'dot.file.relationship.field.empty.relate.link' | dm }}
+                            </button>
+                            {{ 'dot.file.relationship.field.empty.message.suffix' | dm }}
+                        }
+                    </span>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item let-index="rowIndex" let-columns="columns">
+        <tr
+            [pReorderableRow]="index"
+            [class.opacity-50]="isDisabled"
+            [class.cursor-not-allowed]="isDisabled"
+            class="group">
+            <td class="w-12 min-w-12">
+                @if (!isDisabled) {
+                    <span
+                        class="flex cursor-grab items-center text-gray-600"
+                        pReorderableRowHandle
+                        data-testid="relationship-drag-handle">
+                        <i class="pi pi-ellipsis-v text-[14px]"></i>
+                        <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
+                    </span>
+                } @else {
+                    <span class="flex cursor-not-allowed items-center text-gray-600">
+                        <i class="pi pi-ellipsis-v text-[14px]"></i>
+                        <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
+                    </span>
+                }
+            </td>
+
+            @for (column of columns; track $index) {
+                @switch (column.type) {
+                    @case ('title') {
+                        <td
+                            class="min-w-0 flex-1"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
+                            <div class="flex items-center gap-3">
+                                @if (showThumbnail) {
+                                    <div
+                                        class="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
+                                        <dot-content-thumbnail
+                                            [contentlet]="item"
+                                            iconSize="24px"
+                                            data-testId="contentlet-thumbnail" />
+                                    </div>
+                                }
+                                <p class="truncate">{{ item.title }}</p>
+                            </div>
+                        </td>
+                    }
+                    @case ('language') {
+                        <td
+                            class="w-32 max-w-32 min-w-32"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
+                            @if (item.language | language; as localeLabel) {
+                                <p-tag
+                                    class="whitespace-nowrap"
+                                    severity="info"
+                                    [value]="localeLabel"
+                                    data-testid="relationship-locale-tag" />
+                            }
+                        </td>
+                    }
+                    @case ('status') {
+                        <td
+                            class="w-32 max-w-32 min-w-32"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
+                            <dot-contentlet-status-badge [state]="item" />
+                        </td>
+                    }
+                    @case ('image') {
+                        <td
+                            class="w-24 max-w-24 min-w-24"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
+                            <div class="flex items-center justify-center">
+                                <div class="h-14 w-20 shrink-0 overflow-hidden rounded-md">
+                                    <dot-content-thumbnail
+                                        [contentlet]="item"
+                                        iconSize="30px"
+                                        data-testId="contentlet-thumbnail" />
+                                </div>
+                            </div>
+                        </td>
+                    }
+                    @default {
+                        <td class="w-32 max-w-32 min-w-32" [class.text-right!]="$last">
+                            <p class="truncate">{{ item[column.nameField] }}</p>
+                        </td>
+                    }
+                }
+            }
+
+            <td
+                class="w-10 min-w-10"
+                pFrozenColumn
+                alignFrozen="right"
+                [frozen]="true"
+                [class.cursor-not-allowed]="isDisabled">
+                <p-button
+                    size="small"
+                    icon="pi pi-times"
+                    severity="secondary"
+                    [text]="true"
+                    [disabled]="isDisabled"
+                    (onClick)="deleteItem(item.inode)"
+                    styleClass="opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-testid="relationship-delete-button" />
+            </td>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="summary">
+        @if (showPagination) {
+            <div class="flex items-center justify-center pt-2">
+                <dot-pagination
+                    data-testid="relationship-table-pagination"
+                    [currentPageReportLayout]="'center'"
+                    (nextPage)="store.nextPage()"
+                    (previousPage)="store.previousPage()"
+                    [totalPages]="store.totalPages()"
+                    [currentPage]="pagination.currentPage" />
+            </div>
+        }
+    </ng-template>
+</p-table>

@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -23,40 +22,38 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { PasswordModule } from 'primeng/password';
+import { Select, SelectModule } from 'primeng/select';
 
 import { take } from 'rxjs/operators';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-login-as',
     styleUrls: ['./dot-login-as.component.scss'],
     templateUrl: 'dot-login-as.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,
         PasswordModule,
-        DropdownModule,
+        SelectModule,
         DotMessagePipe
     ]
 })
 export class DotLoginAsComponent implements OnInit, OnDestroy {
     visible = input<boolean>(false);
-    visibleChange = output<boolean>();
     cancel = output<boolean>();
 
     passwordElem = viewChild<ElementRef>('password');
-    dropdown = viewChild<Dropdown>('dropdown');
+    dropdown = viewChild<Select>('dropdown');
     formEl = viewChild<HTMLFormElement>('formEl');
 
     form: FormGroup;
@@ -89,9 +86,16 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Emit cancel
+     * Resets dialog state and notifies parent to close.
+     * Guard prevents double-emit: (onHide) fires after [visible]=false is
+     * already propagated from the parent, so visible() is false by then.
      */
     close(): void {
+        if (!this.visible()) return;
+
+        this.form?.reset();
+        this.errorMessage.set('');
+        this.needPassword.set(false);
         this.cancel.emit(true);
     }
 

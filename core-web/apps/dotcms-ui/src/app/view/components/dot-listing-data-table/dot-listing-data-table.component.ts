@@ -1,27 +1,49 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
+    AfterViewInit,
+    ChangeDetectorRef,
     Component,
+    computed,
     ContentChild,
     ContentChildren,
     ElementRef,
     EventEmitter,
+    inject,
     Input,
     OnInit,
     Output,
     QueryList,
+    signal,
     TemplateRef,
     ViewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
-import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
-import { Table } from 'primeng/table';
+import { MenuItem, PrimeTemplate } from 'primeng/api';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenu } from 'primeng/contextmenu';
+import { InputTextModule } from 'primeng/inputtext';
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
-import { OrderDirection, PaginatorService } from '@dotcms/data-access';
-import { LoggerService } from '@dotcms/dotcms-js';
+import { DotCrudService, OrderDirection, PaginatorService } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
 import { DotActionMenuItem } from '@dotcms/dotcms-models';
-import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table/data-table-column';
+import {
+    DotActionMenuButtonComponent,
+    DotIconComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotStringFormatPipe
+} from '@dotcms/ui';
+
+import { ActionHeaderComponent } from './action-header/action-header.component';
+
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonAction } from '../../../shared/models/action-header/button-action.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;
@@ -29,6 +51,9 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
 
 @Component({
     providers: [
+        DotCrudService,
+        DotcmsConfigService,
+        LoggerService,
         PaginatorService,
         {
             provide: Table,
@@ -38,9 +63,28 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     ],
     selector: 'dot-listing-data-table',
     styleUrls: ['./dot-listing-data-table.component.scss'],
-    templateUrl: 'dot-listing-data-table.component.html'
+    templateUrl: 'dot-listing-data-table.component.html',
+    imports: [
+        ActionHeaderComponent,
+        FormsModule,
+        RouterModule,
+        TableModule,
+        InputTextModule,
+        CheckboxModule,
+        ContextMenu,
+        DotActionMenuButtonComponent,
+        DotIconComponent,
+        DotMessagePipe,
+        DotRelativeDatePipe,
+        DotStringFormatPipe,
+        NgTemplateOutlet
+    ]
 })
-export class DotListingDataTableComponent implements OnInit {
+export class DotListingDataTableComponent implements OnInit, AfterViewInit {
+    private cdr = inject(ChangeDetectorRef);
+    loggerService = inject(LoggerService);
+    paginatorService = inject(PaginatorService);
+
     @Input() columns: DataTableColumn[];
     @Input() url: string;
     @Input() actionHeaderOptions: ActionHeaderOptions;
@@ -64,7 +108,20 @@ export class DotListingDataTableComponent implements OnInit {
     @ViewChild('dataTable', { static: true })
     dataTable: Table;
 
+    @ViewChild('cm', { static: false })
+    contextMenuRef: ContextMenu | undefined;
+
     @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
+
+    // Signal to track when contextMenuRef is available
+    private readonly contextMenuRefSignal = signal<ContextMenu | undefined>(undefined);
+
+    // Computed signal for context menu component
+    readonly contextMenuComponent = computed(() => {
+        const hasContextMenu = this.contextMenu;
+        const ref = this.contextMenuRefSignal();
+        return hasContextMenu && ref ? ref : null;
+    });
 
     @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
     @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
@@ -81,10 +138,7 @@ export class DotListingDataTableComponent implements OnInit {
     maxLinksPage: number;
     totalRecords: number;
 
-    constructor(
-        public loggerService: LoggerService,
-        public paginatorService: PaginatorService
-    ) {
+    constructor() {
         this.paginatorService.url = this.url;
     }
 
@@ -92,6 +146,14 @@ export class DotListingDataTableComponent implements OnInit {
         this.globalSearch.nativeElement.focus();
         this.paginationSetUp();
         this.dateColumns = this.columns.filter((column) => column.format === this.DATE_FORMAT);
+    }
+
+    ngAfterViewInit(): void {
+        // Defer signal update to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
+        // The signal update must happen after the current change detection cycle completes
+        setTimeout(() => {
+            this.contextMenuRefSignal.set(this.contextMenuRef);
+        });
     }
 
     /**
@@ -143,12 +205,12 @@ export class DotListingDataTableComponent implements OnInit {
 
     /**
      * Call when click on any pagination link
-     * @param {LazyLoadEvent} event
+     * @param {TableLazyLoadEvent} event
      *
      * @memberof DotListingDataTableComponent
      */
-    loadDataPaginationEvent(event: LazyLoadEvent): void {
-        this.loadData(event.first, event.sortField, event.sortOrder);
+    loadDataPaginationEvent(event: TableLazyLoadEvent): void {
+        this.loadData(event.first, event.sortField as string, event.sortOrder);
     }
 
     /**
@@ -234,14 +296,15 @@ export class DotListingDataTableComponent implements OnInit {
     }
 
     private setItems(items): void {
+        // Defer state updates to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
+        // This is needed because p-table with lazy loading triggers onLazyLoad during initialization
         setTimeout(() => {
-            // avoid ExpressionChangedAfterItHasBeenCheckedError on p-table on tests.
-            // TODO: Double check if versions after prime-ng 11.0.0 solve the need to add this hack.
             this.items = this.mapItems === undefined ? items : this.mapItems(items);
             this.loading = false;
             this.maxLinksPage = this.paginatorService.maxLinksPage;
             this.totalRecords = this.paginatorService.totalRecords;
-        }, 0);
+            this.cdr.markForCheck();
+        });
     }
 
     private isTypeNumber(col: DataTableColumn): boolean {

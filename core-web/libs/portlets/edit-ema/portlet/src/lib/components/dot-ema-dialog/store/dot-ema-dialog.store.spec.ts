@@ -1,11 +1,13 @@
-import { expect, it, describe } from '@jest/globals';
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { describe, expect, it } from '@jest/globals';
+import { SpectatorService, createServiceFactory } from '@openng/spectator/jest';
+import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { MessageService } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogStore } from './dot-ema-dialog.store';
@@ -14,25 +16,27 @@ import { DotActionUrlService } from '../../../services/dot-action-url/dot-action
 import { LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import { PAYLOAD_MOCK } from '../../../shared/mocks';
-import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
+const TEST_SITE_ID = 'test-site-identifier';
+
+/** Mock UVEStore signals used by DotEmaDialogStore (same shape as real store's pageVariantId) */
+const mockUveStore = {
+    pageVariantId: signal(TEST_VARIANT),
+    pageAsset: signal({ site: { identifier: TEST_SITE_ID } })
+};
 
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
 
     const createService = createServiceFactory({
         service: DotEmaDialogStore,
-        mocks: [DotActionUrlService],
+        mocks: [DotActionUrlService, MessageService],
         providers: [
             {
                 provide: UVEStore,
-                useValue: {
-                    pageParams: signal({
-                        variantName: TEST_VARIANT // Is the only thing we need to test the component
-                    })
-                }
+                useValue: mockUveStore
             },
 
             {
@@ -40,6 +44,8 @@ describe('DotEmaDialogStoreService', () => {
                 useValue: new MockDotMessageService({
                     'edit.ema.page.dialog.header.search.content': 'Search Content',
                     'edit.ema.page.dialog.header.search.form': 'Search Form',
+                    'edit.ema.page.dialog.error.content.type.not.found':
+                        'Content type Id or variable not found.',
                     'contenttypes.content.create.contenttype': 'Create {0}'
                 })
             }
@@ -63,7 +69,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -103,7 +109,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -123,9 +129,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: 'undefined',
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -137,7 +144,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -147,7 +154,7 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.editContentlet({
             inode: '123',
             title: 'test',
-            clientAction: CLIENT_ACTIONS.EDIT_CONTENTLET
+            clientAction: DotCMSUVEAction.EDIT_CONTENTLET
         });
 
         const queryParams = new URLSearchParams({
@@ -158,9 +165,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: 'undefined',
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -172,7 +180,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.EDIT_CONTENTLET
+                clientAction: DotCMSUVEAction.EDIT_CONTENTLET
             });
             done();
         });
@@ -192,9 +200,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: null,
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -206,7 +215,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -233,7 +242,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -253,7 +262,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -279,7 +288,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -333,6 +342,27 @@ describe('DotEmaDialogStoreService', () => {
         expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost', 2);
     });
 
+    it('should show an error toast when the content type variable or id is not found', () => {
+        const dotActionUrlService = spectator.inject(DotActionUrlService);
+        const messageService = spectator.inject(MessageService);
+
+        dotActionUrlService.getCreateContentletUrl.andReturn(
+            throwError(() => new Error('Not Found'))
+        );
+
+        spectator.service.createContentletFromPalette({
+            variable: 'unknownType',
+            name: 'Unknown',
+            language_id: 1
+        });
+
+        expect(messageService.add).toHaveBeenCalledWith({
+            severity: 'error',
+            summary: '[dotCMS Create Contentlet]',
+            detail: 'Content type Id or variable not found.'
+        });
+    });
+
     it('should initialize with loading iframe properties', (done) => {
         spectator.service.loadingIframe('test');
 
@@ -346,7 +376,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
             done();
         });
@@ -368,8 +398,26 @@ describe('DotEmaDialogStoreService', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
+            done();
+        });
+    });
+
+    it('should reset action payload', (done) => {
+        // First set an action payload
+        spectator.service.addContentlet({
+            containerId: '1234',
+            acceptTypes: 'test',
+            language_id: '1',
+            actionPayload: PAYLOAD_MOCK
+        });
+
+        // Then reset it
+        spectator.service.resetActionPayload();
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state.actionPayload).toBeUndefined();
             done();
         });
     });
@@ -383,7 +431,7 @@ describe('DotEmaDialogStoreService', () => {
                     stInode: '12345',
                     live: true,
                     title: 'test'
-                } as DotPage,
+                } as DotCMSPage,
                 newLanguage: 2
             });
 
@@ -403,6 +451,7 @@ describe('DotEmaDialogStoreService', () => {
                 reuseLastLang: 'true',
                 variantName: TEST_VARIANT
             });
+            queryParams.set('host_id', TEST_SITE_ID);
 
             spectator.service.dialogState$.subscribe((state) => {
                 expect(state).toEqual({
@@ -414,7 +463,7 @@ describe('DotEmaDialogStoreService', () => {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
                     },
-                    clientAction: CLIENT_ACTIONS.NOOP
+                    clientAction: DotCMSUVEAction.NOOP
                 });
             });
         });
@@ -429,7 +478,7 @@ describe('DotEmaDialogStoreService', () => {
                     title: 'test',
                     working: true,
                     workingInode: '56789'
-                } as DotPage,
+                } as DotCMSPage,
                 newLanguage: 2
             });
 
@@ -449,6 +498,7 @@ describe('DotEmaDialogStoreService', () => {
                 reuseLastLang: 'true',
                 variantName: TEST_VARIANT
             });
+            queryParams.set('host_id', TEST_SITE_ID);
 
             spectator.service.dialogState$.subscribe((state) => {
                 expect(state).toEqual({
@@ -460,7 +510,7 @@ describe('DotEmaDialogStoreService', () => {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
                     },
-                    clientAction: CLIENT_ACTIONS.NOOP
+                    clientAction: DotCMSUVEAction.NOOP
                 });
             });
         });

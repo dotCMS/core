@@ -2,13 +2,13 @@ package com.dotcms.workflow.form;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.Size;
+import org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 
 @JsonDeserialize(builder = WorkflowCopyForm.Builder.class)
 public class WorkflowCopyForm extends Validated {
 
-    @Size(min = 2, max = 100)
+    @Length(min = 2, max = 100)
     private final String name;
 
     public WorkflowCopyForm(final WorkflowCopyForm.Builder builder) {

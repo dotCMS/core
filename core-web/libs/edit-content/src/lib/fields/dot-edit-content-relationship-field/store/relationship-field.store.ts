@@ -1,16 +1,37 @@
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { forkJoin, of, pipe } from 'rxjs';
 
-import { computed } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { computed, inject } from '@angular/core';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import { SelectionMode } from '../models/relationship.models';
-import { getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotLanguage
+} from '@dotcms/dotcms-models';
+
+import { RelationshipFieldService } from './relationship-field.service';
+
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
+import { SelectionMode, TableColumn } from '../models/relationship.models';
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
+    field: DotCMSContentTypeField | null;
     selectionMode: SelectionMode | null;
+    contentType: DotCMSContentType | null;
+    isNewEditorEnabled: boolean;
+    staticColumns: number;
+    columns: TableColumn[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -21,7 +42,12 @@ export interface RelationshipFieldState {
 const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
+    field: null,
+    columns: [],
     selectionMode: null,
+    contentType: null,
+    isNewEditorEnabled: false,
+    staticColumns: STATIC_COLUMNS,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -34,7 +60,6 @@ const initialState: RelationshipFieldState = {
  * This store manages the state and actions related to the relationship field.
  */
 export const RelationshipFieldStore = signalStore(
-    { providedIn: 'root' },
     withState(initialState),
     withComputed((state) => ({
         /**
@@ -42,6 +67,16 @@ export const RelationshipFieldStore = signalStore(
          * @returns {number} The total number of pages.
          */
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        /**
+         * Returns the slice of data for the current page based on offset and rowsPerPage.
+         * @returns {DotCMSContentlet[]} The items for the current page.
+         */
+        paginatedData: computed(() => {
+            const allData = state.data();
+            const { offset, rowsPerPage } = state.pagination();
+
+            return allData.slice(offset, offset + rowsPerPage);
+        }),
         /**
          * Checks if the create new content button is disabled based on the selection mode and the number of items.
          * @returns {boolean} True if the button is disabled, false otherwise.
@@ -65,44 +100,169 @@ export const RelationshipFieldStore = signalStore(
             const identifiers = data.map((item) => item.identifier).join(',');
 
             return `${identifiers}`;
-        })
+        }),
+        showThumbnail: computed(() =>
+            state
+                .data()
+                .some(
+                    (item) =>
+                        item.hasTitleImage === true || (item.hasTitleImage as unknown) === 'true'
+                )
+        )
     })),
-    withMethods((store) => {
-        return {
+    withMethods(
+        (
+            store,
+            relationshipFieldService = inject(RelationshipFieldService),
+            dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            dotEditContentService = inject(DotEditContentService)
+        ) => ({
             /**
              * Sets the data in the state.
              * @param {RelationshipFieldItem[]} data - The data to be set.
              */
             setData(data: DotCMSContentlet[]) {
-                patchState(store, { data: [...data] });
-            },
-            /**
-             * Sets the cardinality of the relationship field.
-             * @param {number} cardinality - The cardinality of the relationship field.
-             */
-            initialize(params: {
-                cardinality: number;
-                contentlet: DotCMSContentlet;
-                variable: string;
-            }) {
-                const { cardinality, contentlet, variable } = params;
-
-                const data = getRelationshipFromContentlet({ contentlet, variable });
-                const selectionMode = getSelectionModeByCardinality(cardinality);
-
                 patchState(store, {
-                    selectionMode,
-                    data
+                    data: [...data],
+                    pagination: { ...store.pagination(), offset: 0, currentPage: 1 }
                 });
             },
             /**
-             * Deletes an item from the store at the specified index.
-             * @param index - The index of the item to delete.
+             * Initializes the relationship field with the provided parameters.
+             * @param {object} params - The initialization parameters.
+             * @param {number} params.cardinality - The cardinality of the relationship field.
+             * @param {DotCMSContentlet} params.contentlet - The contentlet containing the relationship data.
+             * @param {string} params.variable - The variable name for the relationship field.
+             * @param {string} params.contentTypeId - The ID of the content type to load.
+             */
+            initialize: rxMethod<{
+                field: DotCMSContentTypeField;
+                contentlet: DotCMSContentlet;
+                targetLanguageId?: number;
+                targetLanguage?: DotLanguage;
+            }>(
+                pipe(
+                    // Capture existing items before the reset so manual-translation mode can reuse them.
+                    // contentlet is null in manual translation, so prepareField returns [] — without this
+                    // capture there would be nothing to resolve against the target language.
+                    map((params) => ({ ...params, existingData: store.data() })),
+                    tap(() => patchState(store, initialState)),
+                    switchMap(
+                        ({ field, contentlet, targetLanguageId, targetLanguage, existingData }) => {
+                            return relationshipFieldService
+                                .prepareField({ field, contentlet })
+                                .pipe(
+                                    switchMap((newState) => {
+                                        // When contentlet is null (manual translation) prepareField returns [].
+                                        // Fall back to the pre-reset data so items are not lost.
+                                        const dataToProcess =
+                                            contentlet != null ? newState.data : existingData;
+
+                                        if (!targetLanguageId || !dataToProcess.length) {
+                                            return of({ ...newState, data: dataToProcess });
+                                        }
+
+                                        // For each related item, try to find the version in the target
+                                        // language. Falls back to the original item if not available.
+                                        // Patch `language` to the full DotLanguage object so the
+                                        // LanguagePipe (which expects DotLanguage, not a string) renders
+                                        // the column correctly.
+                                        return forkJoin(
+                                            dataToProcess.map((item) =>
+                                                dotEditContentService
+                                                    .getContentById({
+                                                        id: item.identifier,
+                                                        languageId: targetLanguageId
+                                                    })
+                                                    .pipe(
+                                                        map((fetched) =>
+                                                            targetLanguage
+                                                                ? {
+                                                                      ...fetched,
+                                                                      language: targetLanguage
+                                                                  }
+                                                                : fetched
+                                                        ),
+                                                        // Intentional: fallback keeps the original item whose
+                                                        // `language` is a plain string from the API. The language
+                                                        // column will be blank for unresolvable items — acceptable
+                                                        // since it means no translation exists for that item.
+                                                        catchError(() => of(item))
+                                                    )
+                                            )
+                                        ).pipe(
+                                            map((resolvedItems) => ({
+                                                ...newState,
+                                                data: resolvedItems
+                                            }))
+                                        );
+                                    }),
+                                    tapResponse({
+                                        next: (newState) => {
+                                            patchState(store, {
+                                                status: ComponentStatus.LOADED,
+                                                contentType: newState.contentType,
+                                                isNewEditorEnabled: newState.isNewEditorEnabled,
+                                                selectionMode: newState.selectionMode,
+                                                columns: newState.columns,
+                                                data: newState.data,
+                                                field
+                                            });
+                                        },
+                                        error: (error) => {
+                                            if (error instanceof HttpErrorResponse) {
+                                                dotHttpErrorManagerService.handle(error);
+                                            }
+                                            patchState(store, {
+                                                status: ComponentStatus.ERROR
+                                            });
+                                        }
+                                    })
+                                );
+                        }
+                    )
+                )
+            ),
+            /**
+             * Deletes an item from the store by inode.
+             * If the current page offset exceeds the new data length, pagination resets to the last valid page.
+             * @param inode - The inode of the item to delete.
              */
             deleteItem(inode: string) {
-                patchState(store, {
-                    data: store.data().filter((item) => item.inode !== inode)
-                });
+                const newData = store.data().filter((item) => item.inode !== inode);
+                const { offset, rowsPerPage } = store.pagination();
+
+                if (offset >= newData.length && newData.length > 0) {
+                    const lastPage = Math.ceil(newData.length / rowsPerPage);
+                    const newOffset = (lastPage - 1) * rowsPerPage;
+                    patchState(store, {
+                        data: newData,
+                        pagination: {
+                            ...store.pagination(),
+                            offset: newOffset,
+                            currentPage: lastPage
+                        }
+                    });
+                } else if (newData.length === 0) {
+                    patchState(store, {
+                        data: newData,
+                        pagination: {
+                            ...store.pagination(),
+                            offset: 0,
+                            currentPage: 1
+                        }
+                    });
+                } else {
+                    patchState(store, { data: newData });
+                }
+            },
+            /**
+             * Reorders the data without resetting the current pagination.
+             * Used after drag-and-drop row reorder to preserve the current page.
+             * @param {DotCMSContentlet[]} data - The reordered data array.
+             */
+            reorderData(data: DotCMSContentlet[]) {
+                patchState(store, { data: [...data] });
             },
             /**
              * Advances the pagination to the next page and updates the state accordingly.
@@ -128,6 +288,6 @@ export const RelationshipFieldStore = signalStore(
                     }
                 });
             }
-        };
-    })
+        })
+    )
 );

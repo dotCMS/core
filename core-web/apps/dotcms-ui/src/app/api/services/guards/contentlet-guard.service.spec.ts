@@ -4,10 +4,11 @@ import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotContentTypeService } from '@dotcms/data-access';
 
 import { ContentletGuardService } from './contentlet-guard.service';
+
+import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 
 @Injectable()
 class MockDotContentTypeService {
@@ -18,7 +19,7 @@ class MockDotContentTypeService {
 
 @Injectable()
 class MockDotNavigationService {
-    goToFirstPortlet = jasmine.createSpy('goToFirstPortlet');
+    goToFirstPortlet = jest.fn();
 }
 
 describe('ValidContentletGuardService', () => {
@@ -46,34 +47,33 @@ describe('ValidContentletGuardService', () => {
         contentletGuardService = TestBed.inject(ContentletGuardService);
         dotContentletService = TestBed.inject(DotContentTypeService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
             'toString'
         ]);
-        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-            'ActivatedRouteSnapshot',
-            ['toString']
-        );
     });
 
     it('should allow children access to Content Types Portlets', () => {
         let result: boolean;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
-        spyOn(dotContentletService, 'isContentTypeInMenu').and.returnValue(of(true));
+        jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(true));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledWith('banner');
+        expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledTimes(1);
         expect(result).toBe(true);
     });
 
     it('should prevent children access to Content Types Portlets', () => {
         let result: boolean;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
-        spyOn(dotContentletService, 'isContentTypeInMenu').and.returnValue(of(false));
+        jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(false));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledWith('banner');
+        expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
     });

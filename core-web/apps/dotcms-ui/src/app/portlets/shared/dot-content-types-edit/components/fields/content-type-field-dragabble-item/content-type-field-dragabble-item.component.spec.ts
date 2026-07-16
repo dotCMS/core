@@ -1,22 +1,21 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 
-import { FieldService } from '../service';
+import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
@@ -35,29 +34,30 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         TestBed.configureTestingModule({
             declarations: [ContentTypesFieldDragabbleItemComponent],
             imports: [
-                DotIconModule,
-                DotCopyLinkModule,
-                HttpClientTestingModule,
+                DotIconComponent,
+                DotCopyLinkComponent,
                 DotMessagePipe,
-                OverlayPanelModule,
+                PopoverModule,
                 ButtonModule,
                 TooltipModule
             ],
             providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
-                },
-                FieldService
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
+    }));
 
+    function createComponent(field: DotCMSContentTypeField, isSmall = false) {
         fixture = TestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
-
+        fixture.componentRef.setInput('field', field);
+        fixture.componentRef.setInput('isSmall', isSmall);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-    }));
+        fixture.detectChanges(); // Initial detectChanges to initialize component
+        return fixture;
+    }
 
     it('should have a name & variable', () => {
         const field = {
@@ -71,11 +71,10 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
-        const container = de.query(By.css('.info-container__name'));
+        const container = de.query(By.css('span.truncate'));
         expect(container).not.toBeNull();
         expect(container.nativeElement.textContent.trim().replace('  ', ' ')).toEqual('Field name');
     });
@@ -93,8 +92,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
         const copyButton: DebugElement = de.query(By.css('dot-copy-link'));
@@ -115,18 +113,13 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             variable: 'test',
             velocityVarName: 'velocityName'
         };
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
         const attrs = ['FieldLabel', 'Required', 'Indexed', 'Show on list'];
 
-        const attrsString = de.query(
-            By.css(
-                '.field-properties > .field-properties__actions-container > .field-properties__attributes-container'
-            )
-        ).nativeElement.textContent;
+        const attrsString = de.nativeElement.textContent;
 
-        expect(attrs.every((attr) => attrsString.includes(attr))).toBeTrue();
+        expect(attrs.every((attr) => attrsString.includes(attr))).toBe(true);
     });
 
     it('should has a drag button', () => {
@@ -140,12 +133,14 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
-        const button = de.query(By.css('.field-drag'));
-        expect(button).not.toBeNull();
+        const icons = de.queryAll(By.css('i.material-symbols-outlined'));
+        const hasDragIcon = icons.some(
+            (icon) => icon.nativeElement.textContent.trim() === 'drag_indicator'
+        );
+        expect(hasDragIcon).toBe(true);
     });
 
     it('should has a remove button', () => {
@@ -159,8 +154,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
         const button = de.query(By.css('#info-container__delete'));
@@ -189,8 +183,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
         const button = de.query(By.css('#info-container__delete'));
@@ -208,9 +201,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = mockField;
-
-        fixture.detectChanges();
+        createComponent(mockField);
 
         let resp: DotCMSContentTypeField;
         comp.edit.subscribe((field) => (resp = field));
@@ -235,9 +226,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = mockField;
-
-        fixture.detectChanges();
+        createComponent(mockField);
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeFalsy();
     });
 
@@ -252,10 +241,64 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = mockField;
-        comp.isSmall = true;
-
-        fixture.detectChanges();
+        createComponent(mockField, true);
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeTruthy();
+    });
+
+    describe('variableToShow getter', () => {
+        it('should return field variable when variable is defined', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'My Field Name',
+                variable: 'myCustomVariable'
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('myCustomVariable');
+        });
+
+        it('should return camelCase of field name when variable is undefined', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'My Field Name',
+                variable: undefined
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('myFieldName');
+        });
+
+        it('should return camelCase of field name when variable is empty string', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'Another Test Field',
+                variable: ''
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('anotherTestField');
+        });
+
+        it('should return empty string when both variable and name are empty', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: '',
+                variable: ''
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('');
+        });
+
+        it('should return camelCase of field name when variable is null', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'Test Field With Spaces',
+                variable: null
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('testFieldWithSpaces');
+        });
     });
 });

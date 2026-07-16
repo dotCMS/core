@@ -1,0 +1,144 @@
+import { patchState, signalState } from '@ngrx/signals';
+
+import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+
+import { TabsModule } from 'primeng/tabs';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
+
+import { UVEStore } from '../../../store/dot-uve.store';
+import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
+
+interface TabHeaderConfig {
+    value: UVE_PALETTE_TABS;
+    icon: string;
+    tooltipKey: string;
+}
+
+/**
+ * Standalone palette component used by the EMA editor to display and switch
+ * between different UVE-related resources (content types, components, styles, etc.).
+ *
+ * Container component that uses signalState for local UI state (tab selection)
+ * and reads shared state from UVEStore.
+ */
+@Component({
+    selector: 'dot-uve-palette',
+    imports: [
+        TabsModule,
+        TooltipModule,
+        DotMessagePipe,
+        DotRowReorderComponent,
+        DotUvePaletteListComponent
+    ],
+    templateUrl: './dot-uve-palette.component.html',
+    styleUrl: './dot-uve-palette.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotUvePaletteComponent {
+    protected readonly uveStore = inject(UVEStore);
+    protected readonly dotPageLayoutService = inject(DotPageLayoutService);
+    protected readonly $tabHeaders = computed<TabHeaderConfig[]>(() => {
+        const tabs: TabHeaderConfig[] = [
+            {
+                value: UVE_PALETTE_TABS.CONTENT_TYPES,
+                icon: 'pi-stop',
+                tooltipKey: 'uve.palette.tab.content.types'
+            },
+            {
+                value: UVE_PALETTE_TABS.WIDGETS,
+                icon: 'pi-th-large',
+                tooltipKey: 'uve.palette.widgets.title'
+            },
+            {
+                value: UVE_PALETTE_TABS.FAVORITES,
+                icon: 'pi-star',
+                tooltipKey: 'uve.palette.favorites.title'
+            },
+            {
+                value: UVE_PALETTE_TABS.LAYERS,
+                icon: 'pi-table',
+                tooltipKey: 'uve.palette.tab.layers'
+            }
+        ];
+        return tabs;
+    });
+
+    /**
+     * Tabs PT so we can style Prime's internal root element with Tailwind instead of ::ng-deep SCSS.
+     */
+    readonly tabsPt = {
+        root: { class: 'h-full min-h-0' },
+        tablist: { class: 'bg-gray-100' }
+    };
+
+    /** Emits whenever the active tab in the palette changes. */
+    onTabChange = output<UVE_PALETTE_TABS>();
+
+    protected readonly TABS_MAP = UVE_PALETTE_TABS;
+    protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
+
+    /**
+     * Local component UI state using NgRx signalState (recommended pattern).
+     * This keeps tab selection local to the component instead of polluting the global store.
+     */
+    readonly #localState = signalState({
+        currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
+    });
+
+    /**
+     * Computed signals that read from UVEStore for shared state.
+     * Made public for testing purposes.
+     */
+    readonly $pagePath = computed(() => this.uveStore.pageURI());
+    readonly $languageId = computed(() => this.uveStore.pageLanguageId());
+    readonly $variantId = computed(() => this.uveStore.pageVariantId());
+    /** Content types allowed on the current page — passed to the palette list for favorites filtering. */
+    readonly $allowedContentTypes = computed(() => this.uveStore.$allowedContentTypes());
+
+    /**
+     * Standard templates use the dotCMS Template Builder and expose a row/column
+     * layout the editor can read. Advanced templates are hand-coded HTML/CSS,
+     * so there's no structured layout to render in the LAYERS tab — show an
+     * empty-state explaining that instead. Defaults to `true` while the page
+     * is loading so we don't flash the empty-state at users with standard
+     * templates on slow connections.
+     */
+    readonly $isStandardTemplate = computed(
+        () => this.uveStore.pageAsset()?.template?.drawed ?? true
+    );
+
+    /**
+     * Active tab - read from local state, not global store.
+     * Made public for testing purposes.
+     */
+    readonly $activeTab = this.#localState.currentTab;
+
+    /**
+     * Emits when a tree node is selected to scroll to the corresponding element.
+     */
+    onNodeSelect = output<{ selector: string; type: string }>();
+
+    constructor() {
+        // Tab management is now handled locally without effects
+    }
+
+    /**
+     * Called whenever the tab changes, either by user interaction or via the `activeIndex` property.
+     * Updates local component state using patchState instead of dispatching to global store.
+     *
+     * @param value The new tab value.
+     */
+    protected handleTabChange(value: string | number | undefined): void {
+        if (value !== undefined && value !== null) {
+            const tab = value as UVE_PALETTE_TABS;
+            patchState(this.#localState, { currentTab: tab });
+            this.onTabChange.emit(tab);
+        }
+    }
+}

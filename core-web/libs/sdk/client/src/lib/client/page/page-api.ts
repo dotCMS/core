@@ -1,111 +1,53 @@
-import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
+import { consola } from 'consola';
+
+import {
+    DotCMSClientConfig,
+    DotCMSComposedPageResponse,
+    DotCMSExtendedPageResponse,
+    DotCMSPageRequestParams,
+    DotCMSPageResponse,
+    DotErrorPage,
+    DotHttpClient,
+    DotHttpError,
+    DotRequestOptions,
+    UVE_MODE
+} from '@dotcms/types';
+
+import {
+    buildPageQuery,
+    buildQuery,
+    fetchGraphQL,
+    mapContentResponse,
+    removeUndefinedValues
+} from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
-import { DotCMSClientConfig, RequestOptions } from '../client';
-import { ErrorMessages } from '../models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAsset } from '../models/types';
+import { BaseApiClient } from '../base/api/base-api';
 
-/**
- * The parameters for the Page API.
- * @public
- */
-export interface PageRequestParams {
-    /**
-     * The id of the site you want to interact with. Defaults to the one from the config if not provided.
-     */
-    siteId?: string;
-
-    /**
-     * The mode of the page you want to retrieve. Defaults to the site's default mode if not provided.
-     */
-    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE';
-
-    /**
-     * The language id of the page you want to retrieve. Defaults to the site's default language if not provided.
-     */
-    languageId?: number | string;
-
-    /**
-     * The id of the persona for which you want to retrieve the page.
-     */
-    personaId?: string;
-
-    /**
-     * Whether to fire the rules set on the page.
-     */
-    fireRules?: boolean | string;
-
-    /**
-     * Allows access to related content via the Relationship fields of contentlets on a Page; 0 (default).
-     */
-    depth?: 0 | 1 | 2 | 3 | '0' | '1' | '2' | '3';
-
-    /**
-     * The publish date of the page you want to retrieve.
-     */
-    publishDate?: string;
-
-    /**
-     * The variant name of the page you want to retrieve.
-     */
-    variantName?: string;
-}
-
-type StringifyParam<T> = T extends string | number | boolean ? string : never;
-
-type PageToBackendParamsMapping = {
-    siteId: 'hostId';
-    languageId: 'language_id';
-    personaId: 'com.dotmarketing.persona.id';
-};
-
-/**
- * The private parameters for the Page API.
- * @internal
- */
-export type BackendPageParams = {
-    [K in keyof PageRequestParams as K extends keyof PageToBackendParamsMapping
-        ? PageToBackendParamsMapping[K]
-        : K]?: StringifyParam<PageRequestParams[K]>;
-};
-
-export interface GraphQLPageOptions extends PageRequestParams {
-    graphql: {
-        page?: string;
-        content?: Record<string, string>;
-        variables?: Record<string, string>;
-        fragments?: string[];
-    };
+function logVerboseError(
+    url: string,
+    message: string,
+    details: { status?: number; code?: string; variables: Record<string, unknown> }
+) {
+    const statusLine =
+        details.status !== undefined ? `\n  status: ${details.status} | code: ${details.code}` : '';
+    const variables = JSON.stringify(details.variables, null, 2).replace(/\n/g, '\n  ');
+    consola.error(
+        `[DotCMS GraphQL Error] ${url}: ${message}${statusLine}\n\n  variables:\n  ${variables}\n\n  (full query available at error.graphql.query)`
+    );
 }
 
 /**
  * Client for interacting with the DotCMS Page API.
  * Provides methods to retrieve and manipulate pages.
  */
-export class PageClient {
-    /**
-     * Request options including authorization headers.
-     * @private
-     */
-    private requestOptions: RequestOptions;
-
-    /**
-     * Site ID for page requests.
-     * @private
-     */
-    private siteId: string;
-
-    /**
-     * DotCMS URL for page requests.
-     * @private
-     */
-    private dotcmsUrl: string;
-
+export class PageClient extends BaseApiClient {
     /**
      * Creates a new PageClient instance.
      *
      * @param {DotCMSClientConfig} config - Configuration options for the DotCMS client
-     * @param {RequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @param {DotRequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @param {DotHttpClient} httpClient - HTTP client for making requests
      * @example
      * ```typescript
      * const pageClient = new PageClient(
@@ -118,40 +60,37 @@ export class PageClient {
      *     headers: {
      *       Authorization: 'Bearer your-auth-token'
      *     }
-     *   }
+     *   },
+     *   httpClient
      * );
      * ```
      */
-    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
-        this.requestOptions = requestOptions;
-        this.siteId = config.siteId || '';
-        this.dotcmsUrl = config.dotcmsUrl;
+    constructor(
+        config: DotCMSClientConfig,
+        requestOptions: DotRequestOptions,
+        httpClient: DotHttpClient
+    ) {
+        super(config, requestOptions, httpClient);
     }
 
     /**
-     * Retrieves a page from DotCMS using either REST API or GraphQL.
-     * This method is polymorphic and can handle both REST API and GraphQL requests based on the options provided.
+     * Retrieves a page from DotCMS using GraphQL.
      *
      * @param {string} url - The URL of the page to retrieve
-     * @param {PageRequestParams | GraphQLPageOptions} [options] - Options for the request
-     * @returns {Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
-     *
-     * @example Using REST API with options
-     * ```typescript
-     * const page = await pageClient.get('/about-us', {
-     *   mode: 'PREVIEW_MODE',
-     *   languageId: 1,
-     *   siteId: 'demo.dotcms.com'
-     * });
-     * ```
+     * @param {DotCMSPageRequestParams} [options] - Options for the request
+     * @template T - The type of the page and content, defaults to DotCMSBasicPage and Record<string, unknown> | unknown
+     * @returns {Promise<DotCMSComposedPageResponse<T>>} A Promise that resolves to the page data
+     * @throws {DotErrorPage} - Throws a page-specific error if the request fails or page is not found
      *
      * @example Using GraphQL
      * ```typescript
-     * const page = await pageClient.get('/index', {
-     *      languageId: '1',
-     *      mode: 'LIVE',
-     *      graphql: {
-     *          page: `
+     * const page = await pageClient.get<{ page: MyPageWithBanners; content: { blogPosts: { blogTitle: string } } }>(
+     *     '/index',
+     *     {
+     *         languageId: '1',
+     *         mode: 'LIVE',
+     *         graphql: {
+     *             page: `
      *              containers {
      *                  containerContentlets {
      *                      contentlets {
@@ -183,237 +122,188 @@ export class PageClient {
      *              ]
      *          }
      *      });
-     *```
-     */
-    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
-    get(url: string, options?: GraphQLPageOptions): Promise<DotCMSGraphQLPageResponse>;
-    get(
-        url: string,
-        options?: PageRequestParams | GraphQLPageOptions
-    ): Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse> {
-        if (!options) {
-            return this.#getPageFromAPI(url);
-        }
-
-        if (this.#isGraphQLRequest(options)) {
-            return this.#getPageFromGraphQL(url, options);
-        }
-
-        return this.#getPageFromAPI(url, options);
-    }
-
-    /**
-     * Determines if the provided options object is for a GraphQL request.
-     *
-     * @param {PageRequestParams | GraphQLPageOptions} options - The options object to check
-     * @returns {boolean} True if the options are for a GraphQL request, false otherwise
-     * @internal
-     */
-    #isGraphQLRequest(
-        options: PageRequestParams | GraphQLPageOptions
-    ): options is GraphQLPageOptions {
-        return 'graphql' in options;
-    }
-
-    /**
-     * Retrieves all the elements of a Page in your dotCMS system in JSON format.
-     *
-     * @param {string} path - The path of the page to retrieve
-     * @param {PageRequestParams} params - The options for the Page API call
-     * @returns {Promise<unknown>} A Promise that resolves to the page data
-     * @throws {Error} Throws an error if the path parameter is missing or if the fetch request fails
-     * @example
-     * ```typescript
-     * // Get a page with default parameters
-     * const homePage = await pageClient.get('/');
-     *
-     * // Get a page with specific language and mode
-     * const aboutPage = await pageClient.get('/about-us', {
-     *   languageId: 2,
-     *   mode: 'PREVIEW_MODE'
-     * });
-     *
-     * // Get a page with persona targeting
-     * const productPage = await pageClient.get('/products', {
-     *   personaId: 'persona-123',
-     *   depth: 2
-     * });
      * ```
      */
-    async #getPageFromAPI(path: string, params?: PageRequestParams): Promise<DotCMSPageAsset> {
-        if (!path) {
-            throw new Error("The 'path' parameter is required for the Page API");
-        }
-
-        const normalizedParams = this.#mapToBackendParams(params || {});
-        const queryParams = new URLSearchParams(normalizedParams).toString();
-
-        // If the path starts with a slash, remove it to avoid double slashes in the final URL
-        // Because the page path is part of api url path
-        const pagePath = path.startsWith('/') ? path.slice(1) : path;
-        const url = `${this.dotcmsUrl}/api/v1/page/json/${pagePath}?${queryParams}`;
-        const response = await fetch(url, this.requestOptions);
-
-        if (!response.ok) {
-            const error = {
-                status: response.status,
-                message: ErrorMessages[response.status] || response.statusText
-            };
-
-            throw error;
-        }
-
-        return response.json().then((data) => data.entity);
-    }
-
-    /**
-     * Retrieves a personalized page with associated content and navigation.
-     *
-     * @param {Object} options - Options for the personalized page request
-     * @param {string} options.url - The URL of the page to retrieve
-     * @param {string} options.languageId - The language ID for the page content
-     * @param {string} options.mode - The rendering mode for the page
-     * @param {string} options.pageFragment - GraphQL fragment for page data
-     * @param {Record<string, string>} options.content - Content queries to include
-     * @param {Record<string, string>} options.nav - Navigation queries to include
-     * @returns {Promise<Object>} A Promise that resolves to the personalized page data with content and navigation
-     * @example
-     * ```typescript
-     * // Get a personalized page with content and navigation
-     * const personalizedPage = await pageClient.getPageFromGraphQL({
-     *   url: '/about-us',
-     *   languageId: '1',
-     *   mode: 'LIVE',
-     *   pageFragment: `
-     *     fragment PageFields on Page {
-     *       title
-     *       description
-     *       modDate
-     *     }
-     *   `,
-     *   content: {
-     *     blogs: `
-     *       search(query: "+contentType: blog", limit: 3) {
-     *         title
-     *         ...on Blog {
-     *             author {
-     *                 title
-     *             }
-     *         }
-                                }
-     *   nav: {
-     *     mainNav: `
-     *       query MainNav {
-     *         Nav(identifier: "main-nav") {
-     *           title
-     *           items {
-     *             label
-     *             url
-     *           }
-     *         }
-     *       }
-     *     `
-     *   }
-     * });
-     * ```
-     */
-    async #getPageFromGraphQL(
+    async get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
         url: string,
-        options?: GraphQLPageOptions
-    ): Promise<DotCMSGraphQLPageResponse> {
-        const { languageId = '1', mode = 'LIVE', graphql = {} } = options || {};
+        options?: DotCMSPageRequestParams
+    ): Promise<DotCMSComposedPageResponse<T>> {
+        const {
+            languageId = '1',
+            mode = 'LIVE',
+            siteId = this.siteId,
+            fireRules = false,
+            personaId,
+            publishDate,
+            variantName,
+            graphql = {}
+        } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
 
+        const verbose = this.config.logLevel === 'verbose';
         const contentQuery = buildQuery(content);
         const completeQuery = buildPageQuery({
             page,
             fragments,
-            additionalQueries: contentQuery
+            additionalQueries: contentQuery,
+            verbose
         });
 
-        const requestVariables = {
-            url,
-            mode,
+        const newURL = url.startsWith('/') ? url : `/${url}`;
+        const requestVariables: Record<string, unknown> = removeUndefinedValues({
+            url: newURL,
+            mode: UVE_MODE[mode], // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
             languageId,
+            personaId,
+            fireRules,
+            publishDate,
+            siteId,
+            variantName,
             ...variables
-        };
+        });
 
-        const requestHeaders = this.requestOptions.headers as Record<string, string>;
+        const requestHeaders = this.requestOptions.headers;
         const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
 
         try {
-            const { data, errors } = await fetchGraphQL({
+            const response = await fetchGraphQL({
                 baseURL: this.dotcmsUrl,
                 body: requestBody,
-                headers: requestHeaders
+                headers: requestHeaders,
+                httpClient: this.httpClient
             });
 
-            if (errors) {
-                errors.forEach((error: { message: string }) => {
-                    throw new Error(error.message);
-                });
+            // 1. Log unstructured GraphQL errors (structured ones are logged with enriched messages below)
+            if (response.errors?.length) {
+                response.errors
+                    .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
+                    .forEach((error: { message: string }) => {
+                        if (verbose) {
+                            logVerboseError(newURL, error.message, {
+                                variables: requestVariables
+                            });
+                        } else {
+                            consola.error(`[DotCMS GraphQL Error] ${newURL}: `, error.message);
+                        }
+                    });
             }
 
-            const pageResponse = graphqlToPageEntity(data);
+            // 2. BAD QUERY — data is null/undefined means the entire query failed
+            //    (syntax error, unknown type, validation error)
+            //    Must check BEFORE accessing response.data.page
+            if (!response.data) {
+                const firstError = response.errors?.[0];
+
+                throw new DotErrorPage(
+                    firstError?.message ?? 'GraphQL query failed',
+                    400,
+                    'BAD_REQUEST',
+                    new DotHttpError({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        message: firstError?.message ?? 'GraphQL query failed',
+                        data: response.errors
+                    }),
+                    { query: completeQuery, variables: requestVariables }
+                );
+            }
+
+            // 3. STRUCTURED ERRORS — check extensions.code for NOT_FOUND, PERMISSION_DENIED, etc.
+            //    Only fatal when the page itself failed (data.page is null/undefined).
+            //    If data.page exists, partial errors (e.g. secondary content) surface via errors[].
+            if (response.errors?.length && !response.data.page) {
+                const structuredError = response.errors.find(
+                    (error: { extensions?: { code?: string } }) => error.extensions?.code
+                );
+
+                if (structuredError) {
+                    const code = structuredError.extensions?.code;
+                    const status =
+                        structuredError.extensions?.status ??
+                        (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
+                    const message =
+                        code === 'NOT_FOUND'
+                            ? `Page '${newURL}' was not found`
+                            : code === 'PERMISSION_DENIED'
+                              ? `Permission denied: you do not have access to page '${newURL}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
+                              : `Page '${newURL}' could not be loaded (${code})`;
+
+                    if (verbose) {
+                        logVerboseError(newURL, message, {
+                            status,
+                            code,
+                            variables: requestVariables
+                        });
+                    } else {
+                        consola.error(`[DotCMS GraphQL Error] ${newURL}: `, message);
+                    }
+
+                    throw new DotErrorPage(message, status, code, undefined, {
+                        query: completeQuery,
+                        variables: requestVariables
+                    });
+                }
+            }
+
+            // 4. Transform and check page — null page with no structured error = 404
+            const pageResponse = response.data.page
+                ? graphqlToPageEntity(response.data.page)
+                : null;
+
+            const styleEditorSchemas = pageResponse ? pageResponse.page.styleEditorSchemas : [];
 
             if (!pageResponse) {
-                throw new Error('No page data found');
+                throw new DotErrorPage(
+                    `Page '${newURL}' was not found`,
+                    404,
+                    'NOT_FOUND',
+                    new DotHttpError({
+                        status: 404,
+                        statusText: 'Not Found',
+                        message: `Page '${newURL}' was not found`,
+                        data: response.errors
+                    }),
+                    { query: completeQuery, variables: requestVariables }
+                );
             }
 
-            const contentResponse = mapResponseData(data, Object.keys(content));
+            // 5. Build response — include any non-fatal errors for consumers to inspect
+            const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
-                page: pageResponse,
+                pageAsset: pageResponse,
                 content: contentResponse,
-                errors
+                graphql: {
+                    query: completeQuery,
+                    variables: requestVariables
+                },
+                // Always return an array (never `undefined`) so the response stays JSON-serializable
+                // for consumers like Next.js Pages Router (getServerSideProps/getStaticProps throw on undefined).
+                errors: response.errors?.length ? response.errors : [],
+                ...(styleEditorSchemas?.length && { styleEditorSchemas })
             };
         } catch (error) {
-            const errorMessage = {
-                error,
-                message: 'Failed to retrieve page data',
-                query: completeQuery,
-                variables: requestVariables
-            };
+            if (error instanceof DotErrorPage) {
+                throw error;
+            }
 
-            throw errorMessage;
+            if (error instanceof DotHttpError) {
+                throw new DotErrorPage(
+                    `Page request failed for URL '${newURL}': ${error.message}`,
+                    error.status,
+                    'UNKNOWN',
+                    error,
+                    { query: completeQuery, variables: requestVariables }
+                );
+            }
+
+            throw new DotErrorPage(
+                `Page request failed for URL '${newURL}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                500,
+                'UNKNOWN',
+                undefined,
+                { query: completeQuery, variables: requestVariables }
+            );
         }
-    }
-
-    /**
-     * Maps public API parameters to private API parameters.
-     *
-     * @param {PageRequestParams} params - The public API parameters
-     * @returns {BackendPageParams} The private API parameters
-     * @private
-     * @example
-     * ```typescript
-     * // Internal usage
-     * const backendParams = this.mapToBackendParams({
-     *   siteId: 'demo.dotcms.com',
-     *   languageId: 1,
-     *   mode: 'LIVE'
-     * });
-     * // Returns: {
-     *   hostId: 'demo.dotcms.com',
-     *   language_id: '1',
-     *   mode: 'LIVE'
-     * }
-     * ```
-     */
-    #mapToBackendParams(params: PageRequestParams): BackendPageParams {
-        const backendParams = {
-            hostId: params.siteId || this.siteId,
-            mode: params.mode,
-            language_id: params.languageId ? String(params.languageId) : undefined,
-            'com.dotmarketing.persona.id': params.personaId,
-            fireRules: params.fireRules ? String(params.fireRules) : undefined,
-            depth: params.depth ? String(params.depth) : undefined,
-            publishDate: params.publishDate
-        };
-
-        // Remove undefined values
-        return Object.fromEntries(
-            Object.entries(backendParams).filter(([_, value]) => value !== undefined)
-        );
     }
 }

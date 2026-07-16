@@ -1,13 +1,16 @@
-import { expect, describe, it } from '@jest/globals';
-import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
-import { MockComponent } from 'ng-mocks';
+import { describe, expect, it } from '@jest/globals';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { MockComponent, MockModule } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement, signal } from '@angular/core';
+import { Component, computed, EventEmitter, model, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { DatePickerModule } from 'primeng/datepicker';
 
 import {
     DotAnalyticsTrackerService,
@@ -20,6 +23,9 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLanguage } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
+import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -27,91 +33,269 @@ import {
     getRunningExperimentMock,
     mockDotDevices
 } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
+import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import {
+    DEFAULT_DEVICE,
+    DEFAULT_DEVICES,
+    DEFAULT_PERSONA,
+    PERSONA_KEY
+} from '../../../shared/consts';
+import { EDITOR_STATE } from '../../../shared/enums';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
+import { DotPageAssetParams } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { getFullPageURL, createFavoritePagesURL, createFullURL, sanitizeURL } from '../../../utils';
+import { Orientation, PageType } from '../../../store/models';
+import {
+    convertLocalTimeToUTC,
+    createFavoritePagesURL,
+    getFullPageURL,
+    sanitizeURL
+} from '../../../utils';
 
-const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
+/**
+ * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
+ * which uses Angular's signal-based `viewChild()` and can crash when mocked.
+ * Uses model() for value to match the real component's API so [value] binds correctly.
+ * onLanguageChange matches the real component's output used by (onLanguageChange)="onLanguageSelected($event)".
+ */
+@Component({
+    selector: 'dot-language-selector',
+    template: '',
+    standalone: true
+})
+class StubDotLanguageSelectorComponent {
+    value = model<number | DotLanguage | null>(null);
+    onChange = new EventEmitter<number>();
+    onLanguageChange = new EventEmitter<DotLanguage>();
+}
 
-const params = HEADLESS_BASE_QUERY_PARAMS;
+// Mock createFullURL to avoid issues with invalid URLs in tests
+jest.mock('../../../utils', () => ({
+    ...jest.requireActual('../../../utils'),
+    createFullURL: jest.fn((params, siteId) => {
+        const { url = '/', clientHost = 'http://localhost:3000' } = params;
+        return `${clientHost}${url}?siteId=${siteId}&version=true`;
+    })
+}));
+
+const API_URL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
+
+const params: DotPageAssetParams = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
 const pageAPIQueryParams = getFullPageURL({ url, params });
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
-const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
-const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked;
+const pageAssetResponse = MOCK_RESPONSE_HEADLESS;
+const shouldShowInfoDisplay = pageAssetResponse?.page.locked;
 const bookmarksUrl = createFavoritePagesURL({
     languageId: Number(params?.language_id),
     pageURI: url,
-    siteId: pageAPIResponse?.site.identifier
+    siteId: pageAssetResponse?.site.identifier
 });
 
 const baseUVEToolbarState = {
     editor: {
         bookmarksUrl,
-        copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
-    currentLanguage: pageAPIResponse?.viewAs.language,
+    currentLanguage: pageAssetResponse?.viewAs.language,
     urlContentMap: null,
     runningExperiment: null,
-    workflowActionsInode: pageAPIResponse?.page.inode,
-    unlockButton: null,
+    workflowActionsInode: pageAssetResponse?.page.inode,
     showInfoDisplay: shouldShowInfoDisplay
 };
 
+// Mutable signals for test control (computed properties that tests need to mutate)
+const showWorkflowsActionsSignal = signal(true);
+const toggleLockOptionsSignal = signal(null);
+const infoDisplayPropsSignal = signal(undefined);
+const urlContentMapSignal = signal(undefined);
+
+// Separate signals for view state properties (for test control)
+const deviceSignal = signal(
+    DEFAULT_DEVICES.find((device) => device.inode === DEFAULT_DEVICE.inode)
+);
+const socialMediaSignal = signal(null);
+const orientationSignal = signal(Orientation.LANDSCAPE);
+const viewParamsSignal = signal({
+    seo: undefined,
+    device: undefined,
+    orientation: undefined
+});
+
+// View signal that returns ViewState object
+const viewSignal = computed(() => ({
+    device: deviceSignal(),
+    socialMedia: socialMediaSignal(),
+    orientation: orientationSignal(),
+    viewParams: viewParamsSignal(),
+    isEditState: true,
+    isPreviewModeActive: false,
+    ogTagsResults: null
+}));
+
+// Mutable signal for pageParams control (for test control)
+const pageParamsSignal = signal({ ...params, mode: UVE_MODE.EDIT });
+const pageSnapshotSignal = signal({
+    ...MOCK_RESPONSE_VTL,
+    clientResponse: MOCK_RESPONSE_VTL
+});
+const $lockFeatureEnabledSignal = signal(true);
+
+/** Shared language list used across store mocks. */
+const MOCK_PAGE_LANGUAGES = [
+    {
+        id: 1,
+        language: 'English',
+        languageCode: 'en',
+        countryCode: 'US',
+        country: 'United States',
+        translated: true
+    },
+    {
+        id: 2,
+        language: 'Spanish',
+        languageCode: 'es',
+        countryCode: 'ES',
+        country: 'Spain',
+        translated: false
+    },
+    {
+        id: 3,
+        language: 'French',
+        languageCode: 'fr',
+        countryCode: 'FR',
+        country: 'France',
+        translated: true
+    }
+];
+
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
-    setDevice: jest.fn(),
-    pageParams: signal(params),
-    pageAPIResponse: signal(MOCK_RESPONSE_VTL),
-    $apiURL: signal($apiURL),
-    reloadCurrentPage: jest.fn(),
-    loadPageAsset: jest.fn(),
+    viewSetDevice: jest.fn(),
+    viewSetSEO: jest.fn(),
+    viewSetOrientation: jest.fn(),
+    pageParams: pageParamsSignal,
+    pageAsset: pageSnapshotSignal,
+    // View state signal
+    view: viewSignal,
+    // Computed properties (most are functions, some are mutable signals for test control)
+    $apiURL: () => API_URL,
+    viewMode: computed(() => pageParamsSignal()?.mode ?? UVE_MODE.UNKNOWN),
+    pageLanguage: signal({
+        id: 1,
+        language: 'English',
+        languageCode: 'en',
+        countryCode: 'US',
+        country: 'United States',
+        translated: true
+    }),
+    $showWorkflowsActions: showWorkflowsActionsSignal, // Mutable for tests
+    $personaSelector: () => ({
+        pageId: pageAssetResponse?.page.identifier,
+        value: pageAssetResponse?.viewAs.persona ?? DEFAULT_PERSONA
+    }),
+    $infoDisplayProps: infoDisplayPropsSignal, // Mutable for tests
+    $urlContentMap: urlContentMapSignal, // Mutable for tests
+    $lockOptions: toggleLockOptionsSignal, // Mutable for tests
+    $lockFeatureEnabled: $lockFeatureEnabledSignal,
+    pageReload: jest.fn(),
+    editorPaletteOpen: signal(true),
+    editorCanEditContent: signal(true),
+    pageLanguages: signal(MOCK_PAGE_LANGUAGES),
+    pageExperiment: signal(null),
+    viewDevice: deviceSignal,
+    viewSocialMedia: socialMediaSignal,
+    viewDeviceOrientation: orientationSignal,
+    workflowIsLoading: signal(false),
+    workflowLockIsLoading: signal(false),
+    pageLoad: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
-    $personaSelector: signal({
-        pageId: pageAPIResponse?.page.identifier,
-        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
-    }),
-    $infoDisplayProps: signal(undefined),
-    viewParams: signal({
-        seo: undefined,
-        device: undefined,
-        orientation: undefined
-    }),
-    $urlContentMap: signal(undefined),
-    languages: signal([
-        { id: 1, translated: true },
-        { id: 2, translated: false },
-        { id: 3, translated: true }
-    ]),
-    $showWorkflowsActions: signal(true),
+    $isEditMode: signal(false),
+    viewParams: viewParamsSignal,
+    languages: signal(MOCK_PAGE_LANGUAGES),
     patchViewParams: jest.fn(),
-    orientation: signal(''),
-    clearDeviceAndSocialMedia: jest.fn(),
-    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
-    $unlockButton: signal(null),
-    socialMedia: signal(null),
-    trackUVECalendarChange: jest.fn()
+    orientation: orientationSignal, // Use the shared signal
+    viewClearDeviceAndSocialMedia: jest.fn(),
+    device: deviceSignal, // Use the shared signal
+    lockLoading: signal(false),
+    workflowToggleLock: jest.fn(),
+    socialMedia: socialMediaSignal, // Use the shared signal
+    trackUVECalendarChange: jest.fn(),
+    pageType: signal(PageType.TRADITIONAL),
+    isTraditionalPage: signal(true),
+    experiment: signal(null),
+    editor: () => ({
+        panels: {
+            palette: {
+                open: signal(false)
+            },
+            rightSidebar: {
+                open: false
+            }
+        },
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        ogTags: null,
+        styleSchemas: []
+    }),
+    setPaletteOpen: jest.fn()
+};
+
+/** Creates lock options for tests. Defaults to unlocked state; pass overrides for locked/disabled cases. */
+function createLockOptions(
+    overrides: Partial<{
+        inode: string;
+        isLocked: boolean;
+        lockedBy: string;
+        canLock: boolean;
+        isLockedByCurrentUser: boolean;
+        shouldShowButton: boolean;
+    }> = {}
+) {
+    return {
+        inode: 'test-inode',
+        isLocked: false,
+        lockedBy: '',
+        canLock: true,
+        isLockedByCurrentUser: false,
+        shouldShowButton: true,
+        ...overrides
+    };
+}
+
+/** Extracts the accept callback from the confirmation dialog (for personalization tests). */
+function getConfirmationAcceptCallback(confirmationService: ConfirmationService): () => void {
+    return (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+}
+
+/** Shared info display props for variant/device/socialMedia tests. */
+const INFO_DISPLAY_VARIANT_PROPS = {
+    info: { message: 'editpage.editing.variant', args: ['Variant A'] },
+    icon: 'pi pi-file-edit',
+    id: 'variant',
+    actionIcon: 'pi pi-arrow-left'
 };
 
 const personaEventMock = {
@@ -125,7 +309,6 @@ const personaEventMock = {
     hasLiveVersion: false,
     hasTitleImage: false,
     host: 'SYSTEM_HOST',
-    hostFolder: 'SYSTEM_HOST',
     hostName: 'System Host',
     inode: '',
     keyTag: 'dot:persona',
@@ -151,21 +334,38 @@ describe('DotUveToolbarComponent', () => {
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
-    let dotContentletLockerService: DotContentletLockerService;
     let personalizeService: DotPersonalizeService;
 
-    const fixedDate = new Date('2024-01-01');
-    jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
+    // Do NOT use fake timers globally: PrimeNG's equals() (deepEquals) calls .getTime() on
+    // values it thinks are Date. With Jest fake timers or Date instanceof mocks, that breaks.
+    // Use real timers; use fake timers only in specific calendar tests that need a fixed "today".
 
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
+        overrideComponents: [
+            [
+                DotUveToolbarComponent,
+                {
+                    remove: {
+                        imports: [DotLanguageSelectorComponent]
+                    },
+                    add: {
+                        imports: [StubDotLanguageSelectorComponent]
+                    }
+                }
+            ]
+        ],
         imports: [
             HttpClientTestingModule,
+            FormsModule,
+            MockModule(DatePickerModule),
             MockComponent(DotEmaBookmarksComponent),
+            DotEmaInfoDisplayComponent,
             MockComponent(DotEmaRunningExperimentComponent),
+            DotToggleLockButtonComponent,
             MockComponent(EditEmaPersonaSelectorComponent),
             MockComponent(DotUveWorkflowActionsComponent),
-            MockComponent(DotUveDeviceSelectorComponent),
+            DotUveDeviceSelectorComponent,
             MockComponent(DotEditorModeSelectorComponent)
         ],
         providers: [
@@ -236,6 +436,7 @@ describe('DotUveToolbarComponent', () => {
 
     describe('base state', () => {
         beforeEach(() => {
+            $lockFeatureEnabledSignal.set(true);
             spectator = createComponent({
                 providers: [mockProvider(UVEStore, baseUVEState)]
             });
@@ -243,7 +444,6 @@ describe('DotUveToolbarComponent', () => {
             messageService = spectator.inject(MessageService, true);
             devicesService = spectator.inject(DotDevicesService);
             confirmationService = spectator.inject(ConfirmationService, true);
-            dotContentletLockerService = spectator.inject(DotContentletLockerService);
             personalizeService = spectator.inject(DotPersonalizeService, true);
         });
 
@@ -261,10 +461,13 @@ describe('DotUveToolbarComponent', () => {
                 const contentlet = {
                     identifier: '123',
                     inode: '456',
-                    title: 'My super awesome blog post'
+                    title: 'My super awesome blog post',
+                    contentType: 'Blog'
                 };
                 const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
 
+                // The edit URL content map button is only rendered in EDIT mode and when the map exists
+                baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
                 baseUVEState.$urlContentMap.set(contentlet);
                 spectator.detectChanges();
 
@@ -295,84 +498,8 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        describe('unlock button', () => {
-            it('should be null', () => {
-                expect(spectator.query(byTestId('uve-toolbar-unlock-button'))).toBeNull();
-            });
-
-            it('should be true', () => {
-                baseUVEState.$unlockButton.set({
-                    inode: '123',
-                    disabled: false,
-                    loading: false,
-                    info: {
-                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
-                        args: ['John Doe']
-                    }
-                });
-                spectator.detectChanges();
-
-                expect(spectator.query(byTestId('uve-toolbar-unlock-button'))).toBeTruthy();
-            });
-
-            it('should be disabled', () => {
-                baseUVEState.$unlockButton.set({
-                    disabled: true,
-                    loading: false,
-                    info: {
-                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
-                        args: ['John Doe']
-                    },
-                    inode: '123'
-                });
-                spectator.detectChanges();
-                expect(
-                    spectator
-                        .query(byTestId('uve-toolbar-unlock-button'))
-                        .getAttribute('ng-reflect-disabled')
-                ).toEqual('true');
-            });
-
-            it('should be loading', () => {
-                baseUVEState.$unlockButton.set({
-                    loading: true,
-                    disabled: false,
-                    inode: '123',
-                    info: {
-                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
-                        args: ['John Doe']
-                    }
-                });
-                spectator.detectChanges();
-                expect(
-                    spectator
-                        .query(byTestId('uve-toolbar-unlock-button'))
-                        .getAttribute('ng-reflect-loading')
-                ).toEqual('true');
-            });
-
-            it('should call dotContentletLockerService.unlockPage', () => {
-                const spy = jest.spyOn(dotContentletLockerService, 'unlock');
-
-                baseUVEState.$unlockButton.set({
-                    loading: true,
-                    disabled: false,
-                    inode: '123',
-                    info: {
-                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
-                        args: ['John Doe']
-                    }
-                });
-                spectator.detectChanges();
-
-                spectator.click(byTestId('uve-toolbar-unlock-button'));
-
-                expect(spy).toHaveBeenCalledWith('123');
-            });
-        });
-
         describe('dot-ema-bookmarks', () => {
-            it('should have attr', () => {
+            it('should pass bookmarks URL to dot-ema-bookmarks component', () => {
                 const bookmarks = spectator.query(DotEmaBookmarksComponent);
 
                 expect(bookmarks.url).toBe('/test-url?host_id=123-xyz-567-xxl&language_id=1');
@@ -385,40 +512,6 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        describe('copy-url', () => {
-            let button: DebugElement;
-
-            beforeEach(() => {
-                button = spectator.debugElement.query(
-                    By.css('[data-testId="uve-toolbar-copy-url"]')
-                );
-            });
-
-            it('should have attrs', () => {
-                expect(button.attributes).toEqual({
-                    class: 'ng-star-inserted',
-                    icon: 'pi pi-copy',
-                    'data-testId': 'uve-toolbar-copy-url',
-                    'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
-                    'ng-reflect-icon': 'pi pi-copy',
-                    'ng-reflect-text': 'http://localhost:3000/test-url',
-                    'ng-reflect-tooltip-position': 'bottom',
-                    tooltipPosition: 'bottom',
-                    styleClass: 'p-button-text p-button-sm p-button-rounded'
-                });
-            });
-
-            it('should call messageService.add', () => {
-                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
-
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'Copied',
-                    life: 3000
-                });
-            });
-        });
-
         describe('API URL', () => {
             it('should have api link button', () => {
                 expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
@@ -426,12 +519,12 @@ describe('DotUveToolbarComponent', () => {
 
             it('should have api link button with correct href', () => {
                 const btn = spectator.query(byTestId('uve-toolbar-api-link'));
-                expect(btn.getAttribute('href')).toBe($apiURL);
+                expect(btn.getAttribute('href')).toBe(API_URL);
             });
         });
 
         describe('dot-edit-ema-persona-selector', () => {
-            it('should have attr', () => {
+            it('should pass pageId and default persona value to persona selector', () => {
                 const personaSelector = spectator.query(EditEmaPersonaSelectorComponent);
 
                 expect(personaSelector.pageId).toBe('123');
@@ -443,7 +536,6 @@ describe('DotUveToolbarComponent', () => {
                     hasLiveVersion: false,
                     hasTitleImage: false,
                     host: 'SYSTEM_HOST',
-                    hostFolder: 'SYSTEM_HOST',
                     hostName: 'System Host',
                     identifier: 'modes.persona.no.persona',
                     inode: '',
@@ -466,20 +558,20 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
-            it('should personalize - no confirmation', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+            it('should personalize without confirmation when page is already personalized', () => {
+                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
                     personalized: true
                 });
                 spectator.detectChanges();
 
-                expect(spyloadPageAsset).toHaveBeenCalledWith({
+                expect(pageLoadSpy).toHaveBeenCalledWith({
                     [PERSONA_KEY]: '123'
                 });
             });
 
-            it('should personalize - confirmation', () => {
+            it('should show confirmation dialog when personalizing non-personalized page', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
                     personalized: false
@@ -505,13 +597,11 @@ describe('DotUveToolbarComponent', () => {
                     personalized: false
                 });
 
-                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
-
                 spyPersonalized.mockReturnValue(
-                    throwError(new Error('Personalization confirmation failed'))
+                    throwError(() => new Error('Personalization confirmation failed'))
                 );
 
-                acceptFn();
+                getConfirmationAcceptCallback(confirmationService)();
                 spectator.detectChanges();
 
                 expect(spyMessageService).toHaveBeenCalledWith({
@@ -521,7 +611,157 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
-            it('should despersonalize', () => {
+            it('should show backend message from error-message header when personalization API returns HttpErrorResponse', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const backendMessage =
+                    'Does not exists a Persona with the tag: nonexistent-persona';
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                headers: new HttpHeaders({ 'error-message': backendMessage })
+                            })
+                    )
+                );
+
+                getConfirmationAcceptCallback(confirmationService)();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: backendMessage
+                });
+            });
+
+            it('should show backend message from body error when personalization API returns HttpErrorResponse with error body', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                error: {
+                                    error: 'dotcms.api.error.bad_request: Page parameter is missing'
+                                }
+                            })
+                    )
+                );
+
+                getConfirmationAcceptCallback(confirmationService)();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'Page parameter is missing'
+                });
+            });
+
+            it('should show full body error when response has no colon prefix', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const bodyMessage = 'Something went wrong';
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 500,
+                                error: { error: bodyMessage }
+                            })
+                    )
+                );
+
+                getConfirmationAcceptCallback(confirmationService)();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: bodyMessage
+                });
+            });
+
+            it('should use i18n fallback when error-message header is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                headers: new HttpHeaders({ 'error-message': '   \t  ' })
+                            })
+                    )
+                );
+
+                getConfirmationAcceptCallback(confirmationService)();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
+            it('should use i18n fallback when body error is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                error: { error: '   ' }
+                            })
+                    )
+                );
+
+                getConfirmationAcceptCallback(confirmationService)();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
+            it('should show confirmation when depersonalizing', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
                     ...personaEventMock,
                     personalized: true,
@@ -545,33 +785,201 @@ describe('DotUveToolbarComponent', () => {
                 expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
             });
 
-            it('should call loadPageAsset when language is selected and exists that page translated', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+            it('should call pageLoad with language_id when selected language has translation', () => {
+                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'pageLoad');
+                const languageWithTranslation = MOCK_PAGE_LANGUAGES[0]; // English, id 1, translated: true
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithTranslation
+                );
 
-                expect(spyLoadPageAsset).toHaveBeenCalled();
+                expect(spyLoadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
             });
 
-            it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
+            it('should call confirmationService.confirm when selected language has no translation', () => {
                 const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
                 spectator.detectChanges();
+
                 expect(spyConfirmationService).toHaveBeenCalled();
+            });
+
+            it('should emit translatePage with page and newLanguage when user confirms new translation', () => {
+                const translatePageSpy = jest.spyOn(spectator.component.translatePage, 'emit');
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
+
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
+                spectator.detectChanges();
+
+                const acceptCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                    .accept;
+                acceptCallback();
+
+                const expectedPage = pageSnapshotSignal().page;
+                expect(translatePageSpy).toHaveBeenCalledWith({
+                    page: expectedPage,
+                    newLanguage: 2
+                });
+            });
+
+            it('should reset language selector to current language when user rejects new translation', () => {
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
+                const currentLanguage = baseUVEState.pageLanguage();
+                const languageSelector = spectator.query(StubDotLanguageSelectorComponent);
+                const valueSetSpy = jest.spyOn(languageSelector.value, 'set');
+
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
+                spectator.detectChanges();
+
+                const rejectCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                    .reject;
+                rejectCallback();
+
+                expect(valueSetSpy).toHaveBeenCalledWith(currentLanguage);
             });
         });
 
-        it('should have not experiments button if experiment is not running', () => {
+        it('should not show experiments button when no experiment is running', () => {
             expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
         });
 
         it('should have persona selector', () => {
             expect(spectator.query(byTestId('uve-toolbar-persona-selector'))).toBeTruthy();
         });
+
+        describe('toggle lock button', () => {
+            it('should not display toggle lock button when shouldShowButton is false', () => {
+                baseUVEState.$lockOptions.set(createLockOptions({ shouldShowButton: false }));
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('toggle-lock-button'))).toBeNull();
+            });
+
+            it('should display toggle lock button when toggle lock options are available', () => {
+                baseUVEState.$lockOptions.set(createLockOptions());
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('toggle-lock-button'))).toBeTruthy();
+            });
+
+            it('should display unlocked state when page is not locked', () => {
+                baseUVEState.$lockOptions.set(createLockOptions());
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.classList.contains('lock-button--unlocked')).toBeTruthy();
+                expect(button.classList.contains('lock-button--locked')).toBeFalsy();
+            });
+
+            it('should display locked state when page is locked by current user', () => {
+                baseUVEState.$lockOptions.set(
+                    createLockOptions({
+                        inode: 'test-inode',
+                        isLocked: true,
+                        lockedBy: 'current-user',
+                        isLockedByCurrentUser: true
+                    })
+                );
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.classList.contains('lock-button--locked')).toBeTruthy();
+                expect(button.classList.contains('lock-button--unlocked')).toBeFalsy();
+            });
+
+            it('should call store.toggleLock when unlocked button is clicked', () => {
+                const spy = jest.spyOn(store, 'workflowToggleLock');
+
+                baseUVEState.$lockOptions.set(createLockOptions({ inode: 'test-inode-unlock' }));
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith('test-inode-unlock', false, false, undefined);
+            });
+
+            it('should call store.toggleLock when locked button is clicked', () => {
+                const spy = jest.spyOn(store, 'workflowToggleLock');
+
+                baseUVEState.$lockOptions.set(
+                    createLockOptions({
+                        inode: 'test-inode-lock',
+                        isLocked: true,
+                        lockedBy: 'current-user',
+                        isLockedByCurrentUser: true
+                    })
+                );
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith('test-inode-lock', true, true, undefined);
+            });
+
+            it('should disable button when lock operation is loading', () => {
+                baseUVEState.$lockOptions.set(createLockOptions());
+                baseUVEState.workflowLockIsLoading.set(true);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLButtonElement;
+                expect(button?.disabled).toBe(true);
+            });
+
+            it('should enable button when lock operation is not loading', () => {
+                baseUVEState.$lockOptions.set(createLockOptions());
+                baseUVEState.workflowLockIsLoading.set(false);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLButtonElement;
+                expect(button?.disabled).toBe(false);
+            });
+
+            it('should call store.toggleLock with correct params for page locked by another user', () => {
+                const spy = jest.spyOn(store, 'workflowToggleLock');
+
+                baseUVEState.$lockOptions.set(
+                    createLockOptions({
+                        inode: 'test-inode-other',
+                        isLocked: true,
+                        lockedBy: 'another-user',
+                        isLockedByCurrentUser: false
+                    })
+                );
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith('test-inode-other', true, false, undefined);
+            });
+        });
     });
 
     describe('preview', () => {
+        beforeEach(() => {
+            pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
+        });
+
         const previewBaseUveState = {
             ...baseUVEState,
             $isPreviewMode: signal(true)
@@ -583,6 +991,14 @@ describe('DotUveToolbarComponent', () => {
             });
 
             store = spectator.inject(UVEStore, true);
+        });
+
+        it('should have a dot-ema-bookmarks component', () => {
+            expect(spectator.query(DotEmaBookmarksComponent)).toBeTruthy();
+        });
+
+        it('should have a api link button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
         });
 
         it('should have a device selector', () => {
@@ -607,23 +1023,35 @@ describe('DotUveToolbarComponent', () => {
             it('should not show calendar when in preview mode', () => {
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeFalsy();
+                expect(spectator.query('p-datepicker')).toBeFalsy();
             });
         });
     });
     describe('live', () => {
-        const previewBaseUveState = {
+        const liveSocialMediaSignal = signal<string | null>(null);
+        const liveViewModeSignal = signal(UVE_MODE.LIVE);
+        const liveBaseUveState = {
             ...baseUVEState,
             $isPreviewMode: signal(false),
-            $isLiveMode: signal(true)
+            $isLiveMode: signal(true),
+            viewMode: computed(() => liveViewModeSignal()),
+            viewSocialMedia: liveSocialMediaSignal
         };
 
         beforeEach(() => {
             spectator = createComponent({
-                providers: [mockProvider(UVEStore, previewBaseUveState)]
+                providers: [mockProvider(UVEStore, liveBaseUveState)]
             });
 
             store = spectator.inject(UVEStore, true);
+        });
+
+        it('should have a dot-ema-bookmarks component', () => {
+            expect(spectator.query(DotEmaBookmarksComponent)).toBeTruthy();
+        });
+
+        it('should have a api link button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
         });
 
         it('should have a device selector', () => {
@@ -645,107 +1073,137 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('calendar', () => {
+            // Do not mock Date Symbol.hasInstance or Date.UTC: PrimeNG's equals() uses
+            // (x instanceof Date) then x.getTime(). Making instanceof always true causes
+            // getTime() to be called on non-Date values and throws.
+
+            beforeEach(() => {
+                liveViewModeSignal.set(UVE_MODE.LIVE);
+                liveSocialMediaSignal.set(null);
+            });
+
             it('should show calendar when in live mode', () => {
-                expect(spectator.query('p-calendar')).toBeTruthy();
+                liveSocialMediaSignal.set(null);
+                spectator.detectChanges();
+
+                expect(spectator.query('p-datepicker')).toBeTruthy();
             });
 
             it('should show calendar when in live mode and socialMedia is false', () => {
-                baseUVEState.socialMedia.set(null);
+                liveSocialMediaSignal.set(null);
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeTruthy();
+                expect(spectator.query('p-datepicker')).toBeTruthy();
             });
 
             it('should not show calendar when socialMedia has a value', () => {
-                baseUVEState.socialMedia.set('faceboook');
+                liveSocialMediaSignal.set('facebook');
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeFalsy();
+                expect(spectator.query('p-datepicker')).toBeFalsy();
             });
 
             it('should not show calendar when not in live mode', () => {
-                baseUVEState.$isPreviewMode.set(false);
-                baseUVEState.$isLiveMode.set(false);
+                liveSocialMediaSignal.set(null);
+                liveViewModeSignal.set(UVE_MODE.EDIT);
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeFalsy();
+                expect(spectator.query('p-datepicker')).toBeFalsy();
             });
 
             it('should have a minDate of current date on 0h 0min 0s 0ms', () => {
-                baseUVEState.$isPreviewMode.set(false);
-                baseUVEState.$isLiveMode.set(true);
-                baseUVEState.socialMedia.set(null);
+                liveViewModeSignal.set(UVE_MODE.LIVE);
+                liveSocialMediaSignal.set(null);
                 spectator.detectChanges();
 
-                const calendar = spectator.query('p-calendar');
-
-                const expectedMinDate = new Date(fixedDate);
+                const expectedMinDate = new Date();
 
                 expectedMinDate.setHours(0, 0, 0, 0);
 
-                expect(calendar.getAttribute('ng-reflect-min-date')).toBeDefined();
-                expect(new Date(calendar.getAttribute('ng-reflect-min-date'))).toEqual(
-                    expectedMinDate
-                );
+                const minDate = spectator.component['$MIN_DATE']();
+
+                expect(minDate).toEqual(expectedMinDate);
             });
 
             it('should load page on date when date is selected', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+                pageParamsSignal.set({ ...params, mode: UVE_MODE.LIVE });
+                liveBaseUveState.socialMedia.set(null);
+                spectator.detectChanges();
+
+                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
 
                 const calendar = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-calendar"]')
                 );
+
+                expect(calendar).toBeTruthy();
 
                 const date = new Date();
 
                 spectator.triggerEventHandler(calendar, 'ngModelChange', date);
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
-                    mode: UVE_MODE.LIVE,
-                    publishDate: date.toISOString()
+                    publishDate: convertLocalTimeToUTC(date)
                 });
             });
 
             it('should track event on date when date is selected', () => {
+                pageParamsSignal.set({ ...params, mode: UVE_MODE.LIVE });
+                liveBaseUveState.socialMedia.set(null);
+                spectator.detectChanges();
+
                 const spyTrackUVECalendarChange = jest.spyOn(
-                    baseUVEState,
+                    liveBaseUveState,
                     'trackUVECalendarChange'
                 );
 
                 const calendar = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-calendar"]')
                 );
+
+                expect(calendar).toBeTruthy();
 
                 const date = new Date();
 
                 spectator.triggerEventHandler(calendar, 'ngModelChange', date);
 
                 expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
-                    selectedDate: date.toISOString()
+                    selectedDate: convertLocalTimeToUTC(date)
                 });
             });
 
             it('should fetch date when clicking on today button', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
-                const calendar = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
+                pageParamsSignal.set({ ...params, mode: UVE_MODE.LIVE });
+                liveBaseUveState.socialMedia.set(null);
+                spectator.detectChanges();
 
-                calendar.dispatchEvent(new Event('click'));
+                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
+                const todayButton = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
+
+                expect(todayButton).toBeTruthy();
+
+                spectator.click(todayButton);
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
-                    mode: UVE_MODE.LIVE,
                     publishDate: expect.any(String)
                 });
             });
 
             it('should track event on today button', () => {
+                pageParamsSignal.set({ ...params, mode: UVE_MODE.LIVE });
+                liveBaseUveState.socialMedia.set(null);
+                spectator.detectChanges();
+
                 const spyTrackUVECalendarChange = jest.spyOn(
-                    baseUVEState,
+                    liveBaseUveState,
                     'trackUVECalendarChange'
                 );
 
-                const calendar = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
+                const todayButton = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
 
-                calendar.dispatchEvent(new Event('click'));
+                expect(todayButton).toBeTruthy();
+
+                spectator.click(todayButton);
 
                 expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
                     selectedDate: expect.any(String)
@@ -756,12 +1214,10 @@ describe('DotUveToolbarComponent', () => {
 
     describe('State changes', () => {
         beforeEach(() => {
+            const runningExperiment = getRunningExperimentMock();
             const state = {
                 ...baseUVEState,
-                $uveToolbar: signal({
-                    ...baseUVEToolbarState,
-                    runningExperiment: getRunningExperimentMock()
-                })
+                pageExperiment: signal(runningExperiment)
             };
 
             spectator = createComponent({
@@ -771,7 +1227,513 @@ describe('DotUveToolbarComponent', () => {
 
         describe('Experiment is running', () => {
             it('should have experiment running component', () => {
+                spectator.detectChanges();
                 expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeTruthy();
+            });
+        });
+    });
+
+    describe('Presentational Component Integration', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {},
+                detectChanges: false,
+                providers: [
+                    mockProvider(UVEStore, {
+                        ...baseUVEState
+                    })
+                ]
+            });
+            store = spectator.inject(UVEStore, true);
+        });
+
+        describe('DotUveDeviceSelectorComponent', () => {
+            describe('Computed Properties', () => {
+                describe('$deviceSelectorState', () => {
+                    it('should build unified state object from store signals', () => {
+                        const testDevice = DEFAULT_DEVICES[1];
+                        baseUVEState.device.set(testDevice);
+                        baseUVEState.socialMedia.set('facebook');
+                        baseUVEState.orientation.set(Orientation.LANDSCAPE);
+                        spectator.detectChanges();
+
+                        const state = spectator.component.$deviceSelectorState();
+
+                        expect(state).toEqual({
+                            device: testDevice,
+                            socialMedia: 'facebook',
+                            orientation: Orientation.LANDSCAPE
+                        });
+                    });
+
+                    it('should react to device changes', () => {
+                        const defaultDevice = DEFAULT_DEVICES[0];
+                        baseUVEState.device.set(defaultDevice);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().device).toBe(
+                            defaultDevice
+                        );
+
+                        const newDevice = DEFAULT_DEVICES[1];
+                        baseUVEState.device.set(newDevice);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().device).toBe(newDevice);
+                    });
+
+                    it('should react to social media changes', () => {
+                        baseUVEState.socialMedia.set(null);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().socialMedia).toBeNull();
+
+                        baseUVEState.socialMedia.set('twitter');
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().socialMedia).toBe(
+                            'twitter'
+                        );
+                    });
+
+                    it('should react to orientation changes', () => {
+                        baseUVEState.orientation.set(Orientation.PORTRAIT);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().orientation).toBe(
+                            Orientation.PORTRAIT
+                        );
+
+                        baseUVEState.orientation.set(Orientation.LANDSCAPE);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().orientation).toBe(
+                            Orientation.LANDSCAPE
+                        );
+                    });
+                });
+            });
+
+            describe('deviceSelectorChange output', () => {
+                let emittedChanges: DeviceSelectorChange[];
+
+                beforeEach(() => {
+                    emittedChanges = [];
+                    spectator.component.deviceSelectorChange.subscribe((c) =>
+                        emittedChanges.push(c)
+                    );
+                    pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
+                    baseUVEState.$isPreviewMode.set(true);
+                    spectator.detectChanges();
+                });
+
+                it('should emit device change when device selector emits stateChange', () => {
+                    const testDevice = DEFAULT_DEVICES[1];
+
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'device',
+                        device: testDevice
+                    });
+
+                    expect(emittedChanges).toHaveLength(1);
+                    expect(emittedChanges[0]).toEqual({ type: 'device', device: testDevice });
+                });
+
+                it('should emit socialMedia change when device selector emits stateChange', () => {
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'socialMedia',
+                        socialMedia: 'facebook'
+                    });
+
+                    expect(emittedChanges).toHaveLength(1);
+                    expect(emittedChanges[0]).toEqual({
+                        type: 'socialMedia',
+                        socialMedia: 'facebook'
+                    });
+                });
+
+                it('should emit orientation change when device selector emits stateChange', () => {
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'orientation',
+                        orientation: Orientation.PORTRAIT
+                    });
+
+                    expect(emittedChanges).toHaveLength(1);
+                    expect(emittedChanges[0]).toEqual({
+                        type: 'orientation',
+                        orientation: Orientation.PORTRAIT
+                    });
+                });
+
+                it('should emit all change types in sequence', () => {
+                    const testDevice = DEFAULT_DEVICES[0];
+
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'device',
+                        device: testDevice
+                    });
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'socialMedia',
+                        socialMedia: 'twitter'
+                    });
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'orientation',
+                        orientation: Orientation.LANDSCAPE
+                    });
+
+                    expect(emittedChanges).toHaveLength(3);
+                    expect(emittedChanges[0]).toEqual({ type: 'device', device: testDevice });
+                    expect(emittedChanges[1]).toEqual({
+                        type: 'socialMedia',
+                        socialMedia: 'twitter'
+                    });
+                    expect(emittedChanges[2]).toEqual({
+                        type: 'orientation',
+                        orientation: Orientation.LANDSCAPE
+                    });
+                });
+            });
+
+            describe('Template Bindings', () => {
+                beforeEach(() => {
+                    pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
+                    baseUVEState.$isPreviewMode.set(true);
+                    spectator.detectChanges();
+                });
+
+                it('should pass state input to device selector', () => {
+                    const testDevice = DEFAULT_DEVICES[1];
+                    baseUVEState.device.set(testDevice);
+                    baseUVEState.socialMedia.set('facebook');
+                    baseUVEState.orientation.set(Orientation.LANDSCAPE);
+                    spectator.detectChanges();
+
+                    const deviceSelectorDebugElement = spectator.debugElement.query(
+                        By.directive(DotUveDeviceSelectorComponent)
+                    );
+                    const deviceSelector =
+                        deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
+
+                    expect(deviceSelector.$state()).toEqual({
+                        device: testDevice,
+                        socialMedia: 'facebook',
+                        orientation: Orientation.LANDSCAPE
+                    });
+                });
+
+                it('should pass devices input to device selector', () => {
+                    spectator.detectChanges();
+
+                    const deviceSelectorDebugElement = spectator.debugElement.query(
+                        By.directive(DotUveDeviceSelectorComponent)
+                    );
+                    const deviceSelector =
+                        deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
+
+                    expect(deviceSelector.$devices()).toBeDefined();
+                });
+
+                it('should pass isTraditionalPage input to device selector', () => {
+                    baseUVEState.isTraditionalPage.set(true);
+                    spectator.detectChanges();
+
+                    const deviceSelectorDebugElement = spectator.debugElement.query(
+                        By.directive(DotUveDeviceSelectorComponent)
+                    );
+                    const deviceSelector =
+                        deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
+
+                    expect(deviceSelector.$isTraditionalPage()).toBe(true);
+                });
+
+                it('should forward stateChange from device selector as deviceSelectorChange output', () => {
+                    const emitted: DeviceSelectorChange[] = [];
+                    spectator.component.deviceSelectorChange.subscribe((c) => emitted.push(c));
+                    const testDevice = DEFAULT_DEVICES[1];
+
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'device',
+                        device: testDevice
+                    });
+
+                    expect(emitted).toHaveLength(1);
+                    expect(emitted[0]).toEqual({ type: 'device', device: testDevice });
+                });
+            });
+        });
+
+        describe('DotToggleLockButtonComponent', () => {
+            describe('Computed Properties', () => {
+                describe('$lockOptions', () => {
+                    it('should return null when store options are null', () => {
+                        baseUVEState.$lockOptions.set(null);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$lockOptions()).toBeNull();
+                    });
+
+                    it('should build complete options object with loading state', () => {
+                        baseUVEState.$lockOptions.set(createLockOptions());
+                        baseUVEState.workflowLockIsLoading.set(true);
+                        spectator.detectChanges();
+
+                        const options = spectator.component.$lockOptions();
+
+                        expect(options).toEqual({
+                            inode: 'test-inode',
+                            isLocked: false,
+                            isLockedByCurrentUser: false,
+                            canLock: true,
+                            loading: true,
+                            disabled: false,
+                            lockedBy: '',
+                            shouldShowButton: true,
+                            message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                            args: []
+                        });
+                    });
+
+                    it('should set disabled true when canLock is false', () => {
+                        baseUVEState.$lockOptions.set(
+                            createLockOptions({
+                                isLocked: true,
+                                lockedBy: 'another-user',
+                                canLock: false
+                            })
+                        );
+                        baseUVEState.workflowLockIsLoading.set(false);
+                        spectator.detectChanges();
+
+                        const options = spectator.component.$lockOptions();
+
+                        expect(options.disabled).toBe(true);
+                        expect(options.message).toBe('editpage.locked-by');
+                        expect(options.args).toEqual(['another-user']);
+                    });
+
+                    it('should include lockedBy in args when provided', () => {
+                        baseUVEState.$lockOptions.set(
+                            createLockOptions({
+                                isLocked: true,
+                                lockedBy: 'john.doe@example.com',
+                                canLock: false
+                            })
+                        );
+                        spectator.detectChanges();
+
+                        const options = spectator.component.$lockOptions();
+
+                        expect(options.args).toEqual(['john.doe@example.com']);
+                    });
+                });
+            });
+
+            describe('Handler Methods', () => {
+                describe('handleToggleLock', () => {
+                    beforeEach(() => {
+                        baseUVEState.$lockOptions.set(createLockOptions());
+                        baseUVEState.workflowLockIsLoading.set(false);
+                        spectator.detectChanges();
+                    });
+
+                    it('should call store.toggleLock with correct parameters', () => {
+                        const spy = jest.spyOn(store, 'workflowToggleLock');
+
+                        spectator.triggerEventHandler(
+                            DotToggleLockButtonComponent,
+                            'toggleLockClick',
+                            {
+                                inode: 'test-inode-123',
+                                isLocked: false,
+                                isLockedByCurrentUser: false
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith('test-inode-123', false, false, undefined);
+                    });
+
+                    it('should handle locked state correctly', () => {
+                        const spy = jest.spyOn(store, 'workflowToggleLock');
+
+                        spectator.triggerEventHandler(
+                            DotToggleLockButtonComponent,
+                            'toggleLockClick',
+                            {
+                                inode: 'locked-inode',
+                                isLocked: true,
+                                isLockedByCurrentUser: true
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith('locked-inode', true, true, undefined);
+                    });
+
+                    it('should handle page locked by another user', () => {
+                        const spy = jest.spyOn(store, 'workflowToggleLock');
+
+                        spectator.triggerEventHandler(
+                            DotToggleLockButtonComponent,
+                            'toggleLockClick',
+                            {
+                                inode: 'other-user-inode',
+                                isLocked: true,
+                                isLockedByCurrentUser: false
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith(
+                            'other-user-inode',
+                            true,
+                            false,
+                            undefined
+                        );
+                    });
+                });
+            });
+
+            describe('Template Bindings', () => {
+                beforeEach(() => {
+                    baseUVEState.$lockOptions.set(createLockOptions());
+                    baseUVEState.workflowLockIsLoading.set(false);
+                    spectator.detectChanges();
+                });
+
+                it('should pass toggleLockOptions input to toggle lock button', () => {
+                    const toggleLockButton = spectator.query(byTestId('uve-toolbar-toggle-lock'));
+                    expect(toggleLockButton).toBeTruthy();
+
+                    const buttonDebugElement = spectator.debugElement.query(
+                        By.directive(DotToggleLockButtonComponent)
+                    );
+                    const buttonComponent =
+                        buttonDebugElement.componentInstance as DotToggleLockButtonComponent;
+
+                    expect(buttonComponent).toBeTruthy();
+                    expect(buttonComponent.toggleLockOptions()).toEqual({
+                        inode: 'test-inode',
+                        isLocked: false,
+                        isLockedByCurrentUser: false,
+                        canLock: true,
+                        lockedBy: '',
+                        shouldShowButton: true,
+                        loading: false,
+                        disabled: false,
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: []
+                    });
+                });
+
+                it('should call handleToggleLock when toggleLockClick emits', () => {
+                    const spy = jest.spyOn(spectator.component, 'handleToggleLock');
+
+                    spectator.triggerEventHandler(DotToggleLockButtonComponent, 'toggleLockClick', {
+                        inode: 'test-inode',
+                        isLocked: false,
+                        isLockedByCurrentUser: false
+                    });
+
+                    expect(spy).toHaveBeenCalledWith({
+                        inode: 'test-inode',
+                        isLocked: false,
+                        isLockedByCurrentUser: false
+                    });
+                });
+            });
+        });
+
+        describe('DotEmaInfoDisplayComponent', () => {
+            describe('Handler Methods', () => {
+                describe('handleInfoDisplayAction', () => {
+                    beforeEach(() => {
+                        baseUVEState.$infoDisplayProps.set(INFO_DISPLAY_VARIANT_PROPS);
+                        spectator.detectChanges();
+                    });
+
+                    it('should call store.viewClearDeviceAndSocialMedia when device action is triggered', () => {
+                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+
+                        spectator.triggerEventHandler(
+                            DotEmaInfoDisplayComponent,
+                            'actionClicked',
+                            'device'
+                        );
+
+                        expect(spy).toHaveBeenCalled();
+                    });
+
+                    it('should call store.viewClearDeviceAndSocialMedia when socialMedia action is triggered', () => {
+                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+
+                        spectator.triggerEventHandler(
+                            DotEmaInfoDisplayComponent,
+                            'actionClicked',
+                            'socialMedia'
+                        );
+
+                        expect(spy).toHaveBeenCalled();
+                    });
+
+                    it('should not call viewClearDeviceAndSocialMedia for variant action', () => {
+                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+                        spy.mockClear(); // Clear any calls from previous tests
+
+                        spectator.triggerEventHandler(
+                            DotEmaInfoDisplayComponent,
+                            'actionClicked',
+                            'variant'
+                        );
+
+                        expect(spy).not.toHaveBeenCalled();
+                    });
+                });
+            });
+
+            describe('Template Bindings', () => {
+                beforeEach(() => {
+                    baseUVEState.$infoDisplayProps.set(INFO_DISPLAY_VARIANT_PROPS);
+                    spectator.detectChanges();
+                });
+
+                it('should pass options input to info display', () => {
+                    const infoDisplay = spectator.query(byTestId('info-display'));
+                    expect(infoDisplay).toBeTruthy();
+
+                    const infoDisplayDebugElement = spectator.debugElement.query(
+                        By.directive(DotEmaInfoDisplayComponent)
+                    );
+                    const infoDisplayComponent =
+                        infoDisplayDebugElement.componentInstance as DotEmaInfoDisplayComponent;
+
+                    expect(infoDisplayComponent).toBeTruthy();
+                    expect(infoDisplayComponent.$options()).toEqual(INFO_DISPLAY_VARIANT_PROPS);
+                });
+
+                it('should call handleInfoDisplayAction when actionClicked emits', () => {
+                    const spy = jest.spyOn(spectator.component, 'handleInfoDisplayAction');
+
+                    spectator.triggerEventHandler(
+                        DotEmaInfoDisplayComponent,
+                        'actionClicked',
+                        'device'
+                    );
+
+                    expect(spy).toHaveBeenCalledWith('device');
+                });
+
+                it('should not render info display when options are null', () => {
+                    baseUVEState.$infoDisplayProps.set(null);
+                    spectator.detectChanges();
+
+                    const infoDisplay = spectator.query(byTestId('info-display'));
+                    expect(infoDisplay).toBeFalsy();
+                });
+            });
+        });
+
+        describe('isTraditionalPage computed property', () => {
+            it('should expose store.isTraditionalPage signal', () => {
+                expect(spectator.component.isTraditionalPage).toBeDefined();
+                expect(typeof spectator.component.isTraditionalPage).toBe('function');
             });
         });
     });

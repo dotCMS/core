@@ -1,14 +1,11 @@
 package com.dotcms.mock.response;
 
-import com.dotcms.business.SystemCache;
 import com.dotcms.ema.proxy.MockPrintWriter;
-import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletResponse;
+import com.liferay.util.servlet.NullServletOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -147,6 +144,9 @@ public class DotCMSMockResponse implements HttpServletResponse {
 
     @Override
     public ServletOutputStream getOutputStream() throws IOException {
+        if (this.outputStream == null) {
+            return new NullServletOutputStream();
+        }
         return this.outputStream;
     }
 

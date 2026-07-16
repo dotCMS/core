@@ -1,21 +1,9 @@
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import {
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotWorkflowActionsFireService,
-    DotFormatDateService,
-    PushPublishService,
-    DotGlobalMessageService,
-    DotIframeService,
-    DotWizardService,
-    DotWorkflowEventHandlerService
-} from '@dotcms/data-access';
-import { CoreWebService, DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
@@ -24,12 +12,11 @@ import {
     DotMessageSeverity,
     DotMessageType,
     DotProcessedWorkflowPayload,
-    DotWorkflowPayload,
+    DotWizardInput,
     DotWizardStep,
-    DotWizardInput
+    DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -38,12 +25,17 @@ import {
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
+import { DotWorkflowEventHandlerService } from './dot-workflow-event-handler.service';
+
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
+import { DotGlobalMessageService } from '../dot-global-message/dot-global-message.service';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotIframeService } from '../dot-iframe/dot-iframe.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotWizardService } from '../dot-wizard/dot-wizard.service';
+import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { PushPublishService } from '../push-publish/push-publish.service';
 
 @Injectable()
 export class MockPushPublishService {
@@ -156,8 +148,6 @@ describe('DotWorkflowEventHandlerService', () => {
                 provide: LoginService,
                 useClass: LoginServiceMock
             },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
         ]
     });

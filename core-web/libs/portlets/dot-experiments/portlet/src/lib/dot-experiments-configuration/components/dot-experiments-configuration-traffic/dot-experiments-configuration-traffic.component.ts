@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { NgClass, AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -15,7 +15,7 @@ import {
     StepStatus,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,
@@ -26,22 +26,21 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',
-    standalone: true,
     imports: [
-        CommonModule,
         DotMessagePipe,
         DotDynamicDirective,
-        // PrimeNg
         CardModule,
         ButtonModule,
-        DotIconModule,
-        TooltipModule
+        TooltipModule,
+        AsyncPipe,
+        NgClass
     ],
     templateUrl: './dot-experiments-configuration-traffic.component.html',
-    styleUrls: ['./dot-experiments-configuration-traffic.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     vm$: Observable<ConfigurationTrafficStepViewModel> =
         this.dotExperimentsConfigurationStore.trafficStepVm$.pipe(
             tap(({ status }) => this.handleSidebar(status))
@@ -49,15 +48,11 @@ export class DotExperimentsConfigurationTrafficComponent {
 
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
 
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     private componentRef: ComponentRef<
         | DotExperimentsConfigurationTrafficAllocationAddComponent
         | DotExperimentsConfigurationTrafficSplitAddComponent
     >;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     /**
      * Open sidebar to set Traffic Allocation
@@ -77,20 +72,26 @@ export class DotExperimentsConfigurationTrafficComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        this.sidebarHost.viewContainerRef.clear();
-        this.componentRef =
-            status.experimentStep == ExperimentSteps.TRAFFICS_SPLIT
-                ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
-                      DotExperimentsConfigurationTrafficSplitAddComponent
-                  )
-                : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
-                      DotExperimentsConfigurationTrafficAllocationAddComponent
-                  );
+        const sidebarHostRef = this.sidebarHost();
+        if (sidebarHostRef) {
+            sidebarHostRef.viewContainerRef.clear();
+            this.componentRef =
+                status.experimentStep == ExperimentSteps.TRAFFICS_SPLIT
+                    ? sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
+                          DotExperimentsConfigurationTrafficSplitAddComponent
+                      )
+                    : sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
+                          DotExperimentsConfigurationTrafficAllocationAddComponent
+                      );
+        }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 }

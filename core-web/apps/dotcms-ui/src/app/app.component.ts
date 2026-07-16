@@ -1,27 +1,34 @@
-import { Component, OnInit } from '@angular/core';
+import { of } from 'rxjs';
 
-import { map, take } from 'rxjs/operators';
+import { Component, inject, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { catchError, map, take } from 'rxjs/operators';
+
+import {
+    DEFAULT_COLORS,
+    DotLicenseService,
+    DotMessageService,
+    DotUiColorsService
+} from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
 
 @Component({
     selector: 'dot-root',
     templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss']
+    styleUrls: ['./app.component.scss'],
+    imports: [RouterOutlet, DotAlertConfirmComponent]
 })
 export class AppComponent implements OnInit {
-    constructor(
-        private dotCmsConfigService: DotcmsConfigService,
-        private dotUiColors: DotUiColorsService,
-        private dotMessageService: DotMessageService,
-        private dotNavLogoService: DotNavLogoService,
-        private dotLicense: DotLicenseService
-    ) {}
+    private dotCmsConfigService = inject(DotcmsConfigService);
+    private dotUiColors = inject(DotUiColorsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotNavLogoService = inject(DotNavLogoService);
+    private dotLicense = inject(DotLicenseService);
 
     ngOnInit() {
         this.dotCmsConfigService
@@ -35,6 +42,18 @@ export class AppComponent implements OnInit {
                         navBar: config.logos?.navBar,
                         license: config.license
                     };
+                }),
+                // Handle errors gracefully - use default colors if config fails to load
+                // This ensures the app works even if user is not authenticated or endpoint fails
+                catchError((error) => {
+                    console.warn('Failed to load configuration, using defaults:', error);
+                    // Return default values that allow the app to continue functioning
+                    return of({
+                        buildDate: null,
+                        colors: DEFAULT_COLORS,
+                        navBar: null,
+                        license: null
+                    });
                 })
             )
             .subscribe(
@@ -44,15 +63,30 @@ export class AppComponent implements OnInit {
                     navBar,
                     license
                 }: {
-                    buildDate: string;
+                    buildDate: string | null;
                     colors: DotUiColors;
-                    navBar: string;
-                    license: DotLicense;
+                    navBar: string | null;
+                    license: DotLicense | null;
                 }) => {
-                    this.dotMessageService.init({ buildDate });
-                    this.dotNavLogoService.setLogo(navBar);
-                    this.dotUiColors.setColors(document.querySelector('html'), colors);
-                    this.dotLicense.setLicense(license);
+                    // Initialize services with loaded or default values
+                    if (buildDate) {
+                        this.dotMessageService.init({ buildDate });
+                    }
+
+                    if (navBar) {
+                        this.dotNavLogoService.setLogo(navBar);
+                    }
+
+                    // Always set colors (will use defaults if config failed)
+                    // This ensures PrimeNG theme is always initialized
+                    const htmlElement = document.querySelector('html') as HTMLElement;
+                    if (htmlElement) {
+                        this.dotUiColors.setColors(htmlElement, colors);
+                    }
+
+                    if (license) {
+                        this.dotLicense.setLicense(license);
+                    }
                 }
             );
     }

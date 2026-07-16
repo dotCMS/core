@@ -1,13 +1,14 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { Galleria, GalleriaModule } from 'primeng/galleria';
 
 import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent } from '@dotcms/ui';
 
 import { AiImagePromptGalleryComponent } from './ai-image-prompt-gallery.component';
+
+import { DotEmptyContainerComponent } from '../../../dot-empty-container/dot-empty-container.component';
 
 describe('DotAiImagePromptGalleryComponent', () => {
     let spectator: Spectator<AiImagePromptGalleryComponent>;
@@ -110,5 +111,23 @@ describe('DotAiImagePromptGalleryComponent', () => {
 
         const errorContainer = spectator.query(DotEmptyContainerComponent);
         expect(errorContainer.configuration.title).toEqual(errorImagesMock[0].error);
+    });
+
+    it('should reset error message to default when current image has no error', () => {
+        spectator.setInput({
+            isLoading: false,
+            images: errorImagesMock
+        });
+        spectator.detectChanges();
+
+        spectator.setInput({
+            images: imagesMock,
+            activeImageIndex: 0
+        });
+        spectator.detectChanges();
+
+        expect(spectator.component.emptyConfiguration.title).toEqual(
+            'block-editor.extension.ai-image.error'
+        );
     });
 });

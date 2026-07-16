@@ -1,18 +1,23 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    border: 1px solid $color-palette-gray-500;
+    border: 1px solid colors.$color-palette-gray-500;
     display: block;
-    border-radius: $border-radius-xs;
-    padding: $spacing-3;
+    border-radius: common.$border-radius-xs;
+    padding: spacing.$spacing-3;
 
     ::ng-deep {
         .dot-tree--active {
             position: relative;
             &::after {
-                background: $color-palette-primary;
-                width: $spacing-1;
-                height: $spacing-1;
+                background: colors.$color-palette-primary;
+                width: spacing.$spacing-1;
+                height: spacing.$spacing-1;
                 position: absolute;
                 content: "";
                 border-radius: 50%;
@@ -30,18 +35,18 @@
     position: relative;
 
     & > li::after {
-        background: $color-palette-gray-500;
+        background: colors.$color-palette-gray-500;
         width: 1px;
         height: 1.3rem;
         content: "•";
         position: absolute;
         top: 1.4rem;
         left: 0.8rem;
-        color: $color-palette-gray-500;
+        color: colors.$color-palette-gray-500;
         display: flex;
         justify-content: space-evenly;
         align-items: flex-end;
-        font-size: $font-size-lg;
+        font-size: fonts.$font-size-lg;
         line-height: 1px;
     }
 }
@@ -53,13 +58,13 @@
     }
 
     & > li::after {
-        background: $color-palette-gray-500;
+        background: colors.$color-palette-gray-500;
         width: 1.3rem;
         height: 1px;
         content: "";
         position: absolute;
         left: 0.8rem;
-        top: $spacing-3;
+        top: spacing.$spacing-3;
     }
 }
 
@@ -70,23 +75,23 @@
 
     h3 {
         padding: 0;
-        margin-bottom: $spacing-1;
-        font-size: $font-size-md;
+        margin-bottom: spacing.$spacing-1;
+        font-size: fonts.$font-size-md;
         font-weight: bold;
     }
 
     code {
-        color: $color-palette-gray-700;
+        color: colors.$color-palette-gray-700;
     }
 }
 
 ul {
     list-style: none;
-    padding-left: $spacing-5;
+    padding-left: spacing.$spacing-5;
 
     li {
         span {
-            margin-left: $spacing-1;
+            margin-left: spacing.$spacing-1;
         }
 
         .dot-tree__content {

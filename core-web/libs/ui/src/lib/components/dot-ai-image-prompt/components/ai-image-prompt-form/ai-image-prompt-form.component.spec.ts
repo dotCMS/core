@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -6,15 +6,18 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAIImageOrientation, DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
-import { DotClipboardUtil, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
 
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
+
+import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
+import { DotClipboardUtil } from '../../../../services/clipboard/ClipboardUtil';
+import { DotCopyButtonComponent } from '../../../dot-copy-button/dot-copy-button.component';
 
 const MOCK_FORM_VALUE = {
     text: 'Test',
     type: PromptType.INPUT,
-    size: DotAIImageOrientation.HORIZONTAL
+    size: '1024x1024'
 };
 
 const MOCK_AI_VALUE = {
@@ -58,9 +61,7 @@ describe('DotAiImagePromptFormComponent', () => {
         spectator.detectChanges();
         expect(spectator.component.form.get('text').value).toEqual('');
         expect(spectator.component.form.get('type').value).toEqual(PromptType.INPUT);
-        expect(spectator.component.form.get('size').value).toEqual(
-            DotAIImageOrientation.HORIZONTAL
-        );
+        expect(spectator.component.form.get('size').value).toEqual('1024x1024');
     });
 
     it('should emit value when form value change', () => {

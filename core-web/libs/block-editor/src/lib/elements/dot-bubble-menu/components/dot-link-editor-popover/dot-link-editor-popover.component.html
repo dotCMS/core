@@ -1,0 +1,172 @@
+<div
+    dotEditorModal
+    #popover
+    class="link-editor-popover__panel"
+    [editor]="editor()"
+    [tippyOptions]="tippyModalOptions">
+    <input
+        #input
+        pInputText
+        type="text"
+        placeholder="Paste link or search for pages"
+        class="search-input"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchQueryChange($event)"
+        (keydown.enter)="addLinkToNode(searchQuery())"
+        (keydown)="handleSearchInputKeyDown($event)" />
+
+    @if (showLoading()) {
+        <div class="loading-skeleton-container" [style.height]="'15.625rem'">
+            @for (item of [1, 2, 3]; track item) {
+                <div class="listbox-item">
+                    <p-skeleton width="48px" height="48px" />
+                    <div class="skeleton-lines">
+                        <p-skeleton width="80%" height="14px" />
+                        <p-skeleton width="40%" height="14px" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (showSearchResults()) {
+        <p-listbox
+            #resultListbox
+            optionLabel="displayName"
+            [options]="searchResults() || []"
+            (onChange)="selectLink($event.value)"
+            [listStyle]="{ height: '15.625rem' }">
+            <ng-template #item let-item>
+                <div class="listbox-item">
+                    @if (item.hasTitleImage) {
+                        <img [src]="'/dA/' + item.inode" alt="icon" class="listbox-item__img" />
+                    } @else {
+                        <span class="listbox-item__icon pi pi-file"></span>
+                    }
+                    <div class="listbox-item__content">
+                        <div class="listbox-item__title">{{ item.displayName }}</div>
+                        <div class="listbox-item__url">{{ item.url }}</div>
+                    </div>
+                </div>
+            </ng-template>
+
+            <ng-template pTemplate="empty" #empty>
+                <div class="empty-message">
+                    <span class="empty-message__text">
+                        No results for
+                        <br />
+                        <b>{{ searchQuery() }}</b>
+                        <br />
+                        <br />
+                        Press
+                        <kbd>Enter</kbd>
+                        to use the typed link
+                    </span>
+                </div>
+            </ng-template>
+        </p-listbox>
+    }
+
+    @if (showLinkDetails()) {
+        <div class="current-link-view">
+            <div class="current-link-view__header">
+                <span class="pi pi-globe current-link-view__icon"></span>
+                <a
+                    [href]="existingLinkUrl()"
+                    [target]="linkTargetAttribute()"
+                    rel="noopener noreferrer"
+                    class="current-link-view__link">
+                    {{ existingLinkUrl() }}
+                </a>
+            </div>
+
+            <div class="field" data-testid="link-target-field">
+                <label for="linkTarget">Target</label>
+                <p-select
+                    id="linkTarget"
+                    size="small"
+                    [(ngModel)]="linkTargetAttribute"
+                    [options]="targetOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    data-testid="link-target-select" />
+            </div>
+
+            <button
+                type="button"
+                class="toggle-advanced"
+                data-testid="toggle-advanced"
+                aria-controls="advanced-section"
+                [attr.aria-expanded]="showAdvanced()"
+                (click)="showAdvanced.set(!showAdvanced())">
+                Advanced
+                <span
+                    class="pi"
+                    aria-hidden="true"
+                    [class.pi-chevron-down]="!showAdvanced()"
+                    [class.pi-chevron-up]="showAdvanced()"></span>
+            </button>
+
+            @if (showAdvanced()) {
+                <div
+                    id="advanced-section"
+                    class="link-editor-popover__advanced"
+                    data-testid="advanced-section">
+                    <div class="field">
+                        <label for="linkTitle">Title</label>
+                        <input
+                            pInputText
+                            id="linkTitle"
+                            [(ngModel)]="linkTitle"
+                            placeholder="Link title"
+                            data-testid="link-title-input" />
+                    </div>
+                    <div class="field">
+                        <label for="linkAriaLabel">Aria Label</label>
+                        <input
+                            pInputText
+                            id="linkAriaLabel"
+                            [(ngModel)]="linkAriaLabel"
+                            placeholder="Descriptive label for screen readers"
+                            data-testid="link-aria-label-input" />
+                    </div>
+                    <div class="field">
+                        <label for="linkRel">Rel</label>
+                        <p-select
+                            id="linkRel"
+                            size="small"
+                            [(ngModel)]="linkRel"
+                            [options]="relOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            [showClear]="true"
+                            placeholder="Select rel attribute"
+                            data-testid="link-rel-select" />
+                    </div>
+                </div>
+            }
+
+            <div class="current-link-view__actions">
+                <p-button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    (onClick)="saveLinkAttributes()"
+                    label="Save"
+                    data-testid="save-link-button" />
+                <p-button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    (onClick)="copyExistingLinkToClipboard()"
+                    label="Copy Link" />
+                <p-button
+                    type="button"
+                    severity="danger"
+                    size="small"
+                    (onClick)="removeLinkFromEditor()"
+                    label="Remove Link" />
+            </div>
+        </div>
+    }
+</div>

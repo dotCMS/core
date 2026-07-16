@@ -3,21 +3,19 @@
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/dot-rules/src",
-    "prefix": "",
+    "prefix": "dot",
+    "tags": ["skip:test"],
     "targets": {
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
-            "outputs": ["{workspaceRoot}/coverage/libs/dot-rules"],
             "options": {
-                "main": "libs/dot-rules/src/test.ts",
-                "karmaConfig": "libs/dot-rules/karma.conf.js",
-                "tsConfig": "libs/dot-rules/tsconfig.spec.json"
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }

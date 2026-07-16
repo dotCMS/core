@@ -1,0 +1,51 @@
+<div class="edit-content-dialog flex flex-col" data-testid="edit-content-dialog">
+    <div class="flex-1 overflow-hidden">
+        @switch (state()) {
+            @case (ComponentStatus.LOADED) {
+                <dot-edit-content-form-layout
+                    #editContentLayout
+                    [contentTypeId]="data?.contentTypeId"
+                    [contentletInode]="data?.contentletInode"
+                    (contentSaved)="onContentSaved($event)"
+                    data-testid="edit-content-layout" />
+            }
+            @case (ComponentStatus.ERROR) {
+                <div
+                    class="edit-content-dialog__error flex flex-col items-center justify-center text-center flex-1"
+                    data-testid="error-state">
+                    <i class="pi pi-exclamation-triangle edit-content-dialog__error-icon"></i>
+                    <h3 class="edit-content-dialog__error-title">
+                        {{ 'edit.content.dialog.error.title' | dm }}
+                    </h3>
+                    <p class="edit-content-dialog__error-message">
+                        {{ 'edit.content.dialog.error.loading' | dm }}
+                    </p>
+                    <p class="edit-content-dialog__error-details">
+                        {{ error() }}
+                    </p>
+                </div>
+            }
+            @default {
+                <div
+                    class="edit-content-dialog__loading flex flex-col items-center justify-center text-center flex-1"
+                    data-testid="loading-state">
+                    <div class="edit-content-dialog__loading-spinner">
+                        <i class="pi pi-spin pi-spinner"></i>
+                    </div>
+                    <p class="edit-content-dialog__loading-text">
+                        {{ 'edit.content.dialog.loading' | dm }}
+                    </p>
+                </div>
+            }
+        }
+    </div>
+    <div
+        class="flex justify-end gap-2 p-4 border-t border-gray-300"
+        data-testid="edit-content-dialog-footer">
+        <p-button
+            [text]="true"
+            [label]="'close' | dm"
+            (onClick)="closeDialog()"
+            data-testid="edit-content-dialog-cancel-btn" />
+    </div>
+</div>

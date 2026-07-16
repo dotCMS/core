@@ -1,17 +1,16 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { take, pluck } from 'rxjs/operators';
+import { take, map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { ESContent } from '@dotcms/dotcms-models';
+import { DotCMSResponse, ESContent } from '@dotcms/dotcms-models';
 
 export enum ESOrderDirection {
     ASC = 'ASC',
     DESC = 'DESC'
 }
-
 export interface queryEsParams {
     itemsPerPage?: number;
     filter?: string;
@@ -21,7 +20,6 @@ export interface queryEsParams {
     sortField?: string;
     sortOrder?: ESOrderDirection | string;
 }
-
 /**
  * Provides util listing methods to get contentlets data from Elastic Search endpoint
  * @export
@@ -29,6 +27,8 @@ export interface queryEsParams {
  */
 @Injectable()
 export class DotESContentService {
+    private http = inject(HttpClient);
+
     private _paginationPerPage = 40;
     private _offset = '0';
     private _url = '/api/content/_search';
@@ -36,8 +36,6 @@ export class DotESContentService {
     private _sortField = 'modDate';
     private _sortOrder: ESOrderDirection | string = ESOrderDirection.DESC;
     private _extraParams: Map<string, string> = new Map(Object.entries(this._defaultQueryParams));
-
-    constructor(private coreWebService: CoreWebService) {}
 
     /**
      * Returns a list of contentlets from Elastic Search endpoint
@@ -50,13 +48,10 @@ export class DotESContentService {
 
         const queryParams = this.getESQuery(params, this.getObjectFromMap(this._extraParams));
 
-        return this.coreWebService
-            .requestView<ESContent>({
-                body: JSON.stringify(queryParams),
-                method: 'POST',
-                url: this._url
-            })
-            .pipe(pluck('entity'), take(1));
+        return this.http.post<DotCMSResponse<ESContent>>(this._url, queryParams).pipe(
+            map((response) => response.entity),
+            take(1)
+        );
     }
 
     private setExtraParams(name: string, value?: string | number): void {

@@ -180,8 +180,10 @@ public class BundlePublisher extends Publisher {
             Logger.debug(this, "Notify PushPublishStartOnReceiverEvent");
             localSystemEventsAPI.asyncNotify(new PushPublishStartOnReceiverEvent(config.getAssets()));
         } catch (Exception e) {
-            Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+            throw new DotPublishingException("Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
+
+
 
         File folderOut = new File(bundlePath + bundleID);
         if(folderOut.exists()){
@@ -189,35 +191,30 @@ public class BundlePublisher extends Publisher {
         }
         folderOut.mkdir();
 
-        // Extract file to a directory
-        InputStream bundleIS = null;
-        try {
-            bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
-            untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
-        } catch (IOException e) {
-
-            // Notify to anyone subscribed the PP is failed
-            Logger.debug(this, "Notify PushPublishFailureOnReceiverEvent");
-            localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
-            throw new DotPublishingException("Cannot extract the selected archive", e);
-        } finally {
-            CloseUtils.closeQuietly(bundleIS);
-        }
-
         Map<String, String> assetsDetails = null;
-
-        String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
         BundleMetaDataFile bundleMetaDataFile = null;
 
         try {
-            Logger.debug(BundlePublisher.class, "Getting assets list from received bundle with ID '" + bundleName + "'");
-            bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
-            assetsDetails = bundleMetaDataFile.getAssetsDetails();
-        } catch (Exception e) {
-            Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle with ID '" + bundleName + "': " + e.getMessage(), e);
-        }
 
-        try {
+            // Extract file to a directory
+            InputStream bundleIS = null;
+            try {
+                bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
+                untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
+            } finally {
+                CloseUtils.closeQuietly(bundleIS);
+            }
+
+            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
+
+            try {
+                Logger.debug(BundlePublisher.class, "Getting assets list from received bundle with ID '" + bundleName + "'");
+                bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
+                assetsDetails = bundleMetaDataFile.getAssetsDetails();
+            } catch (Exception e) {
+                Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+            }
+
             HibernateUtil.startTransaction();
             // Execute the handlers
             for (IHandler handler : handlers) {
@@ -341,7 +338,7 @@ public class BundlePublisher extends Publisher {
 
                 String pathWithoutName = path.substring(0, path.indexOf(fileName));
                 File fileOrDir = new File(pathWithoutName + entry.getName());
-                
+
                 // if the logFile is outside of of the logFolder, die
                 if ( !fileOrDir.getCanonicalPath().startsWith(baseBundlePath.getCanonicalPath())) {
 
@@ -350,8 +347,8 @@ public class BundlePublisher extends Publisher {
                     SecurityLogger.logInfo(this.getClass(),  " Evil File"  + fileOrDir );
                     throw new DotPublishingException("Bundle trying to write outside of proper path:" + fileOrDir);
                 }
-                
-                
+
+
                 // if the entry is a directory, create the directory
                 if (entry.isDirectory()) {
                     fileOrDir.mkdirs();
@@ -359,7 +356,7 @@ public class BundlePublisher extends Publisher {
                 }
 
 
-                
+
                 // We will ignore symlinks
                 if(entry.isLink() || entry.isSymbolicLink()){
                   SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing symlink (or some non-file) inside a bundle"  );
@@ -386,7 +383,7 @@ public class BundlePublisher extends Publisher {
             }// while
             Logger.debug(BundlePublisher.class, "Untaring bundle finished");
         } catch (Exception e) {
-            throw new DotPublishingException(e.getMessage(),e);
+            throw new DotPublishingException("Exception untaring bundle: " + e.getMessage(),e);
 
         } finally { // close your streams
             if (inputStream != null) {

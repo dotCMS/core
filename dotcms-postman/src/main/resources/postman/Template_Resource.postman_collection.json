@@ -6346,7 +6346,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset Using Not Anonymous Template\",\n        \"url\": \"notAnonymousTemplatePage\",\n        \"friendlyName\":\"PageAsset Using not Anonymous Template\",\n        \"template\": \"{{notAnonymousTemplateId}}\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
+							"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset Using Not Anonymous Template\",\n        \"url\": \"notAnonymousTemplatePage\",\n        \"friendlyName\":\"PageAsset Using not Anonymous Template\",\n        \"template\": \"{{notAnonymousTemplateId}}\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"languageId\": \"{{defaultLanguageId}}\"\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -7524,7 +7524,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset Using File Template\",\n        \"url\": \"pageassetfiletemplate\",\n        \"friendlyName\":\"PageAsset Using File Template\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
+					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset Using File Template\",\n        \"url\": \"pageassetfiletemplate\",\n        \"friendlyName\":\"PageAsset Using File Template\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"languageId\": \"{{defaultLanguageId}}\"\n\t}\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -7551,6 +7551,56 @@
 				"description": "Creates a page successfully using the path of a template as a file as templateId"
 			},
 			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Resolve the default language id once per run with up to 3 retries and cache it",
+					"// as a collection variable. Guards against the cold-cache window where the lookup",
+					"// transiently returns nothing valid and a downstream contentlet save fails with",
+					"// fk_contentlet_lang. See issue #35780.",
+					"(function resolveDefaultLanguageId() {",
+					"    const existing = pm.collectionVariables.get('defaultLanguageId');",
+					"    if (existing && Number(existing) > 0) { return; }",
+					"    const host = (pm.environment.get('serverURL') || 'http://localhost:8080').replace(/\\/$/, '');",
+					"    const auth = 'Basic ' + Buffer.from('admin@dotcms.com:admin').toString('base64');",
+					"    const maxAttempts = 3;",
+					"    const attempt = (n) => {",
+					"        pm.sendRequest({",
+					"            url: host + '/api/v2/languages',",
+					"            method: 'GET',",
+					"            header: { 'Authorization': auth, 'Content-Type': 'application/json' }",
+					"        }, (err, res) => {",
+					"            let id = null;",
+					"            if (!err && res && res.code === 200) {",
+					"                try {",
+					"                    const body = res.json();",
+					"                    const list = Array.isArray(body) ? body",
+					"                        : (body && Array.isArray(body.entity)) ? body.entity",
+					"                        : Object.values(body || {});",
+					"                    const def = list.find(l => l && l.defaultLanguage === true && Number(l.id) > 0)",
+					"                             || list.find(l => l && Number(l.id) > 0);",
+					"                    if (def && Number(def.id) > 0) { id = Number(def.id); }",
+					"                } catch (e) { /* fall through to retry */ }",
+					"            }",
+					"            if (id !== null) {",
+					"                pm.collectionVariables.set('defaultLanguageId', id);",
+					"            } else if (n < maxAttempts) {",
+					"                attempt(n + 1);",
+					"            } else {",
+					"                console.warn('[Template_Resource] defaultLanguageId lookup failed after ' + maxAttempts + ' attempts; falling back to 1');",
+					"                pm.collectionVariables.set('defaultLanguageId', 1);",
+					"            }",
+					"        });",
+					"    };",
+					"    attempt(1);",
+					"})();"
+				]
+			}
 		}
 	],
 	"variable": [
@@ -7652,6 +7702,10 @@
 		},
 		{
 			"key": "notAnonymousPageId",
+			"value": ""
+		},
+		{
+			"key": "defaultLanguageId",
 			"value": ""
 		}
 	]

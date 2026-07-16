@@ -7,7 +7,8 @@ import {
     computed,
     inject,
     input,
-    OnDestroy
+    OnDestroy,
+    signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
@@ -19,15 +20,11 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
-import {
-    COMMENT_TINYMCE,
-    DEFAULT_TINYMCE_CONFIG
-} from '../../dot-edit-content-wysiwyg-field.constant';
+import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
 @Component({
     selector: 'dot-wysiwyg-tinymce',
-    standalone: true,
     imports: [EditorComponent, ReactiveFormsModule],
     templateUrl: './dot-wysiwyg-tinymce.component.html',
     styleUrl: './dot-wysiwyg-tinymce.component.scss',
@@ -53,6 +50,17 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      * Represents a required DotCMS content type field.
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    /**
+     * Whether the field has an error.
+     */
+    $hasError = input.required<boolean>({ alias: 'hasError' });
+
+    /**
+     * Whether the TinyMCE editor iframe currently has focus.
+     * Tracked via TinyMCE's focus/blur events because `:focus-within`
+     * does not propagate from iframes in Chrome.
+     */
+    $isFocused = signal(false);
 
     /**
      * A computed property that retrieves and parses custom TinyMCE properties that comes from
@@ -84,18 +92,6 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             ...this.$customPropsContentField(),
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
-                // TODO: Remove this when the content type saved by the user can preserve the selection
-                const ensureSingleComment = (content: string): string => {
-                    if (content.includes(COMMENT_TINYMCE)) {
-                        content = content.replace(new RegExp(COMMENT_TINYMCE, 'g'), '');
-                    }
-
-                    return COMMENT_TINYMCE + content;
-                };
-
-                editor.on('GetContent', (e) => {
-                    e.content = ensureSingleComment(e.content);
-                });
             }
         };
 
@@ -123,6 +119,8 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      */
     handleEditorInit(event: { editor: Editor }): void {
         this.#editor = event.editor;
+        this.#editor.on('focus', () => this.$isFocused.set(true));
+        this.#editor.on('blur', () => this.$isFocused.set(false));
     }
 
     ngOnDestroy(): void {

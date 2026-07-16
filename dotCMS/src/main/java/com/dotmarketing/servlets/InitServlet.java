@@ -1,11 +1,10 @@
 package com.dotmarketing.servlets;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotcms.util.GeoIp2CityDbUtil;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -20,7 +19,6 @@ import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.quartz.job.ShutdownHookThread;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -28,19 +26,11 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.util.ReleaseInfo;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
@@ -50,7 +40,6 @@ import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
@@ -102,7 +91,7 @@ public class InitServlet extends HttpServlet {
         new StartupLogger().log();
 
         //Check and start the ES Content Store
-        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
+        APILocator.getContentletIndexAPI().checkAndInitializeIndex();
         Logger.info(this, "");
 
         Logger.info(this, "");
@@ -141,30 +130,23 @@ public class InitServlet extends HttpServlet {
             throw new ServletException(e2.getMessage(), e2);
         }
 
-        //Adding the shutdown hook
-        Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
+        //Adding the shutdown hook - uses coordinated shutdown
+        // Register JVM shutdown hook that runs BEFORE Tomcat's shutdown sequence
+        // This ensures request draining happens before connectors are paused
+        registerEarlyShutdownHook();
+        Logger.info(InitServlet.class, "Startup completed - early shutdown hook registered");
 
-        /*
-         * Delete the files out of the temp dir (this gets huge)
-         */
 
-        deleteFiles(new File(SystemUtils.JAVA_IO_TMPDIR));
 
-        // runs the InitThread
-
-        InitThread it = new InitThread();
-        it.start();
 
         //Ensure the system host is in the system
         try {
             APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), false);
-        } catch (DotDataException e1) {
+        } catch (Exception e1) {
             Logger.fatal(InitServlet.class, e1.getMessage(), e1);
             throw new ServletException("Unable to initialize system host", e1);
-        } catch (DotSecurityException e) {
-            Logger.fatal(InitServlet.class, e.getMessage(), e);
-            throw new ServletException("Unable to initialize system host", e);
         }
+
         APILocator.getFolderAPI().findSystemFolder();
 
         // Create the GeoIP2 database reader on startup since it takes around 2
@@ -185,11 +167,7 @@ public class InitServlet extends HttpServlet {
             }
             Logger.info(this, "");
         }
-        
-        
-        
-        
-        
+
 
         /*
          * SHOULD BE LAST THING THAT HAPPENS
@@ -269,183 +247,166 @@ public class InitServlet extends HttpServlet {
         }
 
         Logger.info(this,"InitServlet init Completed");
-
-    }
-
-    protected void deleteFiles(java.io.File directory) {
-        if (directory.isDirectory()) {
-            // get all files for this directory
-            java.io.File[] files = directory.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                // deletes all files on the directory
-                ((java.io.File) files[i]).delete();
-            }
+        long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 300000);
+        if(runInitThread > 0) {
+            DotConcurrentFactory.getScheduledThreadPoolExecutor()
+                    .schedule(new InitRunner(), runInitThread, TimeUnit.MILLISECONDS);
         }
+
     }
+
 
     public static Date getStartupDate() {
         return startupDate;
     }
+    
+    /**
+     * Registers a signal handler that responds to SIGTERM before any shutdown hooks run.
+     * This ensures request draining happens before protocol handlers are paused.
+     */
+    private void registerEarlyShutdownHook() {
+        try {
+            // Register SIGTERM handler that runs before JVM shutdown hooks
+            sun.misc.Signal.handle(new sun.misc.Signal("TERM"), signal -> {
+                try {
+                    Logger.info(InitServlet.class, "SIGTERM signal received - starting coordinated shutdown");
+                    
+                    // Start coordinated shutdown immediately on SIGTERM, before log4j shuts down
+                    ShutdownCoordinator coordinator = ShutdownCoordinator.getInstance();
+                    boolean success = coordinator.shutdown();
+                    
+                    if (success) {
+                        Logger.info(InitServlet.class, "Signal-triggered coordinated shutdown completed successfully");
+                    } else {
+                        Logger.warn(InitServlet.class, "Signal-triggered coordinated shutdown completed with warnings");
+                    }
+                    
+                    // After our coordinated shutdown, allow normal JVM shutdown to proceed
+                    // This will trigger Tomcat's shutdown sequence and other shutdown hooks
+                    Logger.info(InitServlet.class, "Coordinated shutdown complete, allowing JVM shutdown to proceed");
+                    
+                    // Force JVM exit after coordinated shutdown to prevent component reinitialization
+                    // This ensures the container actually stops instead of hanging
+                    try {
+                        Thread.sleep(1000); // Give log messages time to flush
+                        
+                        // Log active threads before exit for debugging
+                        logActiveThreads();
+                        
+                        Logger.info(InitServlet.class, "Exiting JVM to complete container shutdown");
+                        // Use halt() to prevent shutdown hooks from reinitializing components that were already shut down
+                        Runtime.getRuntime().halt(0);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        Runtime.getRuntime().halt(0);
+                    }
+                    
+                } catch (Exception e) {
+                    Logger.error(InitServlet.class, "Error in SIGTERM signal handler: " + e.getMessage(), e);
+                    // Use System.err as fallback since Logger may become unavailable
+                    System.err.println("Error in SIGTERM signal handler: " + e.getMessage());
+                    e.printStackTrace();
+                    // Force immediate halt on error (keep halt for error cases)
+                    Runtime.getRuntime().halt(1);
+                }
+            });
+            
+            // Also register SIGINT handler for graceful shutdown during development (Ctrl+C)
+            sun.misc.Signal.handle(new sun.misc.Signal("INT"), signal -> {
+                try {
+                    Logger.info(InitServlet.class, "SIGINT signal received - starting coordinated shutdown");
+                    
+                    ShutdownCoordinator coordinator = ShutdownCoordinator.getInstance();
+                    boolean success = coordinator.shutdown();
+                    
+                    if (success) {
+                        Logger.info(InitServlet.class, "SIGINT-triggered coordinated shutdown completed successfully");
+                    } else {
+                        Logger.warn(InitServlet.class, "SIGINT-triggered coordinated shutdown completed with warnings");
+                    }
+                    
+                    Logger.info(InitServlet.class, "Coordinated shutdown complete, allowing JVM shutdown to proceed");
+                    
+                    // Force JVM exit after coordinated shutdown to prevent component reinitialization
+                    try {
+                        Thread.sleep(1000); // Give log messages time to flush
+                        
+                        // Log active threads before exit for debugging
+                        logActiveThreads();
+                        
+                        Logger.info(InitServlet.class, "Exiting JVM to complete container shutdown");
+                        // Use halt() to prevent shutdown hooks from reinitializing components that were already shut down
+                        Runtime.getRuntime().halt(0);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        Runtime.getRuntime().halt(0);
+                    }
+                    
+                } catch (Exception e) {
+                    Logger.error(InitServlet.class, "Error in SIGINT signal handler: " + e.getMessage(), e);
+                    System.err.println("Error in SIGINT signal handler: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+            
+            Logger.info(InitServlet.class, "Signal handlers registered for SIGTERM and SIGINT");
+            
+        } catch (Exception e) {
+            Logger.warn(InitServlet.class, "Failed to register signal handlers, falling back to shutdown hook: " + e.getMessage());
+            
+            // Fallback to shutdown hook if signal handling fails
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    Logger.info(InitServlet.class, "Fallback shutdown hook triggered - starting coordinated shutdown");
+                    
+                    ShutdownCoordinator coordinator = ShutdownCoordinator.getInstance();
+                    boolean success = coordinator.shutdown();
+                    
+                    if (success) {
+                        Logger.info(InitServlet.class, "Fallback coordinated shutdown completed successfully");
+                    } else {
+                        Logger.warn(InitServlet.class, "Fallback coordinated shutdown completed with warnings");
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Error in fallback shutdown hook: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            }, "dotcms-fallback-shutdown-hook"));
+        }
+    }
+
 
     /**
-     *
-     * @author will
-     * This thread will fire and send host ids to dotcms.com for internal
-     * corporate information (we are dying to know who is using dotCMS!).
-     * This can be turned off by setting RUN_INIT_THREAD=0 in the config
-     *
+     * Logs information about active threads for debugging shutdown issues
      */
-
-    private class InitThread extends Thread {
-
-        @CloseDBIfOpened
-        public void run() {
-            try {
-                long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 6000);
-                if(runInitThread<1){return;}
-
-                Thread.sleep(runInitThread);
-            } catch (InterruptedException e) {
-                Logger.debug(this,e.getMessage(),e);
+    private static void logActiveThreads() {
+        try {
+            ThreadGroup rootGroup = Thread.currentThread().getThreadGroup();
+            ThreadGroup parentGroup;
+            while ((parentGroup = rootGroup.getParent()) != null) {
+                rootGroup = parentGroup;
             }
-            String address = null;
-            String hostname = "unknown";
-            try {
-                InetAddress addr = InetAddress.getLocalHost();
-                // Get IP Address
-                byte[] ipAddr = addr.getAddress();
-                addr = InetAddress.getByAddress(ipAddr);
-                address = addr.getHostAddress();
-                // Get hostname
-                hostname = addr.getHostName();
-            } catch (Exception e) {
-                Logger.debug(this, "InitThread broke:", e);
+            
+            Thread[] threads = new Thread[rootGroup.activeCount()];
+            int count = rootGroup.enumerate(threads);
+            
+            Logger.debug(InitServlet.class, "=== ACTIVE THREADS BEFORE JVM EXIT (" + count + " threads) ===");
+            
+            for (int i = 0; i < count; i++) {
+                Thread thread = threads[i];
+                if (thread != null) {
+                    Logger.debug(InitServlet.class, String.format("Thread: %s | State: %s | Daemon: %s | Alive: %s", 
+                        thread.getName(), 
+                        thread.getState(), 
+                        thread.isDaemon(), 
+                        thread.isAlive()));
+                }
             }
-            try{
-
-                HostAPI hostAPI = APILocator.getHostAPI();
-                String defaultHost = hostAPI.findDefaultHost(APILocator.getUserAPI().getSystemUser(), false).getHostname();
-                StringBuilder sb = new StringBuilder();
-                List<Host> hosts = hostAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
-                for (Host h : hosts) {
-                    if(!"System Host".equals(h.getHostname())){
-                        sb.append(h.getHostname() + "\r\n");
-                    }
-                    if (UtilMethods.isSet(h.getAliases())) {
-                        String[] x = h.getAliases().split("\\n|\\r");
-                        for(String y : x){
-                            if(UtilMethods.isSet(y) && !y.contains("dotcms.com") || !"host".equals(y)){
-                                sb.append(y + "\r\n");
-                            }
-                        }
-                    }
-                }
-
-                // Construct data
-                StringBuilder data = new StringBuilder();
-                data.append(URLEncoder.encode("ipAddr", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(address, "UTF-8"));
-                data.append("&");
-                data.append(URLEncoder.encode("hostname", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(hostname, "UTF-8"));
-                data.append("&");
-                data.append(URLEncoder.encode("defaultHost", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(defaultHost, "UTF-8"));
-                data.append("&");
-                data.append(URLEncoder.encode("allHosts", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(sb.toString(), "UTF-8"));
-                data.append("&");
-                data.append(URLEncoder.encode("version", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(ReleaseInfo.getReleaseInfo(), "UTF-8"));
-                data.append("&");
-                data.append(URLEncoder.encode("build", "UTF-8"));
-                data.append("=");
-                if(UtilMethods.isSet(System.getProperty(WebKeys.DOTCMS_STARTUP_TIME))){
-                    data.append("&");
-                    data.append(URLEncoder.encode("startupTime", "UTF-8"));
-                    data.append("=");
-                    data.append(URLEncoder.encode(System.getProperty(WebKeys.DOTCMS_STARTUP_TIME), "UTF-8"));
-                }
-                data.append("&");
-                data.append(URLEncoder.encode("serverId", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getDisplayServerId()), "UTF-8"));
-                data.append("&");
-
-                data.append(URLEncoder.encode("licenseId", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getSerial()), "UTF-8"));
-                data.append("&");
-
-                data.append(URLEncoder.encode("licenseLevel", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getLevel()), "UTF-8"));
-                data.append("&");
-
-                if(UtilMethods.isSet(LicenseUtil.getValidUntil())){
-                    data.append(URLEncoder.encode("licenseValid", "UTF-8"));
-                    data.append("=");
-                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil()), StandardCharsets.UTF_8));
-                    data.append("&");
-                }
-                data.append(URLEncoder.encode("perpetual", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.isPerpetual()), "UTF-8"));
-                data.append("&");
-                data.append(URLEncoder.encode("stName", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode("DotcmsStartup", "UTF-8"));
-                data.append("&");
-                data.append(URLEncoder.encode("clientName", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getClientName()), "UTF-8"));
-                data.append("&");
-
-                data.append(URLEncoder.encode("hostfolder", "UTF-8"));
-                data.append("=");
-                data.append(URLEncoder.encode("dotcms.com:/private", "UTF-8"));
-                data.append("&");
-
-                String portalUrl = Config.getStringProperty("DOTCMS_PORTAL_URL", "dotcms.com");
-                String portalUrlProtocol = Config.getStringProperty("DOTCMS_PORTAL_URL_PROTOCOL", "https");
-                String portalUrlUri = Config.getStringProperty("DOTCMS_PORTAL_URL_URI", "/api/content/save/1");
-
-                // Send data
-
-                sb = new StringBuilder();
-                sb.append(portalUrlProtocol + "://" + portalUrl + portalUrlUri);
-                URL url = new URL(sb.toString());
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("PUT");
-                conn.setDoOutput(true);
-                conn.setDoInput(true);
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setUseCaches(false);
-                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-                conn.setRequestProperty("DOTAUTH", "bGljZW5zZXJlcXVlc3RAZG90Y21zLmNvbTpKbnM0QHdAOCZM");
-
-                DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-                wr.writeBytes(data.toString());
-                wr.flush();
-                wr.close();
-                DataInputStream input = new DataInputStream(conn.getInputStream());
-                input.close();
-
-
-            } catch (UnknownHostException e) {
-                Logger.debug(this, "Unable to get Hostname", e);
-            } catch (Exception e) {
-                Logger.debug(this, "InitThread broke:", e);
-            }
+            
+            Logger.debug(InitServlet.class, "=== END ACTIVE THREADS ===");
+        } catch (Exception e) {
+            Logger.warn(InitServlet.class, "Failed to log active threads: " + e.getMessage());
         }
-
     }
 
 }

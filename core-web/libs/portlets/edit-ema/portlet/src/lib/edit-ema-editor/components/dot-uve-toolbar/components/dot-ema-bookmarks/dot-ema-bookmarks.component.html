@@ -1,8 +1,9 @@
 <p-button
-    [pTooltip]="'editpage.toolbar.bookmark' | dm"
     tooltipPosition="bottom"
-    styleClass="p-button-text p-button-sm p-button-rounded"
-    (click)="toggleBookmark()"
+    [pTooltip]="'editpage.toolbar.bookmark' | dm"
+    [text]="true"
+    [rounded]="true"
     [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
     [loading]="loading()"
+    (click)="toggleBookmark()"
     data-testId="bookmark-button" />

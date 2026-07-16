@@ -2,6 +2,8 @@ package com.dotmarketing.util.importer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
@@ -31,6 +33,7 @@ public interface AbstractImportResult extends Serializable {
      *
      * @return the content type name as a string
      */
+    @JsonInclude(Include.NON_EMPTY)
     String contentTypeName();
 
     /**
@@ -38,6 +41,7 @@ public interface AbstractImportResult extends Serializable {
      *
      * @return a String representing the variable name for the content type
      */
+    @JsonInclude(Include.NON_EMPTY)
     String contentTypeVariableName();
 
     /**
@@ -45,6 +49,7 @@ public interface AbstractImportResult extends Serializable {
      *
      * @return a string representing the workflow action ID
      */
+    @JsonInclude(Include.NON_EMPTY)
     Optional<String> workflowActionId();
 
     /**
@@ -58,13 +63,15 @@ public interface AbstractImportResult extends Serializable {
     /**
      * @return Information about the processed import file
      */
+    @JsonInclude(Include.NON_EMPTY)
     @JsonProperty("file")
-    FileInfo fileInfo();
+    Optional<FileInfo> fileInfo();
 
     /**
      * @return Results of the data processing operation
      */
-    ResultData data();
+    @JsonInclude(Include.NON_EMPTY)
+    Optional<ResultData> data();
 
     /**
      * Retrieves a list of validation messages, typically representing potential issues or
@@ -98,6 +105,14 @@ public interface AbstractImportResult extends Serializable {
      */
     @JsonIgnore
     Optional<String> lastInode();
+
+    /**
+     * Retrieves the flag indicating if the process stopped because an error was found and the configuration
+     * @return an {@code Optional<Integer>} representing the last line were the error occurred or an empty
+     * Optional empty if no error occurred or if
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    Optional<Integer> stoppedOnErrorAtLine();
 
     /**
      * Represents the type of operation being performed during an import process. This enum is used

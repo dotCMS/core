@@ -36,6 +36,8 @@ public class ConfigTestHelper extends Config {
     public static void _setupFakeTestingContext() throws Exception {
         // if we need a fake ServletContext
         if (CONTEXT == null) {
+            // make sure the tmp dir is there before running
+            new File(System.getProperty("java.io.tmpdir")).mkdirs();
             ServletContext context = Mockito.mock(ServletContext.class);
             Mockito.when(context.getInitParameter("company_id")).thenReturn("dotcms.org");
 
@@ -48,8 +50,7 @@ public class ConfigTestHelper extends Config {
             WebAppPool.put("dotcms.org", Globals.MESSAGES_KEY, messages);
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
-            // make sure the tmp dir is there before running
-            new File(System.getProperty("java.io.tmpdir")).mkdirs();
+
             final String topPath = Files.createTempDirectory("config_test_helper").toAbsolutePath().toString();
 
             final String velocityPath = VelocityUtil.getVelocityRootPath();

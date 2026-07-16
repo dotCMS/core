@@ -1,5 +1,3 @@
-import { Params } from '@angular/router';
-
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -7,33 +5,187 @@ import {
     DotContainerMap,
     DotDevice,
     DotExperiment,
-    DotExperimentStatus,
-    DotPageContainerStructure,
-    VanityUrl
+    DotExperimentStatus
 } from '@dotcms/dotcms-models';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSURLContentMap,
+    DotCMSVanityUrl,
+    DotCMSViewAsPersona
+} from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
-import {
-    BASE_IFRAME_MEASURE_UNIT,
-    COMMON_ERRORS,
-    DEFAULT_PERSONA,
-    PERSONA_KEY
-} from '../shared/consts';
-import { EDITOR_STATE } from '../shared/enums';
+import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
+import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
     ContentletDragPayload,
     ContentTypeDragPayload,
-    DotPage,
     DotPageAssetParams,
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
-import { Orientation } from '../store/models';
+import { IframeAccessMode, Orientation } from '../store/models';
 
-export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
+/**
+ * Builds a `<base>` href from a page URI.
+ *
+ * Example:
+ * - pageURI: `/about-us/index`
+ * - origin: `https://example.com`
+ * => `https://example.com/about-us/`
+ */
+export function getBaseHrefFromPageURI(pageURI: string, origin: string): string {
+    try {
+        const parsedUrl = new URL(pageURI, origin);
+        const pathnameParts = parsedUrl.pathname.split('/');
+
+        // Remove last segment (page name) to keep the directory as base
+        if (pathnameParts.length > 1) {
+            pathnameParts.pop();
+        }
+
+        const basePath = pathnameParts.join('/') || '/';
+        const normalizedBasePath = basePath.endsWith('/') ? basePath : basePath + '/';
+
+        return parsedUrl.origin + normalizedBasePath;
+    } catch {
+        // If URL parsing fails (malformed input), fall back to a safe base.
+        // `origin` is expected to be a valid origin string (e.g. window.location.origin),
+        // but we guard it anyway.
+        try {
+            return new URL(origin).origin + '/';
+        } catch {
+            return '/';
+        }
+    }
+}
+
+export function getIframeAccessMode(
+    clientHost?: string,
+    currentOrigin = window.location.origin
+): IframeAccessMode {
+    if (!clientHost) {
+        return IframeAccessMode.LOCAL;
+    }
+
+    try {
+        return new URL(clientHost, currentOrigin).origin === new URL(currentOrigin).origin
+            ? IframeAccessMode.LOCAL
+            : IframeAccessMode.CROSS_ORIGIN;
+    } catch {
+        return IframeAccessMode.CROSS_ORIGIN;
+    }
+}
+
+/**
+ * Escapes a string for safe interpolation inside a double-quoted HTML attribute value.
+ *
+ * Note: Even if a value is a valid URL, it may still contain HTML-sensitive characters
+ * (or become unsafe if the upstream normalization changes). This is a defense-in-depth
+ * helper for string-based HTML injection use-cases.
+ */
+export function escapeHtmlAttributeValue(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * Returns the resolved (absolute) href from a click target.
+ *
+ * - If the click happens on an `<a>`, returns `a.href`
+ * - If the click happens inside an `<a>` (e.g. `<img>` inside `<a>`), returns `closest('a').href`
+ *
+ * IMPORTANT: Uses the resolved `href` (respects `<base>`) rather than `getAttribute('href')`.
+ *
+ * This helper is intentionally tolerant of test doubles (plain objects) that expose `href` and `closest`.
+ */
+export function getHrefFromClickTarget(target: EventTarget | null): string | null {
+    const maybeTarget = target as unknown as {
+        href?: string | null;
+        closest?: (selector: string) => { href?: string | null } | null;
+    } | null;
+
+    if (!maybeTarget) {
+        return null;
+    }
+
+    if (maybeTarget.href) {
+        return maybeTarget.href;
+    }
+
+    return maybeTarget.closest?.('a')?.href ?? null;
+}
+
+/**
+ * Ensure the rendered HTML has a `<base>` tag so relative links resolve properly inside iframes.
+ *
+ * If a `<base>` tag already exists, this is a no-op.
+ */
+export type InjectBaseTagData = {
+    html: string;
+    url: string;
+    origin: string;
+};
+
+function hasRealBaseTag(html: string): boolean {
+    // Ignore <base> that appears inside HTML comments or CDATA blocks
+    // so we don't mistakenly treat it as an actual tag in the document.
+    const withoutCommentsAndCdata = html
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
+
+    return /<base\b/i.test(withoutCommentsAndCdata);
+}
+
+/**
+ * Injects a `<base>` tag into the HTML if it is missing.
+ *
+ * @param {InjectBaseTagData} data - The data to inject the base tag into.
+ * @return {string} The HTML with the base tag injected.
+ */
+export function injectBaseTag({ html, url, origin }: InjectBaseTagData): string {
+    if (!html || !url || !origin || hasRealBaseTag(html)) {
+        return html;
+    }
+
+    const baseHref = getBaseHrefFromPageURI(url, origin);
+    const baseTag = `<base href="${escapeHtmlAttributeValue(baseHref)}">`;
+
+    // Prefer placing `<base>` inside an existing `<head>` (right after the opening tag)
+    // This avoids accidentally matching `</head>` that could appear in comments or strings.
+    const headOpenMatch = html.match(/<head[^>]*>/i)?.[0];
+    if (headOpenMatch) {
+        return html.replace(headOpenMatch, headOpenMatch + baseTag);
+    }
+
+    // Fallback: if there is a closing head but we couldn't find an opening head tag.
+    // Use a case-insensitive match for `</head>` and only replace the first occurrence.
+    const headCloseMatch = html.match(/<\/head\s*>/i)?.[0];
+    if (headCloseMatch) {
+        return html.replace(headCloseMatch, baseTag + headCloseMatch);
+    }
+
+    // Fallbacks for advanced templates (may not include head/body tags)
+    const htmlOpenMatch = html.match(/<html[^>]*>/i)?.[0];
+    if (htmlOpenMatch) {
+        return html.replace(htmlOpenMatch, htmlOpenMatch + `<head>${baseTag}</head>`);
+    }
+
+    const bodyOpenMatch = html.match(/<body[^>]*>/i)?.[0];
+    if (bodyOpenMatch) {
+        return html.replace(bodyOpenMatch, `<head>${baseTag}</head>` + bodyOpenMatch);
+    }
+
+    return `<head>${baseTag}</head>` + html;
+}
 
 const REORDER_MENU_BASE_URL =
     'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
@@ -54,25 +206,54 @@ export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 export function insertContentletInContainer(action: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
 
     let didInsert = false;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, personaTag, newContentletId } = action;
 
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
+
     const newPageContainers = pageContainers.map((pageContainer) => {
-        if (
-            areContainersEquals(pageContainer, container) &&
-            !pageContainer.contentletsId.includes(newContentletId)
-        ) {
+        if (areContainersEquals(pageContainer, container)) {
+            // Check if content already exists (duplicate)
+            if (pageContainer.contentletsId.includes(newContentletId)) {
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
+                return pageContainer;
+            }
+
+            // Validate container limit before adding
+            const maxContentlets = container.maxContentlets;
+            if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
+                // Container is at or over its limit, don't add
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+                return pageContainer;
+            }
+
             pageContainer.contentletsId.push(newContentletId);
             didInsert = true;
         }
@@ -84,7 +265,8 @@ export function insertContentletInContainer(action: ActionPayload): {
 
     return {
         pageContainers: newPageContainers,
-        didInsert
+        didInsert,
+        errorCode
     };
 }
 
@@ -102,6 +284,21 @@ export function deleteContentletFromContainer(action: ActionPayload): {
     const { pageContainers, container, contentlet, personaTag } = action;
 
     let contentletsId = [];
+
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
 
     const newPageContainers = pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
@@ -155,22 +352,51 @@ export function areContainersEquals(
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 function insertPositionedContentletInContainer(payload: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     let didInsert = false;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
 
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
+
     const newPageContainers = pageContainers.map((pageContainer) => {
-        if (
-            areContainersEquals(pageContainer, container) &&
-            !pageContainer.contentletsId.includes(newContentletId)
-        ) {
+        if (areContainersEquals(pageContainer, container)) {
+            // Check if content already exists (duplicate)
+            if (pageContainer.contentletsId.includes(newContentletId)) {
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
+                return pageContainer;
+            }
+
+            // Validate container limit before adding
+            const maxContentlets = container.maxContentlets;
+            if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
+                // Container is at or over its limit, don't add
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+                return pageContainer;
+            }
+
             const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
 
             if (index !== -1) {
@@ -191,33 +417,34 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 
     return {
         pageContainers: newPageContainers,
-        didInsert
+        didInsert,
+        errorCode
     };
 }
 
 /**
- * Sanitizes a URL by:
- * 1. Removing extra leading/trailing slashes
- * 2. Preserving 'index' in the URL path
- *
- * @param {string} url
- * @return {*}  {string}
+ * Sanitizes a URL by removing query parameters and cleaning up multiple slashes
+ * @param url The URL to sanitize
+ * @returns The sanitized URL path
  */
 export function sanitizeURL(url?: string): string {
     if (!url || url === '/') {
         return '/';
     }
 
-    return url.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
+    // Remove query params if present
+    const path = url.split('?')[0];
+
+    return path.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
 }
 
 /**
  * Get the personalization for the contentlet
  *
- * @param {Record<string, string>} persona
+ * @param {DotCMSViewAsPersona} persona
  * @return {*}
  */
-export const getPersonalization = (persona: Record<string, string>) => {
+export const getPersonalization = (persona: DotCMSViewAsPersona) => {
     if (!persona || (!persona.contentType && !persona.keyTag)) {
         return `dot:default`;
     }
@@ -321,11 +548,21 @@ export function getIsDefaultVariant(variant?: string): boolean {
  * Check if the param is a forward or page
  *
  * @export
- * @param {VanityUrl} vanityUrl
+ * @param {DotCMSVanityUrl} vanityUrl
  * @return {*}
  */
-export function isForwardOrPage(vanityUrl?: VanityUrl): boolean {
-    return !vanityUrl || (!vanityUrl.permanentRedirect && !vanityUrl.temporaryRedirect);
+export function isForwardOrPage(vanityUrl?: DotCMSVanityUrl): boolean {
+    if (!vanityUrl) {
+        return true;
+    }
+
+    const pageAPIPropsExist = 'permanentRedirect' in vanityUrl && 'temporaryRedirect' in vanityUrl;
+
+    if (pageAPIPropsExist) {
+        return !vanityUrl?.permanentRedirect && !vanityUrl?.temporaryRedirect;
+    }
+
+    return vanityUrl?.action === 200 || vanityUrl?.response === 200; // GraphQL API returns 200 for forward
 }
 
 /**
@@ -377,13 +614,12 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
         paramsCopy['host_id'] = siteId;
     }
 
-    const clientHost = paramsCopy?.clientHost ?? window.location.origin;
+    const clientHost = paramsCopy?.clientHost || window.location.origin;
     const url = paramsCopy?.url;
 
     // Clean the params that are not needed for the page
     delete paramsCopy?.clientHost;
     delete paramsCopy?.url;
-    delete paramsCopy?.mode;
 
     const searchParams = new URLSearchParams(paramsCopy);
 
@@ -393,52 +629,83 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
 }
 
 /**
- * Check if the page can be edited
+ * Checks if a page is locked by a different user (not the current user).
  *
- * @export
- * @param {DotPage} page
- * @param {CurrentUser} currentUser
- * @param {DotExperiment} [experiment]
- * @return {*}  {boolean}
+ * @param {DotCMSPage} page - The page to check
+ * @param {CurrentUser} currentUser - The current user
+ * @return {boolean} True if page is locked by another user
+ */
+export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUser): boolean {
+    return !!page?.locked && page?.lockedBy !== currentUser?.userId;
+}
+
+/**
+ * Checks if the page is locked.
+ *
+ * With feature flag enabled: Returns true if page is locked by ANY user
+ * With feature flag disabled: Returns true if page is locked by ANOTHER user
+ *
+ * @param {DotCMSPage} page - The page to check
+ * @param {CurrentUser} currentUser - The current user
+ * @return {boolean} True if page is considered locked based on feature flag
+ */
+export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
+    // This is the legacy behavior, only show "locked" button if it is locked by another user
+    const isLocked = isPageLockedByOtherUser(page, currentUser);
+    return isLocked;
+}
+
+/**
+ * Determines if the current user can edit the page.
+ *
+ * Editing is allowed when ALL of the following are true:
+ * - User has edit permission on the page
+ * - Page is not locked (or locked by current user with feature flag enabled)
+ * - No experiment is running or scheduled
+ *
+ * @param {DotCMSPage} page - The page to check
+ * @param {CurrentUser} currentUser - The current user
+ * @param {DotExperiment} [experiment] - Optional experiment data
+ * @param {boolean} [isFeatureFlagEnabled=false] - Whether the lock toggle feature is enabled
+ * @return {boolean} True if user can edit the page
  */
 export function computeCanEditPage(
-    page: DotPage,
+    page: DotCMSPage,
     currentUser: CurrentUser,
-    experiment?: DotExperiment
+    experiment?: DotExperiment,
+    isFeatureFlagEnabled = false
 ): boolean {
-    const pageCanBeEdited = page.canEdit;
+    const hasEditPermission = !!page?.canEdit;
 
-    const isLocked = computePageIsLocked(page, currentUser);
-
-    const editingBlockedByExperiment = [
+    const isBlockedByExperiment = [
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.SCHEDULED
     ].includes(experiment?.status);
 
-    return !!pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
-}
+    if (!hasEditPermission || isBlockedByExperiment) {
+        return false;
+    }
 
-/**
- * Check if the page is locked
- *
- * @export
- * @param {DotPage} page
- * @param {CurrentUser} currentUser
- * @return {*}
- */
-export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): boolean {
-    return !!page?.locked && page?.lockedBy !== currentUser?.userId;
+    if (isFeatureFlagEnabled) {
+        // Always can access to Draft mode (edit) if feature flag is enabled
+        return true;
+    }
+
+    // Legacy behavior: user can access to Draft mode (edit) if page is not locked by another user
+    const isLocked = computeIsPageLocked(page, currentUser);
+    // If the page is locked, the user cannot access to Draft mode (edit)
+    return !isLocked;
 }
 
 /**
  * Map the containerStructure to a DotContainerMap
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  * @return {*}  {DotContainerMap}
  */
 export function mapContainerStructureToDotContainerMap(
-    containers: DotPageContainerStructure
+    containers: DotCMSPageAssetContainers
 ): DotContainerMap {
     return Object.keys(containers).reduce((acc, id) => {
         acc[id] = containers[id].container;
@@ -448,12 +715,48 @@ export function mapContainerStructureToDotContainerMap(
 }
 
 /**
+ * Returns a global "set-like" record of all unique `contentTypeVar` values found in the given
+ * page asset containers object.
+ *
+ * - Scans only `containerStructures[*].contentTypeVar`
+ * - Skips missing/empty values
+ * - Does not normalize
+ */
+export function getContentTypeVarRecord(
+    containers: DotCMSPageAssetContainers | null | undefined
+): Record<string, true> {
+    const out: Record<string, true> = {};
+
+    if (!containers) {
+        return out;
+    }
+
+    for (const key in containers) {
+        const containerEntry = containers[key];
+        const structures = containerEntry?.containerStructures;
+
+        if (!Array.isArray(structures) || structures.length === 0) {
+            continue;
+        }
+
+        for (let i = 0; i < structures.length; i++) {
+            const contentTypeVar = structures[i]?.contentTypeVar;
+            if (typeof contentTypeVar === 'string' && contentTypeVar.length > 0) {
+                out[contentTypeVar] = true;
+            }
+        }
+    }
+
+    return out;
+}
+
+/**
  * Map the containerStructure to an array
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  */
-export const mapContainerStructureToArrayOfContainers = (containers: DotPageContainerStructure) => {
+export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageAssetContainers) => {
     return Object.keys(containers).reduce(
         (
             acc: {
@@ -484,15 +787,38 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotPageCont
 };
 
 /**
- * Get the host name for the request
+ * Resolve the host that scanner/SEO requests should target.
+ *
+ * Order: explicit `clientHost` (headless), then the page's own site hostname
+ * (traditional pages), falling back to the admin origin.
  *
  * @export
- * @param {boolean} isTraditionalPage
- * @param {DotPageApiParams} params
+ * @param {DotPageApiParams} params       page API params (may carry `clientHost` for headless)
+ * @param {string} [pageHostname]         site hostname from the page asset
+ *                                        (e.g. "siteb.example.com" or "https://siteb.example.com")
  * @return {*}  {string}
  */
-export const getRequestHostName = (params: DotPageApiParams) => {
-    return params?.clientHost || window.location.origin;
+export const getRequestHostName = (params: DotPageApiParams, pageHostname?: string) => {
+    if (params?.clientHost) {
+        return params.clientHost;
+    }
+
+    if (pageHostname) {
+        try {
+            return new URL(pageHostname).origin;
+        } catch {
+            // Hostname can be provided without scheme (e.g. "siteb.example.com").
+            // Drop anything after the host (path/trailing slash) so the result stays
+            // a clean origin — it is later concatenated with the page path.
+            // Protocol is assumed from the admin origin; an HTTP-only content site
+            // reached from an HTTPS admin would still be requested over HTTPS.
+            const host = pageHostname.split('/')[0];
+
+            return `${window.location.protocol}//${host}`;
+        }
+    }
+
+    return window.location.origin;
 };
 
 /**
@@ -507,17 +833,6 @@ export const getErrorPayload = (errorCode: number) =>
               pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
           }
         : null;
-
-/**
- * Get the editor states
- * @param state
- * @returns {{isDragging: boolean; dragIsActive: boolean; isScrolling: boolean}}
- */
-export const getEditorStates = (state: EDITOR_STATE) => ({
-    isDragging: state === EDITOR_STATE.DRAGGING,
-    dragIsActive: state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG,
-    isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING
-});
 
 /**
  * Compare two URL paths
@@ -572,7 +887,7 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
                 move
             } as ContentletDragPayload
         };
-    } catch (error) {
+    } catch {
         // It can fail if the data.item is not a valid JSON
         // In that case, we are draging an invalid element from the window
         return null;
@@ -647,25 +962,6 @@ export const checkClientHostAccess = (
 };
 
 /**
- * Retrieve the page params from the router query params
- *
- * @export
- * @param {Params} params
- * @return {*}  {DotPageApiParams}
- */
-export function getAllowedPageParams(params: Params): DotPageAssetParams {
-    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
-
-    return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
-        .reduce((obj, key) => {
-            obj[key] = params[key];
-
-            return obj;
-        }, {}) as DotPageAssetParams;
-}
-
-/**
  * Determines the target URL for navigation.
  *
  * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
@@ -676,7 +972,7 @@ export function getAllowedPageParams(params: Params): DotPageAssetParams {
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSContentlet
+    urlContentMap: DotCMSURLContentMap
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
@@ -715,21 +1011,25 @@ export const getOrientation = (device: DotDevice): Orientation => {
         : Orientation.LANDSCAPE;
 };
 
-export const getWrapperMeasures = (
-    device: DotDevice,
-    orientation?: Orientation
-): { width: string; height: string } => {
-    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+/**
+ * Measure the canvas viewport's content area (excluding its CSS padding and
+ * the row's left/right gutter elements). The result is what fits the iframe
+ * in responsive mode: the on-screen budget the user's iframe is clamped to.
+ *
+ * Returns null when the element is detached or measures zero in either axis,
+ * so callers can early-return before pushing a degenerate size to the store.
+ */
+export const measureCanvasAvailableSize = (
+    el: HTMLElement
+): { width: number; height: number } | null => {
+    const styles = getComputedStyle(el);
+    const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+    const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
 
-    return orientation === Orientation.LANDSCAPE
-        ? {
-              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          }
-        : {
-              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          };
+    const width = el.clientWidth - padX;
+    const height = el.clientHeight - padY;
+
+    return width > 0 && height > 0 ? { width, height } : null;
 };
 
 /**
@@ -744,4 +1044,127 @@ export const cleanPageURL = (url: string) => {
     return url
         .replace(/^\/*(.*?)(\/+)?$/, '$1$2') // Capture content and optional trailing slash
         .replace(/\/+/g, '/'); // Clean up any remaining multiple slashes
+};
+
+/**
+ * Converts a Date object to an ISO 8601 string in UTC, preserving the local time
+ * but expressing it in UTC timezone.
+ * @param {Date} date - Reference Date object
+ * @param {boolean} [includeMilliseconds=false] - If true, includes milliseconds
+ * @returns {string} String in ISO 8601 format with the date in UTC
+ */
+export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) => {
+    // Normalize to a Date (handles date-like objects from other realms, e.g. in tests)
+    let normalizedDate: Date;
+    if (date instanceof Date) {
+        normalizedDate = date;
+    } else if (date != null && typeof (date as { getTime?: () => number }).getTime === 'function') {
+        const time = (date as { getTime: () => number }).getTime();
+        normalizedDate = Number.isFinite(time) ? new Date(time) : new Date();
+    } else {
+        throw new Error('Parameter must be a Date object');
+    }
+    if (Number.isNaN(normalizedDate.getTime())) {
+        normalizedDate = new Date();
+    }
+
+    // Extract local time from the date
+    const hours = normalizedDate.getHours();
+    const minutes = normalizedDate.getMinutes();
+    const seconds = normalizedDate.getSeconds();
+    const milliseconds = normalizedDate.getMilliseconds();
+
+    // Create new UTC date with the same local date and time
+    const utcDate = new Date(
+        Date.UTC(
+            normalizedDate.getFullYear(),
+            normalizedDate.getMonth(),
+            normalizedDate.getDate(),
+            hours,
+            minutes,
+            seconds,
+            includeMilliseconds ? milliseconds : 0
+        )
+    );
+
+    // Return in ISO 8601 format
+    const isoString = utcDate.toISOString();
+
+    // Optionally remove milliseconds
+    return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
+};
+
+/**
+ * Converts a Date object (representing a UTC time) to a Local Date object
+ * where the Local time matches the UTC time of the input.
+ * This is the inverse of convertLocalTimeToUTC.
+ * @param {Date} date - Reference Date object (treated as UTC)
+ * @returns {Date} Date object where Local time matches input's UTC time
+ */
+export const convertUTCToLocalTime = (date: Date) => {
+    if (!(date instanceof Date)) {
+        throw new Error('Parameter must be a Date object');
+    }
+
+    return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+        date.getUTCMilliseconds()
+    );
+};
+
+export const removeUndefinedValues = (params: DotPageAssetParams) => {
+    return Object.fromEntries(Object.entries(params).filter(([_, value]) => value !== undefined));
+};
+
+/**
+ * Convert the client params to the page params
+ *
+ * @param {*} params
+ * @return {*}
+ */
+export const convertClientParamsToPageParams = (params) => {
+    if (!params) {
+        return null;
+    }
+
+    const { personaId, languageId, ...rest } = params;
+    const pageParams = {
+        ...rest,
+        [PERSONA_KEY]: personaId,
+        language_id: languageId
+    };
+
+    return removeUndefinedValues(pageParams);
+};
+
+/**
+ * Checks if a URL targets the same pathname as the current page (any hash or query change).
+ *
+ * These navigations should be handled by the browser/client naturally and should not
+ * trigger a full page reload in the editor.
+ *
+ * @param {string} incomingUrl - The URL to check (e.g., '#section', '/page?tab=2', '/other-page')
+ * @param {string} currentUrl - The current page URL for comparison
+ * @returns {boolean} True when resolved `URL.pathname` values are equal
+ *
+ * @example
+ * isSamePageNavigation('#faq', '/home') // true - same path, hash change
+ * isSamePageNavigation('/home?tab=2', '/home') // true - same path, query change
+ * isSamePageNavigation('/home#section', '/home?tab=1') // true - same path, hash and/or query differ
+ * isSamePageNavigation('/other-page', '/home') // false - different path
+ */
+export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): boolean => {
+    if (!incomingUrl || !currentUrl) return false;
+
+    const current = new URL(currentUrl, window.origin);
+    // Resolve incomingUrl relative to the current page URL so bare hashes like
+    // '#section' become '<current-path>#section' instead of resolving to the origin root.
+    const target = new URL(incomingUrl, current.href);
+
+    return target.pathname === current.pathname;
 };

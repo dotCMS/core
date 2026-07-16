@@ -4,15 +4,23 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcms-block-editor/src",
     "prefix": "dotcms",
+    "tags": ["skip:test", "skip:lint"],
     "targets": {
         "build": {
-            "executor": "@nx/angular:browser-esbuild",
+            "executor": "@angular/build:application",
+            "outputs": ["{options.outputPath.base}"],
+            "defaultConfiguration": "production",
             "options": {
-                "outputPath": "dist/apps/dotcms-block-editor",
+                "baseHref": "./",
+                "outputPath": {
+                    "base": "dist/apps/dotcms-block-editor",
+                    "browser": ""
+                },
                 "index": "apps/dotcms-block-editor/src/index.html",
-                "main": "apps/dotcms-block-editor/src/main.ts",
-                "polyfills": "apps/dotcms-block-editor/src/polyfills.ts",
+                "browser": "apps/dotcms-block-editor/src/main.ts",
+                "polyfills": ["apps/dotcms-block-editor/src/polyfills.ts"],
                 "tsConfig": "apps/dotcms-block-editor/tsconfig.app.json",
+                "inlineStyleLanguage": "css",
                 "assets": [
                     "apps/dotcms-block-editor/src/favicon.ico",
                     "apps/dotcms-block-editor/src/assets"
@@ -25,36 +33,36 @@
                 ],
                 "styles": [
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
-                    "libs/dotcms-scss/angular/_forms.scss",
-                    "libs/dotcms-scss/angular/_mixins.scss",
-                    "libs/dotcms-scss/angular/dotcms-theme/theme.scss",
-                    "libs/dotcms-scss/angular/_prime-icons.scss",
-                    "apps/dotcms-block-editor/src/styles.scss"
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "apps/dotcms-block-editor/src/styles.css"
                 ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "allowedCommonJsDependencies": ["lodash.isequal"],
-                "vendorChunk": true,
+                "allowedCommonJsDependencies": ["lodash.isequal", "date-fns"],
                 "extractLicenses": false,
-                "buildOptimizer": false,
                 "sourceMap": true,
                 "optimization": false,
                 "namedChunks": true
             },
             "configurations": {
+                "development": {
+                    "optimization": false,
+                    "sourceMap": true,
+                    "namedChunks": true,
+                    "extractLicenses": false
+                },
                 "localhost": {
                     "sourceMap": true,
-                    "optimization": false,
-                    "watch": true
+                    "optimization": false
                 },
                 "tomcat": {
-                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-block-editor",
+                    "outputPath": {
+                        "base": "../../tomcat9/webapps/ROOT/dotcms-block-editor",
+                        "browser": ""
+                    },
                     "sourceMap": true,
-                    "optimization": false,
-                    "watch": true
+                    "optimization": false
                 },
                 "production": {
                     "fileReplacements": [
@@ -68,13 +76,11 @@
                     "sourceMap": false,
                     "namedChunks": false,
                     "extractLicenses": false,
-                    "vendorChunk": false,
-                    "buildOptimizer": true,
                     "budgets": [
                         {
                             "type": "initial",
-                            "maximumWarning": "2mb",
-                            "maximumError": "2.5mb"
+                            "maximumWarning": "3.5mb",
+                            "maximumError": "4mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -83,13 +89,13 @@
                         }
                     ]
                 }
-            },
-            "defaultConfiguration": "production"
+            }
         },
         "serve": {
-            "executor": "@angular-devkit/build-angular:dev-server",
+            "executor": "@angular/build:dev-server",
+            "continuous": true,
             "options": {
-                "buildTarget": "dotcms-block-editor:build"
+                "buildTarget": "dotcms-block-editor:build:development"
             },
             "configurations": {
                 "production": {
@@ -101,27 +107,22 @@
             }
         },
         "extract-i18n": {
-            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcms-block-editor:build"
             }
         },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
+            "executor": "@angular/build:karma",
             "options": {
                 "main": "apps/dotcms-block-editor/src/test.ts",
                 "tsConfig": "apps/dotcms-block-editor/tsconfig.spec.json",
                 "karmaConfig": "apps/dotcms-block-editor/karma.conf.js",
-                "polyfills": "apps/dotcms-block-editor/src/polyfills.ts",
+                "polyfills": ["apps/dotcms-block-editor/src/polyfills.ts"],
                 "styles": [],
                 "scripts": [],
                 "assets": []
             }
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }

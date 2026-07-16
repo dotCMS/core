@@ -1,7 +1,7 @@
 package com.dotmarketing.tag.business;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -228,7 +228,10 @@ public class TagFactoryImpl implements TagFactory {
             if ( UtilMethods.isSet(host) ) {
 
                 String sortStr = "";
-                if ( UtilMethods.isSet(sort) ) {
+                if ( UtilMethods.isSet(tagName) ) {
+                    // When filtering by tag name, order by length first (shortest matches first), then alphabetically
+                    sortStr = "ORDER BY LENGTH(tagname), tagname ASC";
+                } else if ( UtilMethods.isSet(sort) ) {
                     String sortDirection = sort.startsWith("-") ? "desc" : "asc";
                     sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
 
@@ -242,6 +245,8 @@ public class TagFactoryImpl implements TagFactory {
                 //Filter by tagname, hosts and persona
                 if ( UtilMethods.isSet(tagName) ) {
 
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+
                     String personaFragment = "";
                     if ( excludePersonas ) {
                         personaFragment = " AND persona = ? ";
@@ -253,15 +258,15 @@ public class TagFactoryImpl implements TagFactory {
                         globalTagsFragment = " AND host_id = ? ";
                     }
 
-                    String sql = "SELECT * FROM tag WHERE tagname LIKE ? " + globalTagsFragment + personaFragment + sortStr;
+                    String sql = "SELECT * FROM tag WHERE tagname LIKE ? ESCAPE '\\' " + globalTagsFragment + personaFragment + sortStr;
 
                     dc.setSQL(SQLUtil.addLimits(sql, start, count));
-                    dc.addParam("%" + tagName.toLowerCase() + "%");
-                    try {
-                        dc.addParam(host.getMap().get("tagStorage").toString());
-                    } catch ( NullPointerException e ) {
-                        dc.addParam(Host.SYSTEM_HOST);
-                    }
+                    String escapedTagName = tagName.replace("\\", "\\\\")
+                                                   .replace("_", "\\_")
+                                                   .replace("%", "\\%")
+                                                   .toLowerCase();
+                    dc.addParam("%" + escapedTagName + "%");
+                    dc.addParam(effectiveTagStorage);
                     if ( globalTagsFilter ) {
                         dc.addParam(Host.SYSTEM_HOST);
                     }
@@ -272,6 +277,8 @@ public class TagFactoryImpl implements TagFactory {
                     //check if tag name is not set and if should display global tags
                     //it will check all global tags and current host tags.
 
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+
                     String personaFragment = "";
                     if ( excludePersonas ) {
                         personaFragment = " AND persona = ? ";
@@ -280,11 +287,7 @@ public class TagFactoryImpl implements TagFactory {
                     String sql = "SELECT * FROM tag WHERE (host_id = ? OR host_id = ? ) " + personaFragment + sortStr;
                     dc.setSQL(SQLUtil.addLimits(sql, start, count));
 
-                    try {
-                        dc.addParam(host.getMap().get("tagStorage").toString());
-                    } catch ( NullPointerException e ) {
-                        dc.addParam(Host.SYSTEM_HOST);
-                    }
+                    dc.addParam(effectiveTagStorage);
                     dc.addParam(Host.SYSTEM_HOST);
                     if ( excludePersonas ) {
                         dc.addParam(false);
@@ -293,29 +296,18 @@ public class TagFactoryImpl implements TagFactory {
                     //check all current host tags.
                     String sql = "SELECT * FROM tag ";
 
-                    Object tagStorage = host.getMap().get("tagStorage");
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
 
-                    if ( UtilMethods.isSet(tagStorage) ) {
+                    String personaFragment = "";
+                    if ( excludePersonas ) {
+                        personaFragment = " AND persona = ? ";
+                    }
 
-                        String personaFragment = "";
-                        if ( excludePersonas ) {
-                            personaFragment = " AND persona = ? ";
-                        }
-
-                        sql = sql + "WHERE host_id = ? " + personaFragment + sortStr;
-                        dc.setSQL(SQLUtil.addLimits(sql,start,count));
-                        dc.addParam(tagStorage.toString());
-                        if ( excludePersonas ) {
-                            dc.addParam(false);
-                        }
-                    } else {
-                        if ( excludePersonas ) {
-                            sql = sql + "WHERE persona = ? " + sortStr;
-                        }
-                        dc.setSQL(sql);
-                        if ( excludePersonas ) {
-                            dc.addParam(false);
-                        }
+                    sql = sql + "WHERE host_id = ? " + personaFragment + sortStr;
+                    dc.setSQL(SQLUtil.addLimits(sql,start,count));
+                    dc.addParam(effectiveTagStorage);
+                    if ( excludePersonas ) {
+                        dc.addParam(false);
                     }
                 }
 
@@ -326,6 +318,100 @@ public class TagFactoryImpl implements TagFactory {
             Logger.warn(Tag.class, "getFilteredTags failed: " + e, e);
         }
         return List.of();
+    }
+
+    @Override
+    public long getFilteredTagsCount(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas) throws DotDataException {
+        try {
+            final DotConnect dc = new DotConnect();
+            
+            Host host = null;
+            try {
+                host = APILocator.getHostAPI().find(hostFilter, APILocator.getUserAPI().getSystemUser(), true);
+            } catch (Exception e) {
+                Logger.warn(Tag.class, "Unable to get host according to search criteria - hostId = " + hostFilter);
+            }
+            
+            if (UtilMethods.isSet(host)) {
+                
+                // Filter by tagname, hosts and persona
+                if (UtilMethods.isSet(tagName)) {
+                    
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+                    
+                    String personaFragment = "";
+                    if (excludePersonas) {
+                        personaFragment = " AND persona = ? ";
+                    }
+                    String globalTagsFragment = "";
+                    if (globalTagsFilter) {
+                        globalTagsFragment = " AND (host_id = ? OR host_id = ?) ";
+                    } else {
+                        globalTagsFragment = " AND host_id = ? ";
+                    }
+                    
+                    String sql = "SELECT COUNT(*) as count FROM tag WHERE tagname LIKE ? ESCAPE '\\' " + globalTagsFragment + personaFragment;
+                    
+                    dc.setSQL(sql);
+                    String escapedTagName = tagName.replace("\\", "\\\\")
+                                                   .replace("_", "\\_")
+                                                   .replace("%", "\\%")
+                                                   .toLowerCase();
+                    dc.addParam("%" + escapedTagName + "%");
+                    dc.addParam(effectiveTagStorage);
+                    if (globalTagsFilter) {
+                        dc.addParam(Host.SYSTEM_HOST);
+                    }
+                    if (excludePersonas) {
+                        dc.addParam(false);
+                    }
+                } else if (!UtilMethods.isSet(tagName) && globalTagsFilter) {
+                    // Check if tag name is not set and if should display global tags
+                    
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+                    
+                    String personaFragment = "";
+                    if (excludePersonas) {
+                        personaFragment = " AND persona = ? ";
+                    }
+                    
+                    String sql = "SELECT COUNT(*) as count FROM tag WHERE (host_id = ? OR host_id = ? ) " + personaFragment;
+                    dc.setSQL(sql);
+                    
+                    dc.addParam(effectiveTagStorage);
+                    dc.addParam(Host.SYSTEM_HOST);
+                    if (excludePersonas) {
+                        dc.addParam(false);
+                    }
+                } else {
+                    // Check all current host tags.
+                    String sql = "SELECT COUNT(*) as count FROM tag ";
+                    
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+                    
+                    String personaFragment = "";
+                    if (excludePersonas) {
+                        personaFragment = " AND persona = ? ";
+                    }
+                    
+                    sql = sql + "WHERE host_id = ? " + personaFragment;
+                    dc.setSQL(sql);
+                    dc.addParam(effectiveTagStorage);
+                    if (excludePersonas) {
+                        dc.addParam(false);
+                    }
+                }
+                
+                // Execute and return the count
+                List<Map<String, Object>> results = dc.loadObjectResults();
+                if (!results.isEmpty()) {
+                    return Long.parseLong(results.get(0).get("count").toString());
+                }
+            }
+        } catch (Exception e) {
+            Logger.warn(Tag.class, "getFilteredTagsCount failed: " + e, e);
+        }
+        return 0L;
     }
 
     @Override
@@ -410,6 +496,13 @@ public class TagFactoryImpl implements TagFactory {
                 tagCache.removeByInode(cachedTagInode.getInode());
             }
         }
+
+        // Invalidate cache for the old tag state (before mutation) in case hostId changed.
+        // The incoming tag may already have a new hostId, so look up the current DB state.
+        final Tag existingTag = getTagByTagId(tag.getTagId());
+        if ( existingTag != null && !existingTag.getHostId().equals(tag.getHostId()) ) {
+            tagCache.remove(existingTag);
+        }
         tagCache.remove(tag);
 
         //Execute the update
@@ -444,6 +537,39 @@ public class TagFactoryImpl implements TagFactory {
         dc.addParam(tag.getTagId());
 
         dc.loadResult();
+    }
+
+    @Override
+    public void deleteTagsInBatch(java.util.Collection<String> tagIds) throws DotDataException {
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+
+        // Clear cache for each tag (same as single delete does)
+        for (String tagId : tagIds) {
+            List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tagId);
+            if (cachedTagInodes != null && !cachedTagInodes.isEmpty()) {
+                for (TagInode cachedTagInode : cachedTagInodes) {
+                    tagCache.removeByInode(cachedTagInode.getInode());
+                }
+            }
+            Tag tag = tagCache.get(tagId);
+            if (tag != null) {
+                tagCache.remove(tag);
+            }
+            tagInodeCache.removeByTagId(tagId);
+        }
+
+        // Prepare batch parameters
+        List<com.dotmarketing.common.db.Params> params = tagIds.stream()
+            .map(com.dotmarketing.common.db.Params::new)
+            .collect(java.util.stream.Collectors.toList());
+
+        // Batch delete operations
+        new com.dotmarketing.common.db.DotConnect()
+            .executeBatch("DELETE FROM tag_inode WHERE tag_id = ?", params);
+        new com.dotmarketing.common.db.DotConnect()
+            .executeBatch("DELETE FROM tag WHERE tag_id = ?", params);
     }
 
     @Override
@@ -692,6 +818,27 @@ public class TagFactoryImpl implements TagFactory {
                 .loadObjectResults();
 
         return results.stream().map(row -> row.get(TAG_COLUMN_TAGNAME).toString()).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * Resolves the effective tag storage for a host, respecting the global parameter.
+     * 
+     * @param host The host to resolve tag storage for
+     * @return The effective tag storage ID
+     */
+    private String getEffectiveTagStorage(Host host) {
+        // System host tags are always stored with host_id = "SYSTEM_HOST"
+        if (host.isSystemHost()) {
+            return Host.SYSTEM_HOST;
+        }
+
+        Object tagStorage = host.getMap().get("tagStorage");
+
+        if (!UtilMethods.isSet(tagStorage)) {
+            return host.getIdentifier();
+        }
+
+        return tagStorage.toString();
     }
 
     /**

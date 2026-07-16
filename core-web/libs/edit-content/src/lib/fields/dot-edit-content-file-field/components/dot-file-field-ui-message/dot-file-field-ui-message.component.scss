@@ -1,37 +1,43 @@
-@use "variables" as *;
+// STYLE EXCEPTION — dot-edit-content-file-field
+// Project standard: prefer Tailwind utilities in templates.
+// This feature is the documented exception: it ships as a legacy web component
+// (dotcms-binary-field-builder) without Tailwind in its bundle. Use plain SCSS/BEM
+// here so styles are always embedded with the component in both Angular and Dojo.
 
-:host {
+.dot-file-field-ui-message__root {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: $spacing-3;
     height: 100%;
-    padding: $spacing-3;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
 }
 
-.icon-container {
-    border-radius: 50%;
-    padding: $spacing-3;
-
-    .icon {
-        font-size: $font-size-xxl;
-        width: auto;
-    }
-
-    &.info {
-        color: $color-palette-primary-500;
-        background: $color-palette-primary-200;
-    }
-
-    &.error {
-        color: $color-alert-yellow;
-        background: $color-alert-yellow-light;
-    }
+.dot-file-field-ui-message__root--disabled {
+    pointer-events: none;
 }
 
-.text {
+.dot-file-field-ui-message__icon-wrap {
+    display: flex;
+    width: 4rem;
+    height: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    padding: 1rem;
+}
+
+.dot-file-field-ui-message__icon {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+}
+
+.dot-file-field-ui-message__message {
     text-align: center;
-    line-height: 140%;
-    font-size: $font-size-default;
+    line-height: 1.375;
+}
+
+.dot-file-field-ui-message__message--disabled {
+    color: #9ca3af;
 }

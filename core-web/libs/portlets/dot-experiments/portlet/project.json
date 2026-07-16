@@ -4,23 +4,23 @@
     "projectType": "library",
     "sourceRoot": "libs/portlets/dot-experiments/portlet/src",
     "prefix": "dotcms",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"],
     "targets": {
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}",
+                "{workspaceRoot}/target/core-web-reports"
+            ],
             "options": {
-                "jestConfig": "libs/portlets/dot-experiments/portlet/jest.config.ts"
+                "passWithNoTests": true
             },
             "configurations": {
                 "ci": {
-                    "verbose": false
+                    "ci": true,
+                    "verbose": false,
+                    "coverage": true
                 }
             }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
         }
-    },
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"]
+    }
 }

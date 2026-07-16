@@ -1,11 +1,7 @@
 <form [formGroup]="form" class="p-fluid">
     <div class="field">
         <label dotFieldRequired for="content-type-form-host">{{ 'modes.persona.host' | dm }}</label>
-        <dot-site-selector-field
-            [system]="true"
-            id="content-type-form-host"
-            width="100%"
-            formControlName="hostFolder"></dot-site-selector-field>
+        <dot-site id="content-type-form-host" formControlName="hostFolder"></dot-site>
     </div>
 
     <div class="field">
@@ -20,7 +16,7 @@
             pInputText />
         <dot-field-validation-message
             [message]="'modes.persona.name.error.required' | dm"
-            [field]="form.get('name')"></dot-field-validation-message>
+            [field]="form.get('name')" />
     </div>
 
     <div class="field">
@@ -30,31 +26,34 @@
 
     <div class="field">
         <label for="persona-image">{{ 'modes.persona.upload.file' | dm }}</label>
-        <p-fileUpload
-            *ngIf="!tempUploadedFile"
-            (onUpload)="onFileUpload($event)"
-            (onBeforeUpload)="isValid.emit(false)"
-            [chooseLabel]="'dot.common.choose' | dm"
-            id="persona-image"
-            url="/api/v1/temp"
-            accept="image/*,.webp"
-            auto="true"
-            mode="basic"></p-fileUpload>
-        <div *ngIf="tempUploadedFile" class="form__file-detail">
-            <img [src]="tempUploadedFile.thumbnailUrl" />
-            <span>{{ tempUploadedFile.fileName }}</span>
-            <button
-                (click)="removeImage()"
-                [label]="'dot.common.remove' | dm"
-                class="p-button-outlined p-button-sm"
-                pButton></button>
-        </div>
+        @if (!tempUploadedFile) {
+            <p-fileUpload
+                (onUpload)="onFileUpload($event)"
+                (onBeforeUpload)="isValid.emit(false)"
+                [chooseLabel]="'dot.common.choose' | dm"
+                id="persona-image"
+                url="/api/v1/temp"
+                accept="image/*,.webp"
+                auto="true"
+                mode="basic" />
+        }
+        @if (tempUploadedFile) {
+            <div class="form__file-detail">
+                <img [src]="tempUploadedFile.thumbnailUrl" />
+                <span>{{ tempUploadedFile.fileName }}</span>
+                <button
+                    (click)="removeImage()"
+                    [label]="'dot.common.remove' | dm"
+                    class="p-button-outlined p-button-sm"
+                    pButton></button>
+            </div>
+        }
     </div>
     <div class="field">
         <label for="persona-other-tags">{{ 'modes.persona.other.tags' | dm }}</label>
         <dot-autocomplete-tags
             [placeholder]="'modes.persona.select.tags.placeholder' | dm"
             id="persona-other-tags"
-            formControlName="tags"></dot-autocomplete-tags>
+            formControlName="tags" />
     </div>
 </form>

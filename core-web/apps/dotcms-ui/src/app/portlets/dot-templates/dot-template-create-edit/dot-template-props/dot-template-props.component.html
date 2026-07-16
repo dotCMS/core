@@ -1,9 +1,5 @@
-<dot-form-dialog
-    (cancel)="onCancel()"
-    (save)="onSave()"
-    [saveButtonDisabled]="(isFormValid$ | async) === false"
-    data-testId="dialogForm">
-    <form *ngIf="form" [formGroup]="form" class="p-fluid" data-testId="form">
+@if (form) {
+    <form pFocusTrap [formGroup]="form" class="form" data-testId="form">
         <div class="field" data-testId="titleField">
             <label for="title" dotFieldRequired>
                 {{ 'templates.properties.form.label.title' | dm }}
@@ -14,8 +10,7 @@
                 formControlName="title"
                 autofocus
                 data-testId="templatePropsTitleField" />
-            <dot-field-validation-message
-                [field]="form.get('title')"></dot-field-validation-message>
+            <dot-field-validation-message [field]="form.get('title')" />
         </div>
         <div class="field" data-testId="descriptionField">
             <label for="description">
@@ -23,18 +18,34 @@
             </label>
             <textarea id="description" pInputTextarea formControlName="friendlyName"></textarea>
         </div>
-        <ng-container *ngIf="form.get('theme')">
+        @if (form.get('theme')) {
             <div class="field" data-testId="themeField">
                 <label for="theme">{{ 'templates.properties.form.label.theme' | dm }}</label>
-                <dot-theme-selector-dropdown
+                <dot-theme
                     id="theme"
                     formControlName="theme"
-                    data-testId="templatePropsThemeField"></dot-theme-selector-dropdown>
+                    data-testId="templatePropsThemeField" />
             </div>
-        </ng-container>
+        }
         <div class="field" data-testId="thumbnailField">
-            <label for="thumbnail">{{ 'templates.properties.form.label.thumbnail' | dm }}</label>
-            <dot-template-thumbnail-field formControlName="image"></dot-template-thumbnail-field>
+            <label for="thumbnail">
+                {{ 'templates.properties.form.label.thumbnail' | dm }}
+            </label>
+            <dot-template-thumbnail-field formControlName="image" />
         </div>
     </form>
-</dot-form-dialog>
+}
+
+<div class="flex justify-end gap-2">
+    <p-button
+        (click)="onCancel()"
+        [label]="'cancel' | dm"
+        severity="secondary"
+        [outlined]="true"
+        data-testid="dotFormDialogCancel" />
+    <p-button
+        (click)="onSave()"
+        [label]="'save' | dm"
+        [disabled]="(isFormValid$ | async) === false"
+        data-testid="dotFormDialogSave" />
+</div>

@@ -8,33 +8,38 @@ import {
     OnChanges,
     OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
-import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
+import { SelectModule } from 'primeng/select';
+
+import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
+import { DotIconComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-device-selector',
     templateUrl: './dot-device-selector.component.html',
     styleUrls: ['./dot-device-selector.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [SelectModule, FormsModule, DotIconComponent],
+    providers: [DotDevicesService]
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {
+    private dotDevicesService = inject(DotDevicesService);
+    private dotMessageService = inject(DotMessageService);
+    private readonly cd = inject(ChangeDetectorRef);
+
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
 
     options: DotDevice[] = [];
     placeholder = '';
-
-    constructor(
-        private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService,
-        private readonly cd: ChangeDetectorRef
-    ) {}
 
     ngOnInit() {
         this.loadOptions();
@@ -59,7 +64,7 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
             .get()
             .pipe(
                 take(1),
-                flatMap((devices: DotDevice[]) => devices),
+                mergeMap((devices: DotDevice[]) => devices),
                 filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
                 toArray(),
                 map((devices: DotDevice[]) =>

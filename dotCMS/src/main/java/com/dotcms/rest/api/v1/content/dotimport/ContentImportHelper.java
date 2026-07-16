@@ -2,22 +2,51 @@ package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
+import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobResult;
+import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.jobs.business.job.JobView;
+import com.dotcms.jobs.business.job.JobViewPaginatedResult;
+import com.dotcms.jobs.business.util.JobUtil;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityJobStatusView;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.job.JobResponseUtil;
+import com.dotcms.rest.api.v1.job.JobStatusResponse;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
+import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
+import com.dotmarketing.util.importer.model.ImportResult;
+import com.dotmarketing.util.importer.model.ValidationMessage;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.io.JsonEOFException;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.ValidationException;
+import javax.ws.rs.core.Response;
 
 /**
  * Helper class for managing content import operations in the dotCMS application.
@@ -32,6 +61,21 @@ public class ContentImportHelper {
 
     private final JobQueueManagerAPI jobQueueManagerAPI;
     private static final String IMPORT_CONTENTLETS_QUEUE_NAME = "importContentlets";
+
+    private static final String VALIDATION_ERROR_CODE = "JOB_CREATION_VALIDATION_ERROR";
+
+    // Constants for commands
+    static final String CMD_PUBLISH = Constants.PUBLISH;
+    static final String CMD_PREVIEW = Constants.PREVIEW;
+
+    private static final Set<Class<? extends Throwable>> VALIDATION_EXCEPTION_TYPES = Set.of(
+            JobValidationException.class,
+            ValidationException.class,
+            com.dotcms.rest.exception.ValidationException.class,
+            ValueInstantiationException.class,
+            JsonEOFException.class,
+            JsonParseException.class
+    );
 
     /**
      * Constructor for dependency injection.
@@ -255,6 +299,40 @@ public class ContentImportHelper {
     }
 
     /**
+     * Creates a map of job parameters for error handling during content import.
+     *
+     * @param command The command indicating the type of operation (e.g., "preview" or "import").
+     * @param params  The content import parameters containing the details of the import operation.
+     * @param user    The user initiating the import.
+     * @param request The HTTP request associated with the import operation.
+     * @return A map containing the job parameters for error handling.
+     */
+    private Map<String, Object> createJobParametersOnError(
+            final String command,
+            final ContentImportParams params,
+            final User user,
+            final HttpServletRequest request) {
+
+        final var jsonForm = params.getJsonForm();
+
+        final Map<String, Object> jobParameters;
+        if (null != jsonForm) {
+            jobParameters = Try.of(() -> JsonUtil.getJsonFromString(jsonForm))
+                    .getOrElse(new HashMap<>());
+        } else {
+            jobParameters = new HashMap<>();
+        }
+
+        jobParameters.put("cmd", command);
+        jobParameters.put("userId", user.getUserId());
+
+        // Add site information
+        addSiteInformation(request, jobParameters);
+
+        return jobParameters;
+    }
+
+    /**
      * Adds optional parameters to the job parameter map if they are present in the form.
      *
      * @param params        The content import parameters.
@@ -325,5 +403,202 @@ public class ContentImportHelper {
             Logger.error(this, "Error handling file upload", e);
             throw new DotDataException("Error processing file upload: " + e.getMessage());
         }
+    }
+
+    /**
+     * Handles the creation of a content import job. This method processes the request parameters,
+     * creates the job, and returns an appropriate response. If validation fails, it returns a
+     * BAD_REQUEST response with error details.
+     *
+     * @param command        The command indicating the type of operation (e.g., "preview" or
+     *                       "import")
+     * @param params         The content import parameters containing file and form data
+     * @param initDataObject Object containing initialized user and request data
+     * @param request        The HTTP servlet request
+     * @return A Response object containing either:
+     *         - 200 OK with job status for successful creation
+     *         - 400 BAD_REQUEST with validation error details
+     * @throws DotDataException        If there is an error accessing the data layer
+     * @throws JsonProcessingException If there is an error processing JSON data
+     */
+    Response handleJobCreation(final String command, final ContentImportParams params,
+            final InitDataObject initDataObject, final HttpServletRequest request)
+            throws DotDataException, IOException {
+
+        Logger.debug(this, () -> String.format(
+                " user %s is importing content in preview mode: %s",
+                initDataObject.getUser().getUserId(), params)
+        );
+
+        try {
+
+            // Create the content import job in preview mode
+            final String jobId = createJob(
+                    command, IMPORT_CONTENTLETS_QUEUE_NAME, params,
+                    initDataObject.getUser(), request
+            );
+
+            final var jobStatusResponse = buildJobStatusResponse(jobId, request);
+            return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
+        } catch (Exception e) {
+            if (isValidationException(e)) {
+                return responseForValidationException(
+                        command, params, initDataObject.getUser(), request, e
+                );
+            }
+
+            throw e;
+        }
+    }
+
+    /**
+     * Creates an error response for validation exceptions during content import. This method builds
+     * a job object with error metadata and returns a BAD_REQUEST response.
+     *
+     * @param command   The command being executed (e.g. preview, publish)
+     * @param params    The content import parameters from the request
+     * @param user      The user executing the import
+     * @param request   The HTTP servlet request
+     * @param exception The exception containing the validation error message
+     * @return A Response object with BAD_REQUEST status and job error details
+     */
+    Response responseForValidationException(
+            final String command,
+            final ContentImportParams params,
+            final User user,
+            final HttpServletRequest request,
+            final Exception exception) {
+
+        final Map<String, Object> jobParameters = createJobParametersOnError(
+                command, params, user, request
+        );
+        // Clean up null job parameters
+        jobParameters.entrySet().removeIf(entry -> entry.getValue() == null);
+
+        final var contentType = jobParameters.getOrDefault("contentType", "");
+        final String workflowActionId = (String) jobParameters.getOrDefault(
+                "workflowActionId", null);
+
+        var operationType = OperationType.PREVIEW;
+        if (CMD_PUBLISH.equalsIgnoreCase(command)) {
+            operationType = OperationType.PUBLISH;
+        }
+
+        // Create a validation messages based on the exception
+        final var validationMessages = createValidationMessage(exception);
+
+        final var importResults = ImportResult.builder()
+                .type(operationType)
+                .contentTypeName((String) contentType)
+                .workflowActionId(Optional.ofNullable(workflowActionId))
+                .contentTypeVariableName("")
+                .error(validationMessages)
+                .build();
+
+        final var job = Job.builder()
+                .parameters(jobParameters)
+                .id("")
+                .queueName(IMPORT_CONTENTLETS_QUEUE_NAME)
+                .state(JobState.FAILED)
+                .result(JobResult.builder()
+                        .metadata(JobUtil.transformToMap(importResults))
+                        .build())
+                .build();
+
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(new ResponseEntityView<>(view(job)))
+                .build();
+    }
+
+    /**
+     * Checks if the provided exception is a validation exception.
+     *
+     * @param e The exception to check
+     * @return True if the exception is a validation exception, false otherwise
+     */
+    private boolean isValidationException(Exception e) {
+        return VALIDATION_EXCEPTION_TYPES.stream()
+                .anyMatch(exceptionType -> exceptionType.isInstance(e));
+    }
+
+    /**
+     * Creates a list of validation messages based on the provided exception.
+     *
+     * @param exception The exception that contains the validation error message
+     * @return A list of ValidationMessage objects
+     */
+    private List<ValidationMessage> createValidationMessage(final Exception exception) {
+
+        if (exception instanceof com.dotcms.rest.exception.ValidationException) {
+            return getValidationExceptionMessages(
+                    (com.dotcms.rest.exception.ValidationException) exception
+            );
+        } else if (exception.getCause() instanceof com.dotcms.rest.exception.ValidationException) {
+            return getValidationExceptionMessages(
+                    (com.dotcms.rest.exception.ValidationException) exception.getCause()
+            );
+        }
+
+        return Collections.singletonList(ValidationMessage.builder()
+                .message(exception.getMessage())
+                .code(VALIDATION_ERROR_CODE)
+                .type(ValidationMessageType.ERROR)
+                .build());
+    }
+
+    /**
+     * Converts a ValidationException to a list of ValidationMessage objects.
+     *
+     * @param exception The ValidationException to convert
+     * @return A list of ValidationMessage objects
+     */
+    private List<ValidationMessage> getValidationExceptionMessages(
+            com.dotcms.rest.exception.ValidationException exception) {
+
+        final var violations = exception.violations;
+        return violations.stream()
+                .map(violation -> ValidationMessage.builder()
+                        .message(violation.getMessage())
+                        .code(VALIDATION_ERROR_CODE)
+                        .type(ValidationMessageType.ERROR)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Builds a JobStatusResponse object with the job ID and status URL.
+     *
+     * @param jobId   The job ID
+     * @param request The HttpServletRequest to build the base URL
+     * @return A JobStatusResponse object
+     */
+    JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
+        return JobResponseUtil.buildJobStatusResponse(
+                jobId, "/api/v1/content/_import/%s", request
+        );
+    }
+
+    /**
+     * Converts a Job object to a JobView object.
+     * @param job The Job object to convert.
+     * @return The JobView object.
+     */
+    JobView view(final Job job) {
+        return JobView.builder().from(job).build();
+    }
+
+    /**
+     * Converts a JobPaginatedResult object to a JobViewPaginatedResult object.
+     * @param result The JobPaginatedResult object to convert.
+     * @return The JobViewPaginatedResult object.
+     */
+    JobViewPaginatedResult view(final JobPaginatedResult result) {
+        return JobViewPaginatedResult.builder()
+                .page(result.page())
+                .pageSize(result.pageSize())
+                .total(result.total())
+                .jobs(result.jobs().stream().map(this::view).collect(Collectors.toList()))
+                .build();
     }
 }

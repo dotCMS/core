@@ -282,10 +282,7 @@ export const processedContainers = [
             identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
             name: 'Medium Column (md-1)',
             categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93',
-            source: CONTAINER_SOURCE.DB,
-            parentPermissionable: {
-                hostname: 'demo.dotcms.com'
-            }
+            source: CONTAINER_SOURCE.DB
         }
     },
     {
@@ -295,10 +292,7 @@ export const processedContainers = [
             name: 'Large Column (lg-1)',
             categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f',
             source: CONTAINER_SOURCE.FILE,
-            path: '/container/path',
-            parentPermissionable: {
-                hostname: 'demo.dotcms.com'
-            }
+            path: '/container/path'
         }
     }
 ];

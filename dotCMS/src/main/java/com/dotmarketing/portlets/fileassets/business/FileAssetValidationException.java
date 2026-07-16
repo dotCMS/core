@@ -1,6 +1,13 @@
 package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.importer.exception.ImportLineError;
+
+import java.util.List;
+import java.util.Map;
 
 public class FileAssetValidationException extends DotContentletValidationException {
 
@@ -19,5 +26,37 @@ public class FileAssetValidationException extends DotContentletValidationExcepti
         super(x,cause);
         // TODO Auto-generated constructor stub
     }
+
+	/**
+	 * Constructor for setting ImportLineError from Builder
+	 * @param x
+	 * @param importLineError
+	 */
+	public FileAssetValidationException(String x, ImportLineError importLineError) {
+		super(x, importLineError);
+	}
+
+	/**
+	 * Constructor for setting ImportLineError and validation details from Builder
+	 * @param x
+	 * @param importLineError
+	 * @param notValidFields
+	 * @param notValidRelationships
+	 */
+	public FileAssetValidationException(String x, ImportLineError importLineError,
+			Map<String, List<Field>> notValidFields,
+			Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships) {
+		super(x, importLineError, notValidFields, notValidRelationships);
+	}
+
+	/**
+	 * Constructor for setting ImportLineError, validation details, and char limit data from Builder
+	 */
+	public FileAssetValidationException(String x, ImportLineError importLineError,
+			Map<String, List<Field>> notValidFields,
+			Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships,
+			Map<String, Integer> charLimitMaxByFieldVar) {
+		super(x, importLineError, notValidFields, notValidRelationships, charLimitMaxByFieldVar);
+	}
 
 }

@@ -1,5 +1,9 @@
 package com.dotcms.rest.exception.mapper;
 
+import static com.dotcms.exception.ExceptionUtil.ValidationError;
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.exception.ExceptionUtil.mapValidationException;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
@@ -15,21 +19,16 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.exception.ExceptionUtil.ValidationError;
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.exception.ExceptionUtil.mapValidationException;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -135,13 +134,10 @@ public final class ExceptionMapperUtil {
     public static Response createResponse(final String entity,
                                           final String message,
                                           final Response.Status status){
-
-        return Response
-                .status(status)
-                .entity(Map.of("message", message))
-                .header("error-message", message)
-                .type(MediaType.APPLICATION_JSON)
-                .build();
+        return createResponse(
+                Map.of("message", message), status, message, null,
+                MediaType.APPLICATION_JSON
+        );
     }
 
     /***
@@ -180,22 +176,51 @@ public final class ExceptionMapperUtil {
             final Map<String, Object> entityMap = new HashMap<>();
             entityMap.put("message", message);
             entityMap.put("stacktrace", errors);
-            return Response
-                    .status(status)
-                    .entity(entityMap)
-                    .header("error-key", key)
-                    .header("access-control", getAccessControlHeader(exception))
-                    .build();
+            return createResponse(entityMap, status, key, getAccessControlHeader(exception),
+                    MediaType.APPLICATION_JSON);
         }
 
-        final Map<String, Object> entityMap = new HashMap<>();
-        entityMap.put("message", message);
+        final Map<String, Object> entityMap = Map.of("message", message);
+        return createResponse(entityMap, status, key, getAccessControlHeader(exception),
+                MediaType.APPLICATION_JSON);
+    }
+
+    /**
+     * Creates a Response object with a response message and specified HTTP status.
+     *
+     * @param message the message to include in the JSON response
+     * @param status  the HTTP status to assign to the response
+     * @return a Response object containing the provided message in JSON format and the given HTTP
+     * status
+     */
+    public static Response createResponse(final String message, final Response.Status status) {
+        return createResponse(Map.of("message", message), status,
+                null, null, MediaType.APPLICATION_JSON);
+    }
+
+    /**
+     * Constructs a Response object with the specified parameters.
+     *
+     * @param entityMap           a map containing key-value pairs to be included as the entity
+     *                            object in the response
+     * @param status              the HTTP status of the response
+     * @param errorKey            a string representing the unique error key included in the
+     *                            response headers
+     * @param accessControlHeader a string indicating the value for the "access-control" header
+     * @param mediaType           the media type of the response
+     * @return a constructed Response object containing the provided headers, entity, status, and
+     * media type
+     */
+    public static Response createResponse(final Map<String, Object> entityMap,
+            final Response.Status status, final String errorKey, final String accessControlHeader,
+            final String mediaType) {
 
         return Response
                 .status(status)
                 .entity(entityMap)
-                .header("error-key", key)
-                .header("access-control", getAccessControlHeader(exception))
+                .header("error-key", errorKey)
+                .header("access-control", accessControlHeader)
+                .type(mediaType)
                 .build();
     }
 
@@ -229,7 +254,7 @@ public final class ExceptionMapperUtil {
         } catch (Exception e) {
             Logger.debug(ExceptionMapperUtil.class, e.getMessage(), e);
         }
-        return Response.status(status).entity(new ResponseEntityView(errorEntities))
+        return Response.status(status).entity(new ResponseEntityView<>(errorEntities))
                 .type(MediaType.APPLICATION_JSON).build();
     }
 

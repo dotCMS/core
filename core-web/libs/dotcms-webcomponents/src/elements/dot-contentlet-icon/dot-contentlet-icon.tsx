@@ -11,7 +11,6 @@ const font = 'font_download';
 const map: {
     [key: string]: {
         icon: string;
-        color?: string;
     };
 } = {
     // Misc
@@ -24,30 +23,30 @@ const map: {
     folder: { icon: 'folder' },
 
     // Text
-    doc: { icon: doc, color: '#2E8AED' },
-    docx: { icon: doc, color: '#2E8AED' },
-    odt: { icon: doc, color: '#2E8AED' },
-    ott: { icon: doc, color: '#2E8AED' },
-    odm: { icon: doc, color: '#2E8AED' },
+    doc: { icon: doc },
+    docx: { icon: doc },
+    odt: { icon: doc },
+    ott: { icon: doc },
+    odm: { icon: doc },
 
     // Spreadsheet
-    csv: { icon: doc, color: '#1AAA6B' },
-    numbers: { icon: doc, color: '#1AAA6B' },
-    wks: { icon: doc, color: '#1AAA6B' },
-    xls: { icon: doc, color: '#1AAA6B' },
-    xlsx: { icon: doc, color: '#1AAA6B' },
-    ods: { icon: doc, color: '#1AAA6B' },
-    ots: { icon: doc, color: '#1AAA6B' },
+    csv: { icon: doc },
+    numbers: { icon: doc },
+    wks: { icon: doc },
+    xls: { icon: doc },
+    xlsx: { icon: doc },
+    ods: { icon: doc },
+    ots: { icon: doc },
 
     // Presentation
-    keynote: { icon: doc, color: '#F7C000' },
-    ppt: { icon: doc, color: '#F7C000' },
-    pptx: { icon: doc, color: '#F7C000' },
-    odp: { icon: doc, color: '#F7C000' },
-    otp: { icon: doc, color: '#F7C000' },
+    keynote: { icon: doc },
+    ppt: { icon: doc },
+    pptx: { icon: doc },
+    odp: { icon: doc },
+    otp: { icon: doc },
 
     // PDF Files
-    pdf: { icon: doc, color: '#F15B44' },
+    pdf: { icon: doc },
 
     // Video files
     asf: { icon: video },
@@ -85,17 +84,17 @@ const map: {
     wma: { icon: audio },
 
     // Code
-    vtl: { icon: code, color: 'var(--color-main)' },
-    js: { icon: code, color: '#EBB131' },
-    jsx: { icon: code, color: '#EBB131' },
-    esm: { icon: code, color: '#EBB131' },
-    ts: { icon: code, color: '#EBB131' },
-    tsx: { icon: code, color: '#EBB131' },
-    html: { icon: code, color: '#ED6832' },
-    scss: { icon: code, color: '#2587C5' },
-    sass: { icon: code, color: '#2587C5' },
-    less: { icon: code, color: '#2587C5' },
-    css: { icon: code, color: '#2587C5' },
+    vtl: { icon: code },
+    js: { icon: code },
+    jsx: { icon: code },
+    esm: { icon: code },
+    ts: { icon: code },
+    tsx: { icon: code },
+    html: { icon: code },
+    scss: { icon: code },
+    sass: { icon: code },
+    less: { icon: code },
+    css: { icon: code },
 
     // Font
     otf: { icon: font },
@@ -129,14 +128,28 @@ export class DotContentletIcon {
 
     componentWillRender() {
         /*
-            If it doesn't contain "Icon" (with uppercase) we're assuming that is coming to a material icon name,
-            which is the only way we have to differentiate between new and legacy icons without passing an extra attribute.
+            If it contains "Icon" (with uppercase) we extract the extension by removing "Icon",
+            otherwise we're assuming that is coming as a material icon name.
+            This is the only way we have to differentiate between new and legacy icons without passing an extra attribute.
         */
-        this.ext = this.icon.match('Icon') ? this.icon.replace('Icon', '') : '';
+        this.ext =
+            this.icon && this.icon.includes('Icon') && this.icon !== 'Icon'
+                ? this.icon.replace('Icon', '')
+                : '';
     }
 
     render() {
-        const { icon, color } = this.ext ? this.getIconName() : { icon: this.icon, color: '' };
+        let icon: string;
+        if (this.ext) {
+            // Icon has "Icon" suffix, look it up in the map
+            icon = this.getIconName().icon;
+        } else if (this.icon) {
+            // Icon is a direct material icon name
+            icon = this.icon;
+        } else {
+            // No icon provided, use fallback
+            icon = 'insert_drive_file';
+        }
 
         return (
             <Host>
@@ -144,7 +157,7 @@ export class DotContentletIcon {
                 {icon === 'insert_drive_file' && parseInt(this.size.replace('px', ''), 10) >= 96 ? (
                     <span>{this.ext}</span>
                 ) : null}
-                <mwc-icon style={{ '--mdc-icon-size': this.size, color: color || '#444' }}>
+                <mwc-icon style={{ '--mdc-icon-size': this.size, color: 'var(--gray-700)' }}>
                     {icon}
                 </mwc-icon>
             </Host>
@@ -153,7 +166,6 @@ export class DotContentletIcon {
 
     private getIconName(): {
         icon: string;
-        color?: string;
     } {
         return map[this.ext] || map['ukn'];
     }

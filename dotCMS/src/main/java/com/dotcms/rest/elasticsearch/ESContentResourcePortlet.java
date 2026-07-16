@@ -1,6 +1,13 @@
 package com.dotcms.rest.elasticsearch;
 
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.Relation;
+import com.dotcms.content.index.domain.SearchHit;
+import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.index.domain.TotalHits;
 import com.dotcms.rest.BaseRestPortlet;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
@@ -14,12 +21,15 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import com.liferay.util.Validator;
 import org.apache.commons.io.IOUtils;
 
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -32,10 +42,19 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static com.dotmarketing.util.NumberUtil.toInt;
 
 @Path("/es")
+@Tag(name = "Elasticsearch Content Search", description = "Backend Elasticsearch search endpoints for portlet context")
 public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	ContentletAPI esapi = APILocator.getContentletAPI();
@@ -63,10 +82,13 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
+	@Hidden
+	@Operation(hidden = true)
 	public Response search(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQueryStr,
 			@QueryParam("depth") final String depthParam,
 			@QueryParam("live") final boolean liveParam,
+			@QueryParam("userid") final String useridParam,
 			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
 
@@ -95,14 +117,24 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
 		}
 
+		final User userForSearch;
+		try {
+			userForSearch = resolveUserForSearch(user, useridParam);
+		} catch (DotDataException e) {
+			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+		}
+
 		try {
 
-			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(user);
-			final ESSearchResults esresult = esapi
-					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, user,
+			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(userForSearch);
+			// Route through the phase-aware ContentletAPI.search() (delegates to SearchAPI) so the
+			// endpoint observes the engine selected by the current OpenSearch migration phase (ES in
+			// phases 0-1, OS in phases 2-3) instead of always hitting Elasticsearch.
+			final ContentSearchResults<Contentlet> esresult = esapi
+					.search(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, userForSearch,
 							mode.respectAnonPerms);
 			
-			final JSONObject json = new JSONObject();
+    			final JSONObject json = new JSONObject();
 			final JSONArray jsonCons = new JSONArray();
 
 			for(Object x : esresult){
@@ -123,20 +155,24 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 					}
 
 				} catch (Exception e) {
-					Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
-					Logger.debug(this.getClass(), "unable to find contentlet", e);
+					Logger.warn(this.getClass(), "Unable to convert Contentlet to JSON. Identifier: " + c.getIdentifier());
+					Logger.debug(this.getClass(), "Unable to convert Contentlet to JSON. Identifier: " + c.getIdentifier(), e);
 				}
 			}
 
 			try {
 				json.put("contentlets", jsonCons);
 			} catch (JSONException e) {
-				Logger.warn(this.getClass(), "unable to create JSONObject");
-				Logger.debug(this.getClass(), "unable to create JSONObject", e);
+				Logger.warn(this.getClass(), "Unable to add the contentlets array to the response JSON. Contentlets: " + jsonCons.size());
+				Logger.debug(this.getClass(), "Unable to add the contentlets array to the response JSON. Contentlets: " + jsonCons.size(), e);
 			}
 
-			esresult.getContentlets().clear();
-			json.append("esresponse", new JSONObject(esresult.getResponse().toString()));
+			// Emit the legacy Elasticsearch-wire shape for "esresponse" (took, hits.total,
+			// hits.hits[]._id/._index/._score/._source, aggregations) rebuilt from the neutral
+			// ContentSearchResponse. The backend still routes through the phase-aware SearchAPI (ES in
+			// phases 0-1, OS in phases 2-3); this adapter preserves the existing wire contract that the
+			// dot-es-search Angular portlet and external clients depend on. See toLegacyEsJson().
+			json.append("esresponse", toLegacyEsJson(esresult.getResponse()));
 
 			if ( request.getParameter("pretty") != null ) {
 				return responseResource.response(json.toString(4));
@@ -153,18 +189,53 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
+	@Operation(
+			operationId = "searchContentByESPost",
+			summary = "Search content using a search query (POST)",
+			description = "Executes a JSON search query against dotCMS content in a portlet context. " +
+					"The request body accepts an Elasticsearch/OpenSearch JSON query. The query is routed " +
+					"through the phase-aware search API, so it targets whichever engine the active OpenSearch " +
+					"migration phase selects (Elasticsearch in phases 0-1, OpenSearch in phases 2-3). Results " +
+					"include the matching contentlets plus the search response metadata under 'esresponse', " +
+					"which retains the legacy Elasticsearch-wire shape (took, hits.total, " +
+					"hits.hits[]._id/._index/._score/._source, aggregations) for backward compatibility, " +
+					"regardless of the engine that served the query."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+					description = "Search results returned successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(type = "object",
+									description = "Search results containing the matching contentlets and the Elasticsearch-wire response metadata under 'esresponse'"))),
+			@ApiResponse(responseCode = "400",
+					description = "Invalid Elasticsearch query syntax",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "401",
+					description = "Authentication required",
+					content = @Content(mediaType = "application/json"))
+	})
 	public Response searchPost(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQuery,
+			@Parameter(description = "Depth of related content to include: 0=identifiers only, " +
+					"1=related contentlets, 2=related contentlets with their related identifiers, " +
+					"3=related contentlets with their related contentlets. Omit to exclude relationships.")
 			@QueryParam("depth") final String depthParam,
+			@Parameter(description = "If true, search only live content; if false, search working content")
 			@QueryParam("live") final boolean liveParam,
+			@Parameter(description = "Admin-only: run the query under the permission context of this user ID or email address")
+			@QueryParam("userid") final String useridParam,
+			@Parameter(description = "If true, return full category details (key, name, description); " +
+					"if false, return only category names")
 			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
-		return search(request, response, esQuery, depthParam, liveParam, allCategoriesInfo);
+		return search(request, response, esQuery, depthParam, liveParam, useridParam, allCategoriesInfo);
 	}
 	
 	@GET
 	@Path("raw")
 	@Produces(MediaType.APPLICATION_JSON)
+	@Hidden
+	@Operation(hidden = true)
 	public Response searchRawGet(@Context HttpServletRequest request) {
 		return searchRaw(request);
 
@@ -173,6 +244,31 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@POST
 	@Path("raw")
 	@Produces(MediaType.APPLICATION_JSON)
+	@Operation(
+			operationId = "rawSearchContentByESPost",
+			summary = "Execute raw search query (POST)",
+			description = "Executes a raw JSON search query and returns the unprocessed search response " +
+					"in a portlet context. The request body accepts an Elasticsearch/OpenSearch JSON query. " +
+					"Unlike the /search endpoint, results are returned directly from the search engine without " +
+					"additional contentlet processing. The query is routed through the phase-aware search API, " +
+					"so it targets whichever engine the active OpenSearch migration phase selects (Elasticsearch " +
+					"in phases 0-1, OpenSearch in phases 2-3). The response preserves the legacy Elasticsearch-wire " +
+					"shape (took, hits.total, hits.hits[]._id/._index/._score/._source, aggregations, suggest) for " +
+					"backward compatibility, regardless of the engine that served the query."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+					description = "Search response returned successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(type = "object",
+									description = "Search response in the legacy Elasticsearch-wire shape (took, hits, aggregations, suggest)"))),
+			@ApiResponse(responseCode = "400",
+					description = "Invalid Elasticsearch query",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "401",
+					description = "Authentication required",
+					content = @Content(mediaType = "application/json"))
+	})
 	public Response searchRaw(@Context HttpServletRequest request) {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
@@ -187,13 +283,179 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		try {
 			String esQuery = IOUtils.toString(request.getInputStream());
 
-			return responseResource.response(esapi.esSearchRaw(esQuery, mode.showLive, user, mode.showLive).toString());
+			// Route through the phase-aware ContentletAPI.searchRaw() (delegates to SearchAPI) so the
+			// endpoint observes the engine selected by the current OpenSearch migration phase (ES in
+			// phases 0-1, OS in phases 2-3) instead of always hitting Elasticsearch. The neutral
+			// ContentSearchResponse is re-shaped to the legacy Elasticsearch-wire JSON via toLegacyEsJson()
+			// (the same adapter used by /api/es/search), so the response contract is unchanged for existing
+			// clients and stays safe under rollback while the engine selection remains phase-aware.
+			final ContentSearchResponse searchResponse =
+					esapi.searchRaw(esQuery, mode.showLive, user, mode.showLive);
+			return responseResource.response(toLegacyEsJson(searchResponse).toString());
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error processing :" + e.getMessage(), e);
 			return responseResource.responseError(e.getMessage());
 
 		}
+	}
+
+	/**
+	 * Resolves the user whose permission context should be used for the search.
+	 * Only CMS Admins can impersonate another user; all others always search as themselves.
+	 * Throws {@link DotDataException} if the provided ID/email cannot be resolved.
+	 */
+	private User resolveUserForSearch(final User requestingUser, final String useridParam)
+			throws DotDataException, DotSecurityException {
+		if (!UtilMethods.isSet(useridParam)) {
+			return requestingUser;
+		}
+		if (!APILocator.getRoleAPI().doesUserHaveRole(requestingUser, APILocator.getRoleAPI().loadCMSAdminRole())) {
+			return requestingUser;
+		}
+		try {
+			return Validator.isEmailAddress(useridParam)
+					? APILocator.getUserAPI().loadByUserByEmail(useridParam, APILocator.getUserAPI().getSystemUser(), true)
+					: APILocator.getUserAPI().loadUserById(useridParam, APILocator.getUserAPI().getSystemUser(), true);
+		} catch (Exception e) {
+			Logger.warn(this, "Could not resolve userid '" + useridParam + "': " + e.getMessage());
+			throw new DotDataException("Unknown user: " + useridParam);
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Legacy Elasticsearch-wire adapter (backward compatibility)
+	// -------------------------------------------------------------------------
+	// The /api/es/search "esresponse" field historically carried the raw Elasticsearch SearchResponse
+	// JSON. The backend now routes through the phase-aware, vendor-neutral SearchAPI, so these helpers
+	// rebuild that ES-wire shape from the neutral ContentSearchResponse — preserving the contract the
+	// dot-es-search Angular portlet (hits/total/_source, aggregations) and external clients depend on.
+	// Isolated here so the shared neutral DTO stays clean; removable once clients migrate (R7).
+
+	/** Rebuilds the legacy ES {@code SearchResponse}-style JSON from the neutral response. */
+	private static JSONObject toLegacyEsJson(final ContentSearchResponse response) throws JSONException {
+		final JSONObject root = new JSONObject();
+		root.put("took", response.tookMillis());
+		root.put("timed_out", false);
+		root.put("hits", hitsToLegacyJson(response.hits()));
+		if (response.aggregationTree() != null && !response.aggregationTree().isEmpty()) {
+			root.put("aggregations", aggregationsToLegacyJson(response.aggregationTree()));
+		}
+		if (response.suggest() != null && !response.suggest().isEmpty()) {
+			root.put("suggest", new JSONObject(response.suggest()));
+		}
+		return root;
+	}
+
+	/** Maps neutral {@link SearchHits} to the ES {@code hits} object (total + hits[] with _id/_index/_score/_source). */
+	private static JSONObject hitsToLegacyJson(final SearchHits hits) throws JSONException {
+		final JSONObject hitsObj = new JSONObject();
+		final TotalHits total = hits.getTotalHits();
+		hitsObj.put("total", new JSONObject()
+				.put("value", total.value())
+				.put("relation", total.relation() == Relation.EQUAL_TO ? "eq" : "gte"));
+		final JSONArray arr = new JSONArray();
+		for (final SearchHit hit : hits.getHits()) {
+			final JSONObject hitJson = new JSONObject()
+					.put("_id", hit.getId())
+					.put("_index", hit.getIndex())
+					.put("_score", finiteOrNull(hit.getScore()))
+					.put("_source", new JSONObject(hit.getSourceAsMap()));
+			// Preserve the engine's native per-hit "sort" array (e.g. the _geo_distance value that
+			// field-sorted queries depend on). Only emitted when the query actually sorted by a
+			// field — relevance-only queries carry no sort values and get no "sort" key, matching
+			// the native ES/OS wire format. Non-finite entries are coerced to null like _score.
+			if (!hit.getSortValues().isEmpty()) {
+				final JSONArray sortArr = new JSONArray();
+				for (final Object sortValue : hit.getSortValues()) {
+					sortArr.put(finiteOrNull(sortValue));
+				}
+				hitJson.put("sort", sortArr);
+			}
+			arr.put(hitJson);
+		}
+		hitsObj.put("hits", arr);
+		return hitsObj;
+	}
+
+	/**
+	 * Elasticsearch emits a non-finite {@code _score} ({@code NaN}) for hits that are not
+	 * relevance-scored — field-sorted queries (unless {@code track_scores=true}), and
+	 * filter/{@code constant_score}/aggregation-only contexts. dotCMS's JSON writer rejects
+	 * {@code NaN}/{@code Infinity} ({@code JSONObject.testValidity} throws "JSON does not allow
+	 * non-finite numbers"), so coerce non-finite values to {@code null} — matching Elasticsearch's
+	 * native wire format, which the legacy {@code /api/es/search} contract emitted before the
+	 * phase-aware SearchAPI cutover (#36398).
+	 */
+	private static Object finiteOrNull(final float value) {
+		return Float.isFinite(value) ? Float.valueOf(value) : JSONObject.NULL;
+	}
+
+	/**
+	 * Object overload of {@link #finiteOrNull(float)} for per-hit {@code sort} values, which arrive as
+	 * boxed scalars ({@link Double} for a {@code _geo_distance} sort, {@link Long}, {@link String}, …).
+	 * Non-finite floating-point values are coerced to {@code null} for the same reason as {@code _score};
+	 * every other value (including {@code null}) passes through unchanged.
+	 */
+	private static Object finiteOrNull(final Object value) {
+		if (value == null) {
+			return JSONObject.NULL;
+		}
+		if (value instanceof Double) {
+			final double doubleValue = (Double) value;
+			return Double.isFinite(doubleValue) ? value : JSONObject.NULL;
+		}
+		if (value instanceof Float) {
+			return finiteOrNull(((Float) value).floatValue());
+		}
+		return value;
+	}
+
+	/** Maps the neutral aggregation tree (keyed by aggregation name) to the ES-native {@code aggregations} JSON. */
+	private static JSONObject aggregationsToLegacyJson(final Map<String, Aggregation> tree)
+			throws JSONException {
+		final JSONObject aggs = new JSONObject();
+		for (final Map.Entry<String, Aggregation> entry : tree.entrySet()) {
+			final Aggregation aggregation = entry.getValue();
+			// Emit the ES-native "typed key" (e.g. "sterms#content_types") that the dot-es-search
+			// portlet's splitAggKey() parses to label the aggregation type; fall back to the plain
+			// name when the neutral type is absent/unknown (splitAggKey handles both).
+			final String type = aggregation.getType();
+			final String key = (type != null && !type.isEmpty() && !"unknown".equals(type))
+					? type + "#" + entry.getKey()
+					: entry.getKey();
+			aggs.put(key, aggregationToLegacyJson(aggregation));
+		}
+		return aggs;
+	}
+
+	/**
+	 * Maps a single neutral {@link Aggregation} to its ES-native shape: {@code top_hits} metric
+	 * aggregations become a {@code hits} object; bucket aggregations (terms/histogram) become a
+	 * {@code buckets} array carrying {@code key}/{@code key_as_string}/{@code doc_count} and any
+	 * nested sub-aggregations.
+	 */
+	private static JSONObject aggregationToLegacyJson(final Aggregation aggregation) throws JSONException {
+		final JSONObject obj = new JSONObject();
+		if (aggregation.getHits() != null) {
+			obj.put("hits", hitsToLegacyJson(aggregation.getHits()));
+			return obj;
+		}
+		final JSONArray buckets = new JSONArray();
+		for (final AggregationBucket bucket : aggregation.getBuckets()) {
+			final JSONObject bucketJson = new JSONObject()
+					.put("key", bucket.getKey())
+					.put("doc_count", bucket.getDocCount());
+			if (bucket.getKeyAsString() != null) {
+				bucketJson.put("key_as_string", bucket.getKeyAsString());
+			}
+			for (final Map.Entry<String, Aggregation> sub : bucket.getAggregations().entrySet()) {
+				bucketJson.put(sub.getKey(), aggregationToLegacyJson(sub.getValue()));
+			}
+			buckets.put(bucketJson);
+		}
+		obj.put("buckets", buckets);
+		return obj;
 	}
 
 }

@@ -1,0 +1,57 @@
+// Animation — no Tailwind equivalent for custom keyframes
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.metric-fade-in {
+    animation: fadeIn 200ms ease-in;
+}
+
+/**
+ * Card host is `<p-card class="metric-card">` — `p-card` and `metric-card` are on the same element.
+ * Do not nest `.metric-card .p-card` (no inner .p-card); body/content flex chain must target this host.
+ */
+.metric-card.p-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+}
+
+:host ::ng-deep .metric-card.p-card .p-card-body {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+:host ::ng-deep .metric-card.p-card .p-card-content {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/**
+ * Conditional layout: when a sparkline is projected, `.metric-body` shrinks to intrinsic
+ * height so margin-top:auto on the sparkline slot pulls it to the card bottom.
+ * Tailwind cannot express `:has()` selectors, so this stays in SCSS.
+ */
+.metric-card-stack:has(dot-analytics-sparkline) > .metric-body {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+}
+
+/** Error / non-metric first block: fill card and center the message. */
+.metric-card-stack > :first-child:not(.metric-body) {
+    flex: 1;
+    min-height: 0;
+}

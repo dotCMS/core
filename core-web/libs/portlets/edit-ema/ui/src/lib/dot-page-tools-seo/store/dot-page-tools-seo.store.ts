@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -21,9 +21,11 @@ export interface DotPageToolsSeoState {
  */
 @Injectable()
 export class DotPageToolsSeoStore extends ComponentStore<DotPageToolsSeoState> {
+    private dotPageToolsService = inject(DotPageToolsService);
+
     readonly tools$ = this.select<DotPageToolsSeoState>((state) => state);
 
-    constructor(private dotPageToolsService: DotPageToolsService) {
+    constructor() {
         const initialState: DotPageToolsSeoState = {
             pageTools: []
         };
@@ -49,10 +51,10 @@ export class DotPageToolsSeoStore extends ComponentStore<DotPageToolsSeoState> {
 
                         return updatedTools;
                     }),
-                    tapResponse(
-                        (tools: DotPageTool[]) => this.updatePageTools(tools),
-                        (error: HttpErrorResponse) => console.error(error)
-                    )
+                    tapResponse({
+                        next: (tools: DotPageTool[]) => this.updatePageTools(tools),
+                        error: (error: HttpErrorResponse) => console.error(error)
+                    })
                 );
             })
         );

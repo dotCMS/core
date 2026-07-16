@@ -5,7 +5,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { UVEStore } from '../../../store/dot-uve.store';
 @Component({
     selector: 'dot-uve-page-version-not-found',
-    standalone: true,
     imports: [DotMessagePipe],
     templateUrl: './dot-uve-page-version-not-found.component.html',
     styleUrl: './dot-uve-page-version-not-found.component.scss',
@@ -15,7 +14,7 @@ export class DotUvePageVersionNotFoundComponent {
     readonly #store = inject(UVEStore);
 
     readonly $info = computed(() => {
-        const errorCode = this.#store.errorCode();
+        const errorCode = this.#store.pageErrorCode();
 
         if (errorCode === 404) {
             return {

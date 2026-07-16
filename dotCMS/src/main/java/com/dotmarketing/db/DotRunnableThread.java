@@ -7,9 +7,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkResponse;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -152,26 +149,6 @@ public class DotRunnableThread implements Runnable {
             }
         }
     }
-
-    private static class ReindexActionListeners implements ActionListener<BulkResponse> {
-
-        private final List<Runnable> listeners;
-
-        public ReindexActionListeners(final List<Runnable> listeners) {
-            this.listeners = listeners;
-        }
-
-        @Override
-        public void onResponse(BulkResponse bulkItemResponses) {
-            listeners.stream().forEach(Runnable::run);
-        }
-
-        @Override
-        public void onFailure(final Exception e) {
-            Logger.error(this, e.getMessage(), e);
-        }
-    }
-
 
     private boolean isOrdered(final Runnable runner) {
 

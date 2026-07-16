@@ -13,6 +13,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtil.HandlerType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContainerWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -79,7 +80,7 @@ public class ContainerHandler implements IHandler {
     return this.getClass().getName();
   }
 
-  private void deleteContainer(final Container container) throws DotPublishingException, DotDataException {
+  private void deleteContainer(final Container container) {
     try {
       final Container workingContainer =
           APILocator.getContainerAPI().getWorkingContainerById(container.getIdentifier(), APILocator.getUserAPI().getSystemUser(), false);
@@ -90,7 +91,7 @@ public class ContainerHandler implements IHandler {
       }
     } catch (final Exception e) {
       Logger.error(ContainerHandler.class, String.format("An error occurred when deleting Container '%s' [%s]: %s",
-              container.getTitle(), container.getIdentifier(), e.getMessage()), e);
+              container.getTitle(), container.getIdentifier(), ExceptionUtil.getErrorMessage(e)), e);
     }
   }
 
@@ -141,15 +142,11 @@ public class ContainerHandler implements IHandler {
         unpublish = containerWrapper.getOperation().equals(Operation.UNPUBLISH);
 
         Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
-        if(UtilMethods.isEmpty(()->localHost.getIdentifier())){
-          final Container finalContainer = container;
-          Logger.warn(this.getClass(), "Ignoring container on non-existing host.  Id:" + container.getIdentifier() + ", title:" + Try.of(
-                  finalContainer::getTitle).getOrElse("unknown") + ". Unable to find referenced host id:" + containerId.getHostId());
+        if(UtilMethods.isEmpty(localHost::getIdentifier)){
+            Logger.warn(this.getClass(), "Ignoring container on non-existing site. Id:" + container.getIdentifier() + ", title:" + Try.of(
+                  container::getTitle).getOrElse("unknown") + ". Unable to find referenced host id:" + containerId.getHostId());
           continue;
         }
-
-
-
 
         if (containerWrapper.getOperation().equals(PushPublisherConfig.Operation.UNPUBLISH)) {
           String containerIden = container.getIdentifier();
@@ -204,19 +201,18 @@ public class ContainerHandler implements IHandler {
           }
         } catch (final Exception e) {
             throw new DotPublishingException(String.format("Unable to remove Container Version Info with ID '%s' from" +
-                    " cache: %s", identifierToDelete, e.getMessage()), e);
+                    " cache: %s", identifierToDelete, ExceptionUtil.getErrorMessage(e)), e);
         }
 
       }
 
     } catch (final Exception e) {
-        final String errorMsg = String.format("An error occurred when processing Container in '%s' with ID '%s': %s",
+        final String errorMsg = String.format("An error occurred when processing Container in '%s' with Title '%s' [%s]: %s",
                 workingOn, (null == container ? "(empty)" : container.getTitle()), (null == container ? "(empty)" :
-                        container.getIdentifier()), e.getMessage());
+                        container.getIdentifier()), ExceptionUtil.getErrorMessage(e));
         Logger.error(this.getClass(), errorMsg, e);
         throw new DotPublishingException(errorMsg, e);
     }
   }
-
 
 }

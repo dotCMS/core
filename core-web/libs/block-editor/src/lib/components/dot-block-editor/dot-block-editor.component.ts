@@ -1,5 +1,6 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
+import tippy from 'tippy.js';
 
 import {
     ChangeDetectorRef,
@@ -9,31 +10,38 @@ import {
     inject,
     Injector,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
+    SimpleChanges,
     ViewContainerRef
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+    AbstractControl,
+    ControlValueAccessor,
+    NG_VALUE_ACCESSOR,
+    NgControl
+} from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
-import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
+import CharacterCount from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
-import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotPropertiesService, DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -49,22 +57,26 @@ import {
     AssetUploader,
     BubbleAssetFormExtension,
     BubbleFormExtension,
-    BubbleLinkFormExtension,
-    DEFAULT_LANG_ID,
-    DotBubbleMenuExtension,
+    DotCMSTableExtensions,
     DotComands,
     DotConfigExtension,
     DotFloatingButton,
-    DotTableCellExtension,
-    DotTableExtension,
-    DotTableHeaderExtension,
-    DragHandler,
+    DotTableCellContextMenu,
     FREEZE_SCROLL_KEY,
-    FreezeScroll
+    FreezeScroll,
+    IndentExtension
 } from '../../extensions';
-import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
-import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
+    AIContentNode,
+    ContentletBlock,
+    createGridColumn,
+    GridBlock,
+    ImageNode,
+    LoaderNode,
+    VideoNode
+} from '../../nodes';
+import {
+    DEFAULT_LANG_ID,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
@@ -73,9 +85,9 @@ import {
 } from '../../shared';
 
 @Component({
-    selector: 'dot-block-editor',
+    selector: 'dot-old-block-editor',
     templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss'],
+    styleUrls: ['./dot-block-editor.component.css'],
     providers: [
         DialogService,
         {
@@ -83,9 +95,15 @@ import {
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
-export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
+/**
+ * @deprecated Legacy block editor — kept on the rollback path behind `FEATURE_FLAG_NEW_BLOCK_EDITOR`
+ * so customers can opt out of the new TipTap-v3 editor (`DotCMSEditorComponent` in `@dotcms/new-block-editor`).
+ * Slated for removal once the new editor exits QA. Do not extend this component — file new work against the new editor.
+ */
+export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
 
     @Input() field: DotCMSContentTypeField;
@@ -93,6 +111,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
 
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() isFullscreen = false;
+    @Input() hasFieldError = false;
     @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
     public allowedContentTypes: string;
@@ -102,6 +121,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     public customBlocks = '';
     public content: Content = '';
     public contentletIdentifier: string;
+    public disabled = false;
     editor: Editor;
     subject = new Subject();
     freezeScroll = true;
@@ -109,13 +129,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
-    private _customNodes: Map<string, AnyExtension> = new Map([
+    private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
-        ['table', DotTableExtension()],
         ['aiContent', AIContentNode],
-        ['loader', LoaderNode]
+        ['loader', LoaderNode],
+        ['gridBlock', GridBlock]
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
@@ -123,22 +143,25 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    constructor(
-        private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService,
-        private readonly dotAiService: DotAiService
-    ) {
-        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
-    }
+    readonly viewContainerRef = inject(ViewContainerRef);
+    readonly dotMarketingConfigService = inject(DotMarketingConfigService);
+    readonly dotAiService = inject(DotAiService);
 
-    get characterCount(): CharacterCountStorage {
+    readonly dotDragHandleOptions = {
+        duration: 250,
+        zIndex: 5,
+        placement: 'left'
+    };
+
+    // v3 stopped exporting CharacterCountStorage; mirror the shape locally.
+    get characterCount(): { characters: () => number; words: () => number } {
         return this.editor?.storage.characterCount;
     }
 
     get showCharData() {
         try {
             return JSON.parse(this.displayCountBar as string);
-        } catch (e) {
+        } catch {
             return true;
         }
     }
@@ -147,6 +170,35 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         // The constant used by Medium for words an adult can read per minute is 265
         // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
         return Math.ceil(this.characterCount.words() / 265);
+    }
+
+    /**
+     * Returns the charLimitExceeded error if it exists on the control.
+     * Used in the template to display the error message.
+     */
+    get charLimitError(): { max: number; actual: number } | null {
+        const ngControl = this.#injector.get(NgControl, null);
+
+        return ngControl?.control?.errors?.['charLimitExceeded'] ?? null;
+    }
+
+    /**
+     * Returns true if the editor should show error styling (red border).
+     * Combines the external error state (from parent) with internal charLimit validation.
+     */
+    get hasError(): boolean {
+        return this.hasFieldError || !!this.charLimitError;
+    }
+
+    /**
+     * Returns true if the control has a required error and has been touched.
+     * Used to display the required error message in the footer.
+     */
+    get requiredError(): boolean {
+        const ngControl = this.#injector.get(NgControl, null);
+        const control = ngControl?.control;
+
+        return !!(control?.errors?.['required'] && control?.touched);
     }
 
     registerOnChange(fn: (value: string) => void) {
@@ -162,11 +214,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.setEditorContent(content);
     }
 
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+        if (this.editor) {
+            this.editor.setEditable(!isDisabled);
+        }
+    }
+
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
     ngOnInit() {
+        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
+        tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),
@@ -181,7 +242,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
-                    ]
+                    ],
+                    editable: true
                 });
 
                 this.dotMarketingConfigService.setProperty(
@@ -193,15 +255,105 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             });
     }
 
+    ngOnChanges(changes: SimpleChanges) {
+        // Update DotConfig extension when languageId changes
+        if (changes['languageId'] && this.editor && !changes['languageId'].firstChange) {
+            const newLanguageId = this.contentlet?.languageId || this.languageId;
+            this.editor.storage.dotConfig.lang = newLanguageId;
+        }
+    }
+
     ngOnDestroy() {
+        if (this.editor) {
+            this.editor.destroy();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }
 
-    onBlockEditorChange(value: JSONContent) {
-        this.valueChange.emit(value);
-        this.onChange?.(JSON.stringify(value));
-        this.onTouched?.();
+    onBlockEditorChange(value: JSONContent): void {
+        if (this.disabled) {
+            return;
+        }
+
+        // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
+        // API response always contains this metadata. Without this patch the attrs
+        // would only arrive after the 250 ms debounce fired by the (keyup) handler.
+        // `characterCount` is derived from `this.editor?.storage`, so it can be
+        // undefined when the editor hasn't finished initializing (async ngOnInit).
+        const charCount = this.characterCount?.characters?.() ?? 0;
+        const updatedValue: JSONContent =
+            charCount > 0
+                ? {
+                      ...value,
+                      attrs: {
+                          ...(value.attrs || {}),
+                          charCount,
+                          wordCount: this.characterCount?.words?.() ?? 0,
+                          readingTime: this.readingTime
+                      }
+                  }
+                : value;
+
+        this.valueChange.emit(updatedValue);
+        this.onChange?.(JSON.stringify(updatedValue));
+        this.updateCharLimitValidity();
+    }
+
+    /**
+     * Updates the form control validity based on charLimit.
+     * When character count exceeds charLimit, sets charLimitExceeded error
+     * so the form cannot be saved.
+     *
+     * @private
+     * @memberof DotBlockEditorComponent
+     */
+    private updateCharLimitValidity(): void {
+        const ngControl = this.#injector.get(NgControl, null);
+        const control = ngControl?.control;
+        if (!control) {
+            return;
+        }
+
+        const limit = this.charLimit;
+        if (!Number.isFinite(limit) || limit <= 0) {
+            this.clearCharLimitError(control);
+
+            return;
+        }
+
+        const count = this.characterCount?.characters?.() ?? 0;
+        if (count > limit) {
+            control.setErrors({
+                ...(control.errors || {}),
+                charLimitExceeded: { max: limit, actual: count }
+            });
+            control.markAsTouched();
+        } else {
+            this.clearCharLimitError(control);
+        }
+    }
+
+    /**
+     * Removes the charLimitExceeded error from the control while preserving other errors.
+     *
+     * @private
+     * @param {AbstractControl} control - The form control to clear the error from
+     * @memberof DotBlockEditorComponent
+     */
+    private clearCharLimitError(control: AbstractControl): void {
+        const errors = control.errors;
+        if (!errors || !('charLimitExceeded' in errors)) {
+            return;
+        }
+
+        // Remove charLimitExceeded while preserving other errors
+        const rest = Object.keys(errors)
+            .filter((key) => key !== 'charLimitExceeded')
+            .reduce((acc, key) => ({ ...acc, [key]: errors[key] }), {});
+
+        control.setErrors(Object.keys(rest).length > 0 ? rest : null);
     }
 
     setAllowedBlocks(blocks: string) {
@@ -220,7 +372,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.editor.on('create', () => {
             this.setEditorContent(this.value);
             this.updateCharCount();
+            // Validate char limit on initial load (e.g., existing content over limit)
+            this.updateCharLimitValidity();
         });
+
+        // Validate char limit on every update (typing, paste, etc.)
+        this.editor.on('update', () => {
+            this.updateCharLimitValidity();
+        });
+
+        // Mark control as touched when user leaves the editor (proper ControlValueAccessor pattern)
+        this.editor.on('blur', () => {
+            this.onTouched?.();
+        });
+
         this.subject
             .pipe(takeUntil(this.destroy$), debounceTime(250))
             .subscribe(() => this.updateCharCount());
@@ -427,13 +592,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private getEditorExtensions(isAIPluginInstalled: boolean) {
         const extensions = [
             DotConfigExtension({
-                lang: this.languageId || this.contentlet?.languageId,
+                lang: this.contentlet?.languageId || this.languageId,
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this.allowedBlocks,
                 contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
-            DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),
             Youtube.configure({
                 height: 300,
                 width: 400,
@@ -446,18 +610,48 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
-            DragHandler(this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
-            DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
-            DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
-            DotTableHeaderExtension(),
-            TableRow,
             FreezeScroll,
             CharacterCount,
-            AssetUploader(this.#injector, this.viewContainerRef)
+            AssetUploader(this.#injector, this.viewContainerRef),
+            IndentExtension,
+            Placeholder.configure({
+                emptyEditorClass: 'is-editor-empty',
+                emptyNodeClass: 'is-empty',
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
+                        return this.#dotMessageService.get('block-editor.placeholder.list');
+                    }
+
+                    if (node.type.name === 'heading') {
+                        const level = node.attrs['level'] ?? '';
+
+                        return this.#dotMessageService.get(
+                            'block-editor.placeholder.heading',
+                            level
+                        );
+                    }
+
+                    if (node.type.name === 'codeBlock') {
+                        return this.#dotMessageService.get('block-editor.placeholder.code');
+                    }
+
+                    if (node.type.name === 'blockquote') {
+                        return this.#dotMessageService.get('block-editor.placeholder.quote');
+                    }
+
+                    if (node.type.name === 'table' || node.type.name === 'gridBlock') {
+                        return '';
+                    }
+
+                    return this.#dotMessageService.get('block-editor.placeholder.paragraph');
+                }
+            }),
+            ...DotCMSTableExtensions,
+            DotTableCellContextMenu(this.viewContainerRef),
+            createGridColumn(this.allowedBlocks.length > 1 ? this.allowedBlocks : [])
         ];
 
         if (isAIPluginInstalled) {
@@ -482,7 +676,31 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ autolink: false, openOnClick: false })
+            // Extends the default Link mark with accessibility attributes (title, aria-label)
+            // and rel. These are persisted in the TipTap JSON and rendered in the editor DOM.
+            Link.extend({
+                addAttributes() {
+                    return {
+                        ...this.parent?.(),
+                        title: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('title'),
+                            renderHTML: (attrs) => (attrs.title ? { title: attrs.title } : {})
+                        },
+                        'aria-label': {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('aria-label'),
+                            renderHTML: (attrs) =>
+                                attrs['aria-label'] ? { 'aria-label': attrs['aria-label'] } : {}
+                        },
+                        rel: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('rel'),
+                            renderHTML: (attrs) => (attrs.rel ? { rel: attrs.rel } : {})
+                        }
+                    };
+                }
+            }).configure({ autolink: false, openOnClick: false })
         ];
     }
 

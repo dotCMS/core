@@ -14,12 +14,11 @@ bin/*.sh
 *.sublime-workspace
 
 # IDE - VSCode
-.vscode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+
+
+# Allow core-web VSCode settings
+!core-web/.vscode/
+!core-web/.vscode/**
 
 # none enterprise stuff should make it here #
 #######################################
@@ -101,6 +100,7 @@ node_modules/
 /core-web/dist
 /core-web/dist-lib
 /core-web/docs
+/core-web/documentation.json
 /core-web/tmp
 /core-web/out-tsc
 /core-web/karma_html
@@ -118,6 +118,9 @@ node_modules/
 !/core-web/.yarn/sdks
 !/core-web/.yarn/versions
 
+# Stencil-generated types (regenerated on every build; causes CI "changes during build" failure if tracked)
+/core-web/libs/dotcms-webcomponents/src/components.d.ts
+
 # misc
 /core-web/.nx
 /core-web/.angular/cache
@@ -125,6 +128,7 @@ node_modules/
 /core-web/connect.lock
 /core-web/coverage
 /core-web/libpeerconnection.log
+/core-web/libs/agentic-tools/src/generated
 npm-debug.log
 yarn-error.log
 testem.log
@@ -136,10 +140,13 @@ dotsecure
 /core-web/e2e/*.js
 /core-web/e2e/*.map
 
-/core-web/storybook
 /core-web/out*/
 dist-docs/
 **/test-reports/
+/core-web/apps/dotcms-ui-e2e/playwright-report
+/core-web/apps/dotcms-ui-e2e/test-results
+/core-web/apps/dotcms-ui-e2e/test-results/junit.xml
+/core-web/apps/dotcms-ui-e2e/target
 
 #env
 /core-web/**/.env
@@ -157,7 +164,6 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
 .flattened-pom.xml
-
 /dependencies.txt
 /updates.txt
 
@@ -181,4 +187,33 @@ dotCMS/dependencies.gradle
 .nx/
 .cursorrules
 .cursorignore
-**/vite.config.mts.timestamp-*
+
+# Vite config timestamp files
+**/*vite.config*.timestamp*
+**/*vitest.config*.timestamp*
+
+# Examples package-lock.json
+examples/nextjs/package-lock.json
+examples/angular/package-lock.json
+examples/astro/package-lock.json
+
+# core-web uses yarn, ignore npm lock file
+/core-web/package-lock.json
+
+local/
+
+**/.yalc/
+
+# Claude Code diagnostic outputs
+.claude/diagnostics/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+*.egg
+.venv/

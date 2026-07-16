@@ -19,7 +19,7 @@ At this point, you can use `buildx` to build your image and target the platform(
 
 Use the version specified
 ```
-docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/java-base:ms-jdk-11 .
+docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/java-base:ms-jdk-21.09 .
 ```
 
 or specify a version

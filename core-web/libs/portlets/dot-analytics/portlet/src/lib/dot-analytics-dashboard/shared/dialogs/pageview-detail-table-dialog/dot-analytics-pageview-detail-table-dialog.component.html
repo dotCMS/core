@@ -1,0 +1,74 @@
+<div
+    class="pageview-detail-table-dialog max-h-[min(70vh,28rem)] overflow-auto pr-1"
+    data-testid="analytics-pageview-detail-table-dialog">
+    <p-table
+        class="block w-full"
+        styleClass="pageview-detail-table-dialog__datatable"
+        [value]="$rows()"
+        [paginator]="true"
+        [rows]="DETAIL_TABLE.ROWS_PER_PAGE"
+        [rowsPerPageOptions]="DETAIL_TABLE.ROWS_PER_PAGE_OPTIONS"
+        [alwaysShowPaginator]="DETAIL_TABLE.ALWAYS_SHOW_PAGINATOR"
+        [dataKey]="DETAIL_TABLE.DATA_KEY"
+        [showFirstLastIcon]="false"
+        [showCurrentPageReport]="false"
+        [showJumpToPageDropdown]="false"
+        paginatorDropdownAppendTo="body"
+        [tableStyle]="{ 'min-width': '100%' }">
+        <ng-template pTemplate="header">
+            <tr>
+                <th
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
+                    scope="col">
+                    {{ $dimensionHeaderKey() | dm }}
+                </th>
+                <th
+                    class="w-48 max-w-48 min-w-32 border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
+                    scope="col">
+                    {{ COLUMN_RATE_KEY | dm }}
+                </th>
+                <th
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-end font-semibold whitespace-nowrap text-muted-color"
+                    scope="col">
+                    {{ COLUMN_VIEWS_KEY | dm }}
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+            <tr data-testid="analytics-pageview-detail-table-row">
+                <td class="border-b border-surface py-2.5 pr-3 pl-0 align-middle">
+                    {{ row.dimensionLabel }}
+                </td>
+                <td
+                    class="w-48 max-w-48 min-w-32 border-b border-surface py-2.5 pr-3 pl-0 align-middle">
+                    <span class="inline-flex w-full min-w-0 items-center gap-2">
+                        <span
+                            class="flex h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-200"
+                            role="progressbar"
+                            [attr.aria-valuenow]="row.percentage"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            [attr.aria-label]="progressAriaLabel(row)">
+                            <span
+                                class="h-full rounded-full bg-primary transition-[width] duration-150 ease-out"
+                                data-testid="analytics-pageview-detail-bar-fill"
+                                [style.width.%]="row.percentage"></span>
+                        </span>
+                        <span class="shrink-0 text-color tabular-nums">{{ row.percentage }}%</span>
+                    </span>
+                </td>
+                <td
+                    class="border-b border-surface py-2.5 pr-3 pl-0 text-end align-middle text-color tabular-nums">
+                    {{ row.totalViews | dotAnalyticsCount: 'full' }}
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td class="border-b border-surface py-2.5 pr-3 pl-0 align-middle" colspan="3">
+                    {{ EMPTY_TABLE_KEY | dm }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

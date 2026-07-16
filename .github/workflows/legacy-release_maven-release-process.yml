@@ -1,4 +1,34 @@
-name: Maven Release Process
+#
+# ⚠️ DEPRECATED WORKFLOW ⚠️
+#
+# This workflow is deprecated and has been replaced by the modular release process.
+#
+# Migration Path:
+# → Use: .github/workflows/cicd_6-release.yml
+#
+# The new modular workflow provides:
+# - All functionality from this legacy workflow
+# - Better separation of concerns (modular phases)
+# - Improved error handling and reporting
+# - Java version override support for alternate Java releases
+# - Parallel Java variant builds (cicd_7-release-java-variant.yml)
+# - More flexible configuration options
+#
+# Key improvements:
+# - Modular phases can be reused across different workflows
+# - Better artifact management
+# - Improved observability and debugging
+# - Consistent with modern CI/CD pipeline architecture
+#
+# Deprecation Timeline:
+# - Deprecated: February 2026
+# - Removal: After cicd_6-release.yml proves stable for 2+ production releases
+#
+# Last known usage: January 30, 2026 (10 successful runs in January 2026)
+# Status: Being phased out - new releases should use cicd_6-release.yml
+#
+
+name: Maven Release Process [DEPRECATED]
 on:
   workflow_dispatch:
     inputs:
@@ -26,7 +56,7 @@ on:
       update_github_labels:
         description: 'Update GitHub labels'
         type: boolean
-        default: false
+        default: true
         required: false
       notify_slack:
         description: 'Notify Slack'
@@ -116,6 +146,16 @@ jobs:
           echo "-Dchangelist=" >> .mvn/maven.config
           
           git add .mvn/maven.config
+          
+          # Update LICENSE file Change Date
+          chmod +x .github/actions/update-license-date.sh
+          .github/actions/update-license-date.sh
+          
+          # Add LICENSE file if it was modified
+          if ! git diff --quiet HEAD -- LICENSE; then
+            echo "LICENSE file was updated, adding to commit"
+            git add LICENSE
+          fi
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
@@ -317,7 +357,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.CI_MACHINE_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/dotCMS/plugin-seeds/dispatches \
+            https://api.github.com/repos/dotcms-community/plugin-examples/dispatches \
             -d "{\"event_type\": \"on-plugins-release\", \"client_payload\": {\"release_version\": \"$release_version\"}}" \
             -w "\n%{http_code}" \
             -s)

@@ -5,8 +5,8 @@ import { FieldProperty } from '../field-properties.model';
 
 @Component({
     selector: 'dot-name-property',
-    styleUrls: ['./name-property.component.scss'],
-    templateUrl: './name-property.component.html'
+    templateUrl: './name-property.component.html',
+    standalone: false
 })
 export class NamePropertyComponent {
     property: FieldProperty;

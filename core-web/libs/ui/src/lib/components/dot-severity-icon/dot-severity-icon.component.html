@@ -1,0 +1,14 @@
+@switch ($severity()) {
+    @case ('success') {
+        <CheckIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+    }
+    @case ('info') {
+        <InfoCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+    }
+    @case ('error') {
+        <TimesCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+    }
+    @case ('warn') {
+        <ExclamationTriangleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+    }
+}

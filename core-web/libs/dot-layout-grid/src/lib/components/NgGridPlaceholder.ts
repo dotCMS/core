@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, Renderer2 } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, inject } from '@angular/core';
 
 import { NgGrid } from '../directives/NgGrid';
 import { NgGridItemPosition, NgGridItemSize } from '../interfaces/INgGrid';
@@ -8,15 +8,13 @@ import { NgGridItemPosition, NgGridItemSize } from '../interfaces/INgGrid';
     template: ''
 })
 export class NgGridPlaceholder implements OnInit {
+    private _ngEl = inject(ElementRef);
+    private _renderer = inject(Renderer2);
+
     private _size: NgGridItemSize;
     private _position: NgGridItemPosition;
     private _ngGrid: NgGrid;
     private _cascadeMode: string;
-
-    constructor(
-        private _ngEl: ElementRef,
-        private _renderer: Renderer2
-    ) {}
 
     public registerGrid(ngGrid: NgGrid) {
         this._ngGrid = ngGrid;

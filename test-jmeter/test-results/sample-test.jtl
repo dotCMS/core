@@ -1,0 +1,6 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1749220000000,2,Event Submit,200,OK,Thread Group 1-1,text,true,,1234,567,1,50,https://analytics-dev.dotcms.site/api/v1/event,1,0,0
+1749220000001,1,Event Submit,200,OK,Thread Group 1-2,text,true,,1234,567,2,50,https://analytics-dev.dotcms.site/api/v1/event,1,0,0
+1749220000002,3,Event Submit,200,OK,Thread Group 1-3,text,true,,1234,567,3,50,https://analytics-dev.dotcms.site/api/v1/event,2,0,0
+1749220000003,61,Event Submit,200,OK,Thread Group 1-4,text,true,,1234,567,4,50,https://analytics-dev.dotcms.site/api/v1/event,59,0,0
+1749220000004,2,Event Submit,200,OK,Thread Group 1-5,text,true,,1234,567,5,50,https://analytics-dev.dotcms.site/api/v1/event,1,0,0 

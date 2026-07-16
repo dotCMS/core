@@ -2,8 +2,6 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -25,9 +23,8 @@ describe('DotEmptyStateComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotEmptyStateComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-            imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule]
+            imports: [DotEmptyStateComponent, DotSafeHtmlPipe, DotMessagePipe]
         }).compileComponents();
     });
 
@@ -70,13 +67,13 @@ describe('DotEmptyStateComponent', () => {
         const title = de.query(By.css('[data-testid="title"]'));
         const content = de.query(By.css('[data-testid="content"]'));
         const button = de.query(By.css('[data-testid="button"]'));
-        const icon = de.query(By.css('[data-testid="material-icons"]'));
+        const icon = de.query(By.css('[data-testid="material-symbols-outlined"]'));
 
-        expect(icon.nativeElement.innerText).toBe('web');
-        expect(title.nativeElement.innerText).toEqual('Your template list is empty');
-        expect(content.nativeElement.innerText).toEqual(
+        expect(icon.nativeElement.textContent.trim()).toBe('web');
+        expect(title.nativeElement.textContent).toEqual('Your template list is empty');
+        expect(content.nativeElement.textContent).toEqual(
             "You haven't added anything yet, start by clicking the button below"
         );
-        expect(button.nativeElement.innerText).toEqual('Add New Template');
+        expect(button.nativeElement.textContent).toEqual('Add New Template');
     });
 });

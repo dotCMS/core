@@ -1,20 +1,23 @@
 import { of as observableOf } from 'rxjs';
 
+import { HttpTestingController } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageDisplayService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
@@ -25,12 +28,20 @@ describe('DotEditContentletComponent', () => {
     let dotEditContentletWrapper: DebugElement;
     let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
+    let httpMock: HttpTestingController;
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
+            imports: [
+                DotEditContentletComponent,
+                DotContentletWrapperComponent,
+                DotIframeDialogComponent,
+                BrowserAnimationsModule,
+                RouterTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
+                IframeOverlayService,
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -46,9 +57,18 @@ describe('DotEditContentletComponent', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotCustomEventHandlerService,
+                    useValue: {
+                        handle: jest.fn()
+                    }
+                },
+                {
+                    provide: DotcmsConfigService,
+                    useValue: { getConfig: () => observableOf({}) }
                 }
-            ],
-            imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+            ]
         });
     }));
 
@@ -57,13 +77,18 @@ describe('DotEditContentletComponent', () => {
         de = fixture.debugElement;
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
+        httpMock = de.injector.get(HttpTestingController);
 
-        spyOn(component.shutdown, 'emit');
+        jest.spyOn(component.shutdown, 'emit');
 
         fixture.detectChanges();
 
         dotEditContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
         dotEditContentletWrapperComponent = dotEditContentletWrapper.componentInstance;
+    });
+
+    afterEach(() => {
+        httpMock.match(() => true).forEach((req) => req.flush({}));
     });
 
     describe('default', () => {

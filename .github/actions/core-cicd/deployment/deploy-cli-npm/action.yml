@@ -140,6 +140,7 @@ runs:
           NPM_PACKAGE_VERSION_TAG="latest"
           NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
         fi;
+
         echo "::debug::NPM_PACKAGE_VERSION: $NPM_PACKAGE_VERSION"
         echo "::debug::NPM_PACKAGE_VERSION_TAG: $NPM_PACKAGE_VERSION_TAG"
 

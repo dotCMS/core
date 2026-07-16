@@ -8,6 +8,7 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
@@ -33,7 +34,8 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
     ],
     selector: 'dot-sub-nav',
     templateUrl: './dot-sub-nav.component.html',
-    styleUrls: ['./dot-sub-nav.component.scss']
+    styleUrls: ['./dot-sub-nav.component.scss'],
+    imports: [RouterModule]
 })
 export class DotSubNavComponent {
     @ViewChild('ul', { static: true }) ul: ElementRef;

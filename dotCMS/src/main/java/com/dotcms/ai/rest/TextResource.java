@@ -11,6 +11,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +32,7 @@ import java.util.Map;
  * It includes methods for generating text based on a given prompt.
  */
 @Path("/v1/ai/text")
+@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class TextResource {
 
     /**

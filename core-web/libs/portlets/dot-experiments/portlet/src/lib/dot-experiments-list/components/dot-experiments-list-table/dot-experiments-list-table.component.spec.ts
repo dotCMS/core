@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
 
@@ -58,7 +58,8 @@ const EXPERIMENT_MOCK = {
     actionsItemsMenu: [...MOCK_MENU_ITEMS]
 };
 
-@Pipe({ name: 'date' })
+// eslint-disable-next-line @angular-eslint/prefer-standalone
+@Pipe({ name: 'date', standalone: false })
 class MockDatePipe implements PipeTransform {
     transform(value: string): string {
         return (value as unknown as Date).toLocaleDateString();
@@ -148,7 +149,7 @@ describe('DotExperimentsListTableComponent', () => {
         });
 
         it('should emit action when a row is clicked', () => {
-            jest.spyOn(spectator.component.goToContainer, 'emit');
+            jest.spyOn(spectator.component.$goToContainer, 'emit');
             const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
                 { status: DotExperimentStatus.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
             ];
@@ -156,7 +157,7 @@ describe('DotExperimentsListTableComponent', () => {
             spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
             spectator.click(byTestId('experiment-row'));
-            expect(spectator.component.goToContainer.emit).toHaveBeenCalledWith(
+            expect(spectator.component.$goToContainer.emit).toHaveBeenCalledWith(
                 DRAFT_EXPERIMENT_MOCK
             );
         });

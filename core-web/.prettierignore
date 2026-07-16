@@ -9,6 +9,7 @@
 
 package.json
 package-lock.json
+pnpm-lock.yaml
 yarn-error.log.json
 dist
 dist-lib
@@ -16,7 +17,6 @@ dist-doc
 node_modules
 .angulardoc.json
 .vscode/*
-.storybook
 karma_html
 docs
 .angular

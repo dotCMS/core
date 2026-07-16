@@ -36,7 +36,7 @@ describe('Column', () => {
         expect(containers).toHaveLength(0);
     });
 
-    test('should render a container wrapper with correct grid classes', () => {
+    test('should render a container wrapper with correct grid grid-cols-12 gap-4 classes', () => {
         const { container } = render(<Column column={MOCK_COLUMN} />);
 
         const containerWrapper = container.querySelector('[data-dot="column"]');

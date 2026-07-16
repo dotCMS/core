@@ -9,7 +9,12 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DefaultValuePropertyComponent } from './index';
@@ -33,6 +38,7 @@ describe('DefaultValuePropertyComponent', () => {
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
+                DotFieldRequiredDirective,
                 DotFieldValidationMessageComponent
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -82,14 +88,16 @@ describe('DefaultValuePropertyComponent', () => {
         expect(comp.errorLabel).toEqual('default error');
     });
     it('set error label to specific valid date field', () => {
-        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableDateField';
         fixture.detectChanges();
+        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableDateField';
+        comp.updateErrorLabel();
         expect(comp.errorLabel).toEqual('date error');
     });
 
     it('set error label to specific valid date time field', () => {
-        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableDateTimeField';
         fixture.detectChanges();
+        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableDateTimeField';
+        comp.updateErrorLabel();
         expect(comp.errorLabel).toEqual('date-time error');
     });
 

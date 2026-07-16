@@ -7,7 +7,7 @@ import picocli.CommandLine;
  * Adopting this class as a mixin allows different pull commands to share this common set of
  * options.
  */
-public class PullMixin {
+public class PullMixin extends GlobalMixin {
 
     @CommandLine.Mixin(name = "workspace")
     WorkspaceMixin workspaceMixin;
@@ -26,13 +26,6 @@ public class PullMixin {
                     "Number of retry attempts on errors. By default, this option is disabled, "
                             + "and the command will not retry on error.")
     public int retryAttempts;
-
-    @CommandLine.Option(names = {"--noValidateUnmatchedArguments"},
-            description = "Allows to skip the the validation of the unmatched arguments. "
-                    + "Useful for internal use when a pull sub-command is called from the global pull.",
-            hidden = true,
-            defaultValue = "false")
-    public boolean noValidateUnmatchedArguments;
 
     public WorkspaceParams workspace() {
         return workspaceMixin.workspaceParams();

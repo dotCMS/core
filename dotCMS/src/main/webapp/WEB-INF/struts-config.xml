@@ -27,7 +27,7 @@
       <form-bean name="RecuranceForm" type="com.dotmarketing.portlets.events.struts.RecuranceForm"></form-bean>
       <form-bean name="CmsMaintenanceForm" type="com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm"></form-bean>
       <form-bean name="StructureForm" type="com.dotmarketing.portlets.structure.struts.StructureForm"></form-bean>
-      <form-bean name="RelationshipForm" type="com.dotmarketing.portlets.structure.struts.RelationshipForm"></form-bean>
+
       <form-bean name="DotFieldForm" type="com.dotmarketing.portlets.structure.struts.FieldForm"></form-bean>
       <form-bean name="OrganizationForm" type="com.dotmarketing.portlets.organization.struts.OrganizationForm"></form-bean>
       <!-- User Manager -->
@@ -322,13 +322,7 @@
          <forward name="portlet.ext.structure.view_structure" path="portlet.ext.structure.view_structure" />
       </action>
 
-      <action path="/ext/structure/view_relationships" type="com.dotmarketing.portlets.structure.action.ViewRelationshipsAction">
-         <forward name="portlet.ext.structure.view_relationships" path="portlet.ext.structure.view_relationships" />
-      </action>
 
-      <action path="/ext/structure/edit_relationship" type="com.dotmarketing.portlets.structure.action.EditRelationshipAction" name="RelationshipForm" input="portlet.ext.structure.edit_relationship" validate="false" scope="request">
-         <forward name="portlet.ext.structure.edit_relationship" path="portlet.ext.structure.edit_relationship" />
-      </action>
 
 
       <!-- END STRUCTURE & FIELD-->

@@ -1,0 +1,52 @@
+<div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
+    @if ($showMessage()) {
+        <p-message
+            severity="info"
+            [closable]="true"
+            (onClose)="onCloseMessage()"
+            data-testid="analytics-message">
+            <div class="flex items-center gap-2">
+                <i class="pi pi-info-circle"></i>
+                <span data-testid="message-content">
+                    {{ 'analytics.feature.state' | dm }}
+                    <b>{{ 'development' | dm }}</b>
+                </span>
+            </div>
+        </p-message>
+    }
+
+    <p-tabs [lazy]="true">
+        <div class="analytics-dashboard-toolbar bg-gray-100 border-b border-gray-300 px-4">
+            <div class="flex justify-between items-center gap-4 min-h-12">
+                <div class="flex items-center gap-4 min-w-0">
+                    <p-tablist
+                        class="shrink-0 min-w-0 border-0 bg-transparent shadow-none"
+                        [pt]="tabListPt">
+                        @for (tab of tabs; track tab.id) {
+                            <p-tab
+                                [routerLink]="tab.route"
+                                queryParamsHandling="preserve"
+                                [routerLinkActive]="['p-tab-active']">
+                                {{ tab.label | dm }}
+                            </p-tab>
+                        }
+                    </p-tablist>
+                    <p-divider layout="vertical" />
+                    <dot-analytics-filters
+                        [timeRange]="store.timeRange()"
+                        (changeFilters)="onTimeRangeChange($event)"
+                        data-testid="analytics-filters" />
+                </div>
+                <p-button
+                    [label]="'analytics.dashboard.refresh.button' | dm"
+                    severity="primary"
+                    size="small"
+                    (onClick)="onRefresh()"
+                    data-testid="refresh-button" />
+            </div>
+        </div>
+    </p-tabs>
+    <div class="p-8">
+        <router-outlet />
+    </div>
+</div>

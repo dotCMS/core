@@ -19,7 +19,7 @@ public class WorkflowEmailUtilTest {
 
     /**
      * Method to test {@link WorkflowEmailUtil#resolveSenderInfo(User, UserAPI, CompanyAPI)}
-     * Given Scenario: the users anonymous and system user are passed to the function
+     * Given Scenario: regardless of the user passed to the function
      * Expected Result: we expect the company's email address
      * @throws DotDataException
      */
@@ -72,7 +72,7 @@ public class WorkflowEmailUtilTest {
         assertEquals(companyEmailAddress, calledWithSystem._1);
 
         final Tuple2<String, String> calledWithRingo = WorkflowEmailUtil.resolveSenderInfo(ringo, userAPI, companyAPI);
-        assertEquals(ringosAddress, calledWithRingo._1);
+        assertEquals(companyEmailAddress, calledWithRingo._1);
 
 
     }

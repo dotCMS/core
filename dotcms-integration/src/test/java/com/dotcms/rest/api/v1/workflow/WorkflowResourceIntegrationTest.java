@@ -46,6 +46,7 @@ import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -92,10 +93,12 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetPermissionsActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -133,10 +136,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -1646,6 +1650,266 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
+    /**
+     * Creates a custom contentType with a required text field and a tag field, associated with the
+     * out-of-the-box System and Document workflows.
+     *
+     * @return the created {@link ContentType}
+     * @throws Exception if the content type cannot be created
+     */
+    private ContentType createSampleContentTypeWithTagField() throws Exception {
+        final String ctPrefix = "TestContentTypeWithTag";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        ContentType contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        // Add a required Text field
+        final Field textField =
+                FieldBuilder.builder(TextField.class).name(REQUIRED_TEXT_FIELD_NAME)
+                        .variable(REQUIRED_TEXT_FIELD_NAME)
+                        .required(true)
+                        .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
+
+        // Add a Tag field
+        final Field tagField =
+                FieldBuilder.builder(TagField.class).name(TAG_FIELD_NAME)
+                        .variable(TAG_FIELD_NAME)
+                        .contentTypeId(contentType.id()).build();
+
+        contentType = contentTypeAPI.save(contentType, List.of(textField, tagField));
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
+        );
+
+        return contentType;
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionSinglePart(HttpServletRequest,
+     * HttpServletResponse, String, String, String, String, String, FireActionForm)}
+     * <p>
+     * Given Scenario: A contentlet of a content type that has a Tag field is saved/published with a
+     * tag value (e.g. {@code "new edit content"}). Then the Save/Publish workflow action is fired
+     * again over the same contentlet sending {@code "tags": ""} (an empty value) in the payload.
+     * <p>
+     * Expected Result: The tag must be cleared. After firing the action with an empty tags value
+     * the contentlet must have no tags associated to its tag field, and the returned contentlet must
+     * not echo back the stale tag value.
+     */
+    @Test
+    public void Test_Fire_Save_With_Tag_Then_Fire_Update_With_Empty_Tag_Clears_Tag()
+            throws Exception {
+        final String saveAndPublishActionId = "b9d89c80-3d88-4311-8365-187323c96436";
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentTypeWithTagField();
+            Contentlet brandNewContentlet = null;
+            try {
+                // 1) Save/Publish setting a tag value
+                final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+                final Map<String, Object> contentletFormData = new HashMap<>();
+                contentletFormData.put("stInode", contentType.inode());
+                contentletFormData.put(REQUIRED_TEXT_FIELD_NAME, "value-1");
+                contentletFormData.put(TAG_FIELD_NAME, "new edit content");
+                contentletFormData.put("languageId", 1);
+                builder1.contentlet(contentletFormData);
+
+                final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+                final Response response1 = workflowResource
+                        .fireActionSinglePart(getHttpRequest(), new EmptyHttpResponse(),
+                                saveAndPublishActionId, null, null,
+                                IndexPolicy.WAIT_FOR.name(), "-1", fireActionForm1);
+
+                assertEquals(Status.OK.getStatusCode(), response1.getStatus());
+                final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                        .cast(response1.getEntity());
+                brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
+                assertNotNull(brandNewContentlet.getInode());
+
+                // The tag must have been persisted
+                final List<Tag> savedTags = APILocator.getTagAPI()
+                        .getTagsByInodeAndFieldVarName(brandNewContentlet.getInode(),
+                                TAG_FIELD_NAME);
+                assertEquals("The tag should have been saved", 1, savedTags.size());
+                assertEquals("new edit content", savedTags.get(0).getTagName());
+
+                // 2) Fire the Save/Publish action again over the same contentlet, but now sending
+                // an empty tags value, which should clear the tag.
+                final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+                final Map<String, Object> contentletFormData2 = new HashMap<>();
+                contentletFormData2.put("stInode", contentType.inode());
+                contentletFormData2.put(REQUIRED_TEXT_FIELD_NAME, "value-1");
+                contentletFormData2.put(TAG_FIELD_NAME, "");
+                contentletFormData2.put("languageId", 1);
+                builder2.contentlet(contentletFormData2);
+
+                final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+                final Response response2 = workflowResource
+                        .fireActionSinglePart(getHttpRequest(), new EmptyHttpResponse(),
+                                saveAndPublishActionId, brandNewContentlet.getInode(), null,
+                                IndexPolicy.WAIT_FOR.name(), "-1", fireActionForm2);
+
+                assertEquals(Status.OK.getStatusCode(), response2.getStatus());
+                final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                        .cast(response2.getEntity());
+                final Contentlet updatedContentlet = new Contentlet(
+                        Map.class.cast(fireEntityView2.getEntity()));
+                assertNotNull(updatedContentlet);
+                assertEquals(brandNewContentlet.getIdentifier(),
+                        updatedContentlet.getIdentifier());
+
+                // 3) The tag must be cleared now (this is the bug: the old value is kept).
+                final List<Tag> updatedTags = APILocator.getTagAPI()
+                        .getTagsByInodeAndFieldVarName(updatedContentlet.getInode(),
+                                TAG_FIELD_NAME);
+                assertTrue(
+                        "Tags should be cleared when the action is fired with an empty tags value, "
+                                + "but the following tags were found: " + updatedTags,
+                        updatedTags.isEmpty());
+
+                // The returned contentlet must not echo back the stale tag value
+                final Object tagsValue = updatedContentlet.getMap().get(TAG_FIELD_NAME);
+                assertTrue(
+                        "The returned contentlet still shows the stale tag value: " + tagsValue,
+                        tagsValue == null
+                                || tagsValue.toString().isEmpty()
+                                || (tagsValue instanceof List && ((List) tagsValue).isEmpty()));
+
+            } finally {
+                if (null != brandNewContentlet) {
+                    contentletAPI.destroy(brandNewContentlet, APILocator.systemUser(), false);
+                }
+            }
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Fires the System Workflow Save/Publish action over the given content type. When
+     * {@code includeTagKey} is true the {@code tagField} entry is added to the payload with
+     * {@code tagValue} (which may be a String, a List or {@code null}); when false the tag field key
+     * is omitted entirely (simulating a partial update that does not mention the field).
+     *
+     * @param contentType   the content type to fire against
+     * @param inode         the inode to update, or {@code null} to create a new contentlet
+     * @param tagValue      the value to set for the tag field (only used when {@code includeTagKey})
+     * @param includeTagKey whether the tag field key is present in the payload
+     * @return the contentlet returned by the fire action
+     */
+    private Contentlet fireSaveWithTagValue(final ContentType contentType, final String inode,
+            final Object tagValue, final boolean includeTagKey) throws Exception {
+        final String saveAndPublishActionId = "b9d89c80-3d88-4311-8365-187323c96436";
+        final FireActionForm.Builder builder = new FireActionForm.Builder();
+        final Map<String, Object> formData = new HashMap<>();
+        formData.put("stInode", contentType.inode());
+        formData.put(REQUIRED_TEXT_FIELD_NAME, "value-1");
+        if (includeTagKey) {
+            formData.put(TAG_FIELD_NAME, tagValue);
+        }
+        formData.put("languageId", 1);
+        builder.contentlet(formData);
+
+        final Response response = workflowResource.fireActionSinglePart(getHttpRequest(),
+                new EmptyHttpResponse(), saveAndPublishActionId, inode, null,
+                IndexPolicy.WAIT_FOR.name(), "-1", new FireActionForm(builder));
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        return new Contentlet(Map.class.cast(
+                ResponseEntityView.class.cast(response.getEntity()).getEntity()));
+    }
+
+    private List<Tag> tagsOf(final String inode) throws DotDataException {
+        return APILocator.getTagAPI().getTagsByInodeAndFieldVarName(inode, TAG_FIELD_NAME);
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionSinglePart(HttpServletRequest,
+     * HttpServletResponse, String, String, String, String, String, FireActionForm)}
+     * <p>
+     * Given Scenario: A contentlet with a tag value is updated firing the Save/Publish action with an
+     * explicit {@code "tags": null} in the payload.
+     * <p>
+     * Expected Result: The tags are LEFT UNCHANGED. A null value is a partial-update / no-op signal
+     * (only an explicit empty value clears tags), so the existing tag must survive. Guards the
+     * {@code ""} (wipe) vs {@code null} (no-op) distinction introduced by the fix for #35861.
+     */
+    @Test
+    public void Test_Fire_Update_With_Null_Tag_Preserves_Tag() throws Exception {
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentTypeWithTagField();
+            Contentlet contentlet = null;
+            try {
+                contentlet = fireSaveWithTagValue(contentType, null, "new edit content", true);
+                assertEquals(1, tagsOf(contentlet.getInode()).size());
+
+                final Contentlet updated = fireSaveWithTagValue(contentType,
+                        contentlet.getInode(), null, true);
+
+                final List<Tag> tags = tagsOf(updated.getInode());
+                assertEquals("A null tag value must leave existing tags unchanged", 1, tags.size());
+                assertEquals("new edit content", tags.get(0).getTagName());
+            } finally {
+                if (null != contentlet) {
+                    contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                }
+            }
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionSinglePart(HttpServletRequest,
+     * HttpServletResponse, String, String, String, String, String, FireActionForm)}
+     * <p>
+     * Given Scenario: A contentlet with a tag value is updated firing the Save/Publish action with a
+     * payload that does NOT include the tag field key at all (a partial update of other fields).
+     * <p>
+     * Expected Result: The tags are LEFT UNCHANGED. Omitting the field must not wipe its tags.
+     */
+    @Test
+    public void Test_Fire_Update_Without_Tag_Key_Preserves_Tag() throws Exception {
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentTypeWithTagField();
+            Contentlet contentlet = null;
+            try {
+                contentlet = fireSaveWithTagValue(contentType, null, "new edit content", true);
+                assertEquals(1, tagsOf(contentlet.getInode()).size());
+
+                final Contentlet updated = fireSaveWithTagValue(contentType,
+                        contentlet.getInode(), null, false);
+
+                final List<Tag> tags = tagsOf(updated.getInode());
+                assertEquals("Omitting the tag field must leave existing tags unchanged",
+                        1, tags.size());
+                assertEquals("new edit content", tags.get(0).getTagName());
+            } finally {
+                if (null != contentlet) {
+                    contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                }
+            }
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
     static ImmutableMap<Class, DataTypes> fieldTypesMetaDataMap = new ImmutableMap.Builder<Class, DataTypes>()
             //   .put(BinaryField.class, DataTypes.SYSTEM)
             //   .put(CategoryField.class, DataTypes.SYSTEM)
@@ -1680,6 +1944,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     private static final String REQUIRED_TEXT_FIELD_NAME = "requiredTextField";
     private static final String REQUIRED_TEXT_FIELD_VALUE = "This Value is Required";
+
+    private static final String TAG_FIELD_NAME = "tagField";
 
     private static final String NON_REQUIRED_TEXT_FIELD_NAME = "nonRequiredTextField";
     private static final String NON_REQUIRED_TEXT_FIELD_VALUE = "This Value isn't required";
@@ -2222,7 +2488,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2246,7 +2512,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response2 = workflowResource
                     .fireActionDefaultSinglePart(request2, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm2);
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -2384,7 +2650,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2409,7 +2675,86 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
 
+    /**
+     * Method to test: {@link WorkflowResource#fireActionByNameSinglePart(HttpServletRequest, String, String, String, String, FireActionByNameForm)}
+     * Given Scenario: Fires a save with a limited user
+     * ExpectedResult: The action should be ran ok
+     *
+     */
+    @Test
+    public void testFireActionByName_by_limited_user() throws Exception {
 
+        // Create limited user
+        final Role beRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final User limitedUser = new UserDataGen().roles(beRole).nextPersisted();
+        //Create Content
+        final String titlePropertyKey = "title";
+        final String titlePropertyValue = "Test1";
+        final String richTextContentTypeVarName = "simpleWebPageContent";
+        final FireActionByNameForm.Builder builder1 = new FireActionByNameForm.Builder();
+        final Map<String, Object> contentletFormData = new HashMap<>();
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        contentletFormData.put(titlePropertyKey, titlePropertyValue);
+        contentletFormData.put("contentType", richTextContentTypeVarName);
+        builder1.contentlet(contentletFormData);
+        builder1.actionName("Save");
+        ContentType richTextContentType = null;
+
+        try {
+            // creates a new content type
+            final Field field = new FieldDataGen()
+                    .velocityVarName(titlePropertyKey)
+                    .type(TextField.class)
+                    .next();
+
+            richTextContentType = new ContentTypeDataGen().name("Rich Text 2").workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .velocityVarName(richTextContentTypeVarName).field(field).nextPersisted();
+
+            final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
+                    PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+
+            final List<Permission> newSetOfPermissions = new ArrayList<>();
+            // this is the individual permission
+            newSetOfPermissions.add(new Permission(richTextContentType.getPermissionId(), beRole.getId(), permissionType, true));
+            newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), richTextContentType.getPermissionId(), beRole.getId(), permissionType, true));
+            final Role limiteUserRole = APILocator.getRoleAPI().getUserRole(limitedUser);
+            newSetOfPermissions.add(new Permission(richTextContentType.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+            newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), richTextContentType.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+
+            APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, richTextContentType, APILocator.systemUser(), false);
+
+            newSetOfPermissions.clear();
+            final WorkflowAction saveAction = APILocator.getWorkflowAPI().findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            newSetOfPermissions.add(new Permission(saveAction.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+            APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, saveAction, APILocator.systemUser(), false);
+
+            // this is the inheritance permission
+
+
+            final FireActionByNameForm fireActionForm1 = new FireActionByNameForm(builder1);
+            final HttpServletRequest request1 = getHttpRequest();
+            request1.setAttribute(WebKeys.USER, limitedUser);
+            final Response response1 = workflowResource
+                    .fireActionByNameSinglePart(request1, null, null,
+                            "FORCE",
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            fireActionForm1);
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            final Contentlet contentlet = new Contentlet(
+                    Map.class.cast(fireEntityView1.getEntity()));
+            assertNotNull(contentlet);
+            assertEquals(titlePropertyValue,
+                    contentlet.getMap().get(titlePropertyKey));
+        } finally {
+
+            if (null != richTextContentType) {
+                ContentTypeDataGen.remove(richTextContentType);
+            }
+        }
+    }
 
     private ContentType createCategoryFieldContentType(final String parentCategoryInode)
             throws Exception {
@@ -2593,7 +2938,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         );
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }

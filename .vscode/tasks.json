@@ -1,0 +1,126 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🛠️ - Build Core",
+        "type": "shell",
+        "command": "just build",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "⛴️ - Build Image",
+        "type": "shell",
+        "command": "./mvnw package -pl :dotcms-core -DskipTests docker:build",
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "▶️ - Start",
+        "type": "shell",
+        "command": "${workspaceFolder}/.vscode/toggle-docker.sh ${input:runMode} ${input:dockerPort}",
+        "problemMatcher": [],
+        "isBackground": true,
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "🛑 - Stop",
+        "type": "shell",
+        "command": "just dev-stop",
+        "problemMatcher": [],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "🚀 - Build + Run",
+        "type": "shell",
+        "command": "just build && ./mvnw package -pl :dotcms-core -DskipTests docker:build && ${workspaceFolder}/.vscode/toggle-docker.sh ${input:runMode} ${input:dockerPort}",
+        "problemMatcher": [],
+        "isBackground": true,
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "🧹 - Clean Build",
+        "type": "shell",
+        "command": "rm -rf dotCMS/target && ./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip=true",
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "🧪 - Integration Tests",
+        "type": "shell",
+        "command": "just test-integration-ide",
+        "problemMatcher": [],
+        "isBackground": true
+      }
+    ],
+    "inputs": [
+      {
+        "id": "runMode",
+        "type": "pickString",
+        "description": "How should dotCMS start?",
+        "options": [
+          {
+            "label": "Normal - starts immediately, no debugger",
+            "value": "normal"
+          },
+          {
+            "label": "Debug - starts immediately, debugger can attach to port 5005 anytime",
+            "value": "debug"
+          },
+          {
+            "label": "Debug Suspend - freezes at startup until debugger attaches to port 5005",
+            "value": "debug-suspend"
+          }
+        ],
+        "default": "normal"
+      },
+      {
+        "id": "dockerPort",
+        "type": "promptString",
+        "description": "Docker HTTP port",
+        "default": "7070"
+      }
+    ]
+  }

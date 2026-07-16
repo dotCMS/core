@@ -15,9 +15,10 @@ import com.dotcms.UnitTestBase;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath.LiteFolder;
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -72,40 +73,43 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends UnitTest
     }
 
     @Test
-    public void recreateMissingFoldersInParentPath_ShouldDoNothing_WhenSystemHost() throws DotSecurityException, SQLException, DotDataException {
+    public void recreateMissingFoldersInParentPath_ShouldDoNothing_WhenSystemHost() throws DotSecurityException, DotDataException {
         FixTask00090RecreateMissingFoldersInParentPath fixTaskSpy = spy(FixTask00090RecreateMissingFoldersInParentPath.class);
         doReturn(new ArrayList<>()).when(fixTaskSpy).getFoldersFromParentPath("/", "host-id");
-        fixTaskSpy.recreateMissingFoldersInParentPath("/", "host-id");
-        verify(fixTaskSpy, never()).recreateMissingFolders(anyList());
+        fixTaskSpy.recreateMissingFoldersInParentPath("/", "host-id", new HashSet<>());
+        verify(fixTaskSpy, never()).recreateMissingFolders(anyList(), any());
     }
 
     @Test
-    public void recreateMissingFoldersInParentPath_ShouldDoNothing_WhenSystemFolder() throws DotSecurityException, SQLException, DotDataException {
+    public void recreateMissingFoldersInParentPath_ShouldDoNothing_WhenSystemFolder() throws DotSecurityException, DotDataException {
         FixTask00090RecreateMissingFoldersInParentPath fixTaskSpy = spy(FixTask00090RecreateMissingFoldersInParentPath.class);
         doReturn(new ArrayList<>()).when(fixTaskSpy).getFoldersFromParentPath(SYSTEM_FOLDER_PARENT_PATH, aHostId);
-        fixTaskSpy.recreateMissingFoldersInParentPath("/", aHostId);
-        verify(fixTaskSpy, never()).recreateMissingFolders(anyList());
+        fixTaskSpy.recreateMissingFoldersInParentPath("/", aHostId, new HashSet<>());
+        verify(fixTaskSpy, never()).recreateMissingFolders(anyList(), any());
     }
 
     @Test
-    public void recreateMissingFoldersInParentPath_ShouldRecreate_WhenDifferentThanSystemHostOrFolder() throws DotSecurityException, SQLException, DotDataException {
+    public void recreateMissingFoldersInParentPath_ShouldRecreate_WhenDifferentThanSystemHostOrFolder() throws DotSecurityException, DotDataException {
         final String parentPath = "/level1/";
         FixTask00090RecreateMissingFoldersInParentPath fixTaskSpy = spy(FixTask00090RecreateMissingFoldersInParentPath.class);
         doReturn(new ArrayList<>()).when(fixTaskSpy).getFoldersFromParentPath(parentPath, aHostId);
-        doNothing().when(fixTaskSpy).recreateMissingFolders(anyList());
-        fixTaskSpy.recreateMissingFoldersInParentPath(parentPath, aHostId);
-        verify(fixTaskSpy).recreateMissingFolders(anyList());
+        doNothing().when(fixTaskSpy).recreateMissingFolders(anyList(), any());
+        fixTaskSpy.recreateMissingFoldersInParentPath(parentPath, aHostId, new HashSet<>());
+        verify(fixTaskSpy).recreateMissingFolders(anyList(), any());
     }
 
     @Test
-    public void recreateMissingFolders_ShouldCreateFolder_WhenFolderIsMissing() throws DotSecurityException, SQLException, DotDataException {
+    public void recreateMissingFolders_ShouldCreateFolder_WhenFolderIsMissing() throws DotSecurityException, DotDataException {
         FixTask00090RecreateMissingFoldersInParentPath fixTaskSpy = spy(FixTask00090RecreateMissingFoldersInParentPath.class);
-        doReturn(true).when(fixTaskSpy).isFolderIdentifierMissing(any());
+        doReturn(true).when(fixTaskSpy).isFolderIdentifierMissing(any(), any());
         doNothing().when(fixTaskSpy).createFolder(any());
+        LiteFolder liteFolder = new LiteFolder();
+        liteFolder.name = "test-folder";
+        liteFolder.parentPath = "/";
+        liteFolder.hostId = aHostId;
         List<LiteFolder> liteFolders = new ArrayList<>();
-        liteFolders.add(new LiteFolder());
-        fixTaskSpy.recreateMissingFolders(liteFolders);
-        // let's verify the create folder method was called for the missing folder
+        liteFolders.add(liteFolder);
+        fixTaskSpy.recreateMissingFolders(liteFolders, new HashSet<>());
         verify(fixTaskSpy).createFolder(any());
     }
 

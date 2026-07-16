@@ -7,9 +7,10 @@ import { AddWidgetComponent } from './add-widget.component';
 import { colIcon, rowIcon } from '../../assets/icons';
 
 @Component({
+    standalone: false,
     selector: 'dotcms-host-component',
     template: `
-        <dotcms-add-widget [label]="label" [icon]="icon"></dotcms-add-widget>
+        <dotcms-add-widget [label]="label" [icon]="icon" />
     `
 })
 class HostComponent {
@@ -59,7 +60,7 @@ describe('AddWidgetComponent', () => {
         it('should have label', () => {
             de.query(By.css('[data-testid="cancelBtn"]'));
             const label = de.query(By.css('[data-testid="addWidgetLabel"]'));
-            expect(label.nativeElement.textContent).toBe('Add Widget');
+            expect(label.nativeElement.textContent?.trim()).toBe('Add Widget');
         });
 
         it('should have a image element with the row icon', () => {
@@ -75,7 +76,7 @@ describe('AddWidgetComponent', () => {
             const img = de.query(By.css('img'));
             img.triggerEventHandler('error', null);
             fixture.detectChanges();
-            const icon = de.query(By.css('[data-testId="material-icons-fallback"]'));
+            const icon = de.query(By.css('[data-testId="material-symbols-outlined-fallback"]'));
             expect(icon?.nativeElement.textContent).toContain('add');
         });
     });

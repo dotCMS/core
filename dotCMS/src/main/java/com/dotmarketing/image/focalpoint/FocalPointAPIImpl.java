@@ -3,7 +3,7 @@ package com.dotmarketing.image.focalpoint;
 import static com.dotmarketing.util.StringUtils.isSet;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;

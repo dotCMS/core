@@ -1,37 +1,12 @@
-@use "variables" as *;
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
 
-:host {
-    display: block;
-
-    dot-action-button {
-        display: flex;
-        float: right;
-        position: relative;
-        right: $spacing-3;
-        top: -$spacing-4;
-        z-index: 1;
-    }
-
-    ::ng-deep .p-table .p-table-thead tr th {
-        padding-left: 0;
-        padding-right: 0;
-
-        &:first-child {
-            padding-left: $spacing-4;
+// Minimal styles - most styling done via Tailwind in templates
+::ng-deep {
+    p-table {
+        .p-datatable-wrapper {
+            border: 1px solid colors.$color-palette-gray-300;
+            border-radius: common.$border-radius-md;
         }
-    }
-
-    .dot-key-value__header-keyValue-label {
-        text-align: left;
-    }
-
-    .dot-key-value__header-hidden-label {
-        text-align: center;
-    }
-
-    p-table .dot-key-value__header-actions-label {
-        padding-right: $spacing-9;
-        text-align: right;
-        width: 185px;
     }
 }

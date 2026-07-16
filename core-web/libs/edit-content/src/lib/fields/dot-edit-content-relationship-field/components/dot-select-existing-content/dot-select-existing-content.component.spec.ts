@@ -1,54 +1,60 @@
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
-import { SearchComponent } from './components/search/search.compoment';
+import { SearchComponent } from './components/search/search.component';
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
+import {
+    RelationshipFieldSearchResponse,
+    ExistingContentService
+} from './store/existing-content.service';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { Column } from '../../models/column.model';
-import { RelationshipFieldService } from '../../services/relationship-field.service';
 
 const mockColumns: Column[] = [
     { field: 'title', header: 'Title' },
     { field: 'modDate', header: 'Mod Date' }
 ];
 
-const mockData: DotCMSContentlet[] = [
-    createFakeContentlet({
-        title: 'Content 1',
-        inode: '1',
-        identifier: 'id-1',
-        languageId: mockLocales[0].id
-    }),
-    createFakeContentlet({
-        title: 'Content 2',
-        inode: '2',
-        identifier: 'id-2',
-        languageId: mockLocales[1].id
-    }),
-    createFakeContentlet({
-        title: 'Content 3',
-        inode: '3',
-        identifier: 'id-3',
-        languageId: mockLocales[0].id
-    })
-];
+const mockData: RelationshipFieldSearchResponse = {
+    contentlets: [
+        createFakeContentlet({
+            title: 'Content 1',
+            inode: '1',
+            identifier: 'id-1',
+            languageId: mockLocales[0].id
+        }),
+        createFakeContentlet({
+            title: 'Content 2',
+            inode: '2',
+            identifier: 'id-2',
+            languageId: mockLocales[1].id
+        }),
+        createFakeContentlet({
+            title: 'Content 3',
+            inode: '3',
+            identifier: 'id-3',
+            languageId: mockLocales[0].id
+        })
+    ],
+    totalResults: 3
+};
 
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
     let store: InstanceType<typeof ExistingContentStore>;
-    let dialogRef: DynamicDialogRef;
 
     const messageServiceMock = new MockDotMessageService({
         'dot.file.relationship.dialog.apply.one.entry': 'Apply 1 entry',
-        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries'
+        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries',
+        'dot.file.relationship.dialog.show.selected.items': 'Show Selected Items'
     });
 
     const mockDialogConfig = {
@@ -61,13 +67,12 @@ describe('DotSelectExistingContentComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotSelectExistingContentComponent,
-        componentProviders: [ExistingContentStore],
         providers: [
-            mockProvider(RelationshipFieldService, {
-                getColumnsAndContent: jest.fn(() => of([mockColumns, mockData]))
+            ExistingContentStore,
+            mockProvider(ExistingContentService, {
+                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
             { provide: DynamicDialogConfig, useValue: mockDialogConfig }
         ],
         declarations: [MockComponent(SearchComponent)],
@@ -76,8 +81,7 @@ describe('DotSelectExistingContentComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        store = spectator.inject(ExistingContentStore, true);
-        dialogRef = spectator.inject(DynamicDialogRef);
+        store = spectator.inject(ExistingContentStore);
         spectator.detectChanges();
     });
 
@@ -94,101 +98,188 @@ describe('DotSelectExistingContentComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     contentTypeId: 'test-content-type-id',
                     selectionMode: 'multiple',
-                    currentItemsIds: []
+                    selectedItemsIds: []
                 });
             });
         });
     });
 
-    describe('Dialog Behavior', () => {
-        it('should close dialog with selected items', () => {
-            const mockItems = [
-                createFakeContentlet({ inode: '1' }),
-                createFakeContentlet({ inode: '2' })
-            ];
-            spectator.component.$selectedItems.set(mockItems);
-
-            spectator.component.applyChanges();
-
-            expect(dialogRef.close).toHaveBeenCalledWith(mockItems);
-        });
-
-        it('should close dialog with empty array when no items selected', () => {
-            spectator.component.$selectedItems.set([]);
-
-            spectator.component.applyChanges();
-
-            expect(dialogRef.close).toHaveBeenCalledWith([]);
-        });
-
-        it('should close dialog when cancel button is clicked', () => {
-            spectator.component.closeDialog();
-
-            expect(dialogRef.close).toHaveBeenCalledWith();
-        });
-    });
-
     describe('Selected Items State', () => {
-        it('should disable apply button when no items are selected', () => {
-            spectator.component.$selectedItems.set([]);
-            expect(spectator.component.$items().length).toBe(0);
+        it('should initialize selectedItems with store initialization', () => {
+            spectator.flushEffects();
+            const initSelectedItems = store.selectionItems();
+            expect(spectator.component.$selectionItems()).toEqual(initSelectedItems);
         });
 
-        it('should enable apply button when items are selected', () => {
-            const mockContent = [createFakeContentlet({ inode: '1' })];
-            spectator.component.$selectedItems.set(mockContent);
-            expect(spectator.component.$items().length).toBe(1);
-        });
+        it('should update store selectedItems when $selectedItems changes', () => {
+            const mockItems = [createFakeContentlet({ inode: '1' })];
 
-        it('should handle single item selection', () => {
-            const singleItem = createFakeContentlet({ inode: '1' });
-            spectator.component.$selectedItems.set(singleItem);
-            expect(spectator.component.$items().length).toBe(1);
-            expect(spectator.component.$items()[0]).toEqual(singleItem);
-        });
+            spectator.component.$selectionItems.set(mockItems);
+            spectator.detectChanges();
 
-        it('should handle multiple items selection', () => {
-            const multipleItems = [
-                createFakeContentlet({ inode: '1' }),
-                createFakeContentlet({ inode: '2' })
-            ];
-            spectator.component.$selectedItems.set(multipleItems);
-            expect(spectator.component.$items().length).toBe(2);
-            expect(spectator.component.$items()).toEqual(multipleItems);
+            expect(store.selectionItems()).toEqual(mockItems);
         });
     });
 
-    describe('Apply Button Label', () => {
-        it('should show singular label when one item is selected', () => {
-            const mockContent = [createFakeContentlet({ inode: '1' })];
-            spectator.component.$selectedItems.set(mockContent);
+    describe('Select All excludes constrained items', () => {
+        const item1 = createFakeContentlet({ inode: '1', identifier: 'id-1' });
+        const item2 = createFakeContentlet({ inode: '2', identifier: 'id-2' });
+        const item3 = createFakeContentlet({ inode: '3', identifier: 'id-3' });
 
-            const label = spectator.component.$applyLabel();
-            expect(label).toBe('Apply 1 entry');
+        const markConstrained = (ids: string[]) => {
+            patchState(store, { constrainedIdentifiers: new Set(ids) });
+        };
+
+        beforeEach(() => {
+            patchState(store, { searchData: [item1, item2, item3] });
+            markConstrained([]);
+            spectator.detectChanges();
         });
 
-        it('should show plural label when multiple items are selected', () => {
-            const mockContent = [
-                createFakeContentlet({ inode: '1' }),
-                createFakeContentlet({ inode: '2' })
-            ];
-            spectator.component.$selectedItems.set(mockContent);
+        it('selects only non-constrained items when checked', () => {
+            markConstrained(['id-2']);
 
-            const label = spectator.component.$applyLabel();
-            expect(label).toBe('Apply 2 entries');
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier)).toEqual(['id-1', 'id-3']);
         });
 
-        it('should handle empty selection', () => {
-            spectator.component.$selectedItems.set([]);
-            const label = spectator.component.$applyLabel();
-            expect(label).toBe('Apply 0 entries');
+        it('leaves constrained items unselected when Select All is checked', () => {
+            markConstrained(['id-2']);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.some((i) => i.identifier === 'id-2')).toBe(false);
+        });
+
+        it('selects zero items when all rows are constrained', () => {
+            markConstrained(['id-1', 'id-2', 'id-3']);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            expect(spectator.component.$selectionItems()).toEqual([]);
+        });
+
+        it('selects every item when no row is constrained', () => {
+            markConstrained([]);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier).sort()).toEqual(['id-1', 'id-2', 'id-3']);
+        });
+
+        it('clears the visible selection when Select All is unchecked', () => {
+            spectator.component.$selectionItems.set([item1, item2]);
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: false
+            });
+
+            expect(spectator.component.$selectionItems()).toEqual([]);
+        });
+
+        it('preserves selections from other pages when Select All is checked', () => {
+            const offPageItem = createFakeContentlet({ inode: '99', identifier: 'id-99' });
+            spectator.component.$selectionItems.set([offPageItem]);
+            spectator.detectChanges();
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier).sort()).toEqual([
+                'id-1',
+                'id-2',
+                'id-3',
+                'id-99'
+            ]);
+        });
+
+        it('preserves selections from other pages when Select All is unchecked', () => {
+            const offPageItem = createFakeContentlet({ inode: '99', identifier: 'id-99' });
+            spectator.component.$selectionItems.set([item1, item2, offPageItem]);
+            spectator.detectChanges();
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: false
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier)).toEqual(['id-99']);
+        });
+
+        it('reports $selectAll as false when no selectable items exist', () => {
+            markConstrained(['id-1', 'id-2', 'id-3']);
+
+            expect(spectator.component.$selectAll()).toBe(false);
+        });
+
+        it('reports $isPartiallySelected when some (not all) selectable items are selected', () => {
+            spectator.component.$selectionItems.set([item1]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isPartiallySelected()).toBe(true);
+            expect(spectator.component.$selectAll()).toBe(false);
+        });
+
+        it('reports $isPartiallySelected false when every selectable item is selected', () => {
+            spectator.component.$selectionItems.set([item1, item2, item3]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isPartiallySelected()).toBe(false);
+        });
+
+        it('reports $selectAll as true when every selectable item is selected', () => {
+            markConstrained(['id-2']);
+            spectator.component.$selectionItems.set([item1, item3]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$selectAll()).toBe(true);
+        });
+
+        it('forces $selectAll to false in selected-view mode to avoid wiping the selection', () => {
+            spectator.component.$selectionItems.set([item1, item2, item3]);
+            patchState(store, { viewMode: 'selected' });
+            spectator.detectChanges();
+
+            expect(store.isSelectedView()).toBe(true);
+            expect(spectator.component.$selectAll()).toBe(false);
         });
     });
 
     describe('Item Selection', () => {
         it('should return true when content is in selectedContent array', () => {
             const testContent = createFakeContentlet({ inode: '1' });
-            spectator.component.$selectedItems.set([testContent]);
+            store.setSelectionItems([testContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
@@ -198,7 +289,7 @@ describe('DotSelectExistingContentComponent', () => {
         it('should return false when content is not in selectedContent array', () => {
             const testContent = createFakeContentlet({ inode: '123' });
             const differentContent = createFakeContentlet({ inode: '456' });
-            spectator.component.$selectedItems.set([differentContent]);
+            store.setSelectionItems([differentContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
@@ -207,16 +298,7 @@ describe('DotSelectExistingContentComponent', () => {
 
         it('should return false when selectedContent is empty', () => {
             const testContent = createFakeContentlet({ inode: '123' });
-            spectator.component.$selectedItems.set([]);
-
-            const result = spectator.component.checkIfSelected(testContent);
-
-            expect(result).toBe(false);
-        });
-
-        it('should handle null selectedContent', () => {
-            const testContent = createFakeContentlet({ inode: '123' });
-            spectator.component.$selectedItems.set(null);
+            store.setSelectionItems([]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
@@ -237,11 +319,10 @@ describe('DotSelectExistingContentComponent when selectionMode is missing', () =
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
         providers: [
-            mockProvider(RelationshipFieldService, {
-                getColumnsAndContent: jest.fn(() => of([mockColumns, mockData]))
+            mockProvider(ExistingContentService, {
+                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
             {
                 provide: DynamicDialogConfig,
                 useValue: { data: { contentTypeId: 'test-id' } }
@@ -269,11 +350,10 @@ describe('DotSelectExistingContentComponent when contentTypeId is missing', () =
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
         providers: [
-            mockProvider(RelationshipFieldService, {
-                getColumnsAndContent: jest.fn(() => of([mockColumns, mockData]))
+            mockProvider(ExistingContentService, {
+                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
             {
                 provide: DynamicDialogConfig,
                 useValue: { data: { selectionMode: 'multiple' } }

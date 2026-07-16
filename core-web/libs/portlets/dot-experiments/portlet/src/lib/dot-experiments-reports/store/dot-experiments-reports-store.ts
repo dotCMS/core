@@ -4,7 +4,7 @@ import { ChartData } from 'chart.js';
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
@@ -83,6 +83,12 @@ const CONVERSION_RATE_RANGE_SEPARATOR_LABEL = 'to';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
+    private readonly dotExperimentsService = inject(DotExperimentsService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly messageService = inject(MessageService);
+    private readonly title = inject(Title);
+
     readonly isLoading$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.LOADING
     );
@@ -256,8 +262,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                     const { experimentId, variant } = variantToPromote;
 
                     return this.dotExperimentsService.promoteVariant(experimentId, variant.id).pipe(
-                        tapResponse(
-                            (experiment) => {
+                        tapResponse({
+                            next: (experiment) => {
                                 this.messageService.add({
                                     severity: 'info',
                                     summary: this.dotMessageService.get(
@@ -270,9 +276,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                                 });
                                 this.setExperiment(experiment);
                             },
-                            (error: HttpErrorResponse) =>
+                            error: (error: HttpErrorResponse) =>
                                 this.dotHttpErrorManagerService.handle(error)
-                        )
+                        })
                     );
                 })
             );
@@ -318,13 +324,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         })
     );
 
-    constructor(
-        private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly messageService: MessageService,
-        private readonly title: Title
-    ) {
+    constructor() {
         super(initialState);
     }
 

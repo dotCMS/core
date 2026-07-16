@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -7,14 +7,14 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
+<%@ page import="com.dotcms.content.index.domain.IndexStats" %>
 <%@ include file="/html/common/init.jsp"%>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
-ESIndexAPI esapi = APILocator.getESIndexAPI();
+IndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 

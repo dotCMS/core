@@ -7,18 +7,15 @@ export const fallbackErrorMessages: { [key: number]: string } = {
     400: '400 Bad Request',
     401: '401 Unauthorized Error'
 };
-
 export interface UploadFileProps {
     file: string | File;
     maxSize?: string;
     signal?: AbortSignal;
 }
-
 export interface ErrorResponse {
     message: string;
     errors: { message: string }[];
 }
-
 @Injectable({ providedIn: 'root' })
 export class DotUploadService {
     /**
@@ -130,7 +127,7 @@ export class DotUploadService {
         let message = '';
         try {
             message = response.message || response.errors[0].message;
-        } catch (e) {
+        } catch {
             message = fallbackErrorMessages[status || 500];
         }
 

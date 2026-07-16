@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.attributes.CustomAttributeCache;
+import com.dotcms.analytics.attributes.CustomAttributeCacheImpl;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -7,6 +9,7 @@ import com.dotcms.cache.KeyValueCacheImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.content.index.opensearch.OSQueryCache;
 import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
@@ -231,10 +234,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (BlockDirectiveCache)getInstance(CacheIndex.Block_Directive);
 	}
 
-	public static BlockPageCache getBlockPageCache() {
-		return (BlockPageCache) getInstance(CacheIndex.Block_Page);
+    public static StaticPageCache getBlockPageCache() {
+        return getStaticPageCache();
 	}
 
+    public static StaticPageCache getStaticPageCache() {
+        return (StaticPageCache) getInstance(CacheIndex.Block_Page);
+    }
 	public static VersionableCache getVersionableCache() {
 		return (VersionableCache)getInstance(CacheIndex.Versionable);
 	}
@@ -300,6 +306,10 @@ public class CacheLocator extends Locator<CacheIndex>{
     
     public static ESQueryCache getESQueryCache() {
         return (ESQueryCache) getInstance(CacheIndex.ESQueryCache);
+    }
+
+    public static OSQueryCache getOSQueryCache() {
+        return (OSQueryCache) getInstance(CacheIndex.OSQueryCache);
     }
 
 	public static GraphQLCache getGraphQLCache() {
@@ -402,6 +412,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return serviceRef;
 	 }
 
+	public static CustomAttributeCache getAnalyticsCustomAttributeCache() {
+		return (CustomAttributeCache) getInstance(CacheIndex.ANALYTICS_CUSTOMATTRIBUTE_CACHE);
+	}
+
 
 	@Override
 	protected Object createService(CacheIndex enumObj) {
@@ -477,6 +491,7 @@ enum CacheIndex
 	ApiTokenCache("ApiTokenCache"),
 	PortletCache("PortletCache"),
 	ESQueryCache("ESQueryCache"),
+    OSQueryCache("OSQueryCache"),
 	KeyValueCache("Key/Value Cache"),
 	AppsCache("Apps"),
 	GraphQLSchemaCache("GraphQLSchemaCache"),
@@ -486,7 +501,8 @@ enum CacheIndex
 	EXPERIMENTS_CACHE("ExperimentsCache"),
 	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
 	Javascript("Javascript"),
-	JOB_CACHE("JobCache");
+	JOB_CACHE("JobCache"),
+	ANALYTICS_CUSTOMATTRIBUTE_CACHE("CustomAttributeCache");
 
 	Cachable create() {
 		switch(this) {
@@ -514,7 +530,8 @@ enum CacheIndex
 	      	case Identifier : return new IdentifierCacheImpl();
 	      	case HostVariables : return new HostVariablesCacheImpl();
 	      	case Block_Directive : return new BlockDirectiveCacheImpl();
-	      	case Block_Page : return new BlockPageCacheImpl();
+            case Block_Page:
+                return new StaticPageCacheImpl();
 	      	case Versionable : return new VersionableCacheImpl();
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();
@@ -535,6 +552,7 @@ enum CacheIndex
 	      	case PortletCache : return new PortletCache();
 			case AppsCache: return new AppsCacheImpl();
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
+            case OSQueryCache: return new OSQueryCache();
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
 			case Metadata: return new MetadataCacheImpl();
 			case GraphQLCache: return new GraphQLCache();
@@ -543,6 +561,7 @@ enum CacheIndex
 			case CHAINABLE_404_STORAGE_CACHE: return new Chainable404StorageCache();
 			case Javascript: return new JsCache();
 			case JOB_CACHE: return new JobCacheImpl();
+			case ANALYTICS_CUSTOMATTRIBUTE_CACHE: return new CustomAttributeCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

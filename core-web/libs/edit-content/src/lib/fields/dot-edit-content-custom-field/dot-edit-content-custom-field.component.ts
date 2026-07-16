@@ -1,55 +1,54 @@
-import { NgStyle } from '@angular/common';
-import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    ElementRef,
-    HostListener,
-    inject,
-    input,
-    NgZone,
-    OnDestroy,
-    signal,
-    viewChild
-} from '@angular/core';
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
-import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
-import { WINDOW } from '@dotcms/utils';
+import {
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotRenderModes,
+    NEW_RENDER_MODE_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { IframeFieldComponent } from './components/iframe-field/iframe-field.component';
+import { NativeFieldComponent } from './components/native-field/native-field.component';
+
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
- * This component is used to render a custom field in the DotCMS content editor.
- * It uses an iframe to render the custom field and provides a form bridge to communicate with the custom field.
+ * This component renders custom fields in the DotCMS content editor.
+ * Supports two render modes:
+ * - IFRAME: Legacy VTL-based fields rendered in an iframe (with modal/inline options)
+ * - NATIVE: Modern web components rendered directly in the DOM
+ *
+ * The render mode is determined by the 'newRenderMode' field variable.
  */
 @Component({
     selector: 'dot-edit-content-custom-field',
-    standalone: true,
-    imports: [SafeUrlPipe, NgStyle, DotIconModule, ButtonModule],
+    imports: [
+        ButtonModule,
+        InputTextModule,
+        DialogModule,
+        ReactiveFormsModule,
+        DotMessagePipe,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        IframeFieldComponent,
+        NativeFieldComponent
+    ],
     templateUrl: './dot-edit-content-custom-field.component.html',
-    styleUrls: ['./dot-edit-content-custom-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        {
-            provide: WINDOW,
-            useValue: window
-        }
-    ],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
-    host: {
-        '[class.no-label]': '!$showLabel()'
-    }
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewInit {
+export class DotEditContentCustomFieldComponent extends BaseWrapperField {
     /**
      * The field to render.
      */
@@ -59,246 +58,23 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      */
     $contentType = input<string>(null, { alias: 'contentType' });
     /**
-     * The iframe element to render the custom field in.
+     * The contentlet to render the field for.
      */
-    iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
-
+    $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
     /**
-     * The window object.
+     * The render mode to use.
      */
-    #window = inject(WINDOW);
-    /**
-     * The allowed origins to receive messages from.
-     */
-    private readonly ALLOWED_ORIGINS = [this.#window.location.origin];
-
-    /**
-     * Whether the iframe is in fullscreen mode.
-     */
-    $isFullscreen = signal(false);
-    /**
-     * The variables to pass to the custom field.
-     */
-    $variables = signal<Record<string, string>>({});
-
-    /**
-     * The source URL for the custom field.
-     */
-    $src = computed(() => {
+    $renderMode = computed(() => {
         const field = this.$field();
-        const contentType = this.$contentType();
+        if (!field) return DotRenderModes.IFRAME;
 
-        if (!field || !contentType) {
-            return '';
-        }
-
-        const params = new URLSearchParams({
-            variable: contentType,
-            field: field.variable
-        });
-
-        return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
+        const renderMode = field.fieldVariables?.find(
+            (variable) => variable.key === NEW_RENDER_MODE_VARIABLE_KEY
+        )?.value;
+        return renderMode || DotRenderModes.IFRAME;
     });
-
     /**
-     * Whether to show the label.
+     * Whether the render mode is IFRAME.
      */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
-    });
-
-    /**
-     * The title for the iframe.
-     */
-    $iframeTitle = computed(() => {
-        const field = this.$field();
-
-        return field ? `Content Type ${field.variable} and field ${field.name}` : '';
-    });
-
-    /**
-     * The form bridge to communicate with the custom field.
-     */
-    #formBridge: FormBridge;
-    /**
-     * The control container to get the form.
-     */
-    #controlContainer = inject(ControlContainer);
-    /**
-     * The zone to run the code in.
-     */
-    #zone = inject(NgZone);
-
-    /**
-     * The form to get the form.
-     */
-    $form = computed(() => (this.#controlContainer as FormGroupDirective).form);
-
-    /**
-     * Handles messages from the custom field and toggles fullscreen mode.
-     * @param event - The message event.
-     */
-    @HostListener('window:message', ['$event'])
-    onMessageFromCustomField({ data, origin }: MessageEvent) {
-        if (!this.ALLOWED_ORIGINS.includes(origin)) {
-            console.warn('Message received from unauthorized origin:', origin);
-
-            return;
-        }
-
-        switch (data.type) {
-            case 'toggleFullscreen':
-                this.$isFullscreen.update((value) => !value);
-                break;
-        }
-    }
-
-    /**
-     * Handles the iframe load event.
-     */
-    onIframeLoad() {
-        const iframeEl = this.iframe()?.nativeElement;
-        if (!iframeEl) return;
-
-        iframeEl.classList.add('loaded');
-        this.initializeFormBridge();
-        this.$variables.set(this.initializeVariables());
-
-        const iframeWindow = this.getIframeWindow();
-        if (!iframeWindow) return;
-
-        this.#zone.run(() => {
-            this.initializeCustomFieldApi(iframeWindow);
-        });
-    }
-
-    /**
-     * Initializes the variables for the custom field.
-     * @returns The variables for the custom field.
-     */
-    private initializeVariables(): Record<string, string> {
-        return this.$field().fieldVariables.reduce(
-            (acc, { key, value }) => {
-                acc[key] = value;
-
-                return acc;
-            },
-            {} as Record<string, string>
-        );
-    }
-
-    /**
-     * Initializes the form bridge.
-     */
-    private initializeFormBridge(): void {
-        const form = (this.#controlContainer as FormGroupDirective).form;
-
-        this.#formBridge = createFormBridge({
-            type: 'angular',
-            form,
-            zone: this.#zone
-        });
-    }
-
-    /**
-     * Gets the iframe window.
-     */
-    private getIframeWindow(): Window | null {
-        const iframeEl = this.iframe()?.nativeElement;
-        if (!iframeEl) {
-            console.warn('Iframe not initialized');
-
-            return null;
-        }
-
-        const iframeWindow = iframeEl.contentWindow;
-        if (!iframeWindow) {
-            console.warn('Iframe window not available');
-
-            return null;
-        }
-
-        return iframeWindow;
-    }
-
-    /**
-     * Initializes the custom field API.
-     * @param iframeWindow - The iframe window.
-     */
-    private initializeCustomFieldApi(iframeWindow: Window): void {
-        try {
-            if (!this.#formBridge) throw new Error('Form bridge not initialized');
-
-            // Assign API only to iframe
-            iframeWindow['DotCustomFieldApi'] = this.#formBridge;
-
-            // Notify that the API is ready
-            iframeWindow.postMessage({ type: 'dotcms:form:loaded' }, this.#window.location.origin);
-        } catch (error) {
-            console.error('Error initializing DotCustomFieldApi:', error);
-        }
-    }
-
-    /**
-     * Adjusts the iframe height and sets up the resize observer.
-     */
-    private adjustIframeHeight() {
-        const iframeEl = this.iframe()?.nativeElement;
-        if (!iframeEl) {
-            return () => void 0;
-        }
-
-        const updateHeight = () => {
-            try {
-                const body = iframeEl.contentWindow?.document.body;
-                if (body) {
-                    body.style.margin = '0';
-                    const height = body.scrollHeight;
-                    if (height > 0) {
-                        iframeEl.style.height = `${height + 1}px`;
-                    }
-                }
-            } catch (error) {
-                console.warn('Error adjusting iframe height:', error);
-            }
-        };
-
-        iframeEl.addEventListener('load', updateHeight);
-
-        const observer = new MutationObserver(() => {
-            requestAnimationFrame(updateHeight);
-        });
-
-        iframeEl.addEventListener('load', () => {
-            const body = iframeEl.contentWindow?.document.body;
-            if (body) {
-                observer.observe(body, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true
-                });
-            }
-        });
-
-        return () => {
-            observer.disconnect();
-            iframeEl.removeEventListener('load', updateHeight);
-        };
-    }
-
-    ngOnDestroy(): void {
-        if (this.#formBridge) {
-            this.#formBridge.destroy();
-        }
-    }
-
-    /**
-     * Adjusts the iframe height and sets up the resize observer.
-     */
-    ngAfterViewInit() {
-        this.adjustIframeHeight();
-    }
+    $isIframeStrategy = computed(() => this.$renderMode() === DotRenderModes.IFRAME);
 }

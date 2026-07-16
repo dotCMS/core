@@ -1,0 +1,48 @@
+name: "Experiments"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/analytics.png"
+allowExtraParameters: false
+description: "Experiments provide the ability to, given a Client Id and Client Secret, resolve an access token to be injected across all the analytics services included the resolving of the Analytics Key (Id)."
+
+params:
+  clientId:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Analytics Client ID"
+    hint: "Client ID is required to resolve access token from IDP"
+    required: true
+  clientSecret:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Analytics Client Secret"
+    hint: "Client Secret is required to resolve access token from IDP"
+    required: true
+  analyticsKey:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Analytics Key"
+    hint: "Analytics Key is required to capture analytics data"
+    required: false
+  analyticsConfigUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Analytics Config URL"
+    hint: "Analytics configurator server URL"
+    required: true
+  analyticsWriteUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Analytics Write URL"
+    hint: "URL to send analytics captured data to"
+    required: true
+  analyticsReadUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Analytics Read URL"
+    hint: "URL to get analytics data from"
+    required: true

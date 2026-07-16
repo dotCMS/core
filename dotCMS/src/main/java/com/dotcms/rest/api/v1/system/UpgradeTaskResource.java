@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.ForbiddenException;
@@ -24,6 +25,7 @@ import org.glassfish.jersey.server.JSONP;
  * This Resource has the ability to run an upgrade task, only for ADMIN logged users
  * @author jsanca
  */
+@Tag(name = "Maintenance")
 @Path("/v1/upgradetask")
 public class UpgradeTaskResource {
 

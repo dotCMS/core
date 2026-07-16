@@ -1,44 +1,58 @@
-<div class="dot-add-rows__container">
-    <div
-        *ngIf="rowState === 'add'"
-        [ngClass]="{ 'dot-add-rows__add': rowState === 'add' }"
-        class="dot-add-rows-button__container">
-        <p-splitButton
-            (onClick)="setColumnSelect()"
-            [disabled]="disabled"
-            [model]="actions"
-            label="{{ 'contenttypes.dropzone.rows.add' | dm }}"></p-splitButton>
-    </div>
-
-    <div *ngIf="rowState === 'select'" class="dot-add-rows-columns-list__container">
-        <div class="dot-add-rows-columns-list__title">
-            {{ 'contenttypes.content.add_column_title' | dm }}
+<div class="flex items-center">
+    @if (rowState === 'add') {
+        <div
+            [class.dot-add-rows__add]="rowState === 'add'"
+            class="flex h-49.5 w-full items-baseline justify-center">
+            <p-splitButton
+                (onClick)="setColumnSelect()"
+                [disabled]="$disabled()"
+                [model]="actions"
+                icon="pi pi-plus"
+                label="{{ 'contenttypes.dropzone.rows.add' | dm }}" />
         </div>
+    }
 
-        <p-button
-            (click)="showAddView()"
-            icon="pi pi-times"
-            styleClass="p-button-rounded  p-button-text p-button-sm"></p-button>
-
-        <ul
-            [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
-            class="dot-add-rows-columns-list"
-            #colContainer>
-            <li
-                *ngFor="let colNum of columns; let i = index"
-                (mouseenter)="onMouseEnter(i, $event)"
-                (mouseleave)="onMouseLeave($event)"
-                (click)="emitColumnNumber()"
-                [ngClass]="{ active: i === selectedColumnIndex }"
-                class="dot-add-rows-columns-list__item"
-                tabindex="-1">
-                <span class="dot-add-rows-columns-list__item-title">{{ setColumnValue(i) }}</span>
-                <div class="dot-add-rows-columns-list__item-container">
-                    <div
-                        *ngFor="let i of numberOfCols(colNum)"
-                        class="dot-add-rows-columns-list__item-col"></div>
+    @if (rowState === 'select') {
+        <div class="relative block h-49.5 w-full bg-white p-3">
+            <div class="mb-4 flex items-center justify-between">
+                <div class="text-lg">
+                    {{ 'contenttypes.content.add_column_title' | dm }}
                 </div>
-            </li>
-        </ul>
-    </div>
+                <p-button
+                    (click)="showAddView()"
+                    icon="pi pi-times"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small" />
+            </div>
+            <ul
+                [class.dot-add-rows__select]="rowState === 'select'"
+                class="m-0 flex w-full list-none p-0"
+                #colContainer>
+                @for (colNum of $columns(); track colNum; let i = $index) {
+                    <li
+                        (mouseenter)="onMouseEnter(i, $event)"
+                        (mouseleave)="onMouseLeave($event)"
+                        (click)="emitColumnNumber()"
+                        [class.active]="i === selectedColumnIndex"
+                        [class.bg-primary-50]="i === selectedColumnIndex"
+                        [class.ring-2]="i === selectedColumnIndex"
+                        [class.ring-primary-200]="i === selectedColumnIndex"
+                        [class.bg-gray-200]="i !== selectedColumnIndex"
+                        class="mr-3 block grow cursor-pointer rounded-md p-3 transition-colors duration-200 outline-none last:mr-0"
+                        tabindex="-1">
+                        <span class="mb-2 block text-sm font-semibold text-gray-700">
+                            {{ setColumnValue(i) }}
+                        </span>
+                        <div class="flex">
+                            @for (col of numberOfCols(colNum); track $index) {
+                                <div
+                                    class="mx-1 h-15 grow rounded-sm bg-gray-800 first:ml-0 last:mr-0"></div>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
 </div>

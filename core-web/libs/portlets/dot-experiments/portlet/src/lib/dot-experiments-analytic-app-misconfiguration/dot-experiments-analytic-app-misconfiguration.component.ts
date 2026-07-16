@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -12,7 +12,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 
 @Component({
     selector: 'dot-experiments-analytic-app-misconfiguration',
-    standalone: true,
     imports: [
         DotExperimentsUiHeaderComponent,
         DotMessagePipe,
@@ -20,18 +19,18 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         ButtonModule
     ],
     templateUrl: './dot-experiments-analytic-app-misconfiguration.component.html',
-    styleUrls: ['./dot-experiments-analytic-app-misconfiguration.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'w-full min-h-full flex justify-center items-center flex-col gap-4 bg-white'
+    }
 })
 export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnInit {
+    private router = inject(Router);
+    private location = inject(Location);
+    private dotMessageService = inject(DotMessageService);
+
     emptyConfiguration: PrincipalConfiguration;
     pageTitle: string;
-
-    constructor(
-        private router: Router,
-        private location: Location,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit(): void {
         const location = this.location.getState() as {

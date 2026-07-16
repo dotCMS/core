@@ -29,6 +29,7 @@ public class DotPortletTest {
         testPortlet = DotPortlet.builder()
                 .portletId("test-portlet")
                 .portletClass("com.example.TestPortlet")
+                .portletUrl("/test-portlet")
                 .initParams(initParams)
                 .build();
 
@@ -64,7 +65,7 @@ public class DotPortletTest {
 
     @Test
     public void testFromPortlet() {
-        Portlet portlet = new Portlet("test-portlet", "com.example.TestPortlet", testPortlet.initParams());
+        Portlet portlet = new Portlet("test-portlet", "com.example.TestPortlet", testPortlet.initParams(),testPortlet.getPortletUrl());
         DotPortlet converted = DotPortlet.from(portlet);
         assertEquals(testPortlet, converted);
     }

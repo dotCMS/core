@@ -6,7 +6,7 @@
         "types": [""],
         "target": "es2020",
         "module": "es2020",
-        "moduleResolution": "node"
+        "moduleResolution": "bundler"
     },
     "include": ["src/**/*.ts"],
     "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]

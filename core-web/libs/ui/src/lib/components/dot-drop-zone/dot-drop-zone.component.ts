@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    HostBinding,
     HostListener,
     Input,
     Output
@@ -28,7 +29,6 @@ export interface DropZoneFileValidity {
 
 @Component({
     selector: 'dot-drop-zone',
-    standalone: true,
     imports: [],
     templateUrl: './dot-drop-zone.component.html',
     styleUrls: ['./dot-drop-zone.component.scss'],
@@ -45,6 +45,13 @@ export class DotDropZoneComponent {
      * See Docs: https://www.dotcms.com/docs/latest/binary-field#FieldVariables
      */
     @Input() maxFileSize: number | null = null;
+
+    /*
+     * Whether the drop zone is disabled
+     */
+    @Input()
+    @HostBinding('class.disabled')
+    disabled = false;
 
     @Input() set accept(types: string[]) {
         this._accept = types
@@ -71,10 +78,16 @@ export class DotDropZoneComponent {
 
     @HostListener('drop', ['$event'])
     onDrop(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         event.stopPropagation();
         event.preventDefault();
 
         const { dataTransfer } = event;
+        if (!dataTransfer) return;
+
         const files = this.getFiles(dataTransfer);
         const file = files?.length === 1 ? files[0] : null;
 
@@ -89,6 +102,10 @@ export class DotDropZoneComponent {
 
     @HostListener('dragenter', ['$event'])
     onDragEnter(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         event.stopPropagation();
         event.preventDefault();
         this.fileDragEnter.emit(true);
@@ -96,6 +113,10 @@ export class DotDropZoneComponent {
 
     @HostListener('dragover', ['$event'])
     onDragOver(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         // Prevent the default behavior to allow drop
         event.stopPropagation();
         event.preventDefault();
@@ -104,6 +125,10 @@ export class DotDropZoneComponent {
 
     @HostListener('dragleave', ['$event'])
     onDragLeave(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         event.stopPropagation();
         event.preventDefault();
         this.fileDragLeave.emit(true);
@@ -122,7 +147,7 @@ export class DotDropZoneComponent {
             return true;
         }
 
-        const extension = file.name.split('.').pop().toLowerCase();
+        const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
         const mimeType = file.type.toLowerCase();
 
         const isValidType = this._accept.some(

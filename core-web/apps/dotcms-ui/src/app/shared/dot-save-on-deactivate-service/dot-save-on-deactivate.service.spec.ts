@@ -1,8 +1,8 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotAlertConfirm } from '@dotcms/dotcms-models';
@@ -11,9 +11,12 @@ import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotSaveOnDeactivateService } from './dot-save-on-deactivate.service';
 import { OnSaveDeactivate } from './save-on-deactivate';
 
+import { DOTTestBed } from '../../test/dot-test-bed';
+
 @Component({
     selector: 'dot-test',
-    template: '<h1>Test</h1>'
+    template: '<h1>Test</h1>',
+    standalone: false
 })
 class MockComponent implements OnSaveDeactivate {
     shouldSaveBefore(): boolean {
@@ -34,7 +37,7 @@ describe('DotSaveOnDeactivateService', () => {
     let mockComponent: MockComponent;
     let dotDialogService: DotAlertConfirmService;
     beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             declarations: [MockComponent],
             providers: [
                 DotSaveOnDeactivateService,
@@ -46,13 +49,13 @@ describe('DotSaveOnDeactivateService', () => {
             ],
             imports: []
         });
-        dotSaveOnDeactivateService = testbed.get(DotSaveOnDeactivateService);
-        dotDialogService = testbed.get(DotAlertConfirmService);
+        dotSaveOnDeactivateService = TestBed.inject(DotSaveOnDeactivateService);
+        dotDialogService = TestBed.inject(DotAlertConfirmService);
         mockComponent = new MockComponent();
     });
 
     it('should return true if there is not changes in the model', () => {
-        spyOn(mockComponent, 'shouldSaveBefore').and.returnValue(false);
+        jest.spyOn(mockComponent, 'shouldSaveBefore').mockReturnValue(false);
 
         dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
             expect(val).toBeTruthy();
@@ -60,8 +63,8 @@ describe('DotSaveOnDeactivateService', () => {
     });
 
     it('should return true AND call onDeactivateSave', () => {
-        spyOn(mockComponent, 'onDeactivateSave').and.callThrough();
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(mockComponent, 'onDeactivateSave');
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
         dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
@@ -71,8 +74,8 @@ describe('DotSaveOnDeactivateService', () => {
     });
 
     it('should return true if the user decide NOT to save the latest changes', () => {
-        spyOn(mockComponent, 'onDeactivateSave').and.callThrough();
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(mockComponent, 'onDeactivateSave');
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.reject();
         });
         dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
@@ -82,8 +85,8 @@ describe('DotSaveOnDeactivateService', () => {
     });
 
     it('should return false if the save fails and stay in the current route', () => {
-        spyOn(mockComponent, 'onDeactivateSave').and.returnValue(observableOf(false));
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(mockComponent, 'onDeactivateSave').mockReturnValue(observableOf(false));
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 

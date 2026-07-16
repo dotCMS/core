@@ -2,8 +2,9 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DotRelativeDatePipe } from '@dotcms/ui';
 import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotRelativeDatePipe } from './dot-relative-date.pipe';
 
 const ONE_DAY = 86400000;
 
@@ -40,7 +41,12 @@ describe('DotRelativeDatePipe', () => {
                 },
                 {
                     provide: DotMessageService,
-                    useValue: new MockDotMessageService({ new: 'New' })
+                    useValue: new MockDotMessageService({
+                        'relative.date.now': 'Now',
+                        'relative.date.minute.ago': '1 minute ago',
+                        'relative.date.minutes.ago': '{0} minutes ago',
+                        'relative.date.hours.ago': '{0} hours ago'
+                    })
                 },
                 DotFormatDateService,
                 DotRelativeDatePipe
@@ -75,6 +81,18 @@ describe('DotRelativeDatePipe', () => {
             const dateAndTime = getDateAndTimeFormat(date);
             expect(pipe.transform(dateAndTime)).toEqual('1 day ago');
         });
+
+        it('should return minutes ago for time less than 2 hours', () => {
+            const date = new Date();
+            date.setMinutes(date.getMinutes() - 30);
+            expect(pipe.transform(date.getTime())).toEqual('30 minutes ago');
+        });
+
+        it('should return hours ago for time less than 24 hours', () => {
+            const date = new Date();
+            date.setHours(date.getHours() - 5);
+            expect(pipe.transform(date.getTime())).toEqual('5 hours ago');
+        });
     });
 
     describe('format date', () => {
@@ -83,8 +101,12 @@ describe('DotRelativeDatePipe', () => {
 
             tick(EIGHT_DAYS);
 
+            // The pipe converts millisecond inputs to UTC before formatting,
+            // so the expected value must use the same UTC-shifted date.
+            // Comparing against `date.toLocaleDateString` directly would be
+            // flaky around midnight in any non-UTC timezone.
             expect(pipe.transform(date.getTime())).toEqual(
-                date.toLocaleDateString('en-US', {
+                formatDateService.getUTC(date).toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: 'numeric'
@@ -114,8 +136,10 @@ describe('DotRelativeDatePipe', () => {
             const timeStampAfter = N_DAYS - 1;
 
             date.setDate(date.getDate() - N_DAYS); //Set the date to N days before
+            // Match the pipe's UTC-shift semantics in the expected value
+            // so the assertion isn't timezone-flaky around midnight.
             expect(pipe.transform(date.getTime(), 'MM/dd/yyyy', timeStampAfter)).toEqual(
-                date.toLocaleDateString('en-US', {
+                formatDateService.getUTC(date).toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: 'numeric'

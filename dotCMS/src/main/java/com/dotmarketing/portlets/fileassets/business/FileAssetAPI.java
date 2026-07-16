@@ -273,7 +273,23 @@ public interface FileAssetAPI {
 	 */
 	public String getRealAssetPath(String inode);
 
-	String getRealAssetPath(String inode, String fileName); 
+	/**
+	 * Returns the file on the filesystem that backup the fileAsset
+	 * @param inode
+	 * @param fileName generally speaking this method is expected to be called using the Underlying File Name property
+	 * e.g.   getRealAssetPath(inode, fileAsset.getUnderlyingFileName())
+	 * @return
+	 */
+	String getRealAssetPath(String inode, String fileName);
+
+	/**
+	 * This method returns the file on the filesystem that backup the fileAsset ignoring the case of the extension
+	 *
+	 * @param inode
+	 * @param fileName
+	 * @return the real path of the asset
+	 */
+	String getRealAssetPathIgnoreExtensionCase(String inode, String fileName);
 	
 	/**
      * This method returns the relative path for assets

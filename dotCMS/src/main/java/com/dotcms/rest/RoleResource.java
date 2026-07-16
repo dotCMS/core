@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -17,6 +18,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
@@ -24,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 
 
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Roles")
 @Path("/role")
 public class RoleResource {
 
@@ -59,10 +69,32 @@ public class RoleResource {
 	 * @throws JSONException
 	 */
 
+	@Operation(
+		operationId = "loadRoleChildrenLegacy",
+		summary = "Load role children (deprecated)",
+		description = "Returns role hierarchy with first-level children for lazy-loading role tree in admin UI. If no ID provided, returns root roles. This endpoint is deprecated.",
+		deprecated = true
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Role children loaded successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Role hierarchy tree with child roles containing id, name, locked, and children properties"))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - backend user authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public Response loadChildren(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params)
+	public Response loadChildren(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+		@Parameter(description = "URL parameters including role ID (id=roleId or empty for root roles)", required = true) @PathParam("params") String params)
 			throws DotDataException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -170,10 +202,29 @@ public class RoleResource {
 	 * @throws JSONException
 	 */
 
+	@Operation(
+		operationId = "loadRoleByIdLegacy",
+		summary = "Load role by ID (deprecated)",
+		description = "Returns detailed role information including all role properties. Used for loading complete role details in admin UI. This endpoint is deprecated.",
+		deprecated = true
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Role loaded successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Role details including DBFQN, FQN, description, permissions, id, name, and other role properties"))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - backend user authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
-	public Response loadById(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
+	public Response loadById(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+		@Parameter(description = "URL parameters including role ID (id=roleId)", required = true) @PathParam("params") String params) throws DotDataException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -239,11 +290,30 @@ public class RoleResource {
 	 * @throws DotDataException
 	 * @throws JSONException
 	 */
+	@Operation(
+		operationId = "loadRolesByNameLegacy",
+		summary = "Load roles by name filter (deprecated)",
+		description = "Returns a filtered role tree structure where leaf nodes contain the specified name. Used for role filtering in admin UI. This endpoint is deprecated.",
+		deprecated = true
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Filtered roles loaded successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Filtered role tree structure with identifier, label, and items containing matching roles"))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - backend user authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/loadbyname/{params:.*}")
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
-	public Response loadByName(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
+	public Response loadByName(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+		@Parameter(description = "URL parameters including name filter (name=filterText)", required = true) @PathParam("params") String params) throws DotDataException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)

@@ -1,22 +1,18 @@
-import { NgClass } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    OnInit,
-    effect,
-    inject,
-    input,
-    viewChild
-} from '@angular/core';
-import { ControlContainer, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/forms';
 
-import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
+import { TreeSelectModule } from 'primeng/treeselect';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { HostFolderFiledStore } from './store/host-folder-field.store';
+import { DotHostFolderFieldComponent } from './components/host-folder-field/host-folder-field.component';
 
-import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
  * Component for editing content site or folder field.
@@ -26,8 +22,17 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
  */
 @Component({
     selector: 'dot-edit-content-host-folder-field',
-    standalone: true,
-    imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe, NgClass],
+    imports: [
+        TreeSelectModule,
+        ReactiveFormsModule,
+        FormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        DotHostFolderFieldComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -35,51 +40,17 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ],
-    providers: [HostFolderFiledStore]
+    ]
 })
-export class DotEditContentHostFolderFieldComponent implements OnInit {
+export class DotEditContentHostFolderFieldComponent extends BaseWrapperField {
+    /**
+     * A signal that holds the field.
+     * It is used to display the field in the component.
+     */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-    $treeSelect = viewChild<TreeSelect>(TreeSelect);
-
-    readonly #controlContainer = inject(ControlContainer);
-    readonly store = inject(HostFolderFiledStore);
-
-    pathControl = new FormControl();
-
-    constructor() {
-        effect(() => {
-            this.store.nodeExpaned();
-            const treeSelect = this.$treeSelect();
-            if (treeSelect.treeViewChild) {
-                treeSelect.treeViewChild.updateSerializedValue();
-                treeSelect.cd.detectChanges();
-            }
-        });
-        effect(() => {
-            const nodeSelected = this.store.nodeSelected();
-            this.pathControl.setValue(nodeSelected);
-        });
-
-        effect(() => {
-            const pathToSave = this.store.pathToSave();
-            this.formControl.setValue(pathToSave);
-        });
-    }
-
-    ngOnInit() {
-        const currentPath = this.formControl.value;
-        const isRequired = this.formControl.hasValidator(Validators.required);
-
-        this.store.loadSites({
-            path: currentPath,
-            isRequired
-        });
-    }
-
-    get formControl(): FormControl {
-        const field = this.$field();
-
-        return this.#controlContainer.control.get(field.variable) as FormControl<string>;
-    }
+    /**
+     * A signal that holds the contentlet.
+     * It is used to display the contentlet in the component.
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 }

@@ -30,18 +30,21 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.velocity.tools.view.context.ViewContext;
+
 import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
 
 /**
@@ -54,11 +57,10 @@ import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.is
  */
 public class LanguageAPIImpl implements LanguageAPI {
 
-
     private final static LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
 
 	private HttpServletRequest request; // todo: this should be decouple from the api
-	private LanguageFactory factory;
+	private final LanguageFactory factory;
 	private LanguageVariableAPI languageVariableAPI;
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
@@ -152,7 +154,19 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return factory.getLanguage(id);
 	}
 
-	@CloseDBIfOpened
+    @Override
+    public Optional<Language> getLanguageByIdOrIsoCode(final Object id) {
+        if (Objects.isNull(id)) {
+            return Optional.empty();
+        }
+        if (NumberUtils.isDigits(id.toString())) {
+            return Optional.ofNullable(this.factory.getLanguage(Long.parseLong(id.toString())));
+        }
+        final String[] langCountry = id.toString().split("[_|-]");
+        return Optional.ofNullable(getLanguage(langCountry[0], langCountry.length > 1 ? langCountry[1] : null));
+    }
+
+    @CloseDBIfOpened
 	@Override
 	public List<Language> getLanguages() {
 		return factory.getLanguages();

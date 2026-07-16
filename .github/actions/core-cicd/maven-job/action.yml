@@ -93,6 +93,20 @@ inputs:
     description: 'Require GraalVM to be installed'
     required: true
     default: 'false'
+  maven-compiler-release:
+    description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+    required: false
+  artifact-suffix:
+    description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Dash prefix added automatically for Maven artifacts. Computed from java-version if not provided.'
+    required: false
+  docker-io-username:
+    description: 'Docker Hub username for authenticated pulls (avoids rate limiting)'
+    required: false
+    default: ''
+  docker-io-token:
+    description: 'Docker Hub token for authenticated pulls (avoids rate limiting)'
+    required: false
+    default: ''
 runs:
   using: 'composite'
   steps:
@@ -104,6 +118,44 @@ runs:
         java-version: ${{ inputs.java-version }}
         require-graalvm: ${{ inputs.native || inputs.require-graalvm }}
         graalvm-version: ${{ inputs.graalvm-version }}
+
+    - name: Compute Artifact Suffix
+      id: artifact-suffix
+      shell: bash
+      run: |
+        # Naming Convention for Java Variants:
+        # - User input: suffix without leading separator (e.g., "java25" or "java25-ms")
+        # - Maven artifacts: use dash separator (e.g., "-java25")
+        # - Docker tags: use underscore separator (e.g., "_java25")
+        #
+        # Note: Underscore in Docker tags is non-standard but follows existing dotCMS convention.
+        # Docker typically uses dash or no separator, but we use underscore to distinguish from
+        # version dashes (e.g., "25.02.16-01_java25_abc123" vs "25.02.16-01-java25-abc123").
+        # This convention may be revisited in future.
+
+        # Use provided artifact-suffix if set, otherwise compute from java-version
+        if [ -n "${{ inputs.artifact-suffix }}" ]; then
+          RAW_SUFFIX="${{ inputs.artifact-suffix }}"
+        elif [ -n "${{ inputs.java-version }}" ]; then
+          JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+          RAW_SUFFIX="java${JAVA_MAJOR}"
+        else
+          RAW_SUFFIX=""
+        fi
+
+        # Normalize: strip any leading separators, then add dash for Maven artifacts
+        if [ -n "${RAW_SUFFIX}" ]; then
+          while [[ "${RAW_SUFFIX}" =~ ^[-_] ]]; do
+            RAW_SUFFIX="${RAW_SUFFIX:1}"
+          done
+          ARTIFACT_SUFFIX="-${RAW_SUFFIX}"
+        else
+          ARTIFACT_SUFFIX=""
+        fi
+
+        echo "suffix=${ARTIFACT_SUFFIX}" >> "$GITHUB_OUTPUT"
+        echo "Artifact suffix: '${ARTIFACT_SUFFIX}'"
+
     - id: setup-license
       if: ${{ inputs.dotcms-license != '' }}
       name: Setup License
@@ -132,28 +184,51 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: installs
-        key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+        # hash nodejs-parent/pom.xml so the pnpm-era layout (install-node-and-npm
+        # + corepack shim) is not mixed with the yarn-era layout from cached
+        # builds of the previous toolchain.
+        key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
-    - name: Get yarn cache directory path
-      id: yarn-info
+    - name: Verify pnpm version is in sync between package.json and nodejs-parent/pom.xml
       if: ${{ inputs.requires-node == 'true' }}
       shell: bash
       run: |
-        echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-        echo "version=$(yarn -v)" >> $GITHUB_OUTPUT
-      
+        set -euo pipefail
+        pkg_json_pm=$(jq -r '.packageManager' core-web/package.json)
+        pkg_json_version="${pkg_json_pm#pnpm@}"
+        pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
+        if [ "$pkg_json_version" != "$pom_version" ]; then
+          echo "::error::pnpm version mismatch: core-web/package.json=$pkg_json_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value while the pnpm store cache key uses the package.json value." >&2
+          exit 1
+        fi
+        echo "pnpm version in sync: $pom_version"
 
-    - id: restore-cache-yarn
-      name: Restore Yarn Cache
+    - name: Set up pnpm
+      if: ${{ inputs.requires-node == 'true' }}
+      uses: pnpm/action-setup@v4
+      with:
+        package_json_file: core-web/package.json
+        run_install: false
+
+    - name: Get pnpm store directory path
+      id: pnpm-info
+      if: ${{ inputs.requires-node == 'true' }}
+      shell: bash
+      run: |
+        echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        echo "version=$(pnpm -v)" >> $GITHUB_OUTPUT
+
+    - id: restore-cache-pnpm
+      name: Restore pnpm Store Cache
       if: ${{ inputs.requires-node == 'true' }}
       uses: actions/cache/restore@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}-${{ hashFiles('core-web/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}
-          ${{ runner.os }}-yarn-
-          
+          ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}
+          ${{ runner.os }}-pnpm-
+
 
     - id: cache-sonar
       name: Cache SonarQube Packages
@@ -171,7 +246,7 @@ runs:
       with:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
-        name: maven-repo
+        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
         path: ~/.m2/repository
 
     - id: restore-artifact-docker-image
@@ -179,7 +254,7 @@ runs:
       if: ${{ inputs.needs-docker-image == 'true' }}
       uses: actions/download-artifact@v4
       with:
-        name: docker-image
+        name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/docker-image
 
     - name: Load Docker image from tar file
@@ -194,12 +269,20 @@ runs:
       with:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
-        name: "build-classes"
+        name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
+
+    - name: Docker Hub Login
+      if: ${{ inputs.docker-io-username != '' && inputs.docker-io-token != '' }}
+      uses: docker/login-action@v3.0.0
+      with:
+        username: ${{ inputs.docker-io-username }}
+        password: ${{ inputs.docker-io-token }}
 
     - id: run-maven-build
       name: Run Maven Build
       shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
       run: |
+        set -e  # Exit on any command failure
         DEFAULT_ARGS="-e -B --no-transfer-progress --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dprod=true"
         MAVEN_ARGS="${{ inputs.maven-args }}"
         if [[ "${{ inputs.generate-docker }}" == "true" ]]; then
@@ -208,7 +291,23 @@ runs:
         if [[ "${{ inputs.native }}" == "true" ]]; then
           DEFAULT_ARGS="$DEFAULT_ARGS -Pnative"
         fi
-        FINAL_ARGS=$(echo "$DEFAULT_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
+
+        # Add Maven compiler release override flag for core modules
+        # Priority: explicit maven-compiler-release > default from java-version major > project defaults
+        # Note: Core modules use dotcms.core.compiler.release (default 11), CLI uses dotcms.cli.compiler.release (default 11) for Quarkus/GraalVM compatibility
+        COMPILER_ARGS=""
+        if [[ -n "${{ inputs.maven-compiler-release }}" ]]; then
+          # Explicit release override takes precedence
+          COMPILER_ARGS="-Ddotcms.core.compiler.release=${{ inputs.maven-compiler-release }}"
+          echo "Using explicit dotcms.core.compiler.release=${{ inputs.maven-compiler-release }}"
+        elif [[ -n "${{ inputs.java-version }}" ]]; then
+          # Default compiler release to match the overridden Java version
+          JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+          COMPILER_ARGS="-Ddotcms.core.compiler.release=${JAVA_MAJOR}"
+          echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
+        fi
+
+        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
           echo "Building Maven with args $FINAL_ARGS"
@@ -226,7 +325,7 @@ runs:
       if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: maven-repo
+        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
         path: ~/.m2/repository
 
     - id: persist-docker-build-context
@@ -234,8 +333,41 @@ runs:
       if: ${{ inputs.generate-docker == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: docker-build-context
+        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
         path: dotCMS/target/docker-build.tar
+
+    - id: get-sdkman-version
+      name: Get SDKMAN Java Version
+      if: ${{ inputs.generate-docker == 'true' }}
+      shell: bash
+      run: |
+        # Use provided java-version if set, otherwise read from .sdkmanrc
+        if [ -n "${{ inputs.java-version }}" ]; then
+          SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
+          echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
+        elif [ -f ".sdkmanrc" ]; then
+          SDKMAN_JAVA_VERSION=$(awk -F= '/^java=/ {print $2}' .sdkmanrc)
+          echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+        else
+          echo "Error: .sdkmanrc file not found and no java-version override provided"
+          exit 1
+        fi
+        echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
+
+    - id: build-docker-image-from-archive
+      name: Build Docker Image from Archive
+      if: ${{ inputs.generate-docker == 'true' }}
+      shell: bash
+      run: |
+        # Extract the build context from the tar archive
+        mkdir -p /tmp/docker-context
+        tar -xf dotCMS/target/docker-build.tar -C /tmp/docker-context
+
+        # Build the Docker image from the extracted context
+        docker build --build-arg SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION}" -t dotcms/dotcms-test:${{ inputs.version }} /tmp/docker-context
+
+        # Verify the image was created
+        docker images dotcms/dotcms-test:${{ inputs.version }}
 
     - id: save-docker-image
       name: Save Docker Image to Tar File
@@ -248,7 +380,7 @@ runs:
       uses: actions/upload-artifact@v4
       if: ${{ inputs.generate-docker == 'true' }}
       with:
-        name: docker-image
+        name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/image.tar
 
     - id: persist-build-classes
@@ -256,7 +388,7 @@ runs:
       if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: "build-classes"
+        name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
         path: |
           **/target/classes/**/*.class
           **/target/generated-sources/**/*.java
@@ -285,13 +417,13 @@ runs:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
 
-    - id: save-cache-yarn
-      name: Save Yarn Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-yarn.outputs.cache-hit != 'true' }}
+    - id: save-cache-pnpm
+      name: Save pnpm Store Cache
+      if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ steps.restore-cache-yarn.outputs.cache-primary-key }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ steps.restore-cache-pnpm.outputs.cache-primary-key }}
 
     - id: save-cache-sonar
       name: Save SonarQube Cache

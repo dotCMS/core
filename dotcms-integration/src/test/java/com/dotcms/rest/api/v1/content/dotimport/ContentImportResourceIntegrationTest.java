@@ -2,7 +2,11 @@ package com.dotcms.rest.api.v1.content.dotimport;
 
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
 import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -10,7 +14,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.jobs.business.job.Job;
-import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityJobStatusView;
@@ -27,19 +31,24 @@ import com.dotmarketing.util.Constants;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.jboss.weld.junit5.EnableWeld;
-import org.junit.jupiter.api.*;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.weld.junit5.EnableWeld;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Integration test suite for content import functionality.
@@ -57,7 +66,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private static ContentImportResource importResource;
     private static Language defaultLanguage;
 
-    private final static String IMPORT_QUEUE_NAME = "importContentlets";
+    private static final String IMPORT_QUEUE_NAME = "importContentlets";
     private static final String CMD_PUBLISH = Constants.PUBLISH;
     private static final String CMD_PREVIEW = Constants.PREVIEW;
 
@@ -122,7 +131,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     @Order(2)
     void test_import_content_get_active_jobs() {
         // Call the activeJobs endpoint
-        ResponseEntityView<JobPaginatedResult> result = importResource.activeJobs(request, response, 1, 20);
+        ResponseEntityView<JobViewPaginatedResult> result = importResource.activeJobs(request, response, 1, 20);
         validateJobPaginatedResult(result, 0);
     }
 
@@ -146,7 +155,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         Response importContentResponse = importResource.importContent(request, response, params);
 
         // Call the activeJobs endpoint
-        ResponseEntityView<JobPaginatedResult> result = importResource.activeJobs(request, response, 1, 20);
+        ResponseEntityView<JobViewPaginatedResult> result = importResource.activeJobs(request, response, 1, 20);
 
         // Validate result
         validateJobPaginatedResult(result, 1);
@@ -163,7 +172,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     @Order(4)
     void test_content_import_get_cancel_jobs() {
         // Call the activeJobs endpoint
-        ResponseEntityView<JobPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
+        ResponseEntityView<JobViewPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
         validateJobPaginatedResult(result, 0);
     }
 
@@ -198,7 +207,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         importResource.cancelJob(request, response, responseEntityJobStatusView.getEntity().jobId());
 
         // Call the canceledJobs endpoint
-        ResponseEntityView<JobPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
+        ResponseEntityView<JobViewPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
         // Validate result
         validateJobPaginatedResult(result, 1);
     }
@@ -445,13 +454,13 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting the file
      */
     @Test
-    public void test_import_content_missing_file() throws JsonProcessingException {
+    public void test_import_content_missing_file() throws IOException, DotDataException {
         ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, null);
 
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
+        assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
 
@@ -465,13 +474,13 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting the file
      */
     @Test
-    public void test_import_content_validate_missing_file() throws JsonProcessingException {
+    public void test_import_content_validate_missing_file() throws IOException, DotDataException {
         ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, null);
 
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
 
-        assertThrows(ValidationException.class, () -> importResource.validateContentImport(request, response, params));
+        assertBadRequestResponse(importResource.validateContentImport(request, response, params));
     }
 
 
@@ -512,12 +521,12 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting form data
      */
     @Test
-    public void test_import_content_missing_form() throws IOException {
+    public void test_import_content_missing_form() throws IOException, DotDataException {
         ContentImportParams params = new ContentImportParams();
         params.setFileInputStream(new FileInputStream(csvFile));
         params.setContentDisposition(createContentDisposition(csvFile.getName()));
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
+        assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
 
@@ -531,21 +540,21 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting form data
      */
     @Test
-    public void test_import_content_validate_missing_form() throws IOException {
+    public void test_import_content_validate_missing_form() throws IOException, DotDataException {
         ContentImportParams params = new ContentImportParams();
         params.setFileInputStream(new FileInputStream(csvFile));
         params.setContentDisposition(createContentDisposition(csvFile.getName()));
 
-        assertThrows(ValidationException.class, () -> importResource.validateContentImport(request, response, params));
+        assertBadRequestResponse(importResource.validateContentImport(request, response, params));
     }
 
-    private void validateJobPaginatedResult(ResponseEntityView<JobPaginatedResult> result, long expectedTotalJobs) {
+    private void validateJobPaginatedResult(ResponseEntityView<JobViewPaginatedResult> result, long expectedTotalJobs) {
         assertNotNull(result, "Response should not be null");
 
-        JobPaginatedResult entity = result.getEntity();
+        JobViewPaginatedResult entity = result.getEntity();
         assertNotNull(entity, "JobPaginatedResult should not be null");
 
-        // Validate the properties of JobPaginatedResult
+        // Validate the properties of JobViewPaginatedResult
         assertEquals(1, entity.page(), "Current page should be 1");
         assertEquals(20, entity.pageSize(), "Page size should be 20");
 

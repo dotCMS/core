@@ -1,20 +1,18 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSPersonalizedItem } from '@dotcms/dotcms-models';
+import { DotCMSPersonalizedItem, DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 @Injectable()
 export class DotPersonalizeService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private dotSessionStorageService: DotSessionStorageService
-    ) {}
+    private http = inject(HttpClient);
+    private dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
      * Set a personalized page for the persona passed
@@ -27,19 +25,16 @@ export class DotPersonalizeService {
     personalized(pageId: string, personaTag: string): Observable<DotCMSPersonalizedItem[]> {
         const currentVariantName = this.dotSessionStorageService.getVariationId();
 
-        return this.coreWebService
-            .requestView({
-                method: 'POST',
-                url: `/api/v1/personalization/pagepersonas`,
-                params: {
-                    variantName: currentVariantName
-                },
-                body: {
-                    pageId,
-                    personaTag
-                }
-            })
-            .pipe(pluck('entity'));
+        let params = new HttpParams();
+        if (currentVariantName) {
+            params = params.set('variantName', currentVariantName);
+        }
+
+        return this.http
+            .post<
+                DotCMSResponse<DotCMSPersonalizedItem[]>
+            >('/api/v1/personalization/pagepersonas', { pageId, personaTag }, { params })
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -53,14 +48,15 @@ export class DotPersonalizeService {
     despersonalized(pageId: string, personaTag: string): Observable<string> {
         const currentVariantName = this.dotSessionStorageService.getVariationId();
 
-        return this.coreWebService
-            .requestView({
-                method: 'DELETE',
-                url: `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`,
-                params: {
-                    variantName: currentVariantName
-                }
-            })
-            .pipe(pluck('entity'));
+        let params = new HttpParams();
+        if (currentVariantName) {
+            params = params.set('variantName', currentVariantName);
+        }
+
+        return this.http
+            .delete<
+                DotCMSResponse<string>
+            >(`/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`, { params })
+            .pipe(map((response) => response.entity));
     }
 }

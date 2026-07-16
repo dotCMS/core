@@ -36,6 +36,7 @@ import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -191,7 +192,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.awaitility.Awaitility;
-import org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -635,11 +636,11 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#findAllContent(int, int)}
+     * Testing {@link ContentletDataGen#findAllContent(int, int)}
      *
      * @throws com.dotmarketing.exception.DotDataException
      * @throws com.dotmarketing.exception.DotSecurityException
-     * @see ContentletAPI
+     * @see ContentletDataGen
      * @see Contentlet
      */
     @Ignore("Not Ready to Run.")
@@ -647,7 +648,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void findAllContent() throws DotDataException, DotSecurityException {
 
         //Getting all contentlets live/working contentlets
-        List<Contentlet> contentlets = contentletAPI.findAllContent(0, 5);
+        List<Contentlet> contentlets = ContentletDataGen.findAllContent(0, 5);
 
         //Validations
         assertTrue(contentlets != null && !contentlets.isEmpty());
@@ -2055,6 +2056,158 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertTrue(value2.isEmpty());
     }
 
+    private static final String TAG_CLEARING_FIELD_VAR = "tags";
+
+    /**
+     * Creates a content type with a {@code title} text field and a single {@code tags}
+     * {@link TagField}. Helper for the tag-clearing tests below (GitHub issue #35861).
+     */
+    private ContentType createContentTypeWithTagField() {
+        final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().velocityVarName("title").next());
+        fields.add(new FieldDataGen().type(TagField.class)
+                .velocityVarName(TAG_CLEARING_FIELD_VAR).next());
+        return new ContentTypeDataGen().fields(fields).nextPersisted();
+    }
+
+    /**
+     * Creates and checks in a contentlet of the given type with the given tag value.
+     */
+    private Contentlet createContentletWithTag(final ContentType contentType, final String tagValue)
+            throws Exception {
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentTypeId(contentType.id());
+        contentlet.setHost(defaultHost.getIdentifier());
+        contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        contentlet.setStringProperty("title", "Test " + System.currentTimeMillis());
+        contentlet.setStringProperty(TAG_CLEARING_FIELD_VAR, tagValue);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        return contentletAPI.checkin(contentlet, user, false);
+    }
+
+    private com.dotcms.contenttype.model.field.Field tagClearingField(final ContentType contentType) {
+        final Optional<com.dotcms.contenttype.model.field.Field> field = contentType.fields().stream()
+                .filter(f -> TAG_CLEARING_FIELD_VAR.equals(f.variable())).findFirst();
+        assertTrue("The content type must have the tag field", field.isPresent());
+        return field.get();
+    }
+
+    private List<Tag> tagsOf(final String inode) throws DotDataException {
+        return tagAPI.getTagsByInodeAndFieldVarName(inode, TAG_CLEARING_FIELD_VAR);
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#setContentletProperty(Contentlet, Field, Object)} +
+     * {@link ContentletAPI#checkin(Contentlet, User, boolean)}.
+     * <p>
+     * Given Scenario: A contentlet has a tag value. It is updated through
+     * {@code setContentletProperty(tagField, "")} — the field setter the REST/form populator uses —
+     * and checked in.
+     * <p>
+     * Expected Result: The tag is cleared (no {@code tag_inode} rows for the new inode and the
+     * reloaded contentlet does not echo the old value). Regression guard documenting that, at the
+     * {@link ContentletAPI} boundary, clearing a tag field works correctly — the GitHub issue #35861
+     * defect lives in the workflow/REST merge layer (see {@code WorkflowResourceIntegrationTest}),
+     * not here.
+     */
+    @Test
+    public void setContentletProperty_emptyStringOnTagField_thenCheckin_clearsTags() throws Exception {
+        ContentType contentType = null;
+        try {
+            contentType = createContentTypeWithTagField();
+            final Contentlet saved = createContentletWithTag(contentType, "new edit content");
+            assertEquals("The tag should have been saved", 1, tagsOf(saved.getInode()).size());
+
+            final Contentlet working = contentletAPI.checkout(saved.getInode(), user, false);
+            contentletAPI.setContentletProperty(working, tagClearingField(contentType), "");
+            working.setIndexPolicy(IndexPolicy.FORCE);
+            final Contentlet updated = contentletAPI.checkin(working, user, false);
+
+            assertTrue("tag_inode should be empty after clearing via setContentletProperty, found: "
+                            + tagsOf(updated.getInode()),
+                    tagsOf(updated.getInode()).isEmpty());
+
+            final Contentlet reloaded = contentletAPI.findContentletByIdentifier(
+                    updated.getIdentifier(), false, updated.getLanguageId(), user, false);
+            final String reloadedTag = reloaded.getStringProperty(TAG_CLEARING_FIELD_VAR);
+            assertTrue("Reloaded contentlet still shows the stale tag value: " + reloadedTag,
+                    !UtilMethods.isSet(reloadedTag));
+        } finally {
+            if (null != contentType) {
+                ContentTypeDataGen.remove(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link Contentlet#setStringProperty(String, String)} +
+     * {@link ContentletAPI#checkin(Contentlet, User, boolean)}.
+     * <p>
+     * Given Scenario: A contentlet has a tag value, then the tag field is set to the empty string
+     * directly on the contentlet (the direct-API path) and checked in.
+     * <p>
+     * Expected Result: Tags are cleared. Characterization/regression guard — this path already works
+     * today and must keep working (GitHub issue #35861).
+     */
+    @Test
+    public void setStringProperty_emptyStringOnTagField_thenCheckin_clearsTags() throws Exception {
+        ContentType contentType = null;
+        try {
+            contentType = createContentTypeWithTagField();
+            final Contentlet saved = createContentletWithTag(contentType, "new edit content");
+            assertEquals(1, tagsOf(saved.getInode()).size());
+
+            final Contentlet working = contentletAPI.checkout(saved.getInode(), user, false);
+            working.setStringProperty(TAG_CLEARING_FIELD_VAR, "");
+            working.setIndexPolicy(IndexPolicy.FORCE);
+            final Contentlet updated = contentletAPI.checkin(working, user, false);
+
+            assertTrue("tag_inode should be empty after clearing via setStringProperty",
+                    tagsOf(updated.getInode()).isEmpty());
+        } finally {
+            if (null != contentType) {
+                ContentTypeDataGen.remove(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)} when the tag field
+     * value is not present in the contentlet map.
+     * <p>
+     * Given Scenario: A contentlet has a tag value; it is checked out and the tag property is set to
+     * {@code null} before checkin (a new version).
+     * <p>
+     * Expected Result: The new version has NO tags. This characterizes the key architectural fact
+     * behind GitHub issue #35861: at the {@link ContentletAPI} layer tag persistence is driven
+     * entirely by the tag field value in the contentlet map — there is no automatic carry-over of a
+     * prior version's tags. Consequently "preserve tags on a partial update" is a concern of the
+     * workflow/REST merge layer (which re-populates the loaded value), not of checkin; and that same
+     * merge layer is where the #35861 defect lives (it keeps the stale value when the user clears it).
+     */
+    @Test
+    public void checkin_newVersionWithoutTagValueInMap_doesNotCarryOverTags() throws Exception {
+        ContentType contentType = null;
+        try {
+            contentType = createContentTypeWithTagField();
+            final Contentlet saved = createContentletWithTag(contentType, "new edit content");
+            assertEquals(1, tagsOf(saved.getInode()).size());
+
+            final Contentlet working = contentletAPI.checkout(saved.getInode(), user, false);
+            working.setProperty(TAG_CLEARING_FIELD_VAR, null);
+            working.setIndexPolicy(IndexPolicy.FORCE);
+            final Contentlet updated = contentletAPI.checkin(working, user, false);
+
+            assertTrue("Checkin must not carry over a prior version's tags when the tag field value "
+                            + "is absent from the map, found: " + tagsOf(updated.getInode()),
+                    tagsOf(updated.getInode()).isEmpty());
+        } finally {
+            if (null != contentType) {
+                ContentTypeDataGen.remove(contentType);
+            }
+        }
+    }
+
     /**
      * Tests method {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}.
      * <p>
@@ -3085,10 +3238,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             final Contentlet newContentlet = createContentlet(testStructure, null, false);
             newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
             contentletAPI.delete(newContentlet, user, false);
-            final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user,
-                    false);
-            assertTrue(!UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(
-                    foundContentlet.getInode()));
+            
+            // Wait for the contentlet to be deleted asynchronously
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+                return !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode());
+            });
 
             AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(),
                     "contentlet");
@@ -8303,7 +8458,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 + "  },"
                 + "}";
 
-        final SearchResponse responseDefaultVariant = APILocator.getContentletAPI().esSearchRaw(
+        final ContentSearchResponse responseDefaultVariant = APILocator.getContentletAPI().searchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnDefaultVariant,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);
@@ -8311,7 +8466,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(contentDefaultVariant.getIdentifier() + "_"
                         + contentDefaultVariant.getLanguageId() + "_"
                         + contentDefaultVariant.getVariantId(),
-                responseDefaultVariant.getHits().iterator().next().getId());
+                responseDefaultVariant.hits().iterator().next().getId());
 
         final String queryContentOnNewVariant = "{"
                 + "query: {"
@@ -8321,14 +8476,14 @@ public class ContentletAPITest extends ContentletBaseTest {
                 + "  },"
                 + "}";
 
-        final SearchResponse responseNewVariant = APILocator.getContentletAPI().esSearchRaw(
+        final ContentSearchResponse responseNewVariant = APILocator.getContentletAPI().searchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnNewVariant,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);
 
         assertEquals(contentNewVariant.getIdentifier() + "_"
                         + contentNewVariant.getLanguageId() + "_" + contentNewVariant.getVariantId(),
-                responseNewVariant.getHits().iterator().next().getId());
+                responseNewVariant.hits().iterator().next().getId());
     }
 
     @DataProvider
@@ -8700,6 +8855,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .contentTypeId(contentType.id())
                 .type(TextField.class)
                 .dataType(DataTypes.FLOAT)
+                .defaultValue("0")
                 .nextPersisted();
         ContentTypeDataGen.addField(field);
 

@@ -56,6 +56,7 @@ class PgVectorDataSource {
         config.setPassword(password);
         config.setJdbcUrl(dbUrl);
         config.setMaximumPoolSize(maxConnections);
+        config.setRegisterMbeans(Config.getBooleanProperty("hikari.register.mbeans", true));
         return new HikariDataSource(config);
     }
 

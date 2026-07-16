@@ -1,8 +1,8 @@
-import { createContext } from 'react';
+'use client';
 
-import { DotCMSContentlet, DotCMSPageAsset } from '../types';
+import { ReactNode, createContext } from 'react';
 
-export type DotCMSPageRendererMode = 'production' | 'development';
+import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 /**
  * @internal
@@ -12,11 +12,13 @@ export type DotCMSPageRendererMode = 'production' | 'development';
  * @property {DotCMSPageAsset} pageAsset - The DotCMS page asset
  * @property {RendererMode} mode - The renderer mode
  * @property {Record<string, React.ComponentType<DotCMSContentlet>>} userComponents - The user components
+ * @property {Record<string, ReactNode>} [slots] - Pre-rendered server component nodes keyed by contentlet identifier
  */
 export interface DotCMSPageContextProps {
     pageAsset: DotCMSPageAsset;
     mode: DotCMSPageRendererMode;
-    userComponents: Record<string, React.ComponentType<DotCMSContentlet>>;
+    userComponents: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
+    slots?: Record<string, ReactNode>;
 }
 
 /**
@@ -27,5 +29,6 @@ export interface DotCMSPageContextProps {
 export const DotCMSPageContext = createContext<DotCMSPageContextProps>({
     pageAsset: {} as DotCMSPageAsset,
     mode: 'production',
-    userComponents: {}
+    userComponents: {},
+    slots: {}
 });

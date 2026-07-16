@@ -1,0 +1,54 @@
+import { Component, computed, input, OnChanges, signal } from '@angular/core';
+
+import { DotCMSBlockEditorRendererNativeComponent } from '@dotcms/angular';
+import { BlogContentlet } from '../blog.component';
+import { UVE_MODE } from '@dotcms/types';
+import { NgOptimizedImage } from '@angular/common';
+import { enableBlockEditorInline, getUVEState } from '@dotcms/uve';
+@Component({
+  selector: 'app-blog-post',
+  imports: [DotCMSBlockEditorRendererNativeComponent, NgOptimizedImage],
+  templateUrl: './blog-post.component.html',
+  styleUrl: './blog-post.component.css',
+})
+export class BlogPostComponent implements OnChanges {
+  post = input.required<BlogContentlet>();
+
+  postContent = computed(() => {
+    return this.post().blogContent;
+  });
+
+  get isEditMode() {
+    return getUVEState()?.mode === UVE_MODE.EDIT;
+  }
+
+  blockEditorClasses = signal<string>('');
+
+  ngOnChanges(): void {
+    if (this.isEditMode) {
+      this.blockEditorClasses.set(
+        'prose prose-a:text-teal-500 border-2 border-solid border-teal-400 cursor-pointer',
+      );
+    } else {
+      this.blockEditorClasses.set('prose prose-sm prose-a:text-teal-500');
+    }
+  }
+
+  customRenderers = {
+    Activity: import('./customRenderers/activity/activity.component').then(
+      (c) => c.ActivityComponent,
+    ),
+    // Override the built-in `blockquote` block with a self-contained custom
+    // renderer (a 💡 callout card) to demonstrate customRenderers on the
+    // native renderer.
+    blockquote: import('./customRenderers/callout/callout.component').then(
+      (c) => c.CalloutComponent,
+    ),
+  };
+
+  editPost() {
+    if (this.isEditMode) {
+      enableBlockEditorInline(this.post(), 'blogContent');
+    }
+  }
+}

@@ -9,6 +9,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +32,7 @@ import java.util.concurrent.Future;
  * Redis Resource
  * @author jsanca
  */
+@Tag(name = "System")
 @VisibleForTesting // This is not expose, visible only for internal testing
 @Path("/v1/redis")
 public class RedisResource {

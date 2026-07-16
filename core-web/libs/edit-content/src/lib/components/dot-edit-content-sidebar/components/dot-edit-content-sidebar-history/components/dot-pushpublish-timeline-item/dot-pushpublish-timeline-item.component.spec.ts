@@ -1,0 +1,172 @@
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+
+import { By } from '@angular/platform-browser';
+
+import { AvatarModule } from 'primeng/avatar';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCopyButtonComponent, DotMessagePipe, DotGravatarDirective } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotPushpublishTimelineItemComponent } from './dot-pushpublish-timeline-item.component';
+
+import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-content.model';
+
+describe('DotPushpublishTimelineItemComponent', () => {
+    let spectator: Spectator<DotPushpublishTimelineItemComponent>;
+
+    const mockPushPublishHistoryItem: DotPushPublishHistoryItem = {
+        bundleId: '01K6NY6Z8V92T6SAF582WMTKYQ',
+        environment: 'production-receiver',
+        pushDate: Date.now() - 86400000, // 1 day ago
+        pushedBy: 'Admin User'
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotPushpublishTimelineItemComponent,
+        imports: [AvatarModule, DotCopyButtonComponent, DotMessagePipe, DotGravatarDirective],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'edit.content.sidebar.pushpublish.bundle': 'Bundle',
+                    'edit.content.sidebar.pushpublish.environment': 'Environment',
+                    'edit.content.sidebar.pushpublish.bundle.id.label': 'Bundle ID',
+                    'edit.content.sidebar.pushpublish.copy.bundle.id': 'Copy Bundle ID'
+                })
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            detectChanges: false // Don't auto-detect changes
+        });
+        spectator.setInput('item', mockPushPublishHistoryItem);
+        spectator.detectChanges(); // Now detect changes after input is set
+    });
+
+    describe('Data Display', () => {
+        it('should not render a tooltip on the content wrapper', () => {
+            const wrapper = spectator.query(byTestId('content-wrapper'));
+            expect(wrapper).toBeTruthy();
+            expect(wrapper.getAttribute('tooltipPosition')).toBeNull();
+        });
+
+        it('should show the exact date/time — never a relative string — for the push date', () => {
+            spectator.setInput('item', {
+                ...mockPushPublishHistoryItem,
+                pushDate: new Date(2026, 4, 16, 13, 10).getTime()
+            });
+            spectator.detectChanges();
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).toBe('May 16, 2026 - 1:10 PM');
+            expect(timeDisplay.textContent?.trim()).not.toMatch(/now|ago/i);
+        });
+
+        it('should display correct user name', () => {
+            const userName = spectator.query(byTestId('pushpublish-user'));
+            expect(userName.textContent?.trim()).toBe('Admin User');
+        });
+
+        it('should display "Bundle ID" label on the copy button instead of the raw UUID', () => {
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
+        });
+
+        it('should display correct user avatar label', () => {
+            const avatarElement = spectator.query(byTestId('user-avatar'));
+            expect(avatarElement).toBeTruthy();
+
+            // Access the PrimeNG Avatar component instance to verify label property
+            const avatarDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="user-avatar"]')
+            );
+            const avatarComponent = avatarDebugElement?.componentInstance;
+
+            expect(avatarComponent).toBeTruthy();
+            expect(avatarComponent.label).toBe('A'); // First letter of 'Admin User'
+        });
+
+        it('should pass full bundle ID to copy button', () => {
+            const copyButtonElement = spectator.query(byTestId('copy-bundle-id'));
+            expect(copyButtonElement).toBeTruthy();
+
+            // Access the DotCopyButtonComponent instance to verify copy property
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.copy()).toBe('01K6NY6Z8V92T6SAF582WMTKYQ');
+        });
+    });
+
+    describe('Different Environments', () => {
+        it('should handle different environment names', () => {
+            const testEnvironments = ['staging', 'development', 'qa-environment'];
+
+            testEnvironments.forEach((env) => {
+                spectator.setInput('item', {
+                    ...mockPushPublishHistoryItem,
+                    environment: env
+                });
+                spectator.detectChanges();
+
+                // Environment data should be available in component
+                expect(spectator.component.$item().environment).toBe(env);
+            });
+        });
+    });
+
+    describe('Bundle ID Display', () => {
+        it('should render the static "Bundle ID" i18n label on the copy button', () => {
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
+        });
+    });
+
+    describe('Component Inputs', () => {
+        it('should handle complete data changes', () => {
+            const newItem: DotPushPublishHistoryItem = {
+                bundleId: 'XYZ789NEWBUNDLE123',
+                environment: 'staging-server',
+                pushDate: Date.now() - 3600000, // 1 hour ago
+                pushedBy: 'System Administrator'
+            };
+
+            spectator.setInput('item', newItem);
+            spectator.detectChanges();
+
+            const userName = spectator.query(byTestId('pushpublish-user'));
+            expect(userName.textContent?.trim()).toBe('System Administrator');
+
+            // Access the PrimeNG Avatar component instance to verify label property
+            const avatarDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="user-avatar"]')
+            );
+            const avatarComponent = avatarDebugElement?.componentInstance;
+            expect(avatarComponent).toBeTruthy();
+            expect(avatarComponent.label).toBe('S');
+
+            // Access the DotCopyButtonComponent instance to verify copy + label
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.copy()).toBe('XYZ789NEWBUNDLE123');
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
+        });
+    });
+});

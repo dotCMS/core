@@ -1,11 +1,15 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotcms.content.elasticsearch.business.ClusterStats;
+import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -14,6 +18,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -21,20 +26,31 @@ import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_BASE_URL;
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT;
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_TENANT;
+import static com.liferay.util.StringPool.BLANK;
+
 /**
- * This class provides several utility methods aimed to check the status of the different subsystems
- * of dotCMS, namely:
+ * Provides utility methods for checking the status of the different subsystems of dotCMS, namely:
  * <ul>
  *     <li>Database server connectivity.</li>
  *     <li>Elasticsearch server connectivity.</li>
  *     <li>Caching framework or server connectivity.</li>
- *     <li>File System access.</li>
- *     <li>Assets folder write/delete operations.</li>
+ *     <li>Local and asset file system write access.</li>
+ *     <li>Telemetry service connectivity.</li>
+ *     <li>Content Analytics app configuration and CA Event Manager reachability.</li>
  * </ul>
+ *
+ * <p>Results are cached for a period defined by {@code SYSTEM_STATUS_CACHE_RESPONSE_SECONDS}
+ * (default: 10 s). Only a fully healthy response is cached; a degraded response is always
+ * recomputed on the next request.
  *
  * @author Brent Griffin
  * @since Jul 18th, 2018
@@ -55,6 +71,11 @@ class MonitorHelper {
     private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL,
             DEFAULT_IP_ACL_VALUE);
 
+
+    private final Lazy<String> telemetryEndPointUrl = Lazy.of(() -> Config.getStringProperty(
+            "TELEMETRY_PERSISTENCE_ENDPOINT", null));
+
+
     static final AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = new AtomicReference<>();
 
     MonitorHelper(final HttpServletRequest request, final boolean heavyCheck) {
@@ -74,7 +95,10 @@ class MonitorHelper {
      */
     boolean isAccessGranted(final HttpServletRequest request){
         try {
-            if(IPV6_LOCALHOST.equals(request.getRemoteAddr()) || ACLS_IPS == null || ACLS_IPS.length == 0){
+            final String remoteAddr = request.getRemoteAddr();
+            
+            // Check if localhost using proper InetAddress API (handles all IPv4 and IPv6 localhost forms)
+            if (isLocalhostAddress(remoteAddr) || ACLS_IPS == null || ACLS_IPS.length == 0){
                 return true;
             }
 
@@ -89,6 +113,28 @@ class MonitorHelper {
             Logger.warnEveryAndDebug(this.getClass(), e, 60000);
         }
         return false;
+    }
+
+    /**
+     * Checks if the given address is a localhost address (IPv4 or IPv6).
+     * Properly handles all valid IPv6 representations per RFC 5952, including
+     * collapsed forms like "::1" and expanded forms like "0:0:0:0:0:0:0:1".
+     * 
+     * @param addr The IP address string from request.getRemoteAddr()
+     * @return true if address is localhost (127.0.0.1, ::1, or any loopback address)
+     */
+    boolean isLocalhostAddress(final String addr) {
+        if (!UtilMethods.isSet(addr)) {
+            return false;
+        }
+        
+        try {
+            final InetAddress inetAddr = InetAddress.getByName(addr);
+            return inetAddr.isLoopbackAddress();
+        } catch (final UnknownHostException e) {
+            Logger.debug(this, "Unable to parse address for localhost check: " + addr);
+            return false;
+        }
     }
 
     /**
@@ -109,11 +155,11 @@ class MonitorHelper {
      * @return An instance of {@link MonitorStats} containing the status of the different
      * subsystems.
      */
-    MonitorStats getMonitorStats()  {
+    MonitorStats getMonitorStats(final HttpServletRequest request)  {
         if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
         }
-        return getMonitorStatsNoCache();
+        return getMonitorStatsNoCache(request);
     }
 
     /**
@@ -123,7 +169,7 @@ class MonitorHelper {
      * @return An instance of {@link MonitorStats} containing the status of the different
      * subsystems.
      */
-    synchronized MonitorStats getMonitorStatsNoCache()  {
+    synchronized MonitorStats getMonitorStatsNoCache(final HttpServletRequest request)  {
         // double check
         if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
@@ -135,6 +181,8 @@ class MonitorHelper {
                 .localFSHealthy(isLocalFileSystemHealthy())
                 .dBHealthy(isDBHealthy())
                 .esHealthy(canConnectToES())
+                .telemetry(Try.of(()->canConnectToTelemetry()).getOrElse(false))
+                .contentAnalytics(isContentAnalytics(request))
                 .build();
         // cache a healthy response
         if (monitorStats.isDotCMSHealthy()) {
@@ -142,6 +190,64 @@ class MonitorHelper {
                     monitorStats));
         }
         return monitorStats;
+    }
+
+    /**
+     * Determines whether the Content Analytics subsystem is healthy by running three sequential
+     * checks:
+     * <ol>
+     *   <li><b>App configuration</b> — the {@code dotContentAnalytics-config} App must be
+     *       installed and have secrets configured for the current Site (including an HMAC
+     *       token provisioned via the save-flow exchange).</li>
+     *   <li><b>Required environment variables</b> — {@code DOT_ANALYTICS_BASE_URL},
+     *       {@code DOT_ANALYTICS_TENANT}, and {@code DOT_ANALYTICS_PROJECT} must all be
+     *       present and non-empty.</li>
+     *   <li><b>Service connectivity</b> — the CA Event Manager's {@code /v1/health} endpoint
+     *       must respond with a 2xx status, confirming ClickHouse is reachable.</li>
+     * </ol>
+     *
+     * @param request the current HTTP request, used to resolve the active Site
+     *
+     * @return a {@link Health} name: {@code OK}, {@code NOT_CONFIGURED}, or
+     * {@code CONFIGURATION_ERROR}
+     */
+    private String isContentAnalytics(final HttpServletRequest request) {
+        try {
+            // Required global infrastructure config — these gate the whole subsystem
+            // independent of which site the probe lands on.
+            final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, BLANK);
+            final String tenant  = Config.getStringProperty(DOT_ANALYTICS_TENANT, BLANK);
+            final String project = Config.getStringProperty(DOT_ANALYTICS_PROJECT, BLANK);
+            final boolean globallyConfigured = UtilMethods.isSet(baseUrl)
+                    && UtilMethods.isSet(tenant)
+                    && UtilMethods.isSet(project);
+
+            // Per-site config (App secrets) — automated probes typically hit the System
+            // Host or arrive via IP, in which case getCurrentHostNoThrow may return null.
+            // Avoid passing null into getAppSecrets — its catch-block logger dereferences
+            // the site identifier and would NPE for every probe, polluting logs.
+            final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final boolean siteConfigured = site != null
+                    && !ContentAnalyticsUtil.getAppSecrets(site).isEmpty();
+
+            if (!globallyConfigured && !siteConfigured) {
+                return Health.NOT_CONFIGURED.name();
+            }
+            if (!globallyConfigured) {
+                Logger.warn(this, "Content Analytics health check: missing required env vars " +
+                        "(DOT_ANALYTICS_BASE_URL, DOT_ANALYTICS_TENANT, DOT_ANALYTICS_PROJECT)");
+                return Health.CONFIGURATION_ERROR.name();
+            }
+
+            // Reachability probe — the only check that should fail loudly for monitoring.
+            return EventAnalyticsProxyHelper.healthCheck()
+                    ? Health.OK.name()
+                    : Health.CONFIGURATION_ERROR.name();
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Content Analytics health check failed: %s",
+                    ExceptionUtil.getErrorMessage(e)), e);
+            return Health.CONFIGURATION_ERROR.name();
+        }
     }
 
     /**
@@ -166,13 +272,29 @@ class MonitorHelper {
     boolean canConnectToES() {
         try {
             final ClusterStats stats = APILocator.getESIndexAPI().getClusterStats();
-            return stats != null && stats.getClusterName() != null;
+            return stats != null && stats.clusterName() != null;
         } catch (final Exception e) {
             Logger.warnAndDebug(this.getClass(),
                     "Unable to connect to ES: " + ExceptionUtil.getErrorMessage(e), e);
             return false;
         }
     }
+
+    /**
+     * Returns true if dotCMS can connect to telemetry server
+     * @return
+     */
+    boolean canConnectToTelemetry() {
+
+        if (!UtilMethods.isSet(telemetryEndPointUrl.get())) {
+            return false;
+        }
+        return CircuitBreakerUrl.builder()
+                .setUrl(telemetryEndPointUrl.get())
+                .doPing()
+                .build().ping();
+    }
+
 
     /**
      * Determines if the cache is healthy by checking if the SYSTEM_HOST identifier is available.

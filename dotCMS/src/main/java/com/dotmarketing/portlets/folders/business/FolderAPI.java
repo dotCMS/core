@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Treeable;
@@ -15,7 +17,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.function.Predicate;
  public interface FolderAPI   {
 
 	String SYSTEM_FOLDER = "SYSTEM_FOLDER";
-	String SYSTEM_FOLDER_ID = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
+	String OLD_SYSTEM_FOLDER_ID = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
 	String SYSTEM_FOLDER_ASSET_NAME = "system folder";
 	String SYSTEM_FOLDER_PARENT_PATH = "/System folder";
 
@@ -622,5 +623,36 @@ import java.util.function.Predicate;
 	 */
 	int getContentTypeCount(final Folder folder, final User user,
 							final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
+
+	/**
+	 * Searches for folders within a site, with optional name filtering and optional path scoping.
+	 * Results are permission-filtered and returned as a paginated list.
+	 * Allowed values for {@code params.orderBy()}: {@code "folder.name"}, {@code "folder.mod_date"}.
+	 * Invalid values fall back to {@code folder.name}.
+	 *
+	 * @param params all search parameters; build via {@link FolderSearchParams#builder()}
+	 * @return paginated list with {@code totalResults} reflecting the full filtered count
+	 * @throws DotDataException     on database error
+	 * @throws DotSecurityException if the user lacks permissions
+	 */
+	PaginatedArrayList<FolderSearchView> searchFolders(FolderSearchParams params)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Determines if the folder IDs in the current context require fixing.
+	 *
+	 * This method checks folder.identifiers and folder.inodes to see if they match
+	 *
+	 * @return true if the folder IDs need fixing, false otherwise.
+	 */
+    boolean folderIdsNeedFixing();
+
+	/**
+	 * Updates and corrects folder IDs within the system.
+	 * This method ensures that all folder identifiers and inodes are valid and consistent.
+	 */
+	void fixFolderIds();
+
 
 }

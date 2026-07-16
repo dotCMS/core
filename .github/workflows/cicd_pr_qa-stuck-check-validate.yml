@@ -1,0 +1,44 @@
+name: 'QA Stuck Check — PR validate'
+
+# Runs the smoke-test suite for the qa-stuck-check script on PRs that touch
+# it. Sub-second job, no install needed (the script and test have zero npm
+# deps). Prevents silent regressions from surfacing only on the Mon/Thu
+# scheduled run.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/scripts/qa-stuck-check/**'
+      - '.github/workflows/cicd_scheduled_qa-stuck-check.yml'
+      - '.github/workflows/cicd_pr_qa-stuck-check-validate.yml'
+      - '.claude/triage-config.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-stuck-check-validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run smoke tests
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/scripts/qa-stuck-check
+            .claude/triage-config.json
+            .nvmrc
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Run tests
+        run: node .github/scripts/qa-stuck-check/test-find-stuck-issues.js

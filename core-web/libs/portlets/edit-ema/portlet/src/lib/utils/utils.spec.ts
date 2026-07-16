@@ -1,8 +1,11 @@
-import { Params } from '@angular/router';
-
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSViewAsPersona,
+    UVE_MODE
+} from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -10,42 +13,255 @@ import {
     sanitizeURL,
     getPersonalization,
     getFullPageURL,
-    SDK_EDITOR_SCRIPT_SOURCE,
-    computePageIsLocked,
+    getBaseHrefFromPageURI,
+    injectBaseTag,
+    isPageLockedByOtherUser,
+    computeIsPageLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
+    getContentTypeVarRecord,
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
-    getAllowedPageParams,
+    getRequestHostName,
     getOrientation,
-    getWrapperMeasures,
-    normalizeQueryParams
+    normalizeQueryParams,
+    convertUTCToLocalTime,
+    escapeHtmlAttributeValue,
+    isSamePageNavigation
 } from '.';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
-import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
 import { Orientation } from '../store/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
     page: {
         locked,
         lockedBy
-    } as DotPage,
+    } as DotCMSPage,
     currentUser: {
         userId
     } as CurrentUser
 });
 
 describe('utils functions', () => {
-    describe('SDK Editor Script Source', () => {
-        it('should return the correct script source', () => {
-            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/html/js/editor-js/sdk-editor.js');
+    const countRealBaseTags = (html: string): number => {
+        // Mirror runtime behavior: ignore <base> inside comments/CDATA when counting "real" tags
+        const withoutCommentsAndCdata = html
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
+
+        return withoutCommentsAndCdata.match(/<base\b/gi)?.length ?? 0;
+    };
+
+    describe('base tag helpers', () => {
+        it('should build base href from pageURI', () => {
+            expect(getBaseHrefFromPageURI('/golf-outing-fundraiser', 'https://example.com')).toBe(
+                'https://example.com/'
+            );
+            expect(
+                getBaseHrefFromPageURI('/dotAdmin/golf-outing-fundraiser', 'https://example.com')
+            ).toBe('https://example.com/dotAdmin/');
+            expect(
+                getBaseHrefFromPageURI(
+                    'https://example.com/news/article-1',
+                    'https://irrelevant.com'
+                )
+            ).toBe('https://example.com/news/');
+        });
+
+        it('should handle root path "/" as pageURI', () => {
+            expect(getBaseHrefFromPageURI('/', 'https://example.com')).toBe('https://example.com/');
+        });
+
+        it('should handle empty string pageURI', () => {
+            expect(getBaseHrefFromPageURI('', 'https://example.com')).toBe('https://example.com/');
+        });
+
+        it('should ignore query parameters when building the base href', () => {
+            expect(getBaseHrefFromPageURI('/news/article-1?x=1&y=2', 'https://example.com')).toBe(
+                'https://example.com/news/'
+            );
+        });
+
+        it('should preserve encoded characters in the base href pathname (spaces and unicode)', () => {
+            expect(getBaseHrefFromPageURI('/hello world/index', 'https://example.com')).toBe(
+                'https://example.com/hello%20world/'
+            );
+            expect(getBaseHrefFromPageURI('/café/index', 'https://example.com')).toBe(
+                'https://example.com/caf%C3%A9/'
+            );
+        });
+
+        it('should handle pageURI with trailing slashes', () => {
+            expect(getBaseHrefFromPageURI('/news/', 'https://example.com')).toBe(
+                'https://example.com/news/'
+            );
+        });
+
+        it('should fall back to origin when pageURI cannot be parsed', () => {
+            // Intentionally malformed absolute URL (missing closing bracket in host)
+            expect(getBaseHrefFromPageURI('http://[::1', 'https://example.com')).toBe(
+                'https://example.com/'
+            );
+        });
+
+        it('should inject base tag when missing and head exists', () => {
+            const html = '<html><head><title>x</title></head><body><a href="a">a</a></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+        });
+
+        it('should not inject base tag when base already exists', () => {
+            const html =
+                '<html><head><base href="https://example.com/"><title>x</title></head><body></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            // still only one base tag
+            expect(out.match(/<base\b/gi)?.length).toBe(1);
+        });
+
+        it('should inject base tag when "<base>" appears only inside an HTML comment', () => {
+            const html =
+                '<html><head><!-- <base href="https://evil.example/"> --><title>x</title></head><body></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+            expect(countRealBaseTags(out)).toBe(1);
+        });
+
+        it('should inject base tag when "<base>" appears only inside a CDATA block', () => {
+            const html =
+                '<html><head><![CDATA[<base href="https://evil.example/">]]><title>x</title></head><body></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+            expect(countRealBaseTags(out)).toBe(1);
+        });
+
+        it('should inject base tag for malformed HTML missing closing tags', () => {
+            const html = '<head><title>x</title><body><a href="a">a</a>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+        });
+
+        it('should inject base tag when there is no html/head/body wrapper', () => {
+            const html = '<div>hello</div>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out.startsWith('<head><base href="https://example.com/dotAdmin/"></head>')).toBe(
+                true
+            );
+        });
+
+        it('should escape HTML-sensitive characters in attribute values', () => {
+            expect(escapeHtmlAttributeValue(`a&b<c>d"e'f`)).toBe('a&amp;b&lt;c&gt;d&quot;e&#39;f');
+        });
+
+        it('should be a no-op when pageURI is missing', () => {
+            const html = '<html><head><title>x</title></head><body></body></html>';
+            expect(
+                injectBaseTag({
+                    html,
+                    url: undefined,
+                    origin: 'https://example.com'
+                })
+            ).toBe(html);
+        });
+    });
+
+    describe('getContentTypeVarRecord', () => {
+        it('should return empty record for undefined containers', () => {
+            expect(getContentTypeVarRecord(undefined)).toEqual({});
+        });
+
+        it('should return empty record for null containers', () => {
+            expect(getContentTypeVarRecord(null)).toEqual({});
+        });
+
+        it('should return empty record when containerStructures is missing or empty', () => {
+            const containers = {
+                a: { containerStructures: [] },
+                b: {}
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({});
+        });
+
+        it('should collect unique contentTypeVar values across all containers/structures', () => {
+            const containers = {
+                a: {
+                    containerStructures: [{ contentTypeVar: 'Blog' }, { contentTypeVar: 'Banner' }]
+                },
+                b: {
+                    containerStructures: [
+                        { contentTypeVar: 'Blog' }, // duplicate
+                        { contentTypeVar: 'News' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({
+                Blog: true,
+                Banner: true,
+                News: true
+            });
+        });
+
+        it('should skip non-string and empty string contentTypeVar values', () => {
+            const containers = {
+                a: {
+                    containerStructures: [
+                        { contentTypeVar: '' },
+                        { contentTypeVar: null },
+                        { contentTypeVar: undefined },
+                        { contentTypeVar: 123 },
+                        { contentTypeVar: 'Valid' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Valid: true });
+        });
+
+        it('should not normalize case', () => {
+            const containers = {
+                a: { containerStructures: [{ contentTypeVar: 'Blog' }] },
+                b: { containerStructures: [{ contentTypeVar: 'blog' }] }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Blog: true, blog: true });
         });
     });
 
@@ -61,8 +277,7 @@ describe('utils functions', () => {
                     acceptTypes: 'test',
                     uuid: 'test',
                     maxContentlets: 1,
-                    contentletsId: ['test'],
-                    variantId: '1'
+                    contentletsId: ['test']
                 },
                 pageContainers: [
                     {
@@ -121,8 +336,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test'],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             // Contentlet to delete
@@ -154,6 +368,49 @@ describe('utils functions', () => {
                 contentletsId: ['test']
             });
         });
+
+        it('should add container to pageContainers if it does not exist - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to delete the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['test'],
+                maxContentlets: 1,
+                acceptTypes: 'test'
+            };
+
+            // Contentlet to delete
+            const contentlet = {
+                identifier: 'test',
+                inode: 'test',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = deleteContentletFromContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'test',
+                language_id: 'test',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.pageContainers).toEqual([
+                {
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: [],
+                    personaTag: 'persona-tag'
+                }
+            ]);
+            expect(result.contentletsId).toEqual([]);
+        });
     });
 
     describe('insert contentlet in container', () => {
@@ -173,8 +430,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'container-uui-123',
                 contentletsId: ['contentlet-mark-123'],
-                maxContentlets: 1,
-                variantId: '1'
+                maxContentlets: 2
             };
 
             // Contentlet position mark
@@ -223,8 +479,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1,
-                variantId: '1'
+                maxContentlets: 4
             };
 
             // Contentlet to insert
@@ -274,8 +529,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1,
-                variantId: '1'
+                maxContentlets: 1
             };
 
             // Contentlet to insert
@@ -297,6 +551,7 @@ describe('utils functions', () => {
 
             expect(result).toEqual({
                 didInsert: false,
+                errorCode: 'DUPLICATE_CONTENT',
                 pageContainers: [
                     {
                         identifier: 'test',
@@ -305,6 +560,251 @@ describe('utils functions', () => {
                     }
                 ]
             });
+        });
+
+        it('should add container to pageContainers if it does not exist - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to insert the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: [],
+                maxContentlets: 1,
+                acceptTypes: 'test'
+            };
+
+            // Contentlet position mark
+            const contentlet = {
+                identifier: 'contentlet-id',
+                inode: 'contentlet-inode',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'page-id',
+                language_id: '1',
+                newContentletId: 'new-contentlet-id',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['new-contentlet-id'],
+                        personaTag: 'persona-tag',
+                        acceptTypes: 'test',
+                        maxContentlets: 1
+                    }
+                ]
+            });
+        });
+
+        it('should add container to pageContainers and insert in specific position - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to insert the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['test123'],
+                maxContentlets: 2,
+                acceptTypes: 'test'
+            };
+            // Contentlet to insert
+            const contentlet = {
+                identifier: 'test123',
+                inode: 'test',
+                title: 'test',
+                contentType: 'test'
+            };
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'test',
+                language_id: 'test',
+                position: 'after',
+                newContentletId: '000',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test123', '000'],
+                        personaTag: 'persona-tag',
+                        acceptTypes: 'test',
+                        maxContentlets: 2
+                    }
+                ]
+            });
+        });
+
+        it('should allow inserting into empty container when limit is 1', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: [],
+                    acceptTypes: 'test',
+                    maxContentlets: 1
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: [],
+                maxContentlets: 1,
+                acceptTypes: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet1',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1']);
+        });
+
+        it('should NOT allow inserting when container with limit 1 already has 1 contentlet', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1'],
+                    acceptTypes: 'test',
+                    maxContentlets: 1
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1'],
+                maxContentlets: 1,
+                acceptTypes: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet2',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe('CONTAINER_LIMIT_REACHED');
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1']);
+        });
+
+        it('should allow inserting into container with limit 2 that has 1 contentlet', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1'],
+                    acceptTypes: 'test',
+                    maxContentlets: 2
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1'],
+                maxContentlets: 2,
+                acceptTypes: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet2',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1', 'contentlet2']);
+        });
+
+        it('should NOT allow inserting when container with limit 2 already has 2 contentlets', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1', 'contentlet2'],
+                    acceptTypes: 'test',
+                    maxContentlets: 2
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1', 'contentlet2'],
+                maxContentlets: 2,
+                acceptTypes: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet3',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe('CONTAINER_LIMIT_REACHED');
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1', 'contentlet2']);
         });
     });
 
@@ -319,6 +819,20 @@ describe('utils functions', () => {
 
         it('should clean multiple slashes', () => {
             expect(sanitizeURL('//index////')).toEqual('/index/');
+        });
+
+        it('should clean query params from the url', () => {
+            expect(sanitizeURL('hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                'hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi/?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi/'
+            );
         });
 
         describe('nested url', () => {
@@ -341,13 +855,13 @@ describe('utils functions', () => {
             const personalization = getPersonalization({
                 contentType: 'persona',
                 keyTag: 'adminUser'
-            });
+            } as DotCMSViewAsPersona);
 
             expect(personalization).toBe('dot:persona:adminUser');
         });
 
         it('should return the correct personalization when persona does not exist', () => {
-            const personalization = getPersonalization({});
+            const personalization = getPersonalization({} as DotCMSViewAsPersona);
             expect(personalization).toBe('dot:default');
         });
     });
@@ -398,7 +912,7 @@ describe('utils functions', () => {
         });
     });
 
-    describe('computePageIsLocked', () => {
+    describe('isPageLockedByOtherUser', () => {
         it('should return false when the page is unlocked', () => {
             const { page, currentUser } = generatePageAndUser({
                 locked: false,
@@ -406,31 +920,69 @@ describe('utils functions', () => {
                 userId: '123'
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            const result = isPageLockedByOtherUser(page, currentUser);
 
             expect(result).toBe(false);
         });
 
-        it('should return false when the page is locked and is the same user', () => {
+        it('should return false when the page is locked by the current user', () => {
             const { page, currentUser } = generatePageAndUser({
                 locked: true,
                 lockedBy: '123',
                 userId: '123'
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            const result = isPageLockedByOtherUser(page, currentUser);
 
             expect(result).toBe(false);
         });
 
-        it('should return true when the page is locked and is not the same user', () => {
+        it('should return true when the page is locked by another user', () => {
             const { page, currentUser } = generatePageAndUser({
                 locked: true,
                 lockedBy: '123',
                 userId: '456'
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            const result = isPageLockedByOtherUser(page, currentUser);
+
+            expect(result).toBe(true);
+        });
+    });
+
+    describe('computeIsPageLocked', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page is locked by the current user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return true when the page is locked by another user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
 
             expect(result).toBe(true);
         });
@@ -546,7 +1098,7 @@ describe('utils functions', () => {
             const result = mapContainerStructureToDotContainerMap(dotPageContainerStructureMock);
 
             expect(result).toEqual({
-                '123': dotPageContainerStructureMock['123'].container
+                '123': dotPageContainerStructureMock['123'].container as unknown as DotContainer
             });
         });
     });
@@ -564,7 +1116,6 @@ describe('utils functions', () => {
                         identifier: '123',
                         uuid: '123',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
@@ -582,7 +1133,6 @@ describe('utils functions', () => {
                         identifier: '456',
                         uuid: '123',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
@@ -600,7 +1150,6 @@ describe('utils functions', () => {
                         identifier: '123',
                         uuid: '456',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
@@ -623,9 +1172,92 @@ describe('utils functions', () => {
         });
     });
 
+    describe('isSamePageNavigation', () => {
+        describe('same pathname (hash and/or query)', () => {
+            it('should return true for hash-only link on same page', () => {
+                expect(isSamePageNavigation('#sectionA', '/home')).toBe(true);
+            });
+
+            it('should return true for hash-only link matching current path', () => {
+                expect(isSamePageNavigation('/home#faq', '/home')).toBe(true);
+            });
+
+            it('should return true for hash with complex id', () => {
+                expect(isSamePageNavigation('#section-123_complex', '/about')).toBe(true);
+            });
+
+            it('should return true for query-only change on same page', () => {
+                expect(isSamePageNavigation('/home?tab=2', '/home')).toBe(true);
+            });
+
+            it('should return true for multiple query params on same page', () => {
+                expect(
+                    isSamePageNavigation('/search?query=test&sort=date', '/search?query=test')
+                ).toBe(true);
+            });
+
+            it('should return true for query params with special characters', () => {
+                expect(
+                    isSamePageNavigation('/page?filter=%7B%22type%22%3A%22test%22%7D', '/page')
+                ).toBe(true);
+            });
+
+            it('should return true when path matches and only hash vs query differs', () => {
+                expect(isSamePageNavigation('/home#section', '/home?tab=1')).toBe(true);
+            });
+
+            it('should return true when both hash and query are present on the same path', () => {
+                expect(isSamePageNavigation('/home?tab=2#section', '/home')).toBe(true);
+            });
+
+            it('should return true when both hash and query change on the same path', () => {
+                expect(isSamePageNavigation('/page?filter=value#result', '/page')).toBe(true);
+            });
+        });
+
+        describe('different page navigation', () => {
+            it('should return false when navigating to different page', () => {
+                expect(isSamePageNavigation('/other-page', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash', () => {
+                expect(isSamePageNavigation('/other-page#section', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with query', () => {
+                expect(isSamePageNavigation('/other-page?tab=1', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash and query', () => {
+                expect(isSamePageNavigation('/other-page#section?foo=bar', '/home')).toBe(false);
+            });
+        });
+
+        describe('edge cases', () => {
+            it('should handle root path correctly', () => {
+                expect(isSamePageNavigation('/#top', '/')).toBe(true);
+            });
+
+            it('should handle path without trailing slash vs with trailing slash', () => {
+                expect(isSamePageNavigation('/home#section', '/home/')).toBe(false);
+            });
+
+            it('should handle empty strings gracefully', () => {
+                expect(isSamePageNavigation('', '/home')).toBe(false);
+                expect(isSamePageNavigation('/home', '')).toBe(false);
+            });
+
+            it('should handle undefined-like values', () => {
+                expect(isSamePageNavigation('#section', undefined as unknown as string)).toBe(
+                    false
+                );
+            });
+        });
+    });
+
     describe('createFullURL', () => {
         const expectedURL =
-            'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&depth=1';
+            'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&mode=EDIT_MODE&depth=1';
         const params = {
             url: 'page',
             language_id: '1',
@@ -661,6 +1293,82 @@ describe('utils functions', () => {
                 '123'
             );
             expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
+        });
+    });
+
+    describe('getRequestHostName', () => {
+        it('should return clientHost when it is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                    clientHost: 'https://headless.example.com'
+                })
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should build the host from page hostname when clientHost is missing', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should extract origin when page hostname is a full URL', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'https://siteb.example.com/path'
+                )
+            ).toBe('https://siteb.example.com');
+        });
+
+        it('should strip path and trailing slash from a bare page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com/foo/'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should prioritize clientHost over page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                        clientHost: 'https://headless.example.com'
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should fallback to window origin when neither clientHost nor page hostname is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                })
+            ).toBe(window.location.origin);
         });
     });
 
@@ -751,88 +1459,6 @@ describe('utils functions', () => {
             expect(result).toEqual(
                 'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
-        });
-    });
-
-    describe('getAllowedPageParams', () => {
-        it('should filter and return only allowed page params', () => {
-            const expected = {
-                url: 'some-url',
-                mode: UVE_MODE.EDIT,
-                depth: '2',
-                clientHost: 'localhost',
-                variantName: 'variant',
-                language_id: '1',
-                experimentId: 'exp123',
-                [PERSONA_KEY]: 'persona123'
-            } as DotPageApiParams;
-
-            const params: Params = {
-                ...expected,
-                invalidParam: 'invalid'
-            };
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if no allowed params are present', () => {
-            const params: Params = {
-                invalidParam1: 'invalid1',
-                invalidParam2: 'invalid2'
-            };
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if params is empty', () => {
-            const params: Params = {};
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-    });
-
-    describe('getWrapperMeasures', () => {
-        it('should return correct measures for landscape orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '1200',
-                cssWidth: '800',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
-            expect(result).toEqual({ width: '1200px', height: '800px' });
-        });
-
-        it('should return correct measures for portrait orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '800',
-                cssWidth: '1200',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
-            expect(result).toEqual({ width: '800px', height: '1200px' });
-        });
-
-        it('should use percentage unit for default inode', () => {
-            const device: DotDevice = {
-                cssHeight: '100',
-                cssWidth: '100',
-                inode: 'default'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device);
-            expect(result).toEqual({ width: '100%', height: '100%' });
         });
     });
 
@@ -960,6 +1586,66 @@ describe('utils functions', () => {
 
                 expect(result).toEqual(params);
             });
+        });
+    });
+
+    describe('convertUTCToLocalTime', () => {
+        it('should convert UTC time to local time representation', () => {
+            // Create a date representing "2025-11-19T17:13:00.000Z" (5:13 PM UTC)
+            const utcDate = new Date('2025-11-19T17:13:00.000Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            // The local time should show 17:13 (5:13 PM) in local timezone
+            expect(result.getHours()).toBe(17);
+            expect(result.getMinutes()).toBe(13);
+            expect(result.getSeconds()).toBe(0);
+            expect(result.getFullYear()).toBe(2025);
+            expect(result.getMonth()).toBe(10); // November (0-indexed)
+            expect(result.getDate()).toBe(19);
+        });
+
+        it('should preserve all time components including milliseconds', () => {
+            const utcDate = new Date('2025-11-19T14:30:45.123Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(14);
+            expect(result.getMinutes()).toBe(30);
+            expect(result.getSeconds()).toBe(45);
+            expect(result.getMilliseconds()).toBe(123);
+        });
+
+        it('should handle midnight UTC correctly', () => {
+            const utcDate = new Date('2025-11-19T00:00:00.000Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(0);
+            expect(result.getMinutes()).toBe(0);
+            expect(result.getSeconds()).toBe(0);
+        });
+
+        it('should handle end of day UTC correctly', () => {
+            const utcDate = new Date('2025-11-19T23:59:59.999Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(23);
+            expect(result.getMinutes()).toBe(59);
+            expect(result.getSeconds()).toBe(59);
+            expect(result.getMilliseconds()).toBe(999);
+        });
+
+        it('should handle leap year dates correctly', () => {
+            const utcDate = new Date('2024-02-29T12:00:00.000Z'); // Leap year
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getFullYear()).toBe(2024);
+            expect(result.getMonth()).toBe(1); // February (0-indexed)
+            expect(result.getDate()).toBe(29);
+            expect(result.getHours()).toBe(12);
         });
     });
 });

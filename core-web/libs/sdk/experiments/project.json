@@ -3,34 +3,24 @@
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/experiments/src",
     "projectType": "library",
+    "tags": [],
     "targets": {
         "build": {
-            "executor": "@nrwl/rollup:rollup",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "outputPath": "dist/libs/sdk/experiments",
-                "tsConfig": "libs/sdk/experiments/tsconfig.lib.json",
-                "project": "libs/sdk/experiments/package.json",
-                "entryFile": "libs/sdk/experiments/src/index.ts",
-                "external": ["react/jsx-runtime"],
-                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
-                "compiler": "babel",
-                "assets": [
-                    {
-                        "glob": "libs/sdk/experiments/README.md",
-                        "input": ".",
-                        "output": "."
-                    }
-                ]
-            }
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ]
         },
         "build:iife": {
-            "executor": "@nx/vite:build",
-            "outputs": ["{options.outputPath}"],
+            "dependsOn": ["^build"],
+            "outputs": ["{workspaceRoot}/dist/libs/sdk/experiments/iife"],
             "options": {
-                "outputPath": "dist/libs/sdk/experiments/iife",
-                "main": "libs/sdk/experiments/src/lib/standalone.ts",
-                "tsConfig": "libs/sdk/experiments/tsconfig.lib.json"
+                "outDir": "../../../dist/libs/sdk/experiments/iife"
             }
         },
         "publish": {
@@ -44,12 +34,15 @@
             }
         },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/sdk/experiments/jest.config.ts"
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
-    },
-    "tags": []
+    }
 }

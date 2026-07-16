@@ -14,7 +14,7 @@ describe('TemplateContainersCacheService', () => {
             imports: []
         });
 
-        service = TestBed.get(DotTemplateContainersCacheService);
+        service = TestBed.inject(DotTemplateContainersCacheService);
         containers = {
             '/containers/path': {
                 identifier: '1',
@@ -22,18 +22,14 @@ describe('TemplateContainersCacheService', () => {
                 type: 'type',
                 source: CONTAINER_SOURCE.FILE,
                 path: '/containers/path',
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             },
             '2': {
                 identifier: '2',
                 name: 'container 2',
                 type: 'type',
                 source: CONTAINER_SOURCE.DB,
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             }
         };
     });

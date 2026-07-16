@@ -132,7 +132,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     @Override
     public void shutdown() {
 
-        Try.run(()->DotConcurrentFactory.getInstance().shutdown(OPEN_AI_THREAD_POOL_KEY));
+        Try.run(()->DotConcurrentFactory.getInstance().shutdown(AI_THREAD_POOL_KEY));
     }
 
     @Override
@@ -151,10 +151,20 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 ? ContentToStringUtil.impl.get().guessWhatFieldsToIndex(contentlet)
                 : tryFields;
 
+        if (fields.isEmpty()) {
+            Logger.warn(this, String.format("No valid fields to embed for Contentlet ID '%s' of type " +
+                            "'%s' with title '%s'", contentlet.getIdentifier(),
+                    contentlet.getContentType().variable(), contentlet.getTitle()));
+            return false;
+        }
+
         final Optional<String> content = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
         if (content.isEmpty() || UtilMethods.isEmpty(content.get())) {
-            Logger.warn(this, String.format("No valid fields to embed for Contentlet ID '%s' of type " +
-                    "'%s' with title '%s'", contentlet.getIdentifier(), contentlet.getContentType().variable(), contentlet.getTitle()));
+            final String message = "Something is wrong with the content, and the Contentlet cannot be embedded:\n" +
+                    (tryFields.isEmpty() ? "Found fields from guessing:" + fields.stream().map(Field::variable) :
+                            "Found fields from configuration:" + tryFields.stream().map(Field::variable));
+
+            Logger.warn(this, message);
             return false;
         }
 
@@ -186,7 +196,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return false;
         }
 
-        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
+        DotConcurrentFactory.getInstance().getSubmitter(AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
 
         return true;
     }
@@ -292,6 +302,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return EmbeddingsFactory.impl.get().countEmbeddings(newSearcher);
     }
 
+    @CloseDBIfOpened
     @Override
     public Map<String, Map<String, Object>> countEmbeddingsByIndex() {
         return EmbeddingsFactory.impl.get().countEmbeddingsByIndex();
@@ -332,9 +343,11 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 .getEncoding()
                 .map(encoding -> encoding.encode(content))
                 .orElse(List.of());
+        final int tokenCount = tokens.isEmpty() ? content.split("\\s+").length : tokens.size();
         if (tokens.isEmpty()) {
-            config.debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
-            return Tuple.of(0, List.of());
+            config.debugLogger(this.getClass(), () -> String.format(
+                    "Encoding unavailable for content ID '%s', using word count (%d) as token estimate",
+                    contentId, tokenCount));
         }
 
         final Tuple3<String, Integer, List<Float>> dbEmbeddings =
@@ -347,17 +360,21 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return Tuple.of(dbEmbeddings._2, dbEmbeddings._3);
         }
 
-        final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(
-                tokens.size(),
-                sendTokensToOpenAI(contentId, tokens, userId));
-        saveEmbeddingsForCache(content, openAiEmbeddings);
-        EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
+        final Tuple2<Integer, List<Float>> embeddings = Tuple.of(
+                tokenCount,
+                generateEmbeddings(contentId, content, userId));
+        saveEmbeddingsForCache(content, embeddings);
+        EMBEDDING_CACHE.put(hashed, embeddings);
 
-        return openAiEmbeddings;
+        return embeddings;
     }
 
     @CloseDBIfOpened
     @Override
+    public boolean indexExists(final String indexName) {
+        return EmbeddingsFactory.impl.get().indexExists(indexName);
+    }
+
     public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
         return EmbeddingsFactory.impl.get().embeddingExists(inode, indexName, extractedText);
     }
@@ -423,20 +440,20 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      *
      * @return A {@link List} of {@link Float} values representing the embeddings.
      */
-    private List<Float> sendTokensToOpenAI(final String contentId,
-                                           @NotNull final List<Integer> tokens,
+    private List<Float> generateEmbeddings(final String contentId,
+                                           @NotNull final String content,
                                            final String userId) {
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MODEL, config.getEmbeddingsModel().getCurrentModel());
-        json.put(AiKeys.INPUT, tokens);
-        config.debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
+        json.put(AiKeys.INPUT, content);
+        config.debugLogger(this.getClass(), () -> String.format("Generating embeddings for content ID '%s'", contentId));
         final String responseString = AIProxyClient.get()
                 .callToAI(JSONObjectAIRequest.quickEmbeddings(config, json, userId))
                 .getResponse();
-        config.debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
+        config.debugLogger(this.getClass(), () -> String.format("AI Response for content ID '%s': %s",
                 contentId, responseString.replace("\n", BLANK)));
         final JSONObject jsonResponse = Try.of(() -> new JSONObject(responseString)).getOrElseThrow(e -> {
-            Logger.error(this, "OpenAI Response String is not a valid JSON", e);
+            Logger.error(this, "AI Response String is not a valid JSON", e);
             config.debugLogger(this.getClass(), () -> String.format("Invalid JSON Response: %s", responseString));
             return new DotCorruptedDataException(e);
         });
@@ -479,8 +496,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         try {
             return (List<Float>) data.getJSONArray(AiKeys.EMBEDDING).stream().map(val -> {
 
-                final Double x = (Double) val;
-                return x.floatValue();
+                return ((Number) val).floatValue();
 
             }).collect(Collectors.toList());
         } catch (final JSONException e) {

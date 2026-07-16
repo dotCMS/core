@@ -9,7 +9,8 @@ import {
     ViewContainerRef,
     Output,
     DoCheck,
-    Renderer2
+    Renderer2,
+    inject
 } from '@angular/core';
 
 import { NgGrid } from './NgGrid';
@@ -29,6 +30,12 @@ import {
     selector: '[ngGridItem]'
 })
 export class NgGridItem implements OnInit, OnDestroy, DoCheck {
+    private _differs = inject(KeyValueDiffers);
+    private _ngEl = inject(ElementRef);
+    private _renderer = inject(Renderer2);
+    private _ngGrid = inject(NgGrid);
+    containerRef = inject(ViewContainerRef);
+
     // 	Event Emitters
     @Output()
     public onItemChange: EventEmitter<NgGridItemEvent> = new EventEmitter<NgGridItemEvent>(false);
@@ -166,15 +173,6 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
     get currentRow(): number {
         return this._currentPosition.row;
     }
-
-    // 	Constructor
-    constructor(
-        private _differs: KeyValueDiffers,
-        private _ngEl: ElementRef,
-        private _renderer: Renderer2,
-        private _ngGrid: NgGrid,
-        public containerRef: ViewContainerRef
-    ) {}
 
     public onResizeStartEvent(): void {
         const event: NgGridItemEvent = this.getEventOutput();

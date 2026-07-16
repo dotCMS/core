@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.browsertree;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -15,6 +15,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
  */
 @Deprecated
 @Path("/v1/browsertree")
+@Tag(name = "Browser Tree", description = "File and folder browser tree operations")
 public class BrowserTreeResource implements Serializable {
     private final WebResource webResource;
     private final BrowserTreeHelper browserTreeHelper;

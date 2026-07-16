@@ -1,17 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from '@jest/globals';
+import { Subject } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotMessage, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
-import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotMessageDisplayService } from './dot-message-display.service';
 
+import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotEventsSocket } from '../dot-websocket/dot-events-socket.service';
+
 describe('DotMessageDisplayService', () => {
-    const mockDotcmsEventsService: DotcmsEventsServiceMock = new DotcmsEventsServiceMock();
+    const messageSubject = new Subject<unknown>();
+    const mockDotEventsSocket = {
+        on: jest.fn().mockReturnValue(messageSubject.asObservable())
+    };
 
     let dotMessageDisplayService: DotMessageDisplayService;
 
@@ -27,7 +31,7 @@ describe('DotMessageDisplayService', () => {
         TestBed.configureTestingModule({
             providers: [
                 DotMessageDisplayService,
-                { provide: DotcmsEventsService, useValue: mockDotcmsEventsService },
+                { provide: DotEventsSocket, useValue: mockDotEventsSocket },
                 {
                     provide: DotRouterService,
                     useValue: {
@@ -43,7 +47,7 @@ describe('DotMessageDisplayService', () => {
         dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
     });
 
-    xit('should emit a message', () => {
+    it('should emit a message', () => {
         dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
             expect(message).toEqual({
                 ...messageExpected,
@@ -52,7 +56,7 @@ describe('DotMessageDisplayService', () => {
             });
         });
 
-        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+        messageSubject.next(messageExpected);
     });
 
     it('should push a message', () => {
@@ -72,7 +76,7 @@ describe('DotMessageDisplayService', () => {
 
         dotMessageDisplayService.unsubscribe();
 
-        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+        messageSubject.next(messageExpected);
 
         expect(wasCalled).toBe(false);
     });
@@ -89,7 +93,7 @@ describe('DotMessageDisplayService', () => {
                 });
             });
 
-            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+            messageSubject.next(messageExpected);
         });
 
         it('should not show message when currentPortlet is not in portletIdList ', () => {
@@ -101,7 +105,7 @@ describe('DotMessageDisplayService', () => {
                 wasCalled = true;
             });
 
-            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+            messageSubject.next(messageExpected);
 
             expect(wasCalled).toBe(false);
         });

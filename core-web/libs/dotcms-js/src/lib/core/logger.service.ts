@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { StringUtils } from './string-utils.service';
 import { HttpRequestUtils } from './util/http-request-utils';
@@ -12,10 +12,12 @@ const DEV_MODE_PARAM = 'devMode';
  */
 @Injectable()
 export class LoggerService {
+    private stringUtils = inject(StringUtils);
+
     private showLogs = true;
     private httpRequestUtils: HttpRequestUtils;
 
-    constructor(private stringUtils: StringUtils) {
+    constructor() {
         this.httpRequestUtils = new HttpRequestUtils();
         this.showLogs = this.shouldShowLogs();
 

@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.content.elasticsearch.business.TranslatedQuery;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 

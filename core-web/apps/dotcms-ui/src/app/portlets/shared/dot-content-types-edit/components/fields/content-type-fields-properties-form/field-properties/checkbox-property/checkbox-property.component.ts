@@ -5,7 +5,8 @@ import { FieldProperty } from '../field-properties.model';
 
 @Component({
     selector: 'dot-checkbox-property',
-    templateUrl: './checkbox-property.component.html'
+    templateUrl: './checkbox-property.component.html',
+    standalone: false
 })
 export class CheckboxPropertyComponent {
     property: FieldProperty;

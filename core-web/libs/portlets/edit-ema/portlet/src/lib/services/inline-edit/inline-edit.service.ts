@@ -1,6 +1,6 @@
 import { ElementRef, Injectable, signal } from '@angular/core';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { DotCMSUVEAction } from '@dotcms/types';
 
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
@@ -30,6 +30,19 @@ export const INLINE_CONTENT_STYLES = `
     }    
 `;
 
+/** Shared TinyMCE options for EMA inline editing (excluding per-instance `setup`). */
+export const INLINE_EDIT_TINYMCE_BASE_OPTIONS = {
+    menubar: false,
+    inline: true,
+    // Avoid rewriting root-relative URLs (e.g. /dA/...) to ../... on serialize; iframe base differs from site root.
+    convert_urls: false,
+    valid_styles: {
+        '*': 'font-size,font-family,color,text-decoration,text-align'
+    },
+    powerpaste_word_import: 'clean',
+    powerpaste_html_import: 'clean'
+} as const;
+
 @Injectable({
     providedIn: 'root'
 })
@@ -39,17 +52,11 @@ export class InlineEditService {
     private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
 
     private readonly DEFAULT_TINYMCE_CONFIG = {
-        menubar: false,
-        inline: true,
-        valid_styles: {
-            '*': 'font-size,font-family,color,text-decoration,text-align'
-        },
-        powerpaste_word_import: 'clean',
-        powerpaste_html_import: 'clean',
+        ...INLINE_EDIT_TINYMCE_BASE_OPTIONS,
         setup: this.#handleInlineEditEvents
     };
 
-    private readonly TINYCME_CONFIG = {
+    private readonly TINYMCE_CONFIG = {
         minimal: {
             plugins: ['link', 'autolink'],
             toolbar: 'bold italic underline | link',
@@ -139,7 +146,7 @@ export class InlineEditService {
 
         window.parent.postMessage(
             {
-                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                 payload: {
                     type: 'WYSIWYG'
                 }
@@ -162,7 +169,7 @@ export class InlineEditService {
 
         this.$iframeWindow()
             .tinymce.init({
-                ...this.TINYCME_CONFIG[dataset.mode || 'minimal'],
+                ...this.TINYMCE_CONFIG[dataset.mode || 'minimal'],
                 selector: dataSelector
             })
             .then(([ed]) => {
@@ -244,10 +251,16 @@ export class InlineEditService {
                 isNotDirty: ed.isNotDirty
             };
 
+            // TinyMCE sometimes leaves `isNotDirty` true after edits (e.g. removing an empty list);
+            // compare to initial HTML so blur still persists real changes.
+            const startContent = typeof ed.startContent === 'string' ? ed.startContent : '';
+            const shouldSendUpdate =
+                eventType === 'blur' && (!ed.isNotDirty || content !== startContent);
+
             window.parent.postMessage(
                 {
                     action: 'update-contentlet-inline-editing',
-                    payload: eventType === 'blur' && !ed.isNotDirty ? data : null
+                    payload: shouldSendUpdate ? data : null
                 },
                 '*'
             );

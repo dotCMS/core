@@ -1,15 +1,8 @@
-import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    Host,
-    Input,
-    Optional,
-    TemplateRef
-} from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, TemplateRef, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { Sidebar } from 'primeng/sidebar';
+import { Drawer } from 'primeng/drawer';
 
 /**
  * Used to add a header bar to Sidebar (PrimeNg)
@@ -21,13 +14,16 @@ import { Sidebar } from 'primeng/sidebar';
  */
 @Component({
     selector: 'dot-sidebar-header',
-    standalone: true,
-    imports: [CommonModule, ButtonModule],
+    imports: [ButtonModule, NgTemplateOutlet],
     templateUrl: './dot-sidebar-header.component.html',
-    styleUrls: ['./dot-sidebar-header.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block w-full'
+    }
 })
 export class DotSidebarHeaderComponent {
+    private readonly sidebarComponent = inject(Drawer, { optional: true, host: true });
+
     /**
      * Title of the sidebar
      */
@@ -41,9 +37,9 @@ export class DotSidebarHeaderComponent {
     @Input()
     actionButtonTpl?: TemplateRef<void>;
 
-    constructor(@Optional() @Host() private readonly sidebarComponent: Sidebar) {
-        if (!sidebarComponent) {
-            console.warn('DotSidebarHeaderComponent is for use inside of a PrimeNg Sidebar');
+    constructor() {
+        if (!this.sidebarComponent) {
+            console.warn('DotSidebarHeaderComponent is for use inside of a PrimeNg Drawer');
         }
     }
 

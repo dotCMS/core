@@ -104,6 +104,24 @@
 	if(structure.getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
 		params.put("struts_action",new String[] {"/ext/calendar/edit_event"});
 	}
+	// Include relationship params in editURL so changeLanguage() preserves them across
+	// language switches. Without this, switching language on a new child form loses the
+	// context needed by EditContentletAction to auto-link the content to its parent.
+	if (request.getParameter("relwith") != null) {
+		params.put("relwith", new String[] { request.getParameter("relwith") });
+		if (request.getParameter("relisparent") != null) {
+			params.put("relisparent", new String[] { request.getParameter("relisparent") });
+		}
+		if (request.getParameter("reltype") != null) {
+			params.put("reltype", new String[] { request.getParameter("reltype") });
+		}
+		if (request.getParameter("relname") != null) {
+			params.put("relname", new String[] { request.getParameter("relname") });
+		}
+		if (request.getParameter("relname_inodes") != null) {
+			params.put("relname_inodes", new String[] { request.getParameter("relname_inodes") });
+		}
+	}
 	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
 	WorkflowScheme scheme = null;
 	WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
@@ -353,10 +371,29 @@
 	</div>
 
 <script>
+/**
+ * Manages the "Return To" navigation functionality for content relationships.
+ * 
+ * This function checks if the user is editing content that was accessed via a relationship
+ * field from another contentlet, and displays a return button if applicable.
+ * 
+ * The function:
+ * 1. Retrieves relationship return data from localStorage
+ * 2. Validates if current content matches the stored relationship context
+ * 3. Creates and displays a back button when appropriate
+ * 4. Handles navigation back to the original contentlet
+ * 
+ * The relationship context is stored when a user clicks on a relationship field
+ * to edit related content, allowing them to easily return to the parent content.
+ */
 function showRelationshipReturn(){
 
+
+
     var backInode = localStorage.getItem("dotcms.relationships.relationshipReturnValue");
-    
+	if (backInode) {
+		backInode = JSON.parse(backInode);
+	}
     var myCon = "<%=contentlet.getInode()%>";
     if(myCon === ""){
     	try{
@@ -365,19 +402,14 @@ function showRelationshipReturn(){
     		   // no my con
     	}
     }
-
-    
     
     var referer="<%=UtilMethods.webifyString(request.getParameter("referer"))%>";
-    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || referer =="") {
+    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || (referer =="" && !backInode.blockEditorBackUrl)) {
     	localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
 
-
-    backInode = JSON.parse(backInode);
-
-    if(backInode.inode ==  myCon){
+    if(backInode.inode ==  myCon && !backInode.blockEditorBackUrl){
         localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
@@ -399,8 +431,12 @@ function showRelationshipReturn(){
     var button = document.getElementById("relationshipReturnValueButton");
 
     button.addEventListener("click", function(e) {
-    	window.location.href="<%=request.getParameter("referer")%>";
-       localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
+		localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
+		if (backInode.blockEditorBackUrl) {
+			window.parent.location.href = backInode.blockEditorBackUrl;
+		}
+    	window.location.href = "<%=request.getParameter("referer")%>";
+
     });
 }
 

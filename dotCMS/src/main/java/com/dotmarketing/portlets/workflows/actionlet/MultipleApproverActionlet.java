@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.workflows.WorkflowParameter;
 import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
 
 /**
  * Based on a list of email, userid or roles won't continue the pipeline until all necessary users approve the workflow
@@ -50,6 +53,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 		String emailSubject  = null;
 		String emailBody     = null;
 		boolean isHtml       = false;
+		String customHeaders =null;
 
 		if (params.get("emailSubject") != null) {
 			emailSubject = params.get("emailSubject").getValue();
@@ -65,6 +69,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 
 			}
 		}
+		customHeaders = getParameterValue(params.get(WorkflowParameter.CUSTOM_HEADERS.getKey()));
 
 		final Set<User> requiredApprovers = new HashSet<>();
 		final Set<User> hasApproved       = new HashSet<>();
@@ -150,7 +155,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 
 			final String[] emailsToSend = emails.toArray(new String[emails.size()]);
 			processor.setWorkflowMessage(emailSubject);
-			WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+			WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml, customHeaders);
 		}
 
 		processor.getContextMap().put("type", WorkflowHistoryType.APPROVAL);
@@ -172,7 +177,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 					paramList.add(new MultiEmailParameter("approvers", "User IDs or Emails", null, true));
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "Multiple Approval Required", false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
-
+					paramList.add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -6,25 +6,28 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
     selector: 'dot-p-confirm-dialog',
-    standalone: true,
     imports: [ConfirmDialogModule, ButtonModule],
     template: `
         <p-confirmDialog [style]="{ width: '400px' }" [baseZIndex]="10000">
             <p-footer>
-                <button
-                    class="p-button-secondary"
-                    type="button"
-                    pButton
-                    icon="pi pi-times"
-                    label="Cancel"></button>
-                <button type="button" pButton icon="pi pi-check" label="Delete"></button>
+                <button class="p-button-secondary" type="button" pButton>
+                    <i class="pi pi-times" pButtonIcon></i>
+                    <span pButtonLabel>Cancel</span>
+                </button>
+                <button type="button" pButton>
+                    <i class="pi pi-check" pButtonIcon></i>
+                    <span pButtonLabel>Delete</span>
+                </button>
             </p-footer>
         </p-confirmDialog>
-        <button type="text" (click)="confirm()" pButton icon="pi pi-check" label="Confirm"></button>
+        <button type="text" (click)="confirm()" pButton>
+            <i class="pi pi-check" pButtonIcon></i>
+            <span pButtonLabel>Confirm</span>
+        </button>
     `
 })
 export class ConfirmDialogComponent {
-    constructor(private confirmationService: ConfirmationService) {}
+    private confirmationService = inject(ConfirmationService);
 
     confirm(): void {
         this.confirmationService.confirm({

@@ -267,16 +267,28 @@ public class ServerFactoryImpl extends ServerFactory {
     @WrapInTransaction
     @Override
     public void removeServerFromClusterTable(String serverId) throws DotDataException{
+        
+        try {
+            // Use simple operations with minimal locking to prevent hanging during shutdown
+            Logger.debug(ServerFactoryImpl.class, "Removing server " + serverId + " from cluster tables during shutdown");
+            
+            DotConnect dc = new DotConnect();
+            dc.setSQL("delete from cluster_server_uptime");
+            dc.loadResult();
 
-        DotConnect dc = new DotConnect();
-        dc.setSQL("delete from cluster_server_uptime");
-        dc.loadResult();
-
-
-        dc = new DotConnect();
-        dc.setSQL("delete from cluster_server where server_id = ?");
-        dc.addParam(serverId);
-        dc.loadResult();
+            dc = new DotConnect();
+            dc.setSQL("delete from cluster_server where server_id = ?");
+            dc.addParam(serverId);
+            dc.loadResult();
+            
+            Logger.debug(ServerFactoryImpl.class, "Successfully removed server " + serverId + " from cluster tables");
+            
+        } catch (Exception e) {
+            // Log but don't fail shutdown for cluster cleanup issues
+            Logger.warn(ServerFactoryImpl.class, 
+                "Failed to remove server " + serverId + " from cluster table during shutdown: " + e.getMessage());
+            throw new DotDataException("Server cluster cleanup failed", e);
+        }
     }
     
 

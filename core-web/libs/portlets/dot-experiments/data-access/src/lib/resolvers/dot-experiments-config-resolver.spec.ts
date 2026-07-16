@@ -1,8 +1,8 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator';
 
 import { ActivatedRouteSnapshot } from '@angular/router';
 
-import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotExperimentsConfigResolver } from './dot-experiments-config-resolver';
 
 describe('DotExperimentsConfigResolver', () => {
     let spectator: SpectatorHttp<DotExperimentsConfigResolver>;

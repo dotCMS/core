@@ -1,8 +1,10 @@
 package com.dotcms.api.client.files.traversal.task;
 
+import com.dotcms.cli.common.DotCliIgnore;
 import com.dotcms.model.annotation.ValueType;
 import java.io.File;
 import java.io.Serializable;
+import java.util.Optional;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -66,6 +68,13 @@ public interface AbstractLocalFolderTraversalTaskParams extends Serializable {
      * @return true if the operation should fail fast, false otherwise.
      */
     boolean failFast();
+
+    /**
+     * Returns the DotCliIgnore instance for filtering files and directories based on .dotcliignore patterns.
+     *
+     * @return Optional containing the DotCliIgnore instance, or empty if not set.
+     */
+    Optional<DotCliIgnore> dotCliIgnore();
 
     // END-NOSCAN
 

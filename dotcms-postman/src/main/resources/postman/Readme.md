@@ -4,6 +4,38 @@
 
 The intention of these tests is to validate the response, headers, and return codes for all endpoints. 
 
+## Running via Maven (Recommended)
+
+The easiest way to run these tests is through Maven, which automatically handles dotCMS startup and configuration:
+
+```bash
+# Run ALL postman test collections (requires -Dpostman.collections=all)
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=all
+
+# Run specific collection groups (see config.json for available groups)
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=ai
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=category-content
+
+# Run individual collection by name
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=GraphQLTests
+```
+
+Available collection groups are defined in `config.json`:
+- `ai` - AI-related API tests
+- `category-content` - Category and content API tests
+- `container` - Container API tests
+- `experiment` - Experiment API tests
+- `graphql` - GraphQL API tests
+- `page` - Page API tests
+- `pp` - Push/publish API tests
+- `template` - Template API tests
+- `workflow` - Workflow API tests
+- `default-split` - Miscellaneous API tests
+
+## Manual Newman Execution (Alternative)
+
+For advanced users who need more control, you can run tests manually with Newman:
+
 ### *__Requirements__*
 1. To run this set of tests locally you need to have **npn** installed in your computer, if you don't have it installed, follow this guide to install it via _homebrew_. 
     ```

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -9,7 +7,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { DotMessageDisplayService } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 import { DotMessageDisplayServiceMock } from '@dotcms/utils-testing';
 
 import { DotMessageDisplayComponent } from './dot-message-display.component';
@@ -22,15 +20,26 @@ describe('DotMessageDisplayComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [ToastModule, DotIconModule, BrowserAnimationsModule],
-            declarations: [DotMessageDisplayComponent],
-            providers: [
-                {
-                    provide: DotMessageDisplayService,
-                    useValue: dotMessageDisplayServiceMock
+            imports: [
+                DotMessageDisplayComponent,
+                ToastModule,
+                DotIconComponent,
+                BrowserAnimationsModule
+            ],
+            providers: [MessageService]
+        })
+            .overrideComponent(DotMessageDisplayComponent, {
+                set: {
+                    providers: [
+                        MessageService,
+                        {
+                            provide: DotMessageDisplayService,
+                            useValue: dotMessageDisplayServiceMock
+                        }
+                    ]
                 }
-            ]
-        }).compileComponents();
+            })
+            .compileComponents();
     }));
 
     beforeEach(() => {
@@ -82,7 +91,7 @@ describe('DotMessageDisplayComponent', () => {
 
     it('should add a new message', () => {
         const messageService = fixture.componentRef.injector.get(MessageService);
-        spyOn(messageService, 'add');
+        jest.spyOn(messageService, 'add');
 
         dotMessageDisplayServiceMock.messages$.next({
             life: 300,
@@ -99,8 +108,40 @@ describe('DotMessageDisplayComponent', () => {
         });
     });
 
+    it('should map WARNING severity to PrimeNG "warn"', () => {
+        const messageService = fixture.componentRef.injector.get(MessageService);
+        jest.spyOn(messageService, 'add');
+
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.WARNING,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+
+        expect(messageService.add).toHaveBeenCalledWith({
+            life: 300,
+            detail: 'message',
+            severity: 'warn'
+        });
+    });
+
+    it('should render warning icon for WARNING severity', () => {
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.WARNING,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        fixture.detectChanges();
+        const icon = fixture.debugElement.query(By.css('dot-icon')).componentInstance;
+        expect(icon.name).toEqual('warning');
+    });
+
     it('should unsubscribe', () => {
-        spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
+        jest.spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
         component.ngOnDestroy();
         expect(dotMessageDisplayServiceMock.unsubscribe).toHaveBeenCalled();
     });

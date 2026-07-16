@@ -1,47 +1,52 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
+import { DatePickerModule } from 'primeng/datepicker';
+import { DrawerModule } from 'primeng/drawer';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { take } from 'rxjs/operators';
 
 import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    SIDEBAR_SIZES
+} from '@dotcms/ui';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-dot-experiments-configuration-scheduling-add',
-    standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
-
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
         //PrimeNg
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         SelectButtonModule,
         CardModule,
-        CalendarModule
+        DatePickerModule,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-scheduling-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-scheduling-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     form: FormGroup;
     scheduling: RangeOfDateAndTime;
     stepStatus = ComponentStatus;
+    sidebarSizes = SIDEBAR_SIZES;
 
     today = new Date();
     initialDate = new Date();
@@ -54,10 +59,6 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         status: StepStatus;
         schedulingBoundaries: Record<string, number>;
     }> = this.dotExperimentsConfigurationStore.schedulingStepVm$;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     ngOnInit(): void {
         this.setInitialDate();

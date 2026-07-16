@@ -110,7 +110,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getKeyValueForm(buttonDisabled: boolean): JSX.Element {
+    private getKeyValueForm(buttonDisabled: boolean) {
         return (
             <tr>
                 <td class="key-value-table-form__key">
@@ -147,7 +147,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getWhiteListForm(buttonDisabled: boolean): JSX.Element {
+    private getWhiteListForm(buttonDisabled: boolean) {
         return (
             <tr>
                 <td class="key-value-table-form__key">{this.getWhiteListKeysDropdown()}</td>
@@ -182,7 +182,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getWhiteListKeysDropdown(): JSX.Element {
+    private getWhiteListKeysDropdown() {
         return (
             <select
                 disabled={this.disabled}
@@ -196,7 +196,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getWhiteListValuesDropdown(): JSX.Element {
+    private getWhiteListValuesDropdown() {
         return (
             <select
                 disabled={this.disabled}

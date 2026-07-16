@@ -1,0 +1,173 @@
+<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.filter()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'categories.search.placeholder' | dm"
+                [attr.aria-label]="'categories.search.placeholder' | dm"
+                data-testid="category-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <div class="ml-auto flex items-center gap-2">
+            @if (store.selectedCategories().length > 0) {
+                <p-button
+                    [label]="'categories.delete' | dm"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [outlined]="true"
+                    (onClick)="confirmDelete()"
+                    data-testid="category-delete-btn" />
+            }
+            <p-button
+                [label]="'categories.export' | dm"
+                [outlined]="true"
+                (onClick)="exportCategories()"
+                data-testid="category-export-btn" />
+            <p-splitButton
+                [label]="'categories.add.category' | dm"
+                (onClick)="openCreateDialog()"
+                [model]="addCategoryMenuItems"
+                data-testid="category-add-split-btn" />
+            <p-button
+                icon="pi pi-ellipsis-v"
+                [rounded]="true"
+                [outlined]="true"
+                (onClick)="onToolbarMenuToggle($event)"
+                data-testid="category-toolbar-menu-btn"
+                [attr.aria-label]="'categories.more.actions' | dm" />
+        </div>
+    </div>
+</p-toolbar>
+
+<p-breadcrumb
+    [model]="store.breadcrumbs()"
+    [home]="homeItem"
+    [pt]="{ itemLink: { class: 'cursor-pointer' } }"
+    (onItemClick)="onBreadcrumbClick($event)"
+    (homeClick)="onHomeClick()"
+    data-testid="category-breadcrumb" />
+
+<!-- Table -->
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="categories-table-wrapper">
+    <p-table
+        [value]="store.categories()"
+        [lazy]="true"
+        [scrollable]="true"
+        [rowHover]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        scrollHeight="flex"
+        [pt]="$ptConfig()"
+        [paginator]="true"
+        [rows]="store.rows()"
+        [totalRecords]="store.totalRecords()"
+        [first]="(store.page() - 1) * store.rows()"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [loading]="store.status() === 'loading'"
+        [selection]="store.selectedCategories()"
+        (selectionChange)="store.setSelectedCategories($event)"
+        dataKey="inode"
+        data-testid="categories-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th class="w-16">
+                    <p-tableHeaderCheckbox />
+                </th>
+                <th pSortableColumn="category_name">
+                    {{ 'categories.table.header.name' | dm }}
+                    <p-sortIcon field="category_name" />
+                </th>
+                <th>{{ 'categories.table.header.key' | dm }}</th>
+                <th>{{ 'categories.table.header.variable' | dm }}</th>
+                <th class="text-center!">{{ 'categories.table.header.children' | dm }}</th>
+                <th pSortableColumn="sort_order" class="text-center!">
+                    {{ 'categories.table.header.sort-order' | dm }}
+                    <p-sortIcon field="sort_order" />
+                </th>
+                <th class="w-28 text-center!"></th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-category>
+            <tr
+                data-testid="category-row"
+                class="group cursor-pointer transition-colors duration-200"
+                (click)="onRowClick(category)"
+                (contextmenu)="openRowMenu($event, category)">
+                <td (click)="$event.stopPropagation()">
+                    <p-tableCheckbox [value]="category" />
+                </td>
+                <td data-testid="category-name">{{ category.categoryName }}</td>
+                <td data-testid="category-key">{{ category.key }}</td>
+                <td data-testid="category-variable">{{ category.categoryVelocityVarName }}</td>
+                <td data-testid="category-children" class="text-center!">
+                    {{ category.childrenCount }}
+                </td>
+                <td
+                    data-testid="category-sort-order"
+                    class="flex items-center justify-center"
+                    (click)="$event.stopPropagation()">
+                    <p-inputNumber
+                        [ngModel]="category.sortOrder"
+                        (onInput)="onSortOrderInput(category, $event.value)"
+                        (onBlur)="onSortOrderBlur(category)"
+                        (onKeyDown)="onSortOrderKeyDown($event)"
+                        [min]="0"
+                        [showButtons]="false"
+                        inputStyleClass="w-16 text-center py-0.5 text-sm"
+                        [attr.aria-label]="'categories.table.header.sort-order' | dm"
+                        data-testid="category-sort-order-input" />
+                </td>
+                <td class="text-center!" (click)="$event.stopPropagation()">
+                    <p-button
+                        class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                        icon="pi pi-ellipsis-v"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
+                        (onClick)="openRowMenu($event, category)"
+                        [attr.aria-label]="'categories.actions' | dm"
+                        data-testid="category-actions-btn" />
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr class="h-full hover:bg-transparent!">
+                <td colspan="7" class="h-full border-none p-6 text-center">
+                    <div
+                        class="mx-auto flex max-w-100 flex-col items-center gap-4"
+                        data-testid="categories-empty-state">
+                        <div class="flex size-20 items-center justify-center rounded-full">
+                            <i class="pi pi-tag text-6xl! text-surface-500" aria-hidden="true"></i>
+                        </div>
+                        <div class="flex flex-col text-center">
+                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                                {{ 'categories.empty.state.title' | dm }}
+                            </h3>
+                            <p class="m-0 text-base leading-6 text-color">
+                                {{ 'categories.empty.state.description' | dm }}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-contextMenu #rowMenu [model]="rowMenuItems" appendTo="body" data-testid="category-row-menu" />
+
+<p-menu #toolbarMenu [model]="toolbarMenuItems" [popup]="true" appendTo="body" />
+
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
+
+@if (store.showAddToBundle()) {
+    <dot-add-to-bundle
+        [assetIdentifier]="allCategoriesBundleIdentifier"
+        (cancel)="store.closeAddToBundle()" />
+}

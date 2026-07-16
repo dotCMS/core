@@ -1,3 +1,5 @@
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -7,7 +9,8 @@
         justify-content: space-between;
     }
 
-    dot-block-editor {
+    dot-block-editor,
+    dot-old-block-editor {
         display: flex;
         flex-direction: column;
         height: calc(100% - 4rem);
@@ -15,19 +18,20 @@
 }
 
 ::ng-deep {
-    p-sidebar {
-        .p-sidebar-right {
+    p-drawer {
+        .p-drawer-right {
             width: 50%;
             max-width: 1040px;
         }
 
-        .p-sidebar-content {
+        .p-drawer-content {
             .container {
                 height: 100%;
             }
         }
     }
-    dot-block-editor .editor-wrapper {
+    dot-block-editor .editor-wrapper,
+    dot-old-block-editor .editor-wrapper {
         height: 100% !important;
     }
 }
@@ -35,9 +39,9 @@
 footer {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
 
     .p-button-secondary {
-        margin-right: $spacing-3;
+        margin-right: spacing.$spacing-3;
     }
 }

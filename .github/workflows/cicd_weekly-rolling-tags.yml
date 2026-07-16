@@ -1,0 +1,58 @@
+name: Weekly Rolling Docker Tags
+on:
+  schedule:
+    # Every Saturday at 06:00 UTC
+    - cron: '0 6 * * 6'
+  workflow_dispatch:
+
+env:
+  IMAGE: dotcms/dotcms
+  MAX_WEEKS: 4
+
+jobs:
+  rolling-tags:
+    name: Rotate Weekly Docker Tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Rotate weekly tags
+        run: |
+          set -euo pipefail
+
+          IMAGE="${{ env.IMAGE }}"
+          MAX_WEEKS="${{ env.MAX_WEEKS }}"
+
+          # Retag manifest-side only — no layer downloads needed
+          retag() {
+            local src="$1" dst="$2"
+            echo "--- Promoting ${src} -> ${dst} ---"
+            if docker buildx imagetools inspect "${src}" > /dev/null 2>&1; then
+              docker buildx imagetools create --tag "${dst}" "${src}"
+              echo "Tagged ${dst}"
+            else
+              echo "Skipping: ${src} does not exist yet"
+            fi
+          }
+
+          # Work backwards: weekly-3 -> weekly-4, weekly-2 -> weekly-3, etc.
+          for (( i = MAX_WEEKS - 1; i >= 1; i-- )); do
+            retag "${IMAGE}:weekly-${i}" "${IMAGE}:weekly-$(( i + 1 ))"
+          done
+
+          # weekly -> weekly-1
+          retag "${IMAGE}:weekly" "${IMAGE}:weekly-1"
+
+          # latest -> weekly
+          echo "--- Promoting ${IMAGE}:latest -> ${IMAGE}:weekly ---"
+          docker buildx imagetools create --tag "${IMAGE}:weekly" "${IMAGE}:latest"
+          echo "Tagged ${IMAGE}:weekly"
+
+          echo "=== Rolling tag rotation complete ==="

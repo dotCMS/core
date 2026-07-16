@@ -1,0 +1,52 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch dotCMS UI (Dev Server)",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "yarn",
+            "runtimeArgs": ["nx", "serve", "dotcms-ui"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "serverReadyAction": {
+                "pattern": "Local:.*?(https?://[^\\s]+)",
+                "uriFormat": "%s",
+                "action": "openExternally"
+            }
+        },
+        {
+            "name": "Debug dotCMS UI in Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:4200",
+            "webRoot": "${workspaceFolder}",
+            "sourceMapPathOverrides": {
+                "webpack:/*": "${webRoot}/*",
+                "/./*": "${webRoot}/*",
+                "/src/*": "${webRoot}/*",
+                "/*": "*",
+                "/./~/*": "${webRoot}/node_modules/*"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug ai-evals with Nx",
+            "runtimeExecutable": "yarn",
+            "runtimeArgs": ["nx", "serve", "ai-evals"],
+            "env": {
+                "NODE_OPTIONS": "--inspect=9229"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": ["<node_internals>/**"],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/apps/ai-evals/dist/**/*.(m|c|)js",
+                "!**/node_modules/**"
+            ]
+        }
+    ]
+}

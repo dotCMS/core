@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import com.dotmarketing.portlets.workflows.WorkflowParameter;
 import org.apache.velocity.context.Context;
 
 import com.dotmarketing.business.APILocator;
@@ -19,6 +20,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
+
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
 
 public class NotifyUsersActionlet extends WorkFlowActionlet {
 
@@ -45,6 +48,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 		String emailSubject =null;
 		String emailBody =null;
 		boolean isHtml = false;
+		String customHeaders =null;
 
 		if(params.get("emailSubject") != null ){
 			emailSubject = params.get("emailSubject").getValue();
@@ -61,7 +65,8 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 				
 			}
 		}
-		
+		customHeaders = getParameterValue(params.get(WorkflowParameter.CUSTOM_HEADERS.getKey()));
+
 		String emails = (params.get("emails")== null) ? "" : params.get("emails").getValue();
 		List<String> recipients = new ArrayList<>();
 		StringTokenizer st = new StringTokenizer(emails, ", ");
@@ -111,7 +116,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 		
 		String[] emailsToSend = (String[]) recipients.toArray(new String[recipients.size()]);
 		
-		WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+		WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml, customHeaders);
 	}
 
 	public WorkflowStep getNextStep() {
@@ -132,7 +137,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
 					
 					paramList.add(new WorkflowActionletParameter("isHtml", "Is Html?", null, false));
-				
+					paramList.add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
 				}
 			}
 		}

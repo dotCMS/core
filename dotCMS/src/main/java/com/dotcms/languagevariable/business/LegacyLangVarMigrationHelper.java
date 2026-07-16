@@ -3,6 +3,7 @@ package com.dotcms.languagevariable.business;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -24,6 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -115,8 +118,10 @@ public class LegacyLangVarMigrationHelper {
         Logger.info(this,"===================================================");
         Logger.info(this,"    Legacy Language Variable Migration Process");
         Logger.info(this,"===================================================");
+        // Process files in reverse alphabetical order so locale-specific files (e.g., en_US)
+        // take priority over language-only files (e.g., en)
         try (final Stream<Path> files = Files.list(messagesDir).filter(path -> path.toString().endsWith(".properties")).sorted(
-                Comparator.comparing(o -> o.getFileName().toString()))) {
+                Comparator.comparing((Path o) -> o.getFileName().toString()).reversed())) {
             files.forEach(path -> {
                 final String fileName = path.getFileName().toString();
                 Logger.info(this,String.format("Processing file: %s", fileName));
@@ -195,25 +200,32 @@ public class LegacyLangVarMigrationHelper {
             if (parts.length == 2) {
                 final String key = parts[0];
                 final String value = parts[1];
-                final String languageVariable = this.languageVariableAPI.getLanguageVariable(key,
-                        language.getId(), APILocator.systemUser());
-                if (null == languageVariable || languageVariable.equals(key)) {
-                    final Contentlet langVarAsContent = this.createLanguageVariableAsContent(key, value, language.getId());
-                    try {
-                        final Contentlet checkedInContent = this.publish(langVarAsContent);
-                        Logger.debug(this, String.format("Saved Language Variable with Inode '%s' for language " +
-                                "'%s_%s'", checkedInContent.getInode(), language.getLanguageCode(), language.getCountryCode()));
-                        success.add(checkedInContent.getInode());
-                    } catch (final Exception e) {
-                        Logger.error(this, String.format("Error saving language variable with key: " +
-                                        "'%s', value: '%s', lang: '%s': %s", key, value, language.getId(),
-                                ExceptionUtil.getErrorMessage(e)), e);
-                        fails.add(key);
+                try {
+                    final Optional<LanguageVariable> existingVariable =
+                            this.languageVariableAPI.findVariable(language.getId(), key);
+                    if (existingVariable.isEmpty()) {
+                        final Contentlet langVarAsContent = this.createLanguageVariableAsContent(key, value, language.getId());
+                        try {
+                            final Contentlet checkedInContent = this.publishWithSavepoint(langVarAsContent);
+                            Logger.debug(this, String.format("Saved Language Variable with Inode '%s' for language " +
+                                    "'%s_%s'", checkedInContent.getInode(), language.getLanguageCode(), language.getCountryCode()));
+                            success.add(checkedInContent.getInode());
+                        } catch (final Exception e) {
+                            Logger.error(this, String.format("Error saving language variable with key: " +
+                                            "'%s', value: '%s', lang: '%s': %s", key, value, language.getId(),
+                                    ExceptionUtil.getErrorMessage(e)), e);
+                            fails.add(key);
+                        }
+                    } else {
+                        Logger.warn(this, String.format("Language Variable '%s' in language '%s_%s' " +
+                                " is already defined. The value from the .properties file will be ignored", key,
+                                language.getLanguageCode(), language.getCountryCode()));
                     }
-                } else {
-                    Logger.warn(this, String.format("Language Variable '%s' in language '%s_%s' " +
-                            " is already defined. The value from the .properties file will be ignored", key,
-                            language.getLanguageCode(), language.getCountryCode()));
+                } catch (final DotDataException e) {
+                    Logger.error(this, String.format("Error checking existing language variable with key: " +
+                                    "'%s', lang: '%s': %s", key, language.getId(),
+                            ExceptionUtil.getErrorMessage(e)), e);
+                    fails.add(key);
                 }
             } else {
                 Logger.warn(this,String.format("Invalid line found in file '%s': [ %s ]", path, line));
@@ -328,6 +340,56 @@ public class LegacyLangVarMigrationHelper {
                         .workflowActionId(unpublishAction)
                         .modUser(APILocator.systemUser())
                         .build());
+    }
+
+    /**
+     * Wraps {@link #publish(Contentlet)} in a JDBC savepoint so that a duplicate-key failure in
+     * the {@code unique_fields} table does not poison the shared outer PostgreSQL transaction.
+     * <p>
+     * Without this guard, when {@code StartupTasksExecutor} wraps the entire migration task in a
+     * single transaction via {@code HibernateUtil.startTransaction()}, any {@code INSERT} that
+     * violates the {@code unique_fields_pkey} constraint puts the PostgreSQL connection into an
+     * aborted state. Every subsequent variable then fails with <em>"current transaction is
+     * aborted, commands ignored until end of transaction block"</em> even though only the first
+     * entry had a conflicting row.
+     * <p>
+     * Rolling back to the savepoint on failure resets the connection from aborted to active, so
+     * the remaining variables in the file can continue to be processed independently.
+     *
+     * @param contentlet The {@link Contentlet} representing the new Language Variable.
+     *
+     * @return The published Language Variable as a {@link Contentlet}.
+     *
+     * @throws DotSecurityException The user calling the API lacks the required permissions.
+     * @throws DotDataException     An error occurred when interacting with the database.
+     */
+    private Contentlet publishWithSavepoint(final Contentlet contentlet) throws DotSecurityException,
+            DotDataException {
+        final Connection conn = Try.of(DbConnectionFactory::getConnection).getOrNull();
+        final Savepoint sp = conn != null ? Try.of(() -> conn.setSavepoint()).getOrNull() : null;
+        try {
+            final Contentlet result = this.publish(contentlet);
+            if (sp != null) {
+                Try.run(() -> conn.releaseSavepoint(sp))
+                        .onFailure(ex -> Logger.warn(this,
+                                "Could not release savepoint after successful publish: " + ex.getMessage()));
+            }
+            return result;
+        } catch (final DotSecurityException | DotDataException e) {
+            if (sp != null) {
+                Try.run(() -> conn.rollback(sp))
+                        .onFailure(ex -> Logger.warn(this,
+                                "Could not rollback savepoint after failed publish: " + ex.getMessage()));
+            }
+            throw e;
+        } catch (final RuntimeException e) {
+            if (sp != null) {
+                Try.run(() -> conn.rollback(sp))
+                        .onFailure(ex -> Logger.warn(this,
+                                "Could not rollback savepoint after failed publish: " + ex.getMessage()));
+            }
+            throw e;
+        }
     }
 
 }

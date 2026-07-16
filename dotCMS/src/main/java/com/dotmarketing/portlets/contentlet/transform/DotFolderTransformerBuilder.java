@@ -20,6 +20,7 @@ public class DotFolderTransformerBuilder {
 
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
 
+    private boolean defaultView = false;
     private User user;
     private Role[] roles;
     private List<String> folderIds;
@@ -68,18 +69,35 @@ public class DotFolderTransformerBuilder {
     }
 
     /**
+     * Content-Drive is the default view for Folders
+     * @param user
+     * @param roles
+     * @return
+     */
+    public DotFolderTransformerBuilder withDefaultView(final User user, final Role... roles){
+        this.user = user;
+        this.roles = Arrays.copyOf(roles, roles.length);
+        this.defaultView = true;
+        return this;
+    }
+
+    /**
      * Given the different param This Will get you the instance of  DotMapViewTransformer
      * @return
      */
     public DotMapViewTransformer build() {
-        List<Folder> folders = this.folders;
-        if (null == folders) {
-            folders = resolveFoldersFromIds(folderIds);
+        List<Folder> resolvedFolders = this.folders;
+        if (null == resolvedFolders) {
+            resolvedFolders = resolveFoldersFromIds(folderIds);
+        }
+        //Content-Drive Default View
+        if (defaultView && null != user && roles != null) {
+            return DotFolderTransformerImpl.defaultInstance(user, roles, resolvedFolders);
         }
         if (null != user && roles != null) {
-            return new DotFolderTransformerImpl(user, roles, folders);
+            return new DotFolderTransformerImpl(user, roles, resolvedFolders);
         }
-        return new DotFolderTransformerImpl(folders);
+        return new DotFolderTransformerImpl(resolvedFolders);
     }
 
     /**

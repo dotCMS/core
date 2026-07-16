@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
 
-import { NgClass } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -20,15 +19,16 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule } from 'primeng/paginator';
+import { PopoverModule } from 'primeng/popover';
 
 import { catchError } from 'rxjs/operators';
 
 import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 
 interface PersonaSelector {
     items: DotPersona[];
@@ -38,12 +38,10 @@ interface PersonaSelector {
 
 @Component({
     selector: 'dot-edit-ema-persona-selector',
-    standalone: true,
     imports: [
-        NgClass,
         ButtonModule,
         AvatarModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotAvatarDirective,
         DotMessagePipe,
         ListboxModule,
@@ -52,8 +50,7 @@ interface PersonaSelector {
         ChipModule,
         PaginatorModule
     ],
-    templateUrl: './edit-ema-persona-selector.component.html',
-    styleUrls: ['./edit-ema-persona-selector.component.scss']
+    templateUrl: './edit-ema-persona-selector.component.html'
 })
 export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
@@ -62,6 +59,12 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
 
     readonly MAX_PERSONAS_PER_PAGE = 10;
 
+    /** Passthrough to keep p-avatar small so it fits the toolbar button height (31px). */
+    protected readonly avatarPt = {
+        root: 'w-[15px]! h-[15px]!',
+        label: 'text-xs font-bold'
+    };
+
     $personas = signal<PersonaSelector>({
         items: [],
         totalRecords: 0,
@@ -69,12 +72,14 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     });
 
     @Input() pageId: string;
-    @Input() value: DotPersona;
+    @Input() value: DotCMSViewAsPersona;
 
-    @Output() selected: EventEmitter<DotPersona & { pageId: string }> = new EventEmitter();
-    @Output() despersonalize: EventEmitter<DotPersona & { pageId: string; selected: boolean }> =
-        new EventEmitter();
+    @Output() selected: EventEmitter<DotCMSViewAsPersona & { pageId: string }> = new EventEmitter();
+    @Output() despersonalize: EventEmitter<
+        DotCMSViewAsPersona & { pageId: string; selected: boolean }
+    > = new EventEmitter();
 
+    protected photo = '';
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.pageId) {
             this.fetchPersonas();
@@ -84,6 +89,12 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         if (this.listbox) {
             this.resetValue();
         }
+
+        // We have a discrepancy between the type of the photo in the API and the type of the photo in GQL
+        this.photo =
+            typeof this.value?.photo == 'string'
+                ? this.value?.photo
+                : this.value?.photo?.versionPath;
     }
 
     ngAfterViewInit(): void {
@@ -93,11 +104,11 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     /**
      * Handle the change of the persona
      *
-     * @param {{ value: DotPersona }} { value }
+     * @param {{ value: DotCMSViewAsPersona }} { value }
      * @memberof EditEmaPersonaSelectorComponent
      */
-    onSelect({ value }: { value: DotPersona }) {
-        if (value.identifier === this.value.identifier) {
+    onSelect({ value }: { value: DotCMSViewAsPersona }) {
+        if (value?.identifier === this.value?.identifier || !value) {
             return;
         }
 
@@ -110,17 +121,17 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
      * @memberof EditEmaPersonaSelectorComponent
      */
     resetValue(): void {
-        this.listbox.writeValue(this.value);
+        this.listbox.updateModel(this.value, null);
     }
 
     /**
      * Handle the remove of the persona
      *
      * @param {MouseEvent} event
-     * @param {DotPersona} persona
+     * @param {DotCMSViewAsPersona} persona
      * @memberof EditEmaPersonaSelectorComponent
      */
-    onRemove(event: MouseEvent, persona: DotPersona, selected: boolean) {
+    onRemove(event: MouseEvent, persona: DotCMSViewAsPersona, selected: boolean) {
         event.stopPropagation();
 
         this.despersonalize.emit({

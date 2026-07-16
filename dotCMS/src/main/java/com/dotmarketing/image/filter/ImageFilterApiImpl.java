@@ -1,5 +1,15 @@
 package com.dotmarketing.image.filter;
 
+import com.dotcms.cost.RequestCost;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import com.liferay.util.StringPool;
+import com.twelvemonkeys.image.ResampleOp;
+import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -7,7 +17,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
@@ -16,19 +32,9 @@ import javax.imageio.spi.IIORegistry;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.spi.ServiceRegistry;
 import javax.imageio.stream.ImageInputStream;
-
-import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
 import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.commons.codec.digest.DigestUtils;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
-import com.liferay.util.StringPool;
-import com.twelvemonkeys.image.ResampleOp;
-import io.vavr.control.Try;
 import org.w3c.dom.Document;
 
 public class ImageFilterApiImpl implements ImageFilterAPI {
@@ -107,6 +113,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         return classes;
     }
 
+    @RequestCost
     @Override
     public Dimension getWidthHeight(final File imageFile) {
 
@@ -233,6 +240,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         return resizeImage(imageFile, width, height, DEFAULT_RESAMPLE_OPT);
     }
 
+    @RequestCost
     @Override
     public BufferedImage resizeImage(final File imageFile, final int width, final int height, int resampleOption) {
         final Dimension sourceSize = getWidthHeight(imageFile);

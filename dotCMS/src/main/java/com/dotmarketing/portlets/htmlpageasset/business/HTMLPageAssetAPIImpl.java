@@ -848,6 +848,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
             if (UtilMethods.isSet(contentId)) {
                 requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
+                requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, contentId);
             }
 
 
@@ -856,6 +857,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 
+            requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER, user);
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
             return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();

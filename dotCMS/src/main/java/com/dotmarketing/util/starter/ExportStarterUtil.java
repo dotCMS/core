@@ -6,7 +6,10 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.experiments.business.ExperimentFilter;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.variant.model.Variant;
+import com.google.common.collect.Lists;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.TransformerLocator;
@@ -19,6 +22,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -67,6 +71,7 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -118,7 +123,7 @@ public class ExportStarterUtil {
     private static final Lazy<Integer> QUEUE_CAPACITY =
             Lazy.of(() -> Config.getIntProperty(STARTER_GENERATION_QUEUE_CAPACITY_PROP, 1000));
     private static final Lazy<String> ZIP_FILE_ASSETS_FOLDER =
-            Lazy.of(() -> Config.getStringProperty(STARTER_GENERATION_ASSETS_FOLDER_PROP, "/assets/"));
+            Lazy.of(() -> Config.getStringProperty(STARTER_GENERATION_ASSETS_FOLDER_PROP, "assets"));
 
     private static final String JSON_FILE_EXT = ".json";
 
@@ -445,6 +450,21 @@ public class ExportStarterUtil {
             contentAsJson = RulesImportExportUtil.getInstance().exportToJson();
             starterFiles.add(new FileEntry("RuleImportExportObject" + JSON_FILE_EXT, contentAsJson));
 
+            // Variants are persisted via DotConnect (not Hibernate) so they are not part of the
+            // table set. Export all rows -- including archived ones and DEFAULT -- so experiment
+            // variants survive the round-trip.
+            final List<Variant> variants = TransformerLocator.createVariantTransformer(
+                    dc.setSQL("select * from variant").loadObjectResults()).asList();
+            contentAsJson = defaultObjectMapper.writeValueAsString(variants);
+            starterFiles.add(new FileEntry("Variant" + JSON_FILE_EXT, contentAsJson));
+
+            // Experiments are also persisted via DotConnect (not Hibernate). An empty filter lists
+            // every experiment regardless of page or status.
+            final List<Experiment> experiments = FactoryLocator.getExperimentsFactory()
+                    .list(ExperimentFilter.builder().build());
+            contentAsJson = defaultObjectMapper.writeValueAsString(experiments);
+            starterFiles.add(new FileEntry("Experiment" + JSON_FILE_EXT, contentAsJson));
+
             Logger.debug(this, String.format("Additional exportable entries added = %d", starterFiles.size()));
             Logger.debug(this, "Additional exportable JSON files have been generated successfully!");
         } catch (final Exception e) {
@@ -484,10 +504,28 @@ public class ExportStarterUtil {
             return;
         }
         FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
-            final String filePath = file.getPath().replace(ConfigUtils.getAssetPath(), ZIP_FILE_ASSETS_FOLDER.get());
-            Logger.debug(this, String.format("-> File path: %s", filePath));
-            final FileEntry entry = new FileEntry(filePath, file);
-            this.addFileToZip(entry, zip);
+            try {
+                Path sourcePath = Paths.get(ConfigUtils.getAssetPath()).normalize();
+                Path currentFilePath = file.toPath().normalize();
+                Path targetFolderPath = Paths.get(ZIP_FILE_ASSETS_FOLDER.get()).normalize();
+
+                // Get relative path from source to current file
+                Path relativePath = sourcePath.relativize(currentFilePath);
+
+                // Construct the final path by combining target folder with relative path
+                Path finalPath = targetFolderPath.resolve(relativePath);
+
+                // Convert to string with forward slashes for ZIP compatibility
+                String filePath = finalPath.toString().replace('\\', '/');
+
+                Logger.debug(this, String.format("-> File path: %s", filePath));
+                final FileEntry entry = new FileEntry(filePath, file);
+                this.addFileToZip(entry, zip);
+
+            } catch (Exception e) {
+                Logger.error(this, String.format("Error processing file path for %s: %s",
+                        file.getPath(), e.getMessage()));
+            }
         });
 
 

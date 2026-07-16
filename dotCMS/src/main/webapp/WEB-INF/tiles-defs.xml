@@ -1137,17 +1137,7 @@
 			value="/portlet/ext/structure/edit_field.jsp" />
 	</definition>
 
-	<definition name="portlet.ext.structure.view_relationships"
-		extends="portlet.ext.structure">
-		<put name="content"
-			value="/portlet/ext/structure/view_relationships.jsp" />
-	</definition>
 
-	<definition name="portlet.ext.structure.edit_relationship"
-		extends="portlet.ext.structure">
-		<put name="content"
-			value="/portlet/ext/structure/edit_relationship.jsp" />
-	</definition>
 	<!-- END Portlet Structure -->
 
     <!--  Portlet Form Handler  -->

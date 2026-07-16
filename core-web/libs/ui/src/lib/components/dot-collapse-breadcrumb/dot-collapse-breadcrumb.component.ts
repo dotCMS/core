@@ -4,7 +4,6 @@ import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
-import { ChevronRightIcon } from 'primeng/icons/chevronright';
 import { MenuModule } from 'primeng/menu';
 
 import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
@@ -15,8 +14,7 @@ import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
  * @class DotCollapseBreadcrumbComponent
  */
 @Component({
-    imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterModule, BreadcrumbModule],
-    standalone: true,
+    imports: [ButtonModule, MenuModule, RouterModule, BreadcrumbModule],
     selector: 'dot-collapse-breadcrumb',
     templateUrl: './dot-collapse-breadcrumb.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -34,6 +32,12 @@ export class DotCollapseBreadcrumbComponent {
      * @memberof DotCollapseBreadcrumbComponent
      */
     $maxItems = input<number>(MAX_ITEMS, { alias: 'maxItems' });
+    /**
+     * Style class to apply to the component
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
+    $styleClass = input<string>('', { alias: 'styleClass' });
     /**
      * Items to show
      *

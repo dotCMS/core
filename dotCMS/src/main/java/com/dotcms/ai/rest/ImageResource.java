@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import java.util.Map;
  * It includes methods for generating images based on a given prompt.
  */
 @Path("/v1/ai/image")
+@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class ImageResource {
 
     /**
@@ -98,7 +100,7 @@ public class ImageResource {
                 readParameters(request.getParameterMap()), Marshaller.marshal(aiImageRequestDTO)));
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
-        if (UtilMethods.isEmpty(config.getApiKey())) {
+        if (!config.isEnabled()) {
             return Response
                     .status(Status.INTERNAL_SERVER_ERROR)
                     .entity(Map.of(AiKeys.ERROR, "App Config missing"))
@@ -117,9 +119,35 @@ public class ImageResource {
                 user,
                 APILocator.getHostAPI(),
                 APILocator.getTempFileAPI());
-        final JSONObject resp = service.sendRequest(aiImageRequestDTO);
+        try {
+            final JSONObject resp = service.sendRequest(aiImageRequestDTO);
+            return Response.ok(Marshaller.marshal(resp)).type(MediaType.APPLICATION_JSON_TYPE).build();
+        } catch (Exception e) {
+            final Throwable root = e.getCause() != null ? e.getCause() : e;
+            final String rawMessage = root.getMessage() != null ? root.getMessage() : "Error generating image";
+            final String message = extractErrorMessage(rawMessage);
+            return Response.status(Status.BAD_REQUEST)
+                    .entity(Map.of(AiKeys.ERROR, Map.of("message", message)))
+                    .build();
+        }
+    }
 
-        return Response.ok(Marshaller.marshal(resp)).type(MediaType.APPLICATION_JSON_TYPE).build();
+    private String extractErrorMessage(final String rawMessage) {
+        try {
+            final JSONObject json = new JSONObject(rawMessage);
+            if (json.containsKey(AiKeys.ERROR)) {
+                final Object errorVal = json.get(AiKeys.ERROR);
+                if (errorVal instanceof JSONObject) {
+                    final String msg = ((JSONObject) errorVal).optString("message", null);
+                    if (UtilMethods.isSet(msg)) {
+                        return msg;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // rawMessage is not JSON — return as-is
+        }
+        return rawMessage;
     }
 
     private String readParameters(final Map<String, String[]> parameterMap) {

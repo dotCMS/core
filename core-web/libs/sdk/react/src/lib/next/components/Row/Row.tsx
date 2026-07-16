@@ -1,6 +1,8 @@
+import { DotPageAssetLayoutRow } from '@dotcms/types';
+import { combineClasses, DOT_SECTION_ID_PREFIX } from '@dotcms/uve/internal';
+
 import styles from './Row.module.css';
 
-import { DotPageAssetLayoutRow } from '../../types';
 import { Column } from '../Column/Column';
 
 /**
@@ -12,6 +14,8 @@ import { Column } from '../Column/Column';
  */
 type DotCMSRowRendererProps = {
     row: DotPageAssetLayoutRow;
+    /** 1-based section index used as the `id` anchor for editor scroll-to-section. */
+    index: number;
 };
 /**
  * This component renders a row with all it's content using the layout provided by dotCMS Page API.
@@ -21,12 +25,12 @@ type DotCMSRowRendererProps = {
  * @param {React.ForwardedRef<HTMLDivElement, DotCMS>} ref
  * @return {JSX.Element} Rendered rows with columns
  */
-export const Row = ({ row }: DotCMSRowRendererProps) => {
-    const customRowClass = `${row.styleClass || ''} ${styles.row}`;
+export const Row = ({ row, index }: DotCMSRowRendererProps) => {
+    const customRowClass = combineClasses(['dot-row-container', row.styleClass || '']);
 
     return (
-        <div className="dot-row-container">
-            <div className={customRowClass} data-dot-object={'row'}>
+        <div id={`${DOT_SECTION_ID_PREFIX}${index}`} className={customRowClass}>
+            <div className={styles.row} data-dot-object={'row'}>
                 {row.columns.map((column, index) => (
                     <Column key={index} column={column} />
                 ))}

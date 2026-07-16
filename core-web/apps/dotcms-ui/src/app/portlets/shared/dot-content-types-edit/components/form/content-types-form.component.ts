@@ -1,16 +1,18 @@
 import { Observable, Subject } from 'rxjs';
 
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
-    EventEmitter,
-    Input,
     OnDestroy,
     OnInit,
-    Output,
-    ViewChild
+    inject,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
@@ -19,22 +21,42 @@ import {
 import { ActivatedRoute } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 
 import { filter, startWith, take, takeUntil } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
+import {
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
     DotCMSSystemAction,
     DotCMSSystemActionMappings,
     DotCMSSystemActionType,
     DotCMSWorkflow,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { isEqual } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSiteComponent
+} from '@dotcms/ui';
+import { FieldUtil, isEqual } from '@dotcms/utils';
+
+import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotPageSelectorComponent } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.component';
+import { DotWorkflowsActionsSelectorFieldComponent } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
+import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
+import { DotWorkflowsSelectorFieldComponent } from '../../../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.component';
+import { DotFieldHelperComponent } from '../../../../../view/components/dot-field-helper/dot-field-helper.component';
 
 /**
  * Form component to create or edit content types
@@ -44,21 +66,40 @@ import { FieldUtil } from '@dotcms/utils-testing';
  * @implements {OnInit}
  */
 @Component({
-    providers: [],
+    providers: [DotWorkflowsActionsService, DotWorkflowsActionsSelectorFieldService],
     selector: 'dot-content-types-form',
-    styleUrls: ['./content-types-form.component.scss'],
-    templateUrl: 'content-types-form.component.html'
+    templateUrl: 'content-types-form.component.html',
+    imports: [
+        ReactiveFormsModule,
+        AsyncPipe,
+        CheckboxModule,
+        SelectModule,
+        InputTextModule,
+        DotMessagePipe,
+        DotFieldRequiredDirective,
+        DotAutofocusDirective,
+        DotFieldValidationMessageComponent,
+        DotMdIconSelectorComponent,
+        DotSiteComponent,
+        DotWorkflowsSelectorFieldComponent,
+        DotWorkflowsActionsSelectorFieldComponent,
+        DotPageSelectorComponent,
+        DotFieldHelperComponent
+    ]
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {
-    @ViewChild('name', { static: true }) name: ElementRef;
+    private fb = inject(UntypedFormBuilder);
+    private dotWorkflowService = inject(DotWorkflowService);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotMessageService = inject(DotMessageService);
+    private readonly route = inject(ActivatedRoute);
 
-    @Input() data: DotCMSContentType;
+    readonly $inputName = viewChild.required<ElementRef>('name');
 
-    @Input() layout: DotCMSContentTypeLayoutRow[];
+    readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
-    @Output() send: EventEmitter<DotCMSContentType> = new EventEmitter();
-
-    @Output() valid: EventEmitter<boolean> = new EventEmitter();
+    readonly $send = output<DotCMSContentType>();
+    readonly $valid = output<boolean>();
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
@@ -70,21 +111,13 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private originalValue: DotCMSContentType;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private fb: UntypedFormBuilder,
-        private dotWorkflowService: DotWorkflowService,
-        private dotLicenseService: DotLicenseService,
-        private dotMessageService: DotMessageService,
-        private readonly route: ActivatedRoute
-    ) {}
-
     ngOnInit(): void {
         this.initFormGroup();
         this.initWorkflowField();
         this.bindActionButtonState();
 
         this.nameFieldLabel = this.setNameFieldLabel();
-        this.name.nativeElement.focus();
+        this.$inputName().nativeElement.focus();
         this.newContentEditorEnabled =
             this.route.snapshot?.data?.featuredFlags[
                 FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
@@ -118,7 +151,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      * @memberof ContentTypesFormComponent
      */
     isEditMode(): boolean {
-        return !!(this.data && this.data.id);
+        const data = this.$contentType();
+        return !!(data && data.id);
     }
 
     /**
@@ -128,12 +162,12 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      */
     submitForm(): void {
         if (this.canSave) {
-            this.send.emit(this.addMetadataToForm());
+            this.$send.emit(this.addMetadataToForm());
         }
     }
 
     private setNameFieldLabel(): string {
-        const type = this.data.baseType.toLowerCase();
+        const type = this.$contentType().baseType.toLowerCase();
 
         return `${this.dotMessageService.get(
             `contenttypes.content.${type}`
@@ -151,7 +185,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
             ? this.form.valid && this.isFormValueUpdated()
             : this.form.valid;
 
-        this.valid.next(this.canSave);
+        this.$valid.emit(this.canSave);
     }
 
     private getDateVarFieldOption(field: DotCMSContentTypeField): SelectItem {
@@ -162,7 +196,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private getDateVarOptions(): SelectItem[] {
-        const dateVarOptions = FieldUtil.getFieldsWithoutLayout(this.layout)
+        const dateVarOptions = FieldUtil.getFieldsWithoutLayout(this.$contentType().layout)
             .filter((field: DotCMSContentTypeField) => this.isDateVarField(field))
             .map((field: DotCMSContentTypeField) => this.getDateVarFieldOption(field));
 
@@ -170,29 +204,30 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private initFormGroup(): void {
+        const data = this.$contentType();
         this.form = this.fb.group({
-            defaultType: this.data.defaultType,
-            icon: this.data.icon,
-            fixed: this.data.fixed,
-            system: this.data.system,
-            clazz: this.getProp(this.data.clazz),
-            description: this.getProp(this.data.description),
-            host: this.getProp(this.data.host),
-            folder: this.getProp(this.data.folder),
-            expireDateVar: [{ value: this.getProp(this.data.expireDateVar), disabled: true }],
-            name: [this.getProp(this.data.name), [Validators.required]],
-            publishDateVar: [{ value: this.getProp(this.data.publishDateVar), disabled: true }],
+            defaultType: data.defaultType,
+            icon: data.icon,
+            fixed: data.fixed,
+            system: data.system,
+            clazz: this.getProp(data.clazz),
+            description: this.getProp(data.description),
+            host: this.getProp(data.host),
+            folder: this.getProp(data.folder),
+            expireDateVar: [{ value: this.getProp(data.expireDateVar), disabled: true }],
+            name: [this.getProp(data.name), [Validators.required]],
+            publishDateVar: [{ value: this.getProp(data.publishDateVar), disabled: true }],
             workflows: [
                 {
-                    value: this.data.workflows || [],
+                    value: data.workflows || [],
                     disabled: true
                 }
             ],
             systemActionMappings: this.fb.group({
                 [DotCMSSystemActionType.NEW]: [
                     {
-                        value: this.data.systemActionMappings
-                            ? this.getActionIdentifier(this.data.systemActionMappings)
+                        value: data.systemActionMappings
+                            ? this.getActionIdentifier(data.systemActionMappings)
                             : '',
                         disabled: true
                     }
@@ -260,7 +295,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private isBaseTypeContent(): boolean {
-        return this.data && this.data.baseType === 'CONTENT';
+        const data = this.$contentType();
+        return data && data.baseType === 'CONTENT';
     }
 
     private isDateVarField(field: DotCMSContentTypeField): boolean {
@@ -280,13 +316,14 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private setBaseTypeContentSpecificFields(): void {
         if (this.isBaseTypeContent()) {
+            const data = this.$contentType();
             this.form.addControl(
                 'detailPage',
-                new UntypedFormControl(this.getProp(this.data.detailPage))
+                new UntypedFormControl(this.getProp(data.detailPage))
             );
             this.form.addControl(
                 'urlMapPattern',
-                new UntypedFormControl(this.getProp(this.data.urlMapPattern))
+                new UntypedFormControl(this.getProp(data.urlMapPattern))
             );
         }
     }
@@ -313,7 +350,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private isLayoutSet(): boolean {
-        return !!(this.layout && this.layout.length);
+        const layout = this.$contentType().layout;
+        return !!(layout && layout.length);
     }
 
     private enableWorkflowFormControls(): void {
@@ -352,11 +390,11 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private getMetaDataProperty(_prop: string): string | number | boolean {
-        return this.data?.metadata?.[_prop];
+        return this.$contentType().metadata?.[_prop];
     }
 
     private addMetadataToForm(): DotCMSContentType {
-        const metadata = this.data.metadata || {};
+        const metadata = this.$contentType().metadata || {};
         const newEditContent = this.form.get('newEditContent').value;
         const form = this.form.value;
         delete form.newEditContent;

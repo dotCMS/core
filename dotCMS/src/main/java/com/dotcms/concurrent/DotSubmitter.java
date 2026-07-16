@@ -1,11 +1,14 @@
 package com.dotcms.concurrent;
 
 import com.dotmarketing.util.Logger;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Encapsulate a Submitter for {@link Runnable} and {@link Callable}, in addition to the usual {@link Executor} functionality.
@@ -28,6 +31,8 @@ public interface DotSubmitter extends Executor, Serializable {
      * @param unit
      */
     void delay(final Runnable task, final long delay, final TimeUnit unit);
+
+    void schedule(final Runnable task, final long delay, final TimeUnit unit);
 
     /**
      * Submit a {@link Runnable}, returning the {@link Future}

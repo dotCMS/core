@@ -1,4 +1,4 @@
-<ng-container *ngIf="socialMedia; else deviceBlock">
+@if (socialMedia) {
     <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
         <i
             [ngClass]="socialMediaIconClass"
@@ -11,8 +11,7 @@
             {{ SOCIAL_MEDIA_TILES[socialMedia]?.description | dm }}
         </span>
     </div>
-</ng-container>
-<ng-template #deviceBlock>
+} @else {
     <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
         <i
             [ngClass]="device?.icon"
@@ -25,4 +24,4 @@
             {{ device?.cssHeight | number }} x {{ device?.cssWidth | number }}
         </span>
     </div>
-</ng-template>
+}

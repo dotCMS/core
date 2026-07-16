@@ -13,7 +13,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
 import com.dotcms.variant.VariantAPI;
@@ -2315,6 +2315,19 @@ public class ContentletAjax {
 				for (final Field field : reqs) {
 					String errorString = LanguageUtil.get(user, "message.contentlet.type");
 					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasCharLimitErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_CHAR_LIMIT);
+				final Map<String, Integer> charLimitMaxByFieldVar = ve.getCharLimitMaxByFieldVar();
+				for (final Field field : reqs) {
+					final Integer maxLimit = charLimitMaxByFieldVar.get(field.getVelocityVarName());
+					String errorString = LanguageUtil.get(user, "dot.edit.content.form.field.charLimitExceeded",
+							maxLimit != null ? maxLimit : 0);
 					saveContentErrors.add(errorString);
 				}
 				clearBinary = false;

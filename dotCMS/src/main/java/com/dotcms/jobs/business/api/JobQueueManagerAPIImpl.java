@@ -35,12 +35,14 @@ import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
 import com.dotcms.jobs.business.util.JobUtil;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
@@ -241,7 +243,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             // Close existing services
             closeExecutorService(executorService);
 
-            isShuttingDown = false;
+            // Keep isShuttingDown true until fully closed to prevent race conditions
+            // isShuttingDown = false; // Remove this to prevent race conditions
             isClosed = true;
             Logger.info(this, "JobQueue has been successfully closed.");
         } else {
@@ -662,7 +665,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         int emptyQueueCount = 0;
 
-        while (!Thread.currentThread().isInterrupted() && !isShuttingDown) {
+        while (!Thread.currentThread().isInterrupted() && !isShuttingDown && !ShutdownCoordinator.isShutdownStarted()) {
 
             if (isCircuitBreakerOpen()) {
                 continue;
@@ -677,20 +680,44 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     // If no jobs were found, wait for a short time before checking again
                     // Implement exponential backoff when queue is repeatedly empty
                     long sleepTime = calculateBackoffTime(emptyQueueCount, MAX_EMPTY_QUEUE_COUNT);
+                    
+                    // During shutdown, use shorter sleep times to be more responsive
+                    if (isShuttingDown) {
+                        sleepTime = Math.min(sleepTime, 100); // Max 100ms during shutdown
+                    }
+                    
                     Thread.sleep(sleepTime);
                     emptyQueueCount = incrementAndResetEmptyQueueCount(
                             emptyQueueCount, MAX_EMPTY_QUEUE_COUNT, EMPTY_QUEUE_RESET_THRESHOLD
                     );
                 }
             } catch (InterruptedException e) {
-                Logger.error(this, "Job processing thread interrupted: " + e.getMessage(), e);
+                Logger.debug(this, "Job processing thread interrupted during shutdown");
                 Thread.currentThread().interrupt();
+                break; // Exit the loop immediately on interruption
             } catch (Exception e) {
+                // Check if this is a database-related error during shutdown
+                if (isShuttingDown && ShutdownCoordinator.isShutdownRelated(e)) {
+                    Logger.debug(this, "Database connection lost during shutdown (expected), stopping job processing");
+                    break;
+                }
+                
                 Logger.error(this, "Unexpected error in job processing loop: " + e.getMessage(), e);
                 getCircuitBreaker().recordFailure();
+                
+                // During shutdown, don't continue processing on errors
+                if (isShuttingDown) {
+                    Logger.debug(this, "Stopping job processing due to error during shutdown");
+                    break;
+                }
             }
         }
+        
+        Logger.debug(this, "Job processing thread exiting (interrupted: " + 
+            Thread.currentThread().isInterrupted() + ", shuttingDown: " + isShuttingDown + ")");
     }
+    
+    
 
     /**
      * Processes the next job in the queue.
@@ -701,8 +728,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private boolean processNextJob() throws DotDataException {
 
         try {
+            // Skip database calls during shutdown to avoid blocking threads
+            if (isShuttingDown || ShutdownCoordinator.isShutdownStarted()) {
+                Logger.debug(this, "Skipping job processing during shutdown");
+                return false;
+            }
+            
             Job job = jobQueue.nextJob();
             if (job != null) {
+                // Double-check shutdown status before processing
+                if (isShuttingDown) {
+                    Logger.debug(this, "Shutdown detected, skipping job processing");
+                    return false;
+                }
                 processJobWithRetry(job);
                 return true;
             }
@@ -716,21 +754,55 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     /**
      * Closes an ExecutorService, shutting it down and waiting for any running jobs to complete.
+     * Uses a shorter timeout during shutdown to be responsive to dotCMS shutdown coordination.
      *
      * @param executor The ExecutorService to close.
      */
     private void closeExecutorService(final ExecutorService executor) {
 
-        executor.shutdown();
+        Logger.info(this, "Shutting down job queue executor service");
+        
+        // During coordinated shutdown, be more aggressive to prevent delays
+        if (ShutdownCoordinator.isShutdownStarted()) {
+            Logger.debug(this, "System shutdown detected - using immediate executor termination");
+            var cancelledTasks = executor.shutdownNow();
+            Logger.debug(this, "Cancelled " + cancelledTasks.size() + " pending tasks during immediate shutdown");
+        } else {
+            executor.shutdown();
+        }
 
         try {
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
+            // Use shorter timeout to be more responsive to shutdown coordination
+            // Most job processing threads should exit quickly due to shutdown checks
+            int defaultTimeout = ShutdownCoordinator.isShutdownStarted() ? 2 : 3; // Less time during coordinated shutdown since we use shutdownNow
+            int gracefulTimeoutSeconds = Config.getIntProperty("shutdown.jobqueue.executor.timeout.seconds", defaultTimeout);
+            
+            if (!executor.awaitTermination(gracefulTimeoutSeconds, TimeUnit.SECONDS)) {
+                // During coordinated shutdown, this is expected behavior - use debug level
+                if (ShutdownCoordinator.isShutdownStarted()) {
+                    Logger.debug(this, "Job queue executor graceful shutdown timeout during system shutdown, forcing termination");
+                } else {
+                    Logger.warn(this, "Job queue executor did not terminate gracefully within " + 
+                        gracefulTimeoutSeconds + " seconds, forcing shutdown");
+                }
+                
+                // Interrupt all threads to break out of blocking operations
+                var cancelledTasks = executor.shutdownNow();
+                Logger.debug(this, "Cancelled " + cancelledTasks.size() + " pending tasks during forced shutdown");
+                
+                // Give forced shutdown a brief moment to complete
+                if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    Logger.error(this, "Job queue executor did not terminate even after forced shutdown");
+                } else {
+                    Logger.info(this, "Job queue executor terminated after forced shutdown");
+                }
+            } else {
+                Logger.info(this, "Job queue executor shut down gracefully");
             }
         } catch (InterruptedException e) {
+            Logger.warn(this, "Job queue shutdown interrupted, forcing immediate termination");
             executor.shutdownNow();
             Thread.currentThread().interrupt();
-            Logger.error(this, "Interrupted while waiting for jobs to complete", e);
         }
     }
 
@@ -746,7 +818,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             Logger.warn(this, "Circuit breaker is open. Pausing job processing for a while.");
 
             try {
-                Thread.sleep(5000); // Wait for 5 seconds before checking again
+                // During shutdown, use shorter sleep intervals to be more responsive
+                int sleepInterval = isShuttingDown ? 100 : 1000; // 100ms during shutdown, 1s normally
+                int totalSleepTime = isShuttingDown ? 500 : 5000; // 500ms during shutdown, 5s normally
+                
+                for (int elapsed = 0; elapsed < totalSleepTime && !isShuttingDown; elapsed += sleepInterval) {
+                    Thread.sleep(sleepInterval);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -834,6 +912,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job The job to process.
      */
     private void processJob(final Job job) throws DotDataException {
+
+        // Skip job processing if shutdown is in progress
+        if (isShuttingDown) {
+            Logger.debug(this, "Skipping job processing for job " + job.id() + " due to shutdown");
+            return;
+        }
 
         final Optional<JobProcessor> optional = getProcessorInstance(job);
         if (optional.isPresent()) {

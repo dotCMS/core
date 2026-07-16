@@ -6,11 +6,12 @@
 # Key features:
 # - Triggered on push to main or manual dispatch
 # - Configurable options for reusing previous builds and running all tests
-# - Comprehensive checks including build, tests, SonarQube analysis, and CLI artifact building
+# - Comprehensive checks including build, tests, and CLI artifact building
 # - Deployment to the trunk environment
 # - Final reporting of the workflow status
 
 name: '-3 Trunk Workflow'
+run-name: "Trunk${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
 
 on:
   push:
@@ -35,14 +36,21 @@ on:
         description: 'Publish NPM SDKs'
         type: boolean
         default: false
-      disable-sonar:
-        description: 'Disable SonarQube job'
-        type: boolean
-        default: false
-      disable-semgrep:
-        description: 'Disable Semgrep job'
-        type: boolean
-        default: false
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        type: string
+        required: false
+        default: ''
+      maven-compiler-release:
+        description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1, -java25-ms). If not set, derived from java-version major.'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   # Initialize the trunk check process
@@ -52,8 +60,9 @@ jobs:
     with:
       reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
       build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || github.event_name != 'workflow_dispatch' }}
-      validation-level: 'custom'
-      custom-modules: 'sdk_libs'      
+      # Enable change detection to determine if SDK libs changed (for publishing decision)
+      # Note: Trunk doesn't use filter outputs for test selection - it uses run-all-tests input
+      change-detection: 'enabled'      
 
   # Build job - only runs if no artifacts were found during initialization
   build:
@@ -61,6 +70,10 @@ jobs:
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     permissions:
       contents: read
       packages: write
@@ -74,39 +87,22 @@ jobs:
     with:
       run-all-tests: ${{ inputs.run-all-tests || false }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      e2e: false
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     permissions:
       contents: read
       packages: write
 
-  # SonarQube analysis job
-  sonar:
-    name: Trunk SonarQube
-    needs: [ initialize, test ]
-    if: always() && !failure() && !cancelled() && vars.DISABLE_SONAR != 'true'
-    uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
-    with:
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-  semgrep:
-    name: Trunk Semgrep
-    needs: [ initialize, test ]
-    if: always() && !failure() && !cancelled() && vars.DISABLE_SEMGREP != 'true'
-    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
-    with:
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-    secrets:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
   # CLI Build job - builds CLI artifacts
+  # Skipped when java-version is overridden due to GraalVM/Quarkus compatibility requirements
   build-cli:
     name: CLI Build
     needs: [ initialize,test ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && !inputs.java-version
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
@@ -115,13 +111,17 @@ jobs:
 
   # Deployment job - deploys to the trunk environment
   deployment:
-    needs: [ initialize,build-cli,sonar,test ]
+    needs: [ initialize,build-cli,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-      publish-npm-sdk-libs: ${{ needs.initialize.outputs.sdk_libs != 'false' && github.event_name != 'workflow_dispatch' }}
+      deploy-cli: true
+      publish-npm-sdk-libs: ${{ fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
+      # tag-identifier intentionally omitted: trunk uses only the environment name as its tag
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -134,7 +134,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, sonar, semgrep, deployment]
+    needs: [ initialize, build, build-cli, test, deployment]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

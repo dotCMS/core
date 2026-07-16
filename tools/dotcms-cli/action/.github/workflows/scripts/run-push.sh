@@ -13,7 +13,7 @@ SERVICES_FILE_CONTENT="
 
 _make_home(){
   if [ ! -d "$DOT_CLI_HOME" ]; then
-    mkdir $DOT_CLI_HOME
+    mkdir $DOT_CLI_HOME || return $?
   fi
 }
 
@@ -28,8 +28,8 @@ _get_CLI(){
     return
   fi
 
-  curl "$cli_release_download_url" -L -o ${DOT_CLI_HOME}${DOT_CLI_JAR}
-  chmod 777 "${DOT_CLI_HOME}${DOT_CLI_JAR}"
+  curl "$cli_release_download_url" -L -o ${DOT_CLI_HOME}${DOT_CLI_JAR} || return $?
+  chmod 777 "${DOT_CLI_HOME}${DOT_CLI_JAR}" || return $?
 
   #Check the size of the file
   file="${DOT_CLI_HOME}${DOT_CLI_JAR}" && \
@@ -37,7 +37,7 @@ _get_CLI(){
 
   if [ "$actual_size" -lt 1000000 ]; then
     echo "The file is too small to be the CLI, please check the version and try again"
-    exit 1
+    return 1
   fi
 }
 
@@ -48,8 +48,8 @@ _get_run_java_script(){
       echo "run-java.sh already exists, skipping download"
       return
    fi
-    curl https://repo1.maven.org/maven2/io/fabric8/run-java-sh/"${RUN_JAVA_VERSION}"/run-java-sh-"${RUN_JAVA_VERSION}"-sh.sh -o "${DOT_CLI_HOME}"run-java.sh
-    chmod 777 ${DOT_CLI_HOME}run-java.sh
+    curl https://repo1.maven.org/maven2/io/fabric8/run-java-sh/"${RUN_JAVA_VERSION}"/run-java-sh-"${RUN_JAVA_VERSION}"-sh.sh -o "${DOT_CLI_HOME}"run-java.sh || return $?
+    chmod 777 ${DOT_CLI_HOME}run-java.sh || return $?
 }
 
 _setup_CLI(){
@@ -60,14 +60,14 @@ _setup_CLI(){
    # All we need is a file with an active profile that matches the server we want to connect to in this case we are using default
    # If the directory does not exist we create it
     if [ ! -d "$DOT_SERVICES_HOME" ]; then
-      mkdir "$DOT_SERVICES_HOME"
+      mkdir "$DOT_SERVICES_HOME" || return $?
     else
        # If the directory exists we remove it as we could be updating the server url
-       rm -rf "$DOT_SERVICES_HOME"
-       mkdir "$DOT_SERVICES_HOME"
+       rm -rf "$DOT_SERVICES_HOME" || return $?
+       mkdir "$DOT_SERVICES_HOME" || return $?
     fi
     # Now generate the file
-    echo "$SERVICES_FILE_CONTENT" >> "$SERVICE_FILE";
+    echo "$SERVICES_FILE_CONTENT" >> "$SERVICE_FILE" || return $?
 
     export QUARKUS_LOG_FILE_PATH=$DOT_CLI_HOME"dotcms-cli.log"
 }
@@ -92,18 +92,17 @@ _run_cli_push(){
       export QUARKUS_LOG_FILE_PATH="$DOT_CLI_HOME"dotcms-cli.log
       cmd="bash /tmp/dot-cli/run-java.sh push $workspace_path $push_opts --token=$token"
       eval "$cmd"
-      export exit_code=$?
-      echo $exit_code
+      return $?
 }
 
 install_cli(){
     cli_release_download_url=$1
     force_download=$2
 
-    _make_home
-    _get_CLI "$cli_release_download_url" "$force_download"
-    _get_run_java_script "$force_download"
-    _setup_CLI
+    _make_home || return $?
+    _get_CLI "$cli_release_download_url" "$force_download" || return $?
+    _get_run_java_script "$force_download" || return $?
+    _setup_CLI || return $?
 }
 
 run_cli_push(){
@@ -114,6 +113,6 @@ run_cli_push(){
     echo "PUSH OPTS:"
     echo "$push_opts"
 
-    return_code=$(_run_cli_push "$workspace_path" "$token" "$push_opts")
-    echo "$return_code"
+    _run_cli_push "$workspace_path" "$token" "$push_opts"
+    return $?
 }

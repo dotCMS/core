@@ -10,9 +10,11 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotMessageService,
     DotIframeService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotContentCompareEvent } from '@dotcms/dotcms-models';
@@ -21,7 +23,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { dotContentCompareTableDataMock } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component.spec';
 import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
 import { DotContentCompareComponent } from './dot-content-compare.component';
-import { DotContentCompareModule } from './dot-content-compare.module';
 import { DotContentCompareStore } from './store/dot-content-compare.store';
 
 const DotContentCompareEventMOCK = {
@@ -31,9 +32,9 @@ const DotContentCompareEventMOCK = {
 };
 
 @Component({
+    standalone: false,
     selector: 'dot-test-host-component',
-    template:
-        '<dot-content-compare [data]="data"  (shutdown)="shutdown.emit(true)" ></dot-content-compare>'
+    template: '<dot-content-compare [data]="data"  (shutdown)="shutdown.emit(true)"  />'
 })
 class TestHostComponent {
     @Input() data: DotContentCompareEvent;
@@ -57,10 +58,11 @@ describe('DotContentCompareComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentCompareComponent, TestHostComponent],
-            imports: [DotContentCompareModule],
+            declarations: [TestHostComponent],
+            imports: [DotContentCompareComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotContentTypeService, useValue: { getContentType: () => of({}) } },
                 DotAlertConfirmService,
                 ConfirmationService,
                 {
@@ -84,6 +86,12 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlag: () => of(true)
+                    }
                 }
             ]
         });

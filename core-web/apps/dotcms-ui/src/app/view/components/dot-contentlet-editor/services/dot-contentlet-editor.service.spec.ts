@@ -1,90 +1,58 @@
-import { mockProvider } from '@ngneat/spectator';
 import { of as observableOf } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { ConfirmationService } from 'primeng/api';
-
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import {
-    DotAlertConfirmService,
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotRouterService,
-    DotFormatDateService
-} from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { DotHttpErrorManagerService, DotRouterService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    DotMessageDisplayServiceMock,
-    LoginServiceMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { MockDotHttpErrorManagerService, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContentletEditorService } from './dot-contentlet-editor.service';
 
+import { DotMenuService } from '../../../../api/services/dot-menu.service';
+
 describe('DotContentletEditorService', () => {
-    const load = () => {
-        //
-    };
-
-    const keyDown = () => {
-        //
-    };
-
     let service: DotContentletEditorService;
     let dotMenuService: DotMenuService;
     let dotRouterService: DotRouterService;
-    let httpMock: HttpTestingController;
-    let injector;
+    let httpTesting: HttpTestingController;
 
     beforeEach(() => {
-        injector = TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+        TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentletEditorService,
                 DotMenuService,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                DotFormatDateService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                mockProvider(DotMessageService)
+                { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
+                { provide: DotRouterService, useClass: MockDotRouterService }
             ]
         });
 
-        service = injector.inject(DotContentletEditorService);
-        dotMenuService = injector.inject(DotMenuService);
-        dotRouterService = injector.inject(DotRouterService);
-        httpMock = injector.inject(HttpTestingController);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('456'));
+        service = TestBed.inject(DotContentletEditorService);
+        dotMenuService = TestBed.inject(DotMenuService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        httpTesting = TestBed.inject(HttpTestingController);
+        jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
+    });
+
+    afterEach(() => {
+        httpTesting.verify();
     });
 
     it('should get action url', () => {
-        const url = `v1/portlet/_actionurl/test`;
+        const url = '/api/v1/portlet/_actionurl/test';
 
         service.getActionUrl('test').subscribe((urlString: string) => {
             expect(urlString).toEqual('testString');
         });
 
-        const req = httpMock.expectOne(url);
+        const req = httpTesting.expectOne(url);
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: 'testString'
         });
-        httpMock.verify();
     });
 
     it('should set data to add', () => {
@@ -113,16 +81,23 @@ describe('DotContentletEditorService', () => {
                 container: '123'
             },
             events: {
-                load: load,
-                keyDown: keyDown
+                load: () => {
+                    //
+                },
+                keyDown: () => {
+                    //
+                }
             }
         });
     });
 
     it('should set data to edit', () => {
-        spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
-            url: '/c/c_Test/123',
-            id: 'c_Test'
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                url: '/c/c_Test/123',
+                id: 'c_Test'
+            },
+            writable: true
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(
@@ -151,9 +126,12 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit when current portlet is edit-page', () => {
-        spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
-            url: '/#/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
-            id: 'edit-page'
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                url: '/#/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
+                id: 'edit-page'
+            },
+            writable: true
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(
@@ -182,9 +160,12 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit when current portlet is site-browser', () => {
-        spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
-            url: '/#/c/site-browser/ad5acc23-a466-4ac6-9c76-e6a3bc1d609e',
-            id: 'site-browser'
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                url: '/#/c/site-browser/ad5acc23-a466-4ac6-9c76-e6a3bc1d609e',
+                id: 'site-browser'
+            },
+            writable: true
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(

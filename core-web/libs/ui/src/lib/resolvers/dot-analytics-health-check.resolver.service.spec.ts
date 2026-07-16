@@ -8,7 +8,8 @@ import { RouterStateSnapshot } from '@angular/router';
 
 import { DotExperimentsService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
-import { dotAnalyticsHealthCheckResolver } from '@dotcms/ui';
+
+import { dotAnalyticsHealthCheckResolver } from './dot-analytics-health-check.resolver.service';
 
 describe('dotAnalyticsHealthCheckResolver', () => {
     let dotExperimentsService: DotExperimentsService;

@@ -74,6 +74,8 @@ public class MetricsAPIImpl implements MetricsAPI {
     public void persistMetricsSnapshot(final MetricsSnapshot metricsSnapshot) throws DotDataException {
         Logger.debug(this, "Persisting the snapshot");
         final Client client = getClient();
+        Logger.debug(this, "Client Info: " + client.toString());
+        Logger.debug(this, "MetricsSnapshot Info: " + metricsSnapshot.toString());
         sendMetric(new MetricEndpointPayload.Builder()
                 .clientName(client.getClientName())
                 .clientEnv(client.getEnvironment())
@@ -153,6 +155,8 @@ public class MetricsAPIImpl implements MetricsAPI {
     }
 
     private void sendMetric(final MetricEndpointPayload metricEndpointPayload) {
+        Logger.debug(this, "Sending the metric");
+        Logger.debug(this, "MetricEndpointPayload: " + metricEndpointPayload.toString());
         final CircuitBreakerUrl circuitBreakerUrl = CircuitBreakerUrl.builder()
                 .setMethod(CircuitBreakerUrl.Method.POST)
                 .setUrl(endPointUrl.get())
@@ -166,10 +170,10 @@ public class MetricsAPIImpl implements MetricsAPI {
             circuitBreakerUrl.doString();
             final int response = circuitBreakerUrl.response();
             if (response != HttpServletResponse.SC_CREATED) {
-                Logger.debug(this, "ERROR: Unable to save the Metric. HTTP error code: " + response);
+                Logger.debug(this, "ERROR: Unable to send the Metric. HTTP error code: " + response);
             }
         } catch (final Exception e) {
-            Logger.debug(this, "Failed to save the Metric to Telemetry persistence endpoint", e);
+            Logger.debug(this, "Failed to send the Metric to Telemetry persistence endpoint", e);
         }
     }
 

@@ -4,12 +4,12 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { Dropdown } from 'primeng/dropdown';
+import { Select } from 'primeng/select';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
@@ -32,14 +32,14 @@ describe('DotLanguageSelectorComponent', () => {
     beforeEach(() => {
         spectator = createComponent({ detectChanges: false });
         dotLanguagesService = spectator.inject(DotLanguagesService, true);
-        dotLanguagesService.getLanguagesUsedPage.and.returnValue(of(mockLanguageArray));
+        dotLanguagesService.getLanguagesUsedPage.mockReturnValue(of(mockLanguageArray));
 
         spectator.setInput('pageId', PAGE_ID);
         spectator.detectChanges();
     });
 
     it('should exist a dropdown', () => {
-        expect(spectator.query(Dropdown)).toExist();
+        expect(spectator.query(Select)).toExist();
     });
 
     it('should load languages in the dropdown with every change of value input', () => {
@@ -47,20 +47,21 @@ describe('DotLanguageSelectorComponent', () => {
         spectator.setInput('value', DOT_LANG);
         spectator.detectComponentChanges();
         expect(dotLanguagesService.getLanguagesUsedPage).toHaveBeenCalledWith(PAGE_ID);
+        expect(dotLanguagesService.getLanguagesUsedPage).toHaveBeenCalledTimes(1);
         expect(spectator.component.languagesList().length).toBe(mockLanguageArray.length);
 
-        const pDropdown: Dropdown = spectator.query(Dropdown);
-        expect(pDropdown.options).toEqual(mockLanguageArray);
+        const pSelect = spectator.query(Select);
+        expect(pSelect?.options).toEqual(mockLanguageArray);
     });
 
     it('should have right attributes on dropdown', () => {
         const valueKey = 'id';
         const labelKey = 'language';
-        const pDropdown: Dropdown = spectator.query(Dropdown);
+        const pSelect = spectator.query(Select);
 
-        expect(pDropdown.dataKey).toBe(valueKey);
-        expect(pDropdown.optionLabel).toBe(labelKey);
-
+        expect(pSelect).toBeTruthy();
+        expect(pSelect.dataKey).toBe(valueKey);
+        expect(pSelect.optionLabel).toBe(labelKey);
         expect(spectator.query(byTestId('language-selector'))).toHaveClass('p-dropdown-sm');
     });
 });

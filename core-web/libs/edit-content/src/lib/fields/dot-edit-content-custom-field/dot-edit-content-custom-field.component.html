@@ -1,19 +1,41 @@
-@if ($src(); as src) {
-    <iframe
-        (load)="onIframeLoad()"
-        [src]="src | safeUrl"
-        [class.legacy-custom-field--fullscreen]="$isFullscreen()"
-        [ngStyle]="!$isFullscreen() && { height: $variables()?.height, width: $variables()?.width }"
-        [title]="$iframeTitle()"
-        class="legacy-custom-field"
-        #iframe
-        data-testId="custom-field-iframe"
-        frameborder="0"></iframe>
-}
+@let field = $field();
+@let showLabel = $showLabel();
+@let fieldHasError = $hasError();
 
-@if ($isFullscreen()) {
-    <p-button
-        (click)="$isFullscreen.set(false)"
-        icon="pi pi-times"
-        styleClass="p-button-rounded p-button-text" />
-}
+<dot-card-field [hasError]="fieldHasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        @if ($isIframeStrategy()) {
+            <dot-iframe-field
+                [field]="field"
+                [contentType]="$contentType()"
+                [contentlet]="$contentlet()" />
+        } @else {
+            <dot-native-field [field]="field" [contentlet]="$contentlet()" />
+        }
+    </dot-card-field-content>
+    @if ((fieldHasError && isRequired) || (!fieldHasError && field.hint)) {
+        <dot-card-field-footer>
+            @if (fieldHasError && isRequired) {
+                <small class="p-field-error">
+                    {{ 'dot.edit.content.form.field.required' | dm }}
+                </small>
+            }
+            @if (!fieldHasError && field.hint) {
+                <div class="flex justify-between items-center">
+                    <div class="hint-message">
+                        <small
+                            [attr.data-testId]="'hint-' + field.variable"
+                            data-testid="calendar-field-hint">
+                            {{ field.hint }}
+                        </small>
+                    </div>
+                </div>
+            }
+        </dot-card-field-footer>
+    }
+</dot-card-field>

@@ -4,6 +4,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Encapsulates the attributes retrieve from the Saml Assertion
@@ -30,10 +31,12 @@ public class Attributes implements Serializable {
 	private final Object roles;
 
 	// Saml object with the NameID.
-	private final Object nameID;
+	private final Serializable nameID;
 
 	// SAML Session Index
 	private final String sessionIndex;
+
+	private final Map<String, Object> additionalAttributes;
 
 	private Attributes(final Builder builder) {
 
@@ -45,6 +48,7 @@ public class Attributes implements Serializable {
 		this.roles        = builder.roles;
 		this.nameID       = builder.nameID;
 		this.sessionIndex = builder.sessionIndex;
+		this.additionalAttributes = builder.additionalAttributes;
 	}
 
 	public String getEmail()
@@ -72,7 +76,7 @@ public class Attributes implements Serializable {
 		return roles;
 	}
 
-	public Object getNameID()
+	public Serializable getNameID()
 	{
 		return nameID;
 	}
@@ -81,10 +85,22 @@ public class Attributes implements Serializable {
 		return sessionIndex;
 	}
 
+	public Map<String, Object> getAdditionalAttributes() {
+		return additionalAttributes;
+	}
+
 	@Override
 	public String toString() {
-		return "AttributesBean{" + "nameID='" + nameID + '\'' + ", email='" + email + '\'' + ", lastName='" + lastName + '\''
-				+ ", firstName='" + firstName + '\'' + ", addRoles=" + addRoles + ", roles=" + roles + '}';
+		return "Attributes{" +
+				"email='" + email + '\'' +
+				", lastName='" + lastName + '\'' +
+				", firstName='" + firstName + '\'' +
+				", addRoles=" + addRoles +
+				", roles=" + roles +
+				", nameID=" + nameID +
+				", sessionIndex='" + sessionIndex + '\'' +
+				", additionalAttributes=" + additionalAttributes +
+				'}';
 	}
 
 	public static final class Builder {
@@ -93,8 +109,15 @@ public class Attributes implements Serializable {
 		String firstName = "";
 		boolean addRoles = false;
 		Object roles     = null;
-		Object nameID    = null;
+		Serializable nameID = null;
 		String sessionIndex;
+		Map<String, Object> additionalAttributes;
+
+		public Builder additionalAttributes(final Map<String, Object> additionalAttributes)
+		{
+			this.additionalAttributes = additionalAttributes;
+			return this;
+		}
 
 		public Builder email(final String email )
 		{
@@ -126,7 +149,7 @@ public class Attributes implements Serializable {
 			return this;
 		}
 
-		public Builder nameID(final Object nameID)
+		public Builder nameID(final Serializable nameID)
 		{
 			this.nameID = nameID;
 			return this;
@@ -164,7 +187,7 @@ public class Attributes implements Serializable {
 			return roles;
 		}
 
-		public Object getNameID()
+		public Serializable getNameID()
 		{
 			return nameID;
 		}

@@ -1,11 +1,10 @@
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 
 import { Injectable } from '@angular/core';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-
 import { DotIframeService } from './dot-iframe.service';
+
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 export class DotRouterServiceMock {
@@ -24,8 +23,7 @@ describe('DotIframeService', () => {
             {
                 provide: DotRouterService,
                 useClass: DotRouterServiceMock
-            },
-            mockProvider(CoreWebService)
+            }
         ]
     });
 

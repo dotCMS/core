@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { pluck, map, defaultIfEmpty, catchError } from 'rxjs/operators';
+import { catchError, defaultIfEmpty, map } from 'rxjs/operators';
 
 interface EmaAppSecretValue {
     pattern: string;
@@ -34,24 +34,22 @@ export class EmaAppConfigurationService {
         url = url?.replace(/^\/+|\/+$/g, '');
 
         return this.http.get<{ entity: { config: EmaAppSecretValue[] } }>(`/api/v1/ema`).pipe(
-            pluck('entity', 'config'),
-            map((config) => {
+            map((x): EmaAppSecretValue[] => x?.entity?.config ?? []),
+            map((config): EmaAppSecretValue => {
                 for (const secret of config) {
                     try {
                         if (doesPathMatch(secret.pattern, url)) {
                             return secret;
                         }
-                    } catch (error) {
+                    } catch {
                         throw new Error('Error on match URL pattern');
                     }
                 }
 
                 throw new Error('Current URL did not match any pattern');
             }),
-            catchError(() => {
-                return EMPTY;
-            }),
-            defaultIfEmpty<EmaAppSecretValue | null>(null)
+            catchError(() => EMPTY),
+            defaultIfEmpty(null)
         );
     }
 }

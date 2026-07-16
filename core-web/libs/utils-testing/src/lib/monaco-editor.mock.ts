@@ -8,7 +8,7 @@ export const monacoMock = {
             }),
             getValue: () => '',
             setValue: (value: string) => {
-                console.log(`Editor value set to: ${value}`);
+                //
             },
             getModel: () => ({
                 uri: {
@@ -16,15 +16,14 @@ export const monacoMock = {
                 }
             }),
             updateOptions: (options: object) => {
-                console.log('Editor options updated:', options);
+                //
             },
             onDidChangeModelDecorations: (callback: () => void) => {
-                console.log('Model decorations changed');
                 callback();
 
                 return {
                     dispose: () => {
-                        console.log('Listener disposed');
+                        //
                     }
                 };
             },
@@ -36,18 +35,26 @@ export const monacoMock = {
                 dispose: () => {}
             }),
             layout: (dimension?: { width: number; height: number }) => {
-                console.log('Editor layout updated:', dimension);
+                //
             },
             getPosition: () => ({
                 lineNumber: 1,
                 column: 1
             }),
             setPosition: (position: { lineNumber: number; column: number }) => {
-                console.log('Editor position set to:', position);
+                //
             },
             revealLine: (lineNumber: number) => {
-                console.log('Revealing line:', lineNumber);
-            }
+                //
+            },
+            getSelection: () => ({
+                startLineNumber: 1,
+                startColumn: 1,
+                endLineNumber: 1,
+                endColumn: 1
+            }),
+            executeEdits: () => {},
+            focus: () => {}
         }),
         setModelLanguage: () => {},
         createModel: () => ({
@@ -55,7 +62,7 @@ export const monacoMock = {
         }),
         setTheme: () => {},
         getModelMarkers: (model: object) => {
-            console.log('Getting model markers for model:', model);
+            //
 
             return [
                 {
@@ -78,5 +85,23 @@ export const monacoMock = {
     Uri: {
         parse: () => ({}),
         file: () => ({})
+    },
+    Range: class {
+        startLineNumber: number;
+        startColumn: number;
+        endLineNumber: number;
+        endColumn: number;
+
+        constructor(
+            startLineNumber: number,
+            startColumn: number,
+            endLineNumber: number,
+            endColumn: number
+        ) {
+            this.startLineNumber = startLineNumber;
+            this.startColumn = startColumn;
+            this.endLineNumber = endLineNumber;
+            this.endColumn = endColumn;
+        }
     }
 };

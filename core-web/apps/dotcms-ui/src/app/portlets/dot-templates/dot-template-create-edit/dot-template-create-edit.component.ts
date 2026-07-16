@@ -1,40 +1,61 @@
 import { Observable, Subject } from 'rxjs';
 
+import { AsyncPipe } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators,
+    ReactiveFormsModule
+} from '@angular/forms';
 
-import { DialogService } from 'primeng/dynamicdialog';
-import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
+import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 
-import { filter, takeUntil, tap } from 'rxjs/operators';
+import { takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotTemplateBuilderComponent } from './dot-template-builder/dot-template-builder.component';
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
 import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
+
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
 
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
-    styleUrls: ['./dot-template-create-edit.component.scss'],
-    providers: [DotTemplateStore]
+    providers: [DotTemplateStore, DotTemplatesService, DialogService],
+    host: {
+        class: 'flex flex-col h-full'
+    },
+    imports: [
+        ButtonModule,
+        DotApiLinkComponent,
+        DotPortletToolbarComponent,
+        DynamicDialogModule,
+        DotMessagePipe,
+        DotTemplateBuilderComponent,
+        ReactiveFormsModule,
+        AsyncPipe
+    ]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
+    private fb = inject(UntypedFormBuilder);
+    private dialogService = inject(DialogService);
+    private dotMessageService = inject(DotMessageService);
+
     readonly #store = inject(DotTemplateStore);
+    readonly #globalStore = inject(GlobalStore);
 
     vm$: Observable<VM>;
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService,
-        private dotSiteService: SiteService
-    ) {}
 
     ngOnInit() {
         this.vm$ = this.#store.vm$.pipe(
@@ -50,7 +71,18 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 }
 
                 if (!template.identifier) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: this.dotMessageService.get('templates.create.title'),
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/create`
+                    });
                     this.createTemplate();
+                } else if (template.title) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: template.title,
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/edit/${template.identifier}`
+                    });
                 }
             })
         );
@@ -146,7 +178,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private createTemplate(): void {
-        const ref: DynamicDialogRef = this.dialogService.open(DotTemplatePropsComponent, {
+        const ref = this.dialogService.open(DotTemplatePropsComponent, {
             header: this.dotMessageService.get('templates.create.title'),
             width: '40rem',
             closable: false,
@@ -212,28 +244,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private setSwitchSiteListener(): void {
-        /**
-         * When the portlet reload (from the browser reload button), the site service emits
-         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
-         * an unwanted reload.
-         *
-         * This extra work in the filter is to prevent that extra reload.
-         *
-         */
-        let currentHost = this.dotSiteService.currentSite?.hostname || null;
-        this.dotSiteService.switchSite$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((site: Site) => {
-                    if (currentHost === null) {
-                        currentHost = site?.hostname;
-
-                        return false;
-                    }
-
-                    return true;
-                })
-            )
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
                 this.#store.goToTemplateList();
             });

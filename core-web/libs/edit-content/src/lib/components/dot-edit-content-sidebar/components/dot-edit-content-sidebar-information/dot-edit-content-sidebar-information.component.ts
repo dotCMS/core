@@ -1,20 +1,14 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { ChipModule } from 'primeng/chip';
-import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
-
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
-import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
+import { DotCopyButtonComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 interface ContentSidebarInformation {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSContentlet | null;
     contentType: DotCMSContentType;
     loading: boolean;
     referencesPageCount: string;
@@ -25,42 +19,40 @@ interface ContentSidebarInformation {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-information',
-    standalone: true,
     imports: [
-        CommonModule,
         RouterLink,
         TooltipModule,
-        ChipModule,
-        SkeletonModule,
-        ContentletStatusPipe,
         DotRelativeDatePipe,
         DotMessagePipe,
-        DotNameFormatPipe
+        DotCopyButtonComponent,
+        DatePipe
     ],
     templateUrl: './dot-edit-content-sidebar-information.component.html',
-    styleUrl: './dot-edit-content-sidebar-information.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col gap-2'
+    }
 })
 export class DotEditContentSidebarInformationComponent {
-    #dotMessageService = inject(DotMessageService);
-    /**
-     * Input that contains the data of the contentlet.
-     */
-    $data = input.required<ContentSidebarInformation>({ alias: 'data' });
+    /** The sidebar data including the contentlet, content type, loading state, and references count. */
+    readonly $data = input.required<ContentSidebarInformation>({ alias: 'data' });
 
-    /**
-     * Computed that contains the url to the contentlet.
-     */
-    $jsonUrl = computed(() => `/api/content/id/${this.$data().contentlet.identifier}`);
+    /** URL to fetch the contentlet as JSON via the REST API. */
+    readonly $jsonUrl = computed(
+        () => `/api/v1/content/${this.$data().contentlet?.identifier ?? ''}`
+    );
 
-    /**
-     * Computed that returns a tooltip message when creation date doesn't exist
-     */
-    $createdTooltipMessage = computed(() => {
-        const { contentlet } = this.$data();
+    /** Initials of the last modifier, shown in the "Modified by" avatar chip. */
+    readonly $modifiedByInitials = computed(() => {
+        const name = String(this.$data().contentlet?.modUserName ?? '').trim();
+        const parts = name.split(/\s+/).filter(Boolean);
+        if (!parts.length) {
+            return '?';
+        }
 
-        return !contentlet?.creationDate
-            ? this.#dotMessageService.get('edit.content.sidebar.information.no.created.yet')
-            : null;
+        const first = parts[0].charAt(0);
+        const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
+
+        return (first + last).toUpperCase();
     });
 }

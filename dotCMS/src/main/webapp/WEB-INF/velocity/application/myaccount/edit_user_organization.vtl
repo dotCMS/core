@@ -4,6 +4,14 @@
 #end
 
 <script type='text/javascript' src='/dwr/interface/OrganizationAjax.js'></script>
+<!-- DWR Cookie Security Configuration -->
+<script type="text/javascript">
+	window.dwrCookieSecurityConfig = {
+		secure: $config.getBooleanProperty("DWRSESSIONID_SECURE", false),
+		sameSite: '$config.getStringProperty("DWRSESSIONID_SAMESITE", "")'
+	};
+</script>
+<script type='text/javascript' src='/html/js/dwr-cookie-security.js'></script>
 <script type='text/javascript' src='/dwr/engine.js'></script>
 <script type='text/javascript' src='/dwr/util.js'></script>
 

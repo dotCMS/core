@@ -1,0 +1,9 @@
+<app-header>
+  <app-navigation [items]="content()?.navigation?.children || []"></app-navigation>
+</app-header>
+
+<main class="container mx-auto my-8">
+  <router-outlet />
+</main>
+
+<app-footer [content]="content()" />

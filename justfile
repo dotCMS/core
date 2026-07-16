@@ -1,4 +1,5 @@
 set positional-arguments := true
+import? 'justfile.local'
 home_dir := env_var('HOME')
 # Introduction and Setup
 # If homebrew is not installed, run the following command:
@@ -27,6 +28,14 @@ default:
 build:
     ./mvnw -DskipTests clean install
 
+# Builds the project without tests and disables Maven build cache
+build-no-cache:
+    rm -rf ./core-web/.nx/
+    rm -rf ./core-web/.angular/
+    rm -rf ./core-web/node_modules/
+    rm -rf ./installs/node
+    ./mvnw -DskipTests clean install -Dmaven.build.cache.enabled=false
+
 # Builds the project without running tests, skip using docker or creating image
 build-no-docker:
     ./mvnw -DskipTests clean install -Ddocker.skip
@@ -45,6 +54,18 @@ build-quicker:
 # Builds the project for production, skipping tests
 build-prod:
     ./mvnw -DskipTests clean install -Pprod
+
+# Builds core-web module
+build-core-web:
+    ./mvnw clean install -pl :dotcms-core-web -am -DskipTests
+
+# Builds core-web module with Nx cache reset
+build-core-web-reset-nx:
+    ./mvnw clean install -pl :dotcms-core-web -am -DskipTests -Dnx.reset
+
+# Builds core-web module with Nx cache reset
+build-test-core-web:
+    ./mvnw clean install -pl :dotcms-core-web -am
 
 # Runs a comprehensive test suite including core integration and postman tests, suitable for final validation
 build-test-full:
@@ -78,6 +99,26 @@ dev-run-debug-suspend port="8082":
 dev-start-on-port port="8082":
     ./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port={{ port }}
 
+# Starts the backend with fixed ports (8080 HTTP, 8443 HTTPS, 8090 management) for agentic/CI use
+dev-run-fixed:
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090
+
+# Polls /dotmgt/readyz until dotCMS is ready or 20 retries (100s) expire
+dev-wait-ready:
+    curl --retry 20 --retry-delay 5 --retry-connrefused \
+        -f http://localhost:8090/dotmgt/readyz
+
+# Starts the Angular dev server on port 4200 in the background; logs to /tmp/angular-dev.log
+serve-frontend:
+    cd core-web && yarn nx serve dotcms-ui --port 4200 > /tmp/angular-dev.log 2>&1 & echo $! > /tmp/angular-dev-server.pid
+
+# Stops the Angular dev server started by serve-frontend
+stop-frontend:
+    kill $(cat /tmp/angular-dev-server.pid) && rm /tmp/angular-dev-server.pid
+
 # Stops the development Docker container
 dev-stop:
     ./mvnw -pl :dotcms-core -Pdocker-stop
@@ -92,6 +133,22 @@ dev-tomcat-run port="8087":
 
 dev-tomcat-stop:
     ./mvnw -pl :dotcms-core -Ptomcat-stop -Dcontext.name=local-tomcat
+
+# Starts dotCMS with JMX monitoring enabled for connecting from localhost
+dev-run-jmx:
+    ./mvnw -pl :dotcms-core -Pdocker-start -Djmx.enable=true
+
+# Starts dotCMS with JMX monitoring on custom ports
+dev-run-jmx-ports jmx_port="9999" rmi_port="9998":
+    ./mvnw -pl :dotcms-core -Pdocker-start -Djmx.enable=true -Djmx.port={{ jmx_port }} -Djmx.rmi.port={{ rmi_port }}
+
+# Starts dotCMS with both JMX monitoring and debug enabled
+dev-run-jmx-debug:
+    ./mvnw -pl :dotcms-core -Pdocker-start,jmx-debug -Djmx.debug.enable=true
+
+# Starts dotCMS with JMX, debug, and Glowroot profiler enabled
+dev-run-jmx-debug-glowroot:
+    ./mvnw -pl :dotcms-core -Pdocker-start,jmx-debug,glowroot -Djmx.debug.enable=true -Ddocker.glowroot.enabled=true
 
 # Testing Commands
 
@@ -110,6 +167,15 @@ test-karate collections='KarateCITests#defaults':
 test-integration:
     ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
 
+# Runs only the open-search integration tests
+test-integration-open-search:
+   ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true
+
+# Runs integration tests under an ES->OS migration phase (two separate clusters: ES + OS 3.x).
+# Usage: just test-integration-phase [PHASE] [TEST]   e.g. `just test-integration-phase 3 ContentletIndexAPIImplTest`
+test-integration-phase phase='3' test='':
+   ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.phase={{phase}} {{ if test == '' { '' } else { '-Dit.test=' + test } }}
+
 # Suspends execution for debugging integration tests
 test-integration-debug-suspend:
     ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Pdebug-suspend
@@ -124,47 +190,22 @@ build-core-only:
 
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false -Dtomcat.port=8080
+    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true -Dtomcat.port=8080 -Dmaven.build.cache.enabled=false
 
 # Stops integration test services
 test-integration-stop:
     ./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
 
 test-postman-ide:
-    ./mvnw -pl :dotcms-test-karate pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
+    ./mvnw -pl :dotcms-test-postman pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
 
 test-karate-ide:
     ./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080
 
-# Executes Java E2E tests
-test-e2e-java:
-    ./mvnw -pl :dotcms-e2e-java verify -De2e.test.skip=false
-
-# Suspends execution for debugging Java E2E tests
-test-e2e-java-debug-suspend:
-    ./mvnw -pl :dotcms-e2e-java verify -De2e.test.skip=false -Pdebug-suspend-e2e-tests
-
-# Executes Node E2E tests
-test-e2e-node:
-    ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false
-
-# The `e2e.test.specific` param can be a single test or a list of directories, please refer to: https://playwright.dev/docs/running-tests#run-specific-tests
-test-e2e-node-specific test="login.spec.ts":
-    ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false -De2e.test.specific="{{ test }}"
-
-# Starts a de debug session using Playwright's UI mode, please refer to: https://playwright.dev/docs/test-ui-mode
-# The `e2e.test.specific` param can be a single test or a list of directories, please refer to: https://playwright.dev/docs/running-tests#run-specific-tests
-test-e2e-node-debug-ui test="login.spec.ts":
-    ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false -De2e.test.debug="--ui" -De2e.test.specific="{{ test }}"
-
-# Starts a de debug session using Playwright's debug inspector, please refer to: https://playwright.dev/docs/running-tests#debug-tests-with-the-playwright-inspector
-# The `e2e.test.specific` param can be a single test or a list of directories, please refer to: https://playwright.dev/docs/running-tests#run-specific-tests
-test-e2e-node-debug test="login.spec.ts":
-    ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false -De2e.test.debug="--debug" -De2e.test.specific="{{ test }}"
-
-# Stops E2E test services
-test-e2e-stop:
-    ./mvnw -pl :dotcms-e2e-java,:dotcms-e2e-node -Pdocker-stop -De2e.test.skip=false
+# Executes Playwright E2E tests
+# Removes any leftover container from compose or a previous run so Maven can create it
+test-e2e:
+    ./mvnw -pl :dotcms-ui-e2e verify -De2e.test.skip=false -De2e.test.env=ci -Dmaven.build.cache.skipCache=true
 
 # Docker Commands
 # Runs a published dotCMS Docker image on a dynamic port

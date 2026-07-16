@@ -15,7 +15,7 @@ import java.util.List;
 
 public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTask {
 
-    public static final String SYSTEM_FOLDER_IDENTIFIER = FolderAPI.SYSTEM_FOLDER_ID;
+    public static final String SYSTEM_FOLDER_IDENTIFIER = FolderAPI.OLD_SYSTEM_FOLDER_ID;
 
     public static final String UPDATE_IDENTIFIER_NAME =
             "update identifier set asset_name = ?, parent_path = ? " +

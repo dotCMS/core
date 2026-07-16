@@ -1,7 +1,9 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
 
-import { pluck, take } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+
+import { map, shareReplay, take, tap } from 'rxjs/operators';
 
 import { formatMessage } from '@dotcms/utils';
 
@@ -21,23 +23,26 @@ const BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
     providedIn: 'root'
 })
 export class DotMessageService {
-    private messageMap: { [key: string]: string } = {};
+    private readonly http = inject(HttpClient);
+    private readonly dotLocalstorageService = inject(DotLocalstorageService);
 
-    constructor(
-        private readonly http: HttpClient,
-        private readonly dotLocalstorageService: DotLocalstorageService
-    ) {}
+    private messageMap: { [key: string]: string } = {};
 
     /**
      * Initializes the DotMessageService.
      * @param {DotMessageServiceParams} params - The parameters for initialization.
-     * @return {void}
+     * @return {Observable<void>} Emits when messages are available (HTTP or localStorage).
      */
-    init(params?: DotMessageServiceParams): void {
+    init(params?: DotMessageServiceParams): Observable<void> {
         const lang = params?.language || DEFAULT_LANG;
         const buildDate = params?.buildDate || null;
 
-        this.getAll(lang, buildDate);
+        const load$ = this.getAll(lang, buildDate);
+
+        // Backward compatibility for callers that ignore the returned observable.
+        load$.pipe(take(1)).subscribe();
+
+        return load$;
     }
 
     /**
@@ -62,24 +67,32 @@ export class DotMessageService {
      * @param {string} lang - The language code for the messages.
      * @param newBuildDate
      * @private
-     * @returns {void}
+     * @returns {Observable<void>} Emits when messages are available.
      */
-    private getAll(lang: string = DEFAULT_LANG, newBuildDate: string | null = null): void {
+    private getAll(
+        lang: string = DEFAULT_LANG,
+        newBuildDate: string | null = null
+    ): Observable<void> {
         if (this.shouldReloadMessages(lang, newBuildDate)) {
-            this.http
-                .get(this.geti18nURL(lang))
-                .pipe(take(1), pluck('entity'))
-                .subscribe((messages) => {
+            return this.http.get<{ entity: Record<string, string> }>(this.geti18nURL(lang)).pipe(
+                take(1),
+                map((x) => x?.entity),
+                tap((messages) => {
                     this.messageMap = messages as { [key: string]: string };
                     this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, this.messageMap);
                     this.dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, lang);
                     this.dotLocalstorageService.setItem(BUILDATE_LOCALSTORAGE_KEY, newBuildDate);
-                });
-        } else {
-            this.messageMap = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY) as {
-                [key: string]: string;
-            };
+                }),
+                map(() => void 0),
+                shareReplay({ bufferSize: 1, refCount: false })
+            );
         }
+
+        this.messageMap = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY) as {
+            [key: string]: string;
+        };
+
+        return of(void 0);
     }
 
     /**

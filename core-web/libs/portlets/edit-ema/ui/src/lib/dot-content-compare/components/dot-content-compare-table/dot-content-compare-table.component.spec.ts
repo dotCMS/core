@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@openng/spectator';
 import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -10,7 +10,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 
@@ -22,12 +22,14 @@ import { MockDotMessageService, mockMatchMedia } from '@dotcms/utils-testing';
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
+import { DotContentCompareBlockEditorComponent } from '../dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 
 @Component({
+    standalone: false,
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'
+        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff" />'
 })
 class TestHostComponent {
     @Input() data: DotContentCompareTableData;
@@ -285,14 +287,13 @@ describe('DotContentCompareTableComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotContentCompareTableComponent,
-                DotContentComparePreviewFieldComponent
-            ],
+            declarations: [TestHostComponent],
             imports: [
+                DotContentCompareTableComponent,
+                DotContentComparePreviewFieldComponent,
+                DotContentCompareBlockEditorComponent,
                 TableModule,
-                DropdownModule,
+                SelectModule,
                 SelectButtonModule,
                 DotDiffPipe,
                 DotMessagePipe,
@@ -336,11 +337,15 @@ describe('DotContentCompareTableComponent', () => {
                 de
                     .query(By.css('[data-testId="table-tittle"]'))
                     .nativeElement.innerHTML.replace(/^\s+|\s+$/gm, '')
-            ).toEqual(dotContentCompareTableDataMock.working.identifier);
+            ).toEqual('edit.content.sidebar.history.menu.current');
         });
         it('should show dropdown', () => {
-            const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
+        });
+        it('should show data.compare as the initially selected version in the dropdown', () => {
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
+            expect(dropdown.value).toEqual(dotContentCompareTableDataMock.compare);
         });
         it('should show selectButton', () => {
             const select: SelectButton = de.query(
@@ -352,14 +357,14 @@ describe('DotContentCompareTableComponent', () => {
             ]);
         });
         it('should show versions selectButton with transformed label', async () => {
-            const dropdown = de.query(By.css('p-dropdown'));
+            const dropdown = de.query(By.css('p-select'));
 
             dropdown.componentInstance.show();
             hostFixture.detectChanges();
 
             const versions = hostComponent.data.versions;
 
-            dropdown.queryAll(By.css('.p-dropdown-item')).forEach((item, index) => {
+            dropdown.queryAll(By.css('.p-select-option')).forEach((item, index) => {
                 const textContent = item.nativeElement.textContent;
                 const text = `${versions[index].modDate} by ${versions[index].modUserName}`;
                 expect(textContent).toContain(text);
@@ -480,7 +485,7 @@ describe('DotContentCompareTableComponent', () => {
     describe('events', () => {
         it('should emit changeVersion', () => {
             jest.spyOn(hostComponent.changeVersion, 'emit');
-            const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             dropdown.onChange.emit({ value: 'test', originalEvent: createFakeEvent('click') });
 
             expect(hostComponent.changeVersion.emit).toHaveBeenCalledWith('test');

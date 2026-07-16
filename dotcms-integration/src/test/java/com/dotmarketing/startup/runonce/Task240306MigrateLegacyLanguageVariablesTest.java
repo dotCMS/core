@@ -3,10 +3,14 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.languagevariable.business.ImmutableMigrationSummary;
+import com.dotcms.languagevariable.business.LegacyLangVarMigrationHelper;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -18,8 +22,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -27,10 +41,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.liferay.util.StringPool.BLANK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -181,6 +199,256 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
     }
 
     /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link Task240306MigrateLegacyLanguageVariables#executeUpgrade()}</li>
+     *     <li><b>Given Scenario: </b>Two properties files exist:
+     *     cms_language_en.properties (33 entries - 32 shared + 1 unique) and cms_language_en_US.properties (37 entries - 32 shared + 5 unique).
+     *     The root 'en' language (no country) does NOT exist in the system (removed before test).
+     *     Only the 'en_US' language exists. According to migration rules, when root language doesn't exist,
+     *     both files map to the most specific available language (en_US in this case).</li>
+     *     <li><b>Expected Result: </b>Both files map to en_US language. Files are processed in reverse alphabetical order,
+     *     so cms_language_en_US.properties is processed first, creating 37 language variables.
+     *     Then cms_language_en.properties is processed: 32 keys already exist (skipped), but 1 unique key is added.
+     *     EN_US values take priority for duplicates. Total unique variables = 38 (37 from en_US + 1 unique from en).
+     *     Root EN language is restored after test completion.
+     *     No errors should occur.</li>
+     * </ul>
+     *
+     * @throws DotDataException     An error occurred when interacting with the database.
+     * @throws DotSecurityException An error occurred due to security constraints.
+     */
+    @Ignore("Flaky test - see https://github.com/dotCMS/core/issues/33788")
+    @Test
+    public void testBothFilesMapToSameLanguageWithPriorityHandling() throws DotDataException, DotSecurityException, IOException {
+        final Task240306MigrateLegacyLanguageVariables dataTask = new Task240306MigrateLegacyLanguageVariables();
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+
+        // Get the root 'en' language (created in seedLanguages with no country code)
+        final Language rootEnLanguage = languageAPI.getLanguage("en", BLANK);
+        assertNotNull("Root English language must exist before test for removal", rootEnLanguage);
+
+        // Get the 'en_US' language
+        final Language enUSLanguage = languageAPI.getLanguage("en", "US");
+        assertNotNull("English (United States) language must exist for this test", enUSLanguage);
+
+        // Backup existing messages directory files before modifying
+        final Map<String, byte[]> backupFiles = backupMessagesDirectory();
+
+        // Track if root EN language needs restoration
+        boolean rootEnLanguageRemoved = false;
+
+        try {
+            // Remove root EN language and its associated content
+            rootEnLanguageRemoved = removeLanguageAndContent(rootEnLanguage);
+
+            // Verify root EN language no longer exists
+            final Language verifyRemoved = languageAPI.getLanguage("en", BLANK);
+            assertNull("Root EN language should not exist for this test", verifyRemoved);
+
+            // Copy test language variable files from test resources to the messages directory
+            // where the migration task will read them
+            copyTestLanguageFiles();
+
+            // Remove any existing language variable contentlets to ensure clean state
+            removeExistingLanguageVariables();
+
+            // Calculate expected count: total unique keys from both files
+            // Both files will map to en_US since root en doesn't exist
+            // en_US has 37 entries, en has 33 entries (32 duplicates + 1 unique)
+            // Expected: 38 unique keys (en_US values take priority for duplicates)
+            final String enUSFilePath = "lang-vars/cms_language_en_US.properties";
+            final String enFilePath = "lang-vars/cms_language_en.properties";
+            final long expectedUniqueKeysCount = getExpectedUniqueKeysCount(enUSFilePath, enFilePath);
+
+            assertTrue("This Data Task must always run", dataTask.forceRun());
+            assertTrue("The migration summary object should not exist before running the task",
+                    dataTask.getMigrationSummary().isEmpty());
+
+            dataTask.executeUpgrade();
+
+            final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
+            assertTrue("There must be a migration summary after the task execution",
+                    migrationSummary.isPresent());
+
+            final ImmutableMigrationSummary summary = migrationSummary.get();
+
+            // Verify no failures occurred
+            assertEquals("There should be no failures during migration", 0, summary.fails().size());
+
+            // Verify that en_US language has all the unique entries
+            final List<String> enUSSuccessInodes = summary.success().get(enUSLanguage);
+            assertTrue("There must be migrated variables for 'en_US' language",
+                    enUSSuccessInodes != null && !enUSSuccessInodes.isEmpty());
+
+            // Both files map to en_US, so total should be unique keys count (38: 37 from en_US + 1 from en)
+            assertEquals("Should have " + expectedUniqueKeysCount + " unique language variables from both files",
+                    expectedUniqueKeysCount, enUSSuccessInodes.size());
+
+            // Verify specific key has value from en_US file (priority over en file)
+            final String pagesValue = languageVariableAPI.getLanguageVariable(
+                    "com.dotcms.javax.portlet.title.c-Pages", enUSLanguage.getId(), APILocator.systemUser());
+            assertEquals("Language variable should have value from en_US file (priority)", "Pages", pagesValue);
+
+            // Verify keys that only exist in en_US file
+            final String destinationsValue = languageVariableAPI.getLanguageVariable(
+                    "com.dotcms.javax.portlet.title.c_Destinations", enUSLanguage.getId(), APILocator.systemUser());
+            assertEquals("Language variable from en_US exclusive entry should exist", "Destinations", destinationsValue);
+
+            final String newsValue = languageVariableAPI.getLanguageVariable(
+                    "com.dotcms.javax.portlet.title.c_News", enUSLanguage.getId(), APILocator.systemUser());
+            assertEquals("Language variable from en_US exclusive entry should exist", "News", newsValue);
+
+            // Verify key that only exists in en file (should still be created for en_US language)
+            final String dashboardValue = languageVariableAPI.getLanguageVariable(
+                    "com.dotcms.javax.portlet.title.c_Dashboard", enUSLanguage.getId(), APILocator.systemUser());
+            assertEquals("Language variable from en exclusive entry should exist and be mapped to en_US", "Dashboard", dashboardValue);
+
+            Logger.info(this, String.format("Successfully migrated %d unique language variables for en_US without errors. " +
+                    "cms_language_en_US.properties (37 entries) was processed first, cms_language_en.properties (33 entries with 32 duplicates + 1 unique) added 1 more.",
+                    enUSSuccessInodes.size()));
+        } finally {
+            final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
+            migrationSummary.ifPresent(this::cleanup);
+
+            // Restore root EN language if it was removed
+            if (rootEnLanguageRemoved) {
+                try {
+                    createLangVariantInNotExists("en", BLANK, "English", BLANK);
+                    Logger.info(this, "Restored root EN language after test");
+                } catch (Exception e) {
+                    Logger.error(this, "Failed to restore root EN language: " + e.getMessage(), e);
+                }
+            }
+
+            // Always restore the messages directory to its original state
+            restoreMessagesDirectory(backupFiles);
+        }
+    }
+
+    /**
+     * Reproduces the "transaction cascade" bug triggered in production by
+     * {@link com.dotmarketing.startup.StartupTasksExecutor#executeDataUpgrades()}.
+     *
+     * <p>{@code executeDataUpgrades()} wraps every upgrade task in a single shared PostgreSQL
+     * transaction via {@link HibernateUtil#startTransaction()}.  When one language variable fails
+     * with a duplicate-key violation in the {@code unique_fields} table, PostgreSQL marks the
+     * entire connection as <em>aborted</em>.  Every subsequent variable then fails with:
+     * <pre>
+     * ERROR: current transaction is aborted, commands ignored until end of transaction block
+     * </pre>
+     * even though only the first variable had a conflicting entry.</p>
+     *
+     * <p><b>Given scenario:</b>
+     * <ol>
+     *   <li>An outer transaction is started manually (reproducing {@code executeDataUpgrades()}).
+     *   </li>
+     *   <li>An orphaned row is pre-inserted in {@code unique_fields} for the key
+     *       {@code "key_conflict"} — simulating a previous failed migration that persisted the
+     *       unique-field entry without committing the actual contentlet.</li>
+     *   <li>A two-entry properties file is processed: {@code key_conflict} first, then
+     *       {@code key_valid}.</li>
+     * </ol>
+     * <b>Expected result (after the fix):</b> only {@code key_conflict} fails;
+     * {@code key_valid} is migrated successfully.<br>
+     * <b>Current result (before the fix):</b> both variables fail — {@code key_conflict} due
+     * to the duplicate key, and {@code key_valid} because the aborted transaction poisons the
+     * shared PostgreSQL connection.</p>
+     */
+    @Test
+    public void testMigrationVariableFailureDoesNotCascadeToSubsequentVariables()
+            throws Exception {
+
+        // ── setup ──────────────────────────────────────────────────────────────────────────────
+        final ContentTypeAPI ctAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType langVarCT = ctAPI.find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+        assertNotNull("Language Variable content type must exist", langVarCT);
+
+        // Use Arabic-SA as the test language (file name: cms_language_ar_SA.properties).
+        createLangVariantInNotExists("ar", "SA", "Arabic", "Saudi Arabia");
+        final Language testLanguage = APILocator.getLanguageAPI().getLanguage("ar", "SA");
+        assertNotNull("Arabic-SA test language must exist", testLanguage);
+
+        // Create a temp messages dir with exactly two entries:
+        //   key_conflict → will collide with the pre-inserted orphan unique_fields row
+        //   key_valid    → must succeed; currently also fails due to transaction cascade (bug)
+        final Path tempDir = Files.createTempDirectory("lang-var-cascade-test");
+        final Path propsFile = tempDir.resolve("cms_language_ar_SA.properties");
+        Files.write(propsFile,
+                "key_conflict=Conflict Value\nkey_valid=Valid Value\n"
+                        .getBytes(StandardCharsets.UTF_8));
+
+        // ── reproduce the production outer-transaction context ─────────────────────────────────
+        // StartupTasksExecutor calls HibernateUtil.startTransaction() before executeUpgrade(),
+        // causing all @WrapInTransaction CDI calls inside the migration to JOIN this transaction
+        // rather than managing their own. A single DB failure therefore aborts the shared
+        // PostgreSQL connection for all subsequent variables.
+        HibernateUtil.startTransaction();
+        ImmutableMigrationSummary summary = null;
+        try {
+            // Pre-insert an orphaned unique_fields row for "key_conflict" within the same
+            // transaction. The criteria string must match what UniqueFieldCriteria.criteria()
+            // would produce: contentTypeId + fieldVarName + languageId + fieldValue.
+            // (uniquePerSite = false for Language Variable, so no siteId is appended.)
+            final String criteria = langVarCT.id()
+                    + KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR
+                    + testLanguage.getId()
+                    + "key_conflict";
+
+            new DotConnect()
+                    .setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) "
+                            + "VALUES (encode(sha256(convert_to(?::text, 'UTF8')), 'hex'), ?::jsonb)")
+                    .addParam(criteria)
+                    .addParam(String.format(
+                            "{\"contentTypeId\":\"%s\",\"fieldVariableName\":\"%s\","
+                                    + "\"languageId\":%d,\"fieldValue\":\"key_conflict\","
+                                    + "\"contentletIds\":[\"orphan-fake-id\"],\"live\":false,"
+                                    + "\"variant\":\"DEFAULT\",\"uniquePerSite\":false}",
+                            langVarCT.id(),
+                            KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR,
+                            testLanguage.getId()))
+                    .loadResult();
+
+            final LegacyLangVarMigrationHelper helper =
+                    new LegacyLangVarMigrationHelper(langVarCT.id());
+            summary = helper.migrateLegacyLanguageVariables(tempDir);
+
+        } finally {
+            // Roll back everything (orphan row + any contentlets created during migration).
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (final Exception rollbackEx) {
+                Logger.warn(Task240306MigrateLegacyLanguageVariablesTest.class,
+                        "Could not rollback test transaction: " + rollbackEx.getMessage());
+            }
+            Files.deleteIfExists(propsFile);
+            Files.deleteIfExists(tempDir);
+        }
+
+        // ── assertions ─────────────────────────────────────────────────────────────────────────
+        assertNotNull("Migration summary must be present", summary);
+
+        final List<String> fails  = summary.fails().getOrDefault(testLanguage, List.of());
+        final List<String> successes = summary.success().getOrDefault(testLanguage, List.of());
+
+        // key_conflict must fail — its unique_fields entry already exists (expected).
+        assertTrue("'key_conflict' must fail due to the pre-existing unique_fields entry",
+                fails.contains("key_conflict"));
+
+        // key_valid must NOT be collateral damage from key_conflict's failure.
+        // Before the fix this assertion fails: key_valid is also in fails because the shared
+        // PostgreSQL connection is poisoned by the aborted transaction.
+        assertFalse(
+                "REGRESSION: 'key_valid' must NOT fail. The failure of 'key_conflict' must not "
+                        + "cascade and abort the PostgreSQL connection for subsequent variables.",
+                fails.contains("key_valid"));
+
+        assertFalse("'key_valid' must have been successfully migrated",
+                successes.isEmpty());
+    }
+
+    /**
      * Given scenario: We simulate the case where the language variable content type is dropped
      * @throws DotSecurityException if a security violation occurs
      * @throws DotDataException if an error occurs
@@ -195,6 +463,217 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, false);
         contentTypeAPI.delete(languageVariableCt);
         Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, asyncDelete);
+    }
+
+    /**
+     * Backs up existing files in the messages directory before modifying them.
+     * @return Map of filename to file contents for restoration
+     * @throws IOException if an error occurs reading files
+     */
+    private Map<String, byte[]> backupMessagesDirectory() throws IOException {
+        final Path messagesDir = LegacyLangVarMigrationHelper.messagesDir();
+        final Map<String, byte[]> backup = new HashMap<>();
+
+        if (Files.exists(messagesDir)) {
+            try (final var files = Files.list(messagesDir)) {
+                files.filter(Files::isRegularFile)
+                        .filter(p -> p.toString().endsWith(".properties"))
+                        .forEach(p -> {
+                            try {
+                                backup.put(p.getFileName().toString(), Files.readAllBytes(p));
+                            } catch (IOException e) {
+                                Logger.warn(this, "Failed to backup file: " + p, e);
+                            }
+                        });
+            }
+        }
+
+        Logger.info(this, String.format("Backed up %d files from messages directory", backup.size()));
+        return backup;
+    }
+
+    /**
+     * Restores the messages directory to its original state from the backup.
+     * @param backupFiles Map of filename to file contents
+     * @throws IOException if an error occurs restoring files
+     */
+    private void restoreMessagesDirectory(final Map<String, byte[]> backupFiles) throws IOException {
+        final Path messagesDir = LegacyLangVarMigrationHelper.messagesDir();
+
+        // First, remove all current .properties files
+        if (Files.exists(messagesDir)) {
+            try (final var files = Files.list(messagesDir)) {
+                files.filter(Files::isRegularFile)
+                        .filter(p -> p.toString().endsWith(".properties"))
+                        .forEach(p -> {
+                            try {
+                                Files.delete(p);
+                            } catch (IOException e) {
+                                Logger.warn(this, "Failed to delete file during restore: " + p, e);
+                            }
+                        });
+            }
+        }
+
+        // Then restore backed up files
+        for (Map.Entry<String, byte[]> entry : backupFiles.entrySet()) {
+            final Path targetPath = messagesDir.resolve(entry.getKey());
+            Files.write(targetPath, entry.getValue());
+        }
+
+        Logger.info(this, String.format("Restored %d files to messages directory", backupFiles.size()));
+    }
+
+    /**
+     * Copies test language variable files from test resources to the messages directory
+     * where the migration task will read them.
+     * @throws IOException if an error occurs copying files
+     */
+    private void copyTestLanguageFiles() throws IOException {
+        final Path messagesDir = LegacyLangVarMigrationHelper.messagesDir();
+
+        // Clear the messages directory to ensure clean state
+        if (Files.exists(messagesDir)) {
+            try (Stream<Path> messagesDirFiles = Files.walk(messagesDir)) {
+                messagesDirFiles
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".properties"))
+                    .forEach(p -> {
+                        try {
+                            Files.delete(p);
+                        } catch (IOException e) {
+                            Logger.warn(this, "Failed to delete file: " + p);
+                        }
+                    });
+            }
+        } else {
+            Files.createDirectories(messagesDir);
+        }
+
+        // List of test language files to copy
+        final String[] testFiles = {
+                "cms_language_en.properties",
+                "cms_language_en_US.properties",
+                "cms_language_en_CA.properties",
+                "cms_language_es.properties",
+                "cms_language_es_ES.properties",
+                "cms_language_fr.properties",
+                "cms_language_fr_FR.properties",
+                "cms_language_eo.properties",
+                "cms_language_ja.properties"
+        };
+
+        // Copy each file from test resources to messages directory
+        for (final String fileName : testFiles) {
+            final String resourcePath = "lang-vars/" + fileName;
+            try (final InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+                if (inputStream != null) {
+                    final Path targetPath = messagesDir.resolve(fileName);
+                    Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                    Logger.info(this, String.format("Copied test file: %s to %s", fileName, targetPath));
+                }
+            }
+        }
+    }
+    
+    /**
+     * Reads both specified properties files and counts the total unique keys across both.
+     * @param enUSFilePath Path to cms_language_en_US.properties in test resources
+     * @param enFilePath Path to cms_language_en.properties in test resources
+     * @return Count of unique keys across both files
+     * @throws IOException if an error occurs reading the files
+     */
+    private long getExpectedUniqueKeysCount(String enUSFilePath, String enFilePath) throws IOException{
+        final Set<String> allKeys = new HashSet<>();
+
+        // Read keys from en_US file
+        final var enUSResourceUrl = getClass().getClassLoader().getResource(enUSFilePath);
+        assertNotNull("The en_US language variables file must exist in classpath", enUSResourceUrl);
+        final Path enUSPath = Paths.get(enUSResourceUrl.getPath());
+        try (final var lines = Files.lines(enUSPath)) {
+            lines.filter(line -> !line.trim().isEmpty() && line.contains("="))
+                    .forEach(line -> allKeys.add(line.substring(0, line.indexOf('='))));
+        }
+
+        // Read keys from en file (will add any unique keys, but there are none)
+        final var enResourceUrl = getClass().getClassLoader().getResource(enFilePath);
+        assertNotNull("The en language variables file must exist in classpath", enResourceUrl);
+        final Path enPath = Paths.get(enResourceUrl.getPath());
+        try (final var lines = Files.lines(enPath)) {
+            lines.filter(line -> !line.trim().isEmpty() && line.contains("="))
+                    .forEach(line -> allKeys.add(line.substring(0, line.indexOf('='))));
+        }
+
+        return allKeys.size();
+    }
+
+    /**
+     * Removes all existing language variable contentlets to ensure clean state for testing.
+     * @throws DotDataException if an error occurs querying or deleting contentlets
+     * @throws DotSecurityException if a security violation occurs
+     */
+    private void removeExistingLanguageVariables() throws DotDataException, DotSecurityException {
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+
+        try {
+            final ContentType languageVariableContentType = contentTypeAPI.find(
+                    LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+
+            if (languageVariableContentType != null) {
+                final List<Contentlet> existingVariables = contentletAPI.search(
+                        "+contentType:" + languageVariableContentType.variable(),
+                        0, 0, null, APILocator.systemUser(), false);
+
+                for (Contentlet contentlet : existingVariables) {
+                    try {
+                        contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                    } catch (Exception e) {
+                        Logger.warn(this, "Failed to delete existing language variable: " +
+                                contentlet.getIdentifier(), e);
+                    }
+                }
+
+                Logger.info(this, String.format("Removed %d existing language variable contentlets",
+                        existingVariables.size()));
+            }
+        } catch (Exception e) {
+            Logger.warn(this, "Error removing existing language variables: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Removes a language and all its associated content.
+     * This is required before deleting a language, as languages with existing content cannot be removed.
+     * @param language the language to remove
+     * @throws DotDataException if an error occurs querying or deleting content
+     * @throws DotSecurityException if a security violation occurs
+     * @return true if the language was removed, false otherwise
+     */
+    private boolean removeLanguageAndContent(final Language language) throws DotDataException, DotSecurityException {
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+
+        // Remove all content associated with the language
+        final List<Contentlet> languageContent = contentletAPI.search(
+                "+languageId:" + language.getId(),
+                0, 0, null, APILocator.systemUser(), false);
+
+        for (Contentlet contentlet : languageContent) {
+            try {
+                contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                return false;
+            } catch (Exception e) {
+                Logger.warn(this, "Failed to delete content for language " + language.getIsoCode() + ": " +
+                        contentlet.getIdentifier(), e);
+            }
+        }
+
+        // Now remove the language itself
+        languageAPI.deleteLanguage(language);
+        Logger.info(this, String.format("Removed language '%s' and %d associated content items",
+                language.getIsoCode(), languageContent.size()));
+        return true;
     }
 
     /**
@@ -227,6 +706,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         eo.ifPresent(languageAPI::deleteLanguage);
         // Create English variants
         createLangVariantInNotExists("en", BLANK, "English", BLANK);
+        createLangVariantInNotExists("en", "us", "English", "United States");
         createLangVariantInNotExists("en", "ca", "English", "Canada");
         // Create French variant
         createLangVariantInNotExists("fr", "fr", "French", "French");

@@ -1,0 +1,18 @@
+<div class="space-y-3">
+    @for (site of siteConfigurations(); track site; let i = $index) {
+        <dot-apps-configuration-item
+            (edit)="edit.emit($event)"
+            (export)="export.emit($event)"
+            (delete)="delete.emit($event)"
+            [class.dot-apps-configuration-item__not-configured]="!site.configured"
+            [site]="site" />
+    }
+</div>
+
+@if (!hideLoadDataButton()) {
+    <button
+        (click)="loadNext()"
+        [label]="'apps.configurations.show.more' | dm"
+        class="dot-apps-configuration-list__show-more p-button-outlined"
+        pButton></button>
+}

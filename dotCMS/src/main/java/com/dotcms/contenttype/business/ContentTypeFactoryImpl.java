@@ -7,7 +7,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -17,8 +16,6 @@ import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -29,6 +26,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -37,7 +35,9 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IdentifierValidator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityUtils;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -46,22 +46,29 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.PERCENT;
+
 
 /**
  * This is the default implementation of the {@link ContentTypeFactory} interface.
@@ -74,6 +81,14 @@ import static com.liferay.util.StringPool.PERCENT;
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     private static final String LOAD_CONTENTTYPE_DETAILS_FROM_CACHE = "LOAD_CONTENTTYPE_DETAILS_FROM_CACHE";
+    private static final String INODE_COLUMN = "inode";
+
+    /**
+     * Maximum number of results to return when limit is -1 (no limit specified).
+     * This prevents unbounded queries from consuming excessive resources.
+     */
+    private static final int MAX_QUERY_LIMIT = 10000;
+
     final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
@@ -170,13 +185,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       final DotConnect dc = new DotConnect();
       String sql = UtilMethods.isSet(filter) ? ContentTypeSql.SELECT_BY_VAR_NAMES_FILTERED : ContentTypeSql.SELECT_BY_VAR_NAMES;
       sql = String.format(sql, String.join(COMMA, Collections.nCopies(varNames.size(), "?")));
-      if (UtilMethods.isSet(orderBy)) {
-          sql = UtilMethods.isSet(orderBy) ? sql + ContentTypeSql.ORDER_BY : sql;
+      if (UtilMethods.isSet(orderBy) && !orderBy.contains(SQLUtil.DOT_NOT_SORT)) { // DOT_NOT_SORT is used to indicate no order by wanted
           final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
-          sql = String.format(sql, sanitizedOrderBy);
+          if (UtilMethods.isSet(sanitizedOrderBy)) {
+              sql = sql + " ORDER BY " + sanitizedOrderBy;
+          }
       }
       dc.setSQL(sql);
-      varNames.forEach(varName -> dc.addParam(varName));
+      varNames.forEach(varName -> dc.addParam(varName != null ? varName.toLowerCase() : null));
       if (UtilMethods.isSet(filter)) {
         dc.addParam("%" + filter + "%");
         dc.addParam("%" + filter + "%");
@@ -209,7 +225,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-      return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+      try {
+          return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
@@ -236,26 +256,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     @Override
     public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset,final String siteId)
             throws DotDataException {
-        return UtilMethods.isSet(siteId)
-                ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
-                : dbSearch(search, baseType,orderBy, limit, offset, null);
+        try {
+            return UtilMethods.isSet(siteId)
+                    ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
+                    : dbSearch(search, baseType,orderBy, limit, offset, null);
+        } catch (DotSecurityException e) {
+            throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+        }
     }
 
   @Override
-  public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int limit, int offset)
-      throws DotDataException {
+  public List<ContentType> search(String search, BaseContentType baseType, String orderBy,
+      int limit, int offset) throws DotDataException {
     return search(search,baseType.getType(),orderBy,limit,offset);
-  }
-
-  @Override
-  public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
-
-    return search(search, BaseContentType.ANY, orderBy, limit, offset);
-  }
-
-  @Override
-  public List<ContentType> search(String search, String orderBy) throws DotDataException {
-    return search(search, BaseContentType.ANY, orderBy, Config.getIntProperty("PER_PAGE", 50), 0);
   }
 
   @Override
@@ -274,24 +287,50 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   @Override
+  public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
+    return search(search, BaseContentType.ANY, orderBy, limit, offset);
+  }
+
+  @Override
+  public List<ContentType> search(String search, String orderBy) throws DotDataException {
+    return search(search, BaseContentType.ANY, orderBy, Config.getIntProperty("PER_PAGE", 50), 0);
+  }
+
+  @Override
   public List<ContentType> search(final List<String> sites, final String search, final int type,
                                   final String orderBy, final int limit, final int offset) throws DotDataException {
-      return dbSearch(search, type, orderBy, limit, offset, sites);
+      try {
+          return dbSearch(search, type, orderBy, limit, offset, sites);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
   public int searchCount(String search) throws DotDataException {
-      return dbCount(search, BaseContentType.ANY.getType());
+      try {
+          return dbCount(search, BaseContentType.ANY.getType());
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
   public int searchCount(String search, int baseType) throws DotDataException {
-      return dbCount(search, baseType);
+      try {
+          return dbCount(search, baseType);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
   public int searchCount(String search, BaseContentType baseType) throws DotDataException {
-      return dbCount(search, baseType.getType());
+      try {
+          return dbCount(search, baseType.getType());
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
@@ -337,14 +376,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   private ContentType dbSelectDefaultType() throws DotDataException {
-    DotConnect dc = new DotConnect().setSQL(this.contentTypeSql.SELECT_DEFAULT_TYPE);
+    DotConnect dc = new DotConnect().setSQL(ContentTypeSql.SELECT_DEFAULT_TYPE);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).from();
   }
 
   private ContentType dbUpdateDefaultToTrue(ContentType type) throws DotDataException {
 
-    new DotConnect().setSQL(this.contentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
+    new DotConnect().setSQL(ContentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
     type = ContentTypeBuilder.builder(type).defaultType(true).build();
     return save(type);
 
@@ -353,7 +392,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbByType(int type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = this.contentTypeSql.SELECT_BY_TYPE;
+    String sql = ContentTypeSql.SELECT_BY_TYPE;
     dc.setSQL(String.format(sql, "mod_date desc")).addParam(type);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
@@ -362,7 +401,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbAll(String orderBy) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = this.contentTypeSql.SELECT_ALL;
+    String sql = ContentTypeSql.SELECT_ALL;
     orderBy = SQLUtil.sanitizeSortBy(orderBy);
     dc.setSQL(String.format(sql, orderBy));
 
@@ -372,12 +411,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private ContentType dbById(@NotNull String id) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.SELECT_BY_INODE);
+    dc.setSQL(ContentTypeSql.SELECT_BY_INODE);
     dc.addParam(id);
     List<Map<String, Object>> results;
 
     results = dc.loadObjectResults();
-    if (results.size() == 0) {
+    if (results.isEmpty()) {
       throw new NotFoundInDbException("Content Type with id:'" + id + "' not found");
     }
     return new DbContentTypeTransformer(results.get(0)).from();
@@ -391,7 +430,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String suggestedVarName = VelocityUtil.convertToVelocityVariable(tryVar, true);
     String varName = suggestedVarName;
     for (int i = 1; i < 100000; i++) {
-      dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
+      dc.setSQL(ContentTypeSql.SELECT_COUNT_VAR);
       dc.addParam(varName.toLowerCase());
       if (dc.getInt("test") == 0 && !reservedContentTypeVars.contains(varName.toLowerCase())) {
         return varName;
@@ -408,18 +447,27 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       throw new NotFoundInDbException("Content Type with var:" + var + " not found");
     }
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.SELECT_BY_VAR);
+    dc.setSQL(ContentTypeSql.SELECT_BY_VAR);
     dc.addParam(var.toLowerCase());
     List<Map<String, Object>> results;
 
     results = dc.loadObjectResults();
-    if (results.size() == 0) {
+    if (results.isEmpty()) {
       throw new NotFoundInDbException("Content Type with var:" + var + " not found");
     }
     return new DbContentTypeTransformer(results.get(0)).from();
 
   }
 
+    /**
+     * Saves the specific Content Type.
+     *
+     * @param saveType The {@link ContentType} being saved.
+     *
+     * @return The {@link ContentType} that was saved.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
   private ContentType dbSaveUpdate(final ContentType saveType) throws DotDataException {
     final ContentTypeBuilder builder = ContentTypeBuilder
             .builder(saveType)
@@ -437,11 +485,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     ContentType oldContentType = null;
     try {
       oldContentType = dbById(saveType.id());
-    } catch (NotFoundInDbException notThere) {
-      Logger.debug(getClass(), "structure inode not found in db:" + saveType.id());
+    } catch (final NotFoundInDbException notThere) {
+      Logger.debug(getClass(), String.format("Content Type ID '%s' not found in the database", saveType.id()));
     }
 
-    //The id generator needs to use the CT variable. Since we're gonna need it upfront generating the deterministic id
+    // The id generator needs to use the CT variable. Since we're gonna need it upfront generating
+    // the deterministic id
     final String variable;
     if (oldContentType == null) {
     	if (UtilMethods.isSet(saveType.variable())) {
@@ -486,10 +535,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
       if (isNew) {
           if (ContentTypeAPI.reservedStructureNames.contains(retType.name().toLowerCase()) && !retType.system()) {
-              throw new IllegalArgumentException("cannot save a structure with name:" + retType.name());
+              throw new IllegalArgumentException("cannot save a Content Type with name:" + retType.name());
           }
           if (ContentTypeAPI.reservedStructureVars.contains(retType.variable().toLowerCase()) && !retType.system()) {
-              throw new IllegalArgumentException("cannot save a structure with name:" + retType.name());
+              throw new IllegalArgumentException("cannot save a Content Type with variable name:" + retType.variable());
           }
       }
 
@@ -501,7 +550,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     final List<Field> fields = new ArrayList<>(saveType.fields());
     for (final Field requiredField : retType.requiredFields()) {
-        Optional<Field> foundField = fields
+        final Optional<Field> foundField = fields
                 .stream()
                 .filter(x -> requiredField.variable().equalsIgnoreCase(x.variable()))
                 .findFirst();
@@ -510,60 +559,24 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         }
     }
 
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-    // set up default fields
+    final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
     for (Field field : fields) {
         final List<FieldVariable> fieldVariables = field.fieldVariables();
 
         if (oldContentType == null) {
             field = FieldBuilder.builder(field).contentTypeId(retType.id()).build();
             try {
-                field = fapi.save(field, APILocator.systemUser(), false);
-            } catch (DotSecurityException e) {
-                Logger.error(this, String.format("Could not save field %s", field.id()), e);
+                field = fieldAPI.save(field, APILocator.systemUser(), false);
+            } catch (final DotSecurityException e) {
+                Logger.error(this, String.format("Could not save Field '%s' [ %s ]: " +
+                        "%s", field.name(), field.id(), getErrorMessage(e)), e);
                 throw new DotStateException(e);
             }
         }
-
-        saveFieldVariables(field, fieldVariables);
+        fieldAPI.save(fieldVariables, field);
     }
 
     return retType;
-  }
-
-  /**
-   * For each field provided variable try to create one not before resetting the whole list
-   *
-   * @param field field variables belong to
-   * @param fieldVariables original field variables
-   */
-  private void saveFieldVariables(final Field field, List<FieldVariable> fieldVariables) {
-      if (field.id() == null) {
-          Logger.warn(getClass(), String.format("Not saving field variables. Found null id at field %s", field.name()));
-          return;
-      }
-
-      final FieldAPI fieldApi = APILocator.getContentTypeFieldAPI();
-      try {
-          // delete variables
-          for(final FieldVariable fieldVariable : fieldApi.loadVariables(field)) {
-              fieldApi.delete(fieldVariable);
-          }
-
-          // add provided variables
-          for(final FieldVariable fieldVariable : fieldVariables) {
-              fieldApi.save(
-                      ImmutableFieldVariable
-                              .builder()
-                              .from(fieldVariable)
-                              .fieldId(field.id())
-                              .id(null)
-                              .build(),
-                      APILocator.systemUser());
-          }
-      } catch (final DotDataException | UniqueFieldValueDuplicatedException | DotSecurityException e) {
-          throw new DotStateException(e);
-      }
   }
 
   private boolean doesTypeWithVariableExist(String variable) throws DotDataException {
@@ -581,7 +594,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeUpdate(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.UPDATE_TYPE_INODE);
+    dc.setSQL(ContentTypeSql.UPDATE_TYPE_INODE);
     dc.addParam(type.owner());
     dc.addParam(type.id());
     dc.loadResult();
@@ -589,7 +602,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeInsert(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.INSERT_TYPE_INODE);
+    dc.setSQL(ContentTypeSql.INSERT_TYPE_INODE);
     dc.addParam(type.id());
     dc.addParam(type.iDate());
     dc.addParam(type.owner());
@@ -697,8 +710,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     // remove structure itself
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
-    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(ContentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
     return true;
   }
 
@@ -722,49 +735,94 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
  *
  * @throws DotDataException An error occurred when retrieving information from the database.
  */
+ @CloseDBIfOpened
  private List<ContentType> dbSearch(final String search, final int baseType, String orderBy,
-                                    int limit, final int offset, final List<String> siteIds) throws DotDataException {
+                                    int limit, final int offset, final List<String> siteIds) throws DotDataException, DotSecurityException {
     if (limit == 0) {
         throw new DotDataException("The 'limit' param must be greater than 0");
     }
-    limit = (limit < 0) ? 10000 : limit;
+    limit = (limit < 0) ? MAX_QUERY_LIMIT : limit;
 
     // Our legacy code passes in raw sql conditions. We need to detect
     // and handle those
     final SearchCondition searchCondition = new SearchCondition(search);
-    if (SQLUtil.sanitizeSortBy(orderBy).isEmpty()) {
-    	orderBy = ContentTypeFactory.MOD_DATE_COLUMN;
+    
+    // SECURITY: Sanitize orderBy parameter to prevent SQL injection
+    String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+    if (sanitizedOrderBy.isEmpty()) {
+    	sanitizedOrderBy = ContentTypeFactory.MOD_DATE_COLUMN;
     }
 
-    String siteIdsParam = this.formatSiteIdsToSqlQuery(siteIds);
-    siteIdsParam = UtilMethods.isSet(siteIdsParam) ? siteIdsParam : "'" + PERCENT + "'";
+    // SECURITY: Validate and prepare site parameters
+    List<String> validatedSites = validateSiteIds(siteIds);
+    
+    // SECURITY: Create DotConnect early for connection access
     final DotConnect dc = new DotConnect();
-
+    
+    // SECURITY: Build SQL with proper parameterization (no String.format injection)
+    StringBuilder sqlBuilder = new StringBuilder();
     if (LOAD_FROM_CACHE.get()) {
-        dc.setSQL(String.format(ContentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION,
-                SQLUtil.sanitizeCondition(searchCondition.condition),
-                SQLUtil.sanitizeCondition(siteIdsParam),
-                orderBy));
+        sqlBuilder.append(ContentTypeSql.SELECT_ONLY_INODE_FIELD);
     } else {
-        dc.setSQL(String.format(ContentTypeSql.SELECT_QUERY_CONDITION,
-                SQLUtil.sanitizeCondition(searchCondition.condition),
-                SQLUtil.sanitizeCondition(siteIdsParam),
-                orderBy));
+        sqlBuilder.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
     }
+    
+    sqlBuilder.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
+    
+    // SECURITY: Add safe condition if present
+    if (searchCondition.safeCondition != null) {
+        sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+    }
+    
+    // SECURITY: Add community edition filtering (hardcoded values - not user input)
+    if (searchCondition.isCommunityEdition) {
+        sqlBuilder.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
+                  .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+    }
+    
+    // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
+    if (!validatedSites.isEmpty()) {
+        // Build multiple OR conditions with proper parameterization and escaping
+        String likeConditions = validatedSites.stream()
+            .map(site -> "host LIKE ? ESCAPE '\\'")
+            .collect(Collectors.joining(" OR "));
+        sqlBuilder.append(" AND (").append(likeConditions).append(") ");
+    } else {
+        // No sites specified - match all non-NULL hosts (preserves original behavior)
+        sqlBuilder.append(" AND host IS NOT NULL ");
+    }
+    
+    sqlBuilder.append(" and structuretype >= ? and structuretype <= ? ");
+    
+    if (LOAD_FROM_CACHE.get()) {
+        sqlBuilder.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
+    }
+    
+    sqlBuilder.append(" order by ").append(sanitizedOrderBy);
+    
+    // SECURITY: Execute with proper parameter binding
+    dc.setSQL(sqlBuilder.toString());
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
-    // inode like
-    dc.addParam( searchCondition.search );
-    // lower(name) like
-    dc.addParam(searchCondition.search.toLowerCase());
-    // velocity_var_name like
-    dc.addParam( searchCondition.search );
-    // Look for types of the specified base Content Type
-    dc.addParam(baseType);
-    // If any base Content Type must be retrieved -- type 0 -- then include all base types
-    dc.addParam((baseType == 0) ? 100000 : baseType);
+    
+    // Add common search parameters using helper method
+    addCommonSearchParameters(dc, searchCondition);
+    
+    // Add site parameters for LIKE clauses (substring matching with escaping)
+    if (!validatedSites.isEmpty()) {
+        // Add escaped LIKE patterns with wildcards: %escaped_site%
+        for (String site : validatedSites) {
+            String escapedPattern = "%" + escapeLikePattern(site) + "%";
+            dc.addParam(escapedPattern);
+        }
+    }
+    // Note: No parameter needed for "host IS NOT NULL"
+    
+    // Add content type parameters
+    dc.addParam(baseType);                                     // structuretype >= ?
+    dc.addParam((baseType == 0) ? 100000 : baseType);        // structuretype <= ?
 
-    Logger.debug(this, () -> "QUERY: " + dc.getSQL());
+    Logger.debug(this, () -> "SECURE QUERY: " + dc.getSQL());
 
     if (LOAD_FROM_CACHE.get()) {
         return dc.loadObjectResults()
@@ -772,47 +830,161 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 .map(type -> Try.of(() -> find((String) type.get(INODE_COLUMN)))
                         .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
                                 String.format("Failed to retrieve Content Type with Inode '%s': %s",
-                                        type.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
+                                        type.get(INODE_COLUMN), getErrorMessage(e)), e))
                         .getOrNull())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     } else {
         return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
     }
-  }
+}
 
+    
     /**
-     * Appends the list of Site Identifiers to a SQL query that will allow to look for more than one
-     * Site.
-     *
-     * @param siteIds The list of Site Identifiers to search for.
-     *
-     * @return A SQL-ready string that can be used in a WHERE clause to lok for data in more than
-     * one Site.
+     * SECURITY: Escapes LIKE pattern special characters to prevent LIKE injection attacks.
+     * This method escapes the wildcard characters %, _, and the escape character \ itself.
+     * 
+     * @param input The input string to escape for use in LIKE patterns
+     * @return The escaped string safe for use in LIKE patterns with ESCAPE '\'
      */
-    private String formatSiteIdsToSqlQuery(final List<String> siteIds) {
-        return UtilMethods.isNotSet(siteIds) ? BLANK : siteIds.stream()
-                .map(site -> "'" + PERCENT + site + PERCENT +"'").collect(Collectors.joining(" OR host LIKE "));
+    private String escapeLikePattern(String input) {
+        if (input == null) {
+            return null;
+        }
+        // Escape backslash first to avoid double-escaping
+        return input.replace("\\", "\\\\")
+                   .replace("%", "\\%")
+                   .replace("_", "\\_");
     }
 
-  private int dbCount(String search, int baseType) throws DotDataException {
+    /**
+     * SECURITY: Site validation that filters out invalid site IDs.
+     * Used for LIKE pattern matching queries (host LIKE ? ESCAPE '\\').
+     * Behavior aligned with HostUtil.resolveSiteIds() for consistency.
+     */
+    private List<String> validateSiteIds(final List<String> siteIds) {
+        if (UtilMethods.isNotSet(siteIds)) {
+            return Collections.emptyList(); // Will match all hosts
+        }
+        
+        List<String> validSites = new ArrayList<>();
+        
+        // SECURITY: Validate site IDs for LIKE pattern matching
+        for (String siteId : siteIds) {
+            if (siteId != null && IdentifierValidator.isValid(siteId, IdentifierValidator.SITE_PROFILE)) {
+                validSites.add(siteId);
+            } else {
+                // SECURITY: Do not log user input to prevent log injection
+                Logger.warn(this, "Invalid site identifier rejected during validation");
+            }
+        }
+        
+        return validSites;
+    }
+
+    /**
+     * SECURITY: Adds common search parameters to DotConnect for both search and count queries
+     */
+    private void addCommonSearchParameters(DotConnect dc, SearchCondition searchCondition) throws DotSecurityException {
+        // Add search parameters
+        dc.addParam(searchCondition.search);                      // inode like ?
+        dc.addParam(searchCondition.search.toLowerCase());        // lower(name) like ?
+        dc.addParam(searchCondition.search);                      // velocity_var_name like ?
+        
+        // Add safe condition parameter if present
+        if (searchCondition.safeCondition != null) {
+            addSafeConditionParameter(dc, searchCondition.safeCondition);
+        }
+    }
+
+    /**
+     * SECURITY: Adds safe condition parameter with proper type conversion and validation
+     */
+    private void addSafeConditionParameter(DotConnect dc, SafeCondition safeCondition) throws DotSecurityException {
+        // Only add parameters for non-IS NULL conditions
+        if (safeCondition.value == null) {
+            return; // IS NULL/IS NOT NULL conditions don't need parameters
+        }
+        
+        if ("structuretype".equals(safeCondition.field)) {
+            addStructureTypeParameter(dc, safeCondition.value);
+        } else if (isBooleanField(safeCondition.field)) {
+            dc.addParam(Boolean.parseBoolean(safeCondition.value));
+        } else {
+            dc.addParam(safeCondition.value);
+        }
+    }
+
+    /**
+     * SECURITY: Adds structuretype parameter with integer validation and overflow protection
+     */
+    private void addStructureTypeParameter(DotConnect dc, String value) throws DotSecurityException {
+        try {
+            // SECURITY: Validate integer range to prevent overflow
+            long longValue = Long.parseLong(value);
+            if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+                Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
+                throw new DotSecurityException("Invalid structuretype value: out of range");
+            }
+            dc.addParam((int) longValue);
+        } catch (NumberFormatException e) {
+            Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(value));
+            throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
+        }
+    }
+
+    /**
+     * SECURITY: Checks if a field is a boolean type field
+     */
+    private boolean isBooleanField(String field) {
+        return "system".equals(field) || "fixed".equals(field) || "default_structure".equals(field);
+    }
+    
+    /**
+     * SECURITY: Checks if a column name could be ambiguous in multi-table queries.
+     * These columns exist in both the 'inode' and 'structure' tables used in ContentType queries.
+     */
+    private static boolean isAmbiguousColumn(String column) {
+        return "inode".equals(column) || "name".equals(column);
+    }
+
+  // SECURITY: Fully parameterized count query with proper community edition handling
+  private int dbCount(String search, int baseType) throws DotDataException, DotSecurityException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
-
-    search = LicenseManager.getInstance().isCommunity() 
-                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() +" and structuretype <> " + BaseContentType.PERSONA.getType() 
-                    : search;
-    
     
     SearchCondition searchCondition = new SearchCondition(search);
-
     DotConnect dc = new DotConnect();
-    dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
-    dc.addParam( searchCondition.search );
-    dc.addParam( searchCondition.search.toLowerCase());
-    dc.addParam( searchCondition.search );
-    dc.addParam(bottom);
-    dc.addParam(top);
+    
+    // SECURITY: Build parameterized count query like dbSearch approach
+    StringBuilder sqlBuilder = new StringBuilder();
+    sqlBuilder.append("SELECT COUNT(*) as test FROM structure, inode ");
+    sqlBuilder.append("WHERE structure.inode = inode.inode AND inode.type = 'structure' ");
+    sqlBuilder.append("AND (inode.inode LIKE ? OR LOWER(structure.name) LIKE ? OR structure.velocity_var_name LIKE ?) ");
+    
+    // SECURITY: Add safe condition if present
+    if (searchCondition.safeCondition != null) {
+        sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+    }
+    
+    // SECURITY: Add community edition filtering (hardcoded values - not user input)
+    if (searchCondition.isCommunityEdition) {
+        sqlBuilder.append(" AND structure.structuretype <> ").append(BaseContentType.FORM.getType())
+                  .append(" AND structure.structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+    }
+    
+    sqlBuilder.append(" AND structure.structuretype >= ? AND structure.structuretype <= ? ");
+    sqlBuilder.append(" AND structure.marked_for_deletion = ").append(DbConnectionFactory.getDBFalse());
+    
+    dc.setSQL(sqlBuilder.toString());
+    
+    // Add common search parameters using helper method
+    addCommonSearchParameters(dc, searchCondition);
+    
+    // Add base type range parameters
+    dc.addParam(bottom);                                           // structuretype >= ?
+    dc.addParam(top);                                              // structuretype <= ?
+    
     return dc.getInt("test");
   }
 
@@ -841,7 +1013,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     try {
       contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
 
-      while (contentlets.size() > 0) {
+      while (!contentlets.isEmpty()) {
         conAPI.destroy(contentlets, APILocator.systemUser(), false);
         contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
       }
@@ -878,39 +1050,44 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
   /**
-   * parses legacy conditions passed in as raw sql
-   *
-   * @author root
-   *
+   * SECURITY: Safe search condition processor that supports both text search and parameterized SQL conditions.
+   * Preserves legacy functionality while preventing SQL injection through safe parameterization.
    */
   static class SearchCondition {
     final String search;
     final String condition;
+    final boolean isCommunityEdition;
+    final SafeCondition safeCondition;
 
     final String appendCondition = LicenseManager.getInstance().isCommunity() 
                     ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
                     : BLANK;
-
-    SearchCondition(final String searchOrCondition) {
+    
+    SearchCondition(final String searchOrCondition) throws DotDataException {
+      this.isCommunityEdition = LicenseManager.getInstance().isCommunity();
+      
       if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
         this.condition = appendCondition;
         this.search = PERCENT;
-      } else if (this.containsComparisonOperator(searchOrCondition)) {
+        this.safeCondition = null;
+      } else if (containsComparisonOperator(searchOrCondition)) {
+        // SECURITY: Parse comparison operators safely with parameterization
         this.search = PERCENT;
         this.condition = searchOrCondition.toLowerCase().trim().startsWith("and")
-                ? searchOrCondition
+                ? searchOrCondition + appendCondition
                 : "AND " + searchOrCondition + appendCondition;
+        this.safeCondition = SafeCondition.parse(searchOrCondition);
       } else {
+        // Regular search term
         this.condition = appendCondition;
         this.search = PERCENT + searchOrCondition + PERCENT;
+        this.safeCondition = null;
       }
     }
-
+    
     /**
-    *
-    * @param searchOrCondition
-    * @return
-    */
+     * SECURITY: Check for comparison operators that indicate SQL condition usage
+     */
     private boolean containsComparisonOperator(final String searchOrCondition) {
       return searchOrCondition.contains("<")
               || searchOrCondition.contains("=")
@@ -918,12 +1095,242 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
               || searchOrCondition.toLowerCase().contains(" like ")
               || searchOrCondition.toLowerCase().contains(" is ");
     }
-
+    
     @Override
     public String toString() {
-      return "SearchCondition [search=" + search + ", condition=" + condition + "]";
+      return "SearchCondition [search=" + search + ", isCommunityEdition=" + isCommunityEdition + 
+             ", safeCondition=" + safeCondition + "]";
     }
 
+  }
+
+  /**
+   * SECURITY: Safe condition parser that converts comparison operators into parameterized SQL.
+   * Prevents SQL injection while preserving comparison functionality.
+   */
+  static class SafeCondition {
+    final String field;
+    final String operator;
+    final String value;
+    final String sqlCondition;
+    
+    private SafeCondition(String field, String operator, String value, String sqlCondition) {
+      this.field = field;
+      this.operator = operator;
+      this.value = value;
+      this.sqlCondition = sqlCondition;
+    }
+    
+    /**
+     * SECURITY: Parse user input into safe parameterized conditions using Config-based whitelist.
+     * Much simpler approach that focuses on SQL safety patterns rather than specific field hardcoding.
+     */
+    static SafeCondition parse(String condition) throws DotDataException {
+      if (!UtilMethods.isSet(condition)) {
+        return null;
+      }
+      
+      String trimmed = condition.trim();
+      if (trimmed.toLowerCase().startsWith("and ")) {
+        trimmed = trimmed.substring(4).trim();
+      }
+      
+      // SECURITY: Handle legacy integer=integer patterns for dynamic query building
+      // Equal integers (1=1, 0=0, etc.) = "always true" = no condition needed
+      // Different integers (1=0, 2=3, etc.) = "never matches" = empty results
+      Pattern integerEqualityPattern = Pattern.compile("^\\s*(\\d+)\\s*=\\s*(\\d+)\\s*$");
+      Matcher integerMatcher = integerEqualityPattern.matcher(trimmed);
+      if (integerMatcher.matches()) {
+        int left = Integer.parseInt(integerMatcher.group(1));
+        int right = Integer.parseInt(integerMatcher.group(2));
+        if (left == right) {
+          Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '" + trimmed + "' condition to 'no condition' for safety");
+          return null; // No condition needed - return all results
+        } else {
+          Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '" + trimmed + "' condition to 'never matches' for safety");
+          return new SafeCondition("1", "=", "0", "1 = 0"); // Never matches condition
+        }
+      }
+      
+      // SECURITY: Simple pattern-based validation using Config properties
+      // This approach focuses on SQL safety patterns rather than specific field whitelisting
+      
+      // Get allowed column names from Config (fallback to known safe defaults)
+      Set<String> allowedColumns = getAllowedColumns();
+      
+      // Parse the condition using safe SQL patterns
+      return parseConditionSafely(trimmed, allowedColumns);
+    }
+    
+    /**
+     * SECURITY: Gets allowed column names from the consolidated whitelist in SQLUtil
+     * Uses the same whitelist as other SQL operations for consistency
+     */
+    private static Set<String> getAllowedColumns() {
+      // SECURITY: Use consolidated whitelist from SQLUtil for consistency
+      return Arrays.stream(SQLUtil.getConditionalColumnsWhitelist().toArray(new String[0]))
+          .map(String::toLowerCase)
+          .collect(Collectors.toSet());
+    }
+    
+    /**
+     * SECURITY: Validates column name against allowed columns whitelist
+     */
+    private static void validateColumn(String column, Set<String> allowedColumns) throws DotDataException {
+      if (!allowedColumns.contains(column)) {
+        Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
+        throw new DotDataException("Column not allowed: " + column);
+      }
+    }
+    
+    /**
+     * SECURITY: Parses SQL conditions using safe patterns and validation
+     * Supports: column = 'value', column = number, column IS [NOT] NULL, column LIKE 'pattern'
+     */
+    private static SafeCondition parseConditionSafely(String condition, Set<String> allowedColumns) throws DotDataException {
+      // SECURITY: Basic SQL injection patterns to reject immediately
+      if (containsDangerousPatterns(condition)) {
+        Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Dangerous SQL pattern detected in condition: " + SecurityUtils.sanitizeForLogging(condition));
+        throw new DotDataException("Invalid condition format");  
+      }
+      
+      // Pattern 1: [table.]column = 'value' or [table.]column = number
+      // Handles both qualified (structure.system) and unqualified (system) column names
+      Pattern equalityPattern = Pattern.compile(
+          "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|!=|<>|>|<|>=|<=)\\s*(?:'([^']*)'|(\\d+))\\s*$", 
+          Pattern.CASE_INSENSITIVE
+      );
+      
+      Matcher equalityMatcher = equalityPattern.matcher(condition);
+      if (equalityMatcher.matches()) {
+        String table = equalityMatcher.group(1); // Can be null for unqualified columns
+        String column = equalityMatcher.group(2).toLowerCase();
+        String operator = equalityMatcher.group(3);
+        String stringValue = equalityMatcher.group(4);
+        String numericValue = equalityMatcher.group(5);
+        
+        validateColumn(column, allowedColumns);
+        
+        String value = stringValue != null ? stringValue : numericValue;
+        
+        // SECURITY: Reject ambiguous columns - require explicit table qualification
+        if (isAmbiguousColumn(column) && table == null) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+        }
+        
+        // Use table qualification if provided, otherwise use column directly
+        String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+        
+        String sqlCondition = qualifiedColumn + " " + operator + " ?";
+        return new SafeCondition(column, operator, value, sqlCondition);
+      }
+      
+      // Pattern 2: [table.]column IS [NOT] NULL
+      Pattern nullPattern = Pattern.compile(
+          "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+IS\\s+(NOT\\s+)?NULL\\s*$", 
+          Pattern.CASE_INSENSITIVE
+      );
+      
+      Matcher nullMatcher = nullPattern.matcher(condition);
+      if (nullMatcher.matches()) {
+        String table = nullMatcher.group(1); // Can be null for unqualified columns
+        String column = nullMatcher.group(2).toLowerCase();
+        String notPart = nullMatcher.group(3);
+        String operator = notPart != null ? "IS NOT NULL" : "IS NULL";
+        
+        validateColumn(column, allowedColumns);
+        
+        // SECURITY: Reject ambiguous columns - require explicit table qualification
+        if (isAmbiguousColumn(column) && table == null) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+        }
+        
+        // Use table qualification if provided, otherwise use column directly
+        String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+        
+        String sqlCondition = qualifiedColumn + " " + operator;
+        return new SafeCondition(column, operator, null, sqlCondition);
+      }
+      
+      // Pattern 3: [table.]column LIKE 'pattern'
+      Pattern likePattern = Pattern.compile(
+          "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+LIKE\\s+'([^']*)'\\s*$", 
+          Pattern.CASE_INSENSITIVE
+      );
+      
+      Matcher likeMatcher = likePattern.matcher(condition);
+      if (likeMatcher.matches()) {
+        String table = likeMatcher.group(1); // Can be null for unqualified columns
+        String column = likeMatcher.group(2).toLowerCase();
+        String pattern = likeMatcher.group(3);
+        
+        validateColumn(column, allowedColumns);
+        
+        // SECURITY: Reject ambiguous columns - require explicit table qualification
+        if (isAmbiguousColumn(column) && table == null) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+        }
+        
+        // Use table qualification if provided, otherwise use column directly
+        String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+        
+        String sqlCondition = qualifiedColumn + " LIKE ?";
+        return new SafeCondition(column, "LIKE", pattern, sqlCondition);
+      }
+      
+      // If no patterns match, reject the condition
+      Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Invalid condition format: " + SecurityUtils.sanitizeForLogging(condition));
+      throw new DotDataException("Invalid condition format");
+    }
+    
+    /**
+     * SECURITY: Detects obvious SQL injection attack patterns to prevent them from reaching the database
+     * Focuses on clear attack indicators rather than individual keywords that might be legitimate parameter values
+     */
+    private static boolean containsDangerousPatterns(String condition) {
+      String lower = condition.toLowerCase();
+      
+      // Check for SQL comment patterns (almost never legitimate in condition values)
+      if (lower.contains("--") || lower.contains("/*") || lower.contains("*/")) {
+        return true;
+      }
+      
+      // Check for statement terminators (should never appear in condition values)
+      if (lower.contains(";")) {
+        return true;
+      }
+      
+      // Check for obvious multi-statement injection patterns
+      if (lower.matches(".*\\b(union|select|insert|update|delete|drop|create|alter)\\s+(select|from|into|table|database)\\b.*")) {
+        return true;
+      }
+      
+      // Check for system function calls (pg_, xp_, sp_, @@)
+      if (lower.contains("pg_") || lower.contains("xp_") || lower.contains("sp_") || 
+          lower.contains("@@")) {
+        return true;
+      }
+      
+      // Check for obvious string escape attempts
+      if (lower.contains("''") || lower.matches(".*\\bchar\\s*\\(.*")) {
+        return true;
+      }
+      
+      // Check for obvious concatenation attempts
+      if (lower.matches(".*\\|\\|.*") || lower.matches(".*\\bconcat\\s*\\(.*")) {
+        return true;
+      }
+      
+      return false;
+    }
+    
+    @Override
+    public String toString() {
+      return "SafeCondition[field=" + field + ", operator=" + operator + ", value=" + value + "]";
+    }
   }
 
   static class CleanURLMap {
@@ -986,13 +1393,344 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     @Override
  public long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL(this.contentTypeSql.COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW);
+        dc.setSQL(ContentTypeSql.COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW);
         final Map results = (Map) dc.loadResults().get(0);
         return Long.valueOf(results.get("count").toString());
  }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
+                                                  final String orderBy, final int limit, final int offset,
+                                                  final String siteId, final List<String> requestedContentTypes)
+            throws DotDataException {
+
+        if (types == null || types.isEmpty()) {
+            throw new DotDataException("The 'types' parameter must not be empty");
+        }
+
+        if (limit == 0) {
+            throw new DotDataException("The 'limit' param must be greater than 0");
+        }
+
+        final int effectiveLimit = (limit < 0) ? MAX_QUERY_LIMIT : limit;
+
+        try {
+            // Parse search conditions
+            final SearchCondition searchCondition = new SearchCondition(search);
+
+            // SECURITY: Sanitize orderBy parameter to prevent SQL injection
+            String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+            if (sanitizedOrderBy.isEmpty()) {
+                sanitizedOrderBy = ContentTypeFactory.MOD_DATE_COLUMN;
+            }
+
+            // Extract direction from original orderBy for comparator (sanitizeSortBy strips direction)
+            final String orderByForComparator = extractOrderByForComparator(orderBy, sanitizedOrderBy);
+
+            // SECURITY: Validate and prepare site parameters
+            final List<String> validatedSites = UtilMethods.isSet(siteId)
+                ? validateSiteIds(List.of(siteId))
+                : Collections.emptyList();
+
+            // STEP 1: Handle ensure parameter - fetch specifically requested content types first
+            final List<ContentType> result = new ArrayList<>();
+            final Set<String> includedIds = new HashSet<>();
+            int adjustedOffset = offset;
+
+            if (requestedContentTypes != null && !requestedContentTypes.isEmpty()) {
+                Logger.debug(this, () -> String.format("Processing ensure parameter with %d requested types: %s",
+                        requestedContentTypes.size(), String.join(", ", requestedContentTypes)));
+
+                // Fetch ALL matching ensure items from offset=0, regardless of which page is
+                // being requested. Use a null filter (not `search`): ensure items are guaranteed
+                // to appear by user request, regardless of the active search filter — same
+                // contract as the single-type path in ContentTypeAPIImpl.search().
+                final List<ContentType> ensureTypes = find(requestedContentTypes, null, 0, -1, orderBy);
+
+                // Always register ALL ensure IDs for exclusion so the UNION merge filter (STEP 3)
+                // removes them from the normal paginated stream on every page.
+                // For content types `id == inode`, so adding only one is sufficient.
+                for (ContentType ct : ensureTypes) {
+                    includedIds.add(ct.id());
+                }
+
+                if (offset == 0) {
+                    // Page 1: surface ensure items in the response, capped at effectiveLimit.
+                    for (ContentType ct : ensureTypes) {
+                        if (result.size() < effectiveLimit) {
+                            result.add(ct);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    Logger.debug(this, () -> String.format("Added %d ensure types to results", result.size()));
+
+                    // Early return if ensure items already fill the page.
+                    if (result.size() >= effectiveLimit) {
+                        return result;
+                    }
+                } else {
+                    // Pages 2+: shift the UNION offset back by the number of ensure slots that
+                    // were actually consumed on page 1. When ensureTypes.size() > effectiveLimit,
+                    // page 1 returns at most effectiveLimit items (early return), so the shift
+                    // must use min(ensureTypes.size(), effectiveLimit), not ensureTypes.size().
+                    // Using the raw ensureTypes.size() would over-shift the offset and cause
+                    // duplicates between pages 2 and 3 when ensure overflows the page size.
+                    final int ensureSlotsUsedOnPage1 = Math.min(ensureTypes.size(), effectiveLimit);
+                    adjustedOffset = Math.max(0, offset - ensureSlotsUsedOnPage1);
+                }
+            }
+
+            // STEP 2: Calculate remaining limit for the UNION query
+            final int remainingLimit = effectiveLimit - result.size();
+
+            // Build UNION query for multiple types
+            final DotConnect dc = new DotConnect();
+            final StringBuilder unionQuery = new StringBuilder();
+            final List<Object> parameters = new ArrayList<>();
+
+            boolean first = true;
+            for (BaseContentType type : types) {
+                if (!first) {
+                    unionQuery.append(" UNION ALL ");
+                }
+                first = false;
+
+                // Build individual SELECT for this type
+                if (LOAD_FROM_CACHE.get()) {
+                    unionQuery.append(ContentTypeSql.SELECT_ONLY_INODE_FIELD);
+                } else {
+                    unionQuery.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
+                }
+
+                unionQuery.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
+
+                // Add parameters for this type's search
+                parameters.add(searchCondition.search);
+                parameters.add(searchCondition.search.toLowerCase());
+                parameters.add(searchCondition.search);
+
+                // SECURITY: Add safe condition if present
+                if (searchCondition.safeCondition != null) {
+                    unionQuery.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+                    if (searchCondition.safeCondition.value != null) {
+                        if ("structuretype".equals(searchCondition.safeCondition.field)) {
+                            parameters.add(Integer.parseInt(searchCondition.safeCondition.value));
+                        } else if (isBooleanField(searchCondition.safeCondition.field)) {
+                            parameters.add(Boolean.parseBoolean(searchCondition.safeCondition.value));
+                        } else {
+                            parameters.add(searchCondition.safeCondition.value);
+                        }
+                    }
+                }
+
+                // SECURITY: Add community edition filtering
+                if (searchCondition.isCommunityEdition) {
+                    unionQuery.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
+                              .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+                }
+
+                // SECURITY: Add sites filter using parameterized LIKE clauses
+                if (!validatedSites.isEmpty()) {
+                    String likeConditions = validatedSites.stream()
+                        .map(site -> "host LIKE ? ESCAPE '\\'")
+                        .collect(Collectors.joining(" OR "));
+                    unionQuery.append(" AND (").append(likeConditions).append(") ");
+                    for (String site : validatedSites) {
+                        String escapedPattern = "%" + escapeLikePattern(site) + "%";
+                        parameters.add(escapedPattern);
+                    }
+                } else {
+                    unionQuery.append(" AND host IS NOT NULL ");
+                }
+
+                // Add type filtering for this specific base type
+                final int baseType = type.getType();
+                unionQuery.append(" and structuretype >= ? and structuretype <= ? ");
+                parameters.add(baseType);
+                parameters.add((baseType == 0) ? 100000 : baseType);
+
+                // Exclude ensure items at the SQL level so setMaxRows/setStartRow apply
+                // to the non-ensure stream. Without this, an ensure item whose natural
+                // sort position falls inside the fetch window consumes a maxRows slot
+                // and then gets filtered in Java (STEP 3), leaving the page under-sized.
+                if (!includedIds.isEmpty()) {
+                    final List<String> excludeList = new ArrayList<>(includedIds);
+                    final String notInPlaceholders = excludeList.stream()
+                            .map(id -> "?")
+                            .collect(Collectors.joining(","));
+                    unionQuery.append(" AND inode.inode NOT IN (").append(notInPlaceholders).append(") ");
+                    parameters.addAll(excludeList);
+                }
+
+                if (LOAD_FROM_CACHE.get()) {
+                    unionQuery.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
+                }
+            }
+
+            // Add ORDER BY only when NOT loading from cache
+            // When loading from cache, we only select inode, so ORDER BY columns aren't available
+            // We'll sort in Java after loading from cache instead
+            if (!LOAD_FROM_CACHE.get()) {
+                unionQuery.append(" order by ").append(sanitizedOrderBy);
+            }
+
+            // Execute the UNION query
+            dc.setSQL(unionQuery.toString());
+            dc.setMaxRows(remainingLimit);
+            dc.setStartRow(adjustedOffset);
+
+            // Add all parameters in order
+            for (Object param : parameters) {
+                dc.addParam(param);
+            }
+
+            Logger.debug(this, () -> "MULTI-TYPE UNION QUERY: " + dc.getSQL());
+
+            // Transform results
+            final List<ContentType> queryResults;
+            if (LOAD_FROM_CACHE.get()) {
+                // Load from cache then sort in Java (SQL ORDER BY not available with inode-only select)
+                queryResults = dc.loadObjectResults()
+                        .stream()
+                        .map(typeMap -> Try.of(() -> find((String) typeMap.get(INODE_COLUMN)))
+                                .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
+                                        String.format("Failed to retrieve Content Type with Inode '%s': %s",
+                                                typeMap.get(INODE_COLUMN), getErrorMessage(e)), e))
+                                .getOrNull())
+                        .filter(Objects::nonNull)
+                        .sorted(createContentTypeComparator(orderByForComparator))
+                        .collect(Collectors.toList());
+            } else {
+                queryResults = new DbContentTypeTransformer(dc.loadObjectResults()).asList();
+            }
+
+            // STEP 3: Merge UNION query results with ensure types, avoiding duplicates
+            for (ContentType ct : queryResults) {
+                // Skip if already included from ensure parameter
+                if (!includedIds.contains(ct.inode()) && !includedIds.contains(ct.id())) {
+                    result.add(ct);
+                    if (result.size() >= effectiveLimit) {
+                        break;
+                    }
+                }
+            }
+
+            // STEP 4: Sort the final merged results
+            // When ensure parameter is used, we need to re-sort the combined list
+            // to maintain consistent ordering across ensure and query results
+            if (!result.isEmpty()) {
+                result.sort(createContentTypeComparator(orderByForComparator));
+            }
+
+            Logger.debug(this, () -> String.format("Final result size: %d (limit: %d)", result.size(), effectiveLimit));
+
+            return result;
+
+        } catch (Exception e) {
+            throw new DotDataException("Failed to search multiple content types: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Extracts the orderBy parameter with direction preserved for use in the comparator.
+     * Since sanitizeSortBy() strips the direction, we need to reconstruct it from the original orderBy.
+     *
+     * @param originalOrderBy The original orderBy parameter (e.g., "name asc", "mod_date desc")
+     * @param sanitizedOrderBy The sanitized orderBy (field name only, e.g., "name", "mod_date")
+     * @return The orderBy string with direction preserved (e.g., "name asc", "mod_date desc")
+     */
+    String extractOrderByForComparator(final String originalOrderBy, final String sanitizedOrderBy) {
+        if (originalOrderBy == null || originalOrderBy.trim().isEmpty()) {
+            return sanitizedOrderBy;
+        }
+
+        final String lowerOrderBy = originalOrderBy.trim().toLowerCase();
+        final boolean isDescending = lowerOrderBy.contains("desc") || lowerOrderBy.startsWith("-");
+        final boolean isAscending = lowerOrderBy.contains("asc");
+
+        if (isDescending) {
+            return sanitizedOrderBy + " desc";
+        } else if (isAscending) {
+            return sanitizedOrderBy + " asc";
+        } else {
+            // Default to ascending if no direction specified
+            return sanitizedOrderBy + " asc";
+        }
+    }
+
+    /**
+     * Creates a comparator for sorting ContentType objects based on the orderBy parameter.
+     * Uses rule-based field name normalization from ContentTypeFieldNames for consistency.
+     * Supports sorting by: name, variable, velocity_var_name, mod_date, description.
+     *
+     * @param orderBy The orderBy parameter (e.g., "name", "name desc", "modDate asc")
+     * @return A comparator for ContentType objects
+     */
+    java.util.Comparator<ContentType> createContentTypeComparator(final String orderBy) {
+        if (orderBy == null || orderBy.trim().isEmpty()) {
+            return java.util.Comparator.comparing(ct -> ct.name() != null ? ct.name().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+        }
+
+        // Parse orderBy to extract field and direction
+        final String[] parts = orderBy.trim().toLowerCase().split("\\s+");
+        final String field = com.dotcms.contenttype.util.ContentTypeFieldNames.normalize(parts[0]);
+        final boolean descending = parts.length > 1 && "desc".equals(parts[1]);
+
+        // Create base comparator based on normalized field name
+        final java.util.Comparator<ContentType> comparator = createFieldComparator(field);
+
+        // Reverse if descending
+        return descending ? comparator.reversed() : comparator;
+    }
+
+    /**
+     * Creates a comparator for a specific ContentType field.
+     * Field name should already be normalized via ContentTypeFieldNames.normalize().
+     *
+     * @param normalizedField The normalized database field name (e.g., "mod_date", "velocity_var_name")
+     * @return A comparator for the specified field
+     */
+    private java.util.Comparator<ContentType> createFieldComparator(final String normalizedField) {
+        switch (normalizedField) {
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.NAME:
+                return java.util.Comparator.comparing(
+                    ct -> ct.name() != null ? ct.name().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.VELOCITY_VAR_NAME:
+                return java.util.Comparator.comparing(
+                    ct -> ct.variable() != null ? ct.variable().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.MOD_DATE:
+                return java.util.Comparator.comparing(
+                    ContentType::modDate,
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.DESCRIPTION:
+                return java.util.Comparator.comparing(
+                    ct -> ct.description() != null ? ct.description().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            default:
+                // Default to name if unknown field
+                Logger.debug(this, () -> "Unknown field for comparator: " + normalizedField + ", defaulting to name");
+                return java.util.Comparator.comparing(
+                    ct -> ct.name() != null ? ct.name().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+        }
+    }
+
  private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
-	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
+	 dc.setSQL(ContentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
 	 dc.addParam(type.modDate());
 	 dc.addParam(type.id());
 	 dc.loadResult();

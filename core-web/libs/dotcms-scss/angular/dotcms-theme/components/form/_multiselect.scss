@@ -1,13 +1,38 @@
 @use "variables" as *;
-@import "common";
-@import "mixins";
+@use "common";
+@use "mixins";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/spacing";
 
 .p-multiselect {
     @extend #form-field-base;
-    min-width: 13rem;
+    min-width: 14rem;
     padding-right: 0;
-    min-height: $field-height-md;
-    height: auto;
+    min-height: common2.$field-height-md;
+    height: 2.5em;
+    width: 100%;
+
+    &.p-multiselect-sm {
+        @extend #form-field-sm;
+        min-height: common2.$field-height-sm;
+
+        .p-multiselect-trigger {
+            @extend #field-trigger-sm;
+        }
+
+        &.p-multiselect-chip {
+            .p-multiselect-token {
+                @extend #field-chip-sm;
+
+                .p-icon-wrapper,
+                .p-icon-wrapper svg {
+                    height: 0.75rem;
+                    width: 0.75rem;
+                }
+            }
+        }
+    }
 
     &:not(.p-multiselect-open):hover {
         @extend #form-field-hover;
@@ -21,17 +46,17 @@
     .p-multiselect-label-container {
         display: flex;
         align-items: center;
-        padding-right: $spacing-1;
+        padding-right: spacing.$spacing-1;
 
         .p-multiselect-label:not(.p-placeholder) {
-            color: $black;
-            @include truncate-text;
+            color: colors.$black;
+            @include mixins.truncate-text;
 
             &:has(> .p-multiselect-token) {
-                padding: $spacing-1 0;
+                padding: spacing.$spacing-1 0;
                 height: auto;
                 flex-wrap: wrap;
-                overflow: visible;
+                overflow: hidden;
             }
         }
     }
@@ -49,21 +74,25 @@
         @extend #form-field-disabled;
 
         .p-multiselect-label-container .p-multiselect-label {
-            color: $color-palette-gray-700;
+            color: colors.$color-palette-gray-700;
         }
 
         .p-multiselect-trigger {
             .p-multiselect-trigger-icon {
-                color: $color-palette-gray-700;
+                color: colors.$color-palette-gray-700;
             }
         }
     }
 
     &.p-multiselect-chip {
-        color: $color-palette-gray-800;
+        color: colors.$color-palette-gray-800;
 
         .p-multiselect-label {
-            gap: $spacing-0;
+            gap: spacing.$spacing-0;
+            display: block;
+            cursor: pointer;
+            overflow: hidden;
+            // max-width: 10.70em;
         }
 
         .p-multiselect-token {
@@ -74,6 +103,8 @@
 
 .p-multiselect-panel {
     @extend #field-panel;
+    min-width: 20rem;
+    padding: 0;
 
     .p-multiselect-header {
         @extend #field-panel-header;
@@ -81,19 +112,24 @@
         .p-multiselect-filter-container {
             .p-multiselect-filter {
                 @extend #field-panel-filter;
+                padding-left: spacing.$spacing-6;
+                padding-right: spacing.$spacing-1;
             }
 
             .p-multiselect-filter-icon {
                 @extend #field-panel-filter-icon;
+                left: spacing.$spacing-2;
+                right: unset;
             }
         }
 
         .p-checkbox {
-            margin-right: $spacing-1;
+            margin-right: spacing.$spacing-1;
         }
 
         .p-multiselect-close {
             @extend #field-panel-icon-close;
+            display: none;
         }
     }
 
@@ -102,6 +138,10 @@
 
         .p-multiselect-item {
             @extend #field-panel-item;
+
+            &[data-p-highlight="true"] {
+                @extend #field-panel-item-highlight;
+            }
 
             &.p-highlight {
                 @extend #field-panel-item-highlight;

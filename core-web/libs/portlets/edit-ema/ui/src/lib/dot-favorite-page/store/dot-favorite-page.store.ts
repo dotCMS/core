@@ -1,9 +1,9 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
-import { Observable, throwError, of } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, switchMap, take } from 'rxjs/operators';
 
@@ -48,6 +48,12 @@ export const CMS_OWNER_ROLE_LIST = ['CMS OWNER'];
 
 @Injectable()
 export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
+    private dotPageRenderService = inject(DotPageRenderService);
+    private dotMessageService = inject(DotMessageService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotTempFileUploadService = inject(DotTempFileUploadService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+
     readonly vm$ = this.state$;
 
     // SELECTORS
@@ -82,24 +88,21 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
 
                 return observableResponse.pipe(
                     take(1),
-                    tapResponse(
-                        () => {
+                    tapResponse({
+                        next: () => {
                             this.patchState({
                                 closeDialog: true,
                                 loading: false,
                                 actionState: DotFavoritePageActionState.SAVED
                             });
                         },
-                        (error: HttpErrorResponse) => {
+                        error: (error: HttpErrorResponse) => {
                             this.dotHttpErrorManagerService.handle(error);
-
                             this.patchState({
                                 loading: false
                             });
-
-                            return of(null);
                         }
-                    )
+                    })
                 );
             })
         );
@@ -115,24 +118,21 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                 });
             }),
             take(1),
-            tapResponse(
-                () => {
+            tapResponse({
+                next: () => {
                     this.patchState({
                         closeDialog: true,
                         loading: false,
                         actionState: DotFavoritePageActionState.DELETED
                     });
                 },
-                (error: HttpErrorResponse) => {
+                error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
-
                     this.patchState({
                         loading: false
                     });
-
-                    return of(null);
                 }
-            )
+            })
         );
     });
 
@@ -143,7 +143,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             return this.dotTempFileUploadService.upload(file).pipe(
                 switchMap(([{ id, image }]: DotCMSTempFile[]) => {
                     if (!image) {
-                        return throwError(
+                        return throwError(() =>
                             this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
                         );
                     }
@@ -194,13 +194,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
         });
     }
 
-    constructor(
-        private dotPageRenderService: DotPageRenderService,
-        private dotMessageService: DotMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotTempFileUploadService: DotTempFileUploadService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService
-    ) {
+    constructor() {
         super(null);
     }
 

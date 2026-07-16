@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { catchError, map, take } from 'rxjs/operators';
@@ -25,13 +25,11 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
-    constructor(
-        private contentTypesInfoService: DotContentTypesInfoService,
-        private crudService: DotCrudService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotRouterService: DotRouterService,
-        private loginService: LoginService
-    ) {}
+    private contentTypesInfoService = inject(DotContentTypesInfoService);
+    private crudService = inject(DotCrudService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotRouterService = inject(DotRouterService);
+    private loginService = inject(LoginService);
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotCMSContentType> {
         if (route.paramMap.get('id')) {

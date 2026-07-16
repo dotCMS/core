@@ -5,17 +5,23 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsTabComponent } from '.';
 
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+import { DotMaxlengthDirective } from '../../../../../../view/directives/dot-maxlength/dot-maxlength.directive';
+
 const tabField: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'tab',
+    clazz: DotCMSClazzes.TAB_DIVIDER,
     name: 'fieldTab-1'
 };
 const mockFieldTab: DotCMSContentTypeLayoutRow = {
@@ -24,7 +30,8 @@ const mockFieldTab: DotCMSContentTypeLayoutRow = {
 
 @Component({
     selector: 'dot-test-host',
-    template: '<dot-content-type-fields-tab [fieldTab]="data"></dot-content-type-fields-tab>'
+    template: '<dot-content-type-fields-tab [fieldTab]="data"></dot-content-type-fields-tab>',
+    standalone: false
 })
 class DotTestHostComponent {
     data: DotCMSContentTypeLayoutRow;
@@ -53,7 +60,7 @@ describe('ContentTypeFieldsTabComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
-            imports: [TooltipModule, ButtonModule, DotMessagePipe],
+            imports: [TooltipModule, ButtonModule, DotMessagePipe, DotMaxlengthDirective],
             providers: [
                 DotAlertConfirmService,
                 {
@@ -65,16 +72,13 @@ describe('ContentTypeFieldsTabComponent', () => {
 
         hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
         hostComp = hostFixture.componentInstance;
+        hostComp.data = mockFieldTab;
         hostDe = hostFixture.debugElement;
+        hostFixture.detectChanges();
         de = hostDe.query(By.css('dot-content-type-fields-tab'));
         comp = de.componentInstance;
         dotDialogService = de.injector.get(DotAlertConfirmService);
     }));
-
-    beforeEach(() => {
-        hostComp.setData(mockFieldTab);
-        hostFixture.detectChanges();
-    });
 
     it('should render component', () => {
         const deleteBtn = de.query(By.css('p-button')).componentInstance;
@@ -85,10 +89,10 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit change evt with onBlur & keyUp.enter', () => {
-        spyOn(comp.editTab, 'emit');
-        const preventDefaultSpy = jasmine.createSpy('spy');
-        const stopPropagationSpy = jasmine.createSpy('spy');
-        const labelInput = de.query(By.css('.tab__label'));
+        jest.spyOn(comp.editTab, 'emit');
+        const preventDefaultSpy = jest.fn();
+        const stopPropagationSpy = jest.fn();
+        const labelInput = de.query(By.css('div[contenteditable]'));
 
         labelInput.triggerEventHandler('keydown.enter', {
             preventDefault: preventDefaultSpy,
@@ -121,12 +125,13 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit delete evt', () => {
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        spyOn(comp.removeTab, 'emit');
+        jest.spyOn(comp.removeTab, 'emit');
         const deleteButton = de.query(By.css('p-button')).nativeElement;
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);
+        expect(comp.removeTab.emit).toHaveBeenCalledTimes(1);
     });
 });

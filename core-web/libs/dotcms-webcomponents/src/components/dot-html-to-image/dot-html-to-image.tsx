@@ -88,6 +88,13 @@ export class DotHtmlToImage {
                 this.boundOnMessageHandler = this.onMessageHandler.bind(null, iframe, this);
                 window.addEventListener('message', this.boundOnMessageHandler);
             };
+
+            scriptLib.onerror = () => {
+                this.pageThumbnail.emit({
+                    file: null,
+                    error: 'Failed to load html2canvas script. Check that /html/js/html2canvas/html2canvas.min.js is served correctly (no 401/481, correct MIME type).'
+                });
+            };
         } catch (error) {
             this.pageThumbnail.emit({ file: null, error });
         }

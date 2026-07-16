@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -19,7 +18,6 @@ import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -31,21 +29,11 @@ import {
     DotSiteBrowserService,
     DotGlobalMessageService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     ActivatedRouteMock,
-    CoreWebServiceMock,
     DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
@@ -57,7 +45,8 @@ import { DOT_CONTENT_MAP, DotFieldsService } from './services/dot-fields.service
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
-    styleUrls: []
+    styleUrls: [],
+    standalone: false
 })
 export class DotFormDialogMockComponent {
     @Output() save = new EventEmitter();
@@ -192,29 +181,29 @@ describe('DotAddVariableComponent', () => {
     let de: DebugElement;
     let dialogConfig: DynamicDialogConfig;
     let dialogRef: DynamicDialogRef;
-    let coreWebService: CoreWebService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotAddVariableComponent, DotFormDialogMockComponent],
+            declarations: [DotFormDialogMockComponent],
             imports: [
+                DotAddVariableComponent,
                 ButtonModule,
                 DataViewModule,
-                HttpClientTestingModule,
                 SharedModule,
                 DotMessagePipe
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotFieldsService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -222,17 +211,14 @@ describe('DotAddVariableComponent', () => {
                     useValue: {
                         data: {
                             contentTypeVariable: 'contentType',
-                            onSave: jasmine.createSpy()
+                            onSave: jest.fn()
                         }
                     }
                 },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 StringUtils,
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 {
                     provide: DotMessageDisplayService,
@@ -240,7 +226,12 @@ describe('DotAddVariableComponent', () => {
                 },
                 DialogService,
                 DotSiteBrowserService,
-                DotContentTypeService,
+                {
+                    provide: DotContentTypeService,
+                    useValue: {
+                        getContentType: jest.fn().mockReturnValue(of(mockContentTypes))
+                    }
+                },
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotGlobalMessageService,
@@ -259,16 +250,10 @@ describe('DotAddVariableComponent', () => {
         fixture = TestBed.createComponent(DotAddVariableComponent);
         de = fixture.debugElement;
         dialogConfig = TestBed.inject(DynamicDialogConfig);
-        coreWebService = TestBed.inject(CoreWebService);
     });
 
     describe('dot-add-variable-dialog', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
-                of({
-                    entity: mockContentTypes
-                })
-            );
             fixture.detectChanges();
             tick();
             fixture.detectChanges();

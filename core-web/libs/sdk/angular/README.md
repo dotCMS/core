@@ -1,229 +1,870 @@
-# @dotcms/angular
+# dotCMS Angular SDK
 
-`@dotcms/angular` is the official Angular library designed to work seamlessly with dotCMS. This library simplifies the process of rendering dotCMS pages and integrating with the [Universal Visual Editor](https://www.dotcms.com/docs/latest/universal-visual-editor) in your Angular applications.
+The `@dotcms/angular` SDK is the official dotCMS Angular library. It empowers Angular developers to build powerful, editable websites and applications in no time.
 
 ## Table of Contents
 
-- [Features](#features)
-- [Installation](#installation)
-- [Configuration](#provider-setup)
-  - [Provider Setup](#provider-setup)
-  - [Client Usage](#client-usage)
-- [Components](#components)
-  - [DotcmsLayoutComponent](#dotcmslayoutcomponent)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [Licensing](#licensing)
+-   [Prerequisites & Setup](#prerequisites--setup)
+    -   [Get a dotCMS Environment](#get-a-dotcms-environment)
+    -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
+    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
+    -   [Installation](#installation)
+-   [Configuration](#configuration)
+    -   [Basic Configuration](#basic-configuration)
+    -   [Custom HTTP Client Configuration](#custom-http-client-configuration)
+    -   [Using the Client](#using-the-client)
+    -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
+    -   [Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
+-   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
+    -   [Example Project](#example-project-)
+-   [SDK Reference](#sdk-reference)
+    -   [DotCMSLayoutBody](#dotcmslayoutbody)
+    -   [DotCMSEditableText](#dotcmseditabletext)
+    -   [DotCMSBlockEditorRendererNative](#dotcmsblockeditorrenderernative)
+    -   [DotCMSShowWhen](#dotcmsshowwhen)
+    -   [DotCMSEditablePageService](#dotcmseditablepageservice)
+-   [Troubleshooting](#troubleshooting)
+    -   [Common Issues & Solutions](#common-issues--solutions)
+    -   [Debugging Tips](#debugging-tips)
+    -   [Still Having Issues?](#still-having-issues)
+-   [Support](#support)
+-   [Contributing](#contributing)
+-   [Changelog](#changelog)
+    -   [v1.1.1](#111)
+-   [Licensing](#licensing)
 
-## Features
+## Prerequisites & Setup
 
-- A set of Angular components developed for dotCMS page rendering and editor integration.
-- Enhanced development workflow with full TypeScript support.
-- Optimized performance for efficient rendering of dotCMS pages in Angular applications.
-- Flexible customization options to adapt to various project requirements.
+### Get a dotCMS Environment
 
-## Installation
+#### Version Compatibility
 
-Install the package using npm:
+-   **Recommended**: dotCMS Evergreen
+-   **Minimum**: dotCMS v25.05
+-   **Best Experience**: Latest Evergreen release
+
+#### Environment Setup
+
+**For Production Use:**
+
+-   ☁️ [Cloud hosting options](https://www.dotcms.com/pricing) - managed solutions with SLA
+-   🛠️ [Self-hosted options](https://dev.dotcms.com/docs/current-releases) - deploy on your infrastructure
+
+**For Testing & Development:**
+
+-   🧑🏻‍💻 [dotCMS demo site](https://demo.dotcms.com/dotAdmin/#/public/login) - perfect for trying out the SDK
+-   📘 [Learn how to use the demo site](https://dev.dotcms.com/docs/demo-site)
+-   📝 Read-only access, ideal for building proof-of-concepts
+
+**For Local Development:**
+
+-   🐳 [Docker setup guide](https://github.com/dotCMS/core/tree/main/docker/docker-compose-examples/single-node-demo-site)
+-   💻 [Local installation guide](https://dev.dotcms.com/docs/quick-start-guide)
+
+### Configure The Universal Visual Editor App
+
+For a step-by-step guide on setting up the Universal Visual Editor, check out our [easy-to-follow instructions](https://dev.dotcms.com/docs/uve-headless-config) and get started in no time!
+
+### Create a dotCMS API Key
+
+> [!TIP]
+> Make sure your API Token has read-only permissions for Pages, Folders, Assets, and Content. Using a key with minimal permissions follows security best practices.
+
+This integration requires an API Key with read-only permissions for security best practices:
+
+1. Go to the **dotCMS admin panel**.
+2. Click on **System** > **Users**.
+3. Select the user you want to create the API Key for.
+4. Go to **API Access Key** and generate a new key.
+
+For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
+
+### Installation
 
 ```bash
-npm install @dotcms/angular
+npm install @dotcms/angular@latest
 ```
 
-Or using Yarn:
-
-```bash
-yarn add @dotcms/angular
-```
+This will automatically install the required dependencies:
+- `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
+- `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
 
 ## Configuration
-### Provider Setup
-We need to provide the information of our dotCMS instance
 
-```javascript
+### Basic Configuration
 
-import { ClientConfig } from '@dotcms/client';
+The recommended way to configure the DotCMS client in your Angular application is to use the `provideDotCMSClient` function in your `app.config.ts`:
 
-const DOTCMS_CLIENT_CONFIG: ClientConfig = {
-    dotcmsUrl: environment.dotcmsUrl,
-    authToken: environment.authToken,
-    siteId: environment.siteId
-};
-```
-
-Add this configuration to `ApplicationConfig` in your Angular app.
-
-`src/app/app.config.ts`
-```typescript
-import { InjectionToken } from '@angular/core';
-import { ClientConfig, DotCmsClient } from '@dotcms/client';
-
-export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { provideDotCMSClient } from '@dotcms/angular';
+import { environment } from './environments/environment'; // Assuming your environment variables are here
 
 export const appConfig: ApplicationConfig = {
-    providers: [
-        provideRouter(routes),
-        {
-            provide: DOTCMS_CLIENT_TOKEN,
-            useValue: DotCmsClient.init(DOTCMS_CLIENT_CONFIG),
-        }
-    ],
+  providers: [
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId,
+      // Optional: Custom HTTP client
+      httpClient: (http) => new AngularHttpClient(http)
+    })
+  ]
 };
 ```
 
-This way, we will have access to `DOTCMS_CLIENT_TOKEN` from anywhere in our application.
+### Custom HTTP Client Configuration
 
-### Client Usage
-To interact with the client and obtain information from, for example, our pages
+For advanced use cases, you can provide a custom HTTP client implementation that leverages Angular's `HttpClient`:
 
-```typescript
-export class YourComponent {
-    private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+```ts
+import { HttpClient } from '@angular/common/http';
+import { BaseHttpClient, DotRequestOptions } from '@dotcms/types';
 
-    this.client.page
-        .get({ ...pageParams })
-        .then((response) => {
-            // Use your response
-        })
-        .catch((e) => {
-            const error: PageError = {
-                message: e.message,
-                status: e.status,
-            };
-            // Use the error response
-        })
+// Custom HTTP client using Angular's HttpClient
+class AngularHttpClient extends BaseHttpClient {
+  constructor(private http: HttpClient) {
+    super();
+  }
+
+  async request<T>(url: string, options?: DotRequestOptions): Promise<T> {
+    return this.http.get<T>(url).toPromise();
+  }
+}
+
+// Configure with custom HTTP client
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(), // Ensure Angular's HttpClient is available
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId,
+      httpClient: (http: HttpClient) => new AngularHttpClient(http)
+    })
+  ]
+};
+```
+
+### Using the Client
+
+Then, you can inject the `DotCMSClient` into your components or services:
+
+```ts
+import { Component, inject } from '@angular/core';
+import { DotCMSClient } from '@dotcms/angular';
+
+@Component({
+  selector: 'app-my-component',
+  template: `<!-- Your component template -->`
+})
+export class MyComponent {
+  dotcmsClient = inject(DotCMSClient);
+
+  ngOnInit() {
+    this.dotcmsClient.page
+        .get('/about-us')
+        .then(({ pageAsset }) => {
+            console.log(pageAsset);
+        });
+  }
 }
 ```
 
-For more information on how to use the dotCMS Client, you can visit the [documentation](https://www.github.com/dotCMS/core/blob/main/core-web/libs/sdk/client/README.md)
+### Proxy Configuration for Static Assets
 
-## DotCMS Page API
+Configure a proxy to leverage the powerful dotCMS image API, allowing you to resize and serve optimized images efficiently. This enhances application performance and improves user experience, making it a strategic enhancement for your project.
 
-The `DotcmsLayoutComponent` requires a `DotCMSPageAsset` object to be passed in to it. This object represents a dotCMS page and can be fetched using the `@dotcms/client` library.
+#### 1. Create a Proxy Configuration
 
-- [DotCMS Official Angular Example](https://www.github.com/dotCMS/core/tree/main/examples/angular)
-- [`@dotcms/client` documentation](https://www.npmjs.com/package/@dotcms/client)
-- [Page API documentation](https://www.dotcms.com/docs/latest/page-api)
+Create a `proxy.conf.json` file in your project:
 
-## Components
+```json
+// proxy.conf.json
+{
+    "/dA": {
+        "target": "http://localhost:8080", // Your dotCMS instance URL
+        "secure": false, // Set to true if using HTTPS
+        "changeOrigin": true // Required for hosting scenarios
+    }
+}
+```
 
-### DotcmsLayoutComponent
+#### 2. Update Angular Configuration
 
-The `DotcmsLayoutComponent` is a crucial component for rendering dotCMS page layouts in your Angular application.
+Add the proxy configuration to your `angular.json`:
 
-#### Inputs
+```json
+// angular.json
+{
+    "projects": {
+        "my-app": {
+            "architect": {
+                "serve": {
+                    "builder": "@angular/build:dev-server",
+                    "options": {
+                        "proxyConfig": "src/proxy.conf.json"
+                    }
+                }
+            }
+        }
+    }
+}
+```
 
-| Name         | Type                 | Description                                                           |
-|--------------|----------------------|-----------------------------------------------------------------------|
-| `pageAsset`  | `DotCMSPageAsset`    | The object representing a dotCMS page from PageAPI response.          |
-| `components` | `DotCMSPageComponent`| An object mapping contentlets to their respective render components.  |
-| `editor`     | `EditorConfig`       | Configuration for data fetching in Edit Mode.                         |
+#### 3. Usage in Components
 
-#### Usage Example
+Once configured, image URLs in your components will automatically be proxied to your dotCMS instance:
 
-In your component file (e.g., `pages.component.ts`):
+>📚 Learn more about [Image Resizing and Processing in dotCMS with Angular](https://www.dotcms.com/blog/image-resizing-and-processing-in-dotcms-with-angular-and-nextjs).
 
 ```typescript
-import { Component, signal } from '@angular/core';
-import { DotCMSPageComponent, EditorConfig } from '@dotcms/angular';
+// /components/my-dotcms-image.component.ts
+@Component({
+    template: `
+        <img [src]="'/dA/' + contentlet.inode" alt="Asset from dotCMS" />
+    `
+})
+class MyDotCMSImageComponent {
+    @Input() contentlet: DotCMSBasicContentlet;
+}
+```
+
+### Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)
+
+To optimize images served from dotCMS in your Angular app, we recommend using the built-in `NgOptimizedImage` directive. This integration supports automatic image preloading, lazy loading, and improved performance.
+
+We provide a helper function `provideDotCMSImageLoader()` to configure image loading with your dotCMS instance.
+
+#### Setup
+
+Add the image loader to your `app.config.ts`:
+
+```ts
+// src/app/app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
+import { environment } from './environments/environment';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId
+    }),
+    provideDotCMSImageLoader(environment.dotcmsUrl)
+  ]
+};
+```
+
+#### Usage
+
+Once configured, you can use the `NgOptimizedImage` directive to render dotCMS images:
+
+```ts
+// src/components/my-dotcms-image.component.ts
+@Component({
+  selector: 'my-dotcms-image',
+  template: `
+    <img [ngSrc]="imagePath" alt="Asset from dotCMS" width="400" height="300" />
+  `,
+  standalone: true
+})
+export class MyDotCMSImageComponent {
+  @Input() contentlet!: DotCMSBasicContentlet;
+
+  get imagePath() {
+    return this.contentlet.image.versionPath;
+  }
+}
+```
+
+#### Custom Quality Control
+
+You can control the image quality using the `loaderParams` attribute. This is particularly useful for optimizing performance or achieving specific visual requirements:
+
+```ts
+// src/components/optimized-image.component.ts
+@Component({
+  selector: 'optimized-image',
+  template: `
+    <!-- High quality for hero images -->
+    <img
+      [ngSrc]="heroImagePath"
+      alt="Hero image"
+      width="1200"
+      height="600"
+      [loaderParams]="{ quality: 85 }" />
+
+    <!-- Lower quality for thumbnails -->
+    <img
+      [ngSrc]="thumbnailPath"
+      alt="Thumbnail"
+      width="200"
+      height="150"
+      [loaderParams]="{ quality: 30 }" />
+
+    <!-- Custom language and quality -->
+    <img
+      [ngSrc]="imagePath"
+      alt="Localized image"
+      width="400"
+      height="300"
+      [loaderParams]="{ quality: 60, languageId: '2' }" />
+  `,
+  standalone: true
+})
+export class OptimizedImageComponent {
+  @Input() heroImagePath!: string;
+  @Input() thumbnailPath!: string;
+  @Input() imagePath!: string;
+}
+```
+
+**Quality Parameter Details:**
+- **Range**: 1-100 (where 100 is highest quality)
+- **Default**: 50 (balanced performance and quality)
+- **Usage**: Pass via `loaderParams` object: `{ quality: 75 }`
+- **Performance**: Lower values = smaller file sizes = faster loading
+
+The image loader automatically handles:
+- **Automatic resizing** based on the `width` and `height` attributes
+- **Quality optimization** with a default quality of 50 for better performance
+- **Language-specific images** using the current language context
+- **Responsive images** that adapt to different screen sizes
+- **Custom quality control** via the `loaderParams` attribute
+
+> 📚 Learn more about [`NgOptimizedImage`](https://angular.dev/guide/image-optimization)
+
+## Quickstart: Render a Page with dotCMS
+
+The following example demonstrates how to quickly set up a basic dotCMS page renderer in your Angular application. This example shows how to:
+
+-   Create a standalone component that renders a dotCMS page
+-   Set up dynamic component loading for different content types
+-   Handle both regular page viewing and editor mode
+-   Subscribe to real-time page updates when in the Universal Visual Editor
+
+```typescript
+// /src/app/pages/dotcms-page.component.ts
+import { Component, inject, OnInit, signal } from '@angular/core';
+
+import {
+    DotCMSClient,
+    DotCMSEditablePageService,
+    DotCMSLayoutBodyComponent
+} from '@dotcms/angular';
+import { getUVEState } from '@dotcms/uve';
+import { DotCMSPageAsset, DotCMSPageResponse } from '@dotcms/types';
+
+const DYNAMIC_COMPONENTS = {
+    Blog: import('./blog.component').then(c => c.BlogComponent),
+    Product: import('./product.component').then(c => c.ProductComponent)
+};
 
 @Component({
     selector: 'app-pages',
-    templateUrl: './pages.component.html',
+    standalone: true,
+    imports: [DotCMSLayoutBodyComponent],
+    providers: [DotCMSEditablePageService],
+    template: `
+        @if (pageAsset()) {
+            <dotcms-layout-body
+                [page]="pageAsset()!"
+                [components]="components()"
+            />
+        } @else {
+            <div>Loading...</div>
+        }
+    `
 })
-export class PagesComponent {
-    DYNAMIC_COMPONENTS: DotCMSPageComponent = {
-        Activity: import('../pages/content-types/activity/activity.component').then(
-            (c) => c.ActivityComponent
-        ),
-        Banner: import('../pages/content-types/banner/banner.component').then(
-            (c) => c.BannerComponent
-        ),
-        // Add other components as needed
-    };
+export class PagesComponent implements OnInit {
+    private readonly dotCMSClient = inject(DotCMSClient);
+    private readonly editablePageService = inject(DotCMSEditablePageService);
+    readonly components = signal(DYNAMIC_COMPONENTS);
+    readonly pageAsset = signal<DotCMSPageAsset | null>(null);
 
-    components = signal(this.DYNAMIC_COMPONENTS);
-    editorConfig = signal<EditorConfig>({ params: { depth: 2 } });
+    ngOnInit() {
+        this.dotCMSClient.page
+            .get('/my-page')
+            .then((pageResponse) => {
+                if (getUVEState()) {
+                    this.#subscribeToPageUpdates(pageResponse);
+                    return;
+                }
 
-    // Assume pageAsset is fetched or provided somehow
-    pageAsset: DotCMSPageAsset;
+                this.pageAsset.set(pageResponse.pageAsset);
+            });
+    }
+
+    #subscribeToPageUpdates(pageResponse: DotCMSPageResponse) {
+        this.editablePageService
+            .listen(pageResponse)
+            .subscribe(({ pageAsset }) => this.pageAsset.set(pageAsset));
+    }
 }
 ```
 
-In your template file (e.g., `pages.component.html`):
+### Example Project 🚀
 
-```html
-<dotcms-layout
-    [pageAsset]="pageAsset"
-    [components]="components()"
-    [editor]="editorConfig()"
-/>
+Looking to get started quickly? We've got you covered! Our [Angular starter project](https://github.com/dotCMS/core/tree/main/examples/angular) is the perfect launchpad for your dotCMS + Angular journey. This production-ready template demonstrates everything you need:
+
+📦 Fetch and render dotCMS pages with best practices
+🧩 Register and manage components for different content types
+🔍 Listing pages with search functionality
+📝 Detail pages for blogs
+📈 Image and assets optimization for better performance
+✨ Enable seamless editing via the Universal Visual Editor (UVE)
+⚡️ Leverage Angular's dependency injection and signals for optimal performance
+
+> [!TIP]
+> This starter project is more than just an example, it follows all our best practices. We highly recommend using it as the base for your next dotCMS + Angular project!
+
+## SDK Reference
+
+All components, directives, and services should be imported from `@dotcms/angular`.
+
+### DotCMSLayoutBody
+
+`DotCMSLayoutBody` is a component used to render the layout for a DotCMS page, supporting both production and development modes.
+
+| Input        | Type                     | Required | Default        | Description                                    |
+|--------------|--------------------------|----------|----------------|------------------------------------------------|
+| `page`       | `DotCMSPageAsset`       | ✅       | -              | The page asset containing the layout to render |
+| `components` | `DotCMSPageComponent`    | ✅       | `{}`           | [Map of content type → Angular component](#component-mapping)        |
+| `mode`       | `DotCMSPageRendererMode` | ❌       | `'production'` | [Rendering mode ('production' or 'development')](#layout-body-modes) |
+
+#### Usage
+
+```typescript
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSClient, DotCMSLayoutBodyComponent } from '@dotcms/angular';
+
+@Component({
+    imports: [DotCMSLayoutBodyComponent],
+    template: `
+        <dotcms-layout-body [page]="pageAsset()!" [components]="components()" mode="development" />
+    `
+})
+export class MyPageComponent implements OnInit {
+    protected readonly components = signal({
+        Blog: import('./blog.component').then((c) => c.BlogComponent)
+    });
+    protected readonly pageAsset = signal<DotCMSPageAsset | null>(null);
+    private readonly dotCMSClient = inject(DotCMSClient);
+
+    ngOnInit() {
+        this.dotCMSClient.page.get('/my-page').then(({ pageAsset }) => {
+            this.pageAsset.set(pageAsset);
+        });
+    }
+}
 ```
 
-This setup allows for dynamic rendering of different content types on your dotCMS pages.
+#### Layout Body Modes
 
-## Best Practices
+-   `production`: Performance-optimized mode that only renders content with explicitly mapped components, leaving unmapped content empty.
+-   `development`: Debug-friendly mode that renders default components for unmapped content types and provides visual indicators and console logs for empty containers and missing mappings.
 
-1. **Lazy Loading**: Use dynamic imports for components to improve initial load times.
-2. **Error Handling**: Implement robust error handling for API calls and component rendering.
-3. **Type Safety**: Leverage TypeScript's type system to ensure proper usage of dotCMS structures.
-4. **Performance Optimization**: Monitor and optimize the performance of rendered components.
+#### Component Mapping
+
+The `DotCMSLayoutBody` component uses a `components` input to map content type variable names to Angular components. This allows you to render different components for different content types. Example:
+
+```typescript
+const DYNAMIC_COMPONENTS = {
+    Blog: import('./blog.component').then((c) => c.BlogComponent),
+    Product: import('./product.component').then((c) => c.ProductComponent)
+};
+```
+
+-   Keys (e.g., `Blog`, `Product`): Match your [content type variable names](https://dev.dotcms.com/docs/content-types#VariableNames) in dotCMS
+-   Values: Dynamic imports of your Angular components that render each content type
+-   Supports lazy loading through dynamic imports
+-   Components must be standalone or declared in a module
+
+> [!TIP]
+> Always use the exact content type variable name from dotCMS as the key. You can find this in the Content Types section of your dotCMS admin panel.
+
+### DotCMSEditableText
+
+`DotCMSEditableText` is a component for inline editing of text fields in dotCMS, supporting plain text, text area, and WYSIWYG fields.
+
+| Input        | Type                | Required | Description                                                                                                                                                                                                                 |
+|--------------|---------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `contentlet` | `T extends DotCMSBasicContentlet`  | ✅       | The contentlet containing the editable field                                                                                                   |
+| `fieldName`  | `keyof T`                     | ✅       | Name of the field to edit, which must be a valid key of the contentlet type `T`                                                                |
+| `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Supports text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
+| `format`     | `'text' \| 'html'`  | ❌       | `text` (default): Renders HTML tags as plain text <br/> `html`: Interprets and renders HTML markup                                                                                                                          |
+
+#### Usage
+
+```typescript
+import { Component, Input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+import { DotCMSBasicContentlet } from '@dotcms/types';
+import { DotCMSEditableTextComponent } from '@dotcms/angular';
+
+@Component({
+    selector: 'app-your-component',
+    imports: [RouterLink, NgOptimizedImage, DotCMSEditableTextComponent],
+    template: `
+        <div
+            class="flex overflow-hidden relative justify-center items-center w-full h-96 bg-gray-200">
+            <img
+                class="object-cover w-full"
+                [src]="'/dA/' + contentlet().inode"
+                [alt]="contentlet().title" />
+            <div
+                class="flex absolute inset-0 flex-col justify-center items-center p-4 text-center text-white">
+                <h2 class="mb-2 text-6xl font-bold text-shadow">
+                    <dotcms-editable-text fieldName="title" [contentlet]="contentlet()" />
+                </h2>
+                <a
+                    class="p-4 text-xl bg-red-400 rounded-sm transition duration-300 hover:bg-red-500"
+                    [routerLink]="contentlet().link">
+                    See more
+                </a>
+            </div>
+        </div>
+    `
+})
+export class MyBannerComponent {
+    @Input() contentlet: DotCMSBasicContentlet;
+}
+```
+
+#### Editor Integration
+
+-   Detects UVE edit mode and enables inline TinyMCE editing
+-   Triggers a `Save` [workflow action](https://dev.dotcms.com/docs/workflows) on blur without needing the full content dialog.
+
+### DotCMSBlockEditorRendererNative
+
+`DotCMSBlockEditorRendererNative` is the recommended renderer for [Block Editor](https://dev.dotcms.com/docs/block-editor) content. It emits **clean semantic HTML** — `<ul><li><p>…</p></li></ul>` — with no custom wrapper elements between semantic tags.
+
+> The original `DotCMSBlockEditorRenderer` is deprecated and retained for backward compatibility. See the component's TSDoc and [`MIGRATION.md`](./MIGRATION.md#migrating-to-the-semantic-block-editor-renderer) for the migration path — it's a one-line swap.
+
+#### Why it matters
+
+The host element is the real semantic tag (`<ul>`, `<li>`, `<p>`, `<h1>`–`<h6>`, ...) and recursion is done through `ng-template` outlets that render as HTML comment nodes (invisible to the accessibility tree), so `<li>` stays a true DOM child of `<ul>` — the relationship the HTML spec and assistive technology require, and that accessibility scanners flag when broken. This applies inside table cells and grid columns too: `<td><ul><li>…` stays intact.
+
+| Input             | Type                 | Required | Description                                                                                                |
+|-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|
+| `blocks`          | `BlockEditorNode`               | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
+| `customRenderers` | `CustomRenderer`                | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
+| `class`           | `string`                        | ❌       | CSS class to apply to the container                                                                        |
+| `style`           | `string \| Record<string, string>` | ❌   | Inline styles for the container                                                                            |
+
+#### Usage
+
+```typescript
+import { DotCMSBasicContentlet } from '@dotcms/types';
+import { DotCMSBlockEditorRendererNativeComponent } from '@dotcms/angular';
+
+const CUSTOM_RENDERERS = {
+    customBlock: import('./custom-block.component').then((c) => c.CustomBlockComponent),
+    h1: import('./custom-h1.component').then((c) => c.CustomH1Component)
+};
+
+@Component({
+    selector: 'app-your-component',
+    imports: [DotCMSBlockEditorRendererNativeComponent],
+    template: `
+        <dotcms-block-editor-renderer-native
+            [blocks]="contentlet.myBlockEditorField"
+            [customRenderers]="customRenderers()" />
+    `
+})
+export class MyBannerComponent {
+    @Input() contentlet: DotCMSBasicContentlet;
+    readonly customRenderers = signal(CUSTOM_RENDERERS);
+}
+```
+
+#### Recommendations
+
+-   Should not be used with [`DotCMSEditableText`](#dotcmseditabletext).
+-   Keep in mind that the CSS cascade can affect the look and feel of your blocks.
+
+### DotCMSShowWhen
+
+`DotCMSShowWhen` is a `directive` for conditionally showing content based on the current UVE mode. Useful for mode-based behaviors outside of render logic.
+
+| Input  | Type       | Required | Description                                                                                                                                                                                                         |
+|--------|------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `when` | `UVE_MODE` | ✅       | The `UVE` mode when content should be displayed: <br/> `UVE_MODE.EDIT`: Only visible in edit mode <br/> `UVE_MODE.PREVIEW`: Only visible in preview mode <br/> `UVE_MODE.PUBLISHED`: Only visible in published mode |
+
+#### Usage
+
+```typescript
+import { Component } from '@angular/core';
+
+import { DotCMSShowWhenDirective } from '@dotcms/angular';
+import { UVE_MODE } from '@dotcms/types';
+
+@Component({
+    selector: 'app-your-component',
+    imports: [DotCMSShowWhenDirective],
+    template: `
+        <div *dotCMSShowWhen="uveMode.EDIT">Only visible in edit mode</div>
+    `
+})
+export class YourComponent {
+    readonly uveMode = UVE_MODE;
+}
+```
+
+📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/universal-visual-editor).
+
+### DotCMSEditablePageService
+
+The `DotCMSEditablePageService` enables real-time page updates when using the Universal Visual Editor. It provides a single method `listen` that returns an Observable of page changes.
+
+| Param          | Type                 | Required | Description                                   |
+|----------------|----------------------|----------|-----------------------------------------------|
+| `pageResponse` | `DotCMSPageResponse` | ✅       | The page data object from `client.page.get()` |
+
+#### Service Lifecycle & Operations
+
+When you use the `listen` method, the service:
+
+1. Initializes the UVE with your page data
+2. Sets up communication channels with the editor
+3. Tracks content changes in real-time
+4. Updates your page automatically when:
+    - Content is edited inline
+    - Blocks are added or removed
+    - Layout changes are made
+    - Components are moved
+5. Cleans up all listeners and connections on destroy
+
+#### Usage
+
+```typescript
+import { Subscription } from 'rxjs';
+import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core';
+
+import { getUVEState } from '@dotcms/uve';
+import { DotCMSPageAsset } from '@dotcms/types';
+import {
+    DotCMSClient,
+    DotCMSEditablePageService,
+    DotCMSLayoutBodyComponent
+} from '@dotcms/angular';
+
+const DYNAMIC_COMPONENTS = {
+    Blog: import('./blog.component').then((c) => c.BlogComponent)
+};
+
+@Component({
+    imports: [DotCMSLayoutBodyComponent],
+    providers: [DotCMSEditablePageService],
+    template: `
+        @if (pageAsset()) {
+            <dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
+        } @else {
+            <div>Loading...</div>
+        }
+    `
+})
+export class PageComponent implements OnInit, OnDestroy {
+    private subscription?: Subscription;
+    private readonly dotCMSClient = inject(DotCMSClient);
+    private readonly editablePageService = inject(DotCMSEditablePageService);
+    readonly components = signal(DYNAMIC_COMPONENTS);
+    readonly pageAsset = signal<DotCMSPageAsset | null>(null);
+
+    ngOnInit() {
+        this.dotCMSClient.page.get('/about-us').then((pageResponse) => {
+            // Only subscribe to changes when in the editor
+            if (getUVEState()) {
+                this.subscription = this.editablePageService
+                    .listen(pageResponse)
+                    .subscribe(({ pageAsset }) => {
+                        this.pageAsset.set(pageAsset);
+                    });
+            } else {
+                const { pageAsset } = pageResponse;
+                this.pageAsset.set(pageAsset);
+            }
+        });
+    }
+
+    ngOnDestroy() {
+        this.subscription?.unsubscribe();
+    }
+}
+```
 
 ## Troubleshooting
 
-If you encounter issues while using `@dotcms/angular`, here are some common problems and their solutions:
+### Common Issues & Solutions
 
-1. **Dependency Issues**:
-   - Ensure that all dependencies, such as `@dotcms/client`, `@angular/core`, and `rxjs`, are correctly installed and up-to-date. You can verify installed versions by running:
-     ```bash
-     npm list @dotcms/client @angular/core rxjs
-     ```
-   - If there are any missing or incompatible versions, reinstall dependencies by running:
-     ```bash
-     npm install
-     ```
-     or
-     ```bash
-     npm install --force
-     ```
+#### Universal Visual Editor (UVE)
 
-2. **Configuration Errors**:
-   - **DotCMS Configuration**: Double-check that your `DOTCMS_CLIENT_CONFIG` settings (URL, auth token, site ID) are correct and aligned with the environment variables. For example:
-     ```typescript
-     const DOTCMS_CLIENT_CONFIG: ClientConfig = {
-         dotcmsUrl: environment.dotcmsUrl,  // Ensure this is a valid URL
-         authToken: environment.authToken,  // Ensure auth token has the correct permissions
-         siteId: environment.siteId         // Ensure site ID is valid and accessible
-     };
-     ```
-   - **Injection Issues**: Ensure that `DOTCMS_CLIENT_TOKEN` is provided globally. Errors like `NullInjectorError` usually mean the token hasn’t been properly added to the `ApplicationConfig`. Verify by checking `src/app/app.config.ts`.
+1. **UVE Not Loading**: Page loads but UVE controls are not visible
+    - **Possible Causes**:
+        - Incorrect UVE configuration
+        - Missing API token permissions
+        - Missing the `DotCMSEditablePageService` call to enable UVE.
+    - **Solutions**:
+        - Verify UVE app configuration in dotCMS admin
+        - Check API token has edit permissions
+        - Ensure `dotcmsUrl` matches your instance URL exactly
 
-3. **Network and API Errors**:
-   - **dotCMS API Connectivity**: If API calls are failing, check your browser’s Network tab to ensure requests to `dotcmsUrl` are successful. For CORS-related issues, ensure that your dotCMS server allows requests from your application’s domain.
-   - **Auth Token Permissions**: If you’re seeing `401 Unauthorized` errors, make sure the auth token used in `DOTCMS_CLIENT_CONFIG` has appropriate permissions in dotCMS for accessing pages and content.
+#### Missing Content
 
-4. **Page and Component Rendering**:
-   - **Dynamic Imports**: If you’re encountering issues with lazy-loaded components, make sure dynamic imports are correctly set up, as in:
-     ```typescript
-      const DYNAMIC_COMPONENTS: DotCMSPageComponent = {
-        Activity: import('../pages/content-types/activity/activity.component').then(
-            (c) => c.ActivityComponent
-        )
-      };
-     ```
-   - **Invalid Page Assets**: Ensure that `pageAsset` objects are correctly formatted. Missing fields in `pageAsset` can cause errors in `DotcmsLayoutComponent`. Validate the structure by logging `pageAsset` before passing it in.
+1. **Components Not Rendering**: Empty spaces where content should appear
 
-5. **Common Angular Errors**:
-   - **Change Detection**: Angular sometimes fails to detect changes with dynamic content. If `DotcmsLayoutComponent` isn’t updating as expected, you may need to call `ChangeDetectorRef.detectChanges()` manually.
-   - **TypeScript Type Errors**: Ensure all types (e.g., `DotCMSPageAsset`, `DotCMSPageComponent`) are imported correctly from `@dotcms/angular`. Type mismatches can often be resolved by verifying imports.
+    - **Possible Causes**:
+        - Missing component mappings
+        - Incorrect content type variable names
+    - **Solutions**:
+        - Check component registration in `components` prop
+        - Verify content type variable names match exactly
+        - Enable `development` mode for detailed logging
 
-6. **Consult Documentation**: Refer to the official [dotCMS documentation](https://dotcms.com/docs/) and the [@dotcms/angular GitHub repository](https://github.com/dotCMS/core). These sources often provide updates and additional usage examples.
+2. **Asset Loading Issues**: Images or files not loading
+    - **Possible Causes**:
+        - Proxy configuration issues
+        - CORS restrictions
+    - **Solutions**:
+        - Verify proxy settings in `angular.json`
+        - Check network tab for CORS errors
+        - Ensure `/dA` path is properly configured
+
+#### Development Setup
+
+1. **Build Errors**: `npm install` fails
+
+    - **Solutions**:
+        - Clear npm cache: `npm cache clean --force`
+        - Delete `node_modules` and reinstall
+        - Verify Node.js version compatibility
+
+2. **Runtime Errors**: Console errors about missing imports or components not rendering
+    - **Solutions**:
+        - Check all imports are from `@dotcms/angular`
+        - Verify all peer dependencies are installed
+        - Update to latest compatible versions
+
+### Debugging Tips
+
+1. **Enable Development Mode**
+
+    ```typescript
+    <dotcms-layout-body
+        [page]="pageAsset()"
+        [components]="components()"
+        mode="development"
+    />
+    ```
+
+    This will:
+
+    - Show detailed error messages
+    - Highlight unmapped components
+    - Log component lifecycle events
+
+2. **Check Browser Console**
+
+    - Check for errors in the browser console
+    - Check for errors in the browser network tab
+
+3. **Network Monitoring**
+    - Use browser dev tools to monitor API calls
+    - Check for 401/403 errors (auth issues)
+    - Verify asset loading paths
+
+### Still Having Issues?
+
+If you're still experiencing problems after trying these solutions:
+
+1. Search existing [GitHub issues](https://github.com/dotCMS/core/issues)
+2. Ask questions on the [community forum](https://community.dotcms.com/) to engage with other users.
+3. Create a new issue with:
+    - Detailed reproduction steps
+    - Environment information
+    - Error messages
+    - Code samples
+
+## Support
+
+We offer multiple channels to get help with the dotCMS Angular SDK:
+
+-   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
+-   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
+-   **Stack Overflow**: Use the tag `dotcms-angular` when posting questions.
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support).
+
+When reporting issues, please include:
+
+-   SDK version you're using
+-   Angular version
+-   Minimal reproduction steps
+-   Expected vs. actual behavior
 
 ## Contributing
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://www.gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Angular SDK! If you'd like to contribute, please follow these steps:
+
+1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows the existing style and includes appropriate tests.
+
+## Changelog
+
+### [1.1.1]
+
+#### ✨ Added - Enhanced Client Architecture
+
+**New Features:**
+- Added `DotCMSAngularProviderConfig` for Angular-specific configuration
+- Custom HTTP client support with Angular's `HttpClient` integration
+- Enhanced image optimization with automatic quality control (default: 50%)
+- Improved provider system with better error handling and type safety
+
+**No Breaking Changes:**
+- `DotCMSClient` remains the same - no migration required
+- All existing code continues to work without changes
+- New features are additive and optional
+
+#### 🔄 Enhanced - Provider System
+
+**Improvements:**
+- Enhanced `provideDotCMSClient` with optional custom HTTP client factory
+- Added `DotCMSAngularProviderConfig` interface for better type safety
+- Improved error handling and HTTP client architecture
+
+**New Configuration Options:**
+```typescript
+provideDotCMSClient({
+  dotcmsUrl: environment.dotcmsUrl,
+  authToken: environment.authToken,
+  siteId: environment.siteId,
+  httpClient: (http: HttpClient) => new AngularHttpClient(http) // New!
+})
+```
+
+#### 🎨 Enhanced - Image Loading
+
+**Improvements:**
+- Automatic quality optimization for better performance
+- Enhanced responsive image support
+- Improved language-specific image handling
+- Better integration with Angular's `NgOptimizedImage` directive
 
 ## Licensing
 
-dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
+
+Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
+
+Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).

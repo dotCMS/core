@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
     ActivatedRoute,
     Event,
@@ -15,19 +15,21 @@ import { filter } from 'rxjs/operators';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotRouterService {
+    private router = inject(Router);
+    private route = inject(ActivatedRoute);
+
     portletReload$ = new Subject();
-    private _storedRedirectUrl: string;
+    private _storedRedirectUrl: string | null = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);
     private _pageLeaveRequest = new Subject<void>();
 
-    constructor(
-        private router: Router,
-        private route: ActivatedRoute
-    ) {
+    constructor() {
         this._routeHistory.url = this.router.url;
         this.router.events
             .pipe(filter((event: Event) => event instanceof NavigationEnd))
@@ -50,7 +52,8 @@ export class DotRouterService {
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
-            id: this.getPortletId(this.router.routerState.snapshot.url)
+            id: this.getPortletId(this.router.routerState.snapshot.url),
+            parentMenuId: this.route.snapshot.queryParams['mId']
         };
     }
 
@@ -115,9 +118,9 @@ export class DotRouterService {
         const menuId = 'edit-page';
 
         return this.router.navigate([`/${menuId}/content`], {
-            queryParams,
-            state: {
-                menuId
+            queryParams: {
+                ...queryParams,
+                mId: menuId.substring(0, 4)
             }
         });
     }
@@ -315,7 +318,7 @@ export class DotRouterService {
      * @returns boolean
      * @memberof DotRouterService
      */
-    isJSPPortletURL(url): boolean {
+    isJSPPortletURL(url: string): boolean {
         return url.startsWith('/c/');
     }
 
@@ -326,7 +329,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     isEditPage(): boolean {
-        return this.currentPortlet.id === 'edit-page';
+        return this.currentPortlet.id === 'site-browser';
     }
 
     /**
@@ -338,8 +341,16 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
-        const { replaceUrl = false, queryParamsHandling = '' } = navigateToPorletOptions || {};
-        const url = this.router.createUrlTree([link], { queryParamsHandling });
+        const {
+            replaceUrl = false,
+            queryParamsHandling = '',
+            queryParams = {}
+        } = navigateToPorletOptions || {};
+
+        const url = this.router.createUrlTree([link], {
+            queryParamsHandling,
+            queryParams
+        });
 
         return this.router.navigateByUrl(url, { replaceUrl });
     }
@@ -350,6 +361,7 @@ export class DotRouterService {
 
     getPortletId(url: string): string {
         url = decodeURIComponent(url);
+
         if (url.indexOf('?') > 0) {
             url = url.substring(0, url.indexOf('?'));
         }
@@ -358,7 +370,13 @@ export class DotRouterService {
             .split('/')
             .filter((item) => item !== '' && item !== '#' && item !== 'c');
 
-        return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
+        const key = urlSegments[0];
+
+        if (key && PORTLET_ID_RESOLVERS[key]) {
+            return PORTLET_ID_RESOLVERS[key](urlSegments);
+        }
+
+        return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : key || '';
     }
 
     isPublicPage(): boolean {
@@ -372,7 +390,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     isCurrentPortletCustom(): boolean {
-        return this.isCustomPortlet(this.currentPortlet.id);
+        return this.isCustomPortlet(this.currentPortlet.id || '');
     }
 
     /**
@@ -446,3 +464,21 @@ export class DotRouterService {
         return navExtras;
     }
 }
+
+const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = {
+    analytics: (urlSegments: string[]) => {
+        // Handle edge case: /analytics without second segment should return 'analytics'
+        if (!urlSegments[1]) {
+            return urlSegments[0] || '';
+        }
+
+        return `${urlSegments[0]}-${urlSegments[1]}`;
+    },
+    'edit-page': () => {
+        return 'site-browser';
+    },
+    // URL is kebab-case; backend portlet-name stays snake_case for DB compat (#35809).
+    'velocity-playground': () => {
+        return 'velocity_playground';
+    }
+};

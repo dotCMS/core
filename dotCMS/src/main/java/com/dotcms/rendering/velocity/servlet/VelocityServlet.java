@@ -5,14 +5,11 @@ import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDB;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.UserWebAPIImpl;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
@@ -118,7 +115,9 @@ public class VelocityServlet extends HttpServlet {
 
     @Override
     @CloseDB
-    protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
+    // Not final: Weld's Tomcat InstanceManager (WELD-ENV-001100) processes all servlets
+    // for interceptor bindings. WELD-001504 rejects final methods with @CloseDB.
+    protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         Logger.debug(this, "======Starting VelocityServlet_service=====");
         final VelocityRequestWrapper request =VelocityRequestWrapper.wrapVelocityRequest(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
@@ -148,16 +147,7 @@ public class VelocityServlet extends HttpServlet {
                             + Constants.CMS_FILTER_URI_OVERRIDE);
             return;
         }
-        
-        // if you are not running ee
-        if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level)
-                || (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level)
-                || (!LicenseUtil.isASAllowed())) {
-            Logger.debug(this, "VelocityServlet_service Enterprise License is required");
-            Logger.error(this, "Enterprise License is required");
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
+
         
         
         // try to get the page
@@ -175,7 +165,7 @@ public class VelocityServlet extends HttpServlet {
             );
 
             Logger.debug(this, "VelocityServlet_service pageHtml: " + pageHtml);
-
+            APILocator.getRequestCostAPI().addCostHeader(request, response);
             response.getOutputStream().write(pageHtml.getBytes());
         } catch (ResourceNotFoundException rnfe) {
             Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);

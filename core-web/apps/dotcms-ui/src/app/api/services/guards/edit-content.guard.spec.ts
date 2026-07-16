@@ -26,7 +26,7 @@ describe('EditContentGuard', () => {
         });
 
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-        spyOn(dotPropertiesService, 'getFeatureFlag').and.callThrough();
+        jest.spyOn(dotPropertiesService, 'getFeatureFlag');
 
         return TestBed.runInInjectionContext(editContentGuard);
     };

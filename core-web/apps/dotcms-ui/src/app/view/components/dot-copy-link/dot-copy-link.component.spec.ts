@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotIconModule } from '@dotcms/ui';
+import { DotClipboardUtil, DotIconComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';
@@ -25,15 +25,19 @@ describe('DotCopyLinkComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotCopyLinkComponent],
+            imports: [DotCopyLinkComponent, ButtonModule, TooltipModule, DotIconComponent],
             providers: [
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                DotClipboardUtil
-            ],
-            imports: [ButtonModule, TooltipModule, DotIconModule]
+                {
+                    provide: DotClipboardUtil,
+                    useValue: {
+                        copy: jest.fn()
+                    }
+                }
+            ]
         }).compileComponents();
     }));
 
@@ -44,7 +48,7 @@ describe('DotCopyLinkComponent', () => {
 
         dotClipboardUtil = de.injector.get(DotClipboardUtil);
 
-        spyOn(dotClipboardUtil, 'copy').and.callFake(() => {
+        jest.spyOn(dotClipboardUtil, 'copy').mockImplementation(() => {
             return new Promise((resolve) => {
                 resolve(true);
             });
@@ -65,8 +69,7 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should show copy icon', () => {
-            const icon = de.query(By.css('[data-testId="icon"]'));
-            expect(icon).not.toBeNull();
+            expect(button.componentInstance.icon).toBe('pi pi-copy');
         });
 
         it('should have pTooltip attributes', () => {
@@ -76,13 +79,14 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should copy text to clipboard', () => {
-            const stopPropagation = jasmine.createSpy('stopPropagation');
+            const stopPropagation = jest.fn();
 
             button.triggerEventHandler('click', {
                 stopPropagation: stopPropagation
             });
 
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith('Text to copy');
+            expect(dotClipboardUtil.copy).toHaveBeenCalledTimes(1);
             expect(stopPropagation).toHaveBeenCalledTimes(1);
         });
     });

@@ -3,30 +3,33 @@
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/angular/src",
     "prefix": "lib",
-    "tags": [],
     "projectType": "library",
+    "tags": [],
     "targets": {
         "build": {
             "executor": "@nx/angular:package",
             "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+            "defaultConfiguration": "production",
             "options": {
-                "project": "libs/sdk/angular/ng-package.json"
+                "project": "libs/sdk/angular/ng-package.json",
+                "tsConfig": "libs/sdk/angular/tsconfig.lib.json"
             },
             "configurations": {
                 "production": {
                     "tsConfig": "libs/sdk/angular/tsconfig.lib.prod.json"
                 },
-                "development": {
-                    "tsConfig": "libs/sdk/angular/tsconfig.lib.json"
-                }
-            },
-            "defaultConfiguration": "production"
+                "development": {}
+            }
         },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/sdk/angular/jest.config.ts"
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
     }

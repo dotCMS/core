@@ -1,18 +1,19 @@
-import { Injectable, Inject, LOCALE_ID } from '@angular/core';
+import { Injectable, LOCALE_ID, inject } from '@angular/core';
 
 import { LoggerService } from '../logger.service';
 
 @Injectable()
 export class UserModel {
+    private loggerService = inject(LoggerService);
+
     username: string;
     password: string;
     locale: string;
     suppressAlerts = false;
 
-    constructor(
-        private loggerService: LoggerService,
-        @Inject(LOCALE_ID) localeId: string
-    ) {
+    constructor() {
+        const localeId = inject(LOCALE_ID);
+
         this.locale = localeId; // default to 'en-US'
         try {
             const url = window.location.search.substring(1);

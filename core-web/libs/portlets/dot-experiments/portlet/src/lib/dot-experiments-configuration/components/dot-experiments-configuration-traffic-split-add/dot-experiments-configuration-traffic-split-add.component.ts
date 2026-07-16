@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import {
     AbstractControl,
     FormArray,
@@ -16,14 +16,19 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { RadioButtonModule } from 'primeng/radiobutton';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { take } from 'rxjs/operators';
 
 import { ComponentStatus, TrafficProportionTypes, Variant } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    SIDEBAR_SIZES
+} from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,
@@ -32,37 +37,33 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-traffic-split-add',
-    standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
-        //PrimeNg
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         RadioButtonModule,
         InputNumberModule,
-        FormsModule
+        FormsModule,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-traffic-split-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-traffic-split-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private fb = inject(FormBuilder);
+
     form: FormGroup;
     stepStatus = ComponentStatus;
+    sidebarSizes = SIDEBAR_SIZES;
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
     customPercentages = TrafficProportionTypes.CUSTOM_PERCENTAGES;
 
     vm$: Observable<ConfigurationTrafficStepViewModel> =
         this.dotExperimentsConfigurationStore.trafficStepVm$;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private fb: FormBuilder
-    ) {}
 
     get variants(): FormArray {
         return this.form.get('variants') as FormArray;

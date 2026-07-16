@@ -247,12 +247,28 @@ import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariables
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemField;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayout;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflow;
-import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifier;
 import com.dotmarketing.startup.runonce.Task241014AddTemplateValueOnContentletIndex;
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortlet;
 import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayout;
 import com.dotmarketing.startup.runonce.Task250107RemoveEsReadOnlyMonitorJob;
+import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
+import com.dotmarketing.startup.runonce.Task250603UpdateIdentifierParentPathCheckTrigger;
+import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodes;
+import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTable;
+import com.dotmarketing.startup.runonce.Task250828CreateCustomAttributeTable;
+import com.dotmarketing.startup.runonce.Task251029RemoveContentTypesLegacyPortletFromLayouts;
+import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTree;
+import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTable;
+import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenu;
+import com.dotmarketing.startup.runonce.Task260320AddPluginsPortletToMenu;
+import com.dotmarketing.startup.runonce.Task260324AddIdentifierPathTriggerIndex;
+import com.dotmarketing.startup.runonce.Task260403SetLz4CompressionOnTextColumns;
+import com.dotmarketing.startup.runonce.Task260403SetPermissionReferenceUnlogged;
+import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifier;
+import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenu;
+import com.dotmarketing.startup.runonce.Task260507CreateS3VanityAliasTable;
+import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLength;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -274,7 +290,7 @@ import java.util.stream.Collectors;
  */
 public class TaskLocatorUtil {
 
-	private static final List<Class<?>> userfixTasks = new CopyOnWriteArrayList<>();
+	private static final List<Class<?>> userFixTasks = new CopyOnWriteArrayList<>();
 
 	/**
 	 * Returns the list of tasks that are run to solve internal conflicts
@@ -282,7 +298,7 @@ public class TaskLocatorUtil {
 	 *
 	 * @return The list of Fix Tasks.
 	 */
-	private static final List<Class<?>> systemfixTasks = ImmutableList.of(
+	private static final List<Class<?>> systemFixTasks = ImmutableList.of(
 			FixTask00001CheckAssetsMissingIdentifiers.class,
 			FixTask00003CheckContainersInconsistencies.class,
 			FixTask00006CheckLinksInconsistencies.class,
@@ -310,7 +326,7 @@ public class TaskLocatorUtil {
 	 *            - The new fix task class.
 	 */
 	public static void addFixTask(Class<?> clazz){
-		userfixTasks.add(clazz);
+		userFixTasks.add(clazz);
 	}
 
 	/**
@@ -320,7 +336,7 @@ public class TaskLocatorUtil {
 	 *            - The fix task to remove.
 	 */
 	public static void removeFixTask(Class<?> clazz){
-		userfixTasks.remove(clazz);
+		userFixTasks.remove(clazz);
 	}
 
 	/**
@@ -330,8 +346,8 @@ public class TaskLocatorUtil {
 	 */
 	public static List<Class<?>> getFixTaskClasses() {
 		final List<Class<?>> l = new ArrayList<>();
-		l.addAll(systemfixTasks);
-		l.addAll(userfixTasks);
+		l.addAll(systemFixTasks);
+		l.addAll(userFixTasks);
 		return l;
 	}
 
@@ -579,7 +595,25 @@ public class TaskLocatorUtil {
     	.add(Task241016AddCustomLanguageVariablesPortletToLayout.class)
 		.add(Task250107RemoveEsReadOnlyMonitorJob.class)
         .add(Task250113CreatePostgresJobQueueTables.class)
-		.build();
+		.add(Task250603UpdateIdentifierParentPathCheckTrigger.class)
+		.add(Task250604UpdateFolderInodes.class)
+        .add(Task250604UpdateFolderInodes.class)
+        .add(Task250826AddIndexesToUniqueFieldsTable.class)
+        .add(Task250828CreateCustomAttributeTable.class)
+        .add(Task251029RemoveContentTypesLegacyPortletFromLayouts.class)
+        .add(Task251103AddStylePropertiesColumnInMultiTree.class)
+        .add(Task251212AddVersionColumnIndicesTable.class)
+        .add(Task260206AddUsagePortletToMenu.class)
+        .add(Task260320AddPluginsPortletToMenu.class)
+        .add(Task260324AddIdentifierPathTriggerIndex.class)
+        .add(Task260403SetLz4CompressionOnTextColumns.class)
+        .add(Task260403SetPermissionReferenceUnlogged.class)
+        .add(Task260407AddBaseTypeColumnToIdentifier.class)
+        .add(Task260505AddPluginsPortletToMenu.class)
+        .add(Task260507CreateS3VanityAliasTable.class)
+        .add(Task260615AlterClusterIdLength.class)
+        .build();
+
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

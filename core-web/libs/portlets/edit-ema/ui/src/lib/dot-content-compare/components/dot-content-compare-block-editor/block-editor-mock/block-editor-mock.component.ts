@@ -1,39 +1,49 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
     OnInit,
-    Output
+    Output,
+    signal
 } from '@angular/core';
 
 import { Editor, JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
+/**
+ * Mirrors the **new** block editor ({@link DotCMSEditorComponent}) for compare-view tests:
+ * content set via `[value]` is applied with `emitUpdate: false`, so it dispatches a TipTap
+ * `transaction` but never emits `valueChange`. `valueChange` fires only on real user edits
+ * (`update`). The compare component must rely on the `transaction` — not `valueChange` — to
+ * populate the diff on load (issue #36550).
+ */
 @Component({
     selector: 'dot-block-editor',
-    standalone: true,
-    imports: [CommonModule],
+    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: '<div>Block Editor Mock</div>'
 })
 export class BlockEditorMockComponent implements OnInit {
     @Input() value: JSONContent;
-    editor: Editor;
+    readonly editor = signal<Editor | null>(null);
     @Output() valueChange = new EventEmitter<JSONContent>();
 
     ngOnInit() {
-        this.editor = new Editor({
+        const editor = new Editor({
             extensions: [StarterKit]
         });
 
-        this.editor.on('create', () => {
-            this.editor.commands.setContent(this.value, true);
+        editor.on('create', () => {
+            if (this.value) {
+                editor.commands.setContent(this.value, { emitUpdate: false });
+            }
         });
 
-        this.editor.on('update', () => {
-            this.valueChange.emit();
+        editor.on('update', () => {
+            this.valueChange.emit(editor.getJSON());
         });
+
+        this.editor.set(editor);
     }
 }

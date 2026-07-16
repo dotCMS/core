@@ -1,9 +1,29 @@
 @let uiMessage = $uiMessage();
+@let disabled = $disabled();
 
-<div [ngClass]="uiMessage.severity" class="icon-container" data-testId="ui-message-icon-container">
-    <i [ngClass]="uiMessage.icon" data-testId="ui-message-icon" class="icon"></i>
-</div>
-<div class="text">
-    <div [innerHTML]="uiMessage.message | dm: uiMessage?.args" data-testId="ui-message-span"></div>
-    <ng-content></ng-content>
+<div
+    class="dot-file-field-ui-message__root"
+    [class.dot-file-field-ui-message__root--disabled]="disabled">
+    <div
+        class="dot-file-field-ui-message__icon-wrap"
+        [style.color]="
+            disabled ? 'var(--field-disabled-color)' : 'var(--color-palette-primary-500)'
+        "
+        [style.background-color]="
+            disabled ? 'var(--field-disabled-bgcolor)' : 'var(--color-palette-primary-200)'
+        "
+        data-testId="ui-message-icon-container">
+        <i
+            [ngClass]="uiMessage?.icon"
+            data-testId="ui-message-icon"
+            class="dot-file-field-ui-message__icon"></i>
+    </div>
+    <div
+        class="dot-file-field-ui-message__message"
+        [class.dot-file-field-ui-message__message--disabled]="disabled">
+        <span
+            [innerHTML]="uiMessage?.message | dm: uiMessage?.args"
+            data-testId="ui-message-span"></span>
+        <ng-content />
+    </div>
 </div>

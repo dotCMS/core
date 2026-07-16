@@ -1,18 +1,14 @@
 import { tapResponse } from '@ngrx/operators';
 import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { tap, exhaustMap, switchMap } from 'rxjs/operators';
+import { catchError, tap, exhaustMap, switchMap } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
+import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 
 /** Maximum number of items to fetch per page */
 export const PEER_PAGE_LIMIT = 7000;
@@ -53,27 +49,28 @@ export const SiteFieldStore = signalStore(
         valueToSave: computed(() => {
             const node = nodeSelected();
 
-            if (node?.data?.id) {
-                return node.data.id;
+            if (node?.data?.id && node?.data?.type) {
+                return `${node.data.type}:${node.data.id}`;
             }
 
             return null;
         })
     })),
     withMethods((store) => {
-        const dotEditContentService = inject(DotEditContentService);
+        const dotBrowsingService = inject(DotBrowsingService);
 
         return {
             /**
-             * Loads the sites tree structure
-             * @description Fetches the initial tree structure of sites with pagination
+             * Loads the sites tree structure.
+             * After loading, if there is a synthetic nodeSelected (from setInitialSelection),
+             * automatically resolves it to a real tree node for proper TreeSelect highlighting.
              * @method loadSites
              */
             loadSites: rxMethod<void>(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    switchMap(() => {
-                        return dotEditContentService
+                    switchMap(() =>
+                        dotBrowsingService
                             .getSitesTreePath({
                                 perPage: PEER_PAGE_LIMIT,
                                 filter: '*',
@@ -92,14 +89,74 @@ export const SiteFieldStore = signalStore(
                                             error: ''
                                         })
                                 })
-                            );
+                            )
+                    ),
+                    // After sites load, resolve synthetic selection to real tree node
+                    switchMap(() => {
+                        const selected = store.nodeSelected();
+                        const tree = store.tree();
+
+                        if (!selected?.data || tree.length === 0) {
+                            return EMPTY;
+                        }
+
+                        const { id, type, hostname } = selected.data;
+
+                        // For sites: find the real node by id
+                        if (type === 'site') {
+                            const realNode = tree.find((s) => s.data?.id === id);
+                            if (realNode) {
+                                patchState(store, { nodeSelected: realNode });
+                            }
+
+                            return EMPTY;
+                        }
+
+                        // For folders: find the site, load its children, find the folder
+                        const siteNode = tree.find((s) => s.data?.hostname === hostname);
+
+                        if (!siteNode) {
+                            return EMPTY;
+                        }
+
+                        // Load the site's root children (same as manual expand)
+                        // so the tree shows the first-level folders under the site.
+                        // Known limitation: only root-level folders are loaded, so nested
+                        // folders (e.g. /news/2024/) won't be visually highlighted in the
+                        // TreeSelect. The chip label and search filter remain correct.
+                        return dotBrowsingService.getFoldersTreeNode(`${hostname}/`).pipe(
+                            tap(({ folders }) => {
+                                const expandedSite: TreeNodeItem = {
+                                    ...siteNode,
+                                    leaf: true,
+                                    icon: 'pi pi-folder-open',
+                                    expanded: true,
+                                    children: [...folders]
+                                };
+
+                                const realFolder = folders.find((f) => f.data?.id === id);
+
+                                // Replace the site node immutably so PrimeNG detects the change
+                                patchState(store, {
+                                    tree: store
+                                        .tree()
+                                        .map((node) => (node === siteNode ? expandedSite : node)),
+                                    nodeExpanded: expandedSite,
+                                    ...(realFolder && {
+                                        nodeSelected: realFolder
+                                    })
+                                });
+                            }),
+                            // If folder resolution fails, keep the synthetic node — the
+                            // chip label and search filter are still correct.
+                            catchError(() => EMPTY)
+                        );
                     })
                 )
             ),
             /**
              * Loads children nodes for a selected tree node
              * @method loadChildren
-             * @param {TreeNodeSelectItem} event - The selected tree node item
              */
             loadChildren: rxMethod<TreeNodeSelectItem>(
                 pipe(
@@ -109,7 +166,7 @@ export const SiteFieldStore = signalStore(
 
                         const fullPath = `${hostname}/${path}`;
 
-                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
+                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
                             tap(({ folders }) => {
                                 node.leaf = true;
                                 node.icon = 'pi pi-folder-open';
@@ -123,16 +180,52 @@ export const SiteFieldStore = signalStore(
             /**
              * Updates the store with the selected node
              * @method chooseNode
-             * @param {TreeNodeSelectItem} event - The selected tree node item
              */
             chooseNode: (event: TreeNodeSelectItem) => {
                 const { node: nodeSelected } = event;
-                const data = nodeSelected.data;
-                if (!data) {
+                if (!nodeSelected.data) {
                     return;
                 }
 
                 patchState(store, { nodeSelected });
+            },
+            /**
+             * Clears the selected node when a node is deselected
+             * @method clearSelection
+             */
+            clearSelection: () => {
+                patchState(store, { nodeSelected: null });
+            },
+            /**
+             * Sets an initial selection from a pre-populated value (e.g., from contentlet context).
+             * Creates a synthetic TreeNodeItem for immediate display in the TreeSelect header.
+             * The real tree node is resolved automatically when loadSites completes.
+             * @method setInitialSelection
+             */
+            setInitialSelection: (params: {
+                id: string;
+                type: 'site' | 'folder';
+                hostname: string;
+                path: string;
+            }) => {
+                const isSite = params.type === 'site';
+                const label = isSite ? params.hostname : `${params.hostname}${params.path}`;
+
+                patchState(store, {
+                    nodeSelected: {
+                        key: params.id,
+                        label,
+                        data: {
+                            id: params.id,
+                            type: params.type,
+                            hostname: params.hostname,
+                            path: params.path
+                        },
+                        icon: isSite ? 'pi pi-globe' : 'pi pi-folder',
+                        leaf: !isSite,
+                        children: []
+                    }
+                });
             }
         };
     })

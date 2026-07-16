@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity;
 
+import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
+import static com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -19,6 +21,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.LoginMode;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -113,15 +117,19 @@ public class VelocityUtilTest {
         pageCacheKey = VelocityUtil.shouldPageCache(request,page);
         Assert.assertTrue(pageCacheKey);
 
-        
         page.setCacheTTL(15);
 
         //Use Cached Page Scenario
         when(request.getMethod()).thenReturn("POST");
         pageCacheKey = VelocityUtil.shouldPageCache(request,page);
         Assert.assertFalse(pageCacheKey);
-        
-        
+
+        //Live mode and BE user (not use cached page)
+        request.getSession().setAttribute(LOGIN_MODE_PARAMETER, LoginMode.BE);
+        request.setAttribute(PAGE_MODE_PARAMETER, PageMode.LIVE);
+        pageCacheKey = VelocityUtil.shouldPageCache(request,page);
+        Assert.assertFalse(pageCacheKey);
+
     }
     
     

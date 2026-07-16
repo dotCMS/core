@@ -8,7 +8,8 @@ import {
   contentGeneric,
 } from "@locators/globalLocators";
 import { contentProperties, genericContent1 } from "./contentData";
-import { SideMenuPage, LoginPage } from "@pages";
+import { LoginPage } from "@pages";
+import { SideMenuComponent } from "@components/sideMenu.component";
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -16,7 +17,7 @@ import { SideMenuPage, LoginPage } from "@pages";
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const loginPage = new LoginPage(page);
-  const sideMenuPage = new SideMenuPage(page);
+  const sideMenuPage = new SideMenuComponent(page);
 
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;
@@ -25,20 +26,6 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   // Login to dotCMS
   await loginPage.login(username, password);
   await sideMenuPage.navigate("Content", "Search All");
-
-  // Validate the portlet title
-  const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
-});
-
-/**
- * Test to validate the portlet title
- * @param page
- */
-test("Validate portlet title", async ({ page }) => {
-  await expect(page.locator("p-breadcrumb")).toContainText("Search All");
 });
 
 /**

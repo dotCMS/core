@@ -1,17 +1,19 @@
-import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
+import { Card } from 'primeng/card';
+import { Tag } from 'primeng/tag';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { DotContentThumbnailComponent } from '../../../dot-content-thumbnail/dot-content-thumbnail.component';
+import { DotContentletStatusBadgeComponent } from '../../../dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 
 @Component({
     selector: 'dot-asset-card',
     templateUrl: './dot-asset-card.component.html',
     styleUrls: ['./dot-asset-card.component.scss'],
-    standalone: true,
-    imports: [CardModule],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    imports: [Card, Tag, DotContentletStatusBadgeComponent, DotContentThumbnailComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetCardComponent {
     @Input() contentlet: DotCMSContentlet;

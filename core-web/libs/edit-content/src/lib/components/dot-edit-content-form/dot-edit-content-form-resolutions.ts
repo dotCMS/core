@@ -1,0 +1,288 @@
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
+
+import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { EditContentQueryParams } from '../../store/edit-content.store';
+import {
+    getSingleSelectableFieldOptions,
+    parseCalendarTimestamp
+} from '../../utils/functions.util';
+import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
+
+/**
+ * A function that provides a default resolution value for a contentlet field.
+ *
+ * @param {Object} contentlet - The contentlet object.
+ * @param {Object} field - The field object.
+ * @param {EditContentQueryParams} queryParams - Optional query params from the URL.
+ * @returns {*} The resolved value for the field.
+ */
+export type FnResolutionValue<T> = (
+    contentlet: DotCMSContentlet,
+    field: DotCMSContentTypeField,
+    queryParams?: EditContentQueryParams,
+    isManualTranslation?: boolean
+) => T;
+
+/**
+ * A function that provides a default resolution value for a contentlet field.
+ *
+ * @returns {*} The resolved value for the field.
+ */
+const emptyResolutionFn: FnResolutionValue<string> = () => '';
+
+/**
+ * A function that provides a default resolution value for a contentlet field.
+ *
+ * @param {Object} contentlet - The contentlet object.
+ * @param {Object} field - The field object.
+ * @returns {*} The resolved value for the field.
+ */
+const defaultResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (contentlet) {
+        return contentlet[field.variable] ?? field.defaultValue;
+    }
+    return isManualTranslation ? null : field.defaultValue;
+};
+
+/**
+ * A function that provides a default resolution value for a contentlet field.
+ *
+ * @param {Object} contentlet - The contentlet object.
+ * @param {Object} field - The field object.
+ * @returns {*} The resolved value for the field.
+ */
+const textFieldResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (!contentlet) {
+        return isManualTranslation ? null : field.defaultValue;
+    }
+
+    const value = contentlet[field.variable] ?? field.defaultValue;
+
+    const shouldRemoveLeadingSlash =
+        contentlet?.baseType === 'HTMLPAGE' &&
+        field.variable === 'url' &&
+        typeof value === 'string' &&
+        value.startsWith('/');
+
+    return shouldRemoveLeadingSlash ? value.substring(1) : value;
+};
+
+/**
+ * Resolves the host folder path for a contentlet based on its type and URL structure.
+ *
+ * For FILEASSET and HTMLPAGE, removes the last path segment to get the parent path:
+ * - File assets: the last segment is the filename, so the result is the directory path.
+ * - Pages: the last segment is the page URL segment (e.g. /about/team), so the result is the path of the parent folder.
+ * For other content types, extracts the path up to the '/content' segment.
+ *
+ * @param contentlet - The contentlet object containing hostName, url, and type
+ * @param field - The field object containing the default value
+ * @returns The resolved host folder path or the field's default value
+ */
+// isManualTranslation not needed: null contentlet already falls back to queryParams / field.defaultValue.
+const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field, queryParams) => {
+    // For new content, prefer folderPath from query params over field default
+    if (!contentlet?.hostName || !contentlet?.url) {
+        return queryParams?.folderPath || field?.defaultValue || '';
+    }
+
+    const { hostName, url, baseType } = contentlet;
+
+    // Ensure hostName and url are strings
+    if (typeof hostName !== 'string' || typeof url !== 'string') {
+        return field?.defaultValue || '';
+    }
+
+    const fullPath = `${hostName}${url}`;
+
+    try {
+        if (
+            baseType === DotCMSBaseTypesContentTypes.FILEASSET ||
+            baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+        ) {
+            // Remove the last path segment: filename for file assets, page URL segment for pages
+            const pathSegments = fullPath.split('/');
+            if (pathSegments.length > 1) {
+                return pathSegments.slice(0, -1).join('/');
+            }
+            return fullPath;
+        } else {
+            // For other content types, extract path up to '/content'
+            const contentIndex = fullPath.indexOf('/content');
+            if (contentIndex !== -1) {
+                return fullPath.slice(0, contentIndex);
+            }
+            return fullPath;
+        }
+    } catch (error) {
+        console.warn('Error processing host folder path:', error);
+        return field?.defaultValue || '';
+    }
+};
+
+/**
+ * A function that provides a default resolution value for a contentlet field.
+ *
+ * @param {Object} contentlet - The contentlet object.
+ * @param {Object} field - The field object.
+ * @returns {*} The resolved value for the field.
+ */
+const categoryResolutionFn: FnResolutionValue<string[] | string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    const values = contentlet?.[field.variable];
+
+    if (Array.isArray(values)) {
+        // isManualTranslation is not checked here: manual translation always passes
+        // contentlet=null, so the array branch is never reached in that path.
+        return values.map((item) => Object.keys(item)[0]);
+    }
+
+    return isManualTranslation ? [] : (field.defaultValue ?? []);
+};
+
+/**
+ * Resolution function for date/time fields
+ * Backend always returns numeric timestamps when value exists, or the field is not included
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object
+ * @param {DotCMSContentTypeField} field - The field object
+ * @returns {number | null} Numeric timestamp or null if no value
+ */
+const dateResolutionFn: FnResolutionValue<number | null> = (contentlet, field) => {
+    if (!contentlet) {
+        // For new content, let the calendar component handle defaultValue processing
+        // The calendar component has proper logic for "now" and fixed dates with server timezone
+        return null;
+    }
+
+    const value = contentlet[field.variable];
+    const timestamp = parseCalendarTimestamp(value);
+
+    // Preserve diagnostics: backend should always return numeric timestamps, so a
+    // non-empty value that fails to parse signals an unexpected payload worth logging.
+    if (timestamp == null && value != null && value !== '') {
+        console.warn('Calendar field received unexpected value from backend:', {
+            fieldVariable: field.variable,
+            value,
+            type: typeof value
+        });
+    }
+
+    return timestamp ?? null;
+};
+
+/**
+ * A function that provides a default resolution value for a contentlet field.
+ *
+ * @param {Object} contentlet - The contentlet object.
+ * @param {Object} field - The field object.
+ * @returns {*} The resolved value for the field.
+ */
+const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
+    const relationship = getRelationshipFromContentlet({
+        contentlet,
+        variable: field.variable
+    });
+
+    return relationship.map((item) => item.identifier).join(',');
+};
+
+/**
+ * Resolution function for block editor fields.
+ * The API may return block editor content as a JSON string when copying/translating.
+ * This function parses the string to an object so the block editor component receives structured data.
+ */
+const blockEditorResolutionFn: FnResolutionValue<string | Record<string, unknown>> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (!contentlet) {
+        return isManualTranslation ? null : field.defaultValue;
+    }
+
+    const value = contentlet[field.variable] ?? field.defaultValue;
+
+    if (typeof value === 'string' && value.trim().startsWith('{')) {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return value;
+        }
+    }
+
+    return value;
+};
+
+const selectResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (!contentlet && isManualTranslation) return null;
+
+    const value = contentlet
+        ? (contentlet[field.variable] ?? field.defaultValue)
+        : field.defaultValue;
+    if (value === null || value === undefined || value === '') {
+        const options = getSingleSelectableFieldOptions(field?.values || '', field.dataType);
+        return options[0]?.value;
+    }
+    return value;
+};
+
+/**
+ * The resolutionValue variable is a record that is responsible for mapping and transforming the
+ * saved value in the contentlet to its corresponding form representation, based on the field type.
+ * This enables each field type to properly process its own data.
+ *
+ */
+export const resolutionValue: Record<
+    FIELD_TYPES,
+    FnResolutionValue<string | string[] | Date | number | Record<string, unknown> | null>
+> = {
+    [FIELD_TYPES.BINARY]: defaultResolutionFn,
+    [FIELD_TYPES.FILE]: defaultResolutionFn,
+    [FIELD_TYPES.IMAGE]: defaultResolutionFn,
+    [FIELD_TYPES.BLOCK_EDITOR]: blockEditorResolutionFn,
+    [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
+    [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
+    [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
+    [FIELD_TYPES.DATE]: dateResolutionFn,
+    [FIELD_TYPES.DATE_AND_TIME]: dateResolutionFn,
+    [FIELD_TYPES.TIME]: dateResolutionFn,
+    [FIELD_TYPES.HIDDEN]: defaultResolutionFn,
+    [FIELD_TYPES.HOST_FOLDER]: hostFolderResolutionFn,
+    [FIELD_TYPES.JSON]: defaultResolutionFn,
+    [FIELD_TYPES.KEY_VALUE]: defaultResolutionFn,
+    [FIELD_TYPES.MULTI_SELECT]: defaultResolutionFn,
+    [FIELD_TYPES.RADIO]: defaultResolutionFn,
+    [FIELD_TYPES.SELECT]: selectResolutionFn,
+    [FIELD_TYPES.TAG]: defaultResolutionFn,
+    [FIELD_TYPES.TEXT]: textFieldResolutionFn,
+    [FIELD_TYPES.TEXTAREA]: defaultResolutionFn,
+    [FIELD_TYPES.WYSIWYG]: defaultResolutionFn,
+    [FIELD_TYPES.CATEGORY]: categoryResolutionFn,
+    [FIELD_TYPES.RELATIONSHIP]: relationshipResolutionFn,
+    [FIELD_TYPES.LINE_DIVIDER]: emptyResolutionFn
+};

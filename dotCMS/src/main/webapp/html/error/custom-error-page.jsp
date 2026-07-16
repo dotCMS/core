@@ -14,7 +14,9 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.UtilMethods" %>
 <%@page import="com.dotmarketing.util.WebKeys"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%><%
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="static com.dotcms.filters.interceptor.saml.SamlWebInterceptor.REFERRER_PARAMETER_KEY" %>
+<%
 out.clear();
 if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGES_FOR_BACKEND", true)){
     out.append(String.valueOf(response.getStatus()));
@@ -29,6 +31,8 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
   final int status = response.getStatus();
   final String title = LanguageUtil.get(pageContext, status + "-page-title");
   final String body = LanguageUtil.get(pageContext, status + "-body1");
+  // Extra HTML rendered below the body (e.g. the Access Denied sign-out link on a 403).
+  String accessDeniedExtraHtml = "";
   try {
     final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
     final boolean isAPICall = pageContext.getErrorData().getRequestURI().startsWith("/api/");
@@ -41,6 +45,23 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
       }
       return; // empty response is better than an HTML response to a REST API call
     }
+
+    if (status == 401) {
+
+        final String referrer = (null != session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN))
+                ? (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)
+                : (null != request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI))
+                ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) : request.getRequestURI();
+
+        if (null == session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)){
+          session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, referrer);
+        }
+
+        final String forwardQueryString = (String) request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
+
+        session.setAttribute(RequestDispatcher.FORWARD_QUERY_STRING, forwardQueryString);
+    }
+
     final String errorPage = "/cms" + status + "Page";
     final Host site = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
@@ -72,6 +93,30 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
         }
       request.getRequestDispatcher("/dotCMS/login").forward(request, response);
       }
+    } else if (status == 403) {
+      // Access Denied: the user is authenticated but not authorized for this resource.
+      // Clear any stale redirect intent and offer a sign-out
+      // link so the user can terminate the SSO session and retry with a different account.
+      session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+
+      String logoutUrl = "/dotCMS/logout";
+      String logoutLabel = LanguageUtil.get(pageContext, "Logout");
+      try {
+        final com.dotcms.saml.DotSamlProxyFactory samlProxy = com.dotcms.saml.DotSamlProxyFactory.getInstance();
+        if (null != site && samlProxy.isAnyHostConfiguredAsSAML()) {
+          final com.dotcms.saml.IdentityProviderConfiguration idpConfig =
+              samlProxy.identityProviderConfigurationFactory().findIdentityProviderConfigurationById(site.getIdentifier());
+          if (null != idpConfig && idpConfig.isEnabled()) {
+            // dotCMS performs SLO against whichever IdP the host is configured for (Entra ID, Okta, ...).
+            logoutUrl = "/api/v1/dotsaml/logout/" + site.getIdentifier();
+            logoutLabel = LanguageUtil.get(pageContext, "403-logout-sso");
+          }
+        }
+      } catch (Exception e) {
+        Logger.debug(this.getClass(), "Unable to resolve SAML logout link for 403 page: " + e.getMessage());
+      }
+
+      accessDeniedExtraHtml = "<p><a href=\"" + logoutUrl + "\">" + logoutLabel + "</a></p>";
     } else if (status == 404) {
       ClickstreamFactory.add404Request(request, response, site);
     } else if (status == 500) {
@@ -129,6 +174,8 @@ h1 {
       <h1><%= title %></h1>
 
       <p><%= body %></p>
+
+      <%= accessDeniedExtraHtml %>
 
     </div>
   </div>

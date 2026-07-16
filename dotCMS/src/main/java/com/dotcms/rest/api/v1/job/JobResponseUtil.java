@@ -4,15 +4,22 @@ import javax.servlet.http.HttpServletRequest;
 
 public class JobResponseUtil {
 
+    private JobResponseUtil() {
+        // Utility class
+    }
+
     /**
      * Builds a JobStatusResponse object with the job ID and status URL.
      *
-     * @param jobId    The job ID
-     * @param request  The HttpServletRequest to build the base URL
+     * @param jobId          The job ID
+     * @param statusEndpoint The path to the status endpoint (e.g. "/api/v1/jobs/%s/status")
+     * @param request        The HttpServletRequest to build the base URL
      * @return A JobStatusResponse object
      */
-    public static JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
-        String statusUrl = buildBaseUrlFromRequest(request) + "/api/v1/jobs/" + jobId + "/status";
+    public static JobStatusResponse buildJobStatusResponse(final String jobId,
+            final String statusEndpoint, final HttpServletRequest request) {
+
+        String statusUrl = buildBaseUrlFromRequest(request) + String.format(statusEndpoint, jobId);
         return JobStatusResponse.builder()
                 .jobId(jobId)
                 .statusUrl(statusUrl)

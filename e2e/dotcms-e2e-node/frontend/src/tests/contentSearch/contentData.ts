@@ -27,7 +27,7 @@ export const fileAssetContent = {
   title: "File Asset title",
   body: "This is a sample file asset content",
   fromURL:
-    "https://upload.wikimedia.org/wikipedia/commons/0/03/DotCMS-logo.svg",
+    "https://dotcms-storage.b-cdn.net/DotCMS-logo.svg",
   newFileName: "New file asset.txt",
   newFileText: "This is a new file asset content",
   newFileTextEdited: "Validate you are able to edit text on binary fields",

@@ -14,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -35,30 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.BASE_TYPE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.CONTENT_TYPE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.CREATION_DATE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HAS_TITLE_IMAGE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_NAME;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LIVE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_NAME_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_NAME_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_DATE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_USER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_USER_NAME_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_NOT_FOUND;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.*;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.LanguageViewStrategy.mapLanguage;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
@@ -162,6 +140,10 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                 map.put(URL_FIELD, url);
             }
         }
+
+        //Expose disabled_wysiwyg to manage text areas and wysiwyg modes.
+        map.put(DISABLED_WYSIWYG_KEY, contentlet.getDisabledWysiwyg());
+
         this.addAuditProperties(contentlet, map);
     }
 
@@ -182,7 +164,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             contentletProperties.put(MOD_USER_NAME_KEY, null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
         }
         if (contentletProperties.containsKey(OWNER_KEY)) {
-            contentletProperties.put(OWNER_NAME_KEY, null != owner ? owner.getFullName() : NOT_APPLICABLE);
+            contentletProperties.put(OWNER_USER_NAME_KEY, null != owner ? owner.getFullName() : NOT_APPLICABLE);
         }
         final Identifier identifier = toolBox.identifierAPI.find(contentlet.getIdentifier());
         if (null != identifier && UtilMethods.isSet(identifier.getId()) && !IdentifierAPI.IDENT404.equals(identifier.getAssetType())) {
@@ -271,6 +253,22 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                         : contentlet.getBinaryMetadata(FILE_ASSET).getName();
 
                     putBinaryLinks(FILE_ASSET, name, contentlet, map);
+
+                    // Surface the binary metadata (including the focal point from custom
+                    // metadata) for the FileAsset's binary field, mirroring the dotAsset path
+                    // below. Without this the image editor cannot re-seed the focal marker when
+                    // reopening a File/Image field that references a legacy FileAsset.
+                    final Metadata fileAssetMetadata = contentlet.getBinaryMetadata(FILE_ASSET);
+                    if (null != fileAssetMetadata) {
+                        final Map<String, Serializable> metaMap = new HashMap<>(
+                                fileAssetMetadata.getMap());
+                        metaMap.remove("path");
+                        final String focalPoint = Try.of(() -> fileAssetMetadata.getCustomMeta()
+                                .getOrDefault(FocalPointAPI.FOCAL_POINT, "0.0").toString())
+                                .getOrElse("0.0");
+                        metaMap.put(FocalPointAPI.FOCAL_POINT, focalPoint);
+                        map.put(FILE_ASSET + "MetaData", metaMap);
+                    }
                     continue;
                 }
 
@@ -283,14 +281,24 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                 if (null != metadata) {
                     Map<String, Serializable> metaMap = new HashMap<>(metadata.getMap());
                     metaMap.remove("path");
+                    // Focal point lives in the binary's custom metadata under a prefixed key, so it
+                    // is not exposed under the clean "focalPoint" key by metadata.getMap(). Surface
+                    // it explicitly so the image editor can re-seed its marker when reopened.
+                    final String focalPoint = Try.of(() ->
+                            metadata.getCustomMeta().getOrDefault(FocalPointAPI.FOCAL_POINT, "0.0").toString()
+                    ).onFailure(e -> Logger.debug(this,
+                            "Unable to read focal point for field '" + velocityVarName + "': "
+                                    + e.getMessage()))
+                            .getOrElse("0.0");
+                    metaMap.put(FocalPointAPI.FOCAL_POINT, focalPoint);
                     map.put(velocityVarName + "MetaData", metaMap);
                     putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);
-                } 
+                }
             } catch (final Exception e) {
                 Logger.warn(this,
                                 String.format("An error occurred when retrieving the Binary file from field"
                                                 + " '%s' in Contentlet with ID '%s': %s", field.variable(),
-                                                contentlet.getIdentifier(), e.getMessage()));
+                                                contentlet.getIdentifier(), e.getMessage()), e);
             }
 
 

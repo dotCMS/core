@@ -6,6 +6,7 @@ import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
@@ -19,11 +20,11 @@ public class MyStatefulJob extends DotStatefulJob {
 
     static final int MAX_THREADS = 10;
     static CountDownLatch countDownLatch = new CountDownLatch(MAX_THREADS);
-    static Set<MyStatefulJob> finishedJobs = new HashSet<>();
+    static Set<MyStatefulJob> finishedJobs = Collections.synchronizedSet(new HashSet<>());
 
     static void init() {
         countDownLatch = new CountDownLatch(MAX_THREADS);
-        finishedJobs = new HashSet<>();
+        finishedJobs = Collections.synchronizedSet(new HashSet<>());
     }
 
     private LocalTime startedAt;

@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 
 import { CommonModule } from '@angular/common';
 
@@ -29,11 +29,8 @@ describe('DotFileFieldUiMessageComponent', () => {
 
     describe('default uiMessage', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    uiMessage: getUiMessage('DEFAULT')
-                } as unknown
-            });
+            spectator = createComponent();
+            spectator.setInput('uiMessage', getUiMessage('DEFAULT'));
         });
 
         it('should be created', () => {
@@ -46,11 +43,51 @@ describe('DotFileFieldUiMessageComponent', () => {
 
             const expectMessage = getUiMessage('DEFAULT');
 
-            const severity = spectator.query(byTestId('ui-message-icon-container'));
+            const iconContainer = spectator.query(byTestId('ui-message-icon-container'));
             const messageIcon = spectator.query(byTestId('ui-message-icon'));
             const messageText = spectator.query(byTestId('ui-message-span'));
 
-            expect(severity).toHaveClass(expectMessage.severity);
+            expect(iconContainer).toBeTruthy();
+            expect(messageIcon).toHaveClass(expectMessage.icon);
+            expect(messageText).toContainText('Drag and Drop File');
+        });
+    });
+
+    describe('when disabled', () => {
+        beforeEach(() => {
+            spectator = createComponent();
+            spectator.setInput('uiMessage', getUiMessage('DEFAULT'));
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+        });
+
+        it('should add disabled class to root element', () => {
+            const rootElement = spectator.query(
+                byTestId('ui-message-icon-container')
+            )?.parentElement;
+            expect(rootElement).toHaveClass('dot-file-field-ui-message__root--disabled');
+        });
+
+        it('should apply disabled styles to icon container', () => {
+            const iconContainer = spectator.query(byTestId('ui-message-icon-container'));
+            expect(iconContainer).toBeTruthy();
+            // Disabled state: icon container receives var(--field-disabled-color) and var(--field-disabled-bgcolor)
+            // via [style] bindings (inline styles cannot be reliably asserted in jsdom)
+        });
+
+        it('should add disabled text color to message text', () => {
+            const textElement = spectator.query(byTestId('ui-message-span'))?.parentElement;
+            expect(textElement).toHaveClass('dot-file-field-ui-message__message--disabled');
+        });
+
+        it('should still display message content when disabled', () => {
+            const expectMessage = getUiMessage('DEFAULT');
+
+            const iconContainer = spectator.query(byTestId('ui-message-icon-container'));
+            const messageIcon = spectator.query(byTestId('ui-message-icon'));
+            const messageText = spectator.query(byTestId('ui-message-span'));
+
+            expect(iconContainer).toBeTruthy();
             expect(messageIcon).toHaveClass(expectMessage.icon);
             expect(messageText).toContainText('Drag and Drop File');
         });

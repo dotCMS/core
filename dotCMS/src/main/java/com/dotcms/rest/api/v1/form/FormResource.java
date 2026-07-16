@@ -31,11 +31,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Provides method to access information about form
  */
 @Path("/v1/form")
+@Tag(name = "Forms", description = "Form management and processing")
 public class FormResource {
 
     private String SUCCESS_CALLBACK_FUNCTION_TEMPLATE = "const formSuccessCallback_%s = function(contentlet){%s};";

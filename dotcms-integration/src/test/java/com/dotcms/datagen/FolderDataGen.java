@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 public class FolderDataGen extends AbstractDataGen<Folder> {
     private long currentTime = System.currentTimeMillis();
@@ -21,6 +22,7 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     private String fileMasks = "";
     private Folder parent;
     private Host site = host;
+    private User owner;
     private String defaultFileType = CacheLocator.getContentTypeCache()
                     .getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME)
                     .getInode();
@@ -70,6 +72,13 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     }
 
     @SuppressWarnings("unused")
+    public FolderDataGen owner(User owner) {
+        this.owner = owner;
+        return this;
+    }
+
+
+    @SuppressWarnings("unused")
     public FolderDataGen parent(Folder parent) {
         this.parent = parent;
         try {
@@ -94,6 +103,11 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
         f.setFilesMasks(fileMasks);
         f.setHostId(site.getIdentifier());
         f.setDefaultFileType(defaultFileType);
+        if(null!= owner ) {
+            f.setOwner(owner.getUserId());
+        } else {
+            f.setOwner(user.getUserId());
+        }
         return f;
     }
 

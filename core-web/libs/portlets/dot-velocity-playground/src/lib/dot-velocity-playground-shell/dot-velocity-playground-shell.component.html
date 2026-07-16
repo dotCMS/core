@@ -1,0 +1,8 @@
+@if ($isLicensed()) {
+    <dot-velocity-playground-page data-testid="velocity-playground-licensed-content" />
+} @else {
+    <dot-empty-container
+        [configuration]="unlicensedConfig"
+        [hideContactUsLink]="true"
+        data-testid="velocity-playground-unlicensed" />
+}

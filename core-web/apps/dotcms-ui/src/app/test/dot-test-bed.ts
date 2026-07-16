@@ -1,44 +1,45 @@
+import { Observable, of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { LOCALE_ID, Type } from '@angular/core';
 import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageService,
     DotRouterService,
-    DotGlobalMessageService,
-    DotFormatDateService,
-    DotIframeService
+    DotSystemConfigService,
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';
+import { DotContentletEditorService } from '../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 export class MockDotUiColorsService {
     setColors() {
@@ -46,12 +47,38 @@ export class MockDotUiColorsService {
     }
 }
 
-export const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
+const mockSystemConfig: DotSystemConfig = {
+    logos: { loginScreen: '', navBar: '' },
+    colors: { primary: '#54428e', secondary: '#3a3847', background: '#BB30E1' },
+    releaseInfo: { buildDate: 'June 24, 2019', version: '5.0.0' },
+    systemTimezone: { id: 'America/Costa_Rica', label: 'Costa Rica', offset: 360 },
+    languages: [],
+    license: {
+        level: 100,
+        displayServerId: '19fc0e44',
+        levelName: 'COMMUNITY EDITION',
+        isCommunity: true
+    },
+    cluster: { clusterId: 'test-cluster', companyKeyDigest: 'test-digest' }
 };
+
+export class MockDotSystemConfigService {
+    getSystemConfig(): Observable<DotSystemConfig> {
+        return of(mockSystemConfig);
+    }
+}
+
+export class MockGlobalStore {
+    // Mock implementation of GlobalStore methods that might be used in tests
+    select = () => of({});
+    dispatch = () => {
+        /* no-op */
+    };
+
+    addNewBreadcrumb = () => {
+        /* no-op */
+    };
+}
 
 /**
  * DOTTestBed its deprecated
@@ -64,13 +91,13 @@ export class DOTTestBed {
             CommonModule,
             FormsModule,
             ReactiveFormsModule,
-            DotSafeHtmlPipe,
-            HttpClientTestingModule
+            DotSafeHtmlPipe
         ],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             { provide: LOCALE_ID, useValue: {} },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             {
                 /* A service that provides a way to navigate between pages. */
                 provide:
@@ -88,10 +115,7 @@ export class DOTTestBed {
             DotHttpErrorManagerService,
             DotIframeService,
             DotMessageService,
-            DotEventsSocket,
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotcmsConfigService,
-            DotcmsEventsService,
             DotFormatDateService,
             LoggerService,
             StringUtils,
@@ -99,7 +123,9 @@ export class DOTTestBed {
             DotLicenseService,
             DotCustomEventHandlerService,
             DotPushPublishDialogService,
-            DotDownloadBundleDialogService
+            DotDownloadBundleDialogService,
+            { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
+            { provide: GlobalStore, useClass: MockGlobalStore }
         ]
     };
 

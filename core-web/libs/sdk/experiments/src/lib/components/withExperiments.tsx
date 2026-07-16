@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import React, { ReactNode, useCallback } from 'react';
 
-import { DotcmsPageProps } from '@dotcms/react';
+import { DotCMSLayoutBodyProps } from '@dotcms/react';
 
 import { DotExperimentHandlingComponent } from './DotExperimentHandlingComponent';
 import { DotExperimentsProvider } from './DotExperimentsProvider';
@@ -28,7 +28,7 @@ export interface PageProviderProps {
  *          adding experiment handling based on the specified configuration.
  */
 export const withExperiments = (
-    WrappedComponent: React.ComponentType<DotcmsPageProps>,
+    WrappedComponent: React.ComponentType<DotCMSLayoutBodyProps>,
     config: DotExperimentConfig
 ) => {
     // We need to use a custom memoization hook
@@ -37,7 +37,7 @@ export const withExperiments = (
     const memoizedConfig = useMemoizedObject(config);
 
     return useCallback(
-        (props: DotcmsPageProps) => {
+        (props: DotCMSLayoutBodyProps) => {
             return (
                 <DotExperimentsProvider config={memoizedConfig}>
                     <DotExperimentHandlingComponent

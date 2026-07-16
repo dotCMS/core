@@ -1,87 +1,277 @@
 @let ogTagsResults = ogTagsResults$;
-@let showSEOTool = $editorProps().seoResults && ogTagsResults;
+@let showSEOTool = $seoResults() && ogTagsResults;
+@let dropzone = $dropzone();
 
 <dot-uve-toolbar
     (translatePage)="translatePage($event)"
-    (editUrlContentMap)="editContentMap($event)" />
+    (editUrlContentMap)="editContentMap($event)"
+    (deviceSelectorChange)="handleDeviceSelectorChange($event)" />
 
 @if (showSEOTool) {
-    <dot-results-seo-tool
-        [seoMedia]="$editorProps().seoResults.socialMedia"
-        [seoOGTags]="$editorProps().seoResults.ogTags"
-        [seoOGTagsResults]="ogTagsResults"
-        data-testId="results-seo-tool"></dot-results-seo-tool>
+    @if ($seoResults(); as seoResults) {
+        <dot-results-seo-tool
+            [seoMedia]="seoResults.socialMedia"
+            [seoOGTags]="seoResults.ogTags"
+            [seoOGTagsResults]="ogTagsResults"
+            data-testId="results-seo-tool" />
+    }
+}
+
+@if (uveStore.editorCanEditContent()) {
+    <div class="palette-wrapper border-r border-gray-200" [class.open]="$paletteOpen">
+        <dot-uve-palette (onNodeSelect)="handlePaletteNodeSelect($event)" data-testId="palette" />
+    </div>
 }
 
 <div
-    class="editor-content"
+    class="editor-content bg-gray-100"
+    #editorContent
     [ngStyle]="$editorContentStyles()"
-    [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
+    [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
     data-testId="editor-content">
-    <div
-        [ngClass]="{
-            'iframe-wrapper--device': $editorProps().iframe.wrapper
-        }"
-        [ngStyle]="{
-            width: $editorProps().iframe?.wrapper?.width,
-            height: $editorProps().iframe?.wrapper?.height
-        }"
-        class="iframe-wrapper">
-        @if (uveStore.status() === UVE_STATUS.ERROR) {
-            <dot-uve-page-version-not-found />
-        }
-        <iframe
-            (load)="onIframePageLoad()"
-            [src]="uveStore.$iframeURL() | safeUrl"
-            [title]="host"
-            [ngStyle]="{
-                pointerEvents: $editorProps().iframe.pointerEvents,
-                opacity: $editorProps().iframe.opacity
-            }"
-            sandbox="allow-scripts allow-same-origin allow-forms"
-            #iframe
-            data-testId="iframe"
-            width="100%"
-            height="100%"></iframe>
-
-        @if ($editorProps().progressBar) {
+    <p-toolbar
+        class="browser-toolbar"
+        [pt]="{
+            root: {
+                style: {
+                    borderRadius: '0',
+                    border: 'none',
+                    borderBottom: 'solid 1px var(--color-gray-200)'
+                }
+            }
+        }">
+        <ng-template #start>
+            <div class="flex items-center gap-1">
+                @if (uveStore.viewMode() === UVE_MODE.EDIT) {
+                    <p-button
+                        (click)="togglePalette()"
+                        [text]="true"
+                        size="small"
+                        [rounded]="true"
+                        data-testId="uve-toolbar-palette-toggle">
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
+                            alt="Left Panel Open"
+                            [class.hidden]="!$paletteOpen"
+                            draggable="false"
+                            data-testId="palette-open-icon" />
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
+                            alt="Left Panel Close"
+                            [class.hidden]="$paletteOpen"
+                            draggable="false"
+                            data-testId="palette-close-icon" />
+                    </p-button>
+                }
+            </div>
+        </ng-template>
+        <ng-template #center>
+            <div class="browser-url-pill bg-gray-100">
+                <p-button
+                    (click)="copyUrlOverlay.toggle($event)"
+                    [pTooltip]="'editpage.header.copy' | dm"
+                    tooltipPosition="bottom"
+                    icon="pi pi-link"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    [pt]="{ icon: { class: 'text-gray-900!' } }"
+                    data-testId="uve-toolbar-copy-url">
+                    <p-popover #copyUrlOverlay>
+                        <div class="url-list">
+                            @for (url of $pageURLS(); track url.value) {
+                                <div class="url-item">
+                                    <div class="url-info">
+                                        <span class="url-label">{{ url.label | dm }}</span>
+                                        <a
+                                            class="url-value"
+                                            [href]="url.value"
+                                            target="_blank"
+                                            rel="noreferrer noopener">
+                                            {{ url.value }}
+                                        </a>
+                                    </div>
+                                    <p-button
+                                        icon="pi pi-copy"
+                                        [text]="true"
+                                        size="small"
+                                        [rounded]="true"
+                                        (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                        [cdkCopyToClipboard]="url.value"
+                                        data-testId="copy-url-button" />
+                                </div>
+                            }
+                        </div>
+                    </p-popover>
+                </p-button>
+                <div class="browser-url-bar">{{ $pageURL() }}</div>
+            </div>
+            <dot-uve-device-controls
+                [state]="$deviceSelectorState()"
+                (stateChange)="handleDeviceSelectorChange($event)"
+                data-testId="uve-device-controls" />
+            <div class="flex items-center gap-2 rounded-full bg-gray-100 pr-3">
+                <p-button
+                    icon="pi pi-undo"
+                    size="small"
+                    [text]="true"
+                    [rounded]="true"
+                    [pt]="{ icon: { class: 'text-gray-900!' } }"
+                    (onClick)="uveStore.viewZoomReset()"
+                    aria-label="Reset zoom and canvas size"
+                    data-testId="zoom-reset" />
+                <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
+                <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
+                <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
+                <dot-uve-zoom-controls />
+            </div>
+        </ng-template>
+        <ng-template #end>
+            <div class="flex items-center gap-1">
+                @if (uveStore.viewMode() === UVE_MODE.EDIT) {
+                    <p-button
+                        (click)="toggleEditPanel()"
+                        [text]="true"
+                        size="small"
+                        [rounded]="true"
+                        data-testId="right-sidebar-toggle">
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
+                            alt="Right Panel Open"
+                            [class.hidden]="!$editPanelOpen"
+                            class="flip-horizontal"
+                            draggable="false"
+                            data-testId="right-sidebar-open-icon" />
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
+                            alt="Right Panel Close"
+                            [class.hidden]="$editPanelOpen"
+                            class="flip-horizontal"
+                            draggable="false"
+                            data-testId="right-sidebar-close-icon" />
+                    </p-button>
+                }
+            </div>
+        </ng-template>
+    </p-toolbar>
+    @if ($progressBar()) {
+        <div class="progress-bar-wrapper">
             <p-progressBar
-                [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
-                [style]="{ height: '6px' }"
+                [style]="{ height: '3px' }"
                 data-testId="progress-bar"
                 mode="indeterminate" />
-        }
-        @if ($editorProps().contentletTools; as contentletTools) {
-            <dot-ema-contentlet-tools
-                (edit)="handleEditContentlet($event)"
-                (editVTL)="handleEditVTL($event)"
-                (delete)="deleteContentlet($event)"
-                (addWidget)="dialog.addWidget($event)"
-                (addForm)="dialog.addForm($event)"
-                (addContent)="dialog.addContentlet($event)"
-                [hide]="contentletTools.hide"
-                [contentletArea]="contentletTools.contentletArea"
-                [isEnterprise]="contentletTools.isEnterprise"
-                [disableDeleteButton]="contentletTools.disableDeleteButton"
-                data-testId="contentlet-tools" />
-        }
-        @if ($editorProps().dropzone; as dropzone) {
-            <dot-ema-page-dropzone
-                [containers]="dropzone.bounds"
-                [dragItem]="dropzone.dragItem"
-                data-testId="dropzone" />
-        }
+        </div>
+    }
+    <div class="canvas-viewport" #canvasViewport>
+        <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
+            <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
+            <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
+                <div
+                    [ngClass]="{
+                        'iframe-wrapper--device': !uveStore.$viewIsResponsiveMode()
+                    }"
+                    class="iframe-wrapper transition-all duration-300">
+                    @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
+                        <dot-uve-page-version-not-found />
+                    }
+                    <dot-uve-iframe
+                        (load)="onIframePageLoad()"
+                        (internalNav)="handleInternalNavFromIframe($event)"
+                        (inlineEditing)="handleInlineEditingFromIframe($event)"
+                        [src]="$iframeSrc()"
+                        [title]="host"
+                        [pointerEvents]="$iframePointerEvents()"
+                        [opacity]="$iframeOpacity()"
+                        #iframe
+                        data-testId="iframe" />
+
+                    @if ($showContentletControls()) {
+                        <dot-uve-contentlet-tools
+                            (openQuickEdit)="handleOpenQuickEdit()"
+                            (openFullEditor)="handleEditWithCopyDecision($event)"
+                            (editVTL)="handleEditVTL($event)"
+                            (deleteContent)="deleteContent($event)"
+                            (addContent)="handleAddContent($event)"
+                            (selectContent)="handleSelectContent($event)"
+                            [contentletArea]="$contentArea"
+                            [allowContentDelete]="$allowContentDelete()"
+                            [showStyleEditorOption]="uveStore.editorCanEditStyles()"
+                            data-testId="contentlet-tools" />
+                    }
+                    @if (!$showLockOverlay() && dropzone) {
+                        <dot-ema-page-dropzone
+                            [containers]="dropzone.bounds"
+                            [dragItem]="dropzone.dragItem"
+                            [zoomLevel]="uveStore.$viewZoomFactor()"
+                            data-testId="dropzone" />
+                    }
+
+                    @if ($showLockOverlay()) {
+                        <dot-uve-lock-overlay />
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-@if ($editorProps().palette; as palette) {
-    <dot-edit-ema-palette
-        [languageId]="palette.languageId"
-        [containers]="palette.containers"
-        [variantId]="palette.variantId"
-        data-testId="palette" />
+@if (uveStore.viewMode() === UVE_MODE.EDIT) {
+    <div
+        class="edit-panel-wrapper border-gray-200"
+        [class.border-l]="$editPanelOpen"
+        [class.open]="$editPanelOpen">
+        <p-tabs
+            [value]="$editorPanelActiveTab()"
+            [dt]="{ tabpanel: { padding: '0' } }"
+            [pt]="{ tablist: { class: 'bg-gray-100' } }"
+            (valueChange)="handleRightSidebarTabChange($event)">
+            <p-tablist>
+                <p-tab [value]="0">
+                    <div [pTooltip]="'uve.toolbar.content.editor' | dm" tooltipPosition="bottom">
+                        <i class="pi pi-pencil"></i>
+                    </div>
+                </p-tab>
+                @if ($showStyleEditorTab()) {
+                    <p-tab [value]="1">
+                        <div
+                            class="flex h-full flex-1 items-center justify-center"
+                            [pTooltip]="'uve.toolbar.style.editor' | dm"
+                            tooltipPosition="bottom">
+                            <i class="pi pi-palette"></i>
+                        </div>
+                    </p-tab>
+                }
+            </p-tablist>
+            <p-tabpanels>
+                <p-tabpanel [value]="0">
+                    @if ($editorPanelActiveTab() === 0) {
+                        <dot-uve-contentlet-quick-edit
+                            [data]="$contentletEditData()"
+                            [loading]="$isIframeLoading()"
+                            (openFullEditor)="handleOpenFullEditor()" />
+                    }
+                </p-tabpanel>
+                @if ($showStyleEditorTab()) {
+                    <p-tabpanel [value]="1">
+                        @if ($editorPanelActiveTab() === 1) {
+                            <div
+                                class="flex-column justify-content-center align-items-center flex size-full gap-2">
+                                @if ($styleSchema()) {
+                                    <dot-uve-style-editor-form [schema]="$styleSchema()!" />
+                                } @else {
+                                    <dot-uve-style-editor-empty-state
+                                        [contentTypeVar]="$styleSchemaContentTypeVar()" />
+                                }
+                            </div>
+                        }
+                    </p-tabpanel>
+                }
+            </p-tabpanels>
+        </p-tabs>
+    </div>
 }
-@if ($editorProps().showDialogs) {
+
+@if ($showDialogs()) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
         (reloadFromDialog)="reloadPage()"
@@ -97,6 +287,17 @@
     rejectButtonStyleClass="p-button-outlined"
     data-testId="confirm-dialog" />
 
-@if ($editorProps().showBlockEditorSidebar) {
-    <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
+@if ($showBlockEditorSidebar()) {
+    <dot-block-editor-sidebar
+        #blockSidebar
+        [variantName]="uveStore.pageVariantId()"
+        (onSaved)="reloadPage()" />
 }
+
+<div
+    #customDragImage
+    class="border-round-lg absolute z-1 border bg-white p-3"
+    style="top: -1000px; left: -1000px; width: fit-content"
+    data-testId="drag-image">
+    {{ uveStore.$areaContentType() }}
+</div>

@@ -523,6 +523,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		var addFilePorletURL = "/c/portal/layout?p_l_id=" + this._getRequestParameter('p_l_id') +
 			"&p_p_id=" + this._getRequestParameter('p_p_id') +
 			"&referer=/html/blank.jsp" +
+			"&angularCurrentPortlet=" + this._getRequestParameter("angularCurrentPortlet") +
 			"&p_p_action=1&p_p_state=maximized&p_p_mode=view&struts_action=/ext/files/upload_multiple&cmd=edit&in_frame=true&parent=" + this.currentFolder.id;
 		this.addAFileIFrame.src = addFilePorletURL;
 		this.addFileDialog.show();

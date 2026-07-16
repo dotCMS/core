@@ -149,7 +149,7 @@
 						<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a>
 					<% } %>
 					<% if(!hideBringBack) { %>
-						 - <a  href="javascript: bringBackTemplateVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+						 - <a  href="javascript: bringBackVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
 					<%}%>
 				<% } %>
 			<% } else { %>

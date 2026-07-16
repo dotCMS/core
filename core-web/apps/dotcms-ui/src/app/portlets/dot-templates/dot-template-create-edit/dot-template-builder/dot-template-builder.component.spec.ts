@@ -1,318 +1,318 @@
-import {
-    AfterContentInit,
-    Component,
-    ContentChild,
-    DebugElement,
-    ElementRef,
-    EventEmitter,
-    Input,
-    Output,
-    ViewChild
-} from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { MockComponent } from 'ng-mocks';
+import { Subject } from 'rxjs';
+
+import { NO_ERRORS_SCHEMA, Component, EventEmitter, Input, Output } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { RouterTestingModule } from '@angular/router/testing';
 
-import { PrimeTemplate } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-
-import { DotGlobalMessageComponent } from '@components/_common/dot-global-message/dot-global-message.component';
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotEventsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-
-import { DotTemplateBuilderComponent } from './dot-template-builder.component';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 
 import {
-    DotTemplateItem,
-    EMPTY_TEMPLATE_ADVANCED,
-    EMPTY_TEMPLATE_DESIGN
-} from '../store/dot-template.store';
+    AUTOSAVE_DEBOUNCE_TIME,
+    DotTemplateBuilderComponent
+} from './dot-template-builder.component';
 
-@Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'dotcms-template-builder-lib',
-    template: `
-        <ng-content select="[toolbar-left]"></ng-content>
-        <ng-content select="[toolbar-actions-right]"></ng-content>
-    `
-})
-class TemplateBuilderMockComponent {
-    @Input() layout: DotLayout;
-    @Input() template: Partial<DotTemplate>;
-    @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
-}
-
-@Component({
-    selector: 'dot-template-advanced',
-    template: ``
-})
-class DotTemplateAdvancedMockComponent {
-    @Input() url;
-
-    @Input() body;
-
-    @Input() didTemplateChanged: boolean;
-
-    @Output() cancel: EventEmitter<MouseEvent> = new EventEmitter();
-
-    @Output() save: EventEmitter<Event> = new EventEmitter();
-
-    @Output() updateTemplate: EventEmitter<Event> = new EventEmitter();
-}
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
+import { DotTemplateAdvancedComponent } from '../dot-template-advanced/dot-template-advanced.component';
+import { DotTemplateItem, DotTemplateItemDesign } from '../store/dot-template.store';
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: true
 })
-export class IframeMockComponent {
+class MockIframeComponent {
     @Input() src: string;
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
-    @ViewChild('iframeElement') iframeElement: ElementRef;
-}
 
-@Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'p-tabView',
-    template: '<ng-content></ng-content>'
-})
-export class TabViewMockComponent {
-    @Input() styleClass: string;
-}
-
-@Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'p-tabPanel',
-    template:
-        '<ng-content></ng-content><ng-container *ngTemplateOutlet="contentTemplate"></ng-container>'
-})
-export class TabPanelMockComponent implements AfterContentInit {
-    @Input() header: string;
-    @ContentChild(PrimeTemplate) container;
-    contentTemplate;
-
-    ngAfterContentInit() {
-        if (this.container.name === 'content') {
-            this.contentTemplate = this.container.template;
+    iframeElement = {
+        nativeElement: {
+            contentWindow: {
+                location: {
+                    reload: jest.fn()
+                }
+            }
         }
-    }
+    };
 }
-
-@Component({
-    selector: 'dot-test-host-component',
-    template: '<dot-template-builder #builder [item]="item"></dot-template-builder> '
-})
-class DotTestHostComponent {
-    @ViewChild('builder') builder: DotTemplateBuilderComponent;
-    item: DotTemplateItem;
-}
-
-const ITEM_FOR_NEW_TEMPLATE_BUILDER = {
-    ...EMPTY_TEMPLATE_DESIGN,
-    theme: '123',
-    live: true
-};
 
 describe('DotTemplateBuilderComponent', () => {
-    let component: DotTemplateBuilderComponent;
-    let fixture: ComponentFixture<DotTemplateBuilderComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotTemplateBuilderComponent>;
+    let dotRouterService: SpyObject<DotRouterService>;
+    let pageLeaveRequest$: Subject<void>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [
-                DotTemplateBuilderComponent,
-                DotTemplateAdvancedMockComponent,
-                IframeMockComponent,
-                TabViewMockComponent,
-                TabPanelMockComponent,
-                DotTestHostComponent,
-                TemplateBuilderMockComponent,
-                DotGlobalMessageComponent
-            ],
-            imports: [
-                DotMessagePipe,
-                DotPortletBoxModule,
-                DotShowHideFeatureDirective,
-                ButtonModule,
-                DotIconModule,
-                RouterTestingModule
-            ],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: new MockDotMessageService({
-                        design: 'Design',
-                        code: 'Code'
-                    })
-                },
-                DotEventsService,
-                {
-                    provide: DotRouterService,
-                    useValue: new MockDotRouterService()
-                }
-            ]
-        }).compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotTemplateBuilderComponent,
+        imports: [DotTemplateBuilderComponent],
+        detectChanges: false,
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockImplementation((key: string) => key)
+            })
+        ],
+        componentImports: [
+            [DotTemplateAdvancedComponent, MockComponent(DotTemplateAdvancedComponent)],
+            [TemplateBuilderComponent, MockComponent(TemplateBuilderComponent)],
+            [DotPortletBoxComponent, MockComponent(DotPortletBoxComponent)],
+            [DotGlobalMessageComponent, MockComponent(DotGlobalMessageComponent)],
+            [IframeComponent, MockIframeComponent]
+        ]
     });
+
+    const createDesignItem = (overrides: Partial<any> = {}): DotTemplateItemDesign => {
+        return {
+            type: 'design',
+            identifier: 'template-id',
+            title: 'Template Title',
+            friendlyName: 'Template Friendly Name',
+            theme: 'theme-id',
+            layout: { body: { rows: [] } },
+            containers: {},
+            ...overrides
+        } as DotTemplateItemDesign;
+    };
+
+    const createAdvancedItem = (overrides: Partial<any> = {}): DotTemplateItem => {
+        return {
+            type: 'advanced',
+            identifier: 'template-id',
+            title: 'Template Title',
+            friendlyName: 'Template Friendly Name',
+            body: '<h1>hi</h1>',
+            ...overrides
+        } as DotTemplateItem;
+    };
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotTemplateBuilderComponent);
-        de = fixture.debugElement;
-        component = fixture.componentInstance;
+        pageLeaveRequest$ = new Subject<void>();
 
-        spyOn(component.save, 'emit');
-        spyOn(component.updateTemplate, 'emit');
-        spyOn(component.cancel, 'emit');
+        spectator = createComponent({
+            providers: [
+                mockProvider(DotRouterService, {
+                    forbidRouteDeactivation: jest.fn(),
+                    pageLeaveRequest$
+                })
+            ]
+        });
+
+        dotRouterService = spectator.inject(DotRouterService);
     });
 
-    describe('design', () => {
-        beforeEach(() => {
-            component.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
-            fixture.detectChanges();
+    it('should set lastTemplate when item input is set', () => {
+        const item = createDesignItem();
+        spectator.setInput('item', item);
+
+        expect(spectator.component.item).toBe(item);
+        expect(spectator.component.lastTemplate).toBe(item);
+    });
+
+    it('should set permissionsUrl and historyUrl on init', () => {
+        const item = createDesignItem({ identifier: 'abc' });
+        spectator.setInput('item', item);
+
+        spectator.detectChanges();
+
+        expect(spectator.component.permissionsUrl).toBe(
+            '/html/templates/permissions.jsp?templateId=abc&popup=true'
+        );
+        expect(spectator.component.historyUrl).toBe(
+            '/html/templates/push_history.jsp?templateId=abc&popup=true'
+        );
+
+        const permissionsIframeDe = spectator.debugElement.query(
+            By.css('dot-iframe[data-testId="permissionsIframe"]')
+        );
+        const historyIframeDe = spectator.debugElement.query(
+            By.css('dot-iframe[data-testId="historyIframe"]')
+        );
+
+        expect(permissionsIframeDe.componentInstance.src).toBe(
+            '/html/templates/permissions.jsp?templateId=abc&popup=true'
+        );
+        expect(historyIframeDe.componentInstance.src).toBe(
+            '/html/templates/push_history.jsp?templateId=abc&popup=true'
+        );
+    });
+
+    describe('<dot-template-advanced> (dot-template-builder.component.html:18-23)', () => {
+        it('should pass the correct inputs', () => {
+            const item = createAdvancedItem({ body: 'ADV_BODY' });
+            spectator.setInput('item', item);
+            spectator.setInput('didTemplateChanged', true);
+
+            spectator.detectChanges();
+
+            const advancedDe = spectator.debugElement.query(By.css('dot-template-advanced'));
+            expect(advancedDe).toBeTruthy();
+            expect(advancedDe.componentInstance.body).toBe('ADV_BODY');
+            expect(advancedDe.componentInstance.didTemplateChanged).toBe(true);
         });
 
-        it('should have tab title "Design"', () => {
-            const panel = de.query(By.css('[data-testId="builder"]'));
-            expect(panel.componentInstance.header).toBe('Design');
-        });
+        it('should forward outputs', () => {
+            const item = createAdvancedItem({ body: 'ADV_BODY' });
+            spectator.setInput('item', item);
+            spectator.setInput('didTemplateChanged', true);
 
-        it('should not show <dot-template-advanced>', () => {
-            const advanced = de.query(By.css('dot-template-advanced'));
-            expect(advanced).toBeNull();
+            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
+
+            spectator.detectChanges();
+
+            const updated = createAdvancedItem({ identifier: 'new-id' });
+            spectator.triggerEventHandler('dot-template-advanced', 'updateTemplate', updated);
+            spectator.triggerEventHandler('dot-template-advanced', 'save', updated);
+            spectator.triggerEventHandler('dot-template-advanced', 'cancel', null);
+
+            expect(updateSpy).toHaveBeenCalledWith(updated);
+            expect(saveSpy).toHaveBeenCalledWith(updated);
+            expect(cancelSpy).toHaveBeenCalled();
         });
     });
 
-    describe('New template design', () => {
-        beforeEach(() => {
-            component.item = {
-                ...EMPTY_TEMPLATE_DESIGN,
-                theme: '123',
-                live: true
-            };
-            fixture.detectChanges();
+    describe('<dotcms-template-builder-lib> (dot-template-builder.component.html:26-37)', () => {
+        it('should pass the correct inputs', () => {
+            const item = createDesignItem({
+                identifier: 'id-1',
+                theme: 't-1',
+                layout: { body: { rows: [{ foo: 'bar' }] } },
+                containers: { c1: { identifier: 'container-1' } }
+            });
+            spectator.setInput('item', item);
+
+            spectator.detectChanges();
+
+            const builderDe = spectator.debugElement.query(By.css('dotcms-template-builder-lib'));
+            expect(builderDe).toBeTruthy();
+            expect(builderDe.componentInstance.layout).toEqual(item.layout as any);
+            expect(builderDe.componentInstance.containerMap).toEqual(item.containers as any);
+            expect(builderDe.componentInstance.template).toEqual({
+                themeId: 't-1',
+                identifier: 'id-1'
+            });
         });
 
-        it('should show new template builder component', () => {
-            const component: DebugElement = fixture.debugElement.query(
-                By.css('[data-testId="new-template-builder"]')
+        it('should react to templateChange output', fakeAsync(() => {
+            const item = createDesignItem({ identifier: 'id-1', theme: 't-1' });
+            spectator.setInput('item', item);
+
+            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.detectChanges();
+
+            const reloadSpy = (spectator.component.historyIframe as any).iframeElement.nativeElement
+                .contentWindow.location.reload as jest.Mock;
+
+            const updated = createDesignItem({ identifier: 'id-2', theme: 't-2' });
+            spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);
+
+            expect(reloadSpy).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
+            // updateTemplate is intentionally NOT emitted on every change — that previously
+            // caused a synchronous echo back into the designer's [layout] input and crashed
+            // updateOldRows when state had stale y values after a row removal.
+            expect(updateSpy).not.toHaveBeenCalled();
+
+            tick(AUTOSAVE_DEBOUNCE_TIME - 1);
+            expect(saveSpy).not.toHaveBeenCalled();
+
+            tick(1);
+            expect(saveSpy).toHaveBeenCalledWith(updated);
+        }));
+
+        // Regression guard: a row removal in the designer fires templateChange twice in
+        // quick succession (once from `removeRow`, once from `moveRow` after gridstack
+        // auto-compacts). If updateTemplate were emitted synchronously on either, the
+        // parent store's `working` signal would update and echo the layout straight back
+        // into the designer's `[layout]` input, triggering `updateOldRows` mid-cycle while
+        // state still had y gaps — producing corrupt rows / column reorders / duplicates.
+        //
+        // Two assertions matter and they're complementary:
+        //   (1) `updateTemplate.emit` is never called synchronously — the wrapper contract.
+        //   (2) The lib's `[layout]` input reference does not change across the rapid
+        //       templateChange emissions in the same tick — the actual bug shape. A future
+        //       refactor that re-introduces the echo via an indirect path (e.g. moving
+        //       update logic into the parent's (templateChange) handler) would still pass
+        //       assertion (1) but fail (2), which is the one that actually keeps the
+        //       designer's state-merging path quiet during the rapid emissions.
+        it('should never echo templateChange synchronously back to parent (regression)', fakeAsync(() => {
+            const item = createDesignItem({ identifier: 'id-1' });
+            spectator.setInput('item', item);
+
+            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.detectChanges();
+
+            const builderDe = spectator.debugElement.query(By.css('dotcms-template-builder-lib'));
+            const layoutBefore = builderDe.componentInstance.layout;
+
+            const afterRemoveRow = createDesignItem({
+                identifier: 'id-1',
+                layout: { body: { rows: [{ stale: 'y=2' } as any] } }
+            });
+            const afterMoveRow = createDesignItem({
+                identifier: 'id-1',
+                layout: { body: { rows: [{ compact: 'y=1' } as any] } }
+            });
+
+            // First emission — state immediately after removeRow (y gap present).
+            spectator.triggerEventHandler(
+                'dotcms-template-builder-lib',
+                'templateChange',
+                afterRemoveRow
             );
+            spectator.detectChanges();
+            // (2) The lib's [layout] input MUST NOT have been replaced by an echo.
+            expect(builderDe.componentInstance.layout).toBe(layoutBefore);
 
-            expect(component).toBeTruthy();
-        });
-
-        it('should set the themeId @Input correctly', () => {
-            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
-            expect(templateBuilder.componentInstance.template.themeId).toBe('123');
-        });
-
-        it('should trigger onTemplateItemChange new-template-builder when the layout is changed', () => {
-            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
-            const template = {
-                layout: EMPTY_TEMPLATE_DESIGN.layout,
-                theme: '123',
-                friendlyName: 'test',
-                identifier: '123',
-                title: 'test'
-            } as DotTemplateItem;
-
-            spyOn(component, 'onTemplateItemChange');
-
-            templateBuilder.triggerEventHandler('templateChange', template);
-            expect(component.onTemplateItemChange).toHaveBeenCalledWith(template);
-        });
-
-        it('should add style classes if new template builder feature flag is on', () => {
-            fixture = TestBed.createComponent(DotTemplateBuilderComponent); // new fixture as async pipe was running before function was replaced
-            fixture.componentInstance.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
-            fixture.detectChanges();
-            const tabView = fixture.debugElement.query(By.css('p-tabView'));
-            const tabViewComponent: TabViewMockComponent = tabView.componentInstance;
-            expect(tabViewComponent.styleClass).toEqual(
-                'dot-template-builder__new-template-builder'
+            // Second emission — state after moveRow auto-compaction. Fires synchronously
+            // in the same tick as the first because moveRow runs inside the rows.changes
+            // subscriber during CD.
+            spectator.triggerEventHandler(
+                'dotcms-template-builder-lib',
+                'templateChange',
+                afterMoveRow
             );
-        });
+            spectator.detectChanges();
+            // (2) Still the same reference after the second emission.
+            expect(builderDe.componentInstance.layout).toBe(layoutBefore);
+
+            // (1) Wrapper contract — no synchronous emit from either templateChange.
+            expect(updateSpy).not.toHaveBeenCalled();
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.component.lastTemplate).toBe(afterMoveRow);
+
+            // After debounce, exactly one save with the LATEST item — proving the dual
+            // emission collapses to a single backend round-trip with consistent state.
+            tick(AUTOSAVE_DEBOUNCE_TIME);
+            expect(saveSpy).toHaveBeenCalledTimes(1);
+            expect(saveSpy).toHaveBeenCalledWith(afterMoveRow);
+            expect(updateSpy).not.toHaveBeenCalled();
+        }));
     });
 
-    describe('advanced', () => {
-        beforeEach(() => {
-            component.item = EMPTY_TEMPLATE_ADVANCED;
-            component.didTemplateChanged = false;
+    it('should save current lastTemplate when page leave is requested', fakeAsync(() => {
+        const item = createDesignItem();
+        spectator.setInput('item', item);
 
-            fixture.detectChanges();
-        });
+        const saveSpy = jest.spyOn(spectator.component.save, 'emit');
 
-        it('should have tab title "Code"', () => {
-            const panel = de.query(By.css('[data-testId="builder"]'));
-            expect(panel.componentInstance.header).toBe('Code');
-        });
+        spectator.detectChanges();
 
-        it('should show dot-template-advanced and pass attr', () => {
-            const builder = de.query(By.css('dot-template-advanced')).componentInstance;
-            expect(builder.body).toBe('');
-            expect(builder.didTemplateChanged).toBe(false);
-        });
+        const updated = createDesignItem({ identifier: 'id-2' });
+        spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);
 
-        it('should emit events from dot-template-advanced', () => {
-            const builder = de.query(By.css('dot-template-advanced'));
+        saveSpy.mockClear();
+        pageLeaveRequest$.next();
 
-            builder.triggerEventHandler('save', EMPTY_TEMPLATE_ADVANCED);
-            builder.triggerEventHandler('updateTemplate', EMPTY_TEMPLATE_ADVANCED);
-            builder.triggerEventHandler('cancel', {});
-
-            expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_ADVANCED);
-            expect(component.updateTemplate.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_ADVANCED);
-            expect(component.cancel.emit).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('permissions and history', () => {
-        beforeEach(() => {
-            component.item = {
-                ...EMPTY_TEMPLATE_ADVANCED,
-                identifier: '123'
-            };
-            fixture.detectChanges();
-        });
-
-        it('should set iframe permissions url', () => {
-            fixture.whenStable().then(() => {
-                const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
-                expect(permissions.componentInstance.src).toBe(
-                    '/html/templates/permissions.jsp?templateId=123&popup=true'
-                );
-            });
-        });
-
-        it('should set iframe history url', () => {
-            fixture.whenStable().then(() => {
-                const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
-                expect(historyIframe.componentInstance.src).toBe(
-                    '/html/templates/push_history.jsp?templateId=123&popup=true'
-                );
-            });
-        });
-
-        it('should handle custom event', () => {
-            spyOn(component.custom, 'emit');
-
-            fixture.whenStable().then(() => {
-                const permissions: IframeMockComponent = de.query(
-                    By.css('[data-testId="historyIframe"]')
-                ).componentInstance;
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'edit-template',
-                    data: {
-                        id: 'id',
-                        inode: 'inode'
-                    }
-                });
-                permissions.custom.emit(customEvent);
-                expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
-            });
-        });
-    });
+        expect(saveSpy).toHaveBeenCalledWith(updated);
+    }));
 });

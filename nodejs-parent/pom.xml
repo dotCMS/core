@@ -12,8 +12,15 @@
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <node.js.version>v18.20.3</node.js.version>
+        <node.js.version>v22.15.0</node.js.version>
+        <pnpm.version>10.17.1</pnpm.version>
+        <!-- Yarn is kept ONLY for the legacy e2e/dotcms-e2e-node module, which is
+             being sunset in favor of the e2e app in core-web/apps/dotcms-ui-e2e.
+             core-web, dotcms-ui-e2e and dotcms-postman all use pnpm. Remove this
+             yarn provisioning (property + install-node-and-yarn execution below)
+             once e2e/dotcms-e2e-node is deleted. -->
         <yarn.version>v1.22.19</yarn.version>
+        <node.install.dir>${maven.multiModuleProjectDirectory}/installs/node</node.install.dir>
     </properties>
     <build>
         <plugins>
@@ -28,32 +35,81 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                    <!-- Yarn is still required only by the legacy e2e/dotcms-e2e-node
+                         module (being sunset in favor of core-web/apps/dotcms-ui-e2e).
+                         Node is already installed by the previous execution so this only
+                         adds yarn to installs/node/yarn. Drop this once that module is gone. -->
+                    <execution>
                         <id>install node and yarn</id>
                         <goals>
                             <goal>install-node-and-yarn</goal>
                         </goals>
-                        <!-- optional: default phase is "generate-resources" -->
                         <phase>validate</phase>
                     </execution>
+                </executions>
+            </plugin>
+
+            <!--
+              Activate pnpm via the corepack shipped with Node 22.
+              frontend-maven-plugin normalises the tarball layout to
+              ${node.install.dir}/node_modules/corepack on both Linux and macOS
+              (the raw Node tarball uses lib/node_modules on Linux; the plugin
+              relocates it). We invoke corepack.js directly with the installed
+              node binary to use the bundled copy rather than letting npx pull
+              a different version from the registry.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <!--
+                      Prepend installs/node to PATH so the pnpm shim's
+                      `#!/usr/bin/env node` shebang picks up our installed
+                      Node 22, not whatever the runner happens to have in
+                      its default PATH (GitHub Actions ships Node 20).
+                    -->
+                    <environmentVariables>
+                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                    </environmentVariables>
+                </configuration>
+                <executions>
                     <execution>
-                        <id>config yarn timeout</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
+                        <id>corepack-enable-pnpm-shim</id>
                         <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
                         <configuration>
-                            <arguments>config set network-timeout 6000000</arguments>
+                            <executable>${node.install.dir}/node</executable>
+                            <arguments>
+                                <argument>${node.install.dir}/node_modules/corepack/dist/corepack.js</argument>
+                                <argument>enable</argument>
+                                <argument>pnpm</argument>
+                                <argument>--install-directory</argument>
+                                <argument>${node.install.dir}</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>config yarn registry</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
+                        <id>corepack-prepare-pnpm</id>
                         <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
                         <configuration>
-                            <arguments>config set registry https://dotcms-npm.b-cdn.net</arguments>
+                            <executable>${node.install.dir}/node</executable>
+                            <arguments>
+                                <argument>${node.install.dir}/node_modules/corepack/dist/corepack.js</argument>
+                                <argument>prepare</argument>
+                                <argument>pnpm@${pnpm.version}</argument>
+                                <argument>--activate</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>

@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { SidebarModule } from 'primeng/sidebar';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import {
@@ -34,9 +34,7 @@ interface CreateForm {
 
 @Component({
     selector: 'dot-experiments-create',
-    standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         // dotCMS
         DotSidebarDirective,
@@ -45,24 +43,24 @@ interface CreateForm {
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,
         // PrimeNg
-        InputTextareaModule,
+        TextareaModule,
         InputTextModule,
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         DotFieldRequiredDirective,
-        DotTrimInputDirective
+        DotTrimInputDirective,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-create.component.html',
-    styleUrls: ['./dot-experiments-create.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsCreateComponent implements OnInit {
+    private readonly dotExperimentsListStore = inject(DotExperimentsListStore);
+
     vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
 
     form: FormGroup<CreateForm>;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
-
-    constructor(private readonly dotExperimentsListStore: DotExperimentsListStore) {}
 
     ngOnInit(): void {
         this.initForm();

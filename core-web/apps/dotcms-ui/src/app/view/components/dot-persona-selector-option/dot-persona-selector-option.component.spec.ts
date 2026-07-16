@@ -16,7 +16,8 @@ import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option
 @Component({
     template: `
         <dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     persona = mockDotPersona;
@@ -33,8 +34,9 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectorOptionComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotPersonaSelectorOptionComponent,
                 BrowserAnimationsModule,
                 DotAvatarDirective,
                 BadgeModule,
@@ -70,12 +72,15 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
             expect(image).toBe(mockDotPersona.photo);
             expect(avatar.query(By.css('.p-badge'))).toBeTruthy();
-            expect(avatar.attributes['ng-reflect-text']).toBe(mockDotPersona.name);
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the text property on the DotAvatarDirective instance
+            const avatarDirective = avatar.injector.get(DotAvatarDirective);
+            expect(avatarDirective.text).toBe(mockDotPersona.name);
         });
 
         it('should have personalized button with right properties', () => {
             const btnElement: DebugElement = de.query(By.css('button'));
-            expect(btnElement.nativeElement.innerText).toBe('Personalized');
+            expect(btnElement.nativeElement.textContent.trim()).toBe('Personalized');
             expect(btnElement.attributes.icon).toBe('pi pi-times');
             expect(btnElement.attributes.iconPos).toBe('right');
         });
@@ -84,7 +89,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
             const lblElement: DebugElement = de.query(
                 By.css('.dot-persona-selector-option__label')
             );
-            expect(lblElement.nativeElement.innerText).toBe(mockDotPersona.name);
+            expect(lblElement.nativeElement.textContent.trim()).toBe(mockDotPersona.name);
             expect(lblElement.nativeElement.classList).toContain(
                 'dot-persona-selector-option__personalized'
             );
@@ -103,7 +108,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
             const lblElement: DebugElement = de.query(
                 By.css('.dot-persona-selector-option__label')
             );
-            expect(lblElement.nativeElement.innerText).toBe(mockDotPersona.name);
+            expect(lblElement.nativeElement.textContent.trim()).toBe(mockDotPersona.name);
             expect(lblElement.nativeElement.classList).not.toContain(
                 'dot-persona-selector-option__personalized'
             );
@@ -132,8 +137,8 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     describe('events', () => {
         beforeEach(() => {
-            spyOn(component.switch, 'emit');
-            spyOn(component.delete, 'emit');
+            jest.spyOn(component.switch, 'emit');
+            jest.spyOn(component.delete, 'emit');
             fixture.detectChanges();
         });
 
@@ -144,6 +149,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
                 }
             });
             expect(component.switch.emit).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.switch.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit persona when delete clicked', () => {
@@ -154,6 +160,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
                 }
             });
             expect(component.delete.emit).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.delete.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -1,15 +1,14 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
-import com.dotcms.repackage.javax.validation.ValidationException;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.InputStream;
+import javax.validation.ValidationException;
+import javax.validation.constraints.NotNull;
 import net.minidev.json.annotate.JsonIgnore;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-
-import java.io.InputStream;
 
 /**
  * Bean class that encapsulates the multipart form parameters for content import operations.
@@ -82,6 +81,14 @@ public class ContentImportParams extends Validated {
     @Override
     public void checkValid() {
         super.checkValid();
+
+        if (jsonForm == null || jsonForm.isEmpty()) {
+            throw new ValidationException("The form data is required.");
+        }
+
+        if (fileInputStream == null) {
+            throw new ValidationException("The file is required.");
+        }
         if (contentDisposition == null || contentDisposition.getFileName() == null) {
             throw new ValidationException("The file must have a valid file name.");
         }

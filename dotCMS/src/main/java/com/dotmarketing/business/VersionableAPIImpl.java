@@ -12,6 +12,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -22,6 +23,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -47,7 +49,6 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	private final VersionableFactory versionableFactory;
 	private final PermissionAPI permissionAPI;
-    final Debouncer debouncer = new Debouncer();
     final UniqueFieldValidationStrategyResolver uniqueFieldValidationStrategyResolver;
 
 	public VersionableAPIImpl() {
@@ -526,17 +527,11 @@ public class VersionableAPIImpl implements VersionableAPI {
                     contentlet.getIdentifier(), contentlet.getLanguageId(), contentlet.getVariantId());
 
             //Get the structure for this contentlet
-            final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( contentlet.getStructureInode() );
-
-            if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
-                if ( UtilMethods.isSet( identifier.getSysPublishDate() ) && identifier.getSysPublishDate().after( new Date() ) ) {
-                    final Runnable futurePublishDateRunnable = ()->
-                    {futurePublishDateMessage(versionable.getModUser());};
-                    debouncer.debounce("contentPublishDateError"+versionable.getModUser(),futurePublishDateRunnable,5000,TimeUnit.MILLISECONDS);
-                    return;
-                }
+            final ContentType contentType = contentlet.getContentType();
+            if (ContentPublishDateUtil.notifyIfFuturePublishDate(contentType, identifier, versionable.getModUser())) {
+                return;
             }
-            if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
+            if ( UtilMethods.isSet( contentType.expireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
                 if ( UtilMethods.isSet( identifier.getSysExpireDate() ) && identifier.getSysExpireDate().before( new Date() ) ) {
                     throw new ExpiredContentletPublishStateException( contentlet );
                 }
@@ -559,22 +554,6 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
     }
 
-    /**
-     * Method to encapsulate the logic of a growl message when content has a future publish date
-     * @param user user to show the growl
-     */
-    private void futurePublishDateMessage(final String user){
-        final String message = Try.of(() -> LanguageUtil.get("message.contentlet.publish.future.date"))
-                .getOrElse("The content was saved successfully but cannot be published because"
-                        + " it is scheduled to be published on future date.");
-        final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder()
-                .setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
-                .setSeverity(MessageSeverity.SUCCESS).setLife(5000);
-
-        SystemMessageEventUtil.getInstance().pushMessage(systemMessageBuilder.create(),
-                ImmutableList.of(user));
-        Logger.debug(this,message);
-    }
 
     @WrapInTransaction
     @Override

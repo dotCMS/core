@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { isInsideEditor } from '@dotcms/client';
+import { DotCMSPageAsset } from '@dotcms/types';
+import { getUVEState } from '@dotcms/uve';
 
 import DotExperimentsContext from '../contexts/DotExperimentsContext';
 
@@ -17,21 +18,33 @@ import DotExperimentsContext from '../contexts/DotExperimentsContext';
  * @param {Object} data - An object containing the runningExperimentId and viewAs (containing variantId).
  * @returns {Object} An object with a function `shouldWaitForVariant` that, when called, returns `true` if it should wait for the correct variant, `false` otherwise.
  */
-export const useExperimentVariant = (data: {
-    runningExperimentId?: string;
-    viewAs: { variantId: string };
-}): { shouldWaitForVariant: boolean } => {
+export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVariant: boolean } => {
     const dotExperimentInstance = useContext(DotExperimentsContext);
 
     const { runningExperimentId, viewAs } = data;
 
-    const { variantId } = viewAs;
+    const variantId = viewAs?.variantId;
 
     // By default, wait for the variant
     const [shouldWaitForVariant, setShouldWaitForVariant] = useState<boolean>(true);
 
     useEffect(() => {
-        if (isInsideEditor() || !runningExperimentId) {
+        // Any UVE mode counts as "inside the editor" - must match DotExperimentsProvider's check.
+        const isInsideEditor = !!getUVEState()?.mode;
+
+        if (isInsideEditor || !runningExperimentId) {
+            setShouldWaitForVariant(false);
+
+            return;
+        }
+
+        // If variantId is not provided, show content and warn
+        if (!variantId) {
+            console.warn(
+                '[DotExperiments] variantId is required but missing. ' +
+                    'Please ensure the page data includes variantId in viewAs. ' +
+                    'Showing content to prevent blank screen.'
+            );
             setShouldWaitForVariant(false);
 
             return;
@@ -49,7 +62,7 @@ export const useExperimentVariant = (data: {
                 return;
             }
         }
-    }, [dotExperimentInstance, data]);
+    }, [dotExperimentInstance, data, variantId, runningExperimentId]);
 
     return { shouldWaitForVariant };
 };

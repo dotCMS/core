@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.when;
 
 @Dependent
 @RunWith(JUnit4WeldRunner.class)
+@Ignore("Data Collectors have been disabled in favor of creating events via REST")
 public class FilesCollectorIntegrationTest {
 
     @BeforeClass
