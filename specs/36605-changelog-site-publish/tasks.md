@@ -252,11 +252,11 @@ wording) lands in the same channel.
 
 ### Tests for User Story 3 (MANDATORY — write FIRST)
 
-- [ ] T033 [P] [US3] Unit test for the **failure exit contract** in `tests/test_cli.py`: a network/auth
+- [x] T033 [P] [US3] Unit test for the **failure exit contract** in `tests/test_cli.py`: a network/auth
         error (e.g. mocked 401) and a payload-rejected (`4xx`) response each produce a **non-zero exit**,
         and — Constitution III guard — the bearer token never appears in captured stdout/stderr/logs
         (FR-008).
-- [ ] T034 [P] [US3] Unit test asserting the **skip vs failure distinction** on stdout per the T005
+- [x] T034 [P] [US3] Unit test asserting the **skip vs failure distinction** on stdout per the T005
         contract in `tests/test_cli.py`: a protective skip exits 0 with the skip marker; a real failure
         exits non-zero with no skip marker — so the workflow can branch to different Slack wording.
 

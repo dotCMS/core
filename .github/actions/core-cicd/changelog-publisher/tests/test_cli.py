@@ -119,3 +119,71 @@ def test_apply_issues_fire_call(tmp_path, monkeypatch):
     assert rc == 0
     put_calls = [c for c in responses_lib.calls if c.request.method == "PUT"]
     assert len(put_calls) == 1
+
+
+# ===========================================================================
+# User Story 3 — failure exit contract + skip-vs-failure stdout distinction
+# ===========================================================================
+
+# A distinctive token so a leak into stdout/stderr/logs is unambiguous.
+_SECRET_TOKEN = "SUPERSECRET-devsite-TOKEN-abc123"
+
+
+@responses_lib.activate
+def test_auth_error_exits_nonzero_without_leaking_token(tmp_path, monkeypatch, capsys, caplog):
+    """A 401 on search -> non-zero exit; the bearer token never appears in
+    stdout/stderr/logs, and no skip marker is emitted (FR-008, Constitution III)."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    responses_lib.add(responses_lib.POST, _SEARCH_URL, json={"message": "invalid token"}, status=401)
+
+    with caplog.at_level("DEBUG"):
+        rc = main(_argv(tmp_path, "26.07.10-01", "--apply"))
+
+    assert rc != 0
+    out, err = capsys.readouterr()
+    assert _SECRET_TOKEN not in out
+    assert _SECRET_TOKEN not in err
+    assert _SECRET_TOKEN not in caplog.text
+    assert "::changelog-skip::" not in out
+
+
+@responses_lib.activate
+def test_payload_rejected_exits_nonzero_without_skip_marker(tmp_path, monkeypatch, capsys):
+    """A 4xx on the fire (payload rejected) -> non-zero exit, no skip marker."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_empty.json"), status=200)
+    responses_lib.add(responses_lib.PUT, _FIRE_URL, json={"message": "bad payload"}, status=400)
+
+    rc = main(_argv(tmp_path, "26.07.10-01", "--apply"))
+
+    assert rc != 0
+    out, _ = capsys.readouterr()
+    assert _SECRET_TOKEN not in out
+    assert "::changelog-skip::" not in out
+
+
+@responses_lib.activate
+def test_ambiguous_match_exits_nonzero(tmp_path, monkeypatch, capsys):
+    """>1 hit -> non-zero exit (never guess), no skip marker."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_two_hits.json"), status=200)
+
+    rc = main(_argv(tmp_path, "26.07.10-01", "--apply", "--service-account", "user-devbot-0000"))
+
+    assert rc != 0
+    out, _ = capsys.readouterr()
+    assert "::changelog-skip::" not in out
+
+
+@responses_lib.activate
+def test_protective_skip_exits_zero_with_marker(tmp_path, monkeypatch, capsys):
+    """A human-edit protective skip exits 0 and emits the skip marker naming the version,
+    so the workflow can branch to skip (not failure) Slack wording (T005 contract)."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_hit.json"), status=200)
+
+    rc = main(_argv(tmp_path, "26.07.10-01", "--apply", "--service-account", "user-devbot-0000"))
+
+    assert rc == 0
+    out, _ = capsys.readouterr()
+    assert "::changelog-skip::26.07.10-01" in out
