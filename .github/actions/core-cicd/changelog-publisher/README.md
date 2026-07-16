@@ -56,15 +56,6 @@ The workflow branches Slack wording on this contract, so it is fixed here before
 - This split is what lets `cicd_comp_changelog-site-publish-phase.yml` post **failure**
   wording for a non-zero exit and **skip** wording when the marker is present (FR-008, US3).
 
-## Golden-file placement
-
-The site-format markdown golden-file test lives in the existing
-`.github/scripts/gather-release-data/` **jest** suite (alongside `categorize.test.ts` /
-`github.test.ts`), **not** in this Python package. Rationale: the golden file guards the
-*generation* output (the `prompt-template-site.md` editorial format), which is a
-Node/markdown concern; keeping it with the generator it tests leaves this delivery tool free
-of markdown-generation concerns.
-
 ## Manual backfill (explicit, per-version — never automatic)
 
 There is **no automatic backfill** (FR-012): each release publishes only the version that

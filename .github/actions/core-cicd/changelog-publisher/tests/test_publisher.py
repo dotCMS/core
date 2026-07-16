@@ -38,12 +38,19 @@ def _fired_contentlet() -> dict:
     return json.loads(fire_calls[0].request.body)["contentlet"]
 
 
-def _publish_create(client, **overrides):
+# The service-account identity is the immutable user id (modUser), not the mutable
+# display name (modUserName) — per lead directive, a rename must not silently disable
+# FR-011 protection. data-model.md documents the display-name fallback.
+SERVICE_ACCOUNT = "user-devbot-0000"
+
+
+def _publish(client, **overrides):
     kwargs = dict(
         version="26.07.10-01",
         release_notes="### Fixes {#Fixes-26.07.10-01}\n- Something ([#1](https://x/pull/1))\n",
         docker_image="dotcms/dotcms:26.07.10-01_abc1234",
         released_date="2026-07-16",
+        service_account=SERVICE_ACCOUNT,
         apply=True,
     )
     kwargs.update(overrides)
@@ -57,7 +64,7 @@ def test_create_path_fires_publish_with_expected_fields():
     _add_fire()
     client = CorpsitesClient(token="t")
 
-    result = _publish_create(client)
+    result = _publish(client)
 
     assert result.status == "created"
     c = _fired_contentlet()
@@ -80,7 +87,7 @@ def test_create_path_sends_no_identifier():
     _add_fire()
     client = CorpsitesClient(token="t")
 
-    _publish_create(client)
+    _publish(client)
 
     assert "identifier" not in _fired_contentlet()
 
@@ -93,7 +100,7 @@ def test_fire_payload_always_disables_wysiwyg_for_release_notes():
     _add_fire()
     client = CorpsitesClient(token="t")
 
-    _publish_create(client)
+    _publish(client)
 
     assert _fired_contentlet()["disabledWYSIWYG"] == ["releaseNotes"]
 
@@ -102,31 +109,12 @@ def test_fire_payload_always_disables_wysiwyg_for_release_notes():
 # User Story 2 — update-in-place, idempotency, human-edit protection, >1 guard
 # ===========================================================================
 
-# The service-account identity is the immutable user id (modUser), not the mutable
-# display name (modUserName) — per lead directive, a rename must not silently disable
-# FR-011 protection. data-model.md documents the display-name fallback.
-SERVICE_ACCOUNT = "user-devbot-0000"
-
-
 def _all_fire_bodies() -> list[dict]:
     return [
         json.loads(c.request.body)["contentlet"]
         for c in responses_lib.calls
         if c.request.method == "PUT"
     ]
-
-
-def _publish(client, **overrides):
-    kwargs = dict(
-        version="26.07.10-01",
-        release_notes="### Fixes {#Fixes-26.07.10-01}\n- Something ([#1](https://x/pull/1))\n",
-        docker_image="dotcms/dotcms:26.07.10-01_abc1234",
-        released_date="2026-07-16",
-        service_account=SERVICE_ACCOUNT,
-        apply=True,
-    )
-    kwargs.update(overrides)
-    return publisher.publish(client, **kwargs)
 
 
 @responses_lib.activate
