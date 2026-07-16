@@ -69,6 +69,12 @@ jobs:
     name: Publish Site Changelog
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     continue-on-error: ${{ inputs.allow_failure }}
+    # Serialize runs per version: a retry racing a re-run must never double-create the
+    # entry (spec edge case; the publisher's post-create read-back closes the sequential
+    # window, this closes the concurrent one). Queued, not cancelled — each run is cheap.
+    concurrency:
+      group: changelog-site-publish-${{ inputs.release_version }}
+      cancel-in-progress: false
     permissions:
       contents: read       # checkout + gh release reads
       pull-requests: read  # Octokit pulls.get for PR details in gather-release-data

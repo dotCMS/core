@@ -102,5 +102,5 @@ def test_older_line_patch_carries_todays_date_and_touches_only_its_version():
     body = _fire_bodies()[0]
     assert body["minor"] == "26.05.27-04"
     assert body["releasedDate"] == "2026-07-16"  # today, not the original line's date
-    # Exactly one search, scoped to this version only.
-    assert _search_queries() == ["+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:26.05.27-04"]
+    # Every search (decision + read-back polls) is scoped to this version only.
+    assert set(_search_queries()) == {"+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:26.05.27-04"}

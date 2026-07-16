@@ -5,6 +5,8 @@ protection, and the `>1` guard are the US2 decision table (T031).
 """
 from __future__ import annotations
 
+import sys
+import time
 from dataclasses import dataclass
 
 # Verified current-track stored values (T004, data-model.md). Not the frontend GraphQL
@@ -16,6 +18,23 @@ _DOWNLOAD = 1
 
 class AmbiguousMatchError(RuntimeError):
     """Raised when >1 entry matches a version — the tool refuses to guess (D4)."""
+
+
+# dotCMS _search is Elasticsearch-backed and indexes asynchronously after Publish fires.
+# After a create, wait until the new row is searchable before exiting, so a re-run started
+# after this run finished cannot miss it and double-create (the workflow's concurrency
+# group serializes truly concurrent runs). Timeout is a warning, not a failure — the
+# write itself succeeded.
+_INDEX_POLL_ATTEMPTS = 10
+_INDEX_POLL_DELAY_SECONDS = 2.0
+
+
+def _wait_until_searchable(client, version: str) -> bool:
+    for _ in range(_INDEX_POLL_ATTEMPTS):
+        time.sleep(_INDEX_POLL_DELAY_SECONDS)
+        if client._search(version):
+            return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -86,6 +105,12 @@ def publish(
             released_date=released_date,
         )
         client.fire(contentlet, apply=apply)
+        if apply and not _wait_until_searchable(client, version):
+            print(
+                f"warning: created entry for {version} is not yet searchable; "
+                "an immediate re-run may not see it",
+                file=sys.stderr,
+            )
         return PublishResult(status="created", version=version)
 
     # Exactly one hit → update-in-place, unless a human last touched it (FR-011).

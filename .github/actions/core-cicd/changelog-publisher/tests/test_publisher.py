@@ -81,6 +81,22 @@ def test_create_path_fires_publish_with_expected_fields():
 
 
 @responses_lib.activate
+def test_create_waits_until_entry_searchable():
+    """After a create, the tool polls _search until the new row is indexed, so a re-run
+    started after this run finished cannot miss it and double-create."""
+    _add_search("search_empty.json")           # decision search: no row yet
+    _add_fire()
+    _add_search("search_hit_automation.json")  # read-back poll: row now visible
+    client = CorpsitesClient(token="t")
+
+    result = _publish(client)
+
+    assert result.status == "created"
+    search_calls = [c for c in responses_lib.calls if c.request.method == "POST"]
+    assert len(search_calls) == 2  # decision search + exactly one poll that saw the row
+
+
+@responses_lib.activate
 def test_create_path_sends_no_identifier():
     """Create must NOT carry an identifier (that is the update-in-place signal)."""
     _add_search("search_empty.json")
