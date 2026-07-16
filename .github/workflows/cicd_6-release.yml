@@ -158,7 +158,6 @@ jobs:
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
-      publish-npm-sdk-libs: false
       java-version: ${{ github.event.inputs.java-version }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     secrets:
