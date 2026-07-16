@@ -26,7 +26,6 @@ import {
     DotLanguagesService,
     DotFolderService,
     DotUploadFileService,
-    DotLocalstorageService,
     DotMessageService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
@@ -49,7 +48,6 @@ import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
-    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
     WARNING_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
@@ -75,7 +73,6 @@ describe('DotContentDriveShellComponent', () => {
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
-    let localStorageService: SpyObject<DotLocalstorageService>;
     let messageService: SpyObject<MessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
@@ -224,17 +221,12 @@ describe('DotContentDriveShellComponent', () => {
                     messageObserver: of({}),
                     clearObserver: of({})
                 }),
-                mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
-                mockProvider(DotLocalstorageService, {
-                    getItem: jest.fn().mockReturnValue(undefined),
-                    setItem: jest.fn()
-                })
+                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
         router = spectator.inject(Router);
         location = spectator.inject(Location);
-        localStorageService = spectator.inject(DotLocalstorageService);
         messageService = spectator.inject(MessageService);
         uploadService = spectator.inject(DotUploadFileService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
@@ -649,14 +641,11 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageContent).toBeTruthy();
         });
 
-        it('should set $showMessage to false when close button is clicked', () => {
+        it('should always render the banner (no dismiss control)', () => {
             spectator.detectChanges();
 
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(false);
+            expect(spectator.query('[data-testid="message"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="close-message"]')).toBeNull();
         });
 
         it('should have a learn more link', () => {
@@ -664,33 +653,6 @@ describe('DotContentDriveShellComponent', () => {
 
             const learnMoreLink = spectator.query('[data-testid="learn-more-link"]');
             expect(learnMoreLink).toBeTruthy();
-        });
-
-        it('should return true if the hide message banner key is not set', () => {
-            localStorageService.getItem.mockReturnValue(undefined);
-            spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(true);
-        });
-
-        it('should return false if the hide message banner key is set', () => {
-            localStorageService.getItem.mockReturnValue('true');
-            spectator.detectComponentChanges();
-
-            expect(spectator.component.$showMessage()).toBe(false);
-        });
-
-        it('should call the localStorage service to set the hide message banner key', () => {
-            spectator.detectChanges();
-
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(localStorageService.setItem).toHaveBeenCalledWith(
-                HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
-                true
-            );
         });
     });
 

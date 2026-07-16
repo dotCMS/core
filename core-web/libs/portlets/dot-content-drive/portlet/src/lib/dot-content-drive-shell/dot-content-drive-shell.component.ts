@@ -9,7 +9,6 @@ import {
     effect,
     ElementRef,
     inject,
-    OnInit,
     signal,
     untracked,
     viewChild
@@ -27,7 +26,6 @@ import { catchError } from 'rxjs/operators';
 import {
     DotFolderService,
     DotUploadFileService,
-    DotLocalstorageService,
     DotWorkflowsActionsService,
     DotMessageService,
     DotWorkflowActionsFireService
@@ -56,7 +54,6 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
     DIALOG_TYPE,
-    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
@@ -101,7 +98,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
     }
 })
-export class DotContentDriveShellComponent implements OnInit {
+export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
@@ -113,7 +110,6 @@ export class DotContentDriveShellComponent implements OnInit {
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
@@ -207,7 +203,6 @@ export class DotContentDriveShellComponent implements OnInit {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
-    readonly $showMessage = signal(false);
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
 
@@ -281,12 +276,6 @@ export class DotContentDriveShellComponent implements OnInit {
             this.#store.setPath(selectedNode.data.path);
         }
     });
-
-    ngOnInit() {
-        this.$showMessage.set(
-            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY)
-        );
-    }
 
     protected onPaginate(event: DotContentDrivePaginateEvent) {
         // Explicit check because it can potentially be 0
@@ -370,18 +359,6 @@ export class DotContentDriveShellComponent implements OnInit {
      */
     protected onDialogHidden() {
         this.$activeDialog.set(undefined);
-    }
-
-    /**
-     * Closes the message
-     *
-     * @protected
-     * @memberof DotContentDriveShellComponent
-     */
-    protected onCloseMessage() {
-        this.$showMessage.set(false);
-
-        this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
     /**
