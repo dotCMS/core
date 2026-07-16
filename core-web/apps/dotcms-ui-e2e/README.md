@@ -89,10 +89,10 @@ Ensure dotCMS is up on **8080** before step 4. If step 3 is already running, Pla
 All commands run from `core-web/`:
 
 ```bash
-# Headed dev run (browser visible, HTML report opens on finish)
+# Full lifecycle: builds Docker image, starts dotCMS via Maven, opens Playwright UI
 pnpm e2e:dev
 
-# Headless dev run (faster feedback)
+# Headless dev run against an already-running stack (faster feedback)
 pnpm e2e:dev:headless
 
 # Filter by test name
@@ -105,7 +105,7 @@ pnpm nx e2e dotcms-ui-e2e src/tests/login/login.spec.ts
 pnpm nx e2e dotcms-ui-e2e --reporter=list
 ```
 
-> **Note:** `pnpm e2e:dev` runs the `e2e:dev:full` target, which also builds Docker and starts dotCMS via Maven. When you already have dotCMS running from step 2, prefer `pnpm e2e:ui` or `pnpm nx e2e dotcms-ui-e2e --configuration=dev` directly.
+> **Note:** `pnpm e2e:dev` runs the `e2e:dev:full` target — a heavy, end-to-end path that builds the dotCMS Docker image, runs `docker:stop` / `docker:start` via Maven, waits for `:8080`, then launches Playwright **UI mode** (`--ui`). Use it when you want Maven to manage the full stack. When dotCMS is already running (see [Local debug flow](#local-debug-flow-frontend-developers)), prefer `pnpm e2e:ui` or `pnpm nx e2e dotcms-ui-e2e --configuration=dev` instead.
 
 ## Full suite / CI parity from local
 
@@ -192,7 +192,7 @@ In dev mode, the HTML report opens automatically when tests finish.
 
 ### Data strategy (E2E)
 
-- Tests run against an **empty starter** (`empty_20250714.zip` or newer).
+- Tests run against an **empty starter** — a clean dotCMS instance with no pre-existing content.
 - Baseline seed data (sites, users) may exist but is **read-only** — do not mutate shared seed records.
 - Any data a test asserts on must be **created by that test**, namespaced (e.g. `e2e_<journey>_<uuid>_`), and **cleaned up** on success and failure.
 
