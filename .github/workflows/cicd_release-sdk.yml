@@ -14,6 +14,8 @@
 # - Version is derived from the GitHub Release tag (mirrors cicd_release-cli.yml exactly)
 # - Skips LTS releases (LTS SDK publish policy is a separate, not-yet-decided follow-up)
 # - Publishes every @dotcms/* SDK package at the exact release version, to the `latest` tag only
+# - The precheck job always runs (even for LTS) so the reason for a skip is always logged,
+#   rather than showing up as a silent "skipped" job with no explanation
 
 name: Release - SDK
 run-name: SDK Release ${{ github.event.release.tag_name || inputs.version }}
@@ -36,20 +38,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Skip LTS releases: LTS SDK publish/backport policy is an open question (ADR-0019),
-  # tracked separately. contains() is case-insensitive, so this also matches `_lts_v`.
   precheck:
-    if: ${{ ( github.event_name == 'release' && !contains(github.event.release.tag_name, 'LTS') ) || github.event_name == 'workflow_dispatch' }}
     name: 'Pre-check'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       REF: ${{ steps.version.outputs.REF }}
+      IS_LTS: ${{ steps.version.outputs.IS_LTS }}
     steps:
       - name: 'Set release version'
         id: version
         run: |
           set -euo pipefail
+          TAG_NAME=""
+
           if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
             TAG_NAME="${{ github.event.release.tag_name }}"
             RELEASE_VERSION="${TAG_NAME:1}"
@@ -59,21 +61,46 @@ jobs:
             REF="main"
           fi
 
+          # contains() in GH Actions expressions is case-insensitive; match that here
+          # so both `_lts_v` and any `LTS`-labeled tag are caught the same way.
+          IS_LTS="false"
+          if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
+            LOWER_TAG=$(echo "$TAG_NAME" | tr '[:upper:]' '[:lower:]')
+            [[ "$LOWER_TAG" == *lts* ]] && IS_LTS="true"
+          fi
+
           echo "::notice:: Event name: $GITHUB_EVENT_NAME"
           echo "::notice:: Release version: $RELEASE_VERSION"
           echo "::notice:: Ref: $REF"
 
+          if [[ "$IS_LTS" == "true" ]]; then
+            echo "::warning::This is an LTS release ($TAG_NAME). SDK publish will be skipped — LTS SDK publish policy is a separate, not-yet-decided follow-up (ADR-0019)."
+          fi
+
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "REF=$REF" >> "$GITHUB_OUTPUT"
+          echo "IS_LTS=$IS_LTS" >> "$GITHUB_OUTPUT"
 
   publish:
     name: 'Publish SDK Packages'
     needs: [ precheck ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
+      - name: 'LTS skip notice'
+        if: needs.precheck.outputs.IS_LTS == 'true'
+        run: |
+          echo "::notice:: Skipping SDK publish for LTS release ${{ needs.precheck.outputs.RELEASE_VERSION }} — see the warning on the Pre-check job for why."
+
+      - name: 'Dry run notice'
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'true'
+        run: |
+          echo "::notice:: DRY RUN — would publish version ${{ needs.precheck.outputs.RELEASE_VERSION }} (ref ${{ needs.precheck.outputs.REF }}) to the 'latest' npm dist-tag for every @dotcms/* SDK package. Skipping the actual npm publish."
+
       - name: 'Publish SDK packages to NPM'
         id: deploy-javascript-sdk
-        if: ${{ github.event_name == 'release' || github.event.inputs.dry-run != 'true' }}
+        if: >-
+          needs.precheck.outputs.IS_LTS != 'true' &&
+          (github.event_name == 'release' || github.event.inputs.dry-run != 'true')
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
           ref: ${{ needs.precheck.outputs.REF }}
@@ -106,3 +133,16 @@ jobs:
             > The SDK release workflow failed while trying to publish version `${{ needs.precheck.outputs.RELEASE_VERSION }}`.
             > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: 'Display results'
+        if: always()
+        run: |
+          echo "::group::SDK Release Summary"
+          echo "Event:            ${{ github.event_name }}"
+          echo "Release version:  ${{ needs.precheck.outputs.RELEASE_VERSION }}"
+          echo "Ref:              ${{ needs.precheck.outputs.REF }}"
+          echo "LTS release:      ${{ needs.precheck.outputs.IS_LTS }}"
+          echo "Dry run:          ${{ github.event.inputs.dry-run || 'false' }}"
+          echo "Published:        ${{ steps.deploy-javascript-sdk.outputs.published || 'not attempted' }}"
+          echo "NPM version:      ${{ steps.deploy-javascript-sdk.outputs.npm-package-version || 'n/a' }}"
+          echo "::endgroup::"

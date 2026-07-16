@@ -139,7 +139,9 @@ runs:
       working-directory: ${{ github.workspace }}/core-web/
       run: |
         set -euo pipefail
+        echo "::group::Build SDK packages"
         pnpm exec nx run-many --target=build --projects='sdk-*' --configuration=production --skip-nx-cache
+        echo "::endgroup::"
       shell: bash
 
     - name: 'Publish SDK packages to NPM'
