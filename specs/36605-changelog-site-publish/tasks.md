@@ -130,24 +130,24 @@ changelog entry appears with correct version/date/docker-tag/formatted notes and
 
 ### Tests for User Story 1 (MANDATORY — write FIRST)
 
-- [ ] T010 [P] [US1] `responses`-mocked unit test for search-by-version parsing in
+- [x] T010 [P] [US1] `responses`-mocked unit test for search-by-version parsing in
         `.github/actions/core-cicd/changelog-publisher/tests/test_client.py`: `_search` returns 0 hits
         (create path) — assert the query string is `+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:<version>`
         with `limit: 2`, and that results are read from `entity.jsonObjectView.contentlets`. Include a
         1-hit fixture in `tests/fixtures/` for later stories.
-- [ ] T011 [P] [US1] Unit test for the **create-path publish payload shape** in `tests/test_publisher.py`:
+- [x] T011 [P] [US1] Unit test for the **create-path publish payload shape** in `tests/test_publisher.py`:
         firing `PUT /api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire` sends
         `contentlet` with `contentType:Dotcmsbuilds`, `minor`, `releaseNotes`, `dockerImage`,
         `releasedDate`, `showInChangeLog`, `lts` (the confirmed T004 values), **no `identifier`** (create),
         and — the regression guard — **`"disabledWYSIWYG": ["releaseNotes"]` always present** (FR-005).
-- [ ] T012 [P] [US1] Unit test for **exclusion filter defense-in-depth** in `tests/test_cli.py`
+- [x] T012 [P] [US1] Unit test for **exclusion filter defense-in-depth** in `tests/test_cli.py`
         (`src/changelog_publisher/version.py`): a current-track `yy.mm.dd-##` string is accepted; `_lts_`
         forms and CLI (`dotcms-cli-*`) forms are **rejected before any network call** with a non-zero exit
         (FR-007). The tool refuses out-of-scope versions independently of the workflow guard.
-- [ ] T013 [P] [US1] Unit test for **dry-run-by-default / `--apply`** in `tests/test_cli.py`: without
+- [x] T013 [P] [US1] Unit test for **dry-run-by-default / `--apply`** in `tests/test_cli.py`: without
         `--apply` no fire call is issued (only `_search` may run) and the intended action is printed;
         with `--apply` the fire call is issued. Mirrors the `evergreen-tracks` safety convention.
-- [ ] T014 [P] [US1] Golden-file test for the **site-format markdown** at the location chosen in T006
+- [x] T014 [P] [US1] Golden-file test for the **site-format markdown** at the location chosen in T006
         (default: `.github/scripts/gather-release-data/` jest suite): assert the rendered notes use the
         site editorial format — section headings (Features / Enhancements & Adjustments / Fixes) with
         anchors like `{#Fixes-<version>}`, per-item `[#NNNNN](github-url)` links, a short prose intro, and
