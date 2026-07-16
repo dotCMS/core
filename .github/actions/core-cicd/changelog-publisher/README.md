@@ -63,7 +63,7 @@ The site-format markdown golden-file test lives in the existing
 `github.test.ts`), **not** in this Python package. Rationale: the golden file guards the
 *generation* output (the `prompt-template-site.md` editorial format), which is a
 Node/markdown concern; keeping it with the generator it tests leaves this delivery tool free
-of markdown-generation concerns. (Recorded in `research.md` D2.)
+of markdown-generation concerns.
 
 ## Manual backfill (explicit, per-version — never automatic)
 
