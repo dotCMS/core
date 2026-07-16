@@ -1,276 +1,263 @@
-# dotCMS E2E Testing Commands
+# dotCMS UI E2E Tests
 
-## Available Commands
+Browser end-to-end tests for the dotCMS admin UI. This is the **canonical** E2E suite — Playwright, Nx, and **pnpm**. The legacy suite at `e2e/dotcms-e2e-node` is deprecated and will be removed; do not add tests there.
 
-### 🚀 **Development Mode (with Angular dev server)**
+## Prerequisites
 
-#### Normal Mode (Browser visible)
+- Docker and a docker compose setup you already use locally
+- dotCMS license at `~/.dotcms/license/license.dat`
+- Node.js per [`.nvmrc`](../../../.nvmrc) (`nvm use`)
+- Java per [`.sdkmanrc`](../../../.sdkmanrc) (`sdk env install`)
+- [`just`](../../../justfile) from the repo root
+- Dependencies installed in `core-web/` (`pnpm install`)
 
-```bash
-yarn e2e:dev
-```
+## Local debug flow (frontend developers)
 
--   ✅ Runs Angular dev server automatically on port 4200
--   ✅ Browser window visible (headed mode)
--   ✅ **Opens HTML report automatically** when tests finish
--   ✅ Uses proxy to dotCMS backend on port 8080
+Use this path when iterating on a feature and debugging tests interactively.
 
-#### Headless Mode (No browser window)
+### 1. Build a local dotCMS image
 
-```bash
-yarn e2e:dev:headless
-```
-
--   ✅ Runs Angular dev server automatically on port 4200
--   ✅ Browser runs in headless mode (faster)
--   ✅ **Opens HTML report automatically** when tests finish
--   ✅ Uses proxy to dotCMS backend on port 8080
-
-### 🏗️ **CI Mode (direct dotCMS connection)**
+From the **repo root**:
 
 ```bash
-yarn e2e:ci
+just build-no-cache
 ```
 
--   ✅ Connects directly to dotCMS on port 8080
--   ✅ Headless mode (no browser window)
--   ✅ Report generated but not opened automatically
--   ✅ Optimized for CI/CD environments
+This performs a full rebuild (clears Nx/Angular/node_modules caches) and produces the local test image:
 
-### 🎨 **Interactive UI Mode**
+```text
+dotcms/dotcms-test:1.0.0-SNAPSHOT
+```
+
+### 2. Point your docker compose at that image
+
+In your habitual docker compose file, set the dotCMS service image:
+
+```yaml
+image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+```
+
+Start your stack and wait until dotCMS is reachable at `http://localhost:8080/dotAdmin`.
+
+### 3. Run Playwright in UI mode (Angular on :4200)
+
+From **`core-web/`**:
 
 ```bash
-yarn e2e:ui
+pnpm nx e2e dotcms-ui-e2e --ui
 ```
 
--   ✅ Opens Playwright's interactive UI
--   ✅ Perfect for debugging and test development
--   ✅ Step-by-step test execution
+This runs in **dev** mode (`CURRENT_ENV=dev`):
 
-### 🎯 **Running Specific Tests**
+- Starts the Angular dev server on port **4200** (proxies `/api/*` to `:8080`)
+- Opens Playwright's interactive UI for step-by-step debugging
+
+Ensure dotCMS is already running on **8080** before starting. Playwright reuses an existing dev server when one is already up (`E2E_REUSE_EXISTING_SERVER` defaults to `true`).
+
+### 4. Run and debug tests manually
+
+Use the Playwright UI to pick specs, run individual tests, inspect traces, and iterate on locators.
+
+**Codegen** (record selectors against the running app):
 
 ```bash
-# Run specific test by name
-yarn e2e:dev --grep "Login"
-
-# Run specific test file
-yarn e2e:dev src/tests/login/login.spec.ts
-
-# Run with different reporter
-yarn e2e:dev --reporter=list
+npx playwright codegen http://localhost:4200/dotAdmin
 ```
 
-## Environment Configuration
+### Quick reference
 
-### Development Environment
+All steps in order:
 
--   **Base URL**: `http://localhost:4200` (Angular dev server)
--   **Backend**: Proxied to dotCMS on `http://localhost:8080`
--   **Report**: Opens automatically in browser
--   **WebServer**: Starts Angular automatically
+```bash
+# 1. repo root — build local dotCMS image
+just build-no-cache
 
-### CI Environment
+# 2. your compose file — set image: dotcms/dotcms-test:1.0.0-SNAPSHOT, then start the stack
+docker compose up
 
--   **Base URL**: `http://localhost:8080` (Direct dotCMS)
--   **Backend**: Direct connection to dotCMS
--   **Report**: Generated but not opened
--   **WebServer**: None (assumes dotCMS is already running)
+# 3. core-web/ — Angular dev server on :4200 (optional; Playwright can start this for you in step 4)
+pnpm nx serve dotcms-ui
 
-## Reports and Debugging
+# 4. core-web/ — Playwright UI against :4200 (proxies API to :8080)
+pnpm nx e2e dotcms-ui-e2e --ui
+```
 
-### HTML Report
+Ensure dotCMS is up on **8080** before step 4. If step 3 is already running, Playwright reuses it (`E2E_REUSE_EXISTING_SERVER=true` by default).
 
--   **Location**: `dist/.playwright/apps/dotcms-ui-e2e/`
--   **Auto-open**: Only in dev mode (`e2e:dev` and `e2e:dev:headless`)
--   **Manual open**: `npx playwright show-report`
+### Useful dev variants
 
-### Screenshots and Videos
+All commands run from `core-web/`:
 
--   **Screenshots**: Taken on test failure
--   **Videos**: Recorded on test failure
--   **Traces**: Captured on retry
--   **Location**: `dist/.playwright/apps/dotcms-ui-e2e/test-output/`
+```bash
+# Headed dev run (browser visible, HTML report opens on finish)
+pnpm e2e:dev
 
-## Best Practices
+# Headless dev run (faster feedback)
+pnpm e2e:dev:headless
 
-### For Development
+# Filter by test name
+pnpm nx e2e dotcms-ui-e2e --grep "Login"
 
-1. Use `yarn e2e:dev` for normal development
-2. Use `yarn e2e:dev:headless` for faster feedback
-3. Use `yarn e2e:ui` for debugging specific tests
-4. Use `--grep` to run specific tests during development
+# Run a specific file
+pnpm nx e2e dotcms-ui-e2e src/tests/login/login.spec.ts
 
-### For CI/CD
+# Different reporter
+pnpm nx e2e dotcms-ui-e2e --reporter=list
+```
 
-1. Use `yarn e2e:ci` in CI environments
-2. Ensure dotCMS is running on port 8080
-3. Reports are generated but not opened automatically
+> **Note:** `pnpm e2e:dev` runs the `e2e:dev:full` target, which also builds Docker and starts dotCMS via Maven. When you already have dotCMS running from step 2, prefer `pnpm e2e:ui` or `pnpm nx e2e dotcms-ui-e2e --configuration=dev` directly.
 
-### Test Writing
+## Full suite / CI parity from local
 
-1. Always follow POM (Page Object Model) patterns
-2. Use `data-testid` selectors with `page.getByTestId()`
-3. Never interact directly with DOM in tests
-4. Centralize test data in separate files
+To run the **entire** E2E suite the same way CI does (headless, full Maven lifecycle):
 
-## 🗄️ **Data Management & Test Isolation**
+From the **repo root**:
 
-### **CRITICAL: Always Use Empty Starter**
+```bash
+just test-e2e
+```
 
-All E2E tests **MUST** assume they are running against a **clean, empty dotCMS instance** (using the `empty_20250714.zip` starter or newer). This ensures:
+Equivalent:
 
--   ✅ **Test Isolation**: Each test runs independently
--   ✅ **Deterministic Results**: No interference from existing data
--   ✅ **Reproducible Failures**: Same conditions every time
+```bash
+./mvnw -pl :dotcms-ui-e2e verify \
+  -De2e.test.skip=false \
+  -De2e.test.env=ci \
+  -Dmaven.build.cache.skipCache=true
+```
 
-### **Create Your Own Test Data**
+This:
 
-**❌ NEVER rely on existing data:**
+- Provisions dependencies and Playwright via Maven
+- Runs tests with `CURRENT_ENV=ci` (base URL `http://localhost:8080`, no Angular dev server)
+- Executes headless against dotCMS directly
+
+Secondary path from `core-web/` (also builds Docker and manages containers via Nx):
+
+```bash
+pnpm e2e:ci
+```
+
+Prefer `just test-e2e` when validating before merge — it matches the CI pipeline.
+
+## Environment reference
+
+| Mode | `CURRENT_ENV` | Base URL | Backend |
+|------|---------------|----------|---------|
+| Dev (default) | `dev` | `http://localhost:4200` | Angular proxy → `:8080` |
+| CI | `ci` | `http://localhost:8080` | Direct dotCMS |
+
+### Environment variables
+
+| Variable | Values | Default | Purpose |
+|----------|--------|---------|---------|
+| `CURRENT_ENV` | `dev` \| `ci` | `dev` | Selects base URL and webServer behavior |
+| `HEADLESS` | `true` \| `false` | `true` in CI | Override browser visibility |
+| `E2E_BASE_URL` | URL | per env | Override base URL |
+| `E2E_REUSE_EXISTING_SERVER` | `true` \| `false` | `true` | Reuse running Angular dev server |
+
+### Reports and artifacts
+
+| Artifact | Location |
+|----------|----------|
+| HTML report | `apps/dotcms-ui-e2e/playwright-report/` |
+| JUnit | `apps/dotcms-ui-e2e/test-results/junit.xml` |
+| Nx output | `dist/.playwright/apps/dotcms-ui-e2e/` |
+| Screenshots / video / traces | `apps/dotcms-ui-e2e/test-results/` (on failure / retry) |
+
+Open a report manually:
+
+```bash
+npx playwright show-report apps/dotcms-ui-e2e/playwright-report
+```
+
+In dev mode, the HTML report opens automatically when tests finish.
+
+## When to write Unit vs Integration vs E2E
+
+**Governing rule:** put each assertion at the **lowest level that can prove it**. E2E is the level of last resort.
+
+| Level | What is real | What is mocked | Use for |
+|-------|--------------|----------------|---------|
+| **Unit** | One component or class | All collaborators (services, store, HTTP, child components) | Pipes, guards, form validation, mapping logic, component output with stubbed deps (Jest + Spectator) |
+| **Integration (FE)** | Angular app: real services, store, router, child components, PrimeNG | **Only HTTP** (`HttpTestingController`) | Request/response wiring, navigation, your bindings into PrimeNG — assert *your* contract, not PrimeNG internals |
+| **E2E (browser)** | Full deployed stack (UI → backend → DB/ES) | Only third-party SaaS at the network edge | Cross-subsystem propagation a mock cannot fake: publish → index → delivery, real workflow transitions, server-side auth enforcement, E2E-class production incidents |
+
+### Do not write E2E for
+
+- Field validation, form error messages, copy, or visual layout → **Unit or Integration**
+- A single endpoint's request/response shape → **Integration or contract test**
+- Deterministic logic in one service → **Unit**
+- Coverage or "being thorough" with no user journey → **Delete / refuse in review**
+
+### Data strategy (E2E)
+
+- Tests run against an **empty starter** (`empty_20250714.zip` or newer).
+- Baseline seed data (sites, users) may exist but is **read-only** — do not mutate shared seed records.
+- Any data a test asserts on must be **created by that test**, namespaced (e.g. `e2e_<journey>_<uuid>_`), and **cleaned up** on success and failure.
 
 ```typescript
-// DON'T DO THIS - Assumes data exists
-test('Edit existing blog post', async ({ page }) => {
-    await page.goto('/content/blogs/my-existing-blog');
-    // This will fail on empty starter!
-});
-```
-
-**✅ ALWAYS create the data you need:**
-
-```typescript
-// DO THIS - Create data in the test
 test('Edit blog post', async ({ page, request }) => {
-    // 1. Create the content type if needed
-    const contentType = await createContentType(request, blogContentType);
-
-    // 2. Create the test data
     const blog = await createContent(request, {
-        contentType: contentType.id,
-        title: 'Test Blog Post',
+        contentType: 'Blog',
+        title: `e2e_blog_${Date.now()}`,
         body: 'Test content'
     });
 
-    // 3. Now test the functionality
     await page.goto(`/content/edit/${blog.identifier}`);
-    // Test continues...
+    // ... assertions ...
 
-    // 4. Clean up after test
     await deleteContent(request, blog.identifier);
 });
 ```
 
-### **Data Encapsulation Patterns**
+Prefer `beforeEach` / `afterEach` or fixtures for setup and teardown. See existing patterns in `src/fixtures/` and `src/requests/`.
 
-#### **1. Use beforeEach/afterEach for Setup/Cleanup**
+### API setup (`src/requests/`)
 
-```typescript
-test.describe('Content Management', () => {
-    let testContent: Content;
+**All test data must be created via the REST API** — never through the UI during setup. The `src/requests/` folder holds shared helpers that call dotCMS endpoints directly (Playwright `APIRequestContext`).
 
-    test.beforeEach(async ({ request }) => {
-        // Create test data
-        testContent = await createTestContent(request);
-    });
+Current modules include: `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts`, `templates.ts`, `schemas.ts`, `workflow.ts`, `workflowActions.ts`, `field-variables.ts`, `updateFeatureFlag.ts`.
 
-    test.afterEach(async ({ request }) => {
-        // Clean up test data
-        await deleteContent(request, testContent.identifier);
-    });
+**Before adding a new helper:**
 
-    test('should edit content', async ({ page }) => {
-        // Use the created test data
-        await page.goto(`/content/edit/${testContent.identifier}`);
-    });
-});
+1. Search `src/requests/` for an existing function that already covers the endpoint or payload you need.
+2. **Reuse** it if it fits — do not duplicate API calls in specs or fixtures.
+3. If nothing exists, add a function to the **most relevant file** in `src/requests/` (one concern per file, shared across specs).
+4. Wire complex multi-step setup in `src/fixtures/`, but keep raw HTTP calls in `src/requests/`.
+
+Never inline `request.post(...)` in a spec when the same call belongs in `src/requests/`.
+
+## Creating new E2E tests
+
+1. **Check the level first** — if Unit or Integration can prove it, do not add E2E.
+2. **Copy an existing spec** under `src/tests/` that matches your feature area (e.g. `edit-content/fields/relationship-field/`).
+3. **Follow the project layout** — see [AGENTS.md](AGENTS.md) for file naming, locators, and gotchas.
+4. **Use Page Object Model** — shared UI in `src/pages/`, field-specific helpers in `tests/.../helpers/`, API setup in `src/requests/` and `src/fixtures/`.
+5. **Locator priority:** `getByRole` → `getByTestId` → `getByLabel` → CSS (Dojo iframe only).
+6. **Create your own data via REST API** — use helpers in `src/requests/`; check for duplicates before adding a new endpoint wrapper (see [API setup](#api-setup-srcrequests) above).
+
+## AI-assisted workflow
+
+Recommended pipeline when adding E2E coverage for a feature or issue:
+
+1. **Write Unit and Integration tests first** — cover component logic, form validation, and HTTP wiring in Jest/Spectator before adding any E2E. Most behavior should already be proven at this level.
+2. **`/test-plan`** — generate a QA-oriented test plan and user journeys from the GitHub issue.
+3. **`/e2e-flow`** — turn the plan into Playwright BDD specs and implementation in this project.
+4. **Re-evaluate with AI** — before merging, ask which proposed E2Es are redundant because Unit or Integration tests already cover the same behavior. Drop or push those assertions down per the cheat sheet above.
+
+The skills own the detailed process; this README is the entry point and the redundancy gate.
+
+## Project layout
+
+```
+src/
+  fixtures/     # auth, API setup (e.g. relationship.fixture.ts)
+  pages/        # shared page objects (*.page.ts)
+  utils/        # iframe, portlets, credentials
+  requests/     # REST API helpers for test data (content types, contentlets, sites, …)
+  tests/        # specs grouped by feature
+playwright.config.ts
 ```
 
-#### **2. Create Factory Functions**
-
-```typescript
-// src/data/factories.ts
-export async function createTestBlog(request: APIRequestContext) {
-    return await createContent(request, {
-        contentType: 'Blog',
-        title: `Test Blog ${Date.now()}`,
-        body: 'Test blog content',
-        author: 'Test Author'
-    });
-}
-
-export async function createTestUser(request: APIRequestContext) {
-    return await createUser(request, {
-        email: `test-${Date.now()}@dotcms.com`,
-        firstName: 'Test',
-        lastName: 'User'
-    });
-}
-```
-
-#### **3. Use Unique Identifiers**
-
-```typescript
-// Always use timestamps or UUIDs for unique data
-const uniqueTitle = `Test Content ${Date.now()}`;
-const uniqueEmail = `user-${crypto.randomUUID()}@test.com`;
-```
-
-### **API Request Helpers**
-
-Create reusable API helpers for data management:
-
-```typescript
-// src/requests/content.ts
-export async function createContent(request: APIRequestContext, data: CreateContentData) {
-    const response = await request.post('/api/v1/content', { data });
-    return response.json();
-}
-
-export async function deleteContent(request: APIRequestContext, identifier: string) {
-    await request.delete(`/api/v1/content/${identifier}`);
-}
-
-// src/requests/users.ts
-export async function createUser(request: APIRequestContext, userData: UserData) {
-    const response = await request.post('/api/v1/users', { data: userData });
-    return response.json();
-}
-```
-
-### **Why This Approach?**
-
-1. **🔒 Isolation**: Tests don't interfere with each other
-2. **🎯 Reliability**: Tests work consistently across environments
-3. **🧹 Clean State**: Each test starts with known conditions
-4. **🔄 Repeatability**: Tests can be run multiple times
-5. **🚀 Parallel Execution**: Tests can run in parallel safely
-
-### **Environment Considerations**
-
--   **Development**: Uses empty starter, creates data as needed
--   **CI**: Uses empty starter, creates data as needed
--   **Local Testing**: Always assume empty state, create required data
-
-Remember: **If your test needs data to exist, your test should create that data!**
-
-## Environment Variables
-
--   `CURRENT_ENV`: `dev` | `ci` (default: `dev`)
--   `HEADLESS`: `true` | `false` (overrides environment default)
--   `E2E_BASE_URL`: Custom base URL (overrides environment default)
--   `E2E_REUSE_EXISTING_SERVER`: `true` | `false` (default: `true`)
-
-## Examples
-
-```bash
-# Quick test during development
-yarn e2e:dev --grep "login"
-
-# Full test suite in headless mode
-yarn e2e:dev:headless
-
-# Debug specific failing test
-yarn e2e:ui src/tests/login/login.spec.ts
-
-# CI mode (for GitHub Actions, etc.)
-yarn e2e:ci
-```
+Code conventions, Angular/Dojo gotchas, and locator rules: **[AGENTS.md](AGENTS.md)**.
