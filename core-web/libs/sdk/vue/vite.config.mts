@@ -27,7 +27,12 @@ export default defineConfig(() => ({
             projects: ['tsconfig.base.json'],
             loose: true
         }),
-        viteStaticCopy({ targets: [{ src: '*.md', dest: '.' }] }),
+        viteStaticCopy({
+            targets: [
+                { src: '*.md', dest: '.' },
+                { src: 'package.json', dest: '.' }
+            ]
+        }),
         dts({
             entryRoot: 'src',
             tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
