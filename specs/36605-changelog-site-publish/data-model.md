@@ -15,16 +15,24 @@ strict one-row-per-version upsert (FR-003, SC-003).
 | `releaseNotes` | WYSIWYG (stores markdown) | `/tmp/site-release-notes.md` (site-format generation, D2) | MUST be sent with `disabledWYSIWYG: ["releaseNotes"]` or markdown collapses to one `<p>` (FR-005). Site editorial format: `### Fixes {#Fixes-<version>}` etc., per-item `[#NNNNN](github url)`, short prose intro, no emoji. |
 | `dockerImage` | text | deployment output docker tag (e.g. `dotcms/dotcms:26.07.10-01_<sha>`) | From the release's produced image tag. |
 | `releasedDate` | date | run date (today) | For an older-line patch this is the actual ship date, NOT the original line's date (FR-013). |
-| `showInChangeLog` | radio (bool) | constant `true` | Makes it appear on the changelog page (FR-006). |
-| `lts` | radio | current-track value | **Open**: confirm the exact current-track value from an existing current-track entry before hardcoding (task brief flagged `lts:3` frontend-query semantics — verify the stored contentlet value, which may differ from the GraphQL filter value). |
-| `released`, `download` | (existing fields) | as used by current entries | Set to match how current-track hand-authored entries set them; confirm from a sample entry during implementation. |
+| `showInChangeLog` | radio (bool) | constant `true` (send JSON boolean `true`) | Makes it appear on the changelog page (FR-006). |
+| `lts` | radio | constant `3` (send JSON integer `3`) | **Verified 2026-07-16** against `26.06.30-01`: the stored contentlet value for a current-track entry is the integer `3` — i.e. the frontend `+Dotcmsbuilds.lts:3` filter matches the *stored* value, they do not differ. Hardcode `3` for current-track. |
+| `released` | radio (bool) | constant `true` (send JSON boolean `true`) | **Verified 2026-07-16**: stored `true` on the current-track sample. |
+| `download` | radio | constant `1` (send JSON integer `1`) | **Verified 2026-07-16**: stored `1` on the current-track sample. |
 
 **Read-only metadata used for control flow:**
 
 | Field | Use |
 |-------|-----|
-| `modUserName` | Human-edit protection (FR-011): if ≠ the automation service account, skip + notify, do not overwrite. |
-| `identifier` / `inode` | Returned by `_search`; the update-in-place path fires the workflow action against the existing identifier so no duplicate row is created. |
+| `modUserName` | Human-edit protection (FR-011): if ≠ the automation service account, skip + notify, do not overwrite. **Verified 2026-07-16**: this field is the last modifier's display name (`givenName surname`) — the `26.06.30-01` sample reads `"Jamie Mauro"` (release manager, hand-authored). Querying `/api/v1/users/current` with a token returns `givenName`/`surname`, confirming the write's `modUserName` = the authenticating user's display name. **No automation-written entry exists yet** (this feature introduces the first), so the service-account display name is not yet observable in the data — it is whatever the `DOTCMS_DEVSITE_TOKEN` user is named at provisioning (D8/FR-009). The tool therefore takes the expected service-account display name as config (CLI `--service-account`, or env `DOTCMS_DEVSITE_SERVICE_ACCOUNT`) and compares stored `modUserName` against it; a mismatch = a human touched it → skip. |
+| `identifier` / `inode` | Returned by `_search` (verified present: `identifier` and `inode` are both top-level contentlet fields); the update-in-place path fires the workflow action against the existing `identifier` so no duplicate row is created. |
+
+**Verified current-track sample (`26.06.30-01`, read-only `_search` 2026-07-16):**
+`lts=3`, `released=true`, `download=1`, `showInChangeLog=true`, `modUserName="Jamie Mauro"`,
+`dockerImage="dotcms/dotcms:26.06.30-01_84b0486"`, `releasedDate="2026-06-30 00:00:00.0"`
+(stored as `yyyy-MM-dd HH:mm:ss.S`; the write sends the plain `yyyy-MM-dd` ship date, which
+the date field accepts). These replace the earlier "confirm"/"open" placeholders — the
+publisher hardcodes `lts=3`, `released=true`, `download=1`, `showInChangeLog=true`.
 
 ## API contract (client calls to corpsites-headless.dotcms.cloud)
 
@@ -55,7 +63,9 @@ $DOTCMS_DEVSITE_TOKEN` (FR-009; never logged).
     "dockerImage": "dotcms/dotcms:26.07.10-01_<sha>",
     "releasedDate": "2026-07-16",
     "showInChangeLog": true,
-    "lts": "<current-track value — confirm>",
+    "lts": 3,
+    "released": true,
+    "download": 1,
     "identifier": "<present only on the update path>",
     "disabledWYSIWYG": ["releaseNotes"]
   }

@@ -55,16 +55,16 @@ protection P2, US3 Slack notifications P3) to enable independent implementation 
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 [SETUP] Scaffold the Python package `.github/actions/core-cicd/changelog-publisher/`
+- [x] T001 [SETUP] Scaffold the Python package `.github/actions/core-cicd/changelog-publisher/`
         mirroring `.github/actions/core-cicd/evergreen-tracks/`: create `pyproject.toml` (requires-python
         `>=3.12`, runtime dep `requests`, dev deps `pytest`+`responses`, a `[project.scripts]`
         `changelog-publisher = "changelog_publisher.cli:main"` console entrypoint), `README.md`, the
         `src/changelog_publisher/__init__.py` package marker, and an empty `tests/` with `tests/fixtures/`.
         No logic yet — just the layout + build config so `uv run` resolves.
-- [ ] T002 [P] [SETUP] Confirm the test harness runs green-empty: `uv run pytest` from
+- [x] T002 [P] [SETUP] Confirm the test harness runs green-empty: `uv run pytest` from
         `.github/actions/core-cicd/changelog-publisher/` collects zero tests and exits 0 (proves the uv
         env + pytest + responses install, matching how the release workflow invokes `evergreen-tracks`).
-- [ ] T003 [P] [SETUP] Add `.gitignore` coverage for `.venv/`, `.pytest_cache/`, and `__pycache__/` under
+- [x] T003 [P] [SETUP] Add `.gitignore` coverage for `.venv/`, `.pytest_cache/`, and `__pycache__/` under
         the new package (mirror `evergreen-tracks`) so the venv/cache dirs are never committed.
 
 **Checkpoint**: Empty but runnable package; no product logic.
@@ -77,7 +77,7 @@ protection P2, US3 Slack notifications P3) to enable independent implementation 
 plan's three open questions plus the exit-code contract — all of which gate implementation *details* and
 must be settled by **inspection of ground truth, not assumption**.
 
-- [ ] T004 [FOUND] **[Open question 1 — exact contentlet field values]** Query the live corpsites-headless
+- [x] T004 [FOUND] **[Open question 1 — exact contentlet field values]** Query the live corpsites-headless
         backend for a recent current-track `Dotcmsbuilds` entry (e.g. `minor` = `26.06.30-01`) via
         `POST /api/content/_search` with `+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:<version>`.
         Record the **exact stored values** of `lts`, `released`, `download`, and `showInChangeLog` for a
@@ -88,7 +88,7 @@ must be settled by **inspection of ground truth, not assumption**.
         `specs/36605-changelog-site-publish/data-model.md`'s field table (replacing the "confirm" / "open"
         placeholders) so the publisher hardcodes verified constants, not guesses. Do NOT proceed to US1
         implementation with placeholder values.
-- [ ] T005 [FOUND] **[Open question 3 — skip-vs-failure signaling contract]** Define and document the
+- [x] T005 [FOUND] **[Open question 3 — skip-vs-failure signaling contract]** Define and document the
         tool's exit-code / stdout contract in `.github/actions/core-cicd/changelog-publisher/README.md`
         *before* any CLI code: **exit 0** for success (created/updated/published) **and** for a protective
         skip, where a skip is distinguished by a machine-readable marker on stdout (e.g. a single line
@@ -97,7 +97,7 @@ must be settled by **inspection of ground truth, not assumption**.
         is what lets the workflow post *different* Slack wording for skips vs failures (FR-008, US3) while
         a skip keeps the run green. The contract must be authored here so US2's human-edit-protection tests
         and US3's Slack-branching tests assert against a fixed spec, not an ad-hoc one.
-- [ ] T006 [FOUND] **[Open question 2 — golden-file placement decision]** Decide and record (in the new
+- [x] T006 [FOUND] **[Open question 2 — golden-file placement decision]** Decide and record (in the new
         package `README.md` and as a one-line note in `research.md` D2) where the site-format markdown
         golden-file test lives: **either** the existing jest suite at `.github/scripts/gather-release-data/`
         (which already has `categorize.test.ts` / `github.test.ts`, so the fixture sits with the generator
@@ -106,7 +106,7 @@ must be settled by **inspection of ground truth, not assumption**.
         jest suite, because generation (the prompt template) is what the golden file guards and it keeps
         the Python tool free of Node/markdown-generation concerns. State the chosen location and the why;
         US1's generation test (T016) targets exactly that path.
-- [ ] T007 [P] [FOUND] Establish shared tool scaffolding used by all stories: `logging` setup mirroring
+- [x] T007 [P] [FOUND] Establish shared tool scaffolding used by all stories: `logging` setup mirroring
         `evergreen-tracks` (info level, **never** log the bearer token or full payloads — Constitution II/III),
         base-URL/`DOTCMS_DEVSITE_TOKEN` env read-once helper, and a `requests.Session` with the
         `Authorization: Bearer` header, in `src/changelog_publisher/client.py`. Skeleton only (no request

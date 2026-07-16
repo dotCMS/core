@@ -48,6 +48,13 @@ template — so a distinct prompt template is the right seam, not a fork of the 
 - *A brand-new generator* — duplicates the gatherer and reintroduces the drift the spec is
   trying to kill.
 
+**Golden-file placement (D2, resolved at T006)**: the site-format markdown golden-file test
+lives in the existing `.github/scripts/gather-release-data/` jest suite (beside
+`categorize.test.ts` / `github.test.ts`), **not** in the Python package — the golden file
+guards the generation output (the `prompt-template-site.md` editorial format), a
+Node/markdown concern, so it belongs with the generator it tests and keeps the delivery tool
+free of markdown-generation concerns.
+
 **Open question carried to tasks (D2a)**: whether one Claude invocation emits both
 `/tmp/release-notes.md` and `/tmp/site-release-notes.md` (cheaper, single call) or the site
 notes are a second lightweight `claude-code-action` step against `prompt-template-site.md`.
