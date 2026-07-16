@@ -289,17 +289,17 @@ wording) lands in the same channel.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T041 [P] [POLISH] Flesh out `.github/actions/core-cicd/changelog-publisher/README.md`: usage
+- [x] T041 [P] [POLISH] Flesh out `.github/actions/core-cicd/changelog-publisher/README.md`: usage
         (`publish` args, dry-run vs `--apply`, `--force` operator override), the exit-code/skip contract
         (T005), the manual backfill procedure (explicit per-version, no auto-backfill — FR-012), and the
         one-time manual end-to-end validation (quickstart dry-run → `--apply` against a throwaway version).
-- [ ] T042 [P] [POLISH] Additional edge-case unit tests surfaced during implementation: "internal
+- [x] T042 [P] [POLISH] Additional edge-case unit tests surfaced during implementation: "internal
         maintenance only" empty-changes note still produces an entry; hotfix `-02`/`-03` same-day suffixes
         each publish their own row; older-line `-04` patch carries today's date and touches no other row
         (FR-013, spec Edge Cases).
-- [ ] T043 [POLISH] Run `uv run pytest` for the full `changelog-publisher` suite and the
+- [x] T043 [POLISH] Run `uv run pytest` for the full `changelog-publisher` suite and the
         `gather-release-data` jest suite (if the golden file landed there per T006); confirm all green.
-- [ ] T044 [POLISH] Security/hygiene pass on touched files: confirm no secret is ever logged or written to
+- [x] T044 [POLISH] Security/hygiene pass on touched files: confirm no secret is ever logged or written to
         `GITHUB_OUTPUT`/step summary, input (version string) is validated before any network call, and the
         `.venv`/cache dirs are gitignored (Constitution II/III).
 
