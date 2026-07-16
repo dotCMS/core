@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
@@ -1247,6 +1248,16 @@ public class BrowserAPIImpl implements BrowserAPI {
                 continue;
             }
 
+            // Time fields index the main field as a full datetime with the value's own date, so a
+            // range on it would compare the (meaningless) date component. Match time-of-day instead,
+            // against the _dotraw keyword sub-field (indexed as HH:mm:ss), so the range works
+            // regardless of the date the value was stored with.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.RANGE
+                    && field instanceof TimeField) {
+                clauses.append(' ').append(buildTimeOfDayRangeClause(luceneFieldName, criteria));
+                continue;
+            }
+
             final String luceneValue = fieldCriteriaLuceneValue(criteria);
             final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
             final FieldContext fieldContext = new FieldContext.Builder()
@@ -1312,6 +1323,49 @@ public class BrowserAPIImpl implements BrowserAPI {
      * would break query_string parsing.
      */
     private static final String ES_QUERY_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
+    /** Time-of-day pattern matching the {@code _dotraw} keyword sub-field of a Time field. */
+    private static final String ES_QUERY_TIME_PATTERN = "HH:mm:ss";
+
+    /**
+     * Builds a time-of-day range clause for a Time field against its {@code _dotraw} keyword
+     * sub-field (indexed as {@code HH:mm:ss}). The main field is a full datetime whose date
+     * component is the value's own save date, so ranging on it would (wrongly) require the query's
+     * date to match; the {@code _dotraw} sub-field holds only the time, and a lexicographic range on
+     * zero-padded {@code HH:mm:ss} equals chronological order within a day.
+     *
+     * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
+     * @param criteria  The RANGE criterion.
+     * @return A clause like {@code +ct.field_dotraw:[14:00:00 TO 15:00:00]}.
+     */
+    private String buildTimeOfDayRangeClause(final String fieldName,
+            final FieldSearchCriteria criteria) {
+        final String from = normalizeTimeBound(criteria.getRangeFrom());
+        final String to = normalizeTimeBound(criteria.getRangeTo());
+        return "+" + fieldName + "_dotraw:[" + from + " TO " + to + "]";
+    }
+
+    /**
+     * Normalizes a range bound to a time-of-day ({@code HH:mm:ss}) in the server timezone, matching
+     * how the Time field's {@code _dotraw} value is indexed. Open/blank bounds become {@code *};
+     * unparseable values are escaped so a crafted value can't alter the query structure.
+     *
+     * @param raw The raw bound value.
+     * @return The {@code HH:mm:ss} bound, {@code *}, or an escaped token.
+     */
+    private String normalizeTimeBound(final String raw) {
+        if (!UtilMethods.isSet(raw) || "*".equals(raw.trim())) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(raw.trim());
+        if (null == parsed) {
+            Logger.warn(this, String.format(
+                    "Unparseable time range bound '%s'; escaping it (the criterion will match "
+                            + "nothing).", raw.trim()));
+            return ESUtils.escape(raw.trim());
+        }
+        return new SimpleDateFormat(ES_QUERY_TIME_PATTERN).format(parsed);
+    }
 
     /**
      * Normalizes a date range bound into a format the index accepts. The FE sends ISO-8601 (e.g.

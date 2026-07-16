@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -31,6 +32,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
@@ -364,6 +366,50 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         assertTrue("featured=true item must match", inodes.contains(angularWithTags.getInode()));
         assertFalse("featured=false item must not match", inodes.contains(reactWithVue.getInode()));
         assertFalse("featured=false item must not match", inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * Time-field range matches by time-of-day regardless of the date the value was stored with.
+     * The FE sends full ISO datetime (today's date + time); a Time field is indexed as a full
+     * datetime with its own save date, so the range is resolved against the {@code _dotraw}
+     * (HH:mm:ss) sub-field instead of the main field.
+     */
+    @Test
+    public void testTimeFieldRangeMatchesTimeOfDayAcrossDates() throws Exception {
+        final String uid = System.currentTimeMillis() + "";
+        final ContentType timeType = new ContentTypeDataGen()
+                .name("DriveFfTime_" + uid).velocityVarName("driveFfTime_" + uid)
+                .baseContentType(BaseContentType.CONTENT).host(testSite).nextPersisted();
+        new FieldDataGen().type(TimeField.class).name("t").velocityVarName("t")
+                .values("").defaultValue("")
+                .contentTypeId(timeType.id()).searchable(true).indexed(true).nextPersisted();
+        // Stored time-of-day 14:30 on an arbitrary past date.
+        final Date timeVal = Date.from(LocalDateTime.of(2020, 3, 1, 14, 30, 0).toInstant(ZoneOffset.UTC));
+        final Contentlet timeContent = new ContentletDataGen(timeType.id())
+                .setProperty("title", "time " + uid).setProperty("t", timeVal)
+                .folder(testFolder).nextPersisted();
+
+        // FE-style bounds on a DIFFERENT date; the 14:00-15:00 window covers 14:30.
+        final Set<String> covering = driveInodes(timeRangeRequest(timeType,
+                "2025-01-01T14:00:00.000Z", "2025-01-01T15:00:00.000Z"));
+        assertTrue("time-of-day 14:30 must match a 14:00-15:00 range regardless of date",
+                covering.contains(timeContent.getInode()));
+
+        // A window that excludes 14:30.
+        final Set<String> excluding = driveInodes(timeRangeRequest(timeType,
+                "2025-01-01T15:00:00.000Z", "2025-01-01T16:00:00.000Z"));
+        assertFalse("time-of-day 14:30 must not match a 15:00-16:00 range",
+                excluding.contains(timeContent.getInode()));
+    }
+
+    private DriveRequestForm timeRangeRequest(final ContentType ct, final String from,
+            final String to) {
+        final Map<String, Object> range = new java.util.HashMap<>();
+        range.put("from", from);
+        range.put("to", to);
+        return DriveRequestForm.builder().assetPath(testAssetPath)
+                .contentTypes(List.of(ct.variable())).showFolders(false)
+                .userSearchable(Map.of("t", range)).build();
     }
 
     /**
