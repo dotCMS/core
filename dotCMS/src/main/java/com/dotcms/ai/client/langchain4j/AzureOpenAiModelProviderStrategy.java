@@ -31,7 +31,8 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
         if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null && !requiresCompletionTokens(config)) builder.maxTokens(config.maxTokens());
+        if (config.maxTokens() != null && !requiresCompletionTokens(config)) { builder.maxTokens(config.maxTokens()); }
+        if (config.maxCompletionTokens() != null && requiresCompletionTokens(config)) { builder.maxCompletionTokens(config.maxCompletionTokens()); }
         return builder.build();
     }
 
@@ -46,7 +47,8 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
         if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null && !requiresCompletionTokens(config)) builder.maxTokens(config.maxTokens());
+        if (config.maxTokens() != null && !requiresCompletionTokens(config)) { builder.maxTokens(config.maxTokens()); }
+        if (config.maxCompletionTokens() != null && requiresCompletionTokens(config)) { builder.maxCompletionTokens(config.maxCompletionTokens()); }
         return builder.build();
     }
 
