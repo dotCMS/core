@@ -46,28 +46,31 @@ An operator can re-run the publishing step for any version — after a failure, 
 
 ---
 
-### User Story 3 - Failures are visible, not silent (Priority: P3)
+### User Story 3 - Failures are announced in Slack, not silent (Priority: P3)
 
-When publishing to the site fails (backend unreachable, auth expired, rejected payload), the release team can see the failure where they already watch releases, and the release itself is not blocked.
+When publishing to the site fails (backend unreachable, auth expired, rejected payload), the release team is notified in Slack — in `#dot-releases` — and the release itself is not blocked.
 
 **Why this priority**: A silently failed post recreates today's problem (stale changelog) while removing the human who used to notice. But changelog publishing must never block or fail the software release itself.
 
-**Independent Test**: Run the publish step with an invalid credential and verify the run reports failure visibly while the release process itself is unaffected.
+**Independent Test**: Run the publish step with an invalid credential and verify a failure notification lands in the Slack channel while the release process itself is unaffected.
 
 **Acceptance Scenarios**:
 
-1. **Given** the site backend is unreachable, **When** the automation runs, **Then** the failure is visibly reported (failed workflow run/alert) and the GitHub release remains published and intact.
+1. **Given** the site backend is unreachable, **When** the automation runs, **Then** a failure notification naming the version and reason is posted to `#dot-releases`, and the GitHub release remains published and intact.
 2. **Given** a failed run, **When** the operator re-runs it after the outage, **Then** the entry publishes correctly (per User Story 2).
+3. **Given** a run is skipped to protect a human-edited entry (see FR-011), **When** the run completes, **Then** the skip and its reason are posted to `#dot-releases` so the team can decide whether to override.
 
 ---
 
 ### Edge Cases
 
-- Monorepo tags that are not product releases (e.g., CLI releases) must not create changelog entries.
+- Monorepo tags that are not current-track product releases (CLI releases, LTS releases) must not create changelog entries — descoped for v1 (see Assumptions).
 - A release with no customer-facing changes still gets an entry (existing convention: a short "internal maintenance only" note).
 - Hotfix releases (multiple releases same day, `-02`/`-03` suffixes) each get their own entry.
-- LTS-track releases must carry the correct track designation so the site's Current/LTS filter buckets them correctly.
+- **Patch of an older version** (e.g. a `-04` hotfix for last month's version shipped after newer versions exist): the entry is created for exactly the version that triggered it, carries its **actual** availability date (the day it shipped, not the original version's date), and the automation never reorders, renumbers, or touches any other entry. Where the site's existing chronological ordering places it is a rendering concern and stays as-is.
+- **Failure is not a debt that auto-collects**: each run publishes only the single release that triggered it. A failed or missed run does NOT cause a later run to sweep history — there is no automatic backfill. Catching up a missed version is an explicit operator re-run for that version.
 - A GitHub release edited after publication: re-running the pipeline for that version updates the site entry (covered by idempotency; automatic re-sync on edit is out of scope).
+- **Human-edited entries are protected**: if an existing entry for the version was last modified by anyone other than the automation's service account (e.g. polished by hand in the admin UI), the automation must not overwrite it — it skips, reports the skip (see User Story 3), and overwriting requires an explicit operator override.
 - The markdown notes must survive storage intact — headings, bullets, code spans, and issue links must render on the site exactly as generated (the storage field is rich-text by default and will mangle markdown unless explicitly stored raw).
 - Concurrent runs for the same version (retry racing a re-run) must not produce duplicate rows.
 
@@ -78,13 +81,16 @@ When publishing to the site fails (backend unreachable, auth expired, rejected p
 - **FR-001**: The system MUST publish a changelog entry to the site automatically when a dotCMS product release is published, with no human action or approval between release and the entry going live.
 - **FR-002**: Each entry MUST include the version identifier, availability date, docker image tag, and release notes categorized per the site's established changelog format (section headings such as Features / Enhancements & Adjustments / Fixes, per-item issue links back to GitHub).
 - **FR-003**: The system MUST locate any existing entry for the version and update it in place; it MUST NOT create a second row for a version that already exists (the underlying record set also drives the site's downloads listing).
-- **FR-004**: Re-running the pipeline for a version MUST be idempotent: the end state equals a single successful run, and the latest generated notes win.
+- **FR-004**: Re-running the pipeline for a version MUST be idempotent: the end state equals a single successful run, and the latest generated notes win — except where FR-011 (human-edit protection) applies.
 - **FR-005**: Markdown formatting of the notes MUST be preserved end-to-end so the rendered entry matches the site's existing entries.
-- **FR-006**: The system MUST mark each entry with the correct release track (current vs LTS) and changelog visibility so the site's filters place it correctly.
-- **FR-007**: Non-product releases from the same repository (e.g., CLI) MUST be excluded.
-- **FR-008**: A publishing failure MUST be visibly reported to the release team and MUST NOT block or fail the product release itself.
+- **FR-006**: The system MUST mark each entry with the current-track designation and changelog visibility so the site's filters place it correctly.
+- **FR-007**: Releases outside scope — CLI releases and LTS releases — MUST be excluded (descoped for v1; the exclusion must be a deliberate filter, not an accident of tag patterns breaking).
+- **FR-008**: A publishing failure or protective skip MUST be reported to the release team as a Slack notification in `#dot-releases` (naming the version and reason) and MUST NOT block or fail the product release itself.
 - **FR-009**: The system MUST authenticate to the site backend using a dedicated service credential stored as a managed secret (no personal tokens).
 - **FR-010**: The generated notes MUST follow the site changelog's editorial format (concise, structured, no emoji) rather than the GitHub release notes format.
+- **FR-011**: The system MUST NOT overwrite an entry that was last modified by anyone other than the automation's own service account. Such entries are skipped with a notification (FR-008); overwriting a human-edited entry requires an explicit operator override.
+- **FR-012**: Each run MUST publish only the release that triggered it. The system MUST NOT automatically backfill other versions; catching up a missed release is an explicit, per-version operator action.
+- **FR-013**: A patch release of an older version MUST produce its own entry with its actual availability date, leaving all other entries untouched.
 
 ### Key Entities
 
@@ -100,7 +106,8 @@ When publishing to the site fails (backend unreachable, auth expired, rejected p
 - **SC-002**: Zero manual CMS steps are required per release for the changelog (baseline today: every entry is hand-created).
 - **SC-003**: After any number of runs and re-runs, exactly one changelog/downloads record exists per released version.
 - **SC-004**: Rendered entries are visually indistinguishable in structure from existing hand-authored entries (headings, bullets, issue links render correctly) for 100% of published releases.
-- **SC-005**: Every failed publish attempt is visible to the release team without anyone having to check the changelog page manually.
+- **SC-005**: Every failed or skipped publish attempt produces a Slack notification in `#dot-releases`; zero failures are discovered by checking the changelog page manually.
+- **SC-006**: Zero human-authored admin-UI edits are lost to the automation (no overwrite without explicit override).
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -115,5 +122,7 @@ When publishing to the site fails (backend unreachable, auth expired, rejected p
 - The site remains the customer-facing source of truth; GitHub release notes remain published as today. One generator feeding both is the drift-prevention strategy, with idempotent re-runs as the repair path.
 - Known storage gotcha to honor at implementation time: the notes field is a rich-text (WYSIWYG) field and the payload must explicitly disable WYSIWYG handling for it (`disabledWYSIWYG`) or markdown gets collapsed into a single paragraph.
 - A service API token for the site backend will be provisioned and stored as a repository/organization secret; provisioning the token is an operational prerequisite, not part of this feature's code.
-- Backfilling the handful of releases published between the last manual update and this feature's go-live is a one-time operational task using the same idempotent pipeline.
-- LTS releases also publish GitHub releases from this repository; they are in scope and are distinguished by their tag/track metadata.
+- Backfilling the handful of releases published between the last manual update and this feature's go-live is a one-time, explicit, per-version operational task using the same pipeline — never an automatic behavior (FR-012). Human-edit protection (FR-011) applies during backfill too, so hand-maintained entries are safe.
+- **LTS releases are descoped for v1** (they keep today's manual process), as are CLI releases. The exclusion filter should make re-scoping LTS in later a config change, not a redesign.
+- The human-edit protection relies on the backend recording who last modified an entry; the automation authenticates as a dedicated service account, so "last modified by someone else" is detectable. Verified 2026-07-16: entry metadata carries the last modifier (e.g. current entries show the release manager's name).
+- Failure/skip notifications go to `#dot-releases` (chosen over `#documentation`; single channel, where the release team already watches).
