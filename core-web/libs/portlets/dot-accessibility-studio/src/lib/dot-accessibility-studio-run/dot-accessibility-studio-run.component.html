@@ -136,7 +136,6 @@
          overflows — so the action footer sits right under the content rather
          than being pushed to the very bottom of the column. -->
     <div
-        #recipeLog
         class="min-h-0 flex-[0_1_auto] overflow-y-auto px-6 pt-1 pb-4"
         data-testid="studio-recipe-log">
         @if (store.isReady()) {
@@ -250,53 +249,13 @@
             </div>
         }
 
-        <!-- Live "now doing" banner — the agent's most recent step, pulsing. -->
-        @if (store.isFixing()) {
-            <div
-                class="mt-2 mb-1 flex items-center gap-2.5 rounded-xl border border-primary-100 bg-primary-50 px-3.5 py-2.5"
-                data-testid="studio-now-doing">
-                <i class="pi pi-spin pi-spinner text-primary" aria-hidden="true"></i>
-                <span class="min-w-0 truncate text-[13px] font-semibold text-primary">
-                    {{
-                        store.latestStep()?.message ??
-                            ('accessibility.studio.fixing' | dm)
-                    }}
-                </span>
-            </div>
-        }
-
-        <!-- Step log -->
-        <div class="flex flex-col" data-testid="studio-recipe-log-steps">
-            @for (step of recipeSteps(); track step.id) {
-                <div
-                    class="dot-recipe-step relative flex gap-3 py-1.5"
-                    data-testid="studio-recipe-step">
-                    <div class="flex flex-none flex-col items-center">
-                        <div
-                            class="flex size-7.5 items-center justify-center rounded-lg"
-                            [class.bg-green-50]="step.tone === 'fixed'"
-                            [class.text-green-600]="step.tone === 'fixed'"
-                            [class.bg-orange-50]="step.tone === 'reported'"
-                            [class.text-orange-700]="step.tone === 'reported'"
-                            [class.bg-primary-50]="step.tone === 'info'"
-                            [class.text-primary]="step.tone === 'info'">
-                            <i [class]="step.icon" class="text-base!" aria-hidden="true"></i>
-                        </div>
-                        @if (!$last) {
-                            <div class="mt-0.5 min-h-1.5 w-0.5 flex-1 bg-surface-100"></div>
-                        }
-                    </div>
-                    <div class="min-w-0 pt-1">
-                        <div class="text-[13px] leading-snug font-semibold text-gray-900">
-                            {{ step.text }}
-                        </div>
-                        @if (step.sub) {
-                            <div class="mt-0.5 text-xs text-gray-400">{{ step.sub }}</div>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
+        <!-- Live agent activity + final report timeline (shared, agent-agnostic). -->
+        <dot-agent-activity-log
+            [messages]="activityMessages()"
+            [activeMessage]="activeMessage()"
+            [working]="store.isFixing()"
+            workingFallbackKey="accessibility.studio.fixing"
+            data-testid="studio-activity-log" />
 
         <!-- Needs your review: axe `incomplete` items. axe flagged these but
              couldn't be sure, so the agent doesn't touch them — a human decides.

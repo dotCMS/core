@@ -10,15 +10,15 @@ import { GlobalStore } from '@dotcms/store';
 
 import { AccessibilityStudioStore } from './accessibility-studio.store';
 
-import { AgentStreamEvent, StudioPageRow } from '../models/accessibility-studio.models';
+import { A11yAgentStreamEvent, StudioPageRow } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
 /** A canned SSE run: two steps then `done` with the mock report. */
-const MOCK_FIX_STREAM: AgentStreamEvent[] = [
-    { type: 'step', phase: 'scan', message: 'Scanning live + working baseline' },
-    { type: 'step', phase: 'fix', message: 'Fixing color-contrast → .btn' },
-    { type: 'done', report: MOCK_FIX_REPORT }
+const MOCK_FIX_STREAM: A11yAgentStreamEvent[] = [
+    { type: 'step', step: { message: 'Scanning live + working baseline', meta: { phase: 'scan' } } },
+    { type: 'step', step: { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } } },
+    { type: 'done', result: MOCK_FIX_REPORT }
 ];
 
 // Two violation rules (3 + 2 = 5 error elements) + one incomplete rule (2 warnings).
@@ -319,9 +319,8 @@ describe('AccessibilityStudioStore', () => {
             expect(agentService.fixStream).toHaveBeenCalledTimes(1);
             expect(store.steps()).toHaveLength(2);
             expect(store.steps()[0]).toEqual({
-                id: 0,
-                phase: 'scan',
-                message: 'Scanning live + working baseline'
+                message: 'Scanning live + working baseline',
+                meta: { phase: 'scan' }
             });
             // …and the terminal `done` event set the report + phase.
             expect(store.phase()).toBe('done');
@@ -345,7 +344,7 @@ describe('AccessibilityStudioStore', () => {
 
         it('startFix returns to scanned and records the error on a terminal error event', () => {
             agentService.fixStream.mockReturnValueOnce(
-                of<AgentStreamEvent>({ type: 'error', message: 'render unreliable' })
+                of<A11yAgentStreamEvent>({ type: 'error', message: 'render unreliable' })
             );
             store.runScan();
             store.startFix();

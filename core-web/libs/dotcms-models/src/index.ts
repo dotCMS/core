@@ -2,6 +2,7 @@ export * from './lib/content-type-view.model';
 export * from './lib/dot-action-bulk-request-options.model';
 export * from './lib/dot-action-bulk-result.model';
 export * from './lib/dot-action-menu-item.model';
+export * from './lib/dot-agent-run.model';
 export * from './lib/dot-ai.model';
 export * from './lib/dot-ajax-action-response';
 export * from './lib/dot-alert-confirm.model';

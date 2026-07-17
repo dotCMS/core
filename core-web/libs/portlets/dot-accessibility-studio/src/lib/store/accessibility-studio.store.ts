@@ -13,7 +13,7 @@ import { computed, effect, inject, untracked } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { AgentRunStep, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -29,8 +29,7 @@ import {
     FixReport,
     FixResult,
     StudioPageRow,
-    StudioPhase,
-    StudioStep
+    StudioPhase
 } from '../models/accessibility-studio.models';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
@@ -53,7 +52,7 @@ interface AccessibilityStudioState {
     /** The real axe scan result — populated by runScan() via DotPageScannerService. */
     scanResult: PageScannerA11yResponse | null;
     /** Live agent activity log — appended from SSE `step` events during a fix run. */
-    steps: StudioStep[];
+    steps: AgentRunStep[];
     /** Set when a fix run fails — surfaced inline so the user can retry. */
     fixError: string | null;
     /** The §6 run report — populated when the fix pass completes (SSE `done`). */
@@ -173,7 +172,7 @@ export const AccessibilityStudioStore = signalStore(
                         ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
                     ) ?? []
         ),
-        latestStep: computed<StudioStep | null>(() => {
+        latestStep: computed<AgentRunStep | null>(() => {
             const steps = store.steps();
             return steps.length ? steps[steps.length - 1] : null;
         }),
@@ -209,10 +208,15 @@ export const AccessibilityStudioStore = signalStore(
                 return report.scan.after.violations;
             }
             if (store.phase() === 'fixing') {
+                // a11y-only optimistic estimate: count fix-phase steps whose message
+                // reads as a completed fix, so the donut animates down as fixes land.
                 const cleared = store
                     .steps()
-                    .filter((s) => s.phase === 'fix' && /^Fixed |Added |Set |Wrapped |Named /.test(s.message))
-                    .length;
+                    .filter(
+                        (s) =>
+                            s.meta?.['phase'] === 'fix' &&
+                            /^Fixed |Added |Set |Wrapped |Named /.test(s.message)
+                    ).length;
                 return Math.max(0, before - cleared);
             }
             return before;
@@ -419,7 +423,6 @@ export const AccessibilityStudioStore = signalStore(
                     skipCss: store.skipCss()
                 };
 
-                let nextStepId = 0;
                 activeSub = agentService
                     .fixStream(request)
                     .pipe(
@@ -433,17 +436,12 @@ export const AccessibilityStudioStore = signalStore(
                     )
                     .subscribe((event) => {
                         if (event.type === 'step') {
-                            patchState(store, {
-                                steps: [
-                                    ...store.steps(),
-                                    { id: nextStepId++, phase: event.phase, message: event.message }
-                                ]
-                            });
+                            patchState(store, { steps: [...store.steps(), event.step] });
                         } else if (event.type === 'done' || event.type === 'aborted') {
                             // done = full run; aborted = stopped early with a partial
                             // report (fixes already applied are kept). Both land on the
                             // done screen with the report the agent returned.
-                            patchState(store, { phase: 'done', report: event.report });
+                            patchState(store, { phase: 'done', report: event.result });
                         } else {
                             // Terminal error event from the agent.
                             patchState(store, { phase: 'scanned', fixError: event.message });

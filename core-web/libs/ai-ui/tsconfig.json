@@ -1,0 +1,19 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "files": [],
+    "include": [],
+    "references": [
+        {
+            "path": "./tsconfig.lib.json"
+        },
+        {
+            "path": "./tsconfig.spec.json"
+        }
+    ],
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "lib": ["dom", "dom.iterable", "es2022"]
+    }
+}

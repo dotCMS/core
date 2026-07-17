@@ -1,17 +1,13 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { AgentRunStep } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAccessibilityStudioRunComponent } from './dot-accessibility-studio-run.component';
 
 import { A11yGroup } from '../models/a11y-groups';
-import {
-    FixReport,
-    StudioPageRow,
-    StudioPhase,
-    StudioStep
-} from '../models/accessibility-studio.models';
+import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
@@ -44,7 +40,7 @@ describe('DotAccessibilityStudioRunComponent', () => {
     // Mutable per-test state read by the store mock's reactive getters.
     let phase: StudioPhase = 'ready';
     let report: FixReport | null = null;
-    let steps: StudioStep[] = [];
+    let steps: AgentRunStep[] = [];
     let fixError: string | null = null;
     // Whether a scan result is present (drives report vs. iframe in the pane).
     let hasScan = false;
@@ -148,7 +144,7 @@ describe('DotAccessibilityStudioRunComponent', () => {
     function render(
         nextPhase: StudioPhase,
         nextReport: FixReport | null = null,
-        nextSteps: StudioStep[] = [],
+        nextSteps: AgentRunStep[] = [],
         nextFixError: string | null = null
     ) {
         phase = nextPhase;
@@ -290,10 +286,10 @@ describe('DotAccessibilityStudioRunComponent', () => {
     });
 
     describe('fixing phase (live stream)', () => {
-        const LIVE_STEPS: StudioStep[] = [
-            { id: 0, phase: 'scan', message: 'Scanning live + working baseline' },
-            { id: 1, phase: 'fix', message: 'Fixing color-contrast → .btn' },
-            { id: 2, phase: 'read', message: 'Agent: reading activity.vtl' }
+        const LIVE_STEPS: AgentRunStep[] = [
+            { message: 'Scanning live + working baseline', meta: { phase: 'scan' } },
+            { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } },
+            { message: 'Agent: reading activity.vtl', meta: { phase: 'read' } }
         ];
 
         beforeEach(() => render('fixing', null, LIVE_STEPS));
@@ -308,12 +304,12 @@ describe('DotAccessibilityStudioRunComponent', () => {
             expect(stopAgent).toHaveBeenCalled();
         });
 
-        it('renders one live recipe step per streamed event', () => {
-            expect(spectator.queryAll(byTestId('studio-recipe-step')).length).toBe(3);
+        it('renders one live activity step per streamed event', () => {
+            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
         });
 
         it('shows the latest step in the now-doing banner', () => {
-            const banner = spectator.query(byTestId('studio-now-doing'));
+            const banner = spectator.query(byTestId('agent-now-doing'));
             expect(banner).toHaveText('Agent: reading activity.vtl');
         });
     });
@@ -343,9 +339,9 @@ describe('DotAccessibilityStudioRunComponent', () => {
             expect(spectator.query(byTestId('studio-review-section'))).toBeTruthy();
         });
 
-        it('renders a recipe step per result plus scan/locate/rescan framing', () => {
+        it('renders an activity step per result plus scan/locate/rescan framing', () => {
             // 7 fixed + 5 reported + 3 framing steps (scan, locate, rescan)
-            expect(spectator.queryAll(byTestId('studio-recipe-step')).length).toBe(15);
+            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(15);
         });
 
         it('triggers publish on click', () => {

@@ -1,0 +1,16 @@
+<div class="flex flex-none flex-col items-center">
+    <div class="flex size-7.5 items-center justify-center rounded-lg" [class]="toneClass()">
+        <i [class]="message().icon" class="text-base!" aria-hidden="true"></i>
+    </div>
+    @if (!last()) {
+        <div class="mt-0.5 min-h-1.5 w-0.5 flex-1 bg-surface-100"></div>
+    }
+</div>
+<div class="min-w-0 pt-1">
+    <div class="text-[13px] leading-snug font-semibold text-gray-900">
+        {{ message().text }}
+    </div>
+    @if (message().sub) {
+        <div class="mt-0.5 text-xs text-gray-400">{{ message().sub }}</div>
+    }
+</div>

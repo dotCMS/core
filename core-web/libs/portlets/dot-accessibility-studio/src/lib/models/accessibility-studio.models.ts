@@ -1,3 +1,5 @@
+import { AgentStreamEvent } from '@dotcms/dotcms-models';
+
 // ── Agent wire contract (plan §5/§6) ────────────────────────────────────────
 
 export type FixStatus = 'fixed-to-working' | 'reported' | 'skipped' | 'regressed' | 'failed';
@@ -28,8 +30,6 @@ export interface FixReport {
     changedFiles: string[];
     publishRequired: true;
 }
-
-export type ActiveRunStatus = 'running' | 'done' | 'error';
 
 /**
  * The Studio → proxy request body (POST /api/v1/a11y-agent/fix[/stream], plan §8.1).
@@ -80,24 +80,14 @@ export interface StudioPageRow {
 
 /**
  * Coarse phase tag on each streamed `step` event, emitted by the agent loop.
- * Mirrors the agent's onStep phases (run-fix/tools): the Studio maps these to an
- * icon + tone for the live activity log.
+ * Mirrors the agent's onStep phases (run-fix/tools): carried in the generic
+ * step's `meta.phase`, the presenter maps it to an icon for the activity log.
  */
 export type StudioStepPhase = 'scan' | 'locate' | 'read' | 'fix' | 'rescan';
 
-/** One live activity-log entry, built from an SSE `step` event. */
-export interface StudioStep {
-    /** Monotonic id for @for tracking + entry animation. */
-    id: number;
-    phase: StudioStepPhase;
-    message: string;
-}
-
-/** Discriminated union of the parsed SSE events the agent emits. */
-export type AgentStreamEvent =
-    | { type: 'step'; phase: StudioStepPhase; message: string }
-    | { type: 'done'; report: FixReport }
-    // Terminal event when the user stopped the run — carries the PARTIAL report
-    // (fixes already applied are kept). Same payload as `done`.
-    | { type: 'aborted'; report: FixReport }
-    | { type: 'error'; message: string };
+/**
+ * The a11y agent's stream: the generic {@link AgentStreamEvent} specialized to
+ * the a11y terminal payload. `done`/`aborted` carry a {@link FixReport} (the
+ * `aborted` one is partial — fixes already applied are kept).
+ */
+export type A11yAgentStreamEvent = AgentStreamEvent<FixReport>;

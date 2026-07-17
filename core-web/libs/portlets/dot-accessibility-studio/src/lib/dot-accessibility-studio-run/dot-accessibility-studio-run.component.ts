@@ -17,10 +17,12 @@ import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { AgentMessage, DotAgentActivityLogComponent } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
 import { AxeImpact } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
+import { A11yAgentPresenter } from '../models/a11y-agent.presenter';
 import {
     impactToSeverity,
     SEVERITY_COLOR,
@@ -28,7 +30,6 @@ import {
     SEVERITY_ORDER,
     type Severity
 } from '../models/a11y-severity';
-import { FixResult, StudioStepPhase } from '../models/accessibility-studio.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
@@ -39,26 +40,6 @@ interface SeverityRow {
     color: string;
     count: number;
 }
-
-/** A human-readable line in the Agent Recipe log. */
-interface RecipeStep {
-    /** Stable id for @for tracking + entry animation. */
-    id: string | number;
-    icon: string;
-    text: string;
-    sub?: string;
-    /** 'fixed' | 'reported' | 'info' — drives the bubble color. */
-    tone: 'fixed' | 'reported' | 'info';
-}
-
-/** Icon for each live agent step phase (SSE `step` events). */
-const STEP_PHASE_ICON: Record<StudioStepPhase, string> = {
-    scan: 'pi pi-search',
-    locate: 'pi pi-sitemap',
-    read: 'pi pi-file',
-    fix: 'pi pi-wrench',
-    rescan: 'pi pi-verified'
-};
 
 /**
  * The Studio run screen (§7): the agent column (score widget + recipe log +
@@ -79,35 +60,10 @@ const STEP_PHASE_ICON: Record<StudioStepPhase, string> = {
         ToggleSwitchModule,
         TooltipModule,
         DotMessagePipe,
-        SafeUrlPipe
+        SafeUrlPipe,
+        DotAgentActivityLogComponent
     ],
     templateUrl: './dot-accessibility-studio-run.component.html',
-    styles: [
-        `
-            /* Each recipe step slides + fades in as it's appended to the log,
-               giving the live agent activity a sense of motion. */
-            @keyframes dot-recipe-step-in {
-                from {
-                    opacity: 0;
-                    transform: translateY(6px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .dot-recipe-step {
-                animation: dot-recipe-step-in 0.28s ease-out both;
-            }
-
-            @media (prefers-reduced-motion: reduce) {
-                .dot-recipe-step {
-                    animation: none;
-                }
-            }
-        `
-    ],
     providers: [A11yMarkerService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'grid h-full min-h-0 grid-cols-[412px_1fr]' }
@@ -116,14 +72,13 @@ export class DotAccessibilityStudioRunComponent {
     readonly store = inject(AccessibilityStudioStore);
 
     private readonly markerService = inject(A11yMarkerService);
-    private readonly messageService = inject(DotMessageService);
+
+    /** Maps the agent stream + FixReport into shared activity-log bubbles. */
+    private readonly presenter = new A11yAgentPresenter(inject(DotMessageService));
 
     /** The preview iframe — markers are injected into its (same-origin) document. */
     private readonly previewFrame =
         viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
-
-    /** The scrollable recipe log — auto-scrolled to the latest live step. */
-    private readonly recipeLog = viewChild<ElementRef<HTMLElement>>('recipeLog');
 
     constructor() {
         // Redraw markers whenever the findings, preview mode, or phase change.
@@ -133,16 +88,6 @@ export class DotAccessibilityStudioRunComponent {
                 this.previewFrame()?.nativeElement,
                 this.showMarkers() ? groups : []
             );
-        });
-
-        // Keep the latest live step in view as the agent streams its activity.
-        effect(() => {
-            // Read the step count so the effect re-runs on each new step.
-            const stepCount = this.store.steps().length;
-            const log = this.recipeLog()?.nativeElement;
-            if (log && stepCount) {
-                log.scrollTop = log.scrollHeight;
-            }
         });
     }
 
@@ -282,75 +227,25 @@ export class DotAccessibilityStudioRunComponent {
     ]);
 
     /**
-     * Live agent activity — one entry per streamed SSE `step` event. Rendered
-     * while the agent runs so the user watches the work happen in real time.
+     * The bubbles for the shared activity log, via the a11y presenter:
+     *   - while fixing → one bubble per live SSE `step` (watch it work)
+     *   - after done   → the final report expanded into bubbles (scan/fixed/reported/rescan)
      */
-    readonly liveSteps = computed<RecipeStep[]>(() =>
-        this.store.steps().map((s) => ({
-            id: s.id,
-            icon: STEP_PHASE_ICON[s.phase],
-            text: s.message,
-            tone: 'info'
-        }))
-    );
-
-    /**
-     * The Agent Recipe step log:
-     *   - while fixing → the live SSE activity (liveSteps)
-     *   - after done   → the final report (fixed + reported, bookended by scan/rescan)
-     */
-    readonly recipeSteps = computed<RecipeStep[]>(() => {
+    readonly activityMessages = computed<AgentMessage[]>(() => {
         if (this.store.isFixing()) {
-            return this.liveSteps();
+            return this.store.steps().map((step, i) => this.presenter.liveStep(step, i));
         }
-        if (!this.store.isDone() && !this.store.isPublished()) {
-            return [];
+        if (this.store.isDone() || this.store.isPublished()) {
+            const report = this.store.report();
+            return report ? this.presenter.resultMessages(report) : [];
         }
-        const report = this.store.report();
-        if (!report) {
-            return [];
-        }
+        return [];
+    });
 
-        const msg = (key: string, ...args: string[]) => this.messageService.get(key, ...args);
-        return [
-            {
-                id: 'scan',
-                icon: 'pi pi-search',
-                text: msg('accessibility.studio.recipe.scan'),
-                sub: msg('accessibility.studio.recipe.scan.sub', String(report.scan.before.violations)),
-                tone: 'info' as const
-            },
-            {
-                id: 'locate',
-                icon: 'pi pi-sitemap',
-                text: msg('accessibility.studio.recipe.locate'),
-                tone: 'info' as const
-            },
-            ...this.store.fixedResults().map((r, i) => ({
-                id: `fixed-${i}`,
-                icon: 'pi pi-check',
-                text: r.review ?? msg('accessibility.studio.recipe.fixed', r.ruleId),
-                sub: this.ruleAndFile(r),
-                tone: 'fixed' as const
-            })),
-            ...this.store.reportedResults().map((r, i) => ({
-                id: `reported-${i}`,
-                // Distinct icon: reverted/regressed → undo, everything else → flag.
-                icon: r.reverted || r.status === 'regressed' ? 'pi pi-replay' : 'pi pi-flag',
-                text: r.review ?? r.reason ?? msg('accessibility.studio.recipe.flagged', r.ruleId),
-                sub: this.ruleAndFile(r),
-                tone: 'reported' as const
-            })),
-            {
-                id: 'rescan',
-                icon: 'pi pi-verified',
-                text: msg('accessibility.studio.recipe.rescan'),
-                sub: msg('accessibility.studio.recipe.rescan.sub',
-                    String(report.scan.before.violations),
-                    String(report.scan.after.violations)),
-                tone: 'info' as const
-            }
-        ];
+    /** The "now doing" banner content — the latest live step while fixing. */
+    readonly activeMessage = computed<AgentMessage | null>(() => {
+        const step = this.store.latestStep();
+        return step ? this.presenter.liveStep(step, this.store.steps().length - 1) : null;
     });
 
     /** Footer title + sub keys derived from the current phase — single switch. */
@@ -462,11 +357,6 @@ export class DotAccessibilityStudioRunComponent {
 
     onSkipCssChange(value: boolean): void {
         this.store.setSkipCss(value);
-    }
-
-    private ruleAndFile(r: FixResult): string {
-        const file = r.file ? r.file.split('/').pop() : undefined;
-        return file ? `${r.ruleId} · ${file}` : r.ruleId;
     }
 
     /** Dot color for an issue-type row, by axe impact (used by the BY ISSUE TYPE list). */

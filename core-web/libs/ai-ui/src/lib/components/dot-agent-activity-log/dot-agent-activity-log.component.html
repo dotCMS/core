@@ -1,0 +1,11 @@
+<!-- Live "now doing" banner — the agent's current step, pulsing. -->
+@if (working()) {
+    <dot-agent-now-doing [message]="activeMessage()" [fallbackKey]="workingFallbackKey()" />
+}
+
+<!-- Step log — one bubble per message. -->
+<div class="flex flex-col" data-testid="agent-activity-steps">
+    @for (message of messages(); track message.id; let last = $last) {
+        <dot-agent-message [message]="message" [last]="last" />
+    }
+</div>

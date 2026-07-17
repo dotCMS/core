@@ -1,11 +1,9 @@
 import { FixReport } from './accessibility-studio.models';
 
 /**
- * Mock §6 run report used to validate the Studio screen visually before the
- * real agent run (SSE) is wired in S4. Mirrors the prototype's fixes:
- * 7 fixed to working, 5 reported/skipped — 12 → 5 violations.
- *
- * Replace with the live agent response when the proxy/SSE lands (S4).
+ * Sample §6 run report used as a test fixture across the store, run-component,
+ * and presenter specs. Mirrors the prototype's fixes: 7 fixed to working, 5
+ * reported/skipped — 12 → 5 violations.
  */
 export const MOCK_FIX_REPORT: FixReport = {
     runId: 'r_mock_01J',
