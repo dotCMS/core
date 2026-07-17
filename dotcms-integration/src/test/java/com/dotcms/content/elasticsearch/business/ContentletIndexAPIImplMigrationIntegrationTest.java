@@ -448,6 +448,33 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     }
 
     /**
+     * Given Scenario: Phase 1 (dual-write). The supplied name exists in NEITHER engine
+     *                 ({@code GHOST_WORKING} was never created anywhere) — e.g. cleaning up a
+     *                 dangling DB pointer whose cluster index is already gone.
+     * When : {@code delete(GHOST_WORKING)} is called.
+     * Then : the delete is a benign, idempotent no-op — a missing index means the delete goal
+     *        (index absent) is already met, so the primary provider's {@code index_not_found} is
+     *        NOT propagated as a failure. This reconciles #36430's primary-failure propagation
+     *        with the #35640 {@code lastOsSlot} cleanup path. GENUINE primary failures (engine
+     *        down / auth) still propagate — covered by the unit test
+     *        {@code ContentletIndexAPIImplDeletePropagationTest}.
+     */
+    @Test
+    public void test_delete_phase1_nameInNeither_isBenignNoOp() {
+        setPhase(1);
+
+        assertFalse("Pre: ghost name must not exist in ES", esImpl().indexExists(GHOST_WORKING));
+        assertFalse("Pre: ghost name must not exist in OS",
+                osIndexAPI.indexExists(opsOS.toPhysicalName(GHOST_WORKING)));
+
+        // A missing index is idempotent-success, not an error: no exception is thrown.
+        final boolean result = contentletIndexAPI().delete(GHOST_WORKING);
+        assertTrue("Deleting a name that exists in neither engine is a benign no-op", result);
+
+        Logger.info(this, "✅ delete Phase 1 — name in neither engine is a benign no-op: " + GHOST_WORKING);
+    }
+
+    /**
      * Given Scenario: Phase 1 (dual-write) with divergent names — {@code ES_WORKING} exists
      *                 only in the legacy set; there is no {@code .os} sibling for it
      *                 (the normal state after a migration catchup deployment).

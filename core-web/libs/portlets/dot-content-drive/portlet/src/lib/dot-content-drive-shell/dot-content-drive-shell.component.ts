@@ -9,7 +9,6 @@ import {
     effect,
     ElementRef,
     inject,
-    OnInit,
     signal,
     untracked,
     viewChild
@@ -17,7 +16,6 @@ import {
 import { Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
@@ -27,7 +25,6 @@ import { catchError } from 'rxjs/operators';
 import {
     DotFolderService,
     DotUploadFileService,
-    DotLocalstorageService,
     DotWorkflowsActionsService,
     DotMessageService,
     DotWorkflowActionsFireService
@@ -56,7 +53,6 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
     DIALOG_TYPE,
-    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
@@ -89,7 +85,6 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotContentDriveDialogContentTypeSelectorComponent,
         DotContentDriveDialogUploadSelectorComponent,
         MessageModule,
-        ButtonModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
         DotSeverityIconComponent
@@ -101,7 +96,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
     }
 })
-export class DotContentDriveShellComponent implements OnInit {
+export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
@@ -113,7 +108,6 @@ export class DotContentDriveShellComponent implements OnInit {
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
@@ -207,7 +201,6 @@ export class DotContentDriveShellComponent implements OnInit {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
-    readonly $showMessage = signal(false);
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
 
@@ -260,23 +253,27 @@ export class DotContentDriveShellComponent implements OnInit {
      * Uses untracked to avoid creating a dependency on path signal
      */
     readonly setPathEffect = effect(() => {
+        // Read both dependencies up front so the guard below doesn't drop `sidebarLoading` as a
+        // dependency (the effect must re-run once the sidebar finishes resolving).
         const selectedNode = this.#store.selectedNode();
+        const sidebarLoading = this.#store.sidebarLoading();
 
-        if (selectedNode) {
-            // Read current path without tracking it to avoid circular dependencies
-            const currentPath = untracked(() => this.#store.path()) ?? '';
+        // Don't sync the path while the sidebar is still resolving its folders. On a cold reload
+        // with a `path` in the URL, `selectedNode` is still the default root node at this point;
+        // syncing from it would clear the restored path back to root and the deep-linked folder
+        // would never open. Once `loadFolders` resolves, it sets `selectedNode` to the matching
+        // node (and flips `sidebarLoading` off), so this effect re-runs and stays in sync.
+        if (sidebarLoading || !selectedNode) {
+            return;
+        }
 
-            if (selectedNode.data.path != currentPath) {
-                this.#store.setPath(selectedNode.data.path);
-            }
+        // Read current path without tracking it to avoid circular dependencies
+        const currentPath = untracked(() => this.#store.path()) ?? '';
+
+        if (selectedNode.data.path != currentPath) {
+            this.#store.setPath(selectedNode.data.path);
         }
     });
-
-    ngOnInit() {
-        this.$showMessage.set(
-            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY)
-        );
-    }
 
     protected onPaginate(event: DotContentDrivePaginateEvent) {
         // Explicit check because it can potentially be 0
@@ -325,6 +322,7 @@ export class DotContentDriveShellComponent implements OnInit {
                     path: contentlet.path,
                     hostname: this.#store.currentSite()?.hostname,
                     id: contentlet.identifier,
+                    inode: contentlet.inode,
                     fromTable: true
                 },
                 key: contentlet.identifier,
@@ -359,18 +357,6 @@ export class DotContentDriveShellComponent implements OnInit {
      */
     protected onDialogHidden() {
         this.$activeDialog.set(undefined);
-    }
-
-    /**
-     * Closes the message
-     *
-     * @protected
-     * @memberof DotContentDriveShellComponent
-     */
-    protected onCloseMessage() {
-        this.$showMessage.set(false);
-
-        this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
     /**

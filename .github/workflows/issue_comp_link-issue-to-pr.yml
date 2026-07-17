@@ -57,46 +57,108 @@ jobs:
         run: |
           pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
-          
+
           # Get PR details
           pr_details=$(curl -s \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number")
-          
+
           # Check for issues linked via GitHub's Development section (timeline events)
           timeline_events=$(curl -s \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/timeline")
-          
+
           # Look for connected/disconnected events that indicate manual linking
           connected_issue=$(echo "$timeline_events" | jq -r '.[] | select(.event == "connected") | .source.issue.number' | head -1)
-          
+
           if [[ -n "$connected_issue" && "$connected_issue" != "null" ]]; then
             echo "Found manually linked issue via Development section: $connected_issue"
             echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
             echo "linked_issue_number=$connected_issue" >> "$GITHUB_OUTPUT"
+            echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+            echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
             echo "link_method=development_section" >> "$GITHUB_OUTPUT"
           else
-            # Check if PR body contains issue references (fixes #123, closes #456, etc.)
             pr_body=$(echo "$pr_details" | jq -r '.body // ""')
-            
-            # Extract issue numbers from PR body using all GitHub-supported keywords
-            # Supports: close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved
-            # With optional colons and case-insensitive matching
-            linked_issues=$(echo "$pr_body" | grep -oiE '(close[ds]?|fix(e[ds])?|resolve[ds]?)(:)?\s+#([0-9]+)' | grep -oE '[0-9]+' | head -1)
-            
+
+            # ── Same-repo: #NUMBER (checked first — explicit same-repo link always wins) ──
+            # Prevents a stray owner/repo#N anywhere in the body from outranking an
+            # intentional "Fixes #123" reference.
+            linked_issues=$(echo "$pr_body" | grep -oiE \
+              '(close[ds]?|fix(e[ds])?|resolve[ds]?)(:)?\s+#([0-9]+)' | grep -oE '[0-9]+' | head -1)
+
             if [[ -n "$linked_issues" ]]; then
-              echo "Found linked issue in PR body: $linked_issues"
+              echo "Found same-repo linked issue in PR body: $linked_issues"
               echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
               echo "linked_issue_number=$linked_issues" >> "$GITHUB_OUTPUT"
+              echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+              echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
               echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
+
             else
-              echo "No linked issues found in Development section or PR body"
-              echo "has_linked_issues=false" >> "$GITHUB_OUTPUT"
+              # ── Cross-repo: owner/repo#NUMBER ───────────────────────────────
+              # Matches: "Closes dotCMS/private-issues#642", "Fixes org/repo#10", etc.
+              cross_repo_match=$(echo "$pr_body" | grep -oiE \
+                '(close[ds]?|fix(e[ds])?|resolve[ds]?)(:)?\s+[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+' | head -1)
+
+              # ── Cross-repo: full GitHub URL ──────────────────────────────────
+              # Matches: "Closes https://github.com/dotCMS/private-issues/issues/642"
+              cross_url_match=$(echo "$pr_body" | grep -oiE \
+                '(close[ds]?|fix(e[ds])?|resolve[ds]?)(:)?\s+https://github\.com/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+/issues/[0-9]+' | head -1)
+
+              if [[ -n "$cross_repo_match" ]]; then
+                owner_repo_num=$(echo "$cross_repo_match" | grep -oE '[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+')
+                cross_owner_repo=$(echo "$owner_repo_num" | cut -d'#' -f1)
+                cross_issue_num=$(echo "$owner_repo_num" | cut -d'#' -f2)
+                # If owner/repo resolves to this repo, route as same-repo so the
+                # PR-list comment and #N body-patch side effects still run.
+                if [[ "${cross_owner_repo,,}" == "${GITHUB_REPOSITORY,,}" ]]; then
+                  echo "Cross-repo ref resolves to same repo ($cross_owner_repo) — treating as same-repo link"
+                  echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                  echo "linked_issue_number=$cross_issue_num" >> "$GITHUB_OUTPUT"
+                  echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                  echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                  echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
+                else
+                  echo "Found cross-repo reference: $cross_owner_repo#$cross_issue_num"
+                  echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                  echo "linked_issue_number=$cross_issue_num" >> "$GITHUB_OUTPUT"
+                  echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
+                  echo "cross_repo_owner_repo=$cross_owner_repo" >> "$GITHUB_OUTPUT"
+                  echo "link_method=cross_repo_body" >> "$GITHUB_OUTPUT"
+                fi
+
+              elif [[ -n "$cross_url_match" ]]; then
+                cross_url=$(echo "$cross_url_match" | grep -oE 'https://github\.com/[^ ]+')
+                cross_owner_repo=$(echo "$cross_url" | sed 's|https://github.com/||;s|/issues/.*||')
+                cross_issue_num=$(echo "$cross_url" | grep -oE 'issues/[0-9]+' | grep -oE '[0-9]+')
+                # Same self-reference check for full URLs
+                if [[ "${cross_owner_repo,,}" == "${GITHUB_REPOSITORY,,}" ]]; then
+                  echo "Cross-repo URL resolves to same repo ($cross_owner_repo) — treating as same-repo link"
+                  echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                  echo "linked_issue_number=$cross_issue_num" >> "$GITHUB_OUTPUT"
+                  echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                  echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                  echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
+                else
+                  echo "Found cross-repo URL: $cross_owner_repo#$cross_issue_num"
+                  echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                  echo "linked_issue_number=$cross_issue_num" >> "$GITHUB_OUTPUT"
+                  echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
+                  echo "cross_repo_owner_repo=$cross_owner_repo" >> "$GITHUB_OUTPUT"
+                  echo "link_method=cross_repo_url" >> "$GITHUB_OUTPUT"
+                fi
+
+              else
+                echo "No linked issues found in Development section or PR body"
+                echo "has_linked_issues=false" >> "$GITHUB_OUTPUT"
+                echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+              fi
             fi
           fi
 
@@ -105,7 +167,7 @@ jobs:
         run: |
           branch_name="$PR_BRANCH"
           issue_number=""
-          
+
           # Try multiple patterns to extract issue number (more flexible but specific)
           if [[ "$branch_name" =~ ^([0-9]+)- ]]; then
             issue_number="${BASH_REMATCH[1]}"
@@ -119,7 +181,7 @@ jobs:
           else
             echo "No issue number found in branch name: $branch_name"
           fi
-          
+
           echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
 
       - name: Determine final issue number
@@ -128,10 +190,12 @@ jobs:
           HAS_LINKED_ISSUES: ${{ steps.check_existing_issues.outputs.has_linked_issues }}
           LINKED_ISSUE_NUMBER: ${{ steps.check_existing_issues.outputs.linked_issue_number }}
           LINK_METHOD: ${{ steps.check_existing_issues.outputs.link_method }}
+          IS_CROSS_REPO: ${{ steps.check_existing_issues.outputs.is_cross_repo }}
+          CROSS_REPO_OWNER_REPO: ${{ steps.check_existing_issues.outputs.cross_repo_owner_repo }}
           BRANCH_ISSUE_NUMBER: ${{ steps.extract_issue_number.outputs.issue_number }}
         run: |
           # Priority:
-          #   1) check_existing_issues: timeline (Development section) or PR body plain-keyword regex
+          #   1) check_existing_issues: timeline (Development section), cross-repo ref, or same-repo keyword
           #   2) closingIssuesReferences GraphQL: GitHub's own parser, catches markdown-linked refs
           #      the regex misses (e.g. "fixes [#123](url)"). This must outrank branch-name
           #      heuristics — author intent in the PR body should win over a branch pattern.
@@ -139,7 +203,7 @@ jobs:
           if [[ "$HAS_LINKED_ISSUES" == "true" ]]; then
             final_issue_number="$LINKED_ISSUE_NUMBER"
             link_method="$LINK_METHOD"
-            echo "Using manually linked issue: $final_issue_number (via $link_method)"
+            echo "Using linked issue: $final_issue_number (via $link_method)"
           else
             pr_number=$(echo "$PR_URL" | grep -o '[0-9]*$')
             closing_issue=""
@@ -172,7 +236,7 @@ jobs:
               echo "::error::No issue number found in Development section, PR body, GitHub linked issues, or branch name"
               echo "::error::Please link an issue using one of these methods:"
               echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
-              echo "::error::2. Add 'fixes #123' (or closes/resolves) to PR body, or"
+              echo "::error::2. Add 'fixes #123' (same repo), 'fixes org/repo#123' (cross-repo), or a full GitHub issue URL to PR body"
               echo "::error::3. Use branch naming like 'issue-123-feature' or '123-feature'"
               echo "failure_detected=true" >> "$GITHUB_OUTPUT"
               exit 1
@@ -180,6 +244,8 @@ jobs:
           fi
 
           echo "final_issue_number=$final_issue_number" >> "$GITHUB_OUTPUT"
+          echo "is_cross_repo=${IS_CROSS_REPO:-false}" >> "$GITHUB_OUTPUT"
+          echo "cross_repo_owner_repo=$CROSS_REPO_OWNER_REPO" >> "$GITHUB_OUTPUT"
 
       # Gates run before any side effects so that a PR whose linked issue is
       # missing required metadata does not get its body patched or have a
@@ -219,32 +285,53 @@ jobs:
         id: validate_issue
         env:
           ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
+          IS_CROSS_REPO: ${{ steps.determine_issue.outputs.is_cross_repo }}
+          CROSS_REPO_OWNER_REPO: ${{ steps.determine_issue.outputs.cross_repo_owner_repo }}
         run: |
           issue_number="$ISSUE_NUMBER"
 
-          # Distinguish API/permission errors from a genuine missing-label result —
-          # otherwise a transient 5xx, a deleted issue, or a scope problem would
-          # all surface as "no team label" and start a cycle where authors add
-          # the label but the next run still fails.
-          gh_err=$(mktemp)
-          if ! labels=$(gh issue view "$issue_number" --repo "${{ github.repository }}" --json labels --jq '.labels[].name' 2>"$gh_err"); then
-            echo "::error::Failed to fetch labels for linked issue #$issue_number:"
-            cat "$gh_err"
+          if [[ "$IS_CROSS_REPO" == "true" && -n "$CROSS_REPO_OWNER_REPO" ]]; then
+            # Cross-repo issue: attempt label fetch; pass regardless of access.
+            # Private tracking repos (e.g. dotCMS/private-issues) may be inaccessible
+            # to the workflow token — treat that as implicit approval.
+            gh_err=$(mktemp)
+            if labels=$(gh issue view "$issue_number" --repo "$CROSS_REPO_OWNER_REPO" --json labels --jq '.labels[].name' 2>"$gh_err"); then
+              team_label=$(echo "$labels" | grep -E '^Team : ' | head -1)
+              if [[ -n "$team_label" ]]; then
+                echo "Cross-repo linked issue $CROSS_REPO_OWNER_REPO#$issue_number has team label: $team_label"
+              else
+                echo "::warning::Cross-repo linked issue $CROSS_REPO_OWNER_REPO#$issue_number has no 'Team : *' label — passing since this is a cross-repo reference"
+              fi
+            else
+              echo "::warning::Could not fetch labels for $CROSS_REPO_OWNER_REPO#$issue_number (private or inaccessible) — skipping team label validation"
+            fi
             rm -f "$gh_err"
-            exit 1
+          else
+            # Same-repo issue: full team label validation required.
+            # Distinguish API/permission errors from a genuine missing-label result —
+            # otherwise a transient 5xx, a deleted issue, or a scope problem would
+            # all surface as "no team label" and start a cycle where authors add
+            # the label but the next run still fails.
+            gh_err=$(mktemp)
+            if ! labels=$(gh issue view "$issue_number" --repo "${{ github.repository }}" --json labels --jq '.labels[].name' 2>"$gh_err"); then
+              echo "::error::Failed to fetch labels for linked issue #$issue_number:"
+              cat "$gh_err"
+              rm -f "$gh_err"
+              exit 1
+            fi
+            rm -f "$gh_err"
+
+            team_label=$(echo "$labels" | grep -E '^Team : ' | head -1)
+
+            if [[ -z "$team_label" ]]; then
+              echo "::error::Linked issue #$issue_number has no 'Team : *' label"
+              echo "::error::Apply a team label (e.g., 'Team : Scout', 'Team : Platform') to the linked issue"
+              echo "validation_failed=true" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+
+            echo "Linked issue #$issue_number has team label: $team_label"
           fi
-          rm -f "$gh_err"
-
-          team_label=$(echo "$labels" | grep -E '^Team : ' | head -1)
-
-          if [[ -z "$team_label" ]]; then
-            echo "::error::Linked issue #$issue_number has no 'Team : *' label"
-            echo "::error::Apply a team label (e.g., 'Team : Scout', 'Team : Platform') to the linked issue"
-            echo "validation_failed=true" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-
-          echo "Linked issue #$issue_number has team label: $team_label"
 
       - name: Remove issue-validation failure comment if resolved
         run: |
@@ -270,6 +357,9 @@ jobs:
           fi
 
       - name: Get existing issue comments
+        # Skip for cross-repo issues — we cannot reliably comment on private repos,
+        # and the linked issue already tracks the PR via its own references.
+        if: steps.determine_issue.outputs.is_cross_repo != 'true'
         id: get_comments
         env:
           ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
@@ -285,6 +375,7 @@ jobs:
           echo "comments_file=/tmp/issue_comments.json" >> "$GITHUB_OUTPUT"
 
       - name: Check if comment already exists
+        if: steps.determine_issue.outputs.is_cross_repo != 'true'
         id: check_comment
         env:
           COMMENTS_FILE: ${{ steps.get_comments.outputs.comments_file }}
@@ -361,14 +452,14 @@ jobs:
           fi
 
       - name: Create new comment
-        if: steps.check_comment.outputs.existing_comment_id == ''
+        if: steps.determine_issue.outputs.is_cross_repo != 'true' && steps.check_comment.outputs.existing_comment_id == ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ steps.determine_issue.outputs.final_issue_number }}
           body: ${{ steps.check_comment.outputs.pr_list }}
 
       - name: Update existing comment
-        if: steps.check_comment.outputs.existing_comment_id != ''
+        if: steps.determine_issue.outputs.is_cross_repo != 'true' && steps.check_comment.outputs.existing_comment_id != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.check_comment.outputs.existing_comment_id }}
@@ -379,22 +470,25 @@ jobs:
           edit-mode: replace
 
       - name: Link PR to issue
+        # Skip for cross-repo: the reference already exists in the PR body as owner/repo#N.
+        # Adding a bare #N would create a broken same-repo link.
+        if: steps.determine_issue.outputs.is_cross_repo != 'true'
         env:
           ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
           pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
           issue_number="$ISSUE_NUMBER"
-          
+
           # Get current PR body
           current_pr=$(curl -s \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number")
-          
+
           current_body=$(echo "$current_pr" | jq -r '.body // ""')
-          
+
           # Check if issue reference already exists (word-boundary match so #10 does not match #100)
           if ! echo "$current_body" | grep -qE "(^|[^0-9])#${issue_number}([^0-9]|\$)"; then
             # Add issue reference to PR body
@@ -403,7 +497,7 @@ jobs:
             else
               new_body="This PR fixes: #$issue_number"
             fi
-            
+
             # Update PR body
             curl -X PATCH \
               -H "Accept: application/vnd.github+json" \
@@ -411,7 +505,7 @@ jobs:
               -H "X-GitHub-Api-Version: 2022-11-28" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number" \
               -d "{\"body\":$(echo "$new_body" | jq -R -s .)}"
-            
+
             echo "Added issue #$issue_number reference to PR #$pr_number body"
           else
             echo "Issue #$issue_number already referenced in PR #$pr_number body"
@@ -435,15 +529,15 @@ jobs:
             exit 0
           fi
 
-          comment_body=$(printf "%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n\n%s\n%s" \
+          comment_body=$(printf "%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n\n%s\n%s" \
             "## ❌ Issue Linking Required" \
             "This PR could not be linked to an issue. **All PRs must be linked to an issue** for tracking purposes." \
             "### How to fix this:" \
             "**Option 1: Add keyword to PR body** (Recommended - auto-removes this comment)" \
             "Edit this PR description and add one of these lines:" \
-            "- \`This PR fixes #123\` or \`Fixes: #123\`" \
-            "- \`This PR closes #123\` or \`Closes: #123\`" \
-            "- \`This PR resolves #123\` or \`Resolves: #123\`" \
+            "- \`Fixes #123\` or \`Closes #123\` — same-repo issue" \
+            "- \`Fixes org/repo#123\` or \`Closes org/repo#123\` — cross-repo or private issue" \
+            "- \`Closes https://github.com/org/repo/issues/123\` — full GitHub URL" \
             "- Other supported keywords: \`fix\`, \`fixed\`, \`close\`, \`closed\`, \`resolve\`, \`resolved\`" \
             "**Option 2: Link via GitHub UI** (Note: won't clear the failed check)" \
             "1. Go to the PR → Development section (right sidebar)" \
@@ -458,7 +552,7 @@ jobs:
             "Issue linking ensures proper tracking, documentation, and helps maintain project history. It connects your code changes to the problem they solve." \
             "---" \
             "*This comment was automatically generated by the issue linking workflow*")
-          
+
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \

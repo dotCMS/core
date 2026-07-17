@@ -1,33 +1,20 @@
 <div class="col-span-3 row-start-1 w-full">
-    @if ($showMessage()) {
-        <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
-            <div class="flex w-full items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <i class="pi pi-info-circle"></i>
-                    <span data-testid="message-content">
-                        {{ 'content-drive.feature.state' | dm }}
-                        <b>{{ 'development' | dm }}</b>
-                    </span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a
-                        href="https://community.dotcms.com/t/check-out-an-early-version-of-our-content-drive/242?u=marcboutillette"
-                        target="_blank"
-                        data-testid="learn-more-link">
-                        {{ 'content-drive.feature.learn-more' | dm }}
-                    </a>
-                    <p-button
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        type="button"
-                        icon="pi pi-times"
-                        data-testid="close-message"
-                        (click)="onCloseMessage()" />
-                </div>
-            </div>
-        </p-message>
-    }
+    <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
+        <div class="flex w-full items-center gap-2">
+            <i class="pi pi-info-circle"></i>
+            <span data-testid="message-content">
+                {{ 'content-drive.feature.state' | dm }}
+                <b>{{ 'development' | dm }}</b>
+            </span>
+            <a
+                class="ml-auto"
+                href="https://community.dotcms.com/t/check-out-an-early-version-of-our-content-drive/242?u=marcboutillette"
+                target="_blank"
+                data-testid="learn-more-link">
+                {{ 'content-drive.feature.learn-more' | dm }}
+            </a>
+        </div>
+    </p-message>
 </div>
 
 <dot-content-drive-toolbar (upload)="onUpload()" data-testid="toolbar" />
