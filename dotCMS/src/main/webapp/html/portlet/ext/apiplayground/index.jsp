@@ -8,13 +8,13 @@
         <meta name="referrer" content="origin" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>DotCMS API Playground</title>
-        <link rel="stylesheet" type="text/css" href="swagger-ui.css?v=20240819">
+        <link rel="stylesheet" type="text/css" href="swagger-ui.css?v=20260717">
     </head>
     <body>
         <div id="swagger-ui"></div>
 
-        <script src="swagger-ui-bundle.js?v=20240819"></script>
-        <script src="swagger-ui-standalone-preset.js?v=20240819"></script>
+        <script src="swagger-ui-bundle.js?v=20260717"></script>
+        <script src="swagger-ui-standalone-preset.js?v=20260717"></script>
 
         <script>
             const HideSchemes = function() {
