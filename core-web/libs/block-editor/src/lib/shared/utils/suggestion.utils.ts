@@ -1,6 +1,6 @@
 import { Props } from 'tippy.js';
 
-import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
+import { SafeUrl } from '@angular/platform-browser';
 
 // Assets
 import {
@@ -15,8 +15,6 @@ import {
     mountsStarsIcon
 } from '../components/suggestions/suggestion-icons';
 import { DotMenuItem } from '../components/suggestions/suggestions.component';
-
-const domSanitizer = new ɵDomSanitizerImpl(document);
 
 const headings: DotMenuItem[] = [...Array(6).keys()].map((level) => {
     const size = level + 1;
@@ -122,7 +120,8 @@ export const getEditorBlockOptions = () => {
 };
 
 export function sanitizeUrl(url: string): SafeUrl {
-    return domSanitizer.bypassSecurityTrustUrl(url);
+    // Static editor icon data URLs are trusted compile-time constants.
+    return url as SafeUrl;
 }
 
 export const suggestionOptions: DotMenuItem[] = [

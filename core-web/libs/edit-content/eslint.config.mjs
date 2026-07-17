@@ -13,15 +13,9 @@ const compat = new FlatCompat({
 export default [
     ...baseConfig,
     ...nx.configs['flat/angular'],
-    ...compat
-        .config({
-            extends: ['plugin:@angular-eslint/template/process-inline-templates']
-        })
-        .map((config) => ({
-            ...config,
+    {
             files: ['**/*.ts'],
             rules: {
-                ...config.rules,
                 '@angular-eslint/no-host-metadata-property': 0,
                 '@angular-eslint/directive-selector': [
                     'error',
@@ -40,11 +34,12 @@ export default [
                     }
                 ],
                 '@angular-eslint/prefer-standalone': 'off',
+                '@angular-eslint/prefer-on-push-component-change-detection': 'off',
                 '@angular-eslint/no-input-rename': 'off',
                 '@angular-eslint/no-output-on-prefix': 'off',
                 '@angular-eslint/no-output-native': 'off'
             }
-        })),
+        },
     ...nx.configs['flat/angular-template'],
     {
         // Pre-migration parity: the repo's eslintrc setup applied only

@@ -22,7 +22,7 @@ core/
 
 ```bash
 sdk env install   # Java 25 via SDKMAN (.sdkmanrc) — build fails with wrong version
-nvm use           # Node 22.15+ via nvm (.nvmrc) — frontend build fails with wrong version
+nvm use           # Node 22.22.3+ via nvm (.nvmrc) — frontend build fails with wrong version
 ```
 
 ## Build & Test Commands

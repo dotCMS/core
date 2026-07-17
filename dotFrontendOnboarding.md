@@ -11,7 +11,7 @@ Welcome to the frontend onboarding guide. This document will help you get set up
 - **UI Components**: PrimeNG 21.1.3
 - **State Management**: NgRx Signals, Component Store (21.0.1)
 - **Build Tool**: Nx 22.5.4
-- **Node**: 22.15+ (pinned via `.nvmrc`)
+- **Node**: 22.22.3+ (pinned via `.nvmrc`)
 - **Testing**: Jest + Spectator (required) 
 
 ## Prerequisites
