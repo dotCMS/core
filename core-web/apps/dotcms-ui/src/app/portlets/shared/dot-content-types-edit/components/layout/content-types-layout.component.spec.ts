@@ -22,6 +22,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -37,6 +38,7 @@ import {
     DotIframeService,
     DotMessageService,
     DotRouterService,
+    DotSystemConfigService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import { LoggerService, LoginService } from '@dotcms/dotcms-js';
@@ -58,6 +60,7 @@ import {
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
@@ -102,16 +105,6 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-add-to-menu',
-    template: ``,
-    standalone: true
-})
-class MockDotAddToMenuComponent {
-    @Input() contentType: DotCMSContentType;
-    @Output() cancel = new EventEmitter<boolean>();
-}
-
-@Component({
     selector: 'dot-style-editor-builder',
     template: '',
     standalone: true
@@ -137,7 +130,7 @@ describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
@@ -149,7 +142,15 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.form.identifier': 'Identifier',
             'contenttypes.dropzone.rows.add': 'Add Row',
             'contenttypes.content.row': 'Row',
-            'contenttypes.content.add_to_menu': 'Add To Menu'
+            'contenttypes.content.add_to_menu': 'Add To Menu',
+            'contenttypes.content.add_to_menu.header': 'Add to Menu',
+            'contenttypes.content.add_to_menu.name': 'Name',
+            'contenttypes.content.add_to_menu.show_under': 'Show under',
+            'contenttypes.content.add_to_menu.default_view': 'Default view',
+            'custom.content.portlet.dataViewMode.card': 'card',
+            'custom.content.portlet.dataViewMode.list': 'list',
+            add: 'Add',
+            cancel: 'Cancel'
         });
 
         TestBed.configureTestingModule({
@@ -163,6 +164,7 @@ describe('ContentTypesLayoutComponent', () => {
                 TabsModule,
                 DotIconComponent,
                 RouterTestingModule,
+                BrowserAnimationsModule,
                 DotApiLinkComponent,
                 DotCopyLinkComponent,
                 DotSafeHtmlPipe,
@@ -180,6 +182,31 @@ describe('ContentTypesLayoutComponent', () => {
                 DotCurrentUserService,
                 DotEventsService,
                 DotAddToMenuService,
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        loadMenu: jest.fn().mockReturnValue(
+                            of([
+                                {
+                                    id: '123',
+                                    name: 'Menu 1',
+                                    label: 'Menu 1',
+                                    tabName: 'Name',
+                                    tabDescription: 'Description',
+                                    tabIcon: 'icon',
+                                    url: '/url/index',
+                                    active: false,
+                                    isOpen: false,
+                                    menuItems: []
+                                }
+                            ])
+                        )
+                    }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
                 {
                     provide: DotIframeService,
                     useValue: {
@@ -237,21 +264,17 @@ describe('ContentTypesLayoutComponent', () => {
                     }
                 }
             ]
-        });
+        })
+            .overrideComponent(ContentTypesLayoutComponent, {
+                remove: {
+                    imports: [IframeComponent, DotStyleEditorBuilderComponent]
+                },
+                add: {
+                    imports: [TestDotIframeComponent, MockDotStyleEditorBuilderComponent]
+                }
+            });
 
-        // Override ContentTypesLayoutComponent to use the mock IframeComponent
-        TestBed.overrideComponent(ContentTypesLayoutComponent, {
-            remove: {
-                imports: [IframeComponent, DotAddToMenuComponent, DotStyleEditorBuilderComponent]
-            },
-            add: {
-                imports: [
-                    TestDotIframeComponent,
-                    MockDotAddToMenuComponent,
-                    MockDotStyleEditorBuilderComponent
-                ]
-            }
-        });
+        await TestBed.compileComponents();
 
         fixture = TestBed.createComponent(TestHostComponent);
         const originalDetectChanges = fixture.detectChanges.bind(fixture);
@@ -312,21 +335,20 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should have open Add to Menu Dialog and close', () => {
-            jest.spyOn(de.componentInstance, 'addContentInMenu');
-            // Add-to-menu is now triggered programmatically (via context menu)
             de.componentInstance.addContentInMenu();
             fixture.detectChanges();
-            expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
-            expect(de.componentInstance.addToMenuContentType).toBe(true);
-            const AddToMenuDialog: MockDotAddToMenuComponent = de.query(
-                By.css('dot-add-to-menu')
-            ).componentInstance;
-            expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
-            AddToMenuDialog.cancel.emit(true);
-            de.componentInstance.addToMenuContentType = false;
+
+            expect(de.componentInstance.$addToMenuContentType()).toBe(true);
+
+            const addToMenuEl = de.query(By.css('dot-add-to-menu'));
+            expect(addToMenuEl).toBeTruthy();
+
+            const addToMenuDialog = addToMenuEl!.componentInstance as DotAddToMenuComponent;
+            addToMenuDialog.cancel.emit(true);
             fixture.detectChanges();
+
             expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();
-            expect(de.componentInstance.addToMenuContentType).toBe(false);
+            expect(de.componentInstance.$addToMenuContentType()).toBe(false);
         });
     });
 

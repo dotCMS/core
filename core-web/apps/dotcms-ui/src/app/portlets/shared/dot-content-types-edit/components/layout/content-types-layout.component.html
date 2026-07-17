@@ -92,7 +92,9 @@
             }
         </p-tabpanels>
     </p-tabs>
+    @if ($addToMenuContentType()) {
+        <dot-add-to-menu
+            (cancel)="$addToMenuContentType.set(false)"
+            [contentType]="$contentType()" />
+    }
 </div>
-@if (addToMenuContentType) {
-    <dot-add-to-menu (cancel)="addToMenuContentType = false" [contentType]="$contentType()" />
-}
