@@ -35,6 +35,11 @@
         }
 
         .p-drawer-content {
+            // The Lara drawer content ships with `padding-top: 0` because the header
+            // normally supplies the top gap. With the header hidden, restore a top padding
+            // that matches the left/right/bottom sides (overlay.modal.padding = 1.5rem).
+            padding-top: spacing.$spacing-4;
+
             .container {
                 height: 100%;
             }
