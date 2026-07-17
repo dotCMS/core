@@ -49,8 +49,10 @@ public class ContentWithStylesForm extends Validated {
 
     @JsonProperty("personaTag")
     @Schema(
-            description = "Persona key tag to personalize this style update for. Omit for the default persona.",
-            example = "dot:persona-key",
+            description = "Raw Persona key tag (e.g. the value of viewAs.persona.keyTag) to personalize "
+                    + "this style update for. Do not include the 'dot:persona:' prefix -- the backend adds "
+                    + "it automatically. Omit for the default persona.",
+            example = "returning_visitor",
             requiredMode = RequiredMode.NOT_REQUIRED
     )
     private final String personaTag;
