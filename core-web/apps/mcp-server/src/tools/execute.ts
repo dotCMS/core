@@ -101,7 +101,7 @@ export default async function handler(
     { code }: InferSchema<typeof schema>,
     extra?: ToolExtraArguments
 ) {
-    const timeout = Number(process.env.SANDBOX_TIMEOUT) || 15000;
+    const timeout = Number(process.env.SANDBOX_TIMEOUT) || 45000;
 
     // The front door absorbs the executor + adapter + context-cache wiring and injects
     // dotCMS instance context automatically. Auth tokens never enter the sandbox.

@@ -47,7 +47,7 @@ Configure the MCP server via the `env` block in your MCP client config:
 |---|---|---|
 | `DOTCMS_URL` | Yes | Base URL of the dotCMS instance |
 | `AUTH_TOKEN` | Yes | JWT Bearer token (generate in dotCMS → User Tools → API Tokens) |
-| `SANDBOX_TIMEOUT` | No | Sandbox execution timeout in ms (default: `15000`) |
+| `SANDBOX_TIMEOUT` | No | Sandbox execution timeout in ms (default: `45000`) |
 
 ## Architecture Overview
 

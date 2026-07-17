@@ -89,7 +89,7 @@ Before setting up the MCP server, you need these environment variables to connec
 | ------------------ | -------- | ---------------------------------- | ------- |
 | `DOTCMS_URL`  | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
-| `SANDBOX_TIMEOUT`  | ❌       | Sandbox execution timeout in ms (default: 15000) | `15000` |
+| `SANDBOX_TIMEOUT`  | ❌       | Sandbox execution timeout in ms (default: 45000) | `45000` |
 | `DEBUG`            | ❌       | When set to any truthy value, emits diagnostic logs to stderr (e.g. context cache load events) | `1` |
 
 
