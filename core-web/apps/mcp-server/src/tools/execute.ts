@@ -1,7 +1,7 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createRuntime } from '@dotcms/ai/runtime';
+import { createRuntime, formatSandboxResult } from '@dotcms/ai/runtime';
 
 export const schema = {
     code: z
@@ -47,7 +47,7 @@ context. The \`formData\`/base64 path below exists only for small, programmatic 
 for transferring real files, themes, or directories.
 
 Tips:
-- Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
+- Output is hard-capped (~25k chars). Use \`pick(arr, fields)\` / \`first(arr, n)\` to return only the fields you need — responses can be very large and are truncated past the cap.
 - For a small programmatic upload (NOT real files — use \`upload_assets\` for those) use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
 Binary responses (small/programmatic reads only — for real files use \`download_assets\`):
@@ -118,18 +118,7 @@ export default async function handler(
 
     const result = await dotcms.run(code); // code === the model's output
 
-    if (!result.success) {
-        const errorMsg = result.error
-            ? `${result.error.name}: ${result.error.message}`
-            : 'Unknown error';
-        const logs = result.logs.length > 0 ? `\nLogs:\n${result.logs.join('\n')}` : '';
-        return `Error: ${errorMsg}${logs}`;
-    }
-
-    const output =
-        typeof result.value === 'string' ? result.value : JSON.stringify(result.value, null, 2);
-
-    const logs = result.logs.length > 0 ? `\n\n--- Logs ---\n${result.logs.join('\n')}` : '';
-
-    return `${output}${logs}`;
+    return formatSandboxResult(result, {
+        truncationHint: 'Return only the fields you need — use pick(arr, fields) and first(arr, n).'
+    });
 }

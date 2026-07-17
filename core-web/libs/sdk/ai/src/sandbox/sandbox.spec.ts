@@ -200,3 +200,75 @@ describe('sandbox adapter routing', () => {
         expect(aborted).toBe(true);
     }, 10000);
 });
+
+describe('resolveRef sandbox helper', () => {
+    // A tiny fake spec injected as the `spec` global (as the search runtime does via includeSpec).
+    const fakeSpec = {
+        components: {
+            schemas: {
+                Page: {
+                    type: 'object',
+                    properties: {
+                        title: { type: 'string' },
+                        template: { $ref: '#/components/schemas/Template' }
+                    }
+                },
+                Template: {
+                    type: 'object',
+                    properties: { theme: { $ref: '#/components/schemas/Theme' } }
+                },
+                Theme: { type: 'object', properties: { name: { type: 'string' } } },
+                // self-referential — bounded depth must terminate
+                Node: { type: 'object', properties: { child: { $ref: '#/components/schemas/Node' } } }
+            }
+        }
+    };
+
+    function runWithSpec(code: string) {
+        const executor = new Executor({ config: { adapters: [], sandbox: { timeout: 5000 } } });
+        return executor.execute(code, { variables: { spec: fakeSpec } });
+    }
+
+    it('expands nested $refs up to the given depth', async () => {
+        const result = await runWithSpec(`return resolveRef('Page', 2);`);
+        expect(result.success).toBe(true);
+        const value = result.value as {
+            properties: { template: { properties: { theme: { $ref?: string; properties?: unknown } } } };
+        };
+        // depth 2: Page → Template → Theme all expanded (Theme has no further refs)
+        expect(value.properties.template.properties.theme.properties).toBeDefined();
+        expect(value.properties.template.properties.theme.$ref).toBeUndefined();
+    });
+
+    it('leaves $ref strings in place beyond the depth bound', async () => {
+        const result = await runWithSpec(`return resolveRef('Page', 1);`);
+        expect(result.success).toBe(true);
+        const value = result.value as {
+            properties: { template: { properties: { theme: { $ref?: string } } } };
+        };
+        // depth 1: Page → Template expanded, but Template's theme ref is left unresolved
+        expect(value.properties.template.properties.theme.$ref).toBe(
+            '#/components/schemas/Theme'
+        );
+    });
+
+    it('terminates on a self-referential schema', async () => {
+        const result = await runWithSpec(`return resolveRef('Node', 5);`);
+        expect(result.success).toBe(true);
+        // Should complete without infinite recursion; the deepest child stays a $ref.
+        expect(result.value).toBeDefined();
+    });
+
+    it('throws a friendly error for an unknown schema name', async () => {
+        const result = await runWithSpec(`return resolveRef('Nope');`);
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toMatch(/Unknown schema "Nope"/);
+    });
+
+    it('throws a friendly error when the spec global is absent', async () => {
+        const executor = new Executor({ config: { adapters: [], sandbox: { timeout: 5000 } } });
+        const result = await executor.execute(`return resolveRef('Page');`);
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toMatch(/only available in the search sandbox/i);
+    });
+});

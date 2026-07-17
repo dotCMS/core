@@ -16,6 +16,9 @@ export type { ExecutorOptions } from './executor';
 export { createWorkerSandbox } from './factory';
 export type { ISandbox, SandboxFactory } from './interface';
 
+export { formatSandboxResult } from './format-result';
+export type { FormatSandboxResultOptions } from './format-result';
+
 export { defineAdapter, isDefinedAdapter, describeAdapterForLLM } from './define-adapter';
 export type {
     AdapterContext,
