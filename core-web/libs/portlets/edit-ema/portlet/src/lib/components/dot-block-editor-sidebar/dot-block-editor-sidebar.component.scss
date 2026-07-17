@@ -6,14 +6,16 @@
     .container {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        height: 100%;
     }
 
+    // Both editors grow to fill the drawer height; the footer keeps its natural height.
+    // The new editor fills via its own `fillHeight` input; the legacy editor fills via the
+    // ::ng-deep `.editor-wrapper` override below.
     dot-block-editor,
     dot-old-block-editor {
-        display: flex;
-        flex-direction: column;
-        height: calc(100% - 4rem);
+        flex: 1 1 auto;
+        min-height: 0;
     }
 }
 
@@ -30,13 +32,17 @@
             }
         }
     }
-    dot-block-editor .editor-wrapper,
+
+    // Legacy editor only: force its internal wrapper to fill the host. The new editor
+    // (`dot-block-editor`) fills via its `fillHeight` input and no longer renders an
+    // `.editor-wrapper` element, so it neither needs nor matches this override.
     dot-old-block-editor .editor-wrapper {
         height: 100% !important;
     }
 }
 
 footer {
+    flex: 0 0 auto;
     display: flex;
     justify-content: flex-end;
     gap: spacing.$spacing-3;

@@ -174,6 +174,12 @@ function normalizeEditorContent(
     selector: 'dot-block-editor',
     changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ['./editor.component.css'],
+    host: {
+        // Turns the host into a full-height flex column when `fillHeight` is set, so the
+        // editor stretches to fill a bounded parent (e.g. the UVE sidebar drawer) instead
+        // of collapsing to its default fixed height. See `:host(.dot-block-editor--fill-height)`.
+        '[class.dot-block-editor--fill-height]': 'fillHeight()'
+    },
     providers: [
         EditorStore,
         SlashMenuService,
@@ -215,11 +221,7 @@ function normalizeEditorContent(
                     <div
                         class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
-                        [style]="
-                            isFullscreen()
-                                ? 'flex: 1; min-height: 0;'
-                                : 'height: 500px; resize: vertical; min-height: 200px;'
-                        ">
+                        [style]="scrollContainerStyle()">
                         <div
                             tiptap
                             [editor]="ed"
@@ -339,6 +341,18 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
      * originating outside the editor (e.g. required, custom validators).
      */
     readonly hasError = input(false, { transform: booleanAttribute });
+
+    /**
+     * When true, the editor stretches to fill 100% of its parent's height instead of
+     * using the default fixed, resizable height. The toolbar and stats bar keep their
+     * natural height; the scroll surface consumes the remaining space.
+     *
+     * Set by hosts that render the editor inside a bounded container — e.g. the UVE
+     * block-editor sidebar drawer — where the editor should fill the available height
+     * (minus the drawer's own footer buttons). Requires the parent to give the host a
+     * definite height (the host becomes a flex column via `dot-block-editor--fill-height`).
+     */
+    readonly fillHeight = input(false, { transform: booleanAttribute });
 
     /**
      * Emits the editor document as a ProseMirror JSON object on every change.
@@ -504,17 +518,38 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     }
 
     /** Backdrop/layout classes for the outer wrapper (fullscreen dimmer vs inline). */
-    protected readonly wrapperClass = computed(() =>
-        this.isFullscreen()
-            ? 'fixed inset-0 z-[9998] flex items-center justify-center bg-black/50'
-            : ''
-    );
+    protected readonly wrapperClass = computed(() => {
+        if (this.isFullscreen()) {
+            return 'fixed inset-0 z-[9998] flex items-center justify-center bg-black/50';
+        }
+
+        // Fill mode: become a flex column that consumes the host's full height so the panel
+        // below can stretch. `min-h-0` lets it shrink inside a flex parent.
+        return this.fillHeight() ? 'flex flex-col h-full min-h-0' : '';
+    });
 
     /** Inner panel sizing and chrome classes (fullscreen vs default card layout). */
-    protected readonly panelClass = computed(() =>
-        this.isFullscreen()
-            ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
-            : 'relative rounded-lg border border-gray-200'
+    protected readonly panelClass = computed(() => {
+        if (this.isFullscreen()) {
+            return 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden';
+        }
+
+        // Fill mode: flex column that grows to fill the wrapper, so the toolbar + stats bar
+        // take their natural height and the scroll surface consumes the rest.
+        return this.fillHeight()
+            ? 'relative flex flex-col flex-1 min-h-0 overflow-hidden rounded-lg border border-gray-200'
+            : 'relative rounded-lg border border-gray-200';
+    });
+
+    /**
+     * Inline styles for the scroll surface. In fullscreen or fill mode it flexes to consume
+     * the remaining height (toolbar + stats bar excluded); otherwise it uses the default
+     * fixed, user-resizable height.
+     */
+    protected readonly scrollContainerStyle = computed(() =>
+        this.isFullscreen() || this.fillHeight()
+            ? 'flex: 1; min-height: 0;'
+            : 'height: 500px; resize: vertical; min-height: 200px;'
     );
 
     /**
