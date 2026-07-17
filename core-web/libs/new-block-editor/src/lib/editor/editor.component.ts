@@ -214,6 +214,7 @@ function normalizeEditorContent(
             <div [class]="panelClass()">
                 @if (editor(); as ed) {
                     <dot-toolbar
+                        class="shrink-0"
                         [editor]="ed"
                         [isFullscreen]="isFullscreen()"
                         (fullscreenToggle)="toggleFullscreen()"
@@ -237,7 +238,7 @@ function normalizeEditorContent(
                     </div>
 
                     <div
-                        class="flex items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
+                        class="flex shrink-0 items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
                         aria-live="polite"
                         [attr.aria-label]="'dot.block.editor.editor.stats.aria-label' | dm">
                         <span>
