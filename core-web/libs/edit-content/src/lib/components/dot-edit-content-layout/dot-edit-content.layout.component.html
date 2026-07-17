@@ -154,12 +154,14 @@
     }
 
     <!-- Stale-while-revalidate: during an in-place reload the previous content
-         stays rendered underneath while the new content loads. This overlay sits
-         in the same grid cell as the body to signal the refresh and block edits
-         to the stale form until the new data swaps in. -->
-    @if ($store.isReloading()) {
+         stays rendered underneath while the new content loads. The overlay is held
+         until BOTH the new content and the sidebar's data have finished loading
+         (see $showReloadOverlay), so the new content is never revealed before the
+         sidebar. It sits in the same grid cell as the body to signal the refresh
+         and block edits to the stale form until everything swaps in. -->
+    @if ($showReloadOverlay()) {
         <div
-            class="edit-content-layout__reloading-overlay flex items-center justify-center [grid-area:body]"
+            class="edit-content-layout__reloading-overlay flex items-center justify-center"
             data-testId="edit-content-layout__reloading-overlay">
             <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
         </div>

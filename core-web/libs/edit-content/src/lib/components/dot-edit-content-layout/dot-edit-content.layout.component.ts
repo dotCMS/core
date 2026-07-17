@@ -5,6 +5,7 @@ import {
     effect,
     inject,
     model,
+    signal,
     untracked,
     viewChild
 } from '@angular/core';
@@ -141,6 +142,19 @@ export class DotEditContentLayoutComponent {
     readonly #host = inject(EDIT_CONTENT_HOST);
 
     /**
+     * Keeps the in-place reload overlay up until BOTH the new content and the
+     * sidebar's data have finished loading — so navigating related content never
+     * reveals the new content while the sidebar is still loading (the "two
+     * loading timings" problem). Armed when a reload starts (`isReloading`) and
+     * disarmed only once everything has settled (`isFullyLoaded`). Only affects
+     * in-place reloads; the initial load is unchanged.
+     */
+    readonly #reloadWait = signal(false);
+
+    /** Whether the in-place reload overlay should be shown. */
+    readonly $showReloadOverlay = computed(() => this.#reloadWait());
+
+    /**
      * "Relating content" breadcrumb model built from the navigation trail.
      *
      * The current (last) crumb is a plain label. Earlier crumbs are a `command`
@@ -242,6 +256,20 @@ export class DotEditContentLayoutComponent {
         // full-screen, dialog config in overlay). Presentation-agnostic — the
         // editor no longer branches on a "dialog mode".
         this.$store.initialize();
+
+        // Hold the in-place reload overlay until BOTH the new content and the
+        // sidebar's data have loaded. Arm when a reload starts (`isReloading`), and
+        // disarm only once everything has settled (`isFullyLoaded`) — the window in
+        // between (content loaded, sidebar still loading) keeps the overlay up so
+        // the new content is not revealed before the sidebar. Only the in-place
+        // reload path arms this; the initial load never sets `isReloading`.
+        effect(() => {
+            if (this.$store.isReloading()) {
+                untracked(() => this.#reloadWait.set(true));
+            } else if (this.$store.isFullyLoaded()) {
+                untracked(() => this.#reloadWait.set(false));
+            }
+        });
 
         // After a successful save: mark the form pristine so the navigation
         // guard does not re-prompt, and clear the signal so the same contentlet

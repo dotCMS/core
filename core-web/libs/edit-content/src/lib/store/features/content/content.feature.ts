@@ -129,7 +129,37 @@ export function withContent() {
              */
             isReloading: computed(
                 () => store.state() === ComponentStatus.LOADING && !!store.contentType()
-            )
+            ),
+
+            /**
+             * True when BOTH sides of the editor are ready: the content (left) is
+             * LOADED and the sidebar's initial data (right — reference pages and
+             * activities) has settled. Used to hold the initial loading state until
+             * the whole screen is populated, instead of revealing the form while the
+             * sidebar still loads.
+             *
+             * There is nothing to wait for — so it returns as soon as the content is
+             * LOADED — when the sidebar is closed (its data never loads) or the
+             * content is new / has no identifier (reference pages and activities only
+             * load for existing content). ERROR counts as settled so a failed sidebar
+             * request never hangs the editor behind the loader.
+             */
+            isFullyLoaded: computed(() => {
+                if (store.state() !== ComponentStatus.LOADED) {
+                    return false;
+                }
+
+                if (!store.uiState().isSidebarOpen || !store.contentlet()?.identifier) {
+                    return true;
+                }
+
+                const settled = (status: ComponentStatus) =>
+                    status === ComponentStatus.LOADED || status === ComponentStatus.ERROR;
+
+                return (
+                    settled(store.information().status) && settled(store.activitiesStatus().status)
+                );
+            })
         })),
         withMethods(
             (
@@ -252,9 +282,24 @@ export function withContent() {
                                 // infinite scroll; the compare/historical views belong to
                                 // the old inode). `contentlet`/`contentType` are kept on
                                 // purpose so the previous content stays rendered until the
-                                // new data loads (stale-while-revalidate). Reference pages
-                                // and activities reload on their own via the sidebar's
-                                // identifier effect, so they are not reset here.
+                                // new data loads (stale-while-revalidate).
+                                //
+                                // Reference pages + activities are reset to LOADING so that,
+                                // during an in-place reload, `isFullyLoaded` stays false until
+                                // the sidebar re-fetches them for the new content (the sidebar's
+                                // identifier effect refires when the contentlet swaps). Without
+                                // this, their stale LOADED status from the previous content would
+                                // make `isFullyLoaded` briefly true and drop the reload overlay
+                                // before the sidebar actually reloaded.
+                                information: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null,
+                                    relatedContent: '0'
+                                },
+                                activitiesStatus: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null
+                                },
                                 versions: [],
                                 versionsPagination: null,
                                 versionsStatus: {

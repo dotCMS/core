@@ -29,10 +29,15 @@
     }
 }
 
-// Stale-while-revalidate reload overlay. Stacks in the body grid cell on top of
-// the previous (stale) content: a translucent scrim keeps the old data faintly
-// visible for continuity while blocking interaction until the new data loads.
+// Stale-while-revalidate reload overlay. Spans BOTH the body and the sidebar (every
+// grid row except the top bar, so the breadcrumb stays visible) so the two share a
+// single loading state — a translucent scrim keeps the old data faintly visible for
+// continuity while blocking interaction until BOTH the content and the sidebar have
+// reloaded. Without spanning the sidebar, its faster reload would finish visibly out
+// of sync with the content.
 .edit-content-layout__reloading-overlay {
+    grid-column: 1 / -1;
+    grid-row: 2 / -1;
     z-index: 10;
     background-color: rgba(255, 255, 255, 0.6);
 }
