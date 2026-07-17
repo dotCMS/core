@@ -4,6 +4,7 @@ This document is the single source of truth for Angular development in the dotCM
 
 ## Tech Stack Configuration
 - **Angular**: 22.0.7 standalone components
+- **Node.js**: 22.22.3+ (pinned via `.nvmrc` / `nodejs-parent/pom.xml`)
 - **UI**: PrimeNG 21.1.3, PrimeIcons (`pi pi-*`), Tailwind CSS 4.x
 - **State**: NgRx Signals 21.x, Component Store  
 - **Build**: Nx 23.1.x
