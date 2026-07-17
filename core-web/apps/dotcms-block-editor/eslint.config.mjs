@@ -14,27 +14,27 @@ export default [
     ...baseConfig,
     ...nx.configs['flat/angular'],
     {
-            files: ['**/*.ts'],
-            rules: {
-                '@angular-eslint/directive-selector': [
-                    'error',
-                    {
-                        type: 'attribute',
-                        prefix: 'dotcms',
-                        style: 'camelCase'
-                    }
-                ],
-                '@angular-eslint/component-selector': [
-                    'error',
-                    {
-                        type: 'element',
-                        prefix: 'dotcms',
-                        style: 'kebab-case'
-                    }
-                ],
-                '@angular-eslint/prefer-standalone': 'off'
-            }
-        },
+        files: ['**/*.ts'],
+        rules: {
+            '@angular-eslint/directive-selector': [
+                'error',
+                {
+                    type: 'attribute',
+                    prefix: 'dotcms',
+                    style: 'camelCase'
+                }
+            ],
+            '@angular-eslint/component-selector': [
+                'error',
+                {
+                    type: 'element',
+                    prefix: 'dotcms',
+                    style: 'kebab-case'
+                }
+            ],
+            '@angular-eslint/prefer-standalone': 'off'
+        }
+    },
     ...nx.configs['flat/angular-template'],
     {
         // Pre-migration parity: the repo's eslintrc setup applied only

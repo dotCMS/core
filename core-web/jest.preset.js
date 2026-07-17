@@ -4,12 +4,7 @@ module.exports = {
     ...nxPreset,
     coverageDirectory: '../../../target/core-web-reports/',
     collectCoverage: true,
-    collectCoverageFrom: [
-        'src/**/*.ts',
-        'src/**/*.tsx',
-        '!src/**/*.module.ts',
-        '!src/index.ts'
-    ],
+    collectCoverageFrom: ['src/**/*.ts', 'src/**/*.tsx', '!src/**/*.module.ts', '!src/index.ts'],
     coverageReporters: ['html', 'lcov', 'text'],
     reporters: [
         'default',

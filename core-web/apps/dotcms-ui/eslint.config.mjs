@@ -14,38 +14,38 @@ export default [
     ...baseConfig,
     ...nx.configs['flat/angular'],
     {
-            files: ['**/*.ts'],
-            rules: {
-                '@angular-eslint/directive-selector': [
-                    'error',
-                    {
-                        type: 'attribute',
-                        prefix: 'dot',
-                        style: 'camelCase'
-                    }
-                ],
-                '@angular-eslint/component-selector': [
-                    'error',
-                    {
-                        type: 'element',
-                        prefix: 'dot',
-                        style: 'kebab-case'
-                    }
-                ],
-                '@typescript-eslint/no-duplicate-enum-values': 'off',
-                '@angular-eslint/prefer-standalone': 'off',
-                '@angular-eslint/prefer-on-push-component-change-detection': 'off',
-                '@angular-eslint/no-input-rename': 'off',
-                '@angular-eslint/no-output-on-prefix': 'off',
-                '@angular-eslint/no-output-native': 'off',
-                '@nx/enforce-module-boundaries': [
-                    'error',
-                    {
-                        allow: ['@dotcms/dotcms-webcomponents/loader']
-                    }
-                ]
-            }
-        },
+        files: ['**/*.ts'],
+        rules: {
+            '@angular-eslint/directive-selector': [
+                'error',
+                {
+                    type: 'attribute',
+                    prefix: 'dot',
+                    style: 'camelCase'
+                }
+            ],
+            '@angular-eslint/component-selector': [
+                'error',
+                {
+                    type: 'element',
+                    prefix: 'dot',
+                    style: 'kebab-case'
+                }
+            ],
+            '@typescript-eslint/no-duplicate-enum-values': 'off',
+            '@angular-eslint/prefer-standalone': 'off',
+            '@angular-eslint/prefer-on-push-component-change-detection': 'off',
+            '@angular-eslint/no-input-rename': 'off',
+            '@angular-eslint/no-output-on-prefix': 'off',
+            '@angular-eslint/no-output-native': 'off',
+            '@nx/enforce-module-boundaries': [
+                'error',
+                {
+                    allow: ['@dotcms/dotcms-webcomponents/loader']
+                }
+            ]
+        }
+    },
     ...nx.configs['flat/angular-template'],
     {
         // Pre-migration parity: the repo's eslintrc setup applied only

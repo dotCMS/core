@@ -12,7 +12,7 @@
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <node.js.version>v22.15.0</node.js.version>
+        <node.js.version>v22.22.3</node.js.version>
         <pnpm.version>10.17.1</pnpm.version>
         <!-- Yarn is kept ONLY for the legacy e2e/dotcms-e2e-node module, which is
              being sunset in favor of the e2e app in core-web/apps/dotcms-ui-e2e.
