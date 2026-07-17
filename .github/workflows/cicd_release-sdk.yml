@@ -122,6 +122,15 @@ jobs:
     needs: [ precheck ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
+      # Required before referencing any local (./) action — the runner's workspace is
+      # empty otherwise, so GitHub can't even locate deploy-javascript-sdk's action.yml.
+      # The composite action re-checks-out internally at the correct ref for the actual
+      # build/publish; this checkout only needs to make the action definition resolvable.
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.precheck.outputs.REF }}
+
       - name: 'LTS skip notice'
         if: needs.precheck.outputs.IS_LTS == 'true'
         run: |
