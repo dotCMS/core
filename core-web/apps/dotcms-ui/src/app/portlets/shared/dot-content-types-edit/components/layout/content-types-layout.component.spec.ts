@@ -264,15 +264,14 @@ describe('ContentTypesLayoutComponent', () => {
                     }
                 }
             ]
-        })
-            .overrideComponent(ContentTypesLayoutComponent, {
-                remove: {
-                    imports: [IframeComponent, DotStyleEditorBuilderComponent]
-                },
-                add: {
-                    imports: [TestDotIframeComponent, MockDotStyleEditorBuilderComponent]
-                }
-            });
+        }).overrideComponent(ContentTypesLayoutComponent, {
+            remove: {
+                imports: [IframeComponent, DotStyleEditorBuilderComponent]
+            },
+            add: {
+                imports: [TestDotIframeComponent, MockDotStyleEditorBuilderComponent]
+            }
+        });
 
         await TestBed.compileComponents();
 

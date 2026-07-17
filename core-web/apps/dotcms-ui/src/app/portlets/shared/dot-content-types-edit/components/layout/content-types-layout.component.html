@@ -1,8 +1,8 @@
-<div class="h-full min-h-0 flex flex-col">
+<div class="flex h-full min-h-0 flex-col">
     <p-tabs
         [value]="$activeTab()"
         (valueChange)="onTabChange($event)"
-        class="flex flex-col grow min-h-0">
+        class="flex min-h-0 grow flex-col">
         <p-tablist
             class="shrink-0"
             [pt]="{ root: { class: '!bg-surface-50 border-b border-gray-200' } }">
@@ -45,16 +45,16 @@
                 <p-menu #contextMenu [model]="$menuItems()" [popup]="true" appendTo="body" />
             </div>
         </p-tablist>
-        <p-tabpanels class="grow basis-0 min-h-0 p-0!">
+        <p-tabpanels class="min-h-0 grow basis-0 p-0!">
             <p-tabpanel value="fields" class="h-full min-h-0">
                 <div class="flex h-full min-h-0" id="content-type-form-layout">
                     <div
-                        class="flex flex-col grow min-h-0 overflow-x-hidden overflow-y-auto bg-gray-200 p-6"
+                        class="flex min-h-0 grow flex-col overflow-x-hidden overflow-y-auto bg-gray-200 p-6"
                         id="content-type-form-main">
                         <ng-content />
                     </div>
                     <div
-                        class="items-center w-64 flex flex-col px-3.5 min-h-0 overflow-y-auto border-l border-gray-200">
+                        class="flex min-h-0 w-64 flex-col items-center overflow-y-auto border-l border-gray-200 px-3.5">
                         <p-splitButton
                             (onClick)="fireAddRowEvent()"
                             [model]="actions"

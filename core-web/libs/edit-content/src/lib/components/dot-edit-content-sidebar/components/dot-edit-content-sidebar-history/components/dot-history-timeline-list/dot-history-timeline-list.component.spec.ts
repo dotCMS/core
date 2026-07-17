@@ -248,7 +248,8 @@ const mockVersionD: DotCMSContentletVersion = {
 })
 class VersionTestHostComponent {
     readonly $markerTpl = viewChild<TemplateRef<{ $implicit: DotCMSContentletVersion }>>('marker');
-    readonly $contentTpl = viewChild<TemplateRef<{ $implicit: DotCMSContentletVersion }>>('content');
+    readonly $contentTpl =
+        viewChild<TemplateRef<{ $implicit: DotCMSContentletVersion }>>('content');
 
     readonly $items = signal<DotCMSContentletVersion[]>([mockVersionA, mockVersionB]);
 }
@@ -322,10 +323,14 @@ const mockPushPublishD: DotPushPublishHistoryItem = {
     imports: [DotHistoryTimelineListComponent],
     template: `
         <ng-template #marker let-item>
-            <span [attr.data-testid]="'marker-' + item.bundleId">{{ item.environment }}-marker</span>
+            <span [attr.data-testid]="'marker-' + item.bundleId">
+                {{ item.environment }}-marker
+            </span>
         </ng-template>
         <ng-template #content let-item>
-            <div [attr.data-testid]="'content-' + item.bundleId">{{ item.environment }}-content</div>
+            <div [attr.data-testid]="'content-' + item.bundleId">
+                {{ item.environment }}-content
+            </div>
         </ng-template>
         <dot-history-timeline-list
             [items]="$items()"
