@@ -111,7 +111,8 @@
             "@dotcms/ai/runtime": ["libs/sdk/ai/src/runtime.ts"],
             "@dotcms/ai/sandbox": ["libs/sdk/ai/src/sandbox/index.ts"],
             "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
-            "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"]
+            "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
+            "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

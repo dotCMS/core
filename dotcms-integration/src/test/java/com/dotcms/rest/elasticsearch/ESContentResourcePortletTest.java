@@ -428,6 +428,117 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                 !hits.getJSONObject(0).isNull("_score"));
     }
 
+    /**
+     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, String, boolean)}
+     * Given scenario: a query that sorts by {@code _geo_distance} (a non-score field). Elasticsearch
+     *          returns the computed distance for every hit under {@code hits.hits[i].sort} — that array
+     *          <b>is</b> the value geo clients read to display each result's distance.
+     * Expected result: HTTP 200 and each hit carries a {@code sort} array whose first element is the
+     *          finite geo distance, in ascending order. Regression guard for
+     *          <a href="https://github.com/dotCMS/core/issues/36581">#36581</a>: the phase-aware
+     *          SearchAPI cutover (#36398) dropped the per-hit {@code sort} array from the rebuilt
+     *          legacy ES-wire response, and #36480 (the {@code _score} NaN fix) did not restore it.
+     */
+    @Test
+    public void test_search_geoDistanceSort_emitsPerHitSortValues() throws Exception {
+        final ContentType contentType = createGeoContentTypeWithCenters();
+        final String geoField = contentType.variable().toLowerCase() + ".latlong";
+
+        // Origin matches "Center-0km"; the three centers sit at increasing distances.
+        final String jsonQuery = "{\n"
+                + "  \"query\": { \"bool\": { \"must\": { \"term\": { \"contenttype\": { \"value\": \""
+                + contentType.variable().toLowerCase() + "\" } } } } },\n"
+                + "  \"sort\": [ { \"_geo_distance\": { \"" + geoField + "\": "
+                + "{ \"lat\": 42.4608, \"lon\": -83.1215 }, \"order\": \"asc\", \"unit\": \"km\", "
+                + "\"distance_type\": \"arc\", \"ignore_unmapped\": true } } ]\n"
+                + "}";
+
+        final Response response = new ESContentResourcePortlet()
+                .search(createHttpRequest(false), new MockHttpResponse(), jsonQuery, "0", true, null, false);
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+        final JSONObject esresponse = new JSONObject(response.getEntity().toString())
+                .getJSONArray("esresponse").getJSONObject(0);
+        final JSONArray hits = esresponse.getJSONObject("hits").getJSONArray("hits");
+        assertEquals("the three published centers must match", 3, hits.length());
+
+        double previousDistance = -1d;
+        for (int i = 0; i < hits.length(); i++) {
+            final JSONObject hit = hits.getJSONObject(i);
+            assertTrue("a _geo_distance-sorted hit must carry the per-hit 'sort' array (#36581)",
+                    hit.has("sort") && !hit.isNull("sort"));
+            final JSONArray sort = hit.getJSONArray("sort");
+            assertTrue("the 'sort' array must carry the computed distance", sort.length() >= 1);
+            final double distance = Double.parseDouble(String.valueOf(sort.get(0)));
+            assertTrue("the geo distance must be finite", Double.isFinite(distance));
+            assertTrue("per-hit sort distances must be in ascending order", distance >= previousDistance);
+            previousDistance = distance;
+        }
+        // The closest center sits on the origin, so its distance rounds to ~0 km.
+        final double closest = Double.parseDouble(
+                String.valueOf(hits.getJSONObject(0).getJSONArray("sort").get(0)));
+        assertTrue("the nearest center's distance must be ~0 km", closest < 1d);
+    }
+
+    /**
+     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, String, boolean)}
+     * Given scenario: a relevance-only query (no {@code sort} clause). Elasticsearch does not emit a
+     *          per-hit {@code sort} array for relevance-scored hits.
+     * Expected result: HTTP 200 and hits carry <b>no</b> {@code sort} key — the fix for #36581 must not
+     *          add an empty/spurious {@code sort} to unsorted queries.
+     */
+    @Test
+    public void test_search_relevanceOnlyQuery_omitsPerHitSort() throws Exception {
+        final ContentType contentType = createContentTypeWithPublishedContent();
+
+        final String jsonQuery = "{\n"
+                + "  \"query\": { \"bool\": { \"must\": { \"term\": { \"contenttype\": { \"value\": \""
+                + contentType.variable().toLowerCase() + "\" } } } } }\n"
+                + "}";
+
+        final Response response = new ESContentResourcePortlet()
+                .search(createHttpRequest(false), new MockHttpResponse(), jsonQuery, "0", true, null, false);
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+        final JSONObject esresponse = new JSONObject(response.getEntity().toString())
+                .getJSONArray("esresponse").getJSONObject(0);
+        final JSONArray hits = esresponse.getJSONObject("hits").getJSONArray("hits");
+        assertTrue("query must return at least one hit", hits.length() > 0);
+        for (int i = 0; i < hits.length(); i++) {
+            assertTrue("a relevance-only (unsorted) hit must not carry a 'sort' key",
+                    !hits.getJSONObject(i).has("sort"));
+        }
+    }
+
+    /**
+     * Creates a content type with a {@code latlong} text field (dynamically mapped to a
+     * {@code geo_point} by the {@code *latlong} template) and publishes three centers at increasing
+     * distances from the reference point (42.4608, -83.1215).
+     */
+    private ContentType createGeoContentTypeWithCenters() throws Exception {
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+        fields.add(new FieldDataGen().name("Latlong").velocityVarName("latlong").next());
+        final ContentType contentType = new ContentTypeDataGen().fields(fields).nextPersisted();
+
+        final String[][] centers = {
+                {"Center-0km", "42.4608,-83.1215"},
+                {"Center-12km", "42.55,-83.20"},
+                {"Center-35km", "42.70,-83.40"}
+        };
+        for (final String[] center : centers) {
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .setProperty("title", center[0])
+                    .setProperty("latlong", center[1])
+                    .nextPersisted();
+            ContentletDataGen.publish(contentlet);
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
+        }
+        return contentType;
+    }
+
     private ContentType createContentTypeWithPublishedContent() throws Exception {
         final long now = System.currentTimeMillis();
         final ContentType contentType = new ContentTypeDataGen()
