@@ -7,6 +7,8 @@
         display: flex;
         flex-direction: column;
         height: 100%;
+        // Breathing room between the editor and the Cancel/Save footer.
+        gap: spacing.$spacing-4;
     }
 
     // Both editors grow to fill the drawer height; the footer keeps its natural height.
@@ -24,6 +26,12 @@
         .p-drawer-right {
             width: 50%;
             max-width: 1040px;
+        }
+
+        // The drawer is used as a plain editing surface (no title, not closable), so the
+        // empty PrimeNG header just wastes vertical space above the editor — hide it.
+        .p-drawer-header {
+            display: none;
         }
 
         .p-drawer-content {
