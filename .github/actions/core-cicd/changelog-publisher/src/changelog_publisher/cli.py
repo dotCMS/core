@@ -77,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     pub = sub.add_parser("publish", help="upsert + publish a release changelog entry")
     pub.add_argument("--version", required=True, help="current-track version, e.g. 26.07.10-01")
-    pub.add_argument("--notes-file", required=True, help="path to the site-format markdown notes")
+    pub.add_argument("--notes-file", required=True, help="path to the release-notes markdown (normally the GitHub release body)")
     pub.add_argument("--docker-image", required=True, help="deployment docker image tag")
     pub.add_argument("--released-date", default="", help="availability date (yyyy-MM-dd); defaults to today")
     pub.add_argument("--apply", action="store_true", help="actually search + fire the Publish action")

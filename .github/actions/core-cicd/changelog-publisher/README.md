@@ -5,8 +5,12 @@ Upserts a dotCMS release's changelog entry onto the public site
 corpsites-headless backend and firing the System Workflow Publish action so it goes live —
 idempotently, protecting human edits, and never blocking the release.
 
-This is the *delivery* half of the feature. *Generation* (site-format markdown) is the
-`.github/scripts/gather-release-data` Node gatherer plus `prompt-template-site.md`.
+There is no separate site-notes generation: the **GitHub release body is the changelog
+content** (one shared artifact, written once by the ai-release-notes phase from
+`gather-release-data/prompt-template.md`). This tool injects the site's per-version
+heading anchors (`### Fixes` → `### Fixes {#Fixes-<version>}`) and strips GitHub's
+auto-appended compare footer mechanically at publish time — so a hand-edit to the GitHub
+release followed by a re-run re-syncs the site.
 
 ## Run locally (dry-run is the default)
 
@@ -24,7 +28,7 @@ the intended action and issues no write.
 | Flag | Required | Purpose |
 |------|----------|---------|
 | `--version` | yes | Current-track version / `minor` field, e.g. `26.07.10-01` (no `v`). Out-of-scope forms (`_lts_`, `dotcms-cli-*`) are rejected before any network call. |
-| `--notes-file` | yes | Path to the site-format markdown notes to store in `releaseNotes`. |
+| `--notes-file` | yes | Path to the release-notes markdown (normally the GitHub release body) to store in `releaseNotes`; heading anchors are injected automatically. |
 | `--docker-image` | yes | Docker image tag stored in `dockerImage`. |
 | `--released-date` | no | Availability date `yyyy-MM-dd`; defaults to today (UTC). |
 | `--apply` | no | Actually search + fire. Omitted = dry-run (default). |

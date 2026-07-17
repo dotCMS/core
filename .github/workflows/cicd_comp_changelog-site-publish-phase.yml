@@ -1,22 +1,19 @@
 #
 # Changelog Site Publish Phase (Reusable Component)
 #
-# Generates SITE-format release notes and publishes them to the public changelog on
-# dev.dotcms.com by upserting a Dotcmsbuilds contentlet on the corpsites-headless backend
-# and firing the System Workflow Publish action (goes live with no approval step).
+# Publishes the release's changelog to the public changelog on dev.dotcms.com by upserting
+# a Dotcmsbuilds contentlet on the corpsites-headless backend and firing the System
+# Workflow Publish action (goes live with no approval step).
+#
+# There is NO generation in this phase: the GitHub release body (already written by the
+# ai-release-notes phase from the shared editorial template) IS the changelog content —
+# one artifact, both destinations, drift structurally impossible. The publisher injects
+# the site's per-version heading anchors mechanically at publish time. A hand-edit to the
+# GitHub release followed by a re-run re-syncs the site.
 #
 # Called by the release pipeline (cicd_6-release.yml) after release-notes, gated on
 # release-prepare's is_latest (current-track GA only). Runs non-blocking (allow_failure) so
 # a changelog hiccup never fails the software release (FR-008).
-#
-# --- D2a decision (one Claude call vs two) -------------------------------------------------
-# The GitHub release notes (cicd_comp_ai-release-notes-phase.yml -> /tmp/release-notes.md)
-# and the SITE notes (this phase -> /tmp/site-release-notes.md) are produced by TWO separate
-# claude-code-action calls against TWO templates, NOT one combined call. Rationale: it leaves
-# the existing GitHub-notes phase completely untouched, keeps the site path independently
-# retriable (a site failure never re-touches the GitHub release), and each template stays
-# single-purpose. Both derive from the same deterministic gather-release-data JSON, so the
-# two calls cannot drift on the underlying facts (the spec's drift-prevention strategy).
 #
 
 name: Changelog Site Publish Phase
@@ -36,10 +33,6 @@ on:
         description: 'Space-separated docker image tags produced by the deployment phase'
         required: true
         type: string
-      previous_tag:
-        description: 'Previous release tag for diff range. If omitted, auto-detected.'
-        required: false
-        type: string
       allow_failure:
         description: 'If true, job failures are non-blocking (used by release pipeline). Defaults to false.'
         required: false
@@ -51,9 +44,6 @@ on:
         type: string
         default: 'CE1TBQU00'  # #dot-releases (public). Pass an override to post elsewhere.
     secrets:
-      ANTHROPIC_API_KEY:
-        required: true
-        description: 'Anthropic API key for Claude'
       DOTCMS_DEVSITE_TOKEN:
         required: true
         description: 'Service-account bearer token for the corpsites-headless backend'
@@ -77,12 +67,9 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read       # checkout + gh release reads
-      pull-requests: read  # Octokit pulls.get for PR details in gather-release-data
-      id-token: write      # Required by claude-code-action for OIDC
     env:
       RELEASE_TAG: ${{ inputs.release_tag }}
       RELEASE_VERSION: ${{ inputs.release_version }}
-      PREVIOUS_TAG: ${{ inputs.previous_tag }}
       REPO: ${{ github.repository }}
     # Defense-in-depth: skip non-standard releases (CLI, LTS). The primary gate is the
     # is_latest guard on the calling job in cicd_6-release.yml.
@@ -96,70 +83,19 @@ jobs:
         with:
           ref: main
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install script dependencies
-        working-directory: .github/scripts/gather-release-data
-        run: npm ci
-
-      - name: Build TypeScript
-        working-directory: .github/scripts/gather-release-data
-        run: npx tsc
-
-      - name: Gather release data
-        working-directory: .github/scripts/gather-release-data
+      - name: Fetch release notes from the GitHub release
         env:
-          GITHUB_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
         run: |
-          if [ -n "$PREVIOUS_TAG" ]; then
-            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" --from-tag "$PREVIOUS_TAG" \
-              > /tmp/release-data.json 2>/tmp/gather-stderr.log
-          else
-            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" \
-              > /tmp/release-data.json 2>/tmp/gather-stderr.log
-          fi
-          cat /tmp/gather-stderr.log
-          if ! jq empty /tmp/release-data.json 2>/dev/null; then
-            echo "Error: gather-release-data output is not valid JSON"
-            cat /tmp/release-data.json
-            exit 1
-          fi
-
-      - name: Assemble prompt
-        run: |
-          cat .github/scripts/gather-release-data/prompt-template-site.md > /tmp/site-prompt.md
-          printf '\n---\n\n## Release Data (JSON)\n\n```json\n' >> /tmp/site-prompt.md
-          cat /tmp/release-data.json >> /tmp/site-prompt.md
-          printf '\n```\n' >> /tmp/site-prompt.md
-
-          # Pass prompt via env file with a random delimiter so PR body content cannot
-          # terminate the heredoc early (same guard as the GitHub-notes phase).
-          DELIM="PROMPT_$(openssl rand -hex 16)"
-          {
-            echo "PROMPT_CONTENT<<${DELIM}"
-            cat /tmp/site-prompt.md
-            echo "${DELIM}"
-          } >> "$GITHUB_ENV"
-
-      - name: Generate site notes with Claude
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: ${{ env.PROMPT_CONTENT }}
-          claude_args: "--allowedTools Write --max-turns 3"
-
-      - name: Verify generated notes
-        run: |
-          # -s (non-empty), not -f: an empty file would publish an empty releaseNotes.
+          # The published GitHub release body is the single shared changelog artifact.
+          gh release view "$RELEASE_TAG" --repo "$REPO" --json body --jq .body \
+            > /tmp/site-release-notes.md
+          # -s (non-empty): an empty release body must not publish an empty releaseNotes.
           if [ ! -s /tmp/site-release-notes.md ]; then
-            echo "Error: Claude did not generate a non-empty /tmp/site-release-notes.md"
-            ls -la /tmp/*.md 2>/dev/null || echo "No .md files in /tmp/"
+            echo "Error: GitHub release $RELEASE_TAG has an empty body"
             exit 1
           fi
-          echo "Generated site notes ($(wc -l < /tmp/site-release-notes.md) lines)."
+          echo "Fetched release notes ($(wc -l < /tmp/site-release-notes.md) lines)."
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
@@ -228,6 +164,6 @@ jobs:
                 && ':warning: *Changelog site publish SKIPPED*'
                 || ':rotating_light: *Changelog site publish FAILED*' }}
             for `${{ inputs.release_version }}` —
-            ${{ steps.publish.outputs.reason || 'failed before the publisher step (generation or setup error)' }}.
+            ${{ steps.publish.outputs.reason || 'failed before the publisher step (release-body fetch or setup error)' }}.
             The GitHub release is published and unaffected. Run:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -12,7 +12,7 @@ strict one-row-per-version upsert (FR-003, SC-003).
 | Field | Type | Source in the pipeline | Notes |
 |-------|------|------------------------|-------|
 | `minor` | text (version string) | `release-prepare.outputs.release_version` (e.g. `26.07.10-01`, no `v` prefix) | The upsert key. Searched via `minor_dotraw` exact match. |
-| `releaseNotes` | WYSIWYG (stores markdown) | `/tmp/site-release-notes.md` (site-format generation, D2) | MUST be sent with `disabledWYSIWYG: ["releaseNotes"]` or markdown collapses to one `<p>` (FR-005). Site editorial format: `### Fixes {#Fixes-<version>}` etc., per-item `[#NNNNN](github url)`, short prose intro, no emoji. |
+| `releaseNotes` | WYSIWYG (stores markdown) | The GitHub release body (single shared artifact), fetched via `gh release view`; the publisher injects per-version heading anchors and strips GitHub's compare footer mechanically | MUST be sent with `disabledWYSIWYG: ["releaseNotes"]` or markdown collapses to one `<p>` (FR-005). Stored form: `### Fixes {#Fixes-<version>}` etc., per-item `[[#NNNNN](github issues url)]`, short prose intro, no emoji. |
 | `dockerImage` | text | deployment output docker tag (e.g. `dotcms/dotcms:26.07.10-01_<sha>`) | From the release's produced image tag. |
 | `releasedDate` | date | run date (today) | For an older-line patch this is the actual ship date, NOT the original line's date (FR-013). |
 | `showInChangeLog` | radio (bool) | constant `true` (send JSON boolean `true`) | Makes it appear on the changelog page (FR-006). |

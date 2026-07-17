@@ -5,6 +5,7 @@ protection, and the `>1` guard are the US2 decision table (T031).
 """
 from __future__ import annotations
 
+import re
 import sys
 import time
 from dataclasses import dataclass
@@ -35,6 +36,23 @@ def _wait_until_searchable(client, version: str) -> bool:
         if client._search(version):
             return True
     return False
+
+
+# The notes are the GitHub release body verbatim (one shared artifact for both
+# destinations). The site's stored markdown additionally wants per-version heading
+# anchors, which would render as literal junk on GitHub — so they are injected here,
+# mechanically, at publish time. Idempotent: headings already carrying an anchor
+# (contain "{") don't match. Also strips GitHub's auto-appended compare footer.
+_SECTION_HEADING = re.compile(r"^### ([A-Za-z]+)([^{\n]*?)\s*$", re.MULTILINE)
+_COMPARE_FOOTER = re.compile(r"\n+\*\*Full Changelog\*\*: \S+\s*$")
+
+
+def prepare_notes(notes: str, version: str) -> str:
+    """Transform the shared release body into the site's stored form."""
+    notes = _COMPARE_FOOTER.sub("\n", notes)
+    return _SECTION_HEADING.sub(
+        lambda m: f"### {m.group(1)}{m.group(2)} {{#{m.group(1)}-{version}}}", notes
+    ).strip() + "\n"
 
 
 @dataclass(frozen=True)
@@ -89,6 +107,7 @@ def publish(
     apply: bool,
 ) -> PublishResult:
     """Search for an existing entry, decide create/update/skip, and fire Publish."""
+    release_notes = prepare_notes(release_notes, version)
     hits = client._search(version)
 
     # >1 hit → never guess which row to update; surface as a failure (D4).

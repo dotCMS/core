@@ -80,6 +80,38 @@ def test_create_path_fires_publish_with_expected_fields():
     assert c["download"] == 1
 
 
+def test_prepare_notes_injects_site_anchors_and_strips_compare_footer():
+    """The shared GitHub release body arrives anchor-free; the site's stored form gets
+    per-version heading anchors injected mechanically, and GitHub's auto-appended
+    compare footer is dropped."""
+    body = (
+        "**dotCMS 26.07.10-01** intro line.\n\n"
+        "### Features\n- A thing. [[#1](https://x/issues/1)]\n\n"
+        "### Enhancements & Adjustments\n- Better. [[#2](https://x/issues/2)]\n\n"
+        "### Deprecations, End of Life & Reminders\n- Bye. [[#3](https://x/issues/3)]\n\n"
+        "**Full Changelog**: https://github.com/dotCMS/core/compare/a...b\n"
+    )
+    out = publisher.prepare_notes(body, "26.07.10-01")
+    assert "### Features {#Features-26.07.10-01}" in out
+    assert "### Enhancements & Adjustments {#Enhancements-26.07.10-01}" in out
+    assert "### Deprecations, End of Life & Reminders {#Deprecations-26.07.10-01}" in out
+    assert "Full Changelog" not in out
+    # Idempotent: a second pass (or hand-authored anchored notes) is a no-op.
+    assert publisher.prepare_notes(out, "26.07.10-01") == out
+
+
+@responses_lib.activate
+def test_fired_notes_carry_injected_anchors():
+    """publish() stores the transformed (anchored) form, not the raw release body."""
+    _add_search("search_empty.json")
+    _add_fire()
+    client = CorpsitesClient(token="t")
+
+    _publish(client, release_notes="intro.\n\n### Fixes\n- F. [[#9](https://x/issues/9)]\n")
+
+    assert "### Fixes {#Fixes-26.07.10-01}" in _fired_contentlet()["releaseNotes"]
+
+
 @responses_lib.activate
 def test_create_waits_until_entry_searchable():
     """After a create, the tool polls _search until the new row is indexed, so a re-run

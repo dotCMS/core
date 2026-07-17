@@ -87,7 +87,7 @@ When publishing to the site fails (backend unreachable, auth expired, rejected p
 - **FR-007**: Releases outside scope — CLI releases and LTS releases — MUST be excluded (descoped for v1; the exclusion must be a deliberate filter, not an accident of tag patterns breaking).
 - **FR-008**: A publishing failure or protective skip MUST be reported to the release team as a Slack notification in `#dot-releases` (naming the version and reason) and MUST NOT block or fail the product release itself.
 - **FR-009**: The system MUST authenticate to the site backend using a dedicated service credential stored as a managed secret (no personal tokens).
-- **FR-010**: The generated notes MUST follow the site changelog's editorial format (concise, structured, no emoji) rather than the GitHub release notes format.
+- **FR-010**: The notes MUST follow the site changelog's editorial format (concise, structured, no emoji). GitHub Releases and the site publish the SAME content, generated once — the GitHub release body is the shared artifact, and destination-specific syntax (heading anchors) is applied mechanically at publish time.
 - **FR-011**: The system MUST NOT overwrite an entry that was last modified by anyone other than the automation's own service account. Such entries are skipped with a notification (FR-008); overwriting a human-edited entry requires an explicit operator override.
 - **FR-012**: Each run MUST publish only the release that triggered it. The system MUST NOT automatically backfill other versions; catching up a missed release is an explicit, per-version operator action.
 - **FR-013**: A patch release of an older version MUST produce its own entry with its actual availability date, leaving all other entries untouched.
@@ -118,7 +118,7 @@ When publishing to the site fails (backend unreachable, auth expired, rejected p
 ## Assumptions
 
 - The site's existing changelog data model and its publish workflow (which has no approval gate) remain as-is; this feature writes into the existing model rather than introducing a new one. Verified 2026-07-16: entries live in the `Dotcmsbuilds` content type on the corpsites-headless backend, publishable in one workflow-API call via the System Workflow, which has no approval step.
-- The existing automated release-notes generation (which already feeds GitHub Releases) can produce the site-format markdown; this feature adds the delivery leg, adapting generation to the site's format where needed.
+- The existing automated release-notes generation runs ONCE per release with a shared editorial template (site format); its output is published as the GitHub release body, and this feature's delivery leg publishes that same body to the site. No second generation exists — one artifact serves both destinations, which is the drift-prevention strategy.
 - The site remains the customer-facing source of truth; GitHub release notes remain published as today. One generator feeding both is the drift-prevention strategy, with idempotent re-runs as the repair path.
 - Known storage gotcha to honor at implementation time: the notes field is a rich-text (WYSIWYG) field and the payload must explicitly disable WYSIWYG handling for it (`disabledWYSIWYG`) or markdown gets collapsed into a single paragraph.
 - A service API token for the site backend will be provisioned and stored as a repository/organization secret; provisioning the token is an operational prerequisite, not part of this feature's code.
