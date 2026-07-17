@@ -2,7 +2,11 @@ import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/j
 
 import { Component, TemplateRef, signal, viewChild } from '@angular/core';
 
+import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
+
 import { DotHistoryTimelineListComponent } from './dot-history-timeline-list.component';
+
+import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-content.model';
 
 interface TestItem {
     id: string;
@@ -99,6 +103,27 @@ describe('DotHistoryTimelineListComponent', () => {
         });
     });
 
+    describe('timeline key', () => {
+        it('should key version items by inode', () => {
+            const timelineList = spectator.query(DotHistoryTimelineListComponent);
+            expect(timelineList!.$timelineKey()).toBe('1|2');
+        });
+
+        it('should change the key when swapping equally-sized version lists', () => {
+            const timelineList = spectator.query(DotHistoryTimelineListComponent);
+            const initialKey = timelineList!.$timelineKey();
+
+            spectator.component.$items.set([
+                { id: '3', label: 'third' },
+                { id: '4', label: 'fourth' }
+            ]);
+            spectator.detectChanges();
+
+            expect(timelineList!.$timelineKey()).not.toBe(initialKey);
+            expect(timelineList!.$timelineKey()).toBe('3|4');
+        });
+    });
+
     describe('template projection', () => {
         it('should render the marker template for every item', () => {
             const first = spectator.query(byTestId('marker-1'));
@@ -162,5 +187,193 @@ describe('DotHistoryTimelineListComponent', () => {
             );
             expect(spectator.component.reachedEndCount).toBe(0);
         });
+    });
+});
+
+const mockVersionA: DotCMSContentletVersion = {
+    archived: false,
+    country: 'US',
+    countryCode: 'US',
+    experimentVariant: false,
+    inode: 'inode-a',
+    isoCode: 'en-US',
+    language: 'English',
+    languageCode: 'en',
+    languageFlag: 'us',
+    languageId: 1,
+    live: true,
+    modDate: 1701428400000,
+    modUser: 'dotcms.org.1',
+    modUserName: 'Admin User',
+    title: 'Version A',
+    working: true
+};
+
+const mockVersionB: DotCMSContentletVersion = {
+    ...mockVersionA,
+    inode: 'inode-b',
+    title: 'Version B',
+    working: false
+};
+
+const mockVersionC: DotCMSContentletVersion = {
+    ...mockVersionA,
+    inode: 'inode-c',
+    title: 'Version C',
+    working: false
+};
+
+const mockVersionD: DotCMSContentletVersion = {
+    ...mockVersionA,
+    inode: 'inode-d',
+    title: 'Version D',
+    working: false
+};
+
+@Component({
+    selector: 'dot-version-test-host',
+    imports: [DotHistoryTimelineListComponent],
+    template: `
+        <ng-template #marker let-item>
+            <span [attr.data-testid]="'marker-' + item.inode">{{ item.title }}-marker</span>
+        </ng-template>
+        <ng-template #content let-item>
+            <div [attr.data-testid]="'content-' + item.inode">{{ item.title }}-content</div>
+        </ng-template>
+        <dot-history-timeline-list
+            [items]="$items()"
+            [markerTemplate]="$markerTpl()!"
+            [contentTemplate]="$contentTpl()!" />
+    `
+})
+class VersionTestHostComponent {
+    readonly $markerTpl = viewChild<TemplateRef<{ $implicit: DotCMSContentletVersion }>>('marker');
+    readonly $contentTpl = viewChild<TemplateRef<{ $implicit: DotCMSContentletVersion }>>('content');
+
+    readonly $items = signal<DotCMSContentletVersion[]>([mockVersionA, mockVersionB]);
+}
+
+describe('DotHistoryTimelineListComponent with version items', () => {
+    let spectator: Spectator<VersionTestHostComponent>;
+
+    const createHost = createComponentFactory({
+        component: VersionTestHostComponent,
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+            observe: jest.fn(),
+            unobserve: jest.fn(),
+            disconnect: jest.fn()
+        })) as unknown as typeof IntersectionObserver;
+
+        spectator = createHost();
+        spectator.detectChanges();
+    });
+
+    it('should key items by inode', () => {
+        const timelineList = spectator.query(DotHistoryTimelineListComponent);
+        expect(timelineList!.$timelineKey()).toBe('inode-a|inode-b');
+    });
+
+    it('should re-render when swapping equally-sized version lists', () => {
+        spectator.component.$items.set([mockVersionC, mockVersionD]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('content-inode-c'))?.textContent?.trim()).toBe(
+            'Version C-content'
+        );
+        expect(spectator.query(byTestId('content-inode-a'))).toBeNull();
+        expect(spectator.query(byTestId('content-inode-b'))).toBeNull();
+    });
+});
+
+const mockPushPublishA: DotPushPublishHistoryItem = {
+    bundleId: 'bundle-a',
+    environment: 'Production',
+    pushDate: 1701428400000,
+    pushedBy: 'admin'
+};
+
+const mockPushPublishB: DotPushPublishHistoryItem = {
+    bundleId: 'bundle-b',
+    environment: 'Staging',
+    pushDate: 1701514800000,
+    pushedBy: 'admin'
+};
+
+const mockPushPublishC: DotPushPublishHistoryItem = {
+    bundleId: 'bundle-c',
+    environment: 'Production',
+    pushDate: 1701601200000,
+    pushedBy: 'editor'
+};
+
+const mockPushPublishD: DotPushPublishHistoryItem = {
+    bundleId: 'bundle-d',
+    environment: 'Staging',
+    pushDate: 1701687600000,
+    pushedBy: 'editor'
+};
+
+@Component({
+    selector: 'dot-pushpublish-test-host',
+    imports: [DotHistoryTimelineListComponent],
+    template: `
+        <ng-template #marker let-item>
+            <span [attr.data-testid]="'marker-' + item.bundleId">{{ item.environment }}-marker</span>
+        </ng-template>
+        <ng-template #content let-item>
+            <div [attr.data-testid]="'content-' + item.bundleId">{{ item.environment }}-content</div>
+        </ng-template>
+        <dot-history-timeline-list
+            [items]="$items()"
+            [markerTemplate]="$markerTpl()!"
+            [contentTemplate]="$contentTpl()!" />
+    `
+})
+class PushPublishTestHostComponent {
+    readonly $markerTpl =
+        viewChild<TemplateRef<{ $implicit: DotPushPublishHistoryItem }>>('marker');
+    readonly $contentTpl =
+        viewChild<TemplateRef<{ $implicit: DotPushPublishHistoryItem }>>('content');
+
+    readonly $items = signal<DotPushPublishHistoryItem[]>([mockPushPublishA, mockPushPublishB]);
+}
+
+describe('DotHistoryTimelineListComponent with push publish items', () => {
+    let spectator: Spectator<PushPublishTestHostComponent>;
+
+    const createHost = createComponentFactory({
+        component: PushPublishTestHostComponent,
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+            observe: jest.fn(),
+            unobserve: jest.fn(),
+            disconnect: jest.fn()
+        })) as unknown as typeof IntersectionObserver;
+
+        spectator = createHost();
+        spectator.detectChanges();
+    });
+
+    it('should key items by bundleId', () => {
+        const timelineList = spectator.query(DotHistoryTimelineListComponent);
+        expect(timelineList!.$timelineKey()).toBe('bundle-a|bundle-b');
+    });
+
+    it('should re-render when swapping equally-sized push publish lists', () => {
+        spectator.component.$items.set([mockPushPublishC, mockPushPublishD]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('content-bundle-c'))?.textContent?.trim()).toBe(
+            'Production-content'
+        );
+        expect(spectator.query(byTestId('content-bundle-a'))).toBeNull();
+        expect(spectator.query(byTestId('content-bundle-b'))).toBeNull();
     });
 });

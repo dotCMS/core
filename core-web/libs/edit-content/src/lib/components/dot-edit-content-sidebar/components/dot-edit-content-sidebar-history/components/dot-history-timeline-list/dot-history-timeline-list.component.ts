@@ -14,6 +14,23 @@ import {
 
 import { TimelineModule } from 'primeng/timeline';
 
+/** Stable identity for timeline items: versions use inode, push publish uses bundleId. */
+function getTimelineItemKey(item: unknown): string {
+    if (item !== null && typeof item === 'object') {
+        const record = item as Record<string, unknown>;
+        if (typeof record.inode === 'string') {
+            return record.inode;
+        }
+        if (typeof record.bundleId === 'string') {
+            return record.bundleId;
+        }
+        if (typeof record.id === 'string') {
+            return record.id;
+        }
+    }
+    return String(item);
+}
+
 /**
  * Shared wrapper around PrimeNG's `<p-timeline>` used by both the Versions and
  * Push Publish sections in the History tab. Consumers project a marker template
@@ -39,7 +56,7 @@ export class DotHistoryTimelineListComponent<T> implements OnDestroy {
     /** Forces p-timeline recreation when the item set changes. */
     readonly $timelineKey = computed(() =>
         this.$items()
-            .map((item) => String((item as { id?: string }).id ?? item))
+            .map((item) => getTimelineItemKey(item))
             .join('|')
     );
 
