@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
-import { Component, TemplateRef, viewChild } from '@angular/core';
+import { Component, TemplateRef, signal, viewChild } from '@angular/core';
 
 import { DotHistoryTimelineListComponent } from './dot-history-timeline-list.component';
 
@@ -25,7 +25,7 @@ interface TestItem {
             <div [attr.data-testid]="'content-' + item.id">{{ item.label }}-content</div>
         </ng-template>
         <dot-history-timeline-list
-            [items]="items"
+            [items]="$items()"
             [markerTemplate]="$markerTpl()!"
             [contentTemplate]="$contentTpl()!"
             [containerTestId]="containerTestId"
@@ -37,10 +37,10 @@ class TestHostComponent {
     readonly $markerTpl = viewChild<TemplateRef<{ $implicit: TestItem }>>('marker');
     readonly $contentTpl = viewChild<TemplateRef<{ $implicit: TestItem }>>('content');
 
-    items: TestItem[] = [
+    readonly $items = signal<TestItem[]>([
         { id: '1', label: 'first' },
         { id: '2', label: 'second' }
-    ];
+    ]);
     containerTestId = 'host-container';
     timelineTestId = 'host-timeline';
 
@@ -115,7 +115,7 @@ describe('DotHistoryTimelineListComponent', () => {
         });
 
         it('should re-render when items input changes', () => {
-            spectator.component.items = [{ id: '3', label: 'third' }];
+            spectator.component.$items.set([{ id: '3', label: 'third' }]);
             spectator.detectChanges();
             expect(spectator.query(byTestId('content-3'))?.textContent?.trim()).toBe(
                 'third-content'

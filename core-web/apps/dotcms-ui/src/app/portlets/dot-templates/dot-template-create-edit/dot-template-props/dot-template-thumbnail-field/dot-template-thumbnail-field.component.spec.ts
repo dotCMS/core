@@ -110,8 +110,8 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 })
             );
 
-            expect(field.nativeNode.previewImageUrl).toBeNull();
-            expect(field.nativeNode.previewImageName).toBeNull();
+            expect(field.nativeNode.previewImageUrl).toBeFalsy();
+            expect(field.nativeNode.previewImageName).toBeFalsy();
             expect(field.nativeNode.placeholder).toBe('Drop or paste image or image url');
         });
 

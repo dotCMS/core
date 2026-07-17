@@ -3,6 +3,7 @@ import {
     afterNextRender,
     ChangeDetectionStrategy,
     Component,
+    computed,
     ElementRef,
     input,
     OnDestroy,
@@ -31,6 +32,16 @@ import { TimelineModule } from 'primeng/timeline';
 export class DotHistoryTimelineListComponent<T> implements OnDestroy {
     /** Items rendered along the timeline. */
     readonly $items = input.required<T[]>({ alias: 'items' });
+
+    /** Spread copy so PrimeNG Timeline re-renders when items change (OnPush + ngFor). */
+    readonly $timelineValue = computed(() => [...this.$items()]);
+
+    /** Forces p-timeline recreation when the item set changes. */
+    readonly $timelineKey = computed(() =>
+        this.$items()
+            .map((item) => String((item as { id?: string }).id ?? item))
+            .join('|')
+    );
 
     /** Template projected for each marker. Receives the item via `$implicit`. */
     readonly markerTemplate = input.required<TemplateRef<{ $implicit: T }>>();

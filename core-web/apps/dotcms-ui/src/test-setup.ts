@@ -10,6 +10,20 @@ import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
 setupZoneTestEnv();
 
+// jsdom does not expose fetch; PrimeNG 21 components may request assets at init
+if (typeof globalThis.fetch !== 'function') {
+    globalThis.fetch = jest.fn(() =>
+        Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({}),
+            text: () => Promise.resolve(''),
+            blob: () => Promise.resolve(new Blob()),
+            arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        })
+    ) as typeof fetch;
+}
+
 // Setup global mocks
 setupResizeObserverMock();
 

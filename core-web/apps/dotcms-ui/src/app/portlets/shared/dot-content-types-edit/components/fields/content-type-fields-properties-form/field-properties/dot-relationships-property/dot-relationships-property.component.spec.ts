@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     FormGroupDirective,
     NgControl,
@@ -9,6 +9,7 @@ import {
     UntypedFormGroup
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -16,6 +17,7 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 import { DotEditContentTypeCacheService } from './services/dot-edit-content-type-cache.service';
+import { DotRelationshipService } from './services/dot-relationship.service';
 
 import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 
@@ -72,6 +74,11 @@ describe('DotRelationshipsPropertyComponent', () => {
         'contenttypes.field.properties.relationships.edit.error.required': 'Edit validation error'
     });
 
+    const mockCardinalities = [
+        { label: 'Many to many', id: 0, name: 'MANY_TO_MANY' },
+        { label: 'One to one', id: 1, name: 'ONE_TO_ONE' }
+    ];
+
     beforeEach(waitForAsync(() => {
         const formGroupDirectiveMock = {
             control: new UntypedFormGroup({
@@ -100,6 +107,19 @@ describe('DotRelationshipsPropertyComponent', () => {
                 },
                 { provide: FormGroupDirective, useValue: formGroupDirectiveMock }
             ]
+        });
+
+        TestBed.overrideComponent(DotRelationshipsPropertyComponent, {
+            set: {
+                providers: [
+                    {
+                        provide: DotRelationshipService,
+                        useValue: {
+                            loadCardinalities: jest.fn().mockReturnValue(of(mockCardinalities))
+                        }
+                    }
+                ]
+            }
         });
 
         fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);

@@ -11,7 +11,6 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -394,13 +393,20 @@ describe('DotFormComponent', () => {
 
             describe('TabView Styling', () => {
                 it('should apply single-tab class when only one tab exists', () => {
-                    const tabView = spectator.query('.dot-edit-content-tabview');
-                    component.$hasSingleTab = signal(true);
+                    dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                        of(MOCK_CONTENTTYPE_1_TAB)
+                    );
+                    store.initializeExistingContent({
+                        inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                        depth: DotContentletDepths.ONE
+                    });
+                    spectator.flushEffects();
                     spectator.detectChanges();
 
-                    expect(tabView.classList.contains('dot-edit-content-tabview--single-tab')).toBe(
-                        true
-                    );
+                    const tabView = spectator.query('.dot-edit-content-tabview');
+                    expect(
+                        tabView?.classList.contains('dot-edit-content-tabview--single-tab')
+                    ).toBe(true);
                 });
             });
         });

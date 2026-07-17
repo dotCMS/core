@@ -3,12 +3,11 @@ import {
     Component,
     ElementRef,
     HostListener,
+    inject,
     Input,
     OnInit,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
-import { SafeUrl } from '@angular/platform-browser';
 
 import { MenuItem } from 'primeng/api';
 
@@ -27,7 +26,7 @@ export interface SuggestionsCommandProps {
 }
 
 export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
-    icon?: string | SafeUrl;
+    icon?: string;
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;
     data?: Record<string, unknown>;

@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-    Component,
-    ComponentFactoryResolver,
-    DebugElement,
-    Directive,
-    Injectable,
-    Input
-} from '@angular/core';
+import { Component, DebugElement, Directive, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     ReactiveFormsModule,
@@ -147,7 +140,6 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             imports: [ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
             providers: [
                 UntypedFormBuilder,
-                ComponentFactoryResolver,
                 { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
