@@ -565,6 +565,104 @@ public class PageResourceTest {
     }
 
     /**
+     * methodToTest {@link PageResource#updateStyles(HttpServletRequest, HttpServletResponse, String, List)}
+     * Given Scenario: The Style Editor saves a style update for the Default Visitor -- i.e. with no
+     * {@code personaTag} (null), and separately with the bare {@code "dot:persona"} prefix scheme sent
+     * as the tag (an edge case a client should never send, but the backend must not misinterpret).
+     * ExpectedResult: Both cases resolve to the default personalization ({@code dot:default}), not to
+     * {@code dot:persona:dot:persona}. Locks down the contract behind.
+     */
+    @Test
+    public void test_updateStyles_with_defaultVisitor() throws Exception {
+        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+        try {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+            final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+            final HTMLPageAsset testPage = pageRenderTest.getPage();
+            final Container container = pageRenderTest.getFirstContainer();
+
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+            final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+            final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                    .languageId(1)
+                    .folder(APILocator.getFolderAPI().findSystemFolder())
+                    .host(host)
+                    .setProperty("title", "Test Content for Default Visitor")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .nextPersisted();
+
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            APILocator.getContentletAPI().publish(contentlet, user, false);
+
+            final List<ContainerEntry> entries = new ArrayList<>();
+            final String containerUUID = UUIDGenerator.generateUuid();
+
+            final ContainerEntry containerEntry = new ContainerEntry(
+                    null,
+                    container.getIdentifier(),
+                    containerUUID,
+                    list(contentlet.getIdentifier())
+            );
+
+            entries.add(containerEntry);
+            final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
+
+            final Response addContentResponse = this.pageResourceWithHelper.addContent(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    VariantAPI.DEFAULT_VARIANT.name(),
+                    pageContainerForm
+            );
+
+            assertNotNull(addContentResponse);
+            assertEquals(200, addContentResponse.getStatus());
+
+            final Map<String, Object> styleProperties = new HashMap<>();
+            styleProperties.put("backgroundColor", "green");
+
+            // Simulate the edge case: a client sending the bare "dot:persona" prefix instead of
+            // omitting personaTag. Must still resolve to the default personalization.
+            final ContentWithStylesForm contentWithStylesForm = new ContentWithStylesForm(
+                    container.getIdentifier(),
+                    containerUUID,
+                    Persona.DOT_PERSONA_PREFIX_SCHEME
+            );
+            contentWithStylesForm.addContentletStyle(contentlet.getIdentifier(), styleProperties);
+
+            final Response updateStylesResponse = this.pageResourceWithHelper.updateStyles(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    List.of(contentWithStylesForm)
+            );
+
+            assertNotNull(updateStylesResponse);
+            assertEquals(200, updateStylesResponse.getStatus());
+
+            final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+            final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
+
+            final Optional<MultiTree> defaultMultiTreeOpt = multiTrees.stream()
+                    .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
+                    .filter(mt -> MultiTree.DOT_PERSONALIZATION_DEFAULT.equals(mt.getPersonalization()))
+                    .findFirst();
+
+            assertTrue("MultiTree should be personalized as dot:default, not dot:persona:dot:persona",
+                    defaultMultiTreeOpt.isPresent());
+
+            final Map<String, Object> savedStyleProperties = defaultMultiTreeOpt.get().getStyleProperties();
+            assertNotNull("StyleProperties should not be null", savedStyleProperties);
+            assertEquals("backgroundColor should match", "green", savedStyleProperties.get("backgroundColor"));
+        } finally {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFeatureFlagValue);
+        }
+    }
+
+    /**
      * Should return at least one persona personalized
      *
      * @throws JSONException
