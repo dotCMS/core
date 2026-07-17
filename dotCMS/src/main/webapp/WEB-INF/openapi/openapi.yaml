@@ -25567,6 +25567,11 @@ components:
           type: string
           description: Container identifier
           example: //demo.dotcms.com/application/containers/default/
+        personaTag:
+          type: string
+          description: Persona key tag to personalize this style update for. Omit
+            for the default persona.
+          example: dot:persona-key
         uuid:
           type: string
           description: Container unique identifier (UUID)
