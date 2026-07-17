@@ -347,8 +347,11 @@ describe('DotRelationshipFieldComponent', () => {
                 buildItem({ inode: 'related-inode', title: 'Related content' })
             );
 
+            // The origin is the SOURCE version (source-inode), not the current
+            // translation, so its crumb is not relabeled with the translation's title —
+            // the origin title is left empty and the source's cached title stands.
             expect(host.goToRelatedContent).toHaveBeenCalledWith(
-                { inode: 'source-inode', title: 'New translation' },
+                { inode: 'source-inode', title: '' },
                 { inode: 'related-inode', title: 'Related content' }
             );
             expect(host.goToCrumb).not.toHaveBeenCalled();

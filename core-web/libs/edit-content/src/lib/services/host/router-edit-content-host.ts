@@ -7,6 +7,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { EditContentHost, EditContentIdentity } from './edit-content-host.model';
@@ -72,7 +73,7 @@ export class RouterEditContentHost implements EditContentHost {
         this.#navigationGuard = guard;
     }
 
-    setTrail(): void {
+    setTrail(_inodes: string[]): void {
         // no-op: the full-screen trail lives in the URL, which this host's own
         // navigation already updates via the `rc` query param.
     }
@@ -92,7 +93,7 @@ export class RouterEditContentHost implements EditContentHost {
         };
     }
 
-    reportSaved(): void {
+    reportSaved(_contentlet: DotCMSContentlet): void {
         // no-op: in full-screen the URL is the source of truth; there is no
         // separate opener to notify.
     }

@@ -81,11 +81,11 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#trailInodes.set(inodes);
     }
 
-    setContentTitle(): void {
+    setContentTitle(_label: string): void {
         // no-op: the dialog must not overwrite the host page title.
     }
 
-    addBreadcrumb(): void {
+    addBreadcrumb(_crumb: { label: string; url: string }): void {
         // no-op: the dialog must not stack a trail onto the shell breadcrumb.
     }
 

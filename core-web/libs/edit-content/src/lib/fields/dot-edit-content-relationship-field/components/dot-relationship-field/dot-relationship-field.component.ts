@@ -302,8 +302,15 @@ export class DotRelationshipFieldComponent
             return;
         }
 
+        // Only label the origin crumb with the current content's title when the
+        // origin IS the current content. For a new translation the origin is the
+        // source version (translationSourceInode), a different content, so don't
+        // relabel it with the translation's title — pass '' and let the source's
+        // already-cached title stand (registerTitle ignores empty titles).
+        const originTitle = originInode === current?.inode ? (current?.title ?? '') : '';
+
         this.#host.goToRelatedContent(
-            { inode: originInode, title: current?.title ?? '' },
+            { inode: originInode, title: originTitle },
             { inode: item.inode, title: item.title ?? '' }
         );
     }

@@ -94,17 +94,18 @@ export function toRelatedContentCrumbs(
  * It does not navigate — that is the {@link EditContentHost}'s job; this store only
  * owns the trail data and title cache.
  *
- * **Two trail sources, one reader:**
- * - Full-screen: the URL is the source of truth. The trail lives in the `rc` query
- *   param (comma-separated inodes, current last) and is derived reactively from the
- *   router URL, so browser back/forward and refresh work for free. `inMemoryTrail`
- *   stays `null`.
- * - Dialog/overlay: there is no URL to use, so the trail is kept in `inMemoryTrail`
- *   (set by the dialog host). When non-null it takes precedence over the URL.
+ * **Trail ownership differs by presentation:**
+ * - Full-screen ({@link RouterEditContentHost}): the URL is the source of truth. The
+ *   trail lives in the `rc` query param (comma-separated inodes, current last) and is
+ *   derived reactively from the router URL, so browser back/forward and refresh work
+ *   for free. That URL-derived trail is what this store exposes.
+ * - Dialog/overlay ({@link OverlayEditContentHost}): there is no URL, so each overlay
+ *   keeps its own per-instance in-memory trail in the host — NOT in this store — so an
+ *   open overlay never disturbs the trail of the full-screen editor behind it.
  *
- * Provided in **root** so it survives the destroy/recreate the full-screen editor
- * goes through on every `:id → :id` navigation (the `content` route opts out of
- * route reuse) and is reachable from either host.
+ * Provided in **root** so the title cache is shared across both hosts (and survives a
+ * hard refresh via sessionStorage), reachable regardless of whether the editor
+ * component is reused or recreated.
  */
 export const DotRelatedContentNavigationStore = signalStore(
     { providedIn: 'root' },
