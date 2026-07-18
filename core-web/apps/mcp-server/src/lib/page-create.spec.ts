@@ -107,13 +107,24 @@ describe('createPage', () => {
 
     // A request recorder standing in for the runtime, so we can assert ordering and payloads.
     // `contentTypes` seeds both loadContext() and the /contenttype/id/{} lookup.
+    // The default site every test's `site: 'demo.dotcms.com'` resolves against. `contentHost` on the
+    // fire body is expected to be this identifier UUID, never the hostname.
+    const DEMO_SITE = {
+        identifier: 'site-uuid-1',
+        hostname: 'demo.dotcms.com',
+        isDefault: true,
+        archived: false
+    };
+
     function fakeRuntime(handlers: {
         onCreateFolders?: (body: unknown) => unknown;
         onFire?: (body: unknown, query: unknown) => unknown;
         onLive?: () => unknown;
         contentTypes?: FakeContentType[];
+        sites?: Array<{ identifier: string; hostname: string; isDefault: boolean; archived: boolean }>;
     }) {
         const contentTypes = handlers.contentTypes ?? [HTMLPAGE_ASSET];
+        const sites = handlers.sites ?? [DEMO_SITE];
         const calls: Array<{ method?: string; path: string; body?: unknown; query?: unknown }> = [];
         const request = jest.fn(async (options: RequestOptions) => {
             calls.push({
@@ -149,7 +160,7 @@ describe('createPage', () => {
                 variable: c.variable,
                 baseType: c.baseType
             })),
-            sites: [],
+            sites,
             languages: [],
             currentUser: null
         }));
@@ -240,6 +251,96 @@ describe('createPage', () => {
         expect(calls.some((c) => c.path.includes('createfolders'))).toBe(false);
         expect(manifest.folder).toBe('/');
         expect(manifest.url).toBe('index');
+    });
+
+    it('fires a ROOT page with contentHost = site UUID, not the hostname (null-host trap)', async () => {
+        let firedBody: { contentlet: Record<string, unknown> } | undefined;
+        const { runtime, calls } = fakeRuntime({
+            onFire: (body) => {
+                firedBody = body as { contentlet: Record<string, unknown> };
+                return { entity: { identifier: 'home', live: true } };
+            }
+        });
+
+        await createPage({
+            dotcms: runtime,
+            site: 'demo.dotcms.com', // a hostname — must be resolved to the UUID
+            urlPath: '/',
+            title: 'Home',
+            template: 't'
+        });
+
+        const contentlet = firedBody?.contentlet ?? {};
+        // The regression: contentHost must be the resolved identifier, never the raw hostname —
+        // a hostname here NPEs the fire for a root page (no folder to anchor the host).
+        expect(contentlet.contentHost).toBe('site-uuid-1');
+        expect(contentlet.contentHost).not.toBe('demo.dotcms.com');
+        // Root page still creates no folder.
+        expect(calls.some((c) => c.path.includes('createfolders'))).toBe(false);
+    });
+
+    it('resolves a hostname to its identifier UUID for a nested page too', async () => {
+        let firedBody: { contentlet: Record<string, unknown> } | undefined;
+        const { runtime, calls } = fakeRuntime({
+            onCreateFolders: () => ({ entity: [{ path: '/books', identifier: 'folder-123' }] }),
+            onFire: (body) => {
+                firedBody = body as { contentlet: Record<string, unknown> };
+                return { entity: { identifier: 'page-1', live: true } };
+            }
+        });
+
+        await createPage({
+            dotcms: runtime,
+            site: 'demo.dotcms.com',
+            urlPath: '/books/index',
+            title: 'Books',
+            template: 't'
+        });
+
+        const contentlet = firedBody?.contentlet ?? {};
+        expect(contentlet.contentHost).toBe('site-uuid-1');
+        // The createfolders path is called with the resolved UUID, not the hostname.
+        const folderCall = calls.find((c) => c.path.includes('createfolders'));
+        expect(folderCall?.path).toContain('site-uuid-1');
+    });
+
+    it('accepts a site passed as its identifier UUID directly', async () => {
+        let firedBody: { contentlet: Record<string, unknown> } | undefined;
+        const { runtime } = fakeRuntime({
+            onFire: (body) => {
+                firedBody = body as { contentlet: Record<string, unknown> };
+                return { entity: { identifier: 'home', live: true } };
+            }
+        });
+
+        await createPage({
+            dotcms: runtime,
+            site: 'site-uuid-1', // already a UUID
+            urlPath: '/',
+            title: 'Home',
+            template: 't'
+        });
+
+        expect((firedBody?.contentlet ?? {}).contentHost).toBe('site-uuid-1');
+    });
+
+    it('throws a clear error when the site is neither a known hostname nor identifier', async () => {
+        const { runtime, calls } = fakeRuntime({
+            onFire: () => ({ entity: { identifier: 'home', live: true } })
+        });
+
+        await expect(
+            createPage({
+                dotcms: runtime,
+                site: 'unknown.example.com',
+                urlPath: '/',
+                title: 'Home',
+                template: 't'
+            })
+        ).rejects.toThrow(/not found.*hostname.*identifier/i);
+
+        // Fails before any side effect.
+        expect(calls.some((c) => c.path.includes('/fire/'))).toBe(false);
     });
 
     it('warns when the created page is not confirmed live (the blank-page trap #2)', async () => {

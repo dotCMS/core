@@ -148,6 +148,24 @@ describe('transformSpec', () => {
         expect(stats.pathCount).toBe(3);
     });
 
+    it('keeps templates/{id}/working but still excludes templates/{id}/live', () => {
+        // Authoring needs the working-layout endpoint; the live variant stays out (edit working,
+        // publish separately). Guards the C1 inclusion decision against a regression.
+        const raw = {
+            openapi: '3.0.1',
+            info: { title: 't', version: '1' },
+            paths: {
+                '/api/v1/templates/{templateId}/working': { get: { summary: 'working' } },
+                '/api/v1/templates/{templateId}/live': { get: { summary: 'live' } }
+            },
+            components: { schemas: {} }
+        };
+        const { spec } = transformSpec(raw);
+        const paths = spec.paths as Record<string, unknown>;
+        expect(paths['/api/v1/templates/{templateId}/working']).toBeDefined();
+        expect(paths['/api/v1/templates/{templateId}/live']).toBeUndefined();
+    });
+
     it('drops deprecated operations', () => {
         const { spec } = transformSpec(makeRawSpec());
         const contentType = (spec.paths as Record<string, Record<string, unknown>>)[

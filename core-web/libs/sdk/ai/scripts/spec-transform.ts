@@ -55,7 +55,6 @@ export const EXCLUDED_PATTERNS = [
     '/api/v1/containers/working',
     '/api/v1/templates/_savepublish',
     '/api/v1/templates/{templateId}/live',
-    '/api/v1/templates/{templateId}/working',
     '/api/v1/templates/image',
     '/api/v1/workflow/actions/separator',
     '/api/v1/sites/{siteId}/ruleengine/'

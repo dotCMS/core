@@ -32,6 +32,11 @@ Helpers available here: \`resolveRef(schemaOrName, depth)\`, \`pick(arr, fields)
 
 Output is hard-capped (~25k chars). Return only what you need — resolve one schema at a bounded depth, not the whole spec.
 
+This spec is a CURATED allow-list of the supported authoring endpoints — not every dotCMS endpoint is present, and that is deliberate. Treat it as the set of endpoints you should use. So:
+- **Guard path access:** \`spec.paths['/x']\` may be \`undefined\`, and \`spec.paths['/x'].get\` on a missing path throws \`TypeError: Cannot read properties of undefined\`. Always use optional chaining: \`spec.paths['/x']?.get\`, or check \`if (!spec.paths['/x']) return 'not in spec'\` first.
+- **Discover before assuming:** to find a path, filter the keys — \`Object.keys(spec.paths).filter(p => p.includes('template'))\` — rather than guessing an exact string.
+- **Absent usually means "not the intended path."** If an endpoint isn't here, first look for a supported one that does the job (search the keys; a different path or verb often covers it). Reaching for an off-list endpoint should be a last resort for a genuine gap, not a reflex — the curated set is what these tools are designed and tested around.
+
 Pre-loaded instance context (also available as globals here):
   - contentTypes, sites, languages, currentUser
   Use these to cross-reference spec endpoints with what the connected instance actually has.

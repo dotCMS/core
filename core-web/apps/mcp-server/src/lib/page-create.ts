@@ -112,6 +112,11 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
     const warnings: string[] = [];
     const extraFields = options.extraFields ?? {};
 
+    // Resolve the site to its identifier UUID up front. `contentHost` on the fire body MUST be a
+    // site UUID — a bare hostname makes the fire NPE ("Host.getIdentifier() because host is null"),
+    // which is exactly the root-page (`/`) trap where there is no folder to anchor the page on.
+    const siteId = await resolveSiteId(options.dotcms, options.site);
+
     // Resolve the page content type and validate it BEFORE creating anything. A wrong type (not a
     // page) or a missing user-required field would otherwise 400 the fire opaquely — and only after
     // we'd already created the folder. Fail early with a precise message instead.
@@ -120,7 +125,7 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
 
     // Trap #1: the parent folder must exist before the page is fired, or dotCMS collapses the
     // page url to /index. createfolders is idempotent — re-creating an existing folder is a no-op.
-    const folderId = await ensureFolder(options.dotcms, options.site, folder);
+    const folderId = await ensureFolder(options.dotcms, siteId, folder);
 
     const title = options.title;
     const fired = (await options.dotcms.request({
@@ -133,7 +138,7 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
                 // they own (a caller can't accidentally override `url`/`template` via extraFields).
                 ...extraFields,
                 contentType: contentType.variable,
-                contentHost: options.site,
+                contentHost: siteId,
                 hostFolder: folderId,
                 languageId: options.languageId ?? 1,
                 title,
@@ -190,6 +195,31 @@ interface ContentTypeDefinition {
     variable: string;
     baseType: string;
     fields: ContentTypeField[];
+}
+
+/**
+ * Resolve a site (given as a hostname OR an identifier UUID) to its identifier UUID.
+ *
+ * The fire body's `contentHost` must be a site UUID. Passing a bare hostname works for pages under
+ * a folder (the folder anchors the host) but NPEs for a root page, where there is no folder — dotCMS
+ * then can't resolve the host and throws "Host.getIdentifier() because host is null". Resolving to
+ * the UUID here makes every page (root included) fire cleanly. Uses the runtime's cached site
+ * context (already loaded), mirroring how resolvePageContentType uses cached content types.
+ */
+async function resolveSiteId(dotcms: DotCMSRuntime, site: string): Promise<string> {
+    const wanted = site.trim();
+    const { sites } = await dotcms.loadContext();
+
+    const match = sites.find((s) => s.identifier === wanted || s.hostname === wanted);
+    if (match) {
+        return match.identifier;
+    }
+
+    const available = sites.map((s) => s.hostname).join(', ') || '(none found)';
+    throw new Error(
+        `Site "${site}" was not found (neither a known hostname nor a site identifier). ` +
+            `Available sites: ${available}.`
+    );
 }
 
 /**
