@@ -7810,7 +7810,7 @@ paths:
               workflow:
               - d61a59e1-a49c-46f2-a929-db2b4bfa88b2
             schema:
-              $ref: "#/components/schemas/ContentTypeForm"
+              $ref: "#/components/schemas/ContentTypeRequestView"
         description: |-
           Accepts either a single content-type object or an array. The body is the content-type object directly (not wrapped in a 'contentType' envelope).
 
@@ -8154,7 +8154,7 @@ paths:
               workflow:
               - d61a59e1-a49c-46f2-a929-db2b4bfa88b2
             schema:
-              $ref: "#/components/schemas/ContentTypeForm"
+              $ref: "#/components/schemas/ContentTypeRequestView"
         description: |-
           The minimum required properties for a successful update are `clazz`, `id`, and `name`.
 
@@ -8705,7 +8705,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ContentTypeFieldView"
-        description: A single field object to create on the content type.
+        description: "A SINGLE field object to create on the content type. This endpoint\
+          \ creates exactly one field: if you pass a JSON array, only the first element\
+          \ is saved (it returns 200 and silently drops the rest). To add multiple\
+          \ fields at once, use PUT /api/v1/contenttype/{typeId}/fields (which takes\
+          \ an array), or include them inline as the 'fields' array when creating\
+          \ the content type via POST /api/v1/contenttype."
         required: true
       responses:
         "200":
@@ -10572,12 +10577,17 @@ paths:
       description: Retrieves a folder by its URI path within the specified site.
       operationId: loadFolderByURI
       parameters:
-      - in: path
+      - description: Site hostname the folder lives on (e.g. 'demo.dotcms.com').
+        in: path
         name: siteName
         required: true
         schema:
           type: string
-      - in: path
+      - description: "Folder path within the site, as a plain path — e.g. 'application/themes/travel'\
+          \ (a leading slash is optional and added if missing). Embedded slashes are\
+          \ allowed (they select nested folders). Pass the raw path; do NOT percent-encode\
+          \ the slashes (a pre-encoded '%2F...' will not match)."
+        in: path
         name: uri
         required: true
         schema:
@@ -12819,20 +12829,27 @@ paths:
       - Page
   /v1/page/json/{uri}:
     get:
-      description: "Returns the metadata (the objects that make up an HTML Page) in\
-        \ JSON format based on the specified URI. If the URI maps to a Vanity URL,\
-        \ a 200 Forward returns the actual page metadata, while a 301/302 redirect\
-        \ returns an empty page JSON with the Vanity URL properties. Supports Time\
-        \ Machine via the publishDate parameter (ISO 8601 format)."
+      description: |-
+        Returns the metadata (the objects that make up an HTML Page) in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual page metadata, while a 301/302 redirect returns an empty page JSON with the Vanity URL properties. Supports Time Machine via the publishDate parameter (ISO 8601 format).
+
+        The URI must be a plain page path (no embedded host). To read a page on a NON-default site, pass the `host_id` query parameter (backend users only); without it the current/default site is used. The `//host/uri` path form is NOT supported.
       operationId: getPageJsonByUri
       parameters:
-      - description: "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')"
+      - description: "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index').\
+          \ Must be a plain path with no embedded host; use host_id to target a specific\
+          \ site."
         in: path
         name: uri
         required: true
         schema:
           type: string
           pattern: .*
+      - description: "Explicit site to read against, given as a host identifier (UUID).\
+          \ Backend users only; if omitted the current/default site is used."
+        in: query
+        name: host_id
+        schema:
+          type: string
       - description: "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)"
         in: query
         name: mode
@@ -12906,22 +12923,27 @@ paths:
       - Page
   /v1/page/render/{uri}:
     get:
-      description: "Returns the metadata of an HTML Page including its rendered HTML\
-        \ code and container content in JSON format based on the specified URI. If\
-        \ the URI maps to a Vanity URL, a 200 Forward returns the actual rendered\
-        \ page, while a 301/302 redirect returns an empty page JSON with Vanity URL\
-        \ properties. Supports Time Machine via the publishDate parameter (ISO 8601\
-        \ format). For EMA (Enterprise Marketing Automation) requests, this may delegate\
-        \ to the JSON endpoint when the rendered attribute is not required."
+      description: |-
+        Returns the metadata of an HTML Page including its rendered HTML code and container content in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. Supports Time Machine via the publishDate parameter (ISO 8601 format). For EMA (Enterprise Marketing Automation) requests, this may delegate to the JSON endpoint when the rendered attribute is not required.
+
+        The URI must be a plain page path (no embedded host). To render a page on a NON-default site, pass the `host_id` query parameter (backend users only); without it the current/default site is used. The `//host/uri` path form is NOT supported.
       operationId: getPageRenderByUri
       parameters:
-      - description: "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')"
+      - description: "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index').\
+          \ Must be a plain path with no embedded host; use host_id to target a specific\
+          \ site."
         in: path
         name: uri
         required: true
         schema:
           type: string
           pattern: .*
+      - description: "Explicit site to render against, given as a host identifier\
+          \ (UUID). Backend users only; if omitted the current/default site is used."
+        in: query
+        name: host_id
+        schema:
+          type: string
       - description: "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)"
         in: query
         name: mode
@@ -12968,18 +12990,26 @@ paths:
       - Page
   /v1/page/renderHTML/{uri}:
     get:
-      description: Returns the rendered HTML content of a page without the JSON metadata
-        wrapper. Useful for retrieving the raw HTML output of a page for embedding
-        or server-side rendering.
+      description: |-
+        Returns the rendered HTML content of a page without the JSON metadata wrapper. Useful for retrieving the raw HTML output of a page for embedding or server-side rendering.
+
+        The page is identified by a plain URI path (e.g. `index`, `about/team`). To render a page on a NON-default site, pass the `host_id` query parameter (backend users only); without it the current/default site is used. The `//host/uri` path form is NOT supported — the URI must not embed a host.
       operationId: renderPageHtmlOnly
       parameters:
-      - description: Path to the HTML Page to render
+      - description: Plain page URI path (e.g. 'index' or 'about/team'). Must not
+          embed a host; use host_id to target a specific site.
         in: path
         name: uri
         required: true
         schema:
           type: string
           pattern: .*
+      - description: "Explicit site to render against, given as a host identifier\
+          \ (UUID). Backend users only; if omitted the current/default site is used."
+        in: query
+        name: host_id
+        schema:
+          type: string
       - description: "Page mode for rendering (default: LIVE_ADMIN)"
         in: query
         name: mode
@@ -17214,10 +17244,10 @@ paths:
       tags:
       - Template
     post:
-      description: "Creates a new working version of a template. The 'theme' field\
-        \ in the form corresponds to the theme folder identifier (referred to as 'themeId'\
-        \ in other endpoints). If a layout is provided, the template is saved as a\
-        \ designed (drawed) template with its layout."
+      description: |-
+        Creates a new working version of a template. The 'theme' field in the form corresponds to the theme folder identifier (referred to as 'themeId' in other endpoints). If a layout is provided, the template is saved as a designed (drawed) template with its layout.
+
+        When `drawed` is true (a layout-designer template): `body` is REQUIRED and must be non-empty (a null body returns 400 'body required when drawed'), and `theme` MUST resolve to a theme **folder** identifier — a host id or other non-folder id returns 400 'theme must be a folder identifier'. Provide `drawedBody` (the layout JSON) as well so the template is a real drawn template.
       operationId: createTemplate
       requestBody:
         content:
@@ -17245,10 +17275,10 @@ paths:
       tags:
       - Template
     put:
-      description: Saves a new working version of an existing template. The form must
-        contain the template identifier. The 'theme' field in the form corresponds
-        to the theme folder identifier (referred to as 'themeId' in other endpoints).
-        Returns 404 if the template does not exist.
+      description: |-
+        Saves a new working version of an existing template. The form must contain the template identifier. The 'theme' field in the form corresponds to the theme folder identifier (referred to as 'themeId' in other endpoints). Returns 404 if the template does not exist.
+
+        When `drawed` is true: `body` is REQUIRED and non-empty (else 400 'body required when drawed'), and `theme` MUST resolve to a theme **folder** identifier (else 400 'theme must be a folder identifier'). Include `drawedBody` (the layout JSON) so the template stays a real drawn template.
       operationId: updateTemplate
       requestBody:
         content:
@@ -25655,6 +25685,90 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowFormEntry"
+    ContentTypeRequestView:
+      type: object
+      description: "A content-type object, posted directly (NOT wrapped in a 'contentType'\
+        \ envelope). The endpoint also accepts an array of these objects to create\
+        \ several types in one call."
+      properties:
+        clazz:
+          type: string
+          description: Fully-qualified class name of the content-type implementation
+            (the 'Immutable' generated type). This is the discriminator that selects
+            the base type.
+          enum:
+          - com.dotcms.contenttype.model.type.ImmutableSimpleContentType
+          - com.dotcms.contenttype.model.type.ImmutableWidgetContentType
+          - com.dotcms.contenttype.model.type.ImmutableFormContentType
+          - com.dotcms.contenttype.model.type.ImmutableFileAssetContentType
+          - com.dotcms.contenttype.model.type.ImmutablePageContentType
+          - com.dotcms.contenttype.model.type.ImmutablePersonaContentType
+          - com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType
+          - com.dotcms.contenttype.model.type.ImmutableKeyValueContentType
+          - com.dotcms.contenttype.model.type.ImmutableDotAssetContentType
+        defaultType:
+          type: boolean
+          description: Whether this is the default content type.
+        description:
+          type: string
+          description: Description of the content type.
+        fields:
+          type: array
+          description: "Fields that make up the content type, in order. Rows and columns\
+            \ are regular entries: 'ImmutableRowField' begins a row, 'ImmutableColumnField'\
+            \ begins a column, and subsequent content fields belong to the most-recent\
+            \ column."
+          items:
+            $ref: "#/components/schemas/ContentTypeFieldView"
+        fixed:
+          type: boolean
+          description: Whether the content type is fixed (system-managed).
+        folder:
+          type: string
+          description: "Folder identifier UUID, or the literal 'SYSTEM_FOLDER' (the\
+            \ default)."
+        host:
+          type: string
+          description: "Site identifier UUID this content type lives on, or the literal\
+            \ 'SYSTEM_HOST' (defaults to the default site)."
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
+            description: "Content-type metadata. Known keys: 'CONTENT_EDITOR2_ENABLED'\
+              \ (boolean), 'DOT_STYLE_EDITOR_SCHEMA' (JSON string)."
+          description: "Content-type metadata. Known keys: 'CONTENT_EDITOR2_ENABLED'\
+            \ (boolean), 'DOT_STYLE_EDITOR_SCHEMA' (JSON string)."
+        name:
+          type: string
+          description: Display name of the content type.
+        system:
+          type: boolean
+          description: Whether the content type is a system type.
+        systemActionMappings:
+          type: object
+          additionalProperties:
+            type: string
+            description: "Maps system actions (NEW, EDIT, PUBLISH, UNPUBLISH, ARCHIVE,\
+              \ UNARCHIVE, DELETE, DESTROY) to workflow action identifiers."
+          description: "Maps system actions (NEW, EDIT, PUBLISH, UNPUBLISH, ARCHIVE,\
+            \ UNARCHIVE, DELETE, DESTROY) to workflow action identifiers."
+        variable:
+          type: string
+          description: "Velocity variable name (unique, alphanumeric, starts with\
+            \ a letter; auto-generated from 'name' if omitted)."
+        workflow:
+          type: array
+          description: "Workflow scheme identifiers to associate with the content\
+            \ type, e.g. [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"] for the System\
+            \ Workflow. NOTE: this key is 'workflow' (singular) in the REQUEST; GET\
+            \ responses return 'workflows' (plural, array of objects) — rename the\
+            \ key when round-tripping."
+          items:
+            type: string
+      required:
+      - clazz
+      - name
     ContentTypeView:
       type: object
       properties:

@@ -529,7 +529,7 @@ public class ContentTypeResource implements Serializable {
 														   "following content fields belong to the most-recent column until the next marker.",
 											 required = true,
 											 content = @Content(
-													 schema = @Schema(implementation = ContentTypeForm.class),
+													 schema = @Schema(implementation = ContentTypeRequestView.class),
 													 examples = {
 															 @ExampleObject(
 																	 value = "[\n" +
@@ -745,7 +745,7 @@ public class ContentTypeResource implements Serializable {
 												"schemes to be associated with the content type.",
 										required = true,
 										content = @Content(
-												schema = @Schema(implementation = ContentTypeForm.class),
+												schema = @Schema(implementation = ContentTypeRequestView.class),
 												examples = {
 														@ExampleObject(
 																value = "{\n" +

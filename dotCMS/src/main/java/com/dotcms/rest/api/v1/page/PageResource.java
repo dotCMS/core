@@ -359,7 +359,10 @@ public class PageResource {
             description = "Returns the metadata (the objects that make up an HTML Page) in JSON format based on the "
                     + "specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual page metadata, "
                     + "while a 301/302 redirect returns an empty page JSON with the Vanity URL properties. "
-                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format)."
+                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format).\n\n"
+                    + "The URI must be a plain page path (no embedded host). To read a page on a NON-default site, "
+                    + "pass the `host_id` query parameter (backend users only); without it the current/default site "
+                    + "is used. The `//host/uri` path form is NOT supported."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page metadata retrieved successfully",
@@ -376,8 +379,12 @@ public class PageResource {
     @Path("/json/{uri: .*}")
     public Response loadJson(@Context final HttpServletRequest originalRequest,
             @Context final HttpServletResponse response,
-            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')", required = true)
+            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index'). "
+                    + "Must be a plain path with no embedded host; use host_id to target a specific site.", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Explicit site to read against, given as a host identifier (UUID). "
+                    + "Backend users only; if omitted the current/default site is used.")
+            @QueryParam("host_id") final String hostId,
             @Parameter(description = "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)")
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
             @Parameter(description = "Persona identifier to render the page with personalization")
@@ -462,7 +469,10 @@ public class PageResource {
                     + "the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. "
                     + "Supports Time Machine via the publishDate parameter (ISO 8601 format). "
                     + "For EMA (Enterprise Marketing Automation) requests, this may delegate to the JSON endpoint when "
-                    + "the rendered attribute is not required."
+                    + "the rendered attribute is not required.\n\n"
+                    + "The URI must be a plain page path (no embedded host). To render a page on a NON-default site, "
+                    + "pass the `host_id` query parameter (backend users only); without it the current/default site "
+                    + "is used. The `//host/uri` path form is NOT supported."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Rendered page retrieved successfully",
@@ -479,8 +489,12 @@ public class PageResource {
     @Path("/render/{uri: .*}")
     public Response render(@Context final HttpServletRequest originalRequest,
             @Context final HttpServletResponse response,
-            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')", required = true)
+            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index'). "
+                    + "Must be a plain path with no embedded host; use host_id to target a specific site.", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Explicit site to render against, given as a host identifier (UUID). "
+                    + "Backend users only; if omitted the current/default site is used.")
+            @QueryParam("host_id") final String hostId,
             @Parameter(description = "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)")
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
             @Parameter(description = "Persona identifier to render the page with personalization")
@@ -498,7 +512,7 @@ public class PageResource {
             if (UtilMethods.isSet(depth)) {
                 HttpServletRequestThreadLocal.INSTANCE.getRequest().setAttribute(WebKeys.HTMLPAGE_DEPTH, depth);
             }
-            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId
+            return this.loadJson(originalRequest, response, uri, hostId, modeParam, personaId, languageId
                     , deviceInode, timeMachineDateAsISO8601);
         }
         Logger.debug(this, () -> String.format(
@@ -1167,7 +1181,11 @@ public class PageResource {
             operationId = "renderPageHtmlOnly",
             summary = "Render page as raw HTML",
             description = "Returns the rendered HTML content of a page without the JSON metadata wrapper. "
-                    + "Useful for retrieving the raw HTML output of a page for embedding or server-side rendering."
+                    + "Useful for retrieving the raw HTML output of a page for embedding or server-side rendering.\n\n"
+                    + "The page is identified by a plain URI path (e.g. `index`, `about/team`). To render a page "
+                    + "on a NON-default site, pass the `host_id` query parameter (backend users only); without it the "
+                    + "current/default site is used. The `//host/uri` path form is NOT supported — the URI must not "
+                    + "embed a host."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page HTML rendered successfully",
@@ -1182,8 +1200,12 @@ public class PageResource {
     @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @Parameter(description = "Path to the HTML Page to render", required = true)
+            @Parameter(description = "Plain page URI path (e.g. 'index' or 'about/team'). "
+                    + "Must not embed a host; use host_id to target a specific site.", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Explicit site to render against, given as a host identifier (UUID). "
+                    + "Backend users only; if omitted the current/default site is used.")
+            @QueryParam("host_id") final String hostId,
             @Parameter(description = "Page mode for rendering (default: LIVE_ADMIN)")
             @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
             throws DotDataException, DotSecurityException {

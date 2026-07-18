@@ -269,7 +269,15 @@ public class FolderResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response loadFolderByURI(@Context final HttpServletRequest httpServletRequest,
                                           @Context final HttpServletResponse httpServletResponse,
+                                          @Parameter(description = "Site hostname the folder lives on (e.g. 'demo.dotcms.com').",
+                                                  required = true)
                                           @PathParam("siteName") final String siteName,
+                                          @Parameter(description = "Folder path within the site, as a plain path — "
+                                                  + "e.g. 'application/themes/travel' (a leading slash is optional and added "
+                                                  + "if missing). Embedded slashes are allowed (they select nested folders). "
+                                                  + "Pass the raw path; do NOT percent-encode the slashes (a pre-encoded "
+                                                  + "'%2F...' will not match).",
+                                                  required = true)
                                           @PathParam("uri") final String uri){
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);

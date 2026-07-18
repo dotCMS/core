@@ -175,7 +175,12 @@ public class FieldResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Response createContentTypeField(@Parameter(description = "Content type ID", required = true)
 										   @PathParam("typeId") final String typeId, 
-										   @RequestBody(description = "A single field object to create on the content type.",
+										   @RequestBody(description = "A SINGLE field object to create on the content type. "
+												   + "This endpoint creates exactly one field: if you pass a JSON array, only the "
+												   + "first element is saved (it returns 200 and silently drops the rest). To add "
+												   + "multiple fields at once, use PUT /api/v1/contenttype/{typeId}/fields (which takes "
+												   + "an array), or include them inline as the 'fields' array when creating the content "
+												   + "type via POST /api/v1/contenttype.",
 													  required = true,
 													  content = @Content(schema = @Schema(implementation = ContentTypeFieldView.class)))
 										   final String fieldJson,

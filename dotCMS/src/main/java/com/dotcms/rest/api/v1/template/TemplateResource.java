@@ -320,7 +320,11 @@ public class TemplateResource {
             summary = "Create a new template",
             description = "Creates a new working version of a template. The 'theme' field in the form " +
                     "corresponds to the theme folder identifier (referred to as 'themeId' in other endpoints). " +
-                    "If a layout is provided, the template is saved as a designed (drawed) template with its layout."
+                    "If a layout is provided, the template is saved as a designed (drawed) template with its layout.\n\n" +
+                    "When `drawed` is true (a layout-designer template): `body` is REQUIRED and must be non-empty " +
+                    "(a null body returns 400 'body required when drawed'), and `theme` MUST resolve to a theme " +
+                    "**folder** identifier — a host id or other non-folder id returns 400 'theme must be a folder " +
+                    "identifier'. Provide `drawedBody` (the layout JSON) as well so the template is a real drawn template."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -373,7 +377,10 @@ public class TemplateResource {
             summary = "Update an existing template",
             description = "Saves a new working version of an existing template. The form must contain the template " +
                     "identifier. The 'theme' field in the form corresponds to the theme folder identifier " +
-                    "(referred to as 'themeId' in other endpoints). Returns 404 if the template does not exist."
+                    "(referred to as 'themeId' in other endpoints). Returns 404 if the template does not exist.\n\n" +
+                    "When `drawed` is true: `body` is REQUIRED and non-empty (else 400 'body required when drawed'), " +
+                    "and `theme` MUST resolve to a theme **folder** identifier (else 400 'theme must be a folder " +
+                    "identifier'). Include `drawedBody` (the layout JSON) so the template stays a real drawn template."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
