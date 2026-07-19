@@ -25,6 +25,33 @@ additive — it did not modify any pre-existing `.claude/` files.
 `/speckit-analyze`. Both spec flows funnel through `/speckit-plan`, so the ADR and legacy
 gates apply to features and fixes alike.
 
+## Spec-folder commit policy
+
+What ships in a PR vs. stays local is decided by one test — **durable reference vs.
+process artifact**:
+
+- **Durable reference** — useful to a reviewer or future dev *after* the PR merges,
+  without re-reading the code → **commit**.
+- **Process artifact** — value is entirely *during* development → **keep local**
+  (gitignored; the files still exist on disk, so `/speckit-implement` and
+  `/speckit-converge` are unaffected).
+
+| Artifact | Commit? | Why |
+|----------|---------|-----|
+| `spec.md` | Always | the reviewed contract (FRs, user stories, success criteria) |
+| `data-model.md` | When it carries verified contracts | concrete entity→field/type, relationships, validation rules, real payload/DB shapes confirmed while building — the field-level ground truth `spec.md` stays above |
+| `contracts/` | Same test as `data-model.md` | committed API specs are durable; scaffolding is not |
+| `plan.md`, `research.md`, `tasks.md`, `quickstart.md`, `checklists/` | Never | pure process — how / what-order / decisions-in-flight |
+
+The never-commit set is enforced by `.gitignore` (`specs/*/plan.md`, `research.md`,
+`tasks.md`, `quickstart.md`, `checklists/`).
+
+**`data-model.md` commit-worthiness bar:** commit it only if a future dev would need it
+to know the shapes without reading the code. Its structure follows the plan template's
+Phase 1 spec — *entity name, fields, relationships, validation rules from requirements*.
+If a feature's `data-model.md` just restates entities already obvious from `spec.md`, it's
+as ephemeral as the rest — don't commit it (same for `contracts/`).
+
 ## Customizations
 
 ### 1. Constitution — `.specify/memory/constitution.md` (AUTHORED)
