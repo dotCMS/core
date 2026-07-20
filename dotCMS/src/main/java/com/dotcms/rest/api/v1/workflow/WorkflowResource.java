@@ -1554,7 +1554,13 @@ public class WorkflowResource {
     @Operation(operationId = "getSystemActionMappingsByContentType", summary = "Find default system actions mapped to a content type",
             description = "Returns a list of [default system actions](https://www.dotcms.com/docs/latest/managing-" +
                     "workflows#DefaultActions) associated with a specified [content type](https://www.dotcms.com" +
-                    "/docs/latest/content-types).",
+                    "/docs/latest/content-types).\n\n" +
+                    "An empty list means only that no *default system-action mappings* (e.g. NEW, PUBLISH) are " +
+                    "configured for this content type — it does **not** mean the content type lacks a workflow or " +
+                    "that publishing will fail. You can still fire actions on its content by ID via " +
+                    "`PUT /api/v1/workflow/actions/{actionId}/fire`, or fire a default system action via " +
+                    "`PUT /api/v1/workflow/actions/default/fire/{systemAction}` (which resolves the action from " +
+                    "the scheme attached to the content type). Do not treat an empty response as a blocker.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Action(s) returned successfully from content type",
