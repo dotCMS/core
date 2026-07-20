@@ -34,9 +34,11 @@ strict one-row-per-version upsert (FR-003, SC-003).
 the date field accepts). These replace the earlier "confirm"/"open" placeholders — the
 publisher hardcodes `lts=3`, `released=true`, `download=1`, `showInChangeLog=true`.
 
-## API contract (client calls to corpsites-headless.dotcms.cloud)
+## API contract (client calls to the site's authoring backend)
 
-Base URL `https://corpsites-headless.dotcms.cloud`. Auth: `Authorization: Bearer
+Base URL comes from the `DOTCMS_DEVSITE_URL` repo variable — intentionally not committed
+to this public repo, and a variable so backend migrations (like the 2026-07 authoring-host
+cutover, which orphaned the previous hostname) are a settings change. Auth: `Authorization: Bearer
 $DOTCMS_DEVSITE_TOKEN` (FR-009; never logged).
 
 ### 1. Locate existing entry — `POST /api/content/_search`

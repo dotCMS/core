@@ -104,6 +104,9 @@ jobs:
         id: publish
         working-directory: .github/actions/core-cicd/changelog-publisher
         env:
+          # Backend URL is a repo variable (not hardcoded in this public repo — PR review):
+          # a backend migration is a variable change, not a code change.
+          DOTCMS_DEVSITE_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
           # Read once by the tool; never echoed to logs / GITHUB_OUTPUT / step summary.
           DOTCMS_DEVSITE_TOKEN: ${{ secrets.DOTCMS_DEVSITE_TOKEN }}
           # Service-account modUser id for human-edit protection (FR-011). --force is never

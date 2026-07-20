@@ -12,8 +12,10 @@ from dataclasses import dataclass
 
 import requests
 
-# corpsites-headless is the site's backend; overridable for local testing only.
-BASE_URL = os.environ.get("DOTCMS_DEVSITE_URL", "https://corpsites-headless.dotcms.cloud")
+# The site backend URL comes from the DOTCMS_DEVSITE_URL repo variable — intentionally
+# not hardcoded (PR #36606 review): a backend migration is then a variable change, not a
+# code change. The 2026-07 authoring-backend migration is exactly why.
+BASE_URL = os.environ.get("DOTCMS_DEVSITE_URL", "").rstrip("/")
 TOKEN_ENV = "DOTCMS_DEVSITE_TOKEN"
 _TIMEOUT = 30
 
@@ -43,10 +45,13 @@ class CorpsitesClient:
     and is never logged or echoed.
     """
 
-    def __init__(self, token: str | None = None, base_url: str = BASE_URL) -> None:
+    def __init__(self, token: str | None = None, base_url: str | None = None) -> None:
         token = token if token is not None else os.environ.get(TOKEN_ENV)
         if not token:
             raise RuntimeError(f"{TOKEN_ENV} is not set")
+        base_url = base_url or BASE_URL  # resolved at call time, not def time
+        if not base_url:
+            raise RuntimeError("DOTCMS_DEVSITE_URL is not set")
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {token}"})

@@ -37,6 +37,8 @@ the intended action and issues no write.
 
 ### Credentials
 
+The backend base URL is read from `DOTCMS_DEVSITE_URL` (a repo variable in CI — deliberately
+never hardcoded, so a backend migration is a settings change, not a code change).
 The bearer token is read once from the `DOTCMS_DEVSITE_TOKEN` environment variable and is
 never logged or echoed. The service-account identity (a `modUser` id) is read from
 `--service-account` or `DOTCMS_DEVSITE_SERVICE_ACCOUNT`; without it, an existing entry with
@@ -66,6 +68,7 @@ There is **no automatic backfill** (FR-012): each release publishes only the ver
 triggered it. To catch up a version that was missed (e.g. published before this automation
 went live, or after an outage), run the tool **once per version** by hand:
 
+    export DOTCMS_DEVSITE_URL=...              # backend base URL (repo variable in CI; not hardcoded)
     export DOTCMS_DEVSITE_TOKEN=...            # service-account token
     export DOTCMS_DEVSITE_SERVICE_ACCOUNT=...  # service-account modUser id
     # generate the site notes for that version, then:

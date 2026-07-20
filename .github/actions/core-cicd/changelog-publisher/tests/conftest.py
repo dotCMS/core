@@ -1,3 +1,9 @@
+import os
+
+# Must be set before changelog_publisher.client is imported (BASE_URL is read at import
+# time); the real value is a repo variable, never hardcoded in the codebase.
+os.environ.setdefault("DOTCMS_DEVSITE_URL", "https://corpsites.test")
+
 import pytest
 
 from changelog_publisher import publisher
