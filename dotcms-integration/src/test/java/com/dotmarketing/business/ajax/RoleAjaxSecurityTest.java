@@ -1,5 +1,6 @@
 package com.dotmarketing.business.ajax;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -56,18 +57,37 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
         assertTrue("backend user should now have roles portlet access",
                 APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("roles", backendUser));
 
+        assertFalse("backend user must not be a CMS Administrator for this test to be meaningful",
+                backendUser.isAdmin());
+
         cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+
+        // Attach the non-admin backend user as the current DWR user for the whole class, mirroring
+        // the established pattern in BrowserAjaxTest (which attaches in @BeforeClass). Attaching
+        // inside the @Test body is unreliable across the suite because WebContextFactory.builder is
+        // a JVM-global static with no per-test isolation.
+        setUpDwrContext(backendUser);
     }
 
     @AfterClass
     public static void cleanUp() throws Exception {
-        if (rolesPortletLayout != null) {
-            APILocator.getRoleAPI().removeLayoutFromRole(rolesPortletLayout,
-                    backendUser.getUserRole());
-            APILocator.getLayoutAPI().removeLayout(rolesPortletLayout);
-        }
-        if (backendUser != null) {
-            APILocator.getUserAPI().delete(backendUser, APILocator.systemUser(), false);
+        try {
+            if (rolesPortletLayout != null) {
+                APILocator.getRoleAPI().removeLayoutFromRole(rolesPortletLayout,
+                        backendUser.getUserRole());
+                APILocator.getLayoutAPI().removeLayout(rolesPortletLayout);
+            }
+            if (backendUser != null) {
+                APILocator.getUserAPI().delete(backendUser, APILocator.systemUser(), false);
+            }
+        } finally {
+            // DWR's WebContextFactory.builder is a JVM-global static with no per-test teardown
+            // (attach() simply overwrites it). Other DWR-backed tests in MainSuite2b — e.g.
+            // LayoutAPITest and PermissionAPITest, which call RoleAjax.saveRolePermission — rely on
+            // a system-user context being attached by earlier tests. Restore that context here so
+            // this test's non-admin backend-user context does not leak and make them fail the
+            // getAdminUser() gate.
+            setUpDwrContext(APILocator.systemUser());
         }
     }
 
@@ -82,8 +102,6 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
     @Test(expected = DotSecurityException.class)
     public void test_addUserToRole_withRolesPortletAccess_cannotSelfEscalateToAdmin()
             throws Exception {
-        setUpDwrContext(backendUser);
-
         final RoleAjax roleAjax = new RoleAjax();
         roleAjax.addUserToRole(backendUser.getUserId(), cmsAdminRoleId);
     }
