@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+import { parse as parseYaml } from 'yaml';
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,70 +9,76 @@ import { transformSpec } from './spec-transform';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const DEFAULT_SPEC_PATH = '/api/openapi.json';
-const DEFAULT_SPEC_URL = `https://dotcms-corp-headless-prod.dotcms.dev${DEFAULT_SPEC_PATH}`;
+/**
+ * The committed, auto-generated spec that ships with the backend. `swagger-maven-plugin`
+ * writes it at compile phase and CI verifies the working copy matches — so it's always
+ * present and offline, no running dotCMS instance required. This is the only source:
+ * spec generation reads this local YAML file and nothing else.
+ * Resolved relative to this script (the `generate-spec` task runs with cwd `libs/sdk/ai`).
+ */
+const LOCAL_SPEC_FILE = path.resolve(
+    __dirname,
+    '../../../../../dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml'
+);
 
 /**
- * Resolve the OpenAPI spec source (a URL or local file path), in priority order:
- *   1. an explicit CLI arg (`... generate-spec -- <url-or-path>`)
- *   2. `DOTCMS_SPEC_URL` — env vars are inherited by the `generate-spec` task that `build`
- *      runs via `dependsOn` (CLI args are NOT), so this is what lets
- *      `DOTCMS_SPEC_URL=… nx build mcp-server` regenerate from a local instance in one command.
- *   3. `${DOTCMS_URL}/api/openapi.json` — convenience: reuse the same instance the runtime targets.
- *   4. the demo instance (so CI builds with no env set produce the committed spec).
+ * Resolve the OpenAPI spec file to read. Defaults to the committed local `openapi.yaml`;
+ * an explicit CLI arg (`... generate-spec -- <path>`) can point at an alternate local YAML.
  */
-function resolveSpecSource(): string {
-    if (process.argv[2]) {
-        return process.argv[2];
-    }
-    if (process.env.DOTCMS_SPEC_URL) {
-        return process.env.DOTCMS_SPEC_URL;
-    }
-    if (process.env.DOTCMS_URL) {
-        return `${process.env.DOTCMS_URL.replace(/\/+$/, '')}${DEFAULT_SPEC_PATH}`;
-    }
-    return DEFAULT_SPEC_URL;
+function resolveSpecFile(): string {
+    return process.argv[2] ? path.resolve(process.argv[2]) : LOCAL_SPEC_FILE;
 }
 
-/** Load and parse the raw OpenAPI document (from a URL or a local file path) into memory. */
-async function loadSpec(source: string): Promise<Record<string, unknown>> {
-    const isUrl = source.startsWith('http://') || source.startsWith('https://');
-
-    let body: string;
-    if (isUrl) {
-        console.log(`[generate-spec] Fetching spec from ${source}`);
-        const response = await fetch(source);
-
-        if (!response.ok) {
-            throw new Error(
-                `Failed to fetch OpenAPI spec from ${source}\n` +
-                    `Status: ${response.status} ${response.statusText}\n\n` +
-                    `Make sure the URL is correct and the dotCMS instance is running.`
-            );
-        }
-        body = await response.text();
-    } else {
-        const filePath = path.resolve(source);
-        if (!fs.existsSync(filePath)) {
-            throw new Error(`OpenAPI spec file not found: ${filePath}`);
-        }
-        console.log(`[generate-spec] Reading spec from ${filePath}`);
-        body = fs.readFileSync(filePath, 'utf-8');
-    }
-
+/** Parse an OpenAPI YAML document into memory. */
+function parseSpec(body: string, filePath: string): Record<string, unknown> {
     try {
-        return JSON.parse(body) as Record<string, unknown>;
-    } catch {
-        throw new Error(
-            `Response from ${source} is not valid JSON.\n` +
-                `Make sure the source points to a valid OpenAPI spec.`
-        );
+        const parsed = parseYaml(body);
+        if (!parsed || typeof parsed !== 'object') {
+            throw new Error('parsed value is not an object');
+        }
+        return parsed as Record<string, unknown>;
+    } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        throw new Error(`${filePath} is not a valid OpenAPI YAML spec: ${detail}`);
     }
 }
 
-async function generateSpec() {
-    const source = resolveSpecSource();
-    const raw = await loadSpec(source);
+/**
+ * Normalize path keys to the full `/api/...` form.
+ *
+ * The committed `openapi.yaml` declares `servers: [{ url: '/' }]` and lists routes WITHOUT the
+ * `/api` prefix (e.g. `/v1/page/...`), while the routes are actually served under `/api` at
+ * runtime. `ALLOWED_PREFIXES`/`EXCLUDED_PATTERNS` are written against the full `/api/...` form,
+ * so prepend `/api` to any path key that lacks it. Idempotent: paths already under `/api` are
+ * left untouched.
+ */
+function normalizeApiPrefix(spec: Record<string, unknown>): Record<string, unknown> {
+    const paths = spec.paths as Record<string, unknown> | undefined;
+    if (!paths) return spec;
+
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(paths)) {
+        const newKey = key.startsWith('/api/') || key === '/api' ? key : `/api${key}`;
+        normalized[newKey] = value;
+    }
+    spec.paths = normalized;
+    return spec;
+}
+
+/** Read and parse the raw OpenAPI document from the local YAML file. */
+function loadSpec(filePath: string): Record<string, unknown> {
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`OpenAPI spec file not found: ${filePath}`);
+    }
+    console.log(`[generate-spec] Reading spec from ${filePath}`);
+    const body = fs.readFileSync(filePath, 'utf-8');
+
+    return normalizeApiPrefix(parseSpec(body, filePath));
+}
+
+function generateSpec() {
+    const filePath = resolveSpecFile();
+    const raw = loadSpec(filePath);
 
     const { spec, stats } = transformSpec(raw);
 
@@ -97,7 +105,9 @@ async function generateSpec() {
     }
 }
 
-generateSpec().catch((err) => {
-    console.error(`[generate-spec] Failed: ${err.message}`);
+try {
+    generateSpec();
+} catch (err) {
+    console.error(`[generate-spec] Failed: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
-});
+}
