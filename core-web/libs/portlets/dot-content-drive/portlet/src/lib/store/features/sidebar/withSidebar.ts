@@ -59,12 +59,7 @@ export function withSidebar() {
 
                 const urlFolderPath = store.path() || '';
 
-                getFolderHierarchyByPath(
-                    urlFolderPath,
-                    currentSite.identifier,
-                    currentSite.hostname,
-                    dotFolderService
-                )
+                getFolderHierarchyByPath(urlFolderPath, currentSite, dotFolderService)
                     .pipe(
                         take(1),
                         catchError((response) => {
@@ -98,17 +93,23 @@ export function withSidebar() {
              */
             loadChildFolders: (
                 path: string,
-                hostname?: string
-            ): Observable<{ folders: DotFolderTreeNodeItem[] }> => {
+                hostname?: string,
+                page = 1
+            ): Observable<{ folders: DotFolderTreeNodeItem[]; totalEntries: number }> => {
                 const currentSite = store.currentSite();
 
                 if (!currentSite) {
-                    return of({ folders: [] });
+                    return of({ folders: [], totalEntries: 0 });
                 }
 
                 const host = hostname || currentSite.hostname;
 
-                return getFolderNodesByPath(path, currentSite.identifier, host, dotFolderService);
+                return getFolderNodesByPath(
+                    path,
+                    { ...currentSite, hostname: host },
+                    dotFolderService,
+                    page
+                );
             },
             /**
              * Sets the selected node

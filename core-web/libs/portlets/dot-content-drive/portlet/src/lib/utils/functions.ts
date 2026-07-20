@@ -11,10 +11,15 @@ import {
     DotContentDriveUserSearchableValue,
     DotFolder,
     DotPagination,
+    DotSite,
     FolderSearchView
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotFolderTreeNodeItem,
+    LOAD_MORE_LABEL_KEY,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
@@ -22,6 +27,7 @@ import {
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TYPES,
     FIELD_FILTER_MULTI_VALUE_TYPES,
+    FOLDER_TREE_PAGE_SIZE,
     FOLDER_TREE_SEARCH_PAGE_SIZE,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
@@ -282,15 +288,13 @@ function warnIfFolderLevelTruncated(path: string, pagination?: DotPagination): v
  * level. Results are ordered to mirror the levels of the target path.
  *
  * @param {string} folderPath - The folder path (without hostname) to expand to, e.g. `/a/b/`
- * @param {string} siteId - Identifier of the site to scope the search
- * @param {string} hostName - Hostname of the site (injected into the adapted folders)
+ * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
  * @param {DotFolderService} dotFolderService - The folder service
  * @returns {Observable<DotFolder[][]>} Observable that emits one folder array per path level
  */
 export function getFolderHierarchyByPath(
     folderPath: string,
-    siteId: string,
-    hostName: string,
+    site: DotSite,
     dotFolderService: DotFolderService
 ): Observable<DotFolder[][]> {
     // The root level (`'/'`) is always fetched first; deeper levels come from the target path.
@@ -299,7 +303,7 @@ export function getFolderHierarchyByPath(
     const folderRequests = paths.map((path) =>
         dotFolderService
             .searchFolders({
-                siteId,
+                siteId: site.identifier,
                 path,
                 recursive: false,
                 orderby: 'name',
@@ -310,7 +314,7 @@ export function getFolderHierarchyByPath(
                 map(({ folders, pagination }) => {
                     warnIfFolderLevelTruncated(path, pagination);
 
-                    return folders.map((view) => folderSearchViewToDotFolder(view, hostName));
+                    return folders.map((view) => folderSearchViewToDotFolder(view, site.hostname));
                 })
             )
     );
@@ -319,41 +323,76 @@ export function getFolderHierarchyByPath(
 }
 
 /**
- * Fetches the direct child folders of a path and transforms them into tree nodes. Used to lazily
- * load a node's children when it is expanded.
+ * Fetches one page of the direct child folders of a path and transforms them into tree nodes.
+ * Used to lazily load a node's children when it is expanded, and to load subsequent pages when the
+ * "Load more" node is clicked.
  *
  * @param {string} folderPath - The folder path (without hostname) whose children to fetch
- * @param {string} siteId - Identifier of the site to scope the search
- * @param {string} hostName - Hostname of the site (injected into the adapted folders)
+ * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<{ folders: DotFolderTreeNodeItem[] }>}
+ * @param {number} [page=1] - 1-based page to request
+ * @returns {Observable<{ folders: DotFolderTreeNodeItem[]; totalEntries: number }>} the page of
+ * child nodes plus the total number of children in the level (to decide whether more remain)
  */
 export function getFolderNodesByPath(
     folderPath: string,
-    siteId: string,
-    hostName: string,
-    dotFolderService: DotFolderService
-): Observable<{ folders: DotFolderTreeNodeItem[] }> {
+    site: DotSite,
+    dotFolderService: DotFolderService,
+    page = 1
+): Observable<{ folders: DotFolderTreeNodeItem[]; totalEntries: number }> {
     return dotFolderService
         .searchFolders({
-            siteId,
+            siteId: site.identifier,
             path: folderPath,
             recursive: false,
             orderby: 'name',
             direction: 'ASC',
-            per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+            page,
+            per_page: FOLDER_TREE_PAGE_SIZE
         })
         .pipe(
-            map(({ folders, pagination }) => {
-                warnIfFolderLevelTruncated(folderPath, pagination);
-
-                return {
-                    folders: folders.map((view) =>
-                        createTreeNode(folderSearchViewToDotFolder(view, hostName))
-                    )
-                };
-            })
+            map(({ folders, pagination }) => ({
+                folders: folders.map((view) =>
+                    createTreeNode(folderSearchViewToDotFolder(view, site.hostname))
+                ),
+                totalEntries: pagination?.totalEntries ?? folders.length
+            }))
         );
+}
+
+/**
+ * Builds the synthetic "Load more" node appended to the end of a paginated folder level. It is not
+ * a real folder: it is not selectable and carries the paging cursor (`nextPage`) and how many
+ * folders still remain, so clicking it can fetch and append the next page.
+ *
+ * @param {string} parentPath - Full path of the parent folder whose children are paginated
+ * @param {string} hostName - Hostname of the site
+ * @param {number} nextPage - The next 1-based page to request
+ * @param {number} remaining - How many folders remain to be loaded in the level
+ * @returns {DotFolderTreeNodeItem} the load-more node
+ */
+export function buildLoadMoreNode(
+    parentPath: string,
+    hostName: string,
+    nextPage: number,
+    remaining: number
+): DotFolderTreeNodeItem {
+    const key = `${LOAD_MORE_NODE_TYPE}:${parentPath}`;
+
+    return {
+        key,
+        label: LOAD_MORE_LABEL_KEY,
+        data: {
+            type: LOAD_MORE_NODE_TYPE,
+            path: parentPath,
+            hostname: hostName,
+            id: key,
+            nextPage,
+            remaining
+        },
+        leaf: true,
+        selectable: false
+    };
 }
 
 /**

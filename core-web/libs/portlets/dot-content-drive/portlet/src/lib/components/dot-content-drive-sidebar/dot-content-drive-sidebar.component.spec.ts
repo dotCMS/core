@@ -248,7 +248,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 // Mock the store's loadChildFolders method to return an observable
                 const mockChildFolders: DotFolderTreeNodeItem[] = [];
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: mockChildFolders })
+                    of({ folders: mockChildFolders, totalEntries: mockChildFolders.length })
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -314,7 +314,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 // Mock the store's loadChildFolders method to return a delayed observable
                 const mockChildFolders: DotFolderTreeNodeItem[] = [];
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: mockChildFolders }).pipe(delay(500))
+                    of({ folders: mockChildFolders, totalEntries: mockChildFolders.length }).pipe(delay(500))
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -359,7 +359,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 ];
 
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: loadedChildFolders })
+                    of({ folders: loadedChildFolders, totalEntries: loadedChildFolders.length })
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -390,7 +390,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             it('should handle error when loading child folders', () => {
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: [] })
+                    of({ folders: [], totalEntries: 0 })
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -416,6 +416,181 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 expect(nodeWithoutChildren.loading).toBe(false);
                 expect(nodeWithoutChildren.expanded).toBe(true);
+            });
+
+            it('should append a "Load more" node when the level has more children than a page', () => {
+                const firstPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'c1',
+                        label: '/big/c1/',
+                        data: { id: 'c1', hostname: 'demo.dotcms.com', path: '/big/c1/', type: 'folder' },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: firstPage, totalEntries: 120 })
+                );
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                const node: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: { id: 'big-folder', hostname: 'demo.dotcms.com', path: '/big/', type: 'folder' },
+                    leaf: false,
+                    children: []
+                };
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', {
+                    originalEvent: new Event('click'),
+                    node
+                });
+
+                expect(node.children).toHaveLength(2);
+                const loadMore = node.children?.[1];
+                expect(loadMore?.data.type).toBe('load-more');
+                expect(loadMore?.data.nextPage).toBe(2);
+                expect(loadMore?.data.remaining).toBe(119);
+                expect(loadMore?.selectable).toBe(false);
+            });
+
+            it('should NOT append a "Load more" node when the page holds the whole level', () => {
+                const onlyPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'c1',
+                        label: '/small/c1/',
+                        data: { id: 'c1', hostname: 'demo.dotcms.com', path: '/small/c1/', type: 'folder' },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: onlyPage, totalEntries: 1 })
+                );
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                const node: DotFolderTreeNodeItem = {
+                    key: 'small-folder',
+                    label: '/small/',
+                    data: { id: 'small-folder', hostname: 'demo.dotcms.com', path: '/small/', type: 'folder' },
+                    leaf: false,
+                    children: []
+                };
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', {
+                    originalEvent: new Event('click'),
+                    node
+                });
+
+                expect(node.children).toHaveLength(1);
+                expect(node.children?.some((child) => child.data.type === 'load-more')).toBe(false);
+            });
+        });
+
+        describe('onLoadMore', () => {
+            it('should append the next page and remove the "Load more" node when the level is exhausted', () => {
+                const existingChild: DotFolderTreeNodeItem = {
+                    key: 'a',
+                    label: '/big/a/',
+                    data: { id: 'a', hostname: 'demo.dotcms.com', path: '/big/a/', type: 'folder' },
+                    leaf: false
+                };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/big/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/big/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/big/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                const parent: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: { id: 'big-folder', hostname: 'demo.dotcms.com', path: '/big/', type: 'folder' },
+                    leaf: false,
+                    expanded: true,
+                    children: [existingChild, loadMoreNode]
+                };
+                contentDriveStore.folders.mockReturnValue([parent]);
+
+                const nextPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'b',
+                        label: '/big/b/',
+                        data: { id: 'b', hostname: 'demo.dotcms.com', path: '/big/b/', type: 'folder' },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: nextPage, totalEntries: 2 })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
+                    '/big/',
+                    'demo.dotcms.com',
+                    2
+                );
+                expect(parent.children?.map((child) => child.key)).toEqual(['a', 'b']);
+                expect(parent.children?.some((child) => child.data.type === 'load-more')).toBe(false);
+                expect(contentDriveStore.updateFolders).toHaveBeenCalled();
+            });
+
+            it('should keep a refreshed "Load more" node when more pages still remain', () => {
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/big/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/big/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/big/',
+                        nextPage: 2,
+                        remaining: 100
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                const parent: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: { id: 'big-folder', hostname: 'demo.dotcms.com', path: '/big/', type: 'folder' },
+                    leaf: false,
+                    expanded: true,
+                    children: [
+                        {
+                            key: 'a',
+                            label: '/big/a/',
+                            data: { id: 'a', hostname: 'demo.dotcms.com', path: '/big/a/', type: 'folder' },
+                            leaf: false
+                        },
+                        loadMoreNode
+                    ]
+                };
+                contentDriveStore.folders.mockReturnValue([parent]);
+
+                const nextPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'b',
+                        label: '/big/b/',
+                        data: { id: 'b', hostname: 'demo.dotcms.com', path: '/big/b/', type: 'folder' },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: nextPage, totalEntries: 150 })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                const refreshed = parent.children?.find((child) => child.data.type === 'load-more');
+                expect(refreshed?.data.nextPage).toBe(3);
+                expect(refreshed?.data.remaining).toBe(148);
             });
         });
 
@@ -655,7 +830,7 @@ describe('DotContentDriveSidebarComponent', () => {
             // slice(0, -1) removes the last segment, so it becomes ['documents']
             contentDriveStore.folders.mockReturnValue(mockTreeNodes);
             contentDriveStore.loadChildFolders.mockReturnValue(
-                of({ parent: mockFolders[0], folders: [] })
+                of({ folders: [], totalEntries: 0 })
             );
 
             // Call the method directly - this is what the effect would call
@@ -699,7 +874,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             contentDriveStore.folders.mockReturnValue(mockTreeNodes);
             contentDriveStore.loadChildFolders.mockReturnValue(
-                of({ parent: mockFolders[0], folders: [] })
+                of({ folders: [], totalEntries: 0 })
             );
 
             // Should not throw error even if element is not found
@@ -769,7 +944,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             contentDriveStore.folders.mockReturnValue(testFolders);
             contentDriveStore.loadChildFolders.mockReturnValue(
-                of({ parent: mockFolders[0], folders: [] })
+                of({ folders: [], totalEntries: 0 })
             );
 
             // Call recursiveExpandOneNode with path segments
@@ -821,7 +996,6 @@ describe('DotContentDriveSidebarComponent', () => {
             contentDriveStore.folders.mockReturnValue(nestedFolders);
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({
-                    parent: mockFolders[0],
                     folders: [
                         {
                             key: 'level2',
@@ -835,7 +1009,8 @@ describe('DotContentDriveSidebarComponent', () => {
                             leaf: false,
                             children: []
                         }
-                    ]
+                    ],
+                    totalEntries: 1
                 })
             );
 
