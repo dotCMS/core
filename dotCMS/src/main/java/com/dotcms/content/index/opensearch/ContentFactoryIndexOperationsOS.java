@@ -334,7 +334,13 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
 
             final String finalDefaultSecondarySort = defaultSecondarySort;
             final SortOrder finalSecondaryOrder = defaultSecondaryOrder;
-            searchRequestBuilder.sort(SortOptions.of(builder ->  builder.field(FieldSort.of(fs -> fs.field(finalDefaultSecondarySort).order(finalSecondaryOrder)))));
+            // Primary sort by relevance (_score desc), then the secondary sort (matches the ES read path
+            // and OSContentletScrollImpl). Omitting the score sort silently drops relevance ordering.
+            searchRequestBuilder.sort(SortOptions.of(so -> so.score(s -> s.order(SortOrder.Desc))));
+            searchRequestBuilder.sort(SortOptions.of(builder ->  builder.field(FieldSort.of(fs -> fs
+                    .field(finalDefaultSecondarySort)
+                    .order(finalSecondaryOrder)
+                    .unmappedType(FieldType.Date)))));
 
         } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")
                 && !sortBy.equals(SortOrder.Asc.toString())  && !sortBy.equals(SortOrder.Desc.toString())) {
