@@ -68,18 +68,53 @@ async function loadSpec(source: string): Promise<Record<string, unknown>> {
     }
 }
 
+/**
+ * A minimal, valid OpenAPI document. Written only as a last resort when the spec source is
+ * unreachable AND no previously-generated spec exists, so the static
+ * `import spec from '../generated/spec.json'` in `src/spec/spec.ts` still resolves and the
+ * build/bundle succeeds. The mcp-server ships with an empty API surface in that case, which is
+ * a degraded-but-working build rather than a hard failure.
+ */
+const EMPTY_SPEC = {
+    openapi: '3.0.1',
+    info: { title: 'dotCMS API (unavailable at build time)', version: '0.0.0' },
+    paths: {},
+    components: { schemas: {} }
+};
+
 async function generateSpec() {
     const source = resolveSpecSource();
-    const raw = await loadSpec(source);
+    const outDir = path.resolve(__dirname, '../src/generated');
+    const outPath = path.join(outDir, 'spec.json');
+
+    let raw: Record<string, unknown>;
+    try {
+        raw = await loadSpec(source);
+    } catch (err) {
+        // The spec is fetched from a live dotCMS instance at build time. In CI (or any offline
+        // build) that instance may be unreachable — which must NOT break the build. Fall back to
+        // an already-generated spec if one exists, otherwise emit a minimal placeholder so the
+        // static JSON import still resolves. Either way we exit 0: a stale/empty spec is a
+        // degraded build, not a broken one.
+        const message = err instanceof Error ? err.message : String(err);
+        console.warn(`[generate-spec] Could not load spec from ${source}: ${message}`);
+
+        if (fs.existsSync(outPath)) {
+            console.warn(`[generate-spec] Reusing existing spec at ${outPath}`);
+            return;
+        }
+
+        console.warn(`[generate-spec] Writing minimal placeholder spec to ${outPath}`);
+        fs.mkdirSync(outDir, { recursive: true });
+        fs.writeFileSync(outPath, JSON.stringify(EMPTY_SPEC), 'utf-8');
+        return;
+    }
 
     const { spec, stats } = transformSpec(raw);
 
     // Compact JSON: this file is machine-read only (query results are re-stringified by the tool
     // handlers). Pretty-printing would add ~270KB for zero model benefit — use `jq` to inspect.
     const json = JSON.stringify(spec);
-
-    const outDir = path.resolve(__dirname, '../src/generated');
-    const outPath = path.join(outDir, 'spec.json');
 
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(outPath, json, 'utf-8');
