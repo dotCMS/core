@@ -5,11 +5,13 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
@@ -57,9 +59,16 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -1239,6 +1248,16 @@ public class BrowserAPIImpl implements BrowserAPI {
                 continue;
             }
 
+            // Time fields index the main field as a full datetime with the value's own date, so a
+            // range on it would compare the (meaningless) date component. Match time-of-day instead,
+            // against the _dotraw keyword sub-field (indexed as HH:mm:ss), so the range works
+            // regardless of the date the value was stored with.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.RANGE
+                    && field instanceof TimeField) {
+                clauses.append(' ').append(buildTimeOfDayRangeClause(luceneFieldName, criteria));
+                continue;
+            }
+
             final String luceneValue = fieldCriteriaLuceneValue(criteria);
             final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
             final FieldContext fieldContext = new FieldContext.Builder()
@@ -1285,9 +1304,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return String.valueOf(criteria.getBooleanValue());
             case RANGE:
                 final String from = UtilMethods.isSet(criteria.getRangeFrom())
-                        ? criteria.getRangeFrom() : "*";
+                        ? normalizeDateBound(criteria.getRangeFrom()) : "*";
                 final String to = UtilMethods.isSet(criteria.getRangeTo())
-                        ? criteria.getRangeTo() : "*";
+                        ? normalizeDateBound(criteria.getRangeTo()) : "*";
                 return from + " TO " + to;
             case MULTI:
                 return String.join(",", criteria.getValues());
@@ -1295,6 +1314,114 @@ public class BrowserAPIImpl implements BrowserAPI {
             default:
                 return criteria.getValues().isEmpty() ? BLANK : criteria.getValues().get(0);
         }
+    }
+
+    /**
+     * ES-accepted date pattern that matches how date fields are indexed
+     * ({@code ESMappingAPIImpl.elasticSearchDateTimeFormatPattern}). The literal {@code T} (no
+     * space) is required so the Lucene range {@code [from TO to]} parses — a space inside the bound
+     * would break query_string parsing.
+     */
+    private static final String ES_QUERY_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
+    /** Time-of-day pattern matching the {@code _dotraw} keyword sub-field of a Time field. */
+    private static final String ES_QUERY_TIME_PATTERN = "HH:mm:ss";
+
+    /**
+     * Builds a time-of-day range clause for a Time field against its {@code _dotraw} keyword
+     * sub-field (indexed as {@code HH:mm:ss}). The main field is a full datetime whose date
+     * component is the value's own save date, so ranging on it would (wrongly) require the query's
+     * date to match; the {@code _dotraw} sub-field holds only the time, and a lexicographic range on
+     * zero-padded {@code HH:mm:ss} equals chronological order within a day.
+     *
+     * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
+     * @param criteria  The RANGE criterion.
+     * @return A clause like {@code +ct.field_dotraw:[14:00:00 TO 15:00:00]}.
+     */
+    private String buildTimeOfDayRangeClause(final String fieldName,
+            final FieldSearchCriteria criteria) {
+        final String from = normalizeTimeBound(criteria.getRangeFrom());
+        final String to = normalizeTimeBound(criteria.getRangeTo());
+        return "+" + fieldName + "_dotraw:[" + from + " TO " + to + "]";
+    }
+
+    /**
+     * Normalizes a range bound to a time-of-day ({@code HH:mm:ss}) in the server timezone, matching
+     * how the Time field's {@code _dotraw} value is indexed. Open/blank bounds become {@code *};
+     * unparseable values are escaped so a crafted value can't alter the query structure.
+     *
+     * @param raw The raw bound value.
+     * @return The {@code HH:mm:ss} bound, {@code *}, or an escaped token.
+     */
+    private String normalizeTimeBound(final String raw) {
+        if (!UtilMethods.isSet(raw) || "*".equals(raw.trim())) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(raw.trim());
+        if (null == parsed) {
+            Logger.warn(this, String.format(
+                    "Unparseable time range bound '%s'; escaping it (the criterion will match "
+                            + "nothing).", raw.trim()));
+            return ESUtils.escape(raw.trim());
+        }
+        return new SimpleDateFormat(ES_QUERY_TIME_PATTERN).format(parsed);
+    }
+
+    /**
+     * Normalizes a date range bound into a format the index accepts. The FE sends ISO-8601 (e.g.
+     * {@code 2011-05-04T13:33:00.000Z}), which is NOT one of the dotCMS ES date formats — the {@code
+     * .SSS} milliseconds and {@code Z} make the range bound unparseable, so the query silently
+     * matches nothing. We parse the value and reformat it to {@link #ES_QUERY_DATE_PATTERN}
+     * ({@code yyyy-MM-dd'T'HH:mm:ss}, literal {@code T} — a space would break Lucene range parsing)
+     * in the server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}).
+     * Values that can't be parsed as a date are passed through unchanged (already ES-formatted or
+     * open bound).
+     *
+     * @param raw The raw bound value.
+     * @return The normalized bound, or the original value if it isn't a recognizable date.
+     */
+    private String normalizeDateBound(final String raw) {
+        final String value = raw.trim();
+        if (value.isEmpty() || "*".equals(value)) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(value);
+        if (null == parsed) {
+            // For a date-typed field the bound should be a date. If it isn't, don't let the raw
+            // value reach the Lucene query_string as-is — escape it so a crafted value can't alter
+            // the query structure (an escaped non-date simply matches nothing).
+            Logger.warn(this, String.format(
+                    "Unparseable date range bound '%s'; escaping it (the criterion will match "
+                            + "nothing).", value));
+            return ESUtils.escape(value);
+        }
+        final String normalized = new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed);
+        Logger.debug(this, String.format("Date range bound '%s' normalized to '%s'.", value,
+                normalized));
+        return normalized;
+    }
+
+    /**
+     * Best-effort parse of a date bound across the ISO-8601 shapes the client sends: instant (with
+     * offset/{@code Z}), offset date-time, local date-time, and date-only. Naive (zone-less) inputs
+     * are resolved in the JVM default zone, the same zone the reformat and indexing use, so the
+     * boundary stays consistent. Returns {@code null} when none match (the raw value is then passed
+     * through unchanged).
+     */
+    private Date parseFlexibleDate(final String value) {
+        Date date = Try.of(() -> Date.from(Instant.parse(value))).getOrNull();
+        if (null == date) {
+            date = Try.of(() -> Date.from(OffsetDateTime.parse(value).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDateTime.parse(value).atZone(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDate.parse(value).atStartOfDay(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        return date;
     }
 
     /**

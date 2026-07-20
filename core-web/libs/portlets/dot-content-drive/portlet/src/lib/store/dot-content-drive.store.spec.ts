@@ -740,6 +740,11 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         spectator = createService();
         store = spectator.service;
         contentDriveService = spectator.inject(DotContentDriveService);
+        // Reset the shared ActivatedRoute mock so a test that seeds queryParams doesn't leak
+        // into the next (the mock's snapshot object is created once by the factory).
+        (
+            spectator.inject(ActivatedRoute).snapshot as { queryParams: Record<string, string> }
+        ).queryParams = {};
     });
 
     beforeEach(() => {
@@ -775,6 +780,33 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 
         expect(contentDriveService.search).toHaveBeenCalledWith(
             expect.objectContaining({ userSearchable: { body: 'hello' } })
+        );
+    });
+
+    it('should release the deferred search once field metadata loads even when the request is unchanged', () => {
+        // Cold restore of a us.* key whose field is NOT among the type's searchable fields
+        // (removed / flag turned off / tampered URL). The payload builder drops it, so the
+        // request is structurally identical before and after the metadata loads. Without a
+        // tracked release, the $request dedupe guard would suppress the effect re-run and the
+        // portlet would stay stuck in LOADING forever. The search must still fire.
+        const route = spectator.inject(ActivatedRoute);
+        (route.snapshot as { queryParams: Record<string, string> }).queryParams = {
+            filters: 'us.ghost:x'
+        };
+
+        // First cycle: init restores the ghost chip, the search is deferred (no metadata yet).
+        spectator.flushEffects();
+        expect(store.userSearchableActive()).toEqual(['ghost']);
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+
+        // Metadata loads but does NOT include 'ghost' → payload stays undefined (request unchanged).
+        store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+        spectator.flushEffects();
+
+        // The search fires anyway; the ineligible us.* value is simply not sent.
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.not.objectContaining({ userSearchable: expect.anything() })
         );
     });
 
