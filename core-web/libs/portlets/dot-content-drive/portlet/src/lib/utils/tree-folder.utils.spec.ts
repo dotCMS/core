@@ -14,7 +14,8 @@ describe('Sidebar Utils', () => {
                     type: 'folder',
                     path: '',
                     hostname: '',
-                    id: ''
+                    id: '',
+                    inode: ''
                 },
                 leaf: false,
                 expanded: true
@@ -83,12 +84,13 @@ describe('Sidebar Utils', () => {
     describe('createTreeNode', () => {
         const mockFolder: DotFolder = {
             id: 'folder-123',
+            inode: 'folder-inode-123',
             path: '/documents/',
             hostName: 'demo.dotcms.com',
             addChildrenAllowed: true
         };
 
-        it('should create a tree node without parent', () => {
+        it('should create a tree node without parent, carrying the folder inode', () => {
             const result = createTreeNode(mockFolder);
 
             expect(result).toEqual({
@@ -96,6 +98,7 @@ describe('Sidebar Utils', () => {
                 label: '/documents/',
                 data: {
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     hostname: 'demo.dotcms.com',
                     path: '/documents/',
                     type: 'folder'
@@ -125,6 +128,7 @@ describe('Sidebar Utils', () => {
                 label: '/documents/',
                 data: {
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     hostname: 'demo.dotcms.com',
                     path: '/documents/',
                     type: 'folder'
@@ -153,6 +157,7 @@ describe('Sidebar Utils', () => {
 
             expect(result.data).toEqual({
                 id: mockFolder.id,
+                inode: mockFolder.inode,
                 hostname: mockFolder.hostName,
                 path: mockFolder.path,
                 type: 'folder'

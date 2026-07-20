@@ -299,15 +299,19 @@ export const DotContentDriveStore = signalStore(
 
                 // Hold the search while a restored `us.*` filter has no field metadata yet: the
                 // payload builder can only shape values it has a field for, so searching now would
-                // drop them and briefly show unfiltered results. Read untracked so these don't
-                // become search-effect dependencies (adding an empty chip must not re-fire a
-                // search); once fields load, `$request` itself changes and re-runs this.
-                const fieldsPending = untracked(
-                    () =>
-                        store.userSearchableActive().length > 0 &&
-                        !store.userSearchableFieldsLoaded()
-                );
-                if (fieldsPending) {
+                // drop them and briefly show unfiltered results.
+                //
+                // `userSearchableFieldsLoaded` is read TRACKED so the effect re-runs the moment
+                // field metadata arrives — even when the resulting `$request` is structurally
+                // identical and its dedupe guard would otherwise suppress the re-run (e.g. a
+                // restored `us.*` key for an ineligible/removed field yields no payload either
+                // way, which would otherwise leave the portlet stuck in LOADING). It flips
+                // false→true exactly once per content-type field load and is never touched by
+                // adding a chip. `userSearchableActive` stays untracked so adding an empty chip
+                // (which changes it but not `loaded`) does not re-fire a search.
+                const fieldsLoaded = store.userSearchableFieldsLoaded();
+                const hasActiveFields = untracked(() => store.userSearchableActive().length > 0);
+                if (hasActiveFields && !fieldsLoaded) {
                     return;
                 }
 
