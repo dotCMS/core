@@ -135,7 +135,17 @@ export class DotContentDriveFieldFilterComponent {
      * the chip popover as a single surface instead of a panel-inside-a-panel.
      */
     protected readonly datePickerPt = {
-        panel: { class: '!border-0 !rounded-none !shadow-none' }
+        // max-width caps the panel so the wider month/year grids can't grow it and bounce the
+        // popover horizontally, while the day view still sizes naturally within the cap.
+        panel: { class: '!border-0 !rounded-none !shadow-none !max-w-96' }
+    };
+    /**
+     * Time pickers additionally trim the panel/time-picker padding so the spinner sits tight to its
+     * From/To label above and the validation message below (the inline chrome is otherwise roomy).
+     */
+    protected readonly timePickerPt = {
+        panel: { class: '!border-0 !rounded-none !shadow-none !p-0' },
+        timePicker: { class: '!p-0' }
     };
 
     /** The content-type field this chip filters on. */
@@ -149,8 +159,12 @@ export class DotContentDriveFieldFilterComponent {
      */
     protected readonly $popoverOpen = signal(false);
 
-    /** Debounced free-text input so we don't fire a search per keystroke. */
-    readonly #textInput$ = new Subject<string>();
+    /**
+     * Debounces the store write so rapid field changes (typing, toggling options, spinning the
+     * time) don't fire a search per change. The local value updates immediately; only the store
+     * patch (which triggers the search) is debounced.
+     */
+    readonly #patch$ = new Subject<string>();
 
     /** Filter-bag key for this field (`us.<variable>`). */
     protected readonly $key = computed(() => `${USER_SEARCHABLE_PREFIX}${this.$field().variable}`);
@@ -354,6 +368,36 @@ export class DotContentDriveFieldFilterComponent {
         return dates.length ? dates : null;
     });
 
+    /**
+     * Time-only fields use two independent pickers (from / to) instead of a range picker: PrimeNG's
+     * `p-datePicker` doesn't support range selection in `timeOnly` mode, so a single range control
+     * can't express a time span. Each bound is nullable so an open-ended range is allowed.
+     */
+    protected readonly $timeFrom = linkedSignal<Date | null>(() => {
+        const [from] = this.$rawValue().split(USER_SEARCHABLE_VALUE_SEPARATOR);
+
+        return from ? new Date(from) : null;
+    });
+    protected readonly $timeTo = linkedSignal<Date | null>(() => {
+        const to = this.$rawValue().split(USER_SEARCHABLE_VALUE_SEPARATOR)[1];
+
+        return to ? new Date(to) : null;
+    });
+
+    /** True when both bounds are set and `from` is after `to` — drives the inline error. */
+    protected readonly $timeRangeInvalid = computed(() => {
+        const from = this.$timeFrom();
+        const to = this.$timeTo();
+        if (!from || !to) {
+            return false;
+        }
+
+        // Time-only compares by time-of-day; date-and-time by the full instant.
+        return this.$timeOnly()
+            ? this.#timeOfDay(from) > this.#timeOfDay(to)
+            : from.getTime() > to.getTime();
+    });
+
     protected readonly $isBinary = computed(() => this.$control() === 'binary-checkbox');
 
     /** Relationship is picked in a full dialog, so the chip opens it instead of a popover. */
@@ -426,9 +470,9 @@ export class DotContentDriveFieldFilterComponent {
     );
 
     constructor() {
-        this.#textInput$
+        this.#patch$
             .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed())
-            .subscribe((value) => this.#patch(value));
+            .subscribe((raw) => this.#store.patchFilters({ [this.$key()]: raw }));
 
         // Resolve the related contentlet for a stored identifier we don't hold yet (cold URL
         // restore). Caching it fills the chip title and lets the picker preselect it by inode.
@@ -515,7 +559,7 @@ export class DotContentDriveFieldFilterComponent {
 
     protected onTextInput(value: string): void {
         this.$textValue.set(value ?? '');
-        this.#textInput$.next(value ?? '');
+        this.#patch(value ?? '');
     }
 
     /**
@@ -635,6 +679,79 @@ export class DotContentDriveFieldFilterComponent {
     }
 
     /**
+     * Updates one bound of a time-only range (from/to) independently. The bound signals keep the
+     * user's input regardless of validity; the filter is only re-applied when the range is valid
+     * (from ≤ to), so an inverted range shows the inline error instead of filtering wrongly.
+     */
+    protected onTimeBoundChange(value: Date | null, bound: 'from' | 'to'): void {
+        if (bound === 'from') {
+            this.$timeFrom.set(value);
+        } else {
+            this.$timeTo.set(value);
+        }
+
+        this.#applyRange();
+    }
+
+    /**
+     * Date-and-Time uses a date-range calendar (no `showTime`, which crashes in PrimeNG's range
+     * mode) plus two time-only pickers. The calendar sets the date part of each bound; the pickers
+     * set the time part. Both feed the same from/to bounds.
+     */
+    protected onDateTimeDatesChange(dates: Date[] | null): void {
+        const [fromDate, toDate] = dates ?? [];
+        this.$timeFrom.set(fromDate ? this.#withDatePart(this.$timeFrom(), fromDate) : null);
+        this.$timeTo.set(toDate ? this.#withDatePart(this.$timeTo(), toDate) : null);
+        this.#applyRange();
+    }
+
+    /** Applies the time part to one bound of a Date-and-Time range (keeping its date). */
+    protected onDateTimeTimeChange(value: Date | null, bound: 'from' | 'to'): void {
+        if (bound === 'from') {
+            this.$timeFrom.set(this.#withTimePart(this.$timeFrom(), value));
+        } else {
+            this.$timeTo.set(this.#withTimePart(this.$timeTo(), value));
+        }
+
+        this.#applyRange();
+    }
+
+    /** Serializes the current from/to bounds, unless the range is inverted (the inline error shows). */
+    #applyRange(): void {
+        if (this.$timeRangeInvalid()) {
+            return;
+        }
+
+        const from = this.$timeFrom();
+        const to = this.$timeTo();
+        const range = {
+            from: from ? from.toISOString() : '',
+            to: to ? to.toISOString() : ''
+        };
+        this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
+    }
+
+    /** Copy of `base` (or today) with `date`'s year/month/day applied — keeps the time part. */
+    #withDatePart(base: Date | null, date: Date): Date {
+        const next = base ? new Date(base) : new Date();
+        next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+
+        return next;
+    }
+
+    /** Copy of `base` (or today) with `time`'s hours/minutes/seconds applied; null time clears the bound. */
+    #withTimePart(base: Date | null, time: Date | null): Date | null {
+        if (!time) {
+            return null;
+        }
+
+        const next = base ? new Date(base) : new Date();
+        next.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), 0);
+
+        return next;
+    }
+
+    /**
      * Clears the value but keeps the chip in the toolbar — same as the built-in filters
      * (Locale/Workflow/Content-Type), whose X resets the selection without removing the chip.
      * A cleared field filter is inactive (no value → not sent in the payload).
@@ -644,18 +761,41 @@ export class DotContentDriveFieldFilterComponent {
     }
 
     #patch(raw: string): void {
+        // Update the local value immediately (chip summary / control reflect it now); debounce the
+        // store write so rapid changes don't fire a search per change.
         this.$rawValue.set(raw);
-        this.#store.patchFilters({ [this.$key()]: raw });
+        this.#patch$.next(raw);
+    }
+
+    /** Seconds since midnight — compares time-only values without the arbitrary date component. */
+    #timeOfDay(date: Date): number {
+        return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
     }
 
     #formatDate(iso: string): string {
         const date = new Date(iso);
         if (Number.isNaN(date.getTime())) return iso;
 
-        return this.$timeOnly()
-            ? date.toLocaleTimeString()
-            : this.$showTime()
-              ? date.toLocaleString()
-              : date.toLocaleDateString();
+        // 24-hour to match the pickers (which default to 24h) — avoids an AM/PM label over a 24h input.
+        const time: Intl.DateTimeFormatOptions = {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        };
+
+        if (this.$timeOnly()) {
+            return date.toLocaleTimeString([], time);
+        }
+
+        if (this.$showTime()) {
+            return date.toLocaleString([], {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                ...time
+            });
+        }
+
+        return date.toLocaleDateString();
     }
 }
