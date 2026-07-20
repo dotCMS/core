@@ -122,15 +122,100 @@
     <!-- Right: Output -->
     <ng-template pTemplate>
         <div class="flex h-full flex-col overflow-hidden">
-            @if (store.hasError()) {
+            @if (store.error(); as error) {
                 <p-message
                     severity="error"
                     icon="pi pi-exclamation-triangle"
                     [pt]="{
-                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0' }
+                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0 block' },
+                        text: { class: 'w-full' }
                     }"
                     data-testid="velocity-playground-error-banner">
-                    {{ store.errorMessage() | dm }}
+                    <div class="flex w-full flex-col gap-1">
+                        <span
+                            class="wrap-break-word font-medium"
+                            data-testid="velocity-playground-error-message">
+                            {{ $errorSummary() }}
+                        </span>
+                        @if (error.structured; as detail) {
+                            <div
+                                class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
+                                data-testid="velocity-playground-error-detail">
+                                @if (detail.errorType) {
+                                    <span
+                                        class="inline-flex items-center rounded-sm bg-red-100 px-1.5 py-0.5 font-mono font-semibold text-red-700"
+                                        data-testid="velocity-playground-error-type">
+                                        {{ detail.errorType }}
+                                    </span>
+                                }
+                                @if (detail.line !== undefined && detail.line !== null) {
+                                    <span
+                                        class="inline-flex items-center gap-1"
+                                        data-testid="velocity-playground-error-location">
+                                        <i class="pi pi-map-marker text-[0.7rem]"></i>
+                                        {{
+                                            'velocityPlayground.error.location'
+                                                | dm
+                                                    : [
+                                                          '' + detail.line,
+                                                          detail.column !== undefined &&
+                                                          detail.column !== null
+                                                              ? '' + detail.column
+                                                              : '—'
+                                                      ]
+                                        }}
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </p-message>
+            }
+            @if (store.hasWarnings() && !store.hasError()) {
+                <p-message
+                    severity="warn"
+                    icon="pi pi-exclamation-triangle"
+                    [pt]="{
+                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0 block' },
+                        text: { class: 'w-full' }
+                    }"
+                    data-testid="velocity-playground-warnings-banner">
+                    <div class="flex w-full flex-col gap-1">
+                        <span class="font-medium" data-testid="velocity-playground-warnings-summary">
+                            {{
+                                'velocityPlayground.warnings.summary'
+                                    | dm: ['' + store.warnings().length]
+                            }}
+                        </span>
+                        <ul class="m-0 flex flex-col gap-0.5 pl-0 text-xs">
+                            @for (warning of store.warnings(); track $index) {
+                                <li
+                                    class="flex flex-wrap items-baseline gap-x-2"
+                                    data-testid="velocity-playground-warning-item">
+                                    <span
+                                        class="inline-flex items-center rounded-sm bg-yellow-100 px-1.5 py-0.5 font-mono font-semibold text-yellow-800">
+                                        {{ warning.type }}
+                                    </span>
+                                    <span class="wrap-break-word">{{ warning.message }}</span>
+                                    @if (warning.line !== undefined && warning.line !== null) {
+                                        <span class="text-color-secondary">
+                                            {{
+                                                'velocityPlayground.error.location'
+                                                    | dm
+                                                        : [
+                                                              '' + warning.line,
+                                                              warning.column !== undefined &&
+                                                              warning.column !== null
+                                                                  ? '' + warning.column
+                                                                  : '—'
+                                                          ]
+                                            }}
+                                        </span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </div>
                 </p-message>
             }
             @if (store.status() === ComponentStatus.INIT && !store.hasError()) {
@@ -148,6 +233,12 @@
                         {{ 'velocityPlayground.output.running' | dm }}
                     </span>
                 </div>
+            } @else if (store.hasError()) {
+                <ngx-monaco-editor
+                    class="min-h-0 flex-1"
+                    [ngModel]="$errorTrace()"
+                    [options]="$errorEditorOptions()"
+                    data-testid="velocity-playground-error-editor" />
             } @else {
                 <!-- Stats bar -->
                 <div

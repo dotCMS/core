@@ -23273,7 +23273,19 @@ paths:
       - Content Type Field
   /vtl/dynamic:
     get:
-      operationId: dynamicGet_2
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
+      operationId: dynamicGetNoPath
       requestBody:
         content:
           application/json:
@@ -23283,16 +23295,36 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (GET)
       tags:
       - Templates
     post:
-      operationId: dynamicPost_2
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
+      operationId: dynamicPostNoPath
       requestBody:
         content:
           application/json:
@@ -23302,16 +23334,36 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (POST)
       tags:
       - Templates
     put:
-      operationId: dynamicPut_2
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
+      operationId: dynamicPutNoPath
       requestBody:
         content:
           application/json:
@@ -23321,16 +23373,36 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (PUT)
       tags:
       - Templates
   /vtl/dynamic/{pathParam}:
     delete:
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
       operationId: dynamicDelete_1
       parameters:
       - in: path
@@ -23348,16 +23420,36 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (DELETE)
       tags:
       - Templates
     get:
-      operationId: dynamicGet_3
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
+      operationId: dynamicGet_2
       parameters:
       - in: path
         name: pathParam
@@ -23374,15 +23466,35 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (GET)
       tags:
       - Templates
     patch:
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
       operationId: dynamicPatch_1
       parameters:
       - in: path
@@ -23400,16 +23512,36 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (PATCH)
       tags:
       - Templates
     post:
-      operationId: dynamicPost_3
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
+      operationId: dynamicPost_2
       parameters:
       - in: path
         name: pathParam
@@ -23426,16 +23558,36 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (POST)
       tags:
       - Templates
     put:
-      operationId: dynamicPut_3
+      description: |-
+        Evaluates Velocity (VTL) code supplied directly in the request body — no `.vtl` file on disk is required — and returns the result. The code is read from a `velocity` property of the JSON body (properly escaped), or the body may be the raw VTL itself.
+
+        The caller requires the **Scripting Developer** role.
+
+        **Response shape** is decided by the submitted code:
+        - If the code populates `$dotJSON` (e.g. `$dotJSON.put("key", ...)`), the response is that JSON object.
+        - Otherwise the raw evaluated output is returned, with the content type set by the script (defaults to `text/plain`).
+
+        **Velocity errors** (syntax/parse errors, method-invocation failures, missing resources) are reported as a `400` with a structured body so an automated caller can locate and fix the offending code instead of receiving partial output. Application-level errors set by the script via `$dotJSON.put("errors", ...)` are also returned as `400`.
+
+        **Warnings** — dotCMS evaluates Velocity in non-strict mode, so an undefined reference (`$noSuchVar`) renders as literal text and a method returning `null` produces no output. These likely-typos are collected and, on a successful response, returned in the `X-Dot-Velocity-Warnings` header (a JSON array); on a `400` they appear in the `warnings` field of the body.
+      operationId: dynamicPut_2
       parameters:
       - in: path
         name: pathParam
@@ -23452,12 +23604,20 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
+          description: Velocity evaluated successfully; body is the raw output or
+            the JSON object produced by the script
+        "400":
           content:
-            application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityErrorResponseView"
+          description: "The submitted Velocity failed to parse or evaluate, or the\
+            \ script reported errors. The body carries the Velocity error detail (message,\
+            \ error type, and line/column when available)."
+        "403":
+          description: User lacks the Scripting Developer role
+      summary: Evaluate inline Velocity code (PUT)
       tags:
       - Templates
   /vtl/{folder}:
@@ -38386,6 +38546,103 @@ components:
         weight:
           type: number
           format: float
+    VelocityErrorResponseView:
+      type: object
+      properties:
+        errors:
+          type: array
+          description: List of Velocity errors detected while evaluating the submitted
+            code.
+          items:
+            $ref: "#/components/schemas/VelocityErrorView"
+        warnings:
+          type: array
+          description: "Non-fatal warnings (undefined references, null method results)\
+            \ observed before the error. Omitted when there are none."
+          items:
+            $ref: "#/components/schemas/VelocityWarningView"
+    VelocityErrorView:
+      type: object
+      description: "A single Velocity evaluation error, structured so an automated\
+        \ caller can locate and fix the offending code without parsing a stack trace."
+      properties:
+        column:
+          type: integer
+          format: int32
+          description: "1-based column number in the submitted velocity where the\
+            \ error occurred, when Velocity reports it. Omitted when unavailable."
+          example: 39
+        detail:
+          type: string
+          description: "Full, multi-line engine output for the error, including the\
+            \ complete grammar-token list for parse errors. Intended for human display;\
+            \ omitted when it adds nothing beyond `message`."
+          example: |-
+            Encountered "<EOF>" at line 6, column 39
+            Was expecting one of:
+                "[" ...
+                "(" ...
+        errorType:
+          type: string
+          description: "Simple class name of the underlying Velocity error, normalized\
+            \ to the public Velocity type (e.g. ParseErrorException, MethodInvocationException,\
+            \ ResourceNotFoundException) rather than a dotCMS-internal subclass. Lets\
+            \ the caller distinguish a syntax error from a runtime error."
+          example: ParseErrorException
+        line:
+          type: integer
+          format: int32
+          description: "1-based line number in the submitted velocity where the error\
+            \ occurred, when Velocity reports it. Omitted when unavailable."
+          example: 6
+        message:
+          type: string
+          description: "Concise, single-line Velocity error message including the\
+            \ offending token and position when available. See `detail` for the full\
+            \ engine output."
+          example: "Encountered \"<EOF>\" at line 6, column 39"
+        templateName:
+          type: string
+          description: Name Velocity associated with the evaluated template. For dynamic
+            requests this is a synthetic name identifying the submitted script.
+          example: dynamic velocity
+    VelocityWarningView:
+      type: object
+      description: "A non-fatal Velocity warning, such as an undefined reference or\
+        \ a method call that returned null. The script still evaluated; warnings flag\
+        \ likely typos in non-strict mode."
+      properties:
+        column:
+          type: integer
+          format: int32
+          description: "1-based column number where the reference appears, when Velocity\
+            \ reports it. Omitted when unavailable."
+          example: 1
+        line:
+          type: integer
+          format: int32
+          description: "1-based line number where the reference appears, when Velocity\
+            \ reports it. Omitted when unavailable."
+          example: 3
+        message:
+          type: string
+          description: Human-readable description of the warning.
+          example: Undefined reference '$noSuchVar' — renders as literal text in non-strict
+            mode
+        reference:
+          type: string
+          description: "The reference or method expression that triggered the warning,\
+            \ when known."
+          example: $noSuchVar
+        type:
+          type: string
+          description: The kind of warning.
+          enum:
+          - UNDEFINED_REFERENCE
+          - NULL_METHOD_RESULT
+          - INVALID_METHOD
+          - NULL_SET
+          example: UNDEFINED_REFERENCE
     Version:
       type: object
       properties:

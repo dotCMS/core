@@ -40,6 +40,8 @@ import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/ut
 import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.store';
 
 import {
+    firstLine,
+    formatErrorTrace,
     formatHistoryLabel,
     getDownloadParams,
     VELOCITY_HELP_EXAMPLES
@@ -105,6 +107,32 @@ export class DotVelocityPlaygroundPageComponent {
         wordWrap: this.store.wrapCode() ? 'on' : 'off',
         readOnly: true
     }));
+
+    // Read-only, plaintext options for the error "stack trace" pane.
+    readonly $errorEditorOptions = computed(() => ({
+        ...DOT_MONACO_RAW_OPTIONS,
+        theme: VELOCITY_THEME_ID,
+        language: 'plaintext',
+        wordWrap: this.store.wrapCode() ? 'on' : 'off',
+        readOnly: true,
+        lineNumbers: 'off',
+        folding: false
+    }));
+
+    // Full error rendered as a copyable, stack-trace-style block for the output pane.
+    readonly $errorTrace = computed(() => {
+        const error = this.store.error();
+        if (!error) return '';
+        const resolvedMessage = this.#messageService.get(error.message);
+        return formatErrorTrace(error, resolvedMessage);
+    });
+
+    // Single-line summary for the banner — the full multi-line detail lives in the trace pane.
+    readonly $errorSummary = computed(() => {
+        const error = this.store.error();
+        if (!error) return '';
+        return firstLine(this.#messageService.get(error.message));
+    });
 
     readonly $historyOptions = computed(() =>
         this.store.history().map((entry) => ({

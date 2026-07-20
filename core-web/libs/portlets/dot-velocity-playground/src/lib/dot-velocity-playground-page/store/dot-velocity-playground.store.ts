@@ -25,6 +25,7 @@ import {
     HISTORY_STORAGE_KEY,
     isValidHistory,
     isValidRatio,
+    parseVelocityError,
     readJson,
     removeKey,
     SPLITTER_STORAGE_KEY,
@@ -32,8 +33,10 @@ import {
     writeJson
 } from '../../dot-velocity-playground.utils';
 import {
+    DotVelocityPlaygroundError,
     DotVelocityPlaygroundResponse,
-    DotVelocityResponseContentType
+    DotVelocityResponseContentType,
+    VelocityWarning
 } from '../../models/dot-velocity-playground.models';
 import { DotVelocityPlaygroundService } from '../../services/dot-velocity-playground.service';
 
@@ -49,7 +52,8 @@ export interface VelocityPlaygroundState {
     output: string;
     outputContentType: DotVelocityResponseContentType;
     elapsedMs: number | null;
-    errorMessage: string | null;
+    error: DotVelocityPlaygroundError | null;
+    warnings: VelocityWarning[];
 }
 
 const initialState: VelocityPlaygroundState = {
@@ -61,7 +65,8 @@ const initialState: VelocityPlaygroundState = {
     output: '',
     outputContentType: 'plaintext',
     elapsedMs: null,
-    errorMessage: null
+    error: null,
+    warnings: []
 };
 
 export const DotVelocityPlaygroundStore = signalStore(
@@ -71,7 +76,8 @@ export const DotVelocityPlaygroundStore = signalStore(
         hasOutput: computed(
             () => store.status() === ComponentStatus.LOADED && store.output().length > 0
         ),
-        hasError: computed(() => store.errorMessage() !== null),
+        hasError: computed(() => store.error() !== null),
+        hasWarnings: computed(() => store.warnings().length > 0),
         canRun: computed(
             () => store.code().trim().length > 0 && store.status() !== ComponentStatus.LOADING
         ),
@@ -114,7 +120,8 @@ export const DotVelocityPlaygroundStore = signalStore(
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             output: '',
-                            errorMessage: null,
+                            error: null,
+                            warnings: [],
                             elapsedMs: null
                         })
                     ),
@@ -132,24 +139,26 @@ export const DotVelocityPlaygroundStore = signalStore(
                                         output: formatBody(response.body, response.contentType),
                                         outputContentType: response.contentType,
                                         elapsedMs: response.elapsedMs,
+                                        warnings: response.warnings,
                                         history: nextHistory
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
-                                    // responseType: 'text' → error.error holds the raw VTL error body.
-                                    const serverBody =
-                                        typeof error?.error === 'string' && error.error.trim()
-                                            ? error.error
-                                            : null;
+                                    // The backend returns a structured 400
+                                    // ({ errors: [...], warnings: [...] }) for Velocity
+                                    // parse/runtime errors. Keep those inline; only fall back to
+                                    // the global (modal) handler for infrastructure failures
+                                    // (network, 403 license, 500…).
+                                    const { error: parsed, isVelocityError } =
+                                        parseVelocityError(error);
                                     patchState(store, {
                                         status: ComponentStatus.LOADED,
-                                        errorMessage:
-                                            serverBody ??
-                                            error?.error?.message ??
-                                            error?.message ??
-                                            'velocityPlayground.error.unknown'
+                                        error: parsed,
+                                        warnings: parsed.warnings
                                     });
-                                    httpErrorManager.handle(error);
+                                    if (!isVelocityError) {
+                                        httpErrorManager.handle(error);
+                                    }
                                 }
                             })
                         );

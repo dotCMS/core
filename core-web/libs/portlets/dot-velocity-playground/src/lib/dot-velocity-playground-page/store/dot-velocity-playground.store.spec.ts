@@ -21,7 +21,8 @@ import { DotVelocityPlaygroundService } from '../../services/dot-velocity-playgr
 const MOCK_RESPONSE: DotVelocityPlaygroundResponse = {
     body: 'hello',
     contentType: 'plaintext',
-    elapsedMs: 42
+    elapsedMs: 42,
+    warnings: []
 };
 
 describe('DotVelocityPlaygroundStore', () => {
@@ -49,6 +50,7 @@ describe('DotVelocityPlaygroundStore', () => {
         errorHandler = spectator.inject(DotHttpErrorManagerService) as unknown as {
             handle: jest.Mock;
         };
+        errorHandler.handle.mockClear();
     });
 
     afterEach(() => {
@@ -59,7 +61,7 @@ describe('DotVelocityPlaygroundStore', () => {
         it('starts in INIT status with empty output', () => {
             expect(spectator.service.status()).toBe(ComponentStatus.INIT);
             expect(spectator.service.output()).toBe('');
-            expect(spectator.service.errorMessage()).toBeNull();
+            expect(spectator.service.error()).toBeNull();
             expect(spectator.service.history()).toEqual([]);
             expect(spectator.service.splitterRatio()).toEqual([...DEFAULT_SPLITTER_RATIO]);
             expect(spectator.service.wrapCode()).toBe(true);
@@ -153,7 +155,8 @@ describe('DotVelocityPlaygroundStore', () => {
                 of({
                     body: '{"ok":true}',
                     contentType: 'json',
-                    elapsedMs: 17
+                    elapsedMs: 17,
+                    warnings: []
                 } satisfies DotVelocityPlaygroundResponse)
             );
 
@@ -167,6 +170,32 @@ describe('DotVelocityPlaygroundStore', () => {
             expect(spectator.service.elapsedMs()).toBe(17);
         });
 
+        it('surfaces warnings from a successful run', () => {
+            const warnings = [
+                {
+                    type: 'UNDEFINED_REFERENCE' as const,
+                    message: "Undefined reference '$x'",
+                    reference: '$x',
+                    line: 1
+                }
+            ];
+            runScriptSpy.mockReturnValue(
+                of({
+                    body: 'output',
+                    contentType: 'plaintext',
+                    elapsedMs: 5,
+                    warnings
+                } satisfies DotVelocityPlaygroundResponse)
+            );
+
+            spectator.service.setCode('$x');
+            spectator.service.runScript();
+
+            expect(spectator.service.warnings()).toEqual(warnings);
+            expect(spectator.service.hasWarnings()).toBe(true);
+            expect(spectator.service.hasError()).toBe(false);
+        });
+
         it('pushes the un-wrapped code into history on success', () => {
             spectator.service.setCode('$hello');
             spectator.service.runScript();
@@ -177,7 +206,7 @@ describe('DotVelocityPlaygroundStore', () => {
             ]);
         });
 
-        it('on error sets errorMessage, returns to LOADED, and delegates to the http error manager', () => {
+        it('on infra error sets error, returns to LOADED, and delegates to the http error manager', () => {
             const httpError = new HttpErrorResponse({
                 error: { message: 'broken' },
                 status: 500,
@@ -189,11 +218,15 @@ describe('DotVelocityPlaygroundStore', () => {
             spectator.service.runScript();
 
             expect(spectator.service.status()).toBe(ComponentStatus.LOADED);
-            expect(spectator.service.errorMessage()).toBe('broken');
+            expect(spectator.service.error()).toEqual({
+                message: 'broken',
+                structured: null,
+                warnings: []
+            });
             expect(errorHandler.handle).toHaveBeenCalledWith(httpError);
         });
 
-        it('uses the raw text response body as errorMessage when responseType is text', () => {
+        it('uses the raw text response body as the error message when responseType is text', () => {
             // responseType: 'text' → error.error is the raw VTL body, not error.message.
             const httpError = new HttpErrorResponse({
                 error: 'Velocity parse error at line 4',
@@ -205,8 +238,43 @@ describe('DotVelocityPlaygroundStore', () => {
             spectator.service.setCode('$broken');
             spectator.service.runScript();
 
-            expect(spectator.service.errorMessage()).toBe('Velocity parse error at line 4');
+            expect(spectator.service.error()).toEqual({
+                message: 'Velocity parse error at line 4',
+                structured: null,
+                warnings: []
+            });
             expect(errorHandler.handle).toHaveBeenCalledWith(httpError);
+        });
+
+        it('parses the structured 400 body and keeps the error inline (no global handler)', () => {
+            // Backend contract: 400 with { errors: [...] }. Service uses responseType:'text',
+            // so error.error arrives as a JSON string that the store must parse.
+            const structured = {
+                message: 'Encountered "#end" — expected #if',
+                errorType: 'ParseErrorException',
+                templateName: 'dynamic velocity',
+                line: 12,
+                column: 3
+            };
+            const httpError = new HttpErrorResponse({
+                error: JSON.stringify({ errors: [structured] }),
+                status: 400,
+                statusText: 'Bad Request'
+            });
+            runScriptSpy.mockReturnValue(throwError(() => httpError));
+
+            spectator.service.setCode('#if(true)');
+            spectator.service.runScript();
+
+            expect(spectator.service.status()).toBe(ComponentStatus.LOADED);
+            expect(spectator.service.error()).toEqual({
+                message: structured.message,
+                structured,
+                warnings: []
+            });
+            expect(spectator.service.hasError()).toBe(true);
+            // Velocity errors stay inline — the global (modal) handler must not fire.
+            expect(errorHandler.handle).not.toHaveBeenCalled();
         });
 
         it('does not add to history when the call errors', () => {

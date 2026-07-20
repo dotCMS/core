@@ -1,4 +1,12 @@
-import { DotVelocityResponseContentType } from './models/dot-velocity-playground.models';
+import { HttpErrorResponse } from '@angular/common/http';
+
+import {
+    DotVelocityPlaygroundError,
+    DotVelocityResponseContentType,
+    VelocityError,
+    VelocityErrorResponse,
+    VelocityWarning
+} from './models/dot-velocity-playground.models';
 
 export const HISTORY_STORAGE_KEY = 'velocityPlayground';
 export const SPLITTER_STORAGE_KEY = 'velocityPlayground.splitterRatio';
@@ -118,6 +126,169 @@ export const getDownloadParams = (
     if (contentType === 'json') return { ext: 'json', mime: 'application/json' };
     if (contentType === 'xml') return { ext: 'xml', mime: 'application/xml' };
     return { ext: 'txt', mime: 'text/plain' };
+};
+
+/** i18n key used when we can't extract any usable message from a failed run. */
+export const UNKNOWN_ERROR_KEY = 'velocityPlayground.error.unknown';
+
+/** Type guard: a single Velocity error object carrying at least a string `message`. */
+const isVelocityErrorObject = (value: unknown): value is VelocityError =>
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as VelocityError).message === 'string';
+
+/** Type guard: the structured `{ errors: VelocityError[] }` body from a `400`. */
+const isVelocityErrorResponse = (value: unknown): value is VelocityErrorResponse =>
+    typeof value === 'object' &&
+    value !== null &&
+    Array.isArray((value as VelocityErrorResponse).errors) &&
+    (value as VelocityErrorResponse).errors.length > 0 &&
+    isVelocityErrorObject((value as VelocityErrorResponse).errors[0]);
+
+/**
+ * Coerce an `HttpErrorResponse.error` into a plain object. The service uses
+ * `responseType: 'text'`, so a structured `400` arrives as a JSON *string* that
+ * must be parsed; a defensive object branch covers interceptors that may have
+ * already parsed it. Returns `null` for anything that isn't structured JSON.
+ */
+const coerceErrorBody = (raw: unknown): unknown => {
+    if (typeof raw === 'object' && raw !== null) return raw;
+    if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (!trimmed.startsWith('{')) return null;
+        try {
+            return JSON.parse(trimmed);
+        } catch {
+            return null;
+        }
+    }
+    return null;
+};
+
+/**
+ * Normalize a failed `POST /api/vtl/dynamic` run into a `DotVelocityPlaygroundError`.
+ *
+ * Recognizes the structured `400` contract (`{ errors: [{ message, errorType,
+ * templateName, line, column }] }`) and returns its first error as `structured`.
+ * Otherwise falls back to the raw text body, then the nested `error.message`,
+ * then the top-level message, then an i18n key — always yielding a non-empty
+ * `message` for the banner.
+ *
+ * `isVelocityError` is `true` only for the structured Velocity contract; callers
+ * use it to keep VTL syntax/runtime errors inline and skip the global (modal)
+ * error handler, which should stay reserved for infrastructure failures.
+ */
+export const parseVelocityError = (
+    error: HttpErrorResponse | null | undefined
+): { error: DotVelocityPlaygroundError; isVelocityError: boolean } => {
+    const body = coerceErrorBody(error?.error);
+
+    if (isVelocityErrorResponse(body)) {
+        const first = body.errors[0];
+        const warnings = Array.isArray(body.warnings) ? body.warnings : [];
+        return {
+            error: { message: first.message, structured: first, warnings },
+            isVelocityError: true
+        };
+    }
+
+    const rawText =
+        typeof error?.error === 'string' && error.error.trim() ? error.error.trim() : null;
+    const nestedMessage =
+        isVelocityErrorObject(body) && body.message.trim() ? body.message.trim() : null;
+
+    const message = rawText ?? nestedMessage ?? error?.message?.trim() ?? UNKNOWN_ERROR_KEY;
+
+    return {
+        error: { message: message || UNKNOWN_ERROR_KEY, structured: null, warnings: [] },
+        isVelocityError: false
+    };
+};
+
+/**
+ * Parse the `X-Dot-Velocity-Warnings` response header (a JSON array of
+ * `VelocityWarning`) sent on a successful run. Returns an empty array when the
+ * header is absent, empty, or malformed — warnings are best-effort context and
+ * must never break the success path.
+ */
+export const parseWarningsHeader = (raw: string | null | undefined): VelocityWarning[] => {
+    if (!raw || !raw.trim()) return [];
+    try {
+        const parsed: unknown = JSON.parse(raw);
+        return Array.isArray(parsed) ? (parsed as VelocityWarning[]) : [];
+    } catch {
+        return [];
+    }
+};
+
+/**
+ * Reduce a (possibly multi-line) error message to a single-line summary for the
+ * banner. Velocity parse errors carry a long "Was expecting one of: …" dump on
+ * subsequent lines — that belongs in the Monaco trace, not the banner. Returns
+ * the first non-empty line, trimmed.
+ */
+export const firstLine = (message: string): string => {
+    const match = message.split('\n').find((line) => line.trim().length > 0);
+    return (match ?? message).trim();
+};
+
+/**
+ * Render a normalized Velocity error as a plain-text, stack-trace-style block for
+ * the read-only Monaco output pane. Shows the full engine output (the backend's
+ * `detail` when present, otherwise the summary), the location, and any collected
+ * warnings — everything the caller needs to fix the code, in one copyable block.
+ *
+ * `message` may be an i18n key for the unknown-error fallback; the caller passes
+ * an already-resolved string via `resolvedMessage` so this stays pure/DOM-free.
+ */
+export const formatErrorTrace = (
+    error: DotVelocityPlaygroundError,
+    resolvedMessage: string
+): string => {
+    const lines: string[] = [];
+    const detail = error.structured;
+
+    // Prefer the full engine output (detail) over the one-line summary for the body.
+    const body = detail?.detail?.trim() ? detail.detail.trim() : resolvedMessage;
+    const header = detail?.errorType ? `${detail.errorType}: ${body}` : body;
+    lines.push(header);
+
+    if (detail) {
+        if (detail.templateName) {
+            lines.push(`    at template "${detail.templateName}"`);
+        }
+        if (detail.line !== undefined && detail.line !== null) {
+            const col =
+                detail.column !== undefined && detail.column !== null
+                    ? `, column ${detail.column}`
+                    : '';
+            lines.push(`    at line ${detail.line}${col}`);
+        }
+    }
+
+    const warningLines = formatWarnings(error.warnings);
+    if (warningLines) {
+        lines.push('', warningLines);
+    }
+
+    return lines.join('\n');
+};
+
+/**
+ * Format a list of Velocity warnings as a plain-text block for the trace pane.
+ * Returns an empty string when there are none.
+ */
+export const formatWarnings = (warnings: VelocityWarning[]): string => {
+    if (!warnings.length) return '';
+    const header = warnings.length === 1 ? '1 warning:' : `${warnings.length} warnings:`;
+    const lines = warnings.map((w) => {
+        const loc =
+            w.line !== undefined && w.line !== null
+                ? ` (line ${w.line}${w.column !== undefined && w.column !== null ? `, column ${w.column}` : ''})`
+                : '';
+        return `  - [${w.type}] ${w.message}${loc}`;
+    });
+    return [header, ...lines].join('\n');
 };
 
 /**
