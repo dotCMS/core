@@ -58,9 +58,13 @@ export function withSidebar() {
                 };
 
                 const urlFolderPath = store.path() || '';
-                const fullPath = `${currentSite.hostname}${urlFolderPath}`;
 
-                getFolderHierarchyByPath(fullPath, dotFolderService)
+                getFolderHierarchyByPath(
+                    urlFolderPath,
+                    currentSite.identifier,
+                    currentSite.hostname,
+                    dotFolderService
+                )
                     .pipe(
                         take(1),
                         catchError((response) => {
@@ -71,7 +75,7 @@ export function withSidebar() {
                                 console.error('Error loading folders:', response);
                             }
 
-                            return of([[realAllFolder as DotFolder]]);
+                            return of([] as DotFolder[][]);
                         })
                     )
                     .subscribe((folders) => {
@@ -95,11 +99,16 @@ export function withSidebar() {
             loadChildFolders: (
                 path: string,
                 hostname?: string
-            ): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> => {
-                const host = hostname || store.currentSite()?.hostname;
-                const fullPath = `${host}${path}`;
+            ): Observable<{ folders: DotFolderTreeNodeItem[] }> => {
+                const currentSite = store.currentSite();
 
-                return getFolderNodesByPath(fullPath, dotFolderService);
+                if (!currentSite) {
+                    return of({ folders: [] });
+                }
+
+                const host = hostname || currentSite.hostname;
+
+                return getFolderNodesByPath(path, currentSite.identifier, host, dotFolderService);
             },
             /**
              * Sets the selected node

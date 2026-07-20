@@ -1,16 +1,18 @@
 import { describe, it, expect } from '@jest/globals';
-import { of, Observable } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
-    DotFolder,
     DotContentDriveFolder,
     DotContentDriveItem,
-    DotCMSContentlet
+    DotCMSContentlet,
+    DotPagination,
+    FolderSearchView
 } from '@dotcms/dotcms-models';
 import {
     createFakeCheckboxField,
     createFakeDateField,
+    createFakeFolderSearchView,
     createFakeSelectField,
     createFakeTagField,
     createFakeTextField
@@ -35,6 +37,7 @@ import {
     getUserSearchableActive
 } from './functions';
 
+import { FOLDER_TREE_SEARCH_PAGE_SIZE } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
@@ -355,325 +358,288 @@ describe('Utility Functions', () => {
 
     describe('getFolderHierarchyByPath', () => {
         let mockDotFolderService: jest.Mocked<DotFolderService>;
+        const SITE_ID = 'site-123';
+        const HOSTNAME = 'test.com';
+
+        const searchResult = (folders: FolderSearchView[]) =>
+            of({ folders, pagination: {} as DotPagination });
 
         beforeEach(() => {
             mockDotFolderService = {
-                getFolders: jest.fn()
+                searchFolders: jest.fn().mockReturnValue(searchResult([]))
             } as unknown as jest.Mocked<DotFolderService>;
         });
 
-        it('should fetch folders for all parent paths', (done) => {
-            const testPath = '/main/sub-folder/inner-folder';
-            const mockFolders1: DotFolder[] = [
-                { id: '1', hostName: 'test.com', path: '/main/', addChildrenAllowed: true }
-            ];
-            const mockFolders2: DotFolder[] = [
-                {
-                    id: '2',
-                    hostName: 'test.com',
-                    path: '/main/sub-folder/',
-                    addChildrenAllowed: true
-                }
-            ];
-            const mockFolders3: DotFolder[] = [
-                {
-                    id: '3',
-                    hostName: 'test.com',
-                    path: '/main/sub-folder/inner-folder/',
-                    addChildrenAllowed: true
-                }
-            ];
+        it('should search the root and every parent path with an uncapped page size', (done) => {
+            const folderPath = '/main/sub-folder/inner-folder';
 
-            // Mock the service to return different folders for each path
-            mockDotFolderService.getFolders
-                .mockReturnValueOnce(of(mockFolders1))
-                .mockReturnValueOnce(of(mockFolders2))
-                .mockReturnValueOnce(of(mockFolders3));
+            getFolderHierarchyByPath(folderPath, SITE_ID, HOSTNAME, mockDotFolderService).subscribe(
+                {
+                    next: () => {
+                        expect(mockDotFolderService.searchFolders).toHaveBeenCalledTimes(4);
 
-            getFolderHierarchyByPath(testPath, mockDotFolderService).subscribe({
-                next: (result) => {
-                    expect(result).toEqual([mockFolders1, mockFolders2, mockFolders3]);
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledTimes(3);
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledWith('/main/');
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledWith(
-                        '/main/sub-folder/'
-                    );
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledWith(
-                        '/main/sub-folder/inner-folder/'
-                    );
-                    done();
-                },
-                error: done
-            });
+                        const expectedPaths = [
+                            '/',
+                            '/main/',
+                            '/main/sub-folder/',
+                            '/main/sub-folder/inner-folder/'
+                        ];
+                        expectedPaths.forEach((path) => {
+                            expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                                expect.objectContaining({
+                                    siteId: SITE_ID,
+                                    path,
+                                    recursive: false,
+                                    per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+                                })
+                            );
+                        });
+                        done();
+                    },
+                    error: done
+                }
+            );
         });
 
-        it('should handle single level path', (done) => {
-            const testPath = '/main';
-            const mockFolders: DotFolder[] = [
-                { id: '1', hostName: 'test.com', path: '/main/', addChildrenAllowed: true }
-            ];
-
-            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
-
-            getFolderHierarchyByPath(testPath, mockDotFolderService).subscribe({
-                next: (result) => {
-                    expect(result).toEqual([mockFolders]);
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledTimes(1);
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledWith('/main/');
-                    done();
-                },
-                error: done
-            });
-        });
-
-        it('should handle service errors gracefully', (done) => {
-            const testPath = '/main';
-            const errorMessage = 'Service error';
-
-            mockDotFolderService.getFolders.mockReturnValue(
-                new Observable((observer) => observer.error(new Error(errorMessage)))
+        it('should adapt search results into DotFolder full paths with the site hostname', (done) => {
+            mockDotFolderService.searchFolders.mockReturnValueOnce(
+                searchResult([
+                    createFakeFolderSearchView({
+                        id: 'm',
+                        inode: 'im',
+                        name: 'main',
+                        path: '/',
+                        addChildrenAllowed: true,
+                        hasChildren: true
+                    })
+                ])
             );
 
-            getFolderHierarchyByPath(testPath, mockDotFolderService).subscribe({
-                next: () => {
-                    done(new Error('Should have thrown an error'));
+            getFolderHierarchyByPath('/main', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: (levels) => {
+                    expect(levels[0][0]).toEqual({
+                        id: 'm',
+                        inode: 'im',
+                        hostName: HOSTNAME,
+                        path: '/main/',
+                        addChildrenAllowed: true,
+                        hasChildren: true
+                    });
+                    done();
                 },
+                error: done
+            });
+        });
+
+        it('should query only the site root for the root path', (done) => {
+            getFolderHierarchyByPath('/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: (levels) => {
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledTimes(1);
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({ path: '/' })
+                    );
+                    expect(levels).toHaveLength(1);
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should query only the site root for an empty path', (done) => {
+            getFolderHierarchyByPath('', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: () => {
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledTimes(1);
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({ path: '/' })
+                    );
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should return every folder in a level without a 40-item cap', (done) => {
+            const many = Array.from({ length: 45 }, (_, i) =>
+                createFakeFolderSearchView({ id: `f${i}`, name: `folder-${i}`, path: '/' })
+            );
+            mockDotFolderService.searchFolders.mockReturnValue(searchResult(many));
+
+            getFolderHierarchyByPath('/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: (levels) => {
+                    expect(levels[0]).toHaveLength(45);
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({ per_page: FOLDER_TREE_SEARCH_PAGE_SIZE })
+                    );
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should propagate service errors', (done) => {
+            mockDotFolderService.searchFolders.mockReturnValue(
+                throwError(() => new Error('Service error'))
+            );
+
+            getFolderHierarchyByPath('/main', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: () => done(new Error('Should have thrown an error')),
                 error: (error) => {
-                    expect(error.message).toBe(errorMessage);
+                    expect(error.message).toBe('Service error');
                     done();
                 }
-            });
-        });
-
-        it('should handle root path', (done) => {
-            const testPath = '/';
-            // Root path has no parent paths, so generateAllParentPaths returns empty array
-            // and the function should return empty array without calling service
-
-            getFolderHierarchyByPath(testPath, mockDotFolderService).subscribe({
-                next: (result) => {
-                    expect(result).toEqual([]);
-                    expect(mockDotFolderService.getFolders).not.toHaveBeenCalled();
-                    done();
-                },
-                error: done
-            });
-        });
-
-        it('should handle empty path', (done) => {
-            const testPath = '';
-            const mockFolders: DotFolder[] = [];
-
-            // Empty path should result in no paths generated, so no service calls
-            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
-
-            getFolderHierarchyByPath(testPath, mockDotFolderService).subscribe({
-                next: (result) => {
-                    // Empty path generates no parent paths, so result should be empty array
-                    expect(result).toEqual([]);
-                    expect(mockDotFolderService.getFolders).not.toHaveBeenCalled();
-                    done();
-                },
-                error: done
             });
         });
     });
 
     describe('getFolderNodesByPath', () => {
         let mockDotFolderService: jest.Mocked<DotFolderService>;
+        const SITE_ID = 'site-123';
+        const HOSTNAME = 'test.com';
+
+        const searchResult = (folders: FolderSearchView[]) =>
+            of({ folders, pagination: {} as DotPagination });
 
         beforeEach(() => {
             mockDotFolderService = {
-                getFolders: jest.fn()
+                searchFolders: jest.fn().mockReturnValue(searchResult([]))
             } as unknown as jest.Mocked<DotFolderService>;
         });
 
-        it('should return parent folder and child tree nodes', (done) => {
-            const testPath = '/main/sub-folder';
-            const mockParentFolder: DotFolder = {
-                id: 'parent-1',
-                hostName: 'test.com',
-                path: '/main/sub-folder/',
-                addChildrenAllowed: true
-            };
-            const mockChildFolder1: DotFolder = {
-                id: 'child-1',
-                hostName: 'test.com',
-                path: '/main/sub-folder/child1/',
-                addChildrenAllowed: true
-            };
-            const mockChildFolder2: DotFolder = {
-                id: 'child-2',
-                hostName: 'test.com',
-                path: '/main/sub-folder/child2/',
-                addChildrenAllowed: false
-            };
+        it('should request the direct children of the path with an uncapped page size', (done) => {
+            const testPath = '/main/sub-folder/';
 
-            const mockFolders = [mockParentFolder, mockChildFolder1, mockChildFolder2];
-            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
+            getFolderNodesByPath(testPath, SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: () => {
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            siteId: SITE_ID,
+                            path: testPath,
+                            recursive: false,
+                            per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+                        })
+                    );
+                    done();
+                },
+                error: done
+            });
+        });
 
-            getFolderNodesByPath(testPath, mockDotFolderService).subscribe({
+        it('should transform child folders into tree nodes', (done) => {
+            mockDotFolderService.searchFolders.mockReturnValue(
+                searchResult([
+                    createFakeFolderSearchView({
+                        id: 'child-1',
+                        inode: 'inode-1',
+                        name: 'child1',
+                        path: '/main/sub-folder/',
+                        addChildrenAllowed: true,
+                        hasChildren: true
+                    }),
+                    createFakeFolderSearchView({
+                        id: 'child-2',
+                        inode: 'inode-2',
+                        name: 'child2',
+                        path: '/main/sub-folder/',
+                        addChildrenAllowed: false,
+                        hasChildren: false
+                    })
+                ])
+            );
+
+            getFolderNodesByPath(
+                '/main/sub-folder/',
+                SITE_ID,
+                HOSTNAME,
+                mockDotFolderService
+            ).subscribe({
                 next: (result) => {
-                    expect(result.parent).toEqual(mockParentFolder);
                     expect(result.folders).toHaveLength(2);
-
-                    // Verify first child tree node
                     expect(result.folders[0]).toEqual({
                         key: 'child-1',
                         label: '/main/sub-folder/child1/',
                         data: {
                             id: 'child-1',
-                            hostname: 'test.com',
+                            inode: 'inode-1',
+                            hostname: HOSTNAME,
                             path: '/main/sub-folder/child1/',
                             type: 'folder'
                         },
+                        // hasChildren: true → expandable (chevron shown)
                         leaf: false
                     });
-
-                    // Verify second child tree node
-                    expect(result.folders[1]).toEqual({
-                        key: 'child-2',
-                        label: '/main/sub-folder/child2/',
-                        data: {
-                            id: 'child-2',
-                            hostname: 'test.com',
-                            path: '/main/sub-folder/child2/',
-                            type: 'folder'
-                        },
-                        leaf: false
-                    });
-
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledWith(testPath);
+                    expect(result.folders[1].key).toBe('child-2');
+                    expect(result.folders[1].label).toBe('/main/sub-folder/child2/');
+                    // hasChildren: false → no chevron, cannot expand
+                    expect(result.folders[1].leaf).toBe(true);
                     done();
                 },
                 error: done
             });
         });
 
-        it('should handle folder with no children', (done) => {
-            const testPath = '/main/empty-folder';
-            const mockParentFolder: DotFolder = {
-                id: 'parent-1',
-                hostName: 'test.com',
-                path: '/main/empty-folder/',
-                addChildrenAllowed: true
-            };
+        it('should return an empty folders array when the level has no children', (done) => {
+            getFolderNodesByPath('/main/empty/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe(
+                {
+                    next: (result) => {
+                        expect(result.folders).toEqual([]);
+                        done();
+                    },
+                    error: done
+                }
+            );
+        });
 
-            const mockFolders = [mockParentFolder]; // Only parent, no children
-            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
+        it('should return every child without a 40-item cap', (done) => {
+            const many = Array.from({ length: 45 }, (_, i) =>
+                createFakeFolderSearchView({ id: `f${i}`, name: `f${i}`, path: '/main/' })
+            );
+            mockDotFolderService.searchFolders.mockReturnValue(searchResult(many));
 
-            getFolderNodesByPath(testPath, mockDotFolderService).subscribe({
+            getFolderNodesByPath('/main/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
                 next: (result) => {
-                    expect(result.parent).toEqual(mockParentFolder);
-                    expect(result.folders).toEqual([]);
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledWith(testPath);
+                    expect(result.folders).toHaveLength(45);
                     done();
                 },
                 error: done
             });
         });
 
-        it('should handle empty folder response', (done) => {
-            const testPath = '/non-existent';
-            const mockFolders: DotFolder[] = [];
-
-            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
-
-            getFolderNodesByPath(testPath, mockDotFolderService).subscribe({
-                next: (result) => {
-                    expect(result.parent).toBeUndefined();
-                    expect(result.folders).toEqual([]);
-                    expect(mockDotFolderService.getFolders).toHaveBeenCalledWith(testPath);
-                    done();
-                },
-                error: done
-            });
-        });
-
-        it('should handle service errors gracefully', (done) => {
-            const testPath = '/main';
-            const errorMessage = 'Service error';
-
-            mockDotFolderService.getFolders.mockReturnValue(
-                new Observable((observer) => observer.error(new Error(errorMessage)))
+        it('should warn (not silently truncate) when a level exceeds the page size', (done) => {
+            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            mockDotFolderService.searchFolders.mockReturnValue(
+                of({
+                    folders: [createFakeFolderSearchView({ path: '/main/' })],
+                    pagination: {
+                        currentPage: 1,
+                        perPage: FOLDER_TREE_SEARCH_PAGE_SIZE,
+                        totalEntries: FOLDER_TREE_SEARCH_PAGE_SIZE + 1
+                    }
+                })
             );
 
-            getFolderNodesByPath(testPath, mockDotFolderService).subscribe({
+            getFolderNodesByPath('/main/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
                 next: () => {
-                    done(new Error('Should have thrown an error'));
+                    expect(warnSpy).toHaveBeenCalledWith(
+                        expect.stringContaining(String(FOLDER_TREE_SEARCH_PAGE_SIZE + 1))
+                    );
+                    warnSpy.mockRestore();
+                    done();
                 },
+                error: done
+            });
+        });
+
+        it('should propagate service errors', (done) => {
+            mockDotFolderService.searchFolders.mockReturnValue(
+                throwError(() => new Error('Service error'))
+            );
+
+            getFolderNodesByPath('/main/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: () => done(new Error('Should have thrown an error')),
                 error: (error) => {
-                    expect(error.message).toBe(errorMessage);
+                    expect(error.message).toBe('Service error');
                     done();
                 }
-            });
-        });
-
-        it('should handle root path', (done) => {
-            const testPath = '/';
-            const mockRootFolder: DotFolder = {
-                id: 'root',
-                hostName: 'test.com',
-                path: '/',
-                addChildrenAllowed: true
-            };
-            const mockChildFolder: DotFolder = {
-                id: 'child-1',
-                hostName: 'test.com',
-                path: '/child1/',
-                addChildrenAllowed: true
-            };
-
-            const mockFolders = [mockRootFolder, mockChildFolder];
-            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
-
-            getFolderNodesByPath(testPath, mockDotFolderService).subscribe({
-                next: (result) => {
-                    expect(result.parent).toEqual(mockRootFolder);
-                    expect(result.folders).toHaveLength(1);
-                    expect(result.folders[0].key).toBe('child-1');
-                    done();
-                },
-                error: done
-            });
-        });
-
-        it('should transform folders with correct tree node structure', (done) => {
-            const testPath = '/test';
-            const mockParentFolder: DotFolder = {
-                id: 'parent-123',
-                hostName: 'example.com',
-                path: '/test/',
-                addChildrenAllowed: true
-            };
-            const mockChildFolder: DotFolder = {
-                id: 'child-456',
-                hostName: 'example.com',
-                path: '/test/subfolder/',
-                addChildrenAllowed: false
-            };
-
-            const mockFolders = [mockParentFolder, mockChildFolder];
-            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
-
-            getFolderNodesByPath(testPath, mockDotFolderService).subscribe({
-                next: (result) => {
-                    expect(result.parent).toEqual(mockParentFolder);
-                    expect(result.folders).toHaveLength(1);
-
-                    const treeNode = result.folders[0];
-                    expect(treeNode.key).toBe('child-456');
-                    expect(treeNode.label).toBe('/test/subfolder/');
-                    expect(treeNode.leaf).toBe(false);
-                    expect(treeNode.data).toEqual({
-                        id: 'child-456',
-                        hostname: 'example.com',
-                        path: '/test/subfolder/',
-                        type: 'folder'
-                    });
-                    done();
-                },
-                error: done
             });
         });
     });

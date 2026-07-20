@@ -9,7 +9,9 @@ import {
     DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDriveUserSearchableValue,
-    DotFolder
+    DotFolder,
+    DotPagination,
+    FolderSearchView
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
@@ -20,6 +22,7 @@ import {
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TYPES,
     FIELD_FILTER_MULTI_VALUE_TYPES,
+    FOLDER_TREE_SEARCH_PAGE_SIZE,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
 } from '../shared/constants';
@@ -225,59 +228,126 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
 }
 
 /**
- * Fetches all parent folders from a given path using parallel API calls
+ * Adapts a `FolderSearchView` (returned by `GET /api/v1/folder/search`) into the `DotFolder`
+ * shape the tree builder consumes.
  *
- * Example: '/main/sub-folder/inner-folder/child-folder' will make calls to:
- * - /main/sub-folder/inner-folder/child-folder
- * - /main/sub-folder/inner-folder
- * - /main/sub-folder
- * - /main
- * - /
+ * The search view exposes the folder's own `name` and its parent `path` separately and omits the
+ * hostname (the search is already scoped by site), so the folder's own full path is recomposed as
+ * `<parentPath><name>/` and the current site hostname is injected.
  *
- * @param {string} path - The full path to generate parent paths from
+ * @param {FolderSearchView} view - The folder search result item
+ * @param {string} hostName - Hostname of the site being browsed
+ * @returns {DotFolder} The adapted folder
+ */
+export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: string): DotFolder {
+    return {
+        id: view.id,
+        inode: view.inode,
+        hostName,
+        path: `${view.path}${view.name}/`,
+        addChildrenAllowed: view.addChildrenAllowed,
+        hasChildren: view.hasChildren
+    };
+}
+
+/**
+ * Warns when a folder level has more folders than the single page we request, so the truncation is
+ * not silent. The tree renders a whole level at once; if a level ever exceeds
+ * {@link FOLDER_TREE_SEARCH_PAGE_SIZE}, pagination/infinite-scroll would be needed.
+ *
+ * @param {string} path - The folder level path being loaded
+ * @param {DotPagination} pagination - Pagination metadata returned by the search endpoint
+ */
+function warnIfFolderLevelTruncated(path: string, pagination?: DotPagination): void {
+    if (pagination && pagination.totalEntries > FOLDER_TREE_SEARCH_PAGE_SIZE) {
+        console.warn(
+            `Folder tree: level "${path}" has ${pagination.totalEntries} folders but only ` +
+                `${FOLDER_TREE_SEARCH_PAGE_SIZE} are shown.`
+        );
+    }
+}
+
+/**
+ * Fetches the folders for every level of a target path using parallel search calls, so the sidebar
+ * tree can be rendered expanded down to that path.
+ *
+ * One `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the site root
+ * (`'/'`) and descending through each parent path. Each call returns the direct children of that
+ * level. Results are ordered to mirror the levels of the target path.
+ *
+ * @param {string} folderPath - The folder path (without hostname) to expand to, e.g. `/a/b/`
+ * @param {string} siteId - Identifier of the site to scope the search
+ * @param {string} hostName - Hostname of the site (injected into the adapted folders)
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<DotFolder[][]>} Observable that emits an array of folder arrays (one for each path level)
+ * @returns {Observable<DotFolder[][]>} Observable that emits one folder array per path level
  */
 export function getFolderHierarchyByPath(
-    path: string,
+    folderPath: string,
+    siteId: string,
+    hostName: string,
     dotFolderService: DotFolderService
 ): Observable<DotFolder[][]> {
-    const paths = generateAllParentPaths(path);
+    // The root level (`'/'`) is always fetched first; deeper levels come from the target path.
+    const paths = ['/', ...generateAllParentPaths(folderPath)];
 
-    // Handle empty paths case - forkJoin doesn't emit for empty array
-    if (paths.length === 0) {
-        return new Observable((observer) => {
-            observer.next([]);
-            observer.complete();
-        });
-    }
+    const folderRequests = paths.map((path) =>
+        dotFolderService
+            .searchFolders({
+                siteId,
+                path,
+                recursive: false,
+                orderby: 'name',
+                direction: 'ASC',
+                per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+            })
+            .pipe(
+                map(({ folders, pagination }) => {
+                    warnIfFolderLevelTruncated(path, pagination);
 
-    const folderRequests = paths.map((path) => dotFolderService.getFolders(path));
+                    return folders.map((view) => folderSearchViewToDotFolder(view, hostName));
+                })
+            )
+    );
 
     return forkJoin(folderRequests);
 }
 
 /**
- * Fetches folders and transforms them into tree nodes
+ * Fetches the direct child folders of a path and transforms them into tree nodes. Used to lazily
+ * load a node's children when it is expanded.
  *
- * @param {string} path - The path to fetch folders from
+ * @param {string} folderPath - The folder path (without hostname) whose children to fetch
+ * @param {string} siteId - Identifier of the site to scope the search
+ * @param {string} hostName - Hostname of the site (injected into the adapted folders)
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }>}
+ * @returns {Observable<{ folders: DotFolderTreeNodeItem[] }>}
  */
 export function getFolderNodesByPath(
-    path: string,
+    folderPath: string,
+    siteId: string,
+    hostName: string,
     dotFolderService: DotFolderService
-): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> {
-    return dotFolderService.getFolders(path).pipe(
-        map((folders) => {
-            const [parent, ...childFolders] = folders;
-
-            return {
-                parent,
-                folders: childFolders.map((folder) => createTreeNode(folder))
-            };
+): Observable<{ folders: DotFolderTreeNodeItem[] }> {
+    return dotFolderService
+        .searchFolders({
+            siteId,
+            path: folderPath,
+            recursive: false,
+            orderby: 'name',
+            direction: 'ASC',
+            per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
         })
-    );
+        .pipe(
+            map(({ folders, pagination }) => {
+                warnIfFolderLevelTruncated(folderPath, pagination);
+
+                return {
+                    folders: folders.map((view) =>
+                        createTreeNode(folderSearchViewToDotFolder(view, hostName))
+                    )
+                };
+            })
+        );
 }
 
 /**

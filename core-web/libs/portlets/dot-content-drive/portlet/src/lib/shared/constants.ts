@@ -17,6 +17,14 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     offset: 0
 };
 
+/**
+ * Page size requested per folder level when loading the sidebar tree via
+ * `GET /api/v1/folder/search`. The tree renders every folder in a level at once (no "load more"),
+ * so we request a single large page instead of paginating. Matches the backend's
+ * `SUB_FOLDER_UNLIMITED_SAFETY_CAP` (10000) — the ceiling the server itself enforces.
+ */
+export const FOLDER_TREE_SEARCH_PAGE_SIZE = 10000;
+
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC
