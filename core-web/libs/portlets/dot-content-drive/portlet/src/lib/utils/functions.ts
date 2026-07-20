@@ -240,11 +240,17 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
  * @returns {DotFolder} The adapted folder
  */
 export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: string): DotFolder {
+    // Normalize the parent path to a trailing slash before composing the folder's own path, so the
+    // result is always `.../<name>/`. `buildTreeFolderNodes` compares this against
+    // `generateAllParentPaths` (always trailing-slashed); a missing slash would break target-path
+    // matching. Mirrors the guard in dot-browsing.service.ts.
+    const parentPath = view.path.endsWith('/') ? view.path : `${view.path}/`;
+
     return {
         id: view.id,
         inode: view.inode,
         hostName,
-        path: `${view.path}${view.name}/`,
+        path: `${parentPath}${view.name}/`,
         addChildrenAllowed: view.addChildrenAllowed,
         hasChildren: view.hasChildren
     };

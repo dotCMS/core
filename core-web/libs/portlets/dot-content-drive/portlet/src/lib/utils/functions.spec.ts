@@ -577,6 +577,24 @@ describe('Utility Functions', () => {
             });
         });
 
+        it('should normalize a parent path that is missing its trailing slash', (done) => {
+            mockDotFolderService.searchFolders.mockReturnValue(
+                searchResult([
+                    createFakeFolderSearchView({ id: 'x', name: 'sub', path: '/main' })
+                ])
+            );
+
+            getFolderNodesByPath('/main/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe({
+                next: (result) => {
+                    // '/main' (no trailing slash) + 'sub' must yield '/main/sub/', not '/mainsub/'
+                    expect(result.folders[0].data.path).toBe('/main/sub/');
+                    expect(result.folders[0].label).toBe('/main/sub/');
+                    done();
+                },
+                error: done
+            });
+        });
+
         it('should return an empty folders array when the level has no children', (done) => {
             getFolderNodesByPath('/main/empty/', SITE_ID, HOSTNAME, mockDotFolderService).subscribe(
                 {
