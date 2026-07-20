@@ -761,8 +761,14 @@ public class OSIndexAPIImpl implements IndexAPI {
             final List<String> physicalNames = indexNames.stream()
                     .map(this::getNameWithClusterIDPrefix)
                     .collect(Collectors.toList());
+            // ignoreUnavailable/allowNoIndices: tolerate names in the batch that are absent on this
+            // engine. During the ES→OS migration callers pass a MERGED ES∪OS index list, so an
+            // OS-only read here can receive ES-only names with no OpenSearch twin. Without these a
+            // single missing index throws index_not_found and drops EVERY alias in the batch
+            // (issue #36360, I-3 — same class as the ES-side fix).
             final GetAliasResponse response = clientProvider.getClient().indices()
-                    .getAlias(GetAliasRequest.of(b -> b.index(physicalNames)));
+                    .getAlias(GetAliasRequest.of(b -> b.index(physicalNames)
+                            .ignoreUnavailable(true).allowNoIndices(true)));
             // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
             response.result().forEach((indexName, indexAliases) -> {
                 final Map<String, ?> aliasMap = indexAliases.aliases();

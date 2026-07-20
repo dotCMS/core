@@ -514,6 +514,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         // Deletes only from THIS engine (indexApi is the direct OSIndexAPIImpl, not the router).
         // Site-search OS indices are plain-named (no .os tag). Active-index protection is enforced
         // by the SiteSearchAPIImpl router before dispatch.
+        // Idempotent per engine: during migration a site-search index can exist on only one engine
+        // (e.g. a Phase-0 ES-only index has no OpenSearch twin), so skip when it is absent here
+        // rather than letting deleteMultiple throw index_not_found and crash the fan-out — which
+        // would otherwise abort the Site Search build mid-switch (issue #36360, I-7).
+        if (!indexApi.indexExists(indexName)) {
+            Logger.info(this.getClass(),
+                    "Site-search index '" + indexName + "' is absent on this engine; nothing to delete.");
+            return;
+        }
         indexApi.deleteMultiple(new String[]{indexName});
     }
 
@@ -844,7 +853,28 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      * note), so the tag is stripped here to keep comparisons and list lookups consistent.</p>
      */
     private Optional<String> defaultSiteSearchIndex() {
-        return loadDefaultIndices().flatMap(VersionedIndices::siteSearch).map(IndexTag::strip);
+        final Optional<String> versioned =
+                loadDefaultIndices().flatMap(VersionedIndices::siteSearch).map(IndexTag::strip);
+        if (versioned.isPresent()) {
+            return versioned;
+        }
+        // Fallback to the legacy pointer. A default activated before the migration started lives only
+        // in the legacy IndiciesAPI store — Phase 0 never populates VersionedIndices (the versioned
+        // site-search slot is written only when an index is activated in a dual-write phase). Without
+        // this fallback, switching reads to OpenSearch (Phase 2/3) leaves $sitesearch.search with no
+        // resolvable default until the operator manually re-activates one (issue #36360, I-5).
+        return legacyDefaultSiteSearchIndex();
+    }
+
+    /**
+     * The active site-search index name from the legacy {@link com.dotmarketing.business.IndiciesAPI}
+     * store, used as a fallback when the OpenSearch versioned store has no site-search pointer yet
+     * (e.g. a default carried over from Phase 0). Returns empty on any error or a blank pointer.
+     */
+    private Optional<String> legacyDefaultSiteSearchIndex() {
+        return Try.of(() -> APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())
+                .toJavaOptional()
+                .filter(UtilMethods::isSet);
     }
 
     private Optional<VersionedIndices> loadDefaultIndices() {
