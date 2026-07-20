@@ -68,6 +68,7 @@ import {
 } from '../../extensions';
 import {
     AIContentNode,
+    AudioNode,
     ContentletBlock,
     createGridColumn,
     GridBlock,
@@ -133,6 +134,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
+        ['audio', AudioNode],
         ['aiContent', AIContentNode],
         ['loader', LoaderNode],
         ['gridBlock', GridBlock]
