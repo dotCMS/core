@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 
-import { DotContentletStatusBadgeComponent } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent, DotContentThumbnailComponent } from '@dotcms/ui';
 
 // Shared
 import {
@@ -26,7 +26,8 @@ import { SuggestionsService } from './services';
         ReactiveFormsModule,
         ButtonModule,
         TagModule,
-        DotContentletStatusBadgeComponent
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent
     ],
     declarations: [
         SuggestionsComponent,

@@ -1,5 +1,5 @@
 import { describe, expect, beforeEach } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';

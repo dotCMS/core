@@ -78,6 +78,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
@@ -174,6 +175,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private final PhaseRouter<ContentletIndexOperations> router;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+
+    /**
+     * Max seconds a single reindex-journal entry may spend loading/mapping its contentlets
+     * before it is marked failed and the queue moves on — guards against hung filesystem I/O
+     * on network-backed storage (issue #36498). {@code 0} disables the guard.
+     */
+    public static final String REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS =
+            "REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS";
+
+    private static final Lazy<ReindexMappingRunner> mappingRunner = Lazy.of(() ->
+            new ReindexMappingRunner(
+                    () -> Config.getIntProperty(REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS, 120),
+                    Config.getIntProperty("REINDEX_CONTENTLET_MAPPING_MAX_THREADS", 8),
+                    DbConnectionFactory::closeSilently));
 
     public ContentletIndexAPIImpl() {
         this(new ContentletIndexOperationsES(),
@@ -1853,6 +1868,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // never left half-deleted. Broadcast the LOGICAL (untagged) name to every write provider
         // so each re-derives its OWN physical name (ES → bare, OS → .os). Track the read
         // provider's result as the primary (issue #35640).
+        // Divergent names are normal after a migration catchup, so the shadow leg skips names its
+        // engine does not hold instead of ERROR-logging an expected miss, and real shadow failures
+        // follow the shadow-write log policy (fire-and-forget) (issue #36423). Primary failures
+        // are logged at ERROR and re-thrown after every provider has been called, matching the
+        // PhaseRouter.writeBoolean contract — pre-migration these propagated to the caller, and
+        // swallowing them lets the REST layer report success for a failed delete (#36430).
         final ContentletIndexOperations primary = router.readProvider();
         final List<ContentletIndexOperations> targets = router.writeProviders();
         final String nameForTargets = IndexTag.OS.untag(indexName);
@@ -1861,6 +1882,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final String logicalName = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
 
         boolean primaryResult = false;
+        RuntimeException primaryEx = null;
         for (final ContentletIndexOperations ops : targets) {
             // Resolve the per-provider physical name (ES → bare, OS → .os tag) via
             // ops.toPhysicalName so the delete targets the REAL index. Routing a bare
@@ -1870,16 +1892,42 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // (1) Delete the cluster index. A failure here must NOT abort the operation —
             // keep going so the remaining engine and the DB pointers are still handled.
             try {
-                final boolean r = ops.indexAPI().delete(physicalName);
-                if (ops == primary) {
-                    primaryResult = r;
+                if (ops != primary && !ops.indexAPI().indexExists(physicalName)) {
+                    // Expected divergent-name miss on the shadow leg — log via the shadow-write
+                    // policy instead of an ERROR stack trace (issue #36423). Fall through so the
+                    // DB pointer for this engine is still cleared in step (2) below.
+                    logShadowWriteFailure(this.getClass(),
+                            "Skipping shadow delete of " + physicalName
+                            + ": index does not exist in the shadow provider (divergent names"
+                            + " are expected during migration catchup)", null);
+                } else {
+                    final boolean r = ops.indexAPI().delete(physicalName);
+                    if (ops == primary) {
+                        primaryResult = r;
+                    }
                 }
             } catch (final Exception e) {
-                Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
-                if (ops == primary) {
-                    primaryResult = false;
+                if (ops == primary && isIndexNotFound(e)) {
+                    // The index is already gone — the delete goal (index absent) is met, so this
+                    // is an idempotent no-op, NOT a failure to propagate. Covers cleaning up a
+                    // dangling DB pointer whose cluster index no longer exists and the divergent
+                    // case where only the shadow engine held the index (issue #35640 lastOsSlot;
+                    // reconciles #36430's primary-failure propagation with that cleanup path).
+                    Logger.debug(this.getClass(),
+                            "Delete of " + physicalName + " hit a missing index; treating as a no-op");
+                    primaryResult = true;
+                } else if (ops == primary) {
+                    // Genuine primary failure (engine down, auth, ...) — surface at ERROR and
+                    // re-throw to the caller so the REST layer does not report success (#36430).
+                    Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
+                    primaryEx = e instanceof RuntimeException
+                            ? (RuntimeException) e : new DotRuntimeException(e);
+                } else {
+                    // Shadow failures are fire-and-forget in dual-write phases (#36423).
+                    logShadowWriteFailure(this.getClass(),
+                            "Shadow delete failed (fire-and-forget in dual-write phase): "
+                            + physicalName + ": " + e.getMessage(), e);
                 }
-                // shadow failures are fire-and-forget in dual-write phases
             }
             // (2) Always remove the indicies-table pointer for this engine, even if the cluster
             // delete above failed, so no DB row is left dangling at a deleted index.
@@ -1889,6 +1937,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 Logger.warn(this.getClass(),
                         "Could not clear the indicies DB pointer for " + physicalName, e);
             }
+        }
+        if (primaryEx != null) {
+            throw primaryEx;
         }
         return primaryResult;
     }
@@ -1906,6 +1957,28 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else {
             clearEsStorePointer(logicalName);
         }
+    }
+
+    /**
+     * True when {@code t} (or any of its causes) reports a missing index. Deleting an index that
+     * is already gone meets the delete goal, so it is treated as an idempotent no-op rather than a
+     * failure that must propagate (see {@link #delete(String)}). Kept vendor-neutral: both the ES
+     * and OpenSearch clients surface the same {@code index_not_found_exception} / "no such index"
+     * marker, so this matches the wire text instead of importing a vendor exception type.
+     */
+    private static boolean isIndexNotFound(final Throwable t) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+            if (cause.getClass().getSimpleName().contains("IndexNotFound")) {
+                return true;
+            }
+            final String message = cause.getMessage();
+            if (message != null
+                    && (message.contains("index_not_found_exception")
+                        || message.contains("no such index"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -2318,14 +2391,40 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private void appendBulkRequestToProcessor(final IndexBulkProcessor proc,
             final ReindexEntry idx) throws DotDataException {
         try {
-            for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
-                Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
-                        contentlet.getInode(), idx.getPriority()));
-                contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
-            }
+            // Bounded timeout: loading and mapping touch binary files, and a hung stat on
+            // network-backed storage must fail this entry instead of wedging the reindex
+            // thread forever (issue #36498).
+            mappingRunner().run(() -> {
+                mapEntryForProcessor(proc, idx);
+                return null;
+            }, "reindex entry with identifier '" + idx.getIdentToIndex() + "'");
         } catch (final Exception e) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
+        }
+    }
+
+    /**
+     * The shared timeout guard for per-entry mapping work. Seam for tests, which override it
+     * to supply a runner with a test-controlled timeout and no DB cleanup.
+     */
+    @VisibleForTesting
+    ReindexMappingRunner mappingRunner() {
+        return mappingRunner.get();
+    }
+
+    /**
+     * Loads all versions of the entry's contentlet and appends their index operations to the
+     * processor. Runs on a {@link ReindexMappingRunner} worker thread when the mapping timeout
+     * guard is enabled, so it must not rely on caller-thread state.
+     */
+    @VisibleForTesting
+    void mapEntryForProcessor(final IndexBulkProcessor proc, final ReindexEntry idx)
+            throws Exception {
+        for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
+            Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
+                    contentlet.getInode(), idx.getPriority()));
+            contentlet.setIndexPolicy(IndexPolicy.DEFER);
+            addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
         }
     }
 
@@ -3127,25 +3226,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void deactivateIndex(String indexName) throws DotDataException, IOException {
         if (isMigrationComplete()) {
             // ── Phase 3: OS only ─────────────────────────────────────────────
-            // Copy all existing OS slots, skipping the one being deactivated.
-            // An unset slot defaults to Optional.empty() in VersionedIndicesImpl.
-            // Failure is fatal: this is the primary store, not a shadow copy.
-            final Optional<VersionedIndices> osExisting =
-                    versionedIndicesAPI.loadDefaultVersionedIndices();
-            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-            if (!IndexType.WORKING.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-            }
-            if (!IndexType.LIVE.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-            }
-            if (!IndexType.REINDEX_WORKING.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-            }
-            if (!IndexType.REINDEX_LIVE.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-            }
-            versionedIndicesAPI.saveIndices(osBuilder.build());
+            // Rebuild the OS store without the deactivated slot. Failure is fatal:
+            // this is the primary store, not a shadow copy, so it propagates.
+            mirrorDeactivateToOsStore(indexName);
             return;
         }
 
@@ -3164,30 +3247,51 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         legacyIndiciesAPI.point(builder.build());
 
         // ── OS mirror (Phases 1 and 2, best-effort) ──────────────────────────
-        // Copy all existing OS slots, skipping the slot that matches the deactivated index type.
-        // Failure is non-fatal: OS is a shadow copy during these phases.
+        // Rebuild the OS store without the deactivated slot. Failure is non-fatal:
+        // OS is a shadow copy during these phases, so it is logged and swallowed.
         if (isMigrationStarted()) {
             try {
-                final Optional<VersionedIndices> osExisting =
-                        versionedIndicesAPI.loadDefaultVersionedIndices();
-                final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-                if (!IndexType.WORKING.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-                }
-                if (!IndexType.LIVE.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-                }
-                if (!IndexType.REINDEX_WORKING.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-                }
-                if (!IndexType.REINDEX_LIVE.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-                }
-                versionedIndicesAPI.saveIndices(osBuilder.build());
+                mirrorDeactivateToOsStore(indexName);
             } catch (Exception e) {
                 Logger.warn(this, "Could not mirror index deactivation to OS store for index: "
                         + indexName, e);
             }
+        }
+    }
+
+    /**
+     * Rebuilds the OS {@link VersionedIndices} store, keeping every slot except the one that
+     * matches {@code indexName}, and persists the result.
+     *
+     * <p>When the deactivated slot was the last populated one the rebuilt record is empty, and
+     * {@link com.dotcms.content.index.VersionedIndicesAPI#saveIndices} rejects it by contract
+     * ("At least one index must be specified"). Persisting it naively would either throw
+     * (phase 3, primary store) or — worse — leave a dangling/stale store row that
+     * {@code initOSCatchup} would treat as authoritative on the next restart. So an empty
+     * rebuild removes the version row instead. This mirrors the guard in
+     * {@link #clearOsStorePointer(String)} (issue #35640).</p>
+     */
+    private void mirrorDeactivateToOsStore(final String indexName) throws DotDataException {
+        final Optional<VersionedIndices> osExisting =
+                versionedIndicesAPI.loadDefaultVersionedIndices();
+        final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
+        if (!IndexType.WORKING.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
+        }
+        if (!IndexType.LIVE.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+        }
+        if (!IndexType.REINDEX_WORKING.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
+        }
+        if (!IndexType.REINDEX_LIVE.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
+        }
+        final VersionedIndices osRebuilt = osBuilder.build();
+        if (osRebuilt.hasAnyIndex()) {
+            versionedIndicesAPI.saveIndices(osRebuilt);
+        } else {
+            versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
         }
     }
 

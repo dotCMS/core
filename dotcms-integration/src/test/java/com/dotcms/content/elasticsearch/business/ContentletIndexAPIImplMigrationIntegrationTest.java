@@ -448,6 +448,59 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     }
 
     /**
+     * Given Scenario: Phase 1 (dual-write). The supplied name exists in NEITHER engine
+     *                 ({@code GHOST_WORKING} was never created anywhere) — e.g. cleaning up a
+     *                 dangling DB pointer whose cluster index is already gone.
+     * When : {@code delete(GHOST_WORKING)} is called.
+     * Then : the delete is a benign, idempotent no-op — a missing index means the delete goal
+     *        (index absent) is already met, so the primary provider's {@code index_not_found} is
+     *        NOT propagated as a failure. This reconciles #36430's primary-failure propagation
+     *        with the #35640 {@code lastOsSlot} cleanup path. GENUINE primary failures (engine
+     *        down / auth) still propagate — covered by the unit test
+     *        {@code ContentletIndexAPIImplDeletePropagationTest}.
+     */
+    @Test
+    public void test_delete_phase1_nameInNeither_isBenignNoOp() {
+        setPhase(1);
+
+        assertFalse("Pre: ghost name must not exist in ES", esImpl().indexExists(GHOST_WORKING));
+        assertFalse("Pre: ghost name must not exist in OS",
+                osIndexAPI.indexExists(opsOS.toPhysicalName(GHOST_WORKING)));
+
+        // A missing index is idempotent-success, not an error: no exception is thrown.
+        final boolean result = contentletIndexAPI().delete(GHOST_WORKING);
+        assertTrue("Deleting a name that exists in neither engine is a benign no-op", result);
+
+        Logger.info(this, "✅ delete Phase 1 — name in neither engine is a benign no-op: " + GHOST_WORKING);
+    }
+
+    /**
+     * Given Scenario: Phase 1 (dual-write) with divergent names — {@code ES_WORKING} exists
+     *                 only in the legacy set; there is no {@code .os} sibling for it
+     *                 (the normal state after a migration catchup deployment).
+     * When : {@code delete(ES_WORKING)} is called with the bare logical name.
+     * Then : the ES index is removed and the call reports success; the shadow leg is skipped
+     *        (no delete attempt against a {@code .os} name that does not exist), so no
+     *        ERROR-level index_not_found noise is produced (#36423). Works in single-cluster
+     *        mode because the missing {@code .os} physical name is distinct from the bare name.
+     */
+    @Test
+    public void test_delete_phase1_bareNameOnlyInEs_skipsShadowAndSucceeds() {
+        setPhase(1);
+
+        assertTrue("Pre: bare name must exist in the legacy set", esImpl().indexExists(ES_WORKING));
+        assertFalse("Pre: no .os sibling may exist",
+                osIndexAPI.indexExists(opsOS.toPhysicalName(ES_WORKING)));
+
+        final boolean deleted = contentletIndexAPI().delete(ES_WORKING);
+
+        assertTrue("Primary delete must report success despite the missing .os sibling", deleted);
+        assertFalse("ES index must be gone after delete", esImpl().indexExists(ES_WORKING));
+
+        Logger.info(this, "✅ delete Phase 1 — bare-only-in-ES removed, shadow skipped: " + ES_WORKING);
+    }
+
+    /**
      * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
      * When : {@code delete()} is called with the {@code .os}-tagged name (as the QA/preview UI
      *        shows the OS index), with cascade on (default).

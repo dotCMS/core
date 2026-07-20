@@ -10,6 +10,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -178,6 +180,7 @@ public class AggregationDomainTest {
         final ContentSearchResponse response = ContentSearchResponse.builder()
                 .hits(hits).tookMillis(42L)
                 .aggregationTree(Map.of("content_types", terms))
+                .suggest(Map.of("titleSuggest", List.of()))
                 .build();
 
         final JsonNode root = mapper.readTree(mapper.writeValueAsString(response));
@@ -186,6 +189,18 @@ public class AggregationDomainTest {
         assertTrue("aggregationTree must be present", root.has("aggregationTree"));
         assertTrue("declared aggregation must survive serialization",
                 root.path("aggregationTree").has("content_types"));
+        // The Velocity-only aliases getAggregations()/getTookInMillis()/getSuggest() must NOT leak into
+        // the neutral Jackson JSON — the tree is single-sourced as aggregationTree, timing as tookMillis,
+        // and suggestions are wire-omitted. The class-level @JsonIgnoreProperties (not method-level
+        // @JsonIgnore) is what suppresses them here, so they stay visible to the reflection-based
+        // $json.generate() path exercised in
+        // jsonGenerate_ofResponse_preservesAggregationsForVelocityNavigation (issue #36435).
+        assertFalse("getAggregations() must not double-emit an 'aggregations' key in the neutral JSON",
+                root.has("aggregations"));
+        assertFalse("getTookInMillis() must not add a 'tookInMillis' key (timing stays as tookMillis)",
+                root.has("tookInMillis"));
+        assertFalse("getSuggest() must not add a 'suggest' key to the neutral JSON",
+                root.has("suggest"));
 
         // hits must be a nested object, not a bare array (SearchHits implements Iterable).
         final JsonNode hitsNode = root.get("hits");
@@ -371,6 +386,74 @@ public class AggregationDomainTest {
         final Aggregation agg = Aggregation.builder().name("x").type("sterms").build();
         assertNotNull("metadata must never be null", agg.getMetadata());
         assertTrue("metadata defaults to empty when unset", agg.getMetadata().isEmpty());
+    }
+
+    // =========================================================================
+    // $json.generate($rawResults.response) reflection navigation — issue #36435
+    // =========================================================================
+    //
+    // Some templates do NOT navigate the Velocity object directly (the path #36026/#36027
+    // restored); they first round-trip the raw response through JSONTool.generate(Object), i.e.
+    // `#set($results = $json.generate($rawResults.response))`, and then walk the resulting
+    // JSONObject: `$results.aggregations.<name>.buckets`. JSONTool.generate(Object) is literally
+    // `new com.dotmarketing.util.json.JSONObject(bean)` — a reflection/bean constructor that only
+    // picks up public zero-arg `getX()`/`isX()` accessors and (crucially) SKIPS any accessor
+    // annotated with Jackson's @JsonIgnore. This test exercises that exact reflection path against
+    // the neutral ContentSearchResponse so the regression is pinned as a fast unit test.
+
+    /**
+     * Reproduction / regression for <a href="https://github.com/dotCMS/core/issues/36435">#36435</a>.
+     *
+     * <p>A customer's {@code sitemap.vtl} does {@code #set($results = $json.generate($rawResults.response))}
+     * and then {@code #foreach($folder in $results.aggregations.<name>.buckets)}. Before the ES→OS
+     * migration the raw response was an ES {@code SearchResponse} bean and its {@code getAggregations()}
+     * (and {@code getTookInMillis()}, {@code getSuggest()}) reflected into the JSON, so those survived
+     * the {@code $json.generate()} hop. After the migration the raw response is
+     * {@link ContentSearchResponse}; those Velocity aliases carried a method-level {@code @JsonIgnore}
+     * (to keep the neutral Jackson wire single-sourced), and the dotCMS-vendored {@link JSONObject} bean
+     * constructor honours {@code @JsonIgnore} too — so they vanished from the generated JSON and the
+     * {@code #foreach} silently iterated zero times.</p>
+     *
+     * <p>Contract this pins: running the response through the same reflection constructor
+     * {@code JSONTool.generate(Object)} uses must expose the Velocity-alias family — the aggregations
+     * navigable as {@code aggregations.<name>.buckets} down to each bucket's {@code key}/{@code docCount},
+     * plus {@code tookInMillis} and {@code suggest}. All three moved from a method-level
+     * {@code @JsonIgnore} to a class-level {@code @JsonIgnoreProperties} that only Jackson honours.</p>
+     */
+    @Test
+    public void jsonGenerate_ofResponse_preservesAggregationsForVelocityNavigation() {
+        final AggregationBucket about = AggregationBucket.builder().key("/about-us/").docCount(12).build();
+        final AggregationBucket products = AggregationBucket.builder().key("/products/").docCount(7).build();
+        final Aggregation folders = Aggregation.builder()
+                .name("folders").type("sterms").buckets(List.of(about, products)).build();
+
+        final ContentSearchResponse response = ContentSearchResponse.builder()
+                .hits(SearchHits.empty()).tookMillis(5L)
+                .aggregationTree(Map.of("folders", folders))
+                .suggest(Map.of("titleSuggest", List.of()))
+                .build();
+
+        // Exactly what JSONTool.generate(Object o) does: new JSONObject(o).
+        final JSONObject json = new JSONObject(response);
+
+        assertTrue("aggregations must survive the $json.generate() reflection hop (issue #36435)",
+                json.has("aggregations"));
+
+        final JSONObject aggs = json.getJSONObject("aggregations");
+        assertTrue("the declared 'folders' aggregation must be present after JSON generation",
+                aggs.has("folders"));
+
+        final JSONArray buckets = aggs.getJSONObject("folders").getJSONArray("buckets");
+        assertEquals("both folder buckets must survive", 2, buckets.length());
+        assertEquals("/about-us/", buckets.getJSONObject(0).getString("key"));
+        assertEquals(12L, buckets.getJSONObject(0).getLong("docCount"));
+        assertEquals("/products/", buckets.getJSONObject(1).getString("key"));
+
+        // The sibling Velocity aliases that shared the same latent regression (issue #36435) must also
+        // survive the reflection hop: getTookInMillis() and getSuggest().
+        assertEquals("tookInMillis must survive the $json.generate() reflection hop", 5L,
+                json.getLong("tookInMillis"));
+        assertTrue("suggest must survive the $json.generate() reflection hop", json.has("suggest"));
     }
 
     /** An empty (but non-null) Elasticsearch aggregation set whose buckets carry no sub-aggs. */
