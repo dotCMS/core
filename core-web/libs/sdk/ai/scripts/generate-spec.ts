@@ -8,7 +8,7 @@ import { transformSpec } from './spec-transform';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
-const DEFAULT_SPEC_URL = `https://corpsites-headless.dotcms.cloud${DEFAULT_SPEC_PATH}`;
+const DEFAULT_SPEC_URL = `https://dotcms-corp-headless-prod.dotcms.dev${DEFAULT_SPEC_PATH}`;
 
 /**
  * Resolve the OpenAPI spec source (a URL or local file path), in priority order:
