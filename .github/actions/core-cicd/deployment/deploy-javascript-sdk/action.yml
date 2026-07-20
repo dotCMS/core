@@ -164,12 +164,21 @@ runs:
           echo "📦 Processing @dotcms/${sdk}..."
           cd "$sdk"
 
-          echo "  🚀 Publishing: @dotcms/${sdk}@${RELEASE_VERSION}"
-          if npm publish --access public --tag latest; then
-            echo "  ✅ Published"
+          # Idempotency: the version is fixed to the dotCMS release tag and can never be
+          # bumped, so if a prior (failed/cancelled) run already published this exact
+          # version, npm would reject a re-publish with a hard 403 — permanently stalling
+          # the release. Treat "already published" as success so a re-run can finish the
+          # remaining packages instead of getting stuck.
+          if npm view "@dotcms/${sdk}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
+            echo "  ⏭️  @dotcms/${sdk}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
           else
-            echo "  ❌ Failed to publish"
-            PUBLISH_SUCCESS=false
+            echo "  🚀 Publishing: @dotcms/${sdk}@${RELEASE_VERSION}"
+            if npm publish --access public --tag latest; then
+              echo "  ✅ Published"
+            else
+              echo "  ❌ Failed to publish"
+              PUBLISH_SUCCESS=false
+            fi
           fi
 
           cd ..

@@ -75,13 +75,17 @@ jobs:
             fi
           fi
 
-          # contains() in GH Actions expressions is case-insensitive; match that here
-          # so both `_lts_v` and any `LTS`-labeled tag are caught the same way.
+          # Case-insensitive substring match on whichever string carries the LTS marker
+          # for this event type — the release tag_name for automatic runs, or the
+          # user-supplied version for manual dispatch (its format already allows
+          # `_lts_v##`, so it must be checked too, not just the release-event path).
           IS_LTS="false"
           if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
-            LOWER_TAG=$(echo "$TAG_NAME" | tr '[:upper:]' '[:lower:]')
-            [[ "$LOWER_TAG" == *lts* ]] && IS_LTS="true"
+            LOWER_VALUE=$(echo "$TAG_NAME" | tr '[:upper:]' '[:lower:]')
+          else
+            LOWER_VALUE=$(echo "$RELEASE_VERSION" | tr '[:upper:]' '[:lower:]')
           fi
+          [[ "$LOWER_VALUE" == *lts* ]] && IS_LTS="true"
 
           echo "::notice:: Event name: $GITHUB_EVENT_NAME"
           echo "::notice:: Release version: $RELEASE_VERSION"
@@ -105,6 +109,12 @@ jobs:
     if: failure()
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
+      # Same requirement as the publish job's own checkout below: a local (./) action
+      # can't be resolved on an empty runner workspace, so without this the Slack step
+      # would silently no-op instead of ever sending the failure notice.
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
       - name: 'Slack Notification (Pre-check failure)'
         continue-on-error: true
         uses: ./.github/actions/core-cicd/notification/notify-slack
