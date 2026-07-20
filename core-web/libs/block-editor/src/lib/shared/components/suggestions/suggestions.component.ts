@@ -9,7 +9,7 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
+ import { MenuItem } from 'primeng/api';
 
 import { map, take } from 'rxjs/operators';
 
