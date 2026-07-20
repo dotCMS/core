@@ -675,19 +675,10 @@ public class BinaryExporterServlet extends HttpServlet {
 	         }
 		} catch (DotSecurityException e) {
 			try {
-			  if(req.getSession()!=null){
-				// any authenticated (non-anonymous) user lacking READ gets a clean 403.
-				// Only anonymous/not-logged-in users are redirected to login with a 401.
-				if(user != null && !user.isAnonymousUser()){
-				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
-					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-				}else{
-					final String requestUri = (String) req.getAttribute("javax.servlet.forward.request_uri");
-					Logger.debug(this, "Setting redirect after login to requested uri: " + requestUri);
-				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestUri);
-					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-				}
-			  }
+				// Centralized auth/authz split: authenticated (non-anonymous) user lacking READ
+				// gets a clean 403; only anonymous/not-logged-in users are redirected to login with a 401.
+				final String requestUri = (String) req.getAttribute("javax.servlet.forward.request_uri");
+				SecurityUtils.sendPermissionDenied(user, requestUri, req, resp);
 			} catch (Exception e1) {
 				Logger.error(BinaryExporterServlet.class, "An error occurred when accessing '" + uri + "': " + e1.getMessage(), e1);
 	            if(!resp.isCommitted()){

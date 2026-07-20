@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -31,6 +32,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
@@ -300,9 +302,11 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
      */
     @Test
     public void testDateRangeFiltersViaIndex() throws DotDataException, DotSecurityException {
+        // ISO-8601 with milliseconds + Z, exactly as the FE sends it (the format that previously
+        // matched nothing until the bound normalization was added).
         final Set<String> inodes = driveInodes(baseRequest()
                 .userSearchable(Map.of(DATE_VAR,
-                        Map.of("from", "2023-01-01", "to", "2025-01-01")))
+                        Map.of("from", "2023-01-01T00:00:00.000Z", "to", "2025-01-01T00:00:00.000Z")))
                 .build());
 
         assertTrue("2024 item must fall within the 2023-2025 range",
@@ -365,6 +369,50 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     }
 
     /**
+     * Time-field range matches by time-of-day regardless of the date the value was stored with.
+     * The FE sends full ISO datetime (today's date + time); a Time field is indexed as a full
+     * datetime with its own save date, so the range is resolved against the {@code _dotraw}
+     * (HH:mm:ss) sub-field instead of the main field.
+     */
+    @Test
+    public void testTimeFieldRangeMatchesTimeOfDayAcrossDates() throws Exception {
+        final String uid = System.currentTimeMillis() + "";
+        final ContentType timeType = new ContentTypeDataGen()
+                .name("DriveFfTime_" + uid).velocityVarName("driveFfTime_" + uid)
+                .baseContentType(BaseContentType.CONTENT).host(testSite).nextPersisted();
+        new FieldDataGen().type(TimeField.class).name("t").velocityVarName("t")
+                .values("").defaultValue("")
+                .contentTypeId(timeType.id()).searchable(true).indexed(true).nextPersisted();
+        // Stored time-of-day 14:30 on an arbitrary past date.
+        final Date timeVal = Date.from(LocalDateTime.of(2020, 3, 1, 14, 30, 0).toInstant(ZoneOffset.UTC));
+        final Contentlet timeContent = new ContentletDataGen(timeType.id())
+                .setProperty("title", "time " + uid).setProperty("t", timeVal)
+                .folder(testFolder).nextPersisted();
+
+        // FE-style bounds on a DIFFERENT date; the 14:00-15:00 window covers 14:30.
+        final Set<String> covering = driveInodes(timeRangeRequest(timeType,
+                "2025-01-01T14:00:00.000Z", "2025-01-01T15:00:00.000Z"));
+        assertTrue("time-of-day 14:30 must match a 14:00-15:00 range regardless of date",
+                covering.contains(timeContent.getInode()));
+
+        // A window that excludes 14:30.
+        final Set<String> excluding = driveInodes(timeRangeRequest(timeType,
+                "2025-01-01T15:00:00.000Z", "2025-01-01T16:00:00.000Z"));
+        assertFalse("time-of-day 14:30 must not match a 15:00-16:00 range",
+                excluding.contains(timeContent.getInode()));
+    }
+
+    private DriveRequestForm timeRangeRequest(final ContentType ct, final String from,
+            final String to) {
+        final Map<String, Object> range = new java.util.HashMap<>();
+        range.put("from", from);
+        range.put("to", to);
+        return DriveRequestForm.builder().assetPath(testAssetPath)
+                .contentTypes(List.of(ct.variable())).showFolders(false)
+                .userSearchable(Map.of("t", range)).build();
+    }
+
+    /**
      * Open-ended range (only {@code from}) matches everything at or after the bound.
      */
     @Test
@@ -377,6 +425,23 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         assertTrue("2024 item is after 2023", inodes.contains(angularWithTags.getInode()));
         assertTrue("2026 item is after 2023", inodes.contains(angularNoTags.getInode()));
         assertFalse("2020 item is before 2023", inodes.contains(reactWithVue.getInode()));
+    }
+
+    /**
+     * A malformed (non-date) range bound with Lucene special characters must not break the query
+     * (no 500, no injection): it is escaped and simply matches nothing.
+     */
+    @Test
+    public void testMalformedDateBoundIsSafe() throws DotDataException, DotSecurityException {
+        final Map<String, Object> range = new java.util.HashMap<>();
+        range.put("from", "not-a-date\"] OR title:*");
+        range.put("to", "*");
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(DATE_VAR, range))
+                .build());
+        assertFalse(inodes.contains(angularWithTags.getInode()));
+        assertFalse(inodes.contains(reactWithVue.getInode()));
+        assertFalse(inodes.contains(angularNoTags.getInode()));
     }
 
     /**
@@ -394,6 +459,19 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 inodes.contains(reactWithVue.getInode()));
         assertFalse("unrelated parent must not match",
                 inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * The relationship filter also accepts a single identifier sent as a scalar string (not an
+     * array), e.g. a one-to-one relationship — treated as a one-element list.
+     */
+    @Test
+    public void testRelationshipAcceptsScalarIdentifier() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(relationshipVar, childNews.getIdentifier()))
+                .build());
+        assertTrue(inodes.contains(angularWithTags.getInode()));
+        assertFalse(inodes.contains(reactWithVue.getInode()));
     }
 
     /**

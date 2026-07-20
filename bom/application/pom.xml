@@ -31,6 +31,7 @@
         <opensearch.version>3.3.0</opensearch.version>
         <langchain4j.version>1.15.1</langchain4j.version>
         <commonmark.version>0.22.0</commonmark.version>
+        <jsoup.version>1.21.1</jsoup.version>
     </properties>
     <dependencyManagement>
 
@@ -498,6 +499,11 @@
                 <groupId>org.commonmark</groupId>
                 <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
                 <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>

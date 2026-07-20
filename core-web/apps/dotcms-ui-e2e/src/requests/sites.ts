@@ -58,3 +58,14 @@ export async function getSites(request: APIRequestContext) {
     const responseData = await response.json();
     return responseData.entity as Site[];
 }
+
+export async function getCurrentSite(request: APIRequestContext) {
+    const response = await request.get('/api/v1/site/currentSite', {
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+    expect(response.status()).toBe(200);
+    const responseData = await response.json();
+    return responseData.entity as Site;
+}
