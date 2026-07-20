@@ -26,18 +26,20 @@ public class ContentTypeRequestView {
 
     @Schema(
             requiredMode = Schema.RequiredMode.REQUIRED,
-            description = "Fully-qualified class name of the content-type implementation (the 'Immutable' generated "
-                    + "type). This is the discriminator that selects the base type.",
+            description = "Base type of the content type, as a case-insensitive base-type name: "
+                    + "`CONTENT`, `WIDGET`, `FORM`, `FILEASSET`, `HTMLPAGE`, `PERSONA`, `VANITY_URL`, "
+                    + "`KEY_VALUE`, or `DOTASSET`. Example: `\"WIDGET\"`.",
+            example = "WIDGET",
             allowableValues = {
-                    "com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
-                    "com.dotcms.contenttype.model.type.ImmutableWidgetContentType",
-                    "com.dotcms.contenttype.model.type.ImmutableFormContentType",
-                    "com.dotcms.contenttype.model.type.ImmutableFileAssetContentType",
-                    "com.dotcms.contenttype.model.type.ImmutablePageContentType",
-                    "com.dotcms.contenttype.model.type.ImmutablePersonaContentType",
-                    "com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType",
-                    "com.dotcms.contenttype.model.type.ImmutableKeyValueContentType",
-                    "com.dotcms.contenttype.model.type.ImmutableDotAssetContentType"
+                    "CONTENT",
+                    "WIDGET",
+                    "FORM",
+                    "FILEASSET",
+                    "HTMLPAGE",
+                    "PERSONA",
+                    "VANITY_URL",
+                    "KEY_VALUE",
+                    "DOTASSET"
             })
     private String clazz;
 

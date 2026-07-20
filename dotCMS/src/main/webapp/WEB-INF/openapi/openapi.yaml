@@ -7782,7 +7782,7 @@ paths:
         content:
           application/json:
             example:
-            - clazz: com.dotcms.contenttype.model.type.ImmutableSimpleContentType
+            - clazz: CONTENT
               defaultType: false
               name: The Content Type 1
               description: THE DESCRIPTION
@@ -7797,7 +7797,7 @@ paths:
                 PUBLISH: ceca71a0-deee-4999-bd47-b01baa1bcfc8
               workflow:
               - d61a59e1-a49c-46f2-a929-db2b4bfa88b2
-            - clazz: com.dotcms.contenttype.model.type.ImmutableSimpleContentType
+            - clazz: CONTENT
               defaultType: false
               name: The Content Type 2
               description: THE DESCRIPTION
@@ -7815,7 +7815,7 @@ paths:
           Accepts either a single content-type object or an array. The body is the content-type object directly (not wrapped in a 'contentType' envelope).
 
           **Required properties:**
-          - `clazz` *(string)* — fully-qualified class name. One of: `com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, `com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, `com.dotcms.contenttype.model.type.ImmutableFormContentType`, `com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, `com.dotcms.contenttype.model.type.ImmutablePageContentType`, `com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, `com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, `com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, `com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`
+          - `clazz` *(string)* — the base type, as a case-insensitive base-type name: `CONTENT`, `WIDGET`, `FORM`, `FILEASSET`, `HTMLPAGE`, `PERSONA`, `VANITY_URL`, `KEY_VALUE`, or `DOTASSET`.
           - `name` *(string)* — display name
 
           **Common optional properties:**
@@ -25702,19 +25702,20 @@ components:
       properties:
         clazz:
           type: string
-          description: Fully-qualified class name of the content-type implementation
-            (the 'Immutable' generated type). This is the discriminator that selects
-            the base type.
+          description: "Base type of the content type, as a case-insensitive base-type\
+            \ name: `CONTENT`, `WIDGET`, `FORM`, `FILEASSET`, `HTMLPAGE`, `PERSONA`,\
+            \ `VANITY_URL`, `KEY_VALUE`, or `DOTASSET`. Example: `\"WIDGET\"`."
           enum:
-          - com.dotcms.contenttype.model.type.ImmutableSimpleContentType
-          - com.dotcms.contenttype.model.type.ImmutableWidgetContentType
-          - com.dotcms.contenttype.model.type.ImmutableFormContentType
-          - com.dotcms.contenttype.model.type.ImmutableFileAssetContentType
-          - com.dotcms.contenttype.model.type.ImmutablePageContentType
-          - com.dotcms.contenttype.model.type.ImmutablePersonaContentType
-          - com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType
-          - com.dotcms.contenttype.model.type.ImmutableKeyValueContentType
-          - com.dotcms.contenttype.model.type.ImmutableDotAssetContentType
+          - CONTENT
+          - WIDGET
+          - FORM
+          - FILEASSET
+          - HTMLPAGE
+          - PERSONA
+          - VANITY_URL
+          - KEY_VALUE
+          - DOTASSET
+          example: WIDGET
         defaultType:
           type: boolean
           description: Whether this is the default content type.

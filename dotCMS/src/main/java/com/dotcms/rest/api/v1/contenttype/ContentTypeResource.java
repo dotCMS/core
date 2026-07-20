@@ -490,16 +490,8 @@ public class ContentTypeResource implements Serializable {
 											 description = "Accepts either a single content-type object or an array. " +
 														   "The body is the content-type object directly (not wrapped in a 'contentType' envelope).\n\n" +
 														   "**Required properties:**\n" +
-														   "- `clazz` *(string)* — fully-qualified class name. One of: " +
-														   "`com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableFormContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutablePageContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`\n" +
+														   "- `clazz` *(string)* — the base type, as a case-insensitive base-type name: " +
+														   "`CONTENT`, `WIDGET`, `FORM`, `FILEASSET`, `HTMLPAGE`, `PERSONA`, `VANITY_URL`, `KEY_VALUE`, or `DOTASSET`.\n" +
 														   "- `name` *(string)* — display name\n\n" +
 														   "**Common optional properties:**\n" +
 														   "- `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)\n" +
@@ -534,7 +526,7 @@ public class ContentTypeResource implements Serializable {
 															 @ExampleObject(
 																	 value = "[\n" +
 																			 "  {\n" +
-																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"clazz\": \"CONTENT\",\n" +
 																			 "    \"defaultType\": false,\n" +
 																			 "    \"name\": \"The Content Type 1\",\n" +
 																			 "    \"description\": \"THE DESCRIPTION\",\n" +
@@ -553,7 +545,7 @@ public class ContentTypeResource implements Serializable {
 																			 "    ]\n" +
 																			 "  },\n" +
 																			 "  {\n" +
-																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"clazz\": \"CONTENT\",\n" +
 																			 "    \"defaultType\": false,\n" +
 																			 "    \"name\": \"The Content Type 2\",\n" +
 																			 "    \"description\": \"THE DESCRIPTION\",\n" +
