@@ -1,0 +1,193 @@
+# Release - SDK Workflow
+#
+# This workflow publishes the @dotcms/* SDK packages to NPM in date-lockstep with dotCMS
+# releases (ADR-0019: platform-adrs/decisions/0019-sdk-cms-date-lockstep-versioning.md).
+#
+# It is modeled directly on cicd_release-cli.yml, which already solved this exact problem
+# for @dotcms/dotcli: publishing is triggered automatically by the GitHub Release created
+# during cicd_6-release.yml, and the version is read straight off the release tag — there
+# is no independent SDK version, no separate manual "publish SDK" step, and no `@next`
+# prerelease channel.
+#
+# Key features:
+# - Automatic trigger on release creation; workflow_dispatch kept for manual re-publish/testing
+# - Version is derived from the GitHub Release tag (mirrors cicd_release-cli.yml exactly)
+# - Skips LTS releases (LTS SDK publish policy is a separate, not-yet-decided follow-up)
+# - Publishes every @dotcms/* SDK package at the exact release version, to the `latest` tag only
+# - The precheck job always runs (even for LTS) so the reason for a skip is always logged,
+#   rather than showing up as a silent "skipped" job with no explanation
+# - A pre-check failure is Slack-notified on its own, since the publish job (and its own
+#   failure notification) never starts if precheck itself fails
+
+name: Release - SDK
+run-name: SDK Release ${{ github.event.release.tag_name || inputs.version }}
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 26.7.14-1), matching the dotCMS release tag format'
+        required: true
+      ref:
+        description: 'Branch/tag to build from (defaults to main). Set to v<version> to rebuild the exact commit of a past release.'
+        required: false
+        default: 'main'
+      dry-run:
+        description: 'Dry run (skip the actual npm publish)'
+        default: 'false'
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  precheck:
+    name: 'Pre-check'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      REF: ${{ steps.version.outputs.REF }}
+      IS_LTS: ${{ steps.version.outputs.IS_LTS }}
+    steps:
+      - name: 'Set release version'
+        id: version
+        run: |
+          set -euo pipefail
+          TAG_NAME=""
+
+          if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            RELEASE_VERSION="${TAG_NAME:1}"
+            REF="${{ github.ref_name }}"
+          else
+            RELEASE_VERSION="${{ github.event.inputs.version }}"
+            REF="${{ github.event.inputs.ref }}"
+
+            # Manual dispatch skips the format check cicd_comp_release-prepare-phase.yml
+            # already applies to real releases, so enforce the same shape here — fail
+            # fast with a clear message instead of a confusing error later at npm publish.
+            if [[ ! "$RELEASE_VERSION" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}(-[0-9]{1,2}|_lts_v[0-9]{1,2})$ ]]; then
+              echo "::error::Invalid version format: '$RELEASE_VERSION'. Expected yy.mm.dd-## or yy.mm.dd_lts_v## (matching the dotCMS release tag format)."
+              exit 1
+            fi
+          fi
+
+          # contains() in GH Actions expressions is case-insensitive; match that here
+          # so both `_lts_v` and any `LTS`-labeled tag are caught the same way.
+          IS_LTS="false"
+          if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
+            LOWER_TAG=$(echo "$TAG_NAME" | tr '[:upper:]' '[:lower:]')
+            [[ "$LOWER_TAG" == *lts* ]] && IS_LTS="true"
+          fi
+
+          echo "::notice:: Event name: $GITHUB_EVENT_NAME"
+          echo "::notice:: Release version: $RELEASE_VERSION"
+          echo "::notice:: Ref: $REF"
+
+          if [[ "$IS_LTS" == "true" ]]; then
+            echo "::warning::This is an LTS release ($TAG_NAME). SDK publish will be skipped — LTS SDK publish policy is a separate, not-yet-decided follow-up (ADR-0019)."
+          fi
+
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "REF=$REF" >> "$GITHUB_OUTPUT"
+          echo "IS_LTS=$IS_LTS" >> "$GITHUB_OUTPUT"
+
+  # Runs only when precheck itself fails (bad version format, unexpected script error).
+  # publish depends on precheck, so it never starts in that case — meaning publish's own
+  # failure Slack step would never fire either. This job exists purely to make sure a
+  # pre-check failure is never silent outside of the Actions UI.
+  notify-precheck-failure:
+    name: 'Notify Pre-check Failure'
+    needs: [ precheck ]
+    if: failure()
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: 'Slack Notification (Pre-check failure)'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *SDK Release FAILED!*
+            >
+            > The SDK release workflow failed during pre-check (version detection/validation), before any publish was attempted.
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  publish:
+    name: 'Publish SDK Packages'
+    needs: [ precheck ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      # Required before referencing any local (./) action — the runner's workspace is
+      # empty otherwise, so GitHub can't even locate deploy-javascript-sdk's action.yml.
+      # The composite action re-checks-out internally at the correct ref for the actual
+      # build/publish; this checkout only needs to make the action definition resolvable.
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.precheck.outputs.REF }}
+
+      - name: 'LTS skip notice'
+        if: needs.precheck.outputs.IS_LTS == 'true'
+        run: |
+          echo "::notice:: Skipping SDK publish for LTS release ${{ needs.precheck.outputs.RELEASE_VERSION }} — see the warning on the Pre-check job for why."
+
+      - name: 'Dry run notice'
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'true'
+        run: |
+          echo "::notice:: DRY RUN — would publish version ${{ needs.precheck.outputs.RELEASE_VERSION }} (ref ${{ needs.precheck.outputs.REF }}) to the 'latest' npm dist-tag for every @dotcms/* SDK package. Skipping the actual npm publish."
+
+      - name: 'Publish SDK packages to NPM'
+        id: deploy-javascript-sdk
+        if: >-
+          needs.precheck.outputs.IS_LTS != 'true' &&
+          (github.event_name == 'release' || github.event.inputs.dry-run != 'true')
+        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
+        with:
+          ref: ${{ needs.precheck.outputs.REF }}
+          version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Slack Notification (SDK release announcement)'
+        if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_green_circle: *Attention dotters:* SDK libs officially released!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ needs.precheck.outputs.RELEASE_VERSION }}` ] is now available on the `NPM` registry :package:, matching dotCMS release `${{ needs.precheck.outputs.RELEASE_VERSION }}`.
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: 'Slack Notification (SDK release failure)'
+        if: failure()
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *SDK Release FAILED!*
+            >
+            > The SDK release workflow failed while trying to publish version `${{ needs.precheck.outputs.RELEASE_VERSION }}`.
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: 'Display results'
+        if: always()
+        run: |
+          echo "::group::SDK Release Summary"
+          echo "Event:            ${{ github.event_name }}"
+          echo "Release version:  ${{ needs.precheck.outputs.RELEASE_VERSION }}"
+          echo "Ref:              ${{ needs.precheck.outputs.REF }}"
+          echo "LTS release:      ${{ needs.precheck.outputs.IS_LTS }}"
+          echo "Dry run:          ${{ github.event.inputs.dry-run || 'false' }}"
+          echo "Published:        ${{ steps.deploy-javascript-sdk.outputs.published || 'not attempted' }}"
+          echo "NPM version:      ${{ steps.deploy-javascript-sdk.outputs.npm-package-version || 'n/a' }}"
+          echo "::endgroup::"
