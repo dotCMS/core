@@ -12,6 +12,7 @@ import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openaiofficial.OpenAiOfficialImageModel;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
 class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
 
@@ -31,8 +32,7 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
         if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         if (config.temperature() != null) { builder.temperature(config.temperature()); }
-        if (config.maxTokens() != null && !requiresCompletionTokens(config)) { builder.maxTokens(config.maxTokens()); }
-        if (config.maxCompletionTokens() != null && requiresCompletionTokens(config)) { builder.maxCompletionTokens(config.maxCompletionTokens()); }
+        applyTokenLimit(config, builder::maxTokens, builder::maxCompletionTokens);
         return builder.build();
     }
 
@@ -47,8 +47,7 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
         if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         if (config.temperature() != null) { builder.temperature(config.temperature()); }
-        if (config.maxTokens() != null && !requiresCompletionTokens(config)) { builder.maxTokens(config.maxTokens()); }
-        if (config.maxCompletionTokens() != null && requiresCompletionTokens(config)) { builder.maxCompletionTokens(config.maxCompletionTokens()); }
+        applyTokenLimit(config, builder::maxTokens, builder::maxCompletionTokens);
         return builder.build();
     }
 
@@ -135,6 +134,22 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
     private static boolean requiresCompletionTokens(final ProviderConfig config) {
         final String name = deploymentName(config) != null ? deploymentName(config) : "";
         return name.matches("o\\d+.*") || name.matches("gpt-([5-9]|\\d{2,}).*");
+    }
+
+    private static void applyTokenLimit(final ProviderConfig config,
+                                        final Consumer<Integer> maxTokensFn,
+                                        final Consumer<Integer> maxCompletionTokensFn) {
+        final Integer tokens = config.maxCompletionTokens() != null
+                ? config.maxCompletionTokens()
+                : config.maxTokens();
+        if (tokens == null) {
+            return;
+        }
+        if (requiresCompletionTokens(config)) {
+            maxCompletionTokensFn.accept(tokens);
+        } else {
+            maxTokensFn.accept(tokens);
+        }
     }
 
 }
