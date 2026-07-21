@@ -118,6 +118,13 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             }
         }
 
+        if (hasPrivateKey != hasPublicCert) {
+            // Exactly one half of the signing keypair: persisting it would break SAML
+            // signing silently at login time. Both halves or neither (neither → generate).
+            throw new BadRequestException(hasPublicCert
+                    ? "A public certificate was supplied without its private key — supply both, or neither to auto-generate a keypair"
+                    : "A private key was supplied without its public certificate — supply both, or neither to auto-generate a keypair");
+        }
         if (!hasPrivateKey && !hasPublicCert) {
             final String hostname = incoming.get("sPEndpointHostname") != null
                     ? String.valueOf(incoming.get("sPEndpointHostname"))
