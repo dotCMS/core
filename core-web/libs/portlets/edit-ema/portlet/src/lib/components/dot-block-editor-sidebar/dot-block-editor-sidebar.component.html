@@ -15,6 +15,7 @@
                     [field]="contentlet.field"
                     [value]="contentlet.content"
                     [languageId]="contentlet.language"
+                    [fillHeight]="true"
                     (valueChange)="value.set($event)"
                     data-testId="dot-block-editor" />
             } @else {

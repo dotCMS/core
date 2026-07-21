@@ -156,9 +156,10 @@ public enum OSIndexProperty {
 
     /**
      * Maximum number of hits to track accurately.
-     * No ES equivalent — OpenSearch-specific feature.
+     * Falls back to {@code ES_TRACK_TOTAL_HITS} so an existing Elasticsearch track_total_hits
+     * configuration is honored under the OpenSearch read path during migration.
      */
-    TRACK_TOTAL_HITS("OS_TRACK_TOTAL_HITS", null),
+    TRACK_TOTAL_HITS("OS_TRACK_TOTAL_HITS", "ES_TRACK_TOTAL_HITS"),
 
     /**
      * Enable in-memory caching of search query results.
