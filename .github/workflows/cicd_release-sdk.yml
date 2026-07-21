@@ -39,9 +39,15 @@ on:
         default: 'false'
         required: false
 
+# No cancel-in-progress: a cancelled mid-loop publish can leave some SDK packages
+# published and others not, at a version fixed to the dotCMS release tag that can
+# never be republished under a different number. cicd_6-release.yml uses
+# cancel-in-progress: false for the same reason; matching it here so a re-run — not a
+# cancellation — is the only way this loop stops partway (the idempotency check in
+# deploy-javascript-sdk handles that re-run case cleanly).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   precheck:
