@@ -5,6 +5,13 @@ name: evergreen-tracks-promote
 # when we run this" answer without a cron moving tags off-window. No cron until
 # the customer-experience team green-lights automatic (e.g. daily) promotion.
 # `latest` still moves per-release via cicd_6-release.yml (--tracks latest).
+#
+# Flow: the `plan` job always runs a dry-run and prints the tag moves; the
+# `apply` job then waits on the `evergreen-tracks-apply` environment's
+# required-reviewer gate. Nothing moves until a human reviews the plan and
+# approves the deployment. (One-time repo setup: Settings > Environments >
+# evergreen-tracks-apply > Required reviewers. Without reviewers configured the
+# apply job runs unattended — the gate is the protection rule, not the YAML.)
 on:
   workflow_dispatch:
     inputs:
@@ -12,10 +19,6 @@ on:
         description: 'Docker repo to operate on'
         required: true
         default: 'dotcms/dotcms'
-      apply:
-        description: 'Actually move tags (false = dry-run)'
-        required: true
-        default: 'false'
       standard_days:
         description: 'Min age (days) for the standard track'
         required: false
@@ -41,7 +44,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  promote:
+  # Dry-run: read live registry state and print the tag moves. No creds needed to
+  # mutate anything here (point_tag only logs when --apply is absent), but we log
+  # into Hub so listing tags works the same as the apply job (private repos).
+  plan:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - uses: actions/checkout@v4
@@ -52,24 +58,44 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Promote tracks
+      - name: Plan track moves (dry-run)
         working-directory: cicd/evergreen-tracks
         env:
           REPO: ${{ github.event.inputs.repo }}
           STANDARD_DAYS: ${{ github.event.inputs.standard_days }}
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
-          DISPATCH_APPLY: ${{ github.event.inputs.apply }}
         run: |
-          # Dry-run by default: dispatch shows the plan and exits. Set apply=true
-          # to actually move the tags. To pause promotion entirely, just don't run
-          # this workflow (or `hold` the affected track).
-          APPLY=""
-          if [ "$DISPATCH_APPLY" = "true" ]; then
-            APPLY="--apply"
-          fi
-          echo "repo=$REPO apply=${APPLY:-<dry-run>}"
+          echo "repo=$REPO (dry-run) — review this plan, then approve the apply job"
+          uv run evergreen-tracks promote \
+            --repo "$REPO" \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS"
+
+  # Apply: gated on the evergreen-tracks-apply environment's required-reviewer
+  # rule. Pauses after `plan` until a human reviews the plan output and approves.
+  apply:
+    needs: plan
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: evergreen-tracks-apply
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Apply track moves
+        working-directory: cicd/evergreen-tracks
+        env:
+          REPO: ${{ github.event.inputs.repo }}
+          STANDARD_DAYS: ${{ github.event.inputs.standard_days }}
+          TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
+        run: |
+          echo "repo=$REPO — applying approved plan"
           uv run evergreen-tracks promote \
             --repo "$REPO" \
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS" \
-            $APPLY
+            --apply

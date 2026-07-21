@@ -15,6 +15,11 @@ tags plus `<version>_tainted` / `<track>_hold` markers).
   team green-lights it. When run, each track lands on the newest GA older than its age
   threshold (`--standard-days` 14, `--trailing-days` 28).
 
+  The dispatch runs in two jobs: `plan` prints the intended moves (dry-run), then `apply`
+  waits on the `evergreen-tracks-apply` environment's required-reviewer gate — nothing
+  moves until a human reviews the plan and approves. (One-time repo setup:
+  Settings > Environments > `evergreen-tracks-apply` > Required reviewers.)
+
 ## Run locally (dry-run is the default)
 
     uv run evergreen-tracks promote --repo dotcms/dotcms-test
