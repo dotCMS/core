@@ -66,9 +66,13 @@ jobs:
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
         run: |
           echo "repo=$REPO (dry-run) — review this plan, then approve the apply job"
+          # --tracks standard,trailing: this workflow never moves `latest` — the
+          # release pipeline owns it and moves it unattended (possibly mid-approval).
+          # Scoping here keeps the drift check below immune to `latest` churn.
           # 2>/dev/null: keep only the engine's stdout plan, drop uv's stderr chatter.
           PLAN=$(uv run evergreen-tracks promote \
             --repo "$REPO" \
+            --tracks standard,trailing \
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS" 2>/dev/null)
           echo "$PLAN"
@@ -101,10 +105,11 @@ jobs:
   # and leaving tags half-moved.
   #
   # `apply` re-derives the plan from live registry state at run time and FAILS
-  # if it differs from the approved plan (a GA landed, a hold/taint changed,
-  # etc.), so it can never move tags nobody reviewed. Standard/trailing age
-  # slowly, so drift is rare — when it happens, re-dispatch to review the new
-  # plan.
+  # if it differs from the approved plan (e.g. a hold/taint marker changed, or a
+  # release aged past a track threshold during a long approval), so it can never
+  # move tags nobody reviewed. The plan is scoped to standard,trailing, so an
+  # unattended `latest` move by the release pipeline mid-approval does NOT trip
+  # it. Drift is rare — when it happens, re-dispatch to review the new plan.
   apply:
     needs: [ plan, gate ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
@@ -133,6 +138,7 @@ jobs:
           # between plan and approval, fail rather than move tags nobody reviewed.
           CURRENT_PLAN=$(uv run evergreen-tracks promote \
             --repo "$REPO" \
+            --tracks standard,trailing \
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS" 2>/dev/null)
           # A never-empty plan ("no track moves needed" at minimum) guards against
@@ -151,6 +157,7 @@ jobs:
           echo "repo=$REPO — plan unchanged since approval; applying"
           uv run evergreen-tracks promote \
             --repo "$REPO" \
+            --tracks standard,trailing \
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS" \
             --apply
