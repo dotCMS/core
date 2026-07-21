@@ -63,14 +63,54 @@ public class SamlProtocolHandlerTest {
         final AppSecrets existing = AppSecrets.builder()
                 .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
                 .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
                 .build();
 
         final AppSecrets result = handler.buildSecrets(
-                Map.of("privateKey", "****", "idpName", "Okta"),
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "idpName", "Okta"),
                 Optional.of(existing));
 
         assertEquals("stored-PEM", result.getSecrets().get("privateKey").getString());
         assertEquals("Okta", result.getSecrets().get("idpName").getString());
+    }
+
+    @Test
+    public void buildSecrets_rejects_cert_without_key() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("publicCert", "a-CERT", "privateKey", "", "idpName", "Okta"),
+                Optional.empty()));
+    }
+
+    @Test
+    public void buildSecrets_rejects_key_without_cert() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "a-PEM", "publicCert", "", "idpName", "Okta"),
+                Optional.empty()));
+    }
+
+    @Test
+    public void buildSecrets_rejects_masked_key_when_cert_not_resent() {
+        // The mask resolves to the stored key, but declared non-hidden keys are
+        // client-authoritative — omitting publicCert would store key-without-cert.
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "idpName", "Okta"),
+                Optional.of(existing)));
+    }
+
+    @Test
+    public void buildSecrets_generates_keypair_when_both_halves_empty() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta", "sPEndpointHostname", "sp.example.com"),
+                Optional.empty());
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+        assertTrue(result.getSecrets().get("privateKey").getString().contains("BEGIN PRIVATE KEY"));
     }
 
     @Test
