@@ -138,7 +138,26 @@ Secondary path from `core-web/` (also builds Docker and manages containers via N
 pnpm e2e:ci
 ```
 
-Prefer `just test-e2e` when validating before merge — it matches the CI pipeline.
+Prefer `just test-e2e` when validating before merge — it matches the CI pipeline (full suite locally; CI runs **3 parallel shards** — see [CI sharding](#ci-sharding)).
+
+### CI sharding
+
+PR CI runs the Playwright suite as **three parallel jobs** (`--shard=1/3`, `2/3`, `3/3`). Each job boots its own dotCMS stack from the prebuilt Docker artifact. Rationale and how to add a 4th shard: [SPEC-ci-sharding.md](SPEC-ci-sharding.md).
+
+Run one shard locally (Maven lifecycle, same as CI):
+
+```bash
+./mvnw -pl :dotcms-ui-e2e verify \
+  -De2e.test.skip=false \
+  -De2e.test.env=ci \
+  -De2e.playwright.args=' -- --shard=1/3'
+```
+
+With the stack already up:
+
+```bash
+cd core-web && CI=true CURRENT_ENV=ci pnpm exec nx run dotcms-ui-e2e:e2e --configuration=ci -- --shard=1/3
+```
 
 ## Environment reference
 

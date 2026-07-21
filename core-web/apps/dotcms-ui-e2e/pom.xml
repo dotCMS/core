@@ -23,7 +23,8 @@
         <e2e.test.skip>true</e2e.test.skip>
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>../../</e2e.frontend.dir>
-        <e2e.test.cmd>nx run dotcms-ui-e2e:e2e --configuration=${e2e.test.env}</e2e.test.cmd>
+        <e2e.playwright.args></e2e.playwright.args>
+        <e2e.test.cmd>nx run dotcms-ui-e2e:e2e --configuration=${e2e.test.env}${e2e.playwright.args}</e2e.test.cmd>
         <e2e.post.test.cmd>exec sh -c "mkdir -p apps/dotcms-ui-e2e/target/playwright-reports &amp;&amp; cp apps/dotcms-ui-e2e/test-results/junit.xml apps/dotcms-ui-e2e/target/playwright-reports/junit.xml"</e2e.post.test.cmd>
         <tomcat.port>8080</tomcat.port>
         <e2e.server.url>http://localhost:${tomcat.port}</e2e.server.url>
