@@ -384,7 +384,7 @@ describe('dot-auth-config.mappers', () => {
             config.oidc.defaultRoles = ['Editor'];
             config.oidc.roleBehavior = 'idp-only';
 
-            const payload = toPayload(config);
+            const payload = toPayload(config, 'test-site-id');
             expect(payload.protocol).toBe('OAUTH');
             expect(payload.values.issuerUrl).toBe('https://idp.example');
             expect(payload.values.clientId).toBe('client');
@@ -399,7 +399,7 @@ describe('dot-auth-config.mappers', () => {
             config.oidc.revocationUrl = 'https://idp.example/revoke';
             config.oidc.groupsUrl = 'https://idp.example/groups';
 
-            const payload = toPayload(config);
+            const payload = toPayload(config, 'test-site-id');
             expect(payload.values.revocationUrl).toBe('https://idp.example/revoke');
             expect(payload.values.groupsUrl).toBe('https://idp.example/groups');
         });
@@ -408,7 +408,7 @@ describe('dot-auth-config.mappers', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'oidc';
 
-            const payload = toPayload(config);
+            const payload = toPayload(config, 'test-site-id');
             expect(payload.values.revocationUrl).toBeUndefined();
             expect(payload.values.groupsUrl).toBeUndefined();
         });
@@ -427,7 +427,7 @@ describe('dot-auth-config.mappers', () => {
             config.saml.roleBehavior = 'static-only';
             config.saml.extraProperties = [{ key: 'extra', value: 'val' }];
 
-            const payload = toPayload(config);
+            const payload = toPayload(config, 'test-site-id');
             expect(payload.protocol).toBe('SAML');
 
             const vals = payload.values as Record<string, unknown>;
@@ -446,19 +446,19 @@ describe('dot-auth-config.mappers', () => {
             config.saml.wantAssertionsSigned = true;
             config.saml.wantResponseSigned = false;
             expect(
-                (toPayload(config).values as Record<string, unknown>)['signatureValidationType']
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)['signatureValidationType']
             ).toBe('assertion');
 
             config.saml.wantAssertionsSigned = false;
             config.saml.wantResponseSigned = true;
             expect(
-                (toPayload(config).values as Record<string, unknown>)['signatureValidationType']
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)['signatureValidationType']
             ).toBe('response');
 
             config.saml.wantAssertionsSigned = false;
             config.saml.wantResponseSigned = false;
             expect(
-                (toPayload(config).values as Record<string, unknown>)['signatureValidationType']
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)['signatureValidationType']
             ).toBe('none');
         });
 
@@ -468,7 +468,7 @@ describe('dot-auth-config.mappers', () => {
             config.saml.idpName = 'Okta';
             config.saml.spEndpointHostname = 'auth.customer.com';
 
-            const vals = toPayload(config).values as Record<string, unknown>;
+            const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
             expect(vals['idpName']).toBe('Okta');
             expect(vals['sPEndpointHostname']).toBe('auth.customer.com');
         });
@@ -478,7 +478,7 @@ describe('dot-auth-config.mappers', () => {
             config.protocol = 'saml';
             config.saml.spEndpointHostname = '';
 
-            const vals = toPayload(config).values as Record<string, unknown>;
+            const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
             expect(vals['sPEndpointHostname']).toBeUndefined();
         });
 
@@ -487,8 +487,25 @@ describe('dot-auth-config.mappers', () => {
             config.protocol = 'saml';
             config.saml.signRequests = false;
 
-            const vals = toPayload(config).values as Record<string, unknown>;
+            const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
             expect(vals['signRequests']).toBe('false');
+        });
+
+        it('persists the Hash user ID toggle under the SAML runtime key hash.userid', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+            config.hashUserId = false;
+
+            const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
+            expect(vals['hash.userid']).toBe('false');
+        });
+
+        it('substitutes the real site id into buttonParam instead of the $siteId template', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+
+            const vals = toPayload(config, 'abc-123').values as Record<string, unknown>;
+            expect(vals['buttonParam']).toBe('/api/v1/dotsaml/metadata/abc-123');
         });
     });
 
@@ -509,12 +526,33 @@ describe('dot-auth-config.mappers', () => {
                 headlessValues: {}
             };
             const config = fromView(view);
-            const vals = toPayload(config).values as Record<string, unknown>;
+            const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
             expect(vals['idpName']).toBe('Corp IdP');
             expect(vals['sPEndpointHostname']).toBe('auth.customer.com');
             expect(vals['signRequests']).toBe('false');
             // and signRequests must not leak into extraProperties as a custom attribute
             expect(config.saml.extraProperties).toEqual([]);
+        });
+
+        it('round-trips a stored hash.userid=false without leaking it into extraProperties', () => {
+            const view: DotAuthConfigView = {
+                hostId: 'SYSTEM_HOST',
+                protocol: 'SAML',
+                configured: true,
+                inherited: false,
+                values: {
+                    enable: true,
+                    idpName: 'Corp IdP',
+                    'hash.userid': 'false'
+                } as never,
+                headlessValues: {}
+            };
+            const config = fromView(view);
+            expect(config.hashUserId).toBe(false);
+            expect(config.saml.extraProperties).toEqual([]);
+
+            const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
+            expect(vals['hash.userid']).toBe('false');
         });
     });
 
@@ -628,7 +666,7 @@ describe('dot-auth-config.mappers', () => {
 
                 config.protocol = 'oidc';
                 config.ssoEnabled = true;
-                const payload = toPayload(config);
+                const payload = toPayload(config, 'test-site-id');
                 expect(payload.values.buildRolesStrategy).toBe(backendValue);
             }
         );
@@ -649,7 +687,7 @@ describe('dot-auth-config.mappers', () => {
 
                 config.protocol = 'saml';
                 config.ssoEnabled = true;
-                const payload = toPayload(config);
+                const payload = toPayload(config, 'test-site-id');
                 expect((payload.values as Record<string, unknown>)['build.roles']).toBe(
                     backendValue
                 );
