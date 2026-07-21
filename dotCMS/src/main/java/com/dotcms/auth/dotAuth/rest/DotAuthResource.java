@@ -693,14 +693,21 @@ public class DotAuthResource {
             }
 
             final Map<String, Object> vals = samlHandler.maskedValues(secrets.get());
-            final String hostname = host.isSystemHost()
-                    ? String.valueOf(vals.getOrDefault("sPEndpointHostname", ""))
+            // The ACS must mirror what the SAML runtime actually serves:
+            // https://<sPEndpointHostname>/dotsaml/login/<hostId> — the configured SP
+            // endpoint hostname (which may carry a port), NOT the site's bare hostname,
+            // and always with the site-id path segment the interceptor routes on.
+            final String spEndpointHostname = String.valueOf(vals.getOrDefault("sPEndpointHostname", ""))
+                    .replaceFirst("(?i)^https?://", "")
+                    .replaceAll("/+$", "");
+            final String hostname = UtilMethods.isSet(spEndpointHostname)
+                    ? spEndpointHostname
                     : host.getHostname();
 
             final String storedEntityId = String.valueOf(vals.getOrDefault("sPIssuerURL", ""));
             final String entityId = UtilMethods.isSet(storedEntityId)
                     ? storedEntityId : "https://" + hostname;
-            final String acsUrl = "https://" + hostname + "/dotsaml/login";
+            final String acsUrl = "https://" + hostname + "/dotsaml/login/" + host.getIdentifier();
 
             final String certPem = String.valueOf(vals.getOrDefault("publicCert", ""));
             // Strip PEM armor/whitespace, then constrain to the base64 alphabet so a

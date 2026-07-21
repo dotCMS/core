@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     ElementRef,
     input,
     output,
@@ -41,7 +42,21 @@ export interface SamlConfigChange {
 })
 export class DotAuthSamlConfigComponent {
     readonly saml = input.required<DotAuthSamlUiConfig>();
+    readonly siteId = input<string>('');
     readonly errors = input<Record<string, string>>({});
+
+    /**
+     * The ACS URL the SAML runtime actually serves: https is forced, the host comes
+     * from spEndpointHostname (falling back to the entityId's host — never its path),
+     * and the site-id segment the interceptor routes on is always appended.
+     */
+    readonly acsUrl = computed(() => {
+        const hostname = (this.saml().spEndpointHostname || this.saml().entityId || '')
+            .replace(/^https?:\/\//i, '')
+            .replace(/[/?#].*$/, '');
+
+        return hostname ? `https://${hostname}/dotsaml/login/${this.siteId()}` : '';
+    });
 
     readonly fieldChange = output<SamlConfigChange>();
     readonly fetchMetadata = output<string>();
