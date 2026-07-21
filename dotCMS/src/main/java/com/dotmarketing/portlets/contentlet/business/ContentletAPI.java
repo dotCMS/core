@@ -725,6 +725,21 @@ public interface ContentletAPI {
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
+	 * Adds the secondary category-permission query fragment (the {@code categoryperms:} clause) to
+	 * the given query based on the user's roles, so results are additionally narrowed by the
+	 * category read permissions of content types that declare a category field with
+	 * {@code secondaryPermissionCheck=true}. Self-guards on {@code PERMISSION_SECONDARY_CATEGORY_CHECK}
+	 * and on admin users. Must be applied alongside {@link #addPermissionsToQuery} by every search
+	 * backend (ES and OS) to keep permission filtering consistent across the migration phases.
+	 *
+	 * @param buffy the query buffer to append to
+	 * @param user the user performing the search
+	 * @param roles the user's roles
+	 * @param respectFrontendRoles whether to include the anonymous/frontend role
+	 */
+	public void addCategoryPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles );
+
+	/**
 	 * The search here takes a lucene query and pulls LuceneHits for you.  You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.
 	 * The returned list will be filtered with only the contentlets that the user can read(use).  you can of course also
