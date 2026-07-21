@@ -47,7 +47,6 @@
                 "${workspaceFolder}/apps/ai-evals/dist/**/*.(m|c|)js",
                 "!**/node_modules/**"
             ]
-        },
-
+        }
     ]
 }
