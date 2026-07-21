@@ -1715,7 +1715,14 @@ public class ContentTypeResource implements Serializable {
             @QueryParam(ContentTypesPaginator.ENSURE) @Parameter(schema = @Schema(type = "string"),
                     description = "Guarantee Content Types to be included in the response: " +
                             "Comma-separated content type keys (e.g. `activity, blog, product`)."
-            ) String ensureContentTypesParam) throws DotDataException {
+            ) String ensureContentTypesParam,
+            @QueryParam(ContentTypesPaginator.SYSTEM_PARAMETER_NAME) @Parameter(
+                    schema = @Schema(type = "boolean", defaultValue = "true"),
+                    description = "Whether to include system Content Types (e.g. Host, Favorite " +
+                            "Page) in the response.\n\nWhen `true` or omitted, system Content " +
+                            "Types are included (default, backward-compatible). When `false`, " +
+                            "they are excluded. Combines with `filter`."
+            ) final Boolean system) throws DotDataException {
 
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(httpRequest, httpResponse)
@@ -1762,6 +1769,10 @@ public class ContentTypeResource implements Serializable {
             if (ensureContentTypesParam != null) {
                 extraParams.put(ContentTypesPaginator.ENSURE,
                         contentTypeHelper.getEnsuredContentTypes(ensureContentTypesParam));
+            }
+
+            if (null != system) {
+                extraParams.put(ContentTypesPaginator.SYSTEM_PARAMETER_NAME, system);
             }
 
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
