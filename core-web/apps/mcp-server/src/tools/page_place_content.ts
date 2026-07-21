@@ -1,7 +1,7 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { placeContent, type PlaceContentOptions } from '../lib/page-place-content';
+import { placeContent, type PagePlaceContentOptions } from '../lib/page-place-content';
 import { errorMessage, runtimeFromEnv } from '../lib/runtime';
 
 // A slot address: a 1-based index into the page's real slots, OR a container reference. `instance`
@@ -138,7 +138,7 @@ export default async function handler(
     extra?: ToolExtraArguments
 ) {
     try {
-        const options: PlaceContentOptions = {
+        const options: PagePlaceContentOptions = {
             dotcms: runtimeFromEnv(extra?.sessionId),
             path: args.path,
             slots: args.slots,

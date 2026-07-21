@@ -25,7 +25,7 @@ export interface SlotAssignment {
     op?: PlaceOp;
 }
 
-export interface PlaceContentOptions {
+export interface PagePlaceContentOptions {
     dotcms: DotCMSRuntime;
     /** Page URL path (e.g. "/about-us") or a page identifier (UUID). */
     path: string;
@@ -60,7 +60,7 @@ export interface SlotResult {
     changed: boolean;
 }
 
-export interface PlaceContentManifest {
+export interface PagePlaceContentManifest {
     /** Identifier of the page whose content was written. */
     pageId: string;
     /** The page's url path. */
@@ -101,7 +101,7 @@ interface PageSlot {
  * real layout, so a typo fails clearly instead of silently doing nothing. The returned manifest
  * gives a before/after diff per slot and flags any slot that lost content.
  */
-export async function placeContent(options: PlaceContentOptions): Promise<PlaceContentManifest> {
+export async function placeContent(options: PagePlaceContentOptions): Promise<PagePlaceContentManifest> {
     const mode: PlaceMode = options.mode ?? 'merge';
     const variantName = options.variantName ?? DEFAULT_VARIANT;
     const languageId = options.languageId ?? DEFAULT_LANGUAGE_ID;
@@ -208,7 +208,7 @@ function sameOrder(a: string[], b: string[]): boolean {
 
 /** A stable key for a slot: a container can appear multiple times, so the uuid is part of it. */
 function slotKey(identifier: string, uuid: string): string {
-    return `${identifier} ${uuid}`;
+    return `${identifier} ${uuid}`;
 }
 
 /**
