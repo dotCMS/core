@@ -5,6 +5,7 @@ import static com.dotcms.auth.providers.oauth.OAuthConstants.PROVIDER_TYPE_OAUTH
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -26,6 +27,10 @@ import java.util.TreeMap;
 public class GenericOAuth2Provider implements OAuthProvider {
 
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+
+    /** Same heap-bound guard as {@code OIDCProvider} — caps IdP response bodies. */
+    private static final int MAX_IDP_RESPONSE_BYTES =
+            Config.getIntProperty("OAUTH_IDP_MAX_RESPONSE_BYTES", 1024 * 1024);
 
     private final String clientId;
     private final char[] clientSecret;
@@ -110,6 +115,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
                             "Accept", "application/json",
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(10000)
+                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -137,6 +143,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
                             "Authorization", "Bearer " + accessToken,
                             "Accept", "application/json"))
                     .setTimeout(5000)
+                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -180,6 +187,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
                         "Authorization", "Bearer " + accessToken,
                         "Accept", "application/json"))
                 .setTimeout(5000)
+                .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                 .build()
                 .doResponse();
         if (resp == null) {
@@ -214,6 +222,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
                             "Authorization", OAuthCrypto.basicAuthHeader(clientId, clientSecret),
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(5000)
+                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
         } catch (final Exception e) {
