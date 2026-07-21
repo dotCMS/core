@@ -163,9 +163,9 @@ jobs:
           #
           # test_filters: Subset of build_test_filters affected by CICD_SKIP_TESTS
           # ============================================================
-          build_test_filters="frontend cli backend build jvm_unit_test"
+          build_test_filters="frontend cli cli_test backend build jvm_unit_test"
           info_filters="sdk_libs documentation cicd"
-          test_filters="frontend cli backend jvm_unit_test"
+          test_filters="frontend cli cli_test backend jvm_unit_test"
 
           declare -A results
 
