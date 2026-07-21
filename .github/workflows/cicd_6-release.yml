@@ -158,7 +158,6 @@ jobs:
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
-      publish-npm-sdk-libs: false
       java-version: ${{ github.event.inputs.java-version }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     secrets:
@@ -172,9 +171,10 @@ jobs:
   # Promote latest - move the floating `latest` Docker tag to this GA release.
   #
   # evergreen-tracks (cicd/evergreen-tracks) is the single controller of the
-  # latest/standard/trailing tags. Its daily cron ages standard/trailing, but
-  # `latest` must move the instant a GA ships — so the release pipeline invokes
-  # the same engine on-demand, scoped to the latest track only (--tracks latest).
+  # latest/standard/trailing tags. standard/trailing move only on a manual
+  # evergreen-tracks-promote dispatch, but `latest` must move the instant a GA
+  # ships — so the release pipeline invokes the same engine on-demand, scoped to
+  # the latest track only (--tracks latest).
   # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
   #
   # Runs for every GA release from main on dotcms/core by default — moving latest
@@ -199,7 +199,9 @@ jobs:
     permissions:
       contents: read
     # Share the registry-mutation lock with the promote/admin workflows so this
-    # on-demand promote can never race the daily cron or an admin run.
+    # on-demand promote can never race a manual promote apply or an admin run.
+    # The promote workflow holds this lock only in its post-approval apply job,
+    # so a promotion pending human approval never queues this job.
     concurrency:
       group: evergreen-tracks-registry
       cancel-in-progress: false

@@ -32,10 +32,6 @@ on:
         description: 'Run all tests'
         type: boolean
         default: false
-      publish-npm-sdk-libs:
-        description: 'Publish NPM SDKs'
-        type: boolean
-        default: false
       java-version:
         description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
         type: string
@@ -117,7 +113,6 @@ jobs:
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       deploy-cli: true
-      publish-npm-sdk-libs: ${{ fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
       # tag-identifier intentionally omitted: trunk uses only the environment name as its tag
       java-version: ${{ github.event.inputs.java-version || '' }}
