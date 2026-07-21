@@ -93,4 +93,43 @@ public class OAuthProtocolHandlerTest {
         assertEquals("stored-secret",
                 result.getSecrets().get(OAuthAppConfig.KEY_CLIENT_SECRET).getString());
     }
+
+    @Test
+    public void buildSecrets_preserves_stored_clientSecret_when_empty_posted() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotAuthConstants.APP_KEY)
+                .withHiddenSecret(OAuthAppConfig.KEY_CLIENT_SECRET, "stored-secret")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of(OAuthAppConfig.KEY_CLIENT_SECRET, ""),
+                Optional.of(existing));
+
+        assertEquals("stored-secret",
+                result.getSecrets().get(OAuthAppConfig.KEY_CLIENT_SECRET).getString());
+    }
+
+    @Test
+    public void buildSecrets_preserves_stored_clientSecret_when_key_absent() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotAuthConstants.APP_KEY)
+                .withHiddenSecret(OAuthAppConfig.KEY_CLIENT_SECRET, "stored-secret")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of(OAuthAppConfig.KEY_CLIENT_ID, "my-id"),
+                Optional.of(existing));
+
+        assertEquals("stored-secret",
+                result.getSecrets().get(OAuthAppConfig.KEY_CLIENT_SECRET).getString());
+    }
+
+    @Test
+    public void buildSecrets_omits_clientSecret_when_empty_and_nothing_stored() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of(OAuthAppConfig.KEY_CLIENT_SECRET, ""),
+                Optional.empty());
+
+        assertNull(result.getSecrets().get(OAuthAppConfig.KEY_CLIENT_SECRET));
+    }
 }
