@@ -13,6 +13,7 @@ import {
     input,
     numberAttribute,
     OnDestroy,
+    OnInit,
     output,
     signal
 } from '@angular/core';
@@ -276,7 +277,7 @@ function normalizeEditorContent(
         </div>
     `
 })
-export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
+export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     /** Slash menu state; used by the template for ARIA on the ProseMirror surface. */
     protected readonly menuService = inject(SlashMenuService);
 
@@ -627,12 +628,24 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 this.document.body.style.overflow = '';
             });
         });
+    }
 
-        // Editor init: fast path (no customBlocks) is synchronous so existing tests
-        // and consumers see no behaviour change. Slow path (customBlocks set) defers
-        // construction until the remote ES-module URLs resolve — TipTap's schema is
-        // frozen at construction time, so adding extensions later is impossible
-        // without destroying the editor and losing ProseMirror state.
+    /**
+     * Builds the TipTap editor once the `field` input is bound.
+     *
+     * This MUST run in {@link ngOnInit}, not the constructor: `field` is a signal
+     * `input()` and Angular binds inputs *after* construction, so reading `this.field()`
+     * in the constructor always sees `undefined` — which silently skips every customer's
+     * `customBlocks` remote extensions (the editor would boot without them and then fail
+     * to parse stored content that references their node types). See #36646.
+     *
+     * Fast path (no customBlocks) builds synchronously. Slow path (customBlocks set) defers
+     * construction until the remote ES-module URLs resolve — TipTap's schema is frozen at
+     * construction time, so extensions must all be present before `new Editor`. `writeValue`
+     * / `setDisabledState` arriving before the editor mounts are buffered via
+     * {@link pendingValue} / {@link pendingDisabled} and drained in {@link commitEditor}.
+     */
+    ngOnInit(): void {
         const parsedCustomBlocks = parseCustomBlocksField(this.field());
         if (parsedCustomBlocks.extensions.length === 0) {
             this.commitEditor(this.buildEditor([]));
