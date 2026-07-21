@@ -95,6 +95,9 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
 
     if (view.protocol === 'SAML') {
         const values = view.values;
+        // SAML stores the toggle under the runtime's key (SAMLHelper.DO_HASH_KEY),
+        // not the OAuth-only `hashUserId`. Absent means true, same as the runtime.
+        config.hashUserId = String(values['hash.userid'] ?? 'true') === 'true';
         config.saml = {
             ...config.saml,
             idpName: String(values.idpName ?? config.saml.idpName),
@@ -156,7 +159,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
     return config;
 }
 
-export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
+export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigPayload {
     if (config.protocol === 'saml') {
         return {
             protocol: 'SAML',
@@ -178,7 +181,9 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
                 idPMetadataFile: config.saml.metadataUrl,
                 publicCert: config.saml.x509cert || undefined,
                 privateKey: config.saml.privateKey || undefined,
-                buttonParam: '/api/v1/dotsaml/metadata/$siteId',
+                // Substituted here, not stored as the raw `$siteId` descriptor template —
+                // classic Apps rendered the stored value verbatim as the button link.
+                buttonParam: `/api/v1/dotsaml/metadata/${siteId}`,
                 'identity.provider.destinationsso.url': config.saml.ssoUrl || undefined,
                 'identity.provider.destinationslo.url': config.saml.sloUrl || undefined,
                 'attribute.email.name': config.saml.claimEmail || undefined,
@@ -187,6 +192,7 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
                 'attribute.roles.name': config.saml.claimGroups || undefined,
                 'allow.user.synchronization': String(config.saml.autoProvision),
                 'login.email.update': String(config.saml.syncOnLogin),
+                'hash.userid': String(config.hashUserId),
                 'role.extra': config.saml.defaultRoles.join(',') || undefined,
                 'build.roles': toBuildRoles(config.saml.roleBehavior),
                 groupMappings: JSON.stringify(config.saml.groupMappings),
@@ -417,7 +423,8 @@ const SAML_ELEVATED_KEYS = new Set([
     'build.roles',
     'groupMappings',
     'enableBackend',
-    'enableFrontend'
+    'enableFrontend',
+    'hash.userid'
 ]);
 
 function extractSamlExtraProperties(
