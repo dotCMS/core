@@ -41,7 +41,7 @@ cd core-web && CI=true CURRENT_ENV=ci pnpm exec nx run dotcms-ui-e2e:e2e --confi
 
 ## Code Style
 
-Matrix naming matches Integration/Postman multi-suite style: `E2E Tests - Nx Playwright 1/3`, etc.
+Matrix job names use **1 of 3** (no `/`) because `stage_name` is embedded in GitHub Actions artifact names (`build-reports-test-*`), which reject forward slashes. Playwright still receives `--shard=N/3` via Maven.
 
 Maven property default is empty so local full-suite runs are unchanged.
 

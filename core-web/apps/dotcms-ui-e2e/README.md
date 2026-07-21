@@ -142,7 +142,7 @@ Prefer `just test-e2e` when validating before merge — it matches the CI pipeli
 
 ### CI sharding
 
-PR CI runs the Playwright suite as **three parallel jobs** (`--shard=1/3`, `2/3`, `3/3`). Each job boots its own dotCMS stack from the prebuilt Docker artifact. Rationale and how to add a 4th shard: [SPEC-ci-sharding.md](SPEC-ci-sharding.md).
+PR CI runs the Playwright suite as **three parallel jobs** (Playwright `--shard=1/3`, `2/3`, `3/3`; GitHub job names use “1 of 3” to keep artifact names valid). Each job boots its own dotCMS stack from the prebuilt Docker artifact. Rationale and how to add a 4th shard: [SPEC-ci-sharding.md](SPEC-ci-sharding.md).
 
 Run one shard locally (Maven lifecycle, same as CI):
 
