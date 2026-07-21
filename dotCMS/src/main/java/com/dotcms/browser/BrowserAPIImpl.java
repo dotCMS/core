@@ -45,9 +45,13 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.RenderMode;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
@@ -70,6 +74,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1858,8 +1863,12 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
         }
+        // Detect archive-target steps once per request (cached WorkflowAPI lookups, never per row).
+        // Only step-pinned entries can be archive-target; scheme-only entries always stay live-only.
+        final Set<String> archiveStepIds = resolveArchiveTargetSteps(browserQuery.workflowStepIds,
+                browserQuery.user);
         appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
-                browserQuery.workflowStepIds, parameters);
+                browserQuery.workflowStepIds, archiveStepIds, parameters);
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
@@ -1878,7 +1887,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(selectQuery);
         }
-        if (!browserQuery.showArchived) {
+        // Suppress the global archived exclusion ONLY when an archive-target step is present; in
+        // that case appendWorkflowQuery owns cvi.deleted per branch. Otherwise (no archive step,
+        // or showArchived) the generated SQL is byte-identical to before.
+        if (!browserQuery.showArchived && archiveStepIds.isEmpty()) {
             appendExcludeArchivedQuery(selectQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
@@ -2190,9 +2202,9 @@ public class BrowserAPIImpl implements BrowserAPI {
      * No-ops when both sets are empty. All ids are sanitized via
      * {@link SQLUtil#sanitizeParameter(String)} and bound as {@code ?} parameters.
      */
-    private void appendWorkflowQuery(final StringBuilder sqlQuery,
+    private static void appendWorkflowQuery(final StringBuilder sqlQuery,
             final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
-            final List<Object> parameters) {
+            final Set<String> archiveStepIds, final List<Object> parameters) {
 
         final boolean hasSchemes = UtilMethods.isSet(workflowSchemeIds);
         final boolean hasSteps = UtilMethods.isSet(workflowStepIds);
@@ -2200,29 +2212,144 @@ public class BrowserAPIImpl implements BrowserAPI {
             return;
         }
 
-        final List<String> orClauses = new ArrayList<>();
+        // Byte-identical path: with no archive-target step the global cvi.deleted='false'
+        // (appendExcludeArchivedQuery) still applies, so the workflow clause is emitted verbatim.
+        if (!UtilMethods.isSet(archiveStepIds)) {
+            final List<String> orClauses = new ArrayList<>();
+            if (hasSchemes) {
+                orClauses.add(schemeExistsClause(workflowSchemeIds, parameters));
+            }
+            if (hasSteps) {
+                orClauses.add(stepExistsClause(workflowStepIds, parameters));
+            }
+            sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
+            return;
+        }
 
+        // Archive-target step present: own cvi.deleted per branch. The live branch (scheme-only
+        // entries + normal steps) keeps cvi.deleted='false'; the archive branch admits archived
+        // rows. Any empty inner group is omitted. archiveStepIds is a subset of workflowStepIds,
+        // so the archive branch is always present here.
+        final Set<String> normalStepIds = new LinkedHashSet<>(workflowStepIds);
+        normalStepIds.removeAll(archiveStepIds);
+
+        final List<String> liveClauses = new ArrayList<>();
         if (hasSchemes) {
-            final String placeholders = workflowSchemeIds.stream()
-                    .map(id -> "?").collect(Collectors.joining(","));
-            orClauses.add(" exists (select 1 from workflow_scheme_x_structure wss "
-                    + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
-                    + ")) ");
-            workflowSchemeIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+            liveClauses.add(schemeExistsClause(workflowSchemeIds, parameters));
+        }
+        if (!normalStepIds.isEmpty()) {
+            liveClauses.add(stepExistsClause(normalStepIds, parameters));
         }
 
-        if (hasSteps) {
-            final String placeholders = workflowStepIds.stream()
-                    .map(id -> "?").collect(Collectors.joining(","));
-            // workflow_task.status holds the current STEP ID (FK -> workflow_step.id),
-            // not a step name — so workflowStepIds are matched against it directly.
-            orClauses.add(" exists (select 1 from workflow_task wt "
-                    + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
-                    + " and wt.status in (" + placeholders + ")) ");
-            workflowStepIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        final List<String> branches = new ArrayList<>();
+        if (!liveClauses.isEmpty()) {
+            branches.add(" ( cvi.deleted = " + DbConnectionFactory.getDBFalse()
+                    + " and (" + String.join(" or ", liveClauses) + ") ) ");
         }
+        branches.add(stepExistsClause(archiveStepIds, parameters));
 
-        sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
+        sqlQuery.append(" and (").append(String.join(" or ", branches)).append(") ");
+    }
+
+    /**
+     * Builds the scheme-only {@code EXISTS} sub-select (match by content-type assignment via
+     * {@code workflow_scheme_x_structure}) and binds the ids as {@code ?} parameters, sanitized via
+     * {@link SQLUtil#sanitizeParameter(String)}. Placeholders and parameters are produced in the
+     * same iteration order.
+     */
+    private static String schemeExistsClause(final Set<String> workflowSchemeIds,
+            final List<Object> parameters) {
+        final String placeholders = workflowSchemeIds.stream()
+                .map(id -> "?").collect(Collectors.joining(","));
+        workflowSchemeIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        return " exists (select 1 from workflow_scheme_x_structure wss "
+                + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
+                + ")) ";
+    }
+
+    /**
+     * Builds the step-pinned {@code EXISTS} sub-select (match the contentlet's current task via
+     * {@code workflow_task.status}, which holds the current STEP ID) and binds the ids as
+     * {@code ?} parameters, sanitized via {@link SQLUtil#sanitizeParameter(String)}. Placeholders
+     * and parameters are produced in the same iteration order.
+     */
+    private static String stepExistsClause(final Set<String> workflowStepIds,
+            final List<Object> parameters) {
+        final String placeholders = workflowStepIds.stream()
+                .map(id -> "?").collect(Collectors.joining(","));
+        // workflow_task.status holds the current STEP ID (FK -> workflow_step.id),
+        // not a step name — so workflowStepIds are matched against it directly.
+        workflowStepIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        return " exists (select 1 from workflow_task wt "
+                + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
+                + " and wt.status in (" + placeholders + ")) ";
+    }
+
+    /**
+     * Resolves, once per request, which of the given step-pinned ids are archive-target steps —
+     * a step reached by an action carrying {@link ArchiveContentActionlet}. Only step-pinned
+     * entries qualify; scheme-only entries always stay live-only. Lookups hit the cached
+     * {@link WorkflowAPI} config tables (no per-row work) and are memoized per scheme within the
+     * call. On any failure the step is treated as non-archive, falling back to the current
+     * live-only behavior — never fails the browse.
+     *
+     * @param workflowStepIds the step-pinned ids from the request (may be empty).
+     * @param user            the user executing the browse (for permission-aware action lookups).
+     * @return the subset of {@code workflowStepIds} that are archive-target; never {@code null}.
+     */
+    private Set<String> resolveArchiveTargetSteps(final Set<String> workflowStepIds,
+            final User user) {
+        if (!UtilMethods.isSet(workflowStepIds)) {
+            return Set.of();
+        }
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final Map<String, Set<String>> archiveTargetsByScheme = new HashMap<>();
+        final Set<String> archiveStepIds = new LinkedHashSet<>();
+        for (final String stepId : workflowStepIds) {
+            final WorkflowStep step = Try.of(() -> workflowAPI.findStep(stepId)).getOrNull();
+            if (step == null || !UtilMethods.isSet(step.getSchemeId())) {
+                continue;
+            }
+            final Set<String> targets = archiveTargetsByScheme.computeIfAbsent(step.getSchemeId(),
+                    schemeId -> archiveTargetStepsForScheme(workflowAPI, schemeId, user));
+            if (targets.contains(stepId)) {
+                archiveStepIds.add(stepId);
+            }
+        }
+        return archiveStepIds;
+    }
+
+    /**
+     * Returns the set of step ids that a dedicated archive action targets ({@code nextStep}) within
+     * the given scheme. A step qualifies when some action's {@link WorkflowAction#getNextStep()}
+     * points to it and that action carries {@link ArchiveContentActionlet}. Archive-in-place
+     * actions ({@code nextStep == CURRENT_STEP}) are excluded (spec §3.6). Never throws — on failure
+     * an empty set is returned so the browse falls back to live-only behavior.
+     */
+    private Set<String> archiveTargetStepsForScheme(final WorkflowAPI workflowAPI,
+            final String schemeId, final User user) {
+        final Set<String> targets = new HashSet<>();
+        try {
+            final WorkflowScheme scheme = workflowAPI.findScheme(schemeId);
+            final List<WorkflowAction> actions = workflowAPI.findActions(scheme, user);
+            final String archiveActionletClass = ArchiveContentActionlet.class.getName();
+            for (final WorkflowAction action : actions) {
+                if (action.isNextStepCurrentStep() || !UtilMethods.isSet(action.getNextStep())) {
+                    continue;
+                }
+                final List<WorkflowActionClass> actionClasses = workflowAPI.findActionClasses(action);
+                final boolean carriesArchive = actionClasses.stream()
+                        .anyMatch(actionClass -> archiveActionletClass.equals(actionClass.getClazz()));
+                if (carriesArchive) {
+                    targets.add(action.getNextStep());
+                }
+            }
+        } catch (final Exception e) {
+            Logger.warn(this, "Unable to resolve archive-target steps for workflow scheme "
+                    + schemeId + "; treating as non-archive. " + e.getMessage());
+            return Set.of();
+        }
+        return targets;
     }
 
     /**
