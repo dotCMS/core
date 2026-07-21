@@ -395,6 +395,24 @@ public class OAuthHelper {
             return;
         }
 
+        // Fetch provider groups BEFORE wiping the existing roles: a groups-endpoint outage
+        // must abort the login with the user's roles untouched — not wipe first, swallow the
+        // failure into an empty refill, and still report a successful login.
+        final Collection<String> providerGroups;
+        if (strategy == BuildRolesStrategy.ALL
+                || strategy == BuildRolesStrategy.STATICADD
+                || strategy == BuildRolesStrategy.IDP) {
+            try {
+                providerGroups = provider.getGroups(accessToken, userInfo);
+            } catch (final Exception e) {
+                throw new DotRuntimeException("Failed fetching groups from the OAuth provider for user "
+                        + user.getEmailAddress() + " — aborting login so existing roles are preserved: "
+                        + e.getMessage(), e);
+            }
+        } else {
+            providerGroups = java.util.Collections.emptyList();
+        }
+
         // Serialize the remove + reapply block per user so concurrent logins for the
         // same user never observe the "wiped but not yet reapplied" intermediate state.
         // Intrinsic-monitor lock on a per-user sentinel is enough — the block runs
@@ -420,11 +438,11 @@ public class OAuthHelper {
                 case STATICADD:
                     applySystemRoles(user, config, frontEndLogin);
                     applyExtraRoles(user, config);
-                    applyProviderGroups(user, provider, accessToken, userInfo, config);
+                    applyProviderGroups(user, providerGroups, config);
                     break;
                 case IDP:
                     // IdP-only: skip the logged-in / back-end baseline, add provider groups only.
-                    applyProviderGroups(user, provider, accessToken, userInfo, config);
+                    applyProviderGroups(user, providerGroups, config);
                     break;
                 case STATICONLY:
                     // Static-only: system + extra roles, ignore whatever groups the IdP claims.
@@ -521,12 +539,8 @@ public class OAuthHelper {
     }
 
     private void applyProviderGroups(final User user,
-                                     final OAuthProvider provider,
-                                     final String accessToken,
-                                     final Map<String, Object> userInfo,
+                                     final Collection<String> groups,
                                      final OAuthAppConfig config) {
-        final Collection<String> groups = Try.of(() -> provider.getGroups(accessToken, userInfo))
-                .getOrElse(java.util.Collections.emptyList());
         if (groups.isEmpty()) {
             Logger.info(this, "OAuth provider returned no groups for " + user.getEmailAddress()
                     + " — check the dotAuth App's groupsClaim and that the IdP actually emits it in the id_token / userinfo");
