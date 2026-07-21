@@ -486,6 +486,10 @@ public class CircuitBreakerUrl {
     public Response<String> doResponse() {
         try {
             return new Response<>(this);
+        } catch (ResponseSizeLimitExceededException e) {
+            // Documented as always propagated — swallowing it to null here would surface
+            // as an NPE at the call site and mask the real cause (response over the cap).
+            throw new DotRuntimeException(e.getMessage(), e);
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
             return null;
