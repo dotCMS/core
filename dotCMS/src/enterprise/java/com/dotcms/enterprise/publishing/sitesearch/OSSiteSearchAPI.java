@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.sitesearch;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
@@ -393,6 +394,33 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             api.removeVersion(rebuilt.version());
         }
         api.clearCache();
+
+        // I-5 fallback invalidation. defaultSiteSearchIndex() falls back to the legacy IndiciesAPI
+        // pointer when the versioned slot is empty. In phases where ES is NOT a write provider
+        // (Phase 3), the router does not fan this deactivation out to ESSiteSearchAPI, so the legacy
+        // pointer would survive and the fallback would keep reporting this index as the active
+        // default — permanently blocking its deletion. Clear the legacy pointer here when it still
+        // points at the index being deactivated. In dual-write phases ESSiteSearchAPI also clears it
+        // via the fan-out, so this is idempotent (issue #36360 review).
+        clearLegacyPointerIfDefault(indexName);
+    }
+
+    /**
+     * Clears the legacy {@link com.dotmarketing.business.IndiciesAPI} site-search pointer when it
+     * still points at {@code indexName}. Complements the I-5 read-fallback in
+     * {@link #defaultSiteSearchIndex()} so a deactivated Phase-0 default is not resurrected by that
+     * fallback in phases where ES is not part of the write fan-out (e.g. Phase 3). Matches on the
+     * exact name so deactivating one index never clears a different index's legacy pointer.
+     */
+    private void clearLegacyPointerIfDefault(final String indexName) throws DotDataException {
+        final String legacyDefault = legacyDefaultSiteSearchIndex().orElse(null);
+        if (legacyDefault == null || !legacyDefault.equals(indexName)) {
+            return;
+        }
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+        builder.setSiteSearch(null);
+        APILocator.getIndiciesAPI().point(builder.build());
     }
 
     // =========================================================================
