@@ -44,6 +44,10 @@ jobs:
   # into Hub so listing tags works the same as the apply job (private repos).
   plan:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      # The dry-run plan text, stashed so `apply` can confirm nothing changed
+      # since approval before it mutates anything.
+      plan: ${{ steps.plan.outputs.plan }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -54,6 +58,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Plan track moves (dry-run)
+        id: plan
         working-directory: cicd/evergreen-tracks
         env:
           REPO: ${{ github.event.inputs.repo }}
@@ -61,10 +66,17 @@ jobs:
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
         run: |
           echo "repo=$REPO (dry-run) — review this plan, then approve the apply job"
-          uv run evergreen-tracks promote \
+          # 2>/dev/null: keep only the engine's stdout plan, drop uv's stderr chatter.
+          PLAN=$(uv run evergreen-tracks promote \
             --repo "$REPO" \
             --standard-days "$STANDARD_DAYS" \
-            --trailing-days "$TRAILING_DAYS"
+            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+          echo "$PLAN"
+          {
+            echo 'plan<<EVERGREEN_PLAN_EOF'
+            echo "$PLAN"
+            echo 'EVERGREEN_PLAN_EOF'
+          } >> "$GITHUB_OUTPUT"
 
   # Approval gate: carries the evergreen-tracks-apply environment's
   # required-reviewer rule and nothing else. Pauses after `plan` until a human
@@ -88,10 +100,11 @@ jobs:
   # cancel-in-progress is false: queueing is safer than aborting mid-promote
   # and leaving tags half-moved.
   #
-  # Note: `apply` re-derives its plan from live registry state at run time —
-  # the approval authorizes the operation (repo + thresholds), not the exact
-  # digest set the plan job printed. Standard/trailing age slowly, so the plan
-  # rarely drifts between plan and approval; if in doubt, re-dispatch.
+  # `apply` re-derives the plan from live registry state at run time and FAILS
+  # if it differs from the approved plan (a GA landed, a hold/taint changed,
+  # etc.), so it can never move tags nobody reviewed. Standard/trailing age
+  # slowly, so drift is rare — when it happens, re-dispatch to review the new
+  # plan.
   apply:
     needs: [ plan, gate ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
@@ -113,8 +126,29 @@ jobs:
           REPO: ${{ github.event.inputs.repo }}
           STANDARD_DAYS: ${{ github.event.inputs.standard_days }}
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
+          APPROVED_PLAN: ${{ needs.plan.outputs.plan }}
         run: |
-          echo "repo=$REPO — applying approved plan"
+          # Re-derive the plan from CURRENT registry state and confirm it still
+          # matches what was approved. If a GA landed or a hold/taint changed
+          # between plan and approval, fail rather than move tags nobody reviewed.
+          CURRENT_PLAN=$(uv run evergreen-tracks promote \
+            --repo "$REPO" \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+          # A never-empty plan ("no track moves needed" at minimum) guards against
+          # a silent pass if plan capture ever breaks (e.g. logging leaves stdout).
+          if [ -z "$APPROVED_PLAN" ] || [ -z "$CURRENT_PLAN" ]; then
+            echo "::error::Empty plan (approved or current) — cannot verify the approved plan. Re-dispatch."
+            exit 1
+          fi
+          # sort: the plan is order-insensitive (held-track lines come from a set).
+          if [ "$(printf '%s\n' "$APPROVED_PLAN" | sort)" != "$(printf '%s\n' "$CURRENT_PLAN" | sort)" ]; then
+            echo "::error::Registry state changed since the plan was approved — refusing to apply. Re-dispatch to review the new plan."
+            echo "--- approved plan ---"; printf '%s\n' "$APPROVED_PLAN"
+            echo "--- current plan ---";  printf '%s\n' "$CURRENT_PLAN"
+            exit 1
+          fi
+          echo "repo=$REPO — plan unchanged since approval; applying"
           uv run evergreen-tracks promote \
             --repo "$REPO" \
             --standard-days "$STANDARD_DAYS" \

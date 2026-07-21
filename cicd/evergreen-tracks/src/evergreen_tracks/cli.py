@@ -166,7 +166,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    # Log to stdout (not the default stderr) so the plan is the command's stdout:
+    # the promote workflow captures a dry-run's stdout and diffs it against the
+    # approved plan, and uv's own chatter stays on stderr where it's discarded.
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     args = build_parser().parse_args(argv)
     return args.func(args)
 

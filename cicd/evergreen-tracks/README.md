@@ -19,9 +19,10 @@ tags plus `<version>_tainted` / `<track>_hold` markers).
   waits on the `evergreen-tracks-apply` environment's required-reviewer gate, and `apply`
   runs after approval — nothing moves until a human reviews the plan and approves.
   (One-time repo setup: Settings > Environments > `evergreen-tracks-apply` > Required
-  reviewers.) Note that `apply` re-derives its plan from live registry state at run
-  time: the approval authorizes the operation (repo + age thresholds), not the exact
-  digest set the plan job printed. Only `apply` takes the shared registry-mutation
+  reviewers.) `apply` re-derives its plan from live registry state at run time and
+  **fails if it no longer matches the approved plan** (e.g. a GA landed or a hold/taint
+  changed between plan and approval), so it can never move tags nobody reviewed — just
+  re-dispatch to review the new plan. Only `apply` takes the shared registry-mutation
   lock, so a pending approval never blocks the release pipeline from moving `latest`.
 
 ## Run locally (dry-run is the default)
