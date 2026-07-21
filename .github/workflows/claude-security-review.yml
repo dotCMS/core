@@ -1,16 +1,13 @@
 name: Claude Security Review
 
-# Runs an AI-assisted security review on every PR. Behavior:
-#   - If Semgrep has already reviewed this PR (any check run, PR comment,
-#     review, or review-comment authored by a Semgrep app/bot), the Claude
-#     review is SKIPPED and the check passes — we trust Semgrep's coverage.
-#   - On the very first push (opened) or a manual dispatch, Claude always runs
-#     unconditionally — Semgrep cannot have reviewed a brand-new PR yet.
-#   - Otherwise, Claude runs. On findings:
-#       - Posts an INTENTIONALLY ABSTRACT comment on the (public) PR
-#       - Notifies the PR author privately on Slack with full details
-#       - Fails the check so the PR is blocked from merge
-#         (only enforced when this job is added to branch-protection required checks)
+# Runs an AI-assisted security review on every PR (opened / synchronize) and on
+# manual dispatch. Claude always reviews — it catches logic-level issues (auth
+# bypasses, injection reachable only through application flow) that pattern-based
+# scanners miss, so its run is not gated on any other tool. On findings:
+#   - Posts an INTENTIONALLY ABSTRACT comment on the (public) PR
+#   - Notifies the PR author privately on Slack with full details
+#   - Fails the check so the PR is blocked from merge
+#     (only enforced when this job is added to branch-protection required checks)
 #
 # Required configuration (Settings → Secrets and variables → Actions):
 #   secrets:
@@ -25,7 +22,7 @@ name: Claude Security Review
 #   "Require status checks to pass" → add "Claude Security Review / security-review"
 #
 # Security note: values from the GitHub context / step outputs (PR title, number,
-# author, action, SHAs) are treated as untrusted. They are passed to
+# author, SHAs) are treated as untrusted. They are passed to
 # actions/github-script via `env:` and read with process.env — never interpolated
 # directly into a `script:` body, which would allow code injection.
 
@@ -94,85 +91,6 @@ jobs:
             core.setOutput('html_url', pr.html_url);
             core.setOutput('author',   pr.user.login);
             core.setOutput('is_draft', pr.draft ? 'true' : 'false');
-            core.setOutput('action',   context.payload.action || 'workflow_dispatch');
-
-      - name: Check for prior Semgrep review (skip Claude if present)
-        id: semgrep
-        uses: actions/github-script@v7
-        env:
-          PR_ACTION: ${{ steps.pr.outputs.action }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-          HEAD_SHA:  ${{ steps.pr.outputs.head_sha }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // On the very first push of a new PR (opened) or a manual dispatch,
-            // always run Claude — Semgrep cannot have reviewed it yet.
-            const action = process.env.PR_ACTION || '';
-            if (action === 'opened' || action === 'workflow_dispatch') {
-              core.info(`Event '${action}' — bypassing Semgrep check, running Claude unconditionally.`);
-              core.setOutput('found', 'false');
-              return;
-            }
-
-            const { owner, repo } = context.repo;
-            const prNumber = Number.parseInt(process.env.PR_NUMBER || '', 10);
-            if (!Number.isInteger(prNumber) || prNumber <= 0) {
-              core.setFailed('Invalid PR number');
-              return;
-            }
-            const headSha = process.env.HEAD_SHA || '';
-            const isSemgrep = (s) => /semgrep/i.test(s || '');
-
-            // 1) Any Semgrep check run on the current head SHA
-            const checks = await github.paginate(github.rest.checks.listForRef, {
-              owner, repo, ref: headSha, per_page: 100
-            });
-            const hasCheck = checks.some(c => isSemgrep(c.name) || isSemgrep(c.app && c.app.slug));
-
-            // 2) Any issue comment authored by a Semgrep bot / user
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner, repo, issue_number: prNumber, per_page: 100
-            });
-            const hasComment = comments.some(c => isSemgrep(c.user && c.user.login));
-
-            // 3) Any PR review from Semgrep
-            const reviews = await github.paginate(github.rest.pulls.listReviews, {
-              owner, repo, pull_number: prNumber, per_page: 100
-            });
-            const hasReview = reviews.some(r => isSemgrep(r.user && r.user.login));
-
-            // 4) Any inline review comment from Semgrep
-            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
-              owner, repo, pull_number: prNumber, per_page: 100
-            });
-            const hasReviewComment = reviewComments.some(c => isSemgrep(c.user && c.user.login));
-
-            const found = hasCheck || hasComment || hasReview || hasReviewComment;
-            core.info(`Semgrep signals — check:${hasCheck} comment:${hasComment} review:${hasReview} review-comment:${hasReviewComment}`);
-            core.setOutput('found', found ? 'true' : 'false');
-
-      - name: Post skip comment (Semgrep already covered this PR)
-        if: steps.semgrep.outputs.found == 'true'
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const body = [
-              '## Security Review',
-              '',
-              'Semgrep coverage detected on this PR — skipping the Claude security review to avoid duplicate work.',
-              '',
-              '_If Semgrep coverage is removed, re-running this check will perform the Claude review._'
-            ].join('\n');
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: Number.parseInt(process.env.PR_NUMBER || '', 10),
-              body
-            });
 
       # The prompt template lives in this workflow's own commit, not in the PR being
       # reviewed. Fetch it from github.workflow_sha (the commit that defines this run)
@@ -180,7 +98,6 @@ jobs:
       # to main — with no hardcoded branch name. Staged to /tmp before the PR-head
       # checkout so it survives that checkout's clean step.
       - name: Fetch security-review prompt (from this workflow's own ref)
-        if: steps.semgrep.outputs.found != 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.workflow_sha }}
@@ -189,11 +106,9 @@ jobs:
           path: _securityreview
 
       - name: Stage prompt template
-        if: steps.semgrep.outputs.found != 'true'
         run: cp _securityreview/.github/claude-security-review-prompt.md /tmp/claude-security-review-prompt.md
 
       - name: Checkout PR head
-        if: steps.semgrep.outputs.found != 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.pr.outputs.head_sha }}
@@ -204,7 +119,6 @@ jobs:
           persist-credentials: false
 
       - name: Prepare prompt (substitute runtime values)
-        if: steps.semgrep.outputs.found != 'true'
         env:
           BASE_SHA:  ${{ steps.pr.outputs.base_sha }}
           HEAD_SHA:  ${{ steps.pr.outputs.head_sha }}
@@ -212,11 +126,9 @@ jobs:
         run: envsubst < /tmp/claude-security-review-prompt.md > /tmp/claude-prompt.md
 
       - name: Install Claude Code CLI
-        if: steps.semgrep.outputs.found != 'true'
         run: npm install -g @anthropic-ai/claude-code@latest --quiet
 
       - name: Run Claude security review
-        if: steps.semgrep.outputs.found != 'true'
         id: review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -226,11 +138,10 @@ jobs:
           claude \
             --dangerously-skip-permissions \
             --allowedTools "Bash,Read,Grep,Glob,Agent" \
-            --model claude-opus-4-7 \
+            --model claude-opus-4-8 \
             -p "$(cat /tmp/claude-prompt.md)"
 
       - name: Parse findings
-        if: steps.semgrep.outputs.found != 'true'
         id: parse
         run: |
           set -euo pipefail
@@ -259,7 +170,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Post abstract PR comment (findings)
-        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'true'
+        if: steps.parse.outputs.has_findings == 'true'
         uses: actions/github-script@v7
         env:
           PR_NUMBER:      ${{ steps.pr.outputs.number }}
@@ -287,7 +198,7 @@ jobs:
             });
 
       - name: Post clean PR comment (no findings)
-        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'false'
+        if: steps.parse.outputs.has_findings == 'false'
         uses: actions/github-script@v7
         env:
           PR_NUMBER: ${{ steps.pr.outputs.number }}
@@ -307,7 +218,7 @@ jobs:
             });
 
       - name: Notify author privately on Slack
-        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'true'
+        if: steps.parse.outputs.has_findings == 'true'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_USER_MAP:  ${{ secrets.SLACK_USER_MAP }}
@@ -377,7 +288,7 @@ jobs:
           PY
 
       - name: Fail check to block merge
-        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'true'
+        if: steps.parse.outputs.has_findings == 'true'
         env:
           FINDINGS_COUNT: ${{ steps.parse.outputs.findings_count }}
         run: |
