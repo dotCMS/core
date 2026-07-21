@@ -78,13 +78,15 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             final Object raw = incoming.get(key);
             if (HIDDEN_KEYS.contains(key)) {
                 final String str = raw == null ? null : String.valueOf(raw);
-                if (DotAuthConstants.HIDDEN_SECRET_MASK.equals(str)) {
+                if (str == null || str.isEmpty() || DotAuthConstants.HIDDEN_SECRET_MASK.equals(str)) {
+                    // Mask AND empty/absent both preserve the stored secret: a client posting
+                    // an empty value must never silently destroy a working clientSecret.
+                    // Clearing a config goes through deleteConfig, not an empty re-save.
                     existing.map(AppSecrets::getSecrets)
                             .map(m -> m.get(key))
                             .ifPresent(secret -> builder.withSecret(key, secret));
                     continue;
                 }
-                if (str == null || str.isEmpty()) continue;
                 builder.withHiddenSecret(key, str);
                 continue;
             }
