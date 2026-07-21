@@ -419,9 +419,14 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
+        const status = this.uveStore.uveStatus();
 
-        if (currentLanguage && !currentLanguage?.translated) {
-            this.createNewTranslation(currentLanguage, page);
+        // Guard: only act on a freshly-loaded page. Without the LOADED check the effect
+        // could fire while a previous pageLoad is still in-flight (stale translated:false data).
+        // untracked: confirmationService.confirm reads PrimeNG-internal signals; tracking them
+        // would cause the effect to re-fire every time the dialog opens/closes.
+        if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+            untracked(() => this.createNewTranslation(currentLanguage, page));
         }
     });
 
@@ -1724,8 +1729,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
-        this.uveStore.pageLoad({ language_id: currentLanguageId });
+        const pageLanguages = this.uveStore.pageLanguages();
+        // Must not navigate back to the current (untranslated) language — doing so would
+        // reload the same state and re-trigger the dialog. Navigate to the default translated
+        // language instead, falling back to the first translated language if needed.
+        const targetLanguage =
+            pageLanguages.find((l) => l.defaultLanguage && l.translated) ??
+            pageLanguages.find((l) => l.translated);
+        const targetLanguageId = targetLanguage?.id?.toString() ?? '1';
+        this.uveStore.pageLoad({ language_id: targetLanguageId });
     }
 
     #clientPayload() {
