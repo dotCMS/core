@@ -30,7 +30,7 @@
                 <label>{{ 'dotauth.field.acsUrl' | dm }}</label>
                 <input
                     pInputText
-                    [ngModel]="saml().entityId + '/dotsaml/login'"
+                    [ngModel]="acsUrl()"
                     disabled
                     [pTooltip]="'dotauth.tooltip.saml.acsUrl' | dm"
                     tooltipPosition="top" />
