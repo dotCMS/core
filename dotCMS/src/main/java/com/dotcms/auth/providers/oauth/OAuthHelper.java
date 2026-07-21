@@ -399,9 +399,7 @@ public class OAuthHelper {
         // must abort the login with the user's roles untouched — not wipe first, swallow the
         // failure into an empty refill, and still report a successful login.
         final Collection<String> providerGroups;
-        if (strategy == BuildRolesStrategy.ALL
-                || strategy == BuildRolesStrategy.STATICADD
-                || strategy == BuildRolesStrategy.IDP) {
+        if (strategy == BuildRolesStrategy.ALL || strategy == BuildRolesStrategy.IDP) {
             try {
                 providerGroups = provider.getGroups(accessToken, userInfo);
             } catch (final Exception e) {
@@ -435,7 +433,6 @@ public class OAuthHelper {
 
             switch (strategy) {
                 case ALL:
-                case STATICADD:
                     applySystemRoles(user, config, frontEndLogin);
                     applyExtraRoles(user, config);
                     applyProviderGroups(user, providerGroups, config);
@@ -444,6 +441,10 @@ public class OAuthHelper {
                     // IdP-only: skip the logged-in / back-end baseline, add provider groups only.
                     applyProviderGroups(user, providerGroups, config);
                     break;
+                case STATICADD:
+                    // Additive per the SAML docs' staticadd contract: keep existing roles,
+                    // add system + extra roles, and IGNORE roles from the IdP. Matches
+                    // SAMLHelper.addRoles.
                 case STATICONLY:
                     // Static-only: system + extra roles, ignore whatever groups the IdP claims.
                     applySystemRoles(user, config, frontEndLogin);
