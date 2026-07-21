@@ -10,7 +10,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import io.vavr.control.Try;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -159,8 +158,16 @@ public class GenericOAuth2Provider implements OAuthProvider {
         if (UtilMethods.isSet(groupsClaim) && userInfo != null && userInfo.containsKey(groupsClaim)) {
             return toStringList(userInfo.get(groupsClaim));
         }
+        // Failures propagate — the caller must be able to tell "endpoint down" from "user has
+        // no groups", otherwise an IdP outage silently strips roles during the role rebuild.
         if (UtilMethods.isSet(groupsUrl)) {
-            return Try.of(() -> fetchGroupsFromUrl(accessToken)).getOrElse(Collections.emptyList());
+            try {
+                return fetchGroupsFromUrl(accessToken);
+            } catch (final DotRuntimeException e) {
+                throw e;
+            } catch (final Exception e) {
+                throw new DotRuntimeException("OAuth2 groups fetch failed: " + e.getMessage(), e);
+            }
         }
         return Collections.emptyList();
     }
@@ -175,9 +182,12 @@ public class GenericOAuth2Provider implements OAuthProvider {
                 .setTimeout(5000)
                 .build()
                 .doResponse();
+        if (resp == null) {
+            // CircuitBreakerUrl.doResponse() maps transport failures (DNS, refused, timeout) to null
+            throw new DotRuntimeException("OAuth2 groups endpoint unreachable: " + groupsUrl);
+        }
         if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
-            Logger.warn(this, "OAuth2 groups endpoint returned HTTP " + resp.getStatusCode());
-            return Collections.emptyList();
+            throw new DotRuntimeException("OAuth2 groups endpoint returned HTTP " + resp.getStatusCode());
         }
         final Object parsed = MAPPER.readValue(resp.getResponse(), Object.class);
         if (parsed instanceof List) {
