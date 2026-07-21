@@ -125,6 +125,16 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
     // page url to /index. createfolders is idempotent — re-creating an existing folder is a no-op.
     const folderId = await ensureFolder(options.dotcms, siteId, folder);
 
+    // Trap #3 (root/leaf page on a NON-default site): the page's HOST_OR_FOLDER field must carry a
+    // concrete location id, or the fire cannot resolve the host and 500s with
+    // "Host.getIdentifier() ... host is null". A nested page passes the folder id (which carries its
+    // host); a root page has no folder, so `folderId` is undefined and, left alone, `hostFolder`
+    // would be dropped from the JSON body — leaving only `contentHost`, which is not enough to
+    // anchor a root page. Fall the location back to the SITE id: HOST_OR_FOLDER accepts a host id
+    // and resolves it to that host's system folder. (This mirrors the working manual recovery:
+    // fire with hostFolder = site id.)
+    const hostFolder = folderId ?? siteId;
+
     const title = options.title;
     const fired = (await options.dotcms.request({
         method: 'PUT',
@@ -137,7 +147,7 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
                 ...extraFields,
                 contentType: contentType.variable,
                 contentHost: siteId,
-                hostFolder: folderId,
+                hostFolder,
                 languageId: options.languageId ?? 1,
                 title,
                 url,
@@ -393,7 +403,9 @@ async function ensureFolder(
     folder: string
 ): Promise<string | undefined> {
     if (folder === '/' || folder === '') {
-        return undefined; // root — pages can hang directly off the site with no hostFolder.
+        // Root page: no folder to create. The caller falls hostFolder back to the site id (a root
+        // page fired with an undefined hostFolder 500s on a non-default site — see Trap #3).
+        return undefined;
     }
 
     const response = (await dotcms.request({

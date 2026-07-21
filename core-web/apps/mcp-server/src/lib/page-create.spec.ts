@@ -273,7 +273,44 @@ describe('createPage', () => {
         // a hostname here NPEs the fire for a root page (no folder to anchor the host).
         expect(contentlet.contentHost).toBe('site-uuid-1');
         expect(contentlet.contentHost).not.toBe('demo.dotcms.com');
+        // Trap #3: a root page has no folder, so hostFolder must fall back to the SITE id (a
+        // concrete HOST_OR_FOLDER value), never undefined — otherwise the fire 500s with
+        // "Host.getIdentifier() ... host is null".
+        expect(contentlet.hostFolder).toBe('site-uuid-1');
         // Root page still creates no folder.
+        expect(calls.some((c) => c.path.includes('createfolders'))).toBe(false);
+    });
+
+    it('fires a ROOT page on a NON-default site with hostFolder = site id (Host.getIdentifier NPE fix)', async () => {
+        let firedBody: { contentlet: Record<string, unknown> } | undefined;
+        const NON_DEFAULT_SITE = {
+            identifier: 'site-uuid-2',
+            hostname: 'other.example.com',
+            isDefault: false,
+            archived: false
+        };
+        const { runtime, calls } = fakeRuntime({
+            sites: [DEMO_SITE, NON_DEFAULT_SITE],
+            onFire: (body) => {
+                firedBody = body as { contentlet: Record<string, unknown> };
+                return { entity: { identifier: 'home', live: true } };
+            }
+        });
+
+        await createPage({
+            dotcms: runtime,
+            site: 'other.example.com',
+            urlPath: '/index',
+            title: 'Home',
+            template: 't'
+        });
+
+        const contentlet = firedBody?.contentlet ?? {};
+        // Both location keys point at the non-default site id — this is exactly the manual recovery
+        // that worked ("explicit host + hostFolder = site id").
+        expect(contentlet.contentHost).toBe('site-uuid-2');
+        expect(contentlet.hostFolder).toBe('site-uuid-2');
+        expect(contentlet.hostFolder).not.toBeUndefined();
         expect(calls.some((c) => c.path.includes('createfolders'))).toBe(false);
     });
 
@@ -297,6 +334,9 @@ describe('createPage', () => {
 
         const contentlet = firedBody?.contentlet ?? {};
         expect(contentlet.contentHost).toBe('site-uuid-1');
+        // A nested page anchors on its created folder id (which carries the host) — NOT the
+        // site-id fallback that only a root page uses.
+        expect(contentlet.hostFolder).toBe('folder-123');
         // The createfolders path is called with the resolved UUID, not the hostname.
         const folderCall = calls.find((c) => c.path.includes('createfolders'));
         expect(folderCall?.path).toContain('site-uuid-1');
