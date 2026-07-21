@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -35,6 +36,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -981,6 +983,78 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 			Assert.fail("Unexpected exception type: " + e.getClass().getName() + " - " + e.getMessage());
 		}
 		assertTrue("An exception should have been thrown", exceptionThrown);
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeFactoryImpl#searchMultipleTypes(String, java.util.Collection, String, int, int, String, java.util.List)}
+	 *
+	 * Given Scenario: Six Content Types across two base types (CONTENT and WIDGET) whose names
+	 * interleave across base types (a=CONTENT, b=WIDGET, c=CONTENT, ...), ordered by name and paged
+	 * with a page size of 2. The multi-type UNION groups rows per base type, so paginating the
+	 * unordered UNION and sorting only each page (the pre-fix cache-mode behavior) yields a
+	 * grouped, non-global order.
+	 *
+	 * Expected Result: Paging through the full set returns a globally sorted sequence
+	 * (a, b, c, d, e, f) with disjoint pages that cover the set exactly (no reappearance), in BOTH
+	 * cache mode ({@code LOAD_CONTENTTYPE_DETAILS_FROM_CACHE=true}, the default) and non-cache mode.
+	 */
+	@Test
+	public void test_searchMultipleTypes_globalSortAndStablePaginationAcrossPages() throws Exception {
+		final boolean originalLoadFromCache =
+				Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+		final long ts = System.currentTimeMillis();
+		final String token = "gsort" + ts;
+		final List<ContentType> created = new ArrayList<>();
+
+		try {
+			// Names interleave across base types so per-type grouping differs from global name order.
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "a"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "b"));
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "c"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "d"));
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "e"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "f"));
+
+			final List<String> expected = List.of(token + "a", token + "b", token + "c",
+					token + "d", token + "e", token + "f");
+
+			for (final boolean loadFromCache : new boolean[]{true, false}) {
+				Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", loadFromCache);
+				// Fresh instance so its LOAD_FROM_CACHE Lazy re-reads the toggled Config value.
+				final ContentTypeFactoryImpl factory = new ContentTypeFactoryImpl();
+
+				final List<String> pagedNames = new ArrayList<>();
+				final Set<String> seenInodes = new HashSet<>();
+				final int pageSize = 2;
+
+				for (int offset = 0; offset < expected.size(); offset += pageSize) {
+					final List<ContentType> page = factory.searchMultipleTypes(token,
+							List.of(BaseContentType.CONTENT, BaseContentType.WIDGET), "name",
+							pageSize, offset, null, null);
+					for (final ContentType ct : page) {
+						assertTrue("A Content Type reappeared on a later page (cache=" + loadFromCache
+								+ "): " + ct.name(), seenInodes.add(ct.inode()));
+						pagedNames.add(ct.name());
+					}
+				}
+
+				assertEquals("Multi-type results must be globally sorted and stably paginated "
+						+ "(cache=" + loadFromCache + ")", expected, pagedNames);
+			}
+		} finally {
+			Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", originalLoadFromCache);
+			for (final ContentType contentType : created) {
+				ContentTypeDataGen.remove(contentType);
+			}
+		}
+	}
+
+	private ContentType newTypeForSort(final BaseContentType baseType, final String name) {
+		return new ContentTypeDataGen()
+				.baseContentType(baseType)
+				.name(name)
+				.velocityVarName(name)
+				.nextPersisted();
 	}
 
 }
