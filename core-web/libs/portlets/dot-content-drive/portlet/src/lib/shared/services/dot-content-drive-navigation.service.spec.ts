@@ -225,7 +225,7 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     describe('createContent', () => {
-        it('should navigate to new content editor (no query params) when feature flag is enabled', () => {
+        it('should navigate to new content editor (empty query params) when feature flag is enabled and no folder given', () => {
             const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
@@ -237,7 +237,25 @@ describe('DotContentDriveNavigationService', () => {
             service.createContent('blog');
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog']);
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
+                queryParams: {}
+            });
+        });
+
+        it('should forward folderPath to the new content editor so it is created in the current folder', () => {
+            const mockContentType = createFakeContentType({
+                id: 'blog',
+                name: 'Blog',
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+            });
+
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            service.createContent('blog', { folderPath: 'demo.dotcms.com/about-us/' });
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
+                queryParams: { folderPath: 'demo.dotcms.com/about-us/' }
+            });
         });
 
         it('should navigate to legacy content editor with mapped CD_ params when feature flag is disabled', () => {
@@ -258,6 +276,27 @@ describe('DotContentDriveNavigationService', () => {
                 queryParams: {
                     CD_path: '/foo',
                     CD_filters: 'bar'
+                }
+            });
+        });
+
+        it('should forward the folder inode to the legacy content editor alongside the CD_ params', () => {
+            const mockContentType = createFakeContentType({
+                id: 'news',
+                name: 'News',
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }
+            });
+
+            location.path.mockReturnValue('/content-drive?path=/foo');
+
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            service.createContent('news', { folderInode: 'inode-1' });
+
+            expect(router.navigate).toHaveBeenCalledWith(['c/content/new/news'], {
+                queryParams: {
+                    CD_path: '/foo',
+                    folder: 'inode-1'
                 }
             });
         });

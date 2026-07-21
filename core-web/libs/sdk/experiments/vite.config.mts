@@ -1,29 +1,28 @@
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 import * as path from 'path';
 
-// These options were migrated by @nx/vite:convert-to-inferred from the project.json file.
-const configValues = { default: {} };
-
-// Determine the correct configValue to use based on the configuration
-const nxConfiguration = process.env.NX_TASK_TARGET_CONFIGURATION ?? 'default';
-
-const options = {
-    ...configValues.default,
-    ...(configValues[nxConfiguration] ?? {})
-};
-
 export default defineConfig({
-    root: __dirname,
+    root: import.meta.dirname,
     cacheDir: '../../../node_modules/.vite/libs/sdk/experiments',
 
     plugins: [
-        nxViteTsPaths(),
+        // `root` points to the core-web workspace root so tsconfig path aliases
+        // (e.g. @dotcms/types) resolve in bundled sibling sources like @dotcms/uve,
+        // which are compiled from source into this build.
+        // `projects` pins resolution to the base tsconfig (which holds every
+        // @dotcms/* alias) so the plugin does NOT crawl every tsconfig in the
+        // monorepo. That crawl runs inside @nx/vite's project-graph inference
+        // (resolveConfig) and segfaults the native resolver on CI.
+        tsconfigPaths({
+            root: path.resolve(import.meta.dirname, '../../../'),
+            projects: ['tsconfig.base.json']
+        }),
         dts({
             entryRoot: 'src',
-            tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
+            tsConfigFilePath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
             skipDiagnostics: true
         })
     ],
@@ -33,7 +32,7 @@ export default defineConfig({
     build: {
         // Explicitly resolve outDir to prevent output from going to external dist folders
         // This ensures reproducible builds regardless of current working directory
-        outDir: path.resolve(__dirname, '../../../dist/libs/sdk/experiments'),
+        outDir: path.resolve(import.meta.dirname, '../../../dist/libs/sdk/experiments'),
         reportCompressedSize: true,
         emptyOutDir: true,
         commonjsOptions: {

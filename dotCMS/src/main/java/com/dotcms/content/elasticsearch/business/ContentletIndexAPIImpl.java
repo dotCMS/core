@@ -1870,8 +1870,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // provider's result as the primary (issue #35640).
         // Divergent names are normal after a migration catchup, so the shadow leg skips names its
         // engine does not hold instead of ERROR-logging an expected miss, and real shadow failures
-        // follow the shadow-write log policy (fire-and-forget); only the primary delete failure is
-        // logged at ERROR and reflected in the returned result (issue #36423).
+        // follow the shadow-write log policy (fire-and-forget) (issue #36423). Primary failures
+        // are logged at ERROR and re-thrown after every provider has been called, matching the
+        // PhaseRouter.writeBoolean contract — pre-migration these propagated to the caller, and
+        // swallowing them lets the REST layer report success for a failed delete (#36430).
         final ContentletIndexOperations primary = router.readProvider();
         final List<ContentletIndexOperations> targets = router.writeProviders();
         final String nameForTargets = IndexTag.OS.untag(indexName);
@@ -1880,6 +1882,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final String logicalName = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
 
         boolean primaryResult = false;
+        RuntimeException primaryEx = null;
         for (final ContentletIndexOperations ops : targets) {
             // Resolve the per-provider physical name (ES → bare, OS → .os tag) via
             // ops.toPhysicalName so the delete targets the REAL index. Routing a bare
@@ -1904,11 +1907,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     }
                 }
             } catch (final Exception e) {
-                if (ops == primary) {
-                    // Primary (authoritative) failure — surface at ERROR and reflect in the result.
+                if (ops == primary && isIndexNotFound(e)) {
+                    // The index is already gone — the delete goal (index absent) is met, so this
+                    // is an idempotent no-op, NOT a failure to propagate. Covers cleaning up a
+                    // dangling DB pointer whose cluster index no longer exists and the divergent
+                    // case where only the shadow engine held the index (issue #35640 lastOsSlot;
+                    // reconciles #36430's primary-failure propagation with that cleanup path).
+                    Logger.debug(this.getClass(),
+                            "Delete of " + physicalName + " hit a missing index; treating as a no-op");
+                    primaryResult = true;
+                } else if (ops == primary) {
+                    // Genuine primary failure (engine down, auth, ...) — surface at ERROR and
+                    // re-throw to the caller so the REST layer does not report success (#36430).
                     Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
-                    primaryResult = false;
+                    primaryEx = e instanceof RuntimeException
+                            ? (RuntimeException) e : new DotRuntimeException(e);
                 } else {
+                    // Shadow failures are fire-and-forget in dual-write phases (#36423).
                     logShadowWriteFailure(this.getClass(),
                             "Shadow delete failed (fire-and-forget in dual-write phase): "
                             + physicalName + ": " + e.getMessage(), e);
@@ -1922,6 +1937,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 Logger.warn(this.getClass(),
                         "Could not clear the indicies DB pointer for " + physicalName, e);
             }
+        }
+        if (primaryEx != null) {
+            throw primaryEx;
         }
         return primaryResult;
     }
@@ -1939,6 +1957,28 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else {
             clearEsStorePointer(logicalName);
         }
+    }
+
+    /**
+     * True when {@code t} (or any of its causes) reports a missing index. Deleting an index that
+     * is already gone meets the delete goal, so it is treated as an idempotent no-op rather than a
+     * failure that must propagate (see {@link #delete(String)}). Kept vendor-neutral: both the ES
+     * and OpenSearch clients surface the same {@code index_not_found_exception} / "no such index"
+     * marker, so this matches the wire text instead of importing a vendor exception type.
+     */
+    private static boolean isIndexNotFound(final Throwable t) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+            if (cause.getClass().getSimpleName().contains("IndexNotFound")) {
+                return true;
+            }
+            final String message = cause.getMessage();
+            if (message != null
+                    && (message.contains("index_not_found_exception")
+                        || message.contains("no such index"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -3264,8 +3304,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @Override
     public long getIndexDocumentCount(final String indexName) {
-        return router.readProvider().getIndexDocumentCount(
-                indexAPI.getNameWithClusterIDPrefix(indexName));
+        // Resolve the physical name through the read provider's own toPhysicalName so the OS read
+        // path (phases 2/3) receives the .os-tagged name. getNameWithClusterIDPrefix adds only the
+        // cluster prefix (no .os tag), so under OS reads the index was reported as not found.
+        final ContentletIndexOperations readProvider = router.readProvider();
+        return readProvider.getIndexDocumentCount(readProvider.toPhysicalName(indexName));
     }
 
     /**

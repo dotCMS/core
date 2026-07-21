@@ -76,7 +76,7 @@
         <vipsffm.libpath.args></vipsffm.libpath.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
-        <tomcat.version>9.0.118</tomcat.version>
+        <tomcat.version>9.0.120</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>

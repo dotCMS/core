@@ -37,6 +37,7 @@ export const createTreeNode = (
         label: folder.path,
         data: {
             id: folder.id,
+            inode: folder.inode,
             hostname: folder.hostName,
             path: folder.path,
             type: 'folder'
