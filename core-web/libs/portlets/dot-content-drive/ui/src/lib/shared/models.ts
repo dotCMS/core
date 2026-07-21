@@ -36,13 +36,17 @@ export type DotContentDriveMoveItems = Omit<DotContentDriveUploadFiles, 'files'>
  * @description Tree node data
  */
 export type DotFolderTreeNodeData = {
-    type: 'site' | 'folder';
+    type: 'site' | 'folder' | 'load-more';
     path: string;
     hostname: string;
     id: string;
     /** Folder inode — carried so the legacy content editor can pre-select this folder when creating content. */
     inode?: string;
     fromTable?: boolean;
+    /** For a `load-more` node: the next 1-based page to request when it is clicked. */
+    nextPage?: number;
+    /** For a `load-more` node: how many folders remain to be loaded in the level. */
+    remaining?: number;
 };
 
 /**
