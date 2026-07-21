@@ -1,42 +1,37 @@
 # Note: This action publishes SDK libraries to NPM.
 #
-# VERSIONING:
-# - Single source of truth: core-web/libs/sdk/VERSION file
-# - LATEST TAG: published by cicd_manual-release-sdks.yml from a release branch
-# - NEXT TAG: always published; base version read from VERSION on the checked-out ref
+# VERSIONING (ADR-0019 — date-lockstep versioning):
+# - The SDK version is always the dotCMS release version it ships with. There is no
+#   independent SDK versioning and no `@next` prerelease channel.
+# - Single source of truth: the `version` input, supplied by the caller (the dotCMS
+#   release pipeline — see cicd_release-sdk.yml, which derives it from the GitHub
+#   Release tag, mirroring how cicd_release-cli.yml versions @dotcms/dotcli).
+# - Every invocation publishes every SDK package at that exact version to the `latest`
+#   npm dist-tag — including releases where the SDK has no code changes, to preserve
+#   the one-dotCMS-version <-> one-SDK-version invariant.
 #
 name: 'SDK Publish NPM Packages - Stable'
-description: 'Publish stable versions of the dotCMS SDK libs on NPM registry.'
+description: 'Publish the dotCMS SDK libs on NPM registry at the given version.'
 inputs:
   ref:
-    description: 'Branch to build from'
+    description: 'Branch/tag to build from'
     required: false
     default: 'main'
+  version:
+    description: 'Exact version to publish every @dotcms/* SDK package at (e.g. 26.7.14-1)'
+    required: true
   npm-token:
     description: 'NPM token'
     required: true
-  publish-latest:
-    description: 'Whether to publish the @latest tag in addition to @next'
-    required: false
-    default: 'false'
   github-token:
     description: 'GitHub Token'
     required: true
 outputs:
   npm-package-version:
-    description: 'SDK libs - NPM package version (formatted for notifications)'
-    value: ${{ steps.deployment_status.outputs.npm_package_version }}
-  npm-package-version-next:
-    description: 'SDK libs - NPM package version for next tag'
-    value: ${{ steps.set_versions.outputs.next_version }}
-  published-latest:
-    description: 'SDK libs - Published to latest tag'
-    value: ${{ steps.deployment_status.outputs.published_latest }}
-  published-next:
-    description: 'SDK libs - Published to next tag'
-    value: ${{ steps.deployment_status.outputs.published_next }}
+    description: 'SDK libs - NPM package version that was published'
+    value: ${{ inputs.version }}
   published:
-    description: 'SDK libs - Published (true if any tag published)'
+    description: 'SDK libs - Published (true if all packages published successfully)'
     value: ${{ steps.deployment_status.outputs.published }}
 runs:
   using: "composite"
@@ -52,46 +47,10 @@ runs:
       with:
         node-version-file: 'core-web/.nvmrc'
 
-    - name: 'Set versions from VERSION file'
-      id: set_versions
-      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
-      env:
-        RUN_NUMBER: ${{ github.run_number }}
-      run: |
-        set -euo pipefail
-        echo "::group::Set versions"
-
-        if [ ! -f "VERSION" ]; then
-          echo "::error::VERSION file not found at core-web/libs/sdk/VERSION"
-          exit 1
-        fi
-
-        BASE_VERSION=$(cat VERSION | tr -d '[:space:]')
-        echo "Base version from VERSION file: $BASE_VERSION"
-
-        if [[ ! "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "::error::Invalid version in VERSION file: '$BASE_VERSION'. Must be semver (e.g. 1.2.6)"
-          exit 1
-        fi
-
-        NEXT_VERSION="${BASE_VERSION}-next.${RUN_NUMBER}"
-
-        echo ""
-        echo "=== VERSION SUMMARY ==="
-        echo "Base (VERSION file): $BASE_VERSION"
-        echo "Latest:              $BASE_VERSION"
-        echo "Next:                $NEXT_VERSION"
-        echo "========================"
-
-        echo "latest_version=$BASE_VERSION" >> $GITHUB_OUTPUT
-        echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-        echo "::endgroup::"
-      shell: bash
-
     - name: 'Update package.json versions'
       working-directory: ${{ github.workspace }}/core-web/libs/sdk/
       env:
-        LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
+        RELEASE_VERSION: ${{ inputs.version }}
         EXAMPLES_PATH: ${{ github.workspace }}/examples
       run: |
         set -euo pipefail
@@ -103,16 +62,20 @@ runs:
         for sdk in "${sdk_packages[@]}"; do
           pkg="$sdk/package.json"
           if [ -f "$pkg" ]; then
-            jq --arg v "$LATEST_VERSION" '.version = $v' "$pkg" > tmp.$$.json && mv tmp.$$.json "$pkg"
-            echo "  ✅ $sdk -> $LATEST_VERSION"
+            jq --arg v "$RELEASE_VERSION" '.version = $v' "$pkg" > tmp.$$.json && mv tmp.$$.json "$pkg"
+            echo "  ✅ $sdk -> $RELEASE_VERSION"
 
-            # Update peerDependencies that reference other SDK packages
+            # Update dependencies/peerDependencies that reference other SDK packages.
+            # Pinned exact (no caret): sibling SDK packages always publish in lockstep at
+            # the same version, so a range only reintroduces the ambiguity ADR-0019 removes.
             for dep in "${sdk_packages[@]}"; do
-              if jq -e ".peerDependencies[\"@dotcms/$dep\"]" "$pkg" >/dev/null 2>&1; then
-                jq --arg dep "@dotcms/$dep" --arg v "^$LATEST_VERSION" \
-                  '.peerDependencies[$dep] = $v' "$pkg" > tmp.$$.json && mv tmp.$$.json "$pkg"
-                echo "    ↳ peerDependency @dotcms/$dep -> ^$LATEST_VERSION"
-              fi
+              for field in dependencies peerDependencies; do
+                if jq -e ".${field}[\"@dotcms/$dep\"]" "$pkg" >/dev/null 2>&1; then
+                  jq --arg field "$field" --arg dep "@dotcms/$dep" --arg v "$RELEASE_VERSION" \
+                    '.[$field][$dep] = $v' "$pkg" > tmp.$$.json && mv tmp.$$.json "$pkg"
+                  echo "    ↳ $field @dotcms/$dep -> $RELEASE_VERSION"
+                fi
+              done
             done
           fi
         done
@@ -122,7 +85,7 @@ runs:
           while IFS= read -r pkg_json; do
             for dep in "${sdk_packages[@]}"; do
               if jq -e ".dependencies[\"@dotcms/$dep\"]" "$pkg_json" >/dev/null 2>&1; then
-                jq --arg dep "@dotcms/$dep" --arg v "^$LATEST_VERSION" \
+                jq --arg dep "@dotcms/$dep" --arg v "^$RELEASE_VERSION" \
                   '.dependencies[$dep] = $v' "$pkg_json" > tmp.$$.json && mv tmp.$$.json "$pkg_json"
               fi
             done
@@ -176,63 +139,55 @@ runs:
       working-directory: ${{ github.workspace }}/core-web/
       run: |
         set -euo pipefail
+        echo "::group::Build SDK packages"
         pnpm exec nx run-many --target=build --projects='sdk-*' --configuration=production --skip-nx-cache
+        echo "::endgroup::"
       shell: bash
 
     - name: 'Publish SDK packages to NPM'
       id: publish_packages
       working-directory: ${{ github.workspace }}/core-web/dist/libs/sdk/
       env:
-        LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
-        NEXT_VERSION: ${{ steps.set_versions.outputs.next_version }}
+        RELEASE_VERSION: ${{ inputs.version }}
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
-        PUBLISH_LATEST: ${{ inputs.publish-latest }}
       run: |
         set -euo pipefail
         echo "::group::Publishing SDK packages"
-        echo "Latest: $LATEST_VERSION (publish: $PUBLISH_LATEST)"
-        echo "Next:   $NEXT_VERSION"
+        echo "Version: $RELEASE_VERSION"
         echo ""
 
         echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
 
-        PUBLISH_LATEST_SUCCESS=true
-        PUBLISH_NEXT_SUCCESS=true
+        PUBLISH_SUCCESS=true
 
         for sdk in $(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
           echo "📦 Processing @dotcms/${sdk}..."
           cd "$sdk"
 
-          ORIGINAL_VERSION=$(jq -r '.version' package.json)
-
-          if [ "$PUBLISH_LATEST" = "true" ]; then
-            echo "  🚀 Publishing latest: @dotcms/${sdk}@${LATEST_VERSION}"
+          # Idempotency: the version is fixed to the dotCMS release tag and can never be
+          # bumped, so if a prior (failed/cancelled) run already published this exact
+          # version, npm would reject a re-publish with a hard 403 — permanently stalling
+          # the release. Treat "already published" as success so a re-run can finish the
+          # remaining packages instead of getting stuck.
+          if npm view "@dotcms/${sdk}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
+            echo "  ⏭️  @dotcms/${sdk}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
+          else
+            echo "  🚀 Publishing: @dotcms/${sdk}@${RELEASE_VERSION}"
             if npm publish --access public --tag latest; then
-              echo "  ✅ Published to latest"
+              echo "  ✅ Published"
             else
-              echo "  ❌ Failed to publish to latest"
-              PUBLISH_LATEST_SUCCESS=false
+              echo "  ❌ Failed to publish"
+              PUBLISH_SUCCESS=false
             fi
           fi
-
-          echo "  🚀 Publishing next: @dotcms/${sdk}@${NEXT_VERSION}"
-          jq --arg v "$NEXT_VERSION" '.version = $v' package.json > tmp.$$.json && mv tmp.$$.json package.json
-          if npm publish --access public --tag next; then
-            echo "  ✅ Published to next"
-          else
-            echo "  ❌ Failed to publish to next"
-            PUBLISH_NEXT_SUCCESS=false
-          fi
-          jq --arg v "$ORIGINAL_VERSION" '.version = $v' package.json > tmp.$$.json && mv tmp.$$.json package.json
 
           cd ..
           echo ""
         done
 
-        echo "actual_published_latest=$PUBLISH_LATEST_SUCCESS" >> $GITHUB_OUTPUT
-        echo "actual_published_next=$PUBLISH_NEXT_SUCCESS" >> $GITHUB_OUTPUT
+        echo "actual_published=$PUBLISH_SUCCESS" >> $GITHUB_OUTPUT
 
-        if [ "$PUBLISH_LATEST_SUCCESS" = "true" ] && [ "$PUBLISH_NEXT_SUCCESS" = "true" ]; then
+        if [ "$PUBLISH_SUCCESS" = "true" ]; then
           echo "🎉 All SDK packages published successfully!"
         else
           echo "❌ Some publications failed"
@@ -247,30 +202,7 @@ runs:
       id: deployment_status
       if: success()
       env:
-        ACTUAL_PUBLISHED_LATEST: ${{ steps.publish_packages.outputs.actual_published_latest }}
-        ACTUAL_PUBLISHED_NEXT: ${{ steps.publish_packages.outputs.actual_published_next }}
-        LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
-        NEXT_VERSION: ${{ steps.set_versions.outputs.next_version }}
-        PUBLISH_LATEST: ${{ inputs.publish-latest }}
+        ACTUAL_PUBLISHED: ${{ steps.publish_packages.outputs.actual_published }}
       run: |
-        echo "published_latest=$ACTUAL_PUBLISHED_LATEST" >> $GITHUB_OUTPUT
-        echo "published_next=$ACTUAL_PUBLISHED_NEXT" >> $GITHUB_OUTPUT
-
-        if [ "$ACTUAL_PUBLISHED_LATEST" = "true" ] || [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
-          PUBLISHED="true"
-        else
-          PUBLISHED="false"
-        fi
-        echo "published=$PUBLISHED" >> $GITHUB_OUTPUT
-
-        if [ "$PUBLISH_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
-          NPM_PACKAGE_VERSION="${LATEST_VERSION} (latest) and ${NEXT_VERSION} (next)"
-        elif [ "$PUBLISH_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_LATEST" = "true" ]; then
-          NPM_PACKAGE_VERSION="${LATEST_VERSION} (latest)"
-        elif [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
-          NPM_PACKAGE_VERSION="${NEXT_VERSION} (next)"
-        else
-          NPM_PACKAGE_VERSION="No versions published"
-        fi
-        echo "npm_package_version=$NPM_PACKAGE_VERSION" >> $GITHUB_OUTPUT
+        echo "published=$ACTUAL_PUBLISHED" >> $GITHUB_OUTPUT
       shell: bash
