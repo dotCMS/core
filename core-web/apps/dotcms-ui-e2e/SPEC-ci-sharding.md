@@ -83,7 +83,7 @@ Sharding is orthogonal to `workers`: each shard job can still use CI workers fro
 ## How to add a 4th shard
 
 1. Choose new total `M` (e.g. 4). Update **every** existing suite’s `--shard=N/M` so `N` runs 1…M with the same `M`.
-2. In `.github/test-matrix.yml`, duplicate an e2e suite entry; set `name` / `stage_name` to `4/4` and `maven_args` to include `-De2e.playwright.args=--shard=4/4` (plus `-De2e.test.env=ci -pl :dotcms-ui-e2e`). Values must not contain spaces (CI `maven-job` tokenizes args on spaces).
+2. In `.github/test-matrix.yml`, duplicate an e2e suite entry; set `name` / `stage_name` to **4 of 4** (no `/` in those labels — artifact names) and `maven_args` to include `-De2e.playwright.args=--shard=4/4` (plus `-De2e.test.env=ci -pl :dotcms-ui-e2e`). Maven property values must not contain spaces (CI `maven-job` tokenizes args on spaces).
 3. Update this spec and `README.md` shard examples to use `/4`.
 4. Validate on a PR: four green jobs, disjoint coverage, acceptable runner cost.
 
