@@ -38,9 +38,8 @@ import {
     DotPushPublishHistoryItem
 } from '../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { initialRootState } from '../../edit-content.store';
-
-// Additional imports for Router testing
 
 // Mock data
 const mockContentletVersion: DotCMSContentletVersion = {
@@ -188,7 +187,14 @@ describe('HistoryFeature', () => {
     let messageService: SpyObject<MessageService>;
     let dotMessageService: SpyObject<DotMessageService>;
     let dotContentletService: SpyObject<DotContentletService>;
-    let router: SpyObject<Router>;
+
+    // Restore navigation is delegated to the EditContentHost port.
+    const mockHost = {
+        setContentTitle: jest.fn(),
+        addBreadcrumb: jest.fn(),
+        goToSavedContent: jest.fn(),
+        goToRestoredVersion: jest.fn()
+    };
 
     const withTest = () =>
         signalStoreFeature(
@@ -226,10 +232,12 @@ describe('HistoryFeature', () => {
             DotMessageService,
             DotContentletService,
             Router
-        ]
+        ],
+        providers: [{ provide: EDIT_CONTENT_HOST, useValue: mockHost }]
     });
 
     beforeEach(() => {
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
         spectator = createStore();
         store = spectator.service;
         dotEditContentService = spectator.inject(DotEditContentService);
@@ -239,7 +247,6 @@ describe('HistoryFeature', () => {
         messageService = spectator.inject(MessageService);
         dotMessageService = spectator.inject(DotMessageService);
         dotContentletService = spectator.inject(DotContentletService);
-        router = spectator.inject(Router);
 
         // Setup default message service responses
         dotMessageService.get.mockImplementation((key: string) => {
@@ -1155,52 +1162,33 @@ describe('HistoryFeature', () => {
             store.updateContentlet(mockContentlet);
         });
 
-        it('should restore version successfully without navigation in dialog mode', fakeAsync(() => {
+        it('should restore version and delegate navigation to the host', fakeAsync(() => {
             const restoredVersion = { ...mockContentlet, inode: 'restored-inode' };
             dotVersionableService.bringBack.mockReturnValue(of(restoredVersion));
-
-            // Set dialog mode
-            patchState(store, { isDialogMode: true });
 
             store.restoreVersion('test-inode');
             tick();
 
             expect(dotVersionableService.bringBack).toHaveBeenCalledWith('test-inode');
-            expect(router.navigate).not.toHaveBeenCalled();
+            // The feature states the intent; whether it actually navigates (mode,
+            // inode-changed) is the host's decision, covered in the host spec.
+            expect(mockHost.goToRestoredVersion).toHaveBeenCalledWith('restored-inode', undefined);
         }));
 
-        it('should restore version and navigate in non-dialog mode when inode changes', fakeAsync(() => {
-            const restoredVersion = { ...mockContentlet, inode: 'restored-inode' };
-            dotVersionableService.bringBack.mockReturnValue(of(restoredVersion));
-
-            // Set non-dialog mode
-            patchState(store, { isDialogMode: false });
-
-            store.restoreVersion('test-inode');
-            tick();
-
-            expect(dotVersionableService.bringBack).toHaveBeenCalledWith('test-inode');
-            expect(router.navigate).toHaveBeenCalledWith(['/content', 'restored-inode'], {
-                replaceUrl: true,
-                queryParamsHandling: 'preserve'
-            });
-        }));
-
-        it('should not navigate when restored inode is the same', fakeAsync(() => {
+        it('should pass the previous inode to the host when restoring', fakeAsync(() => {
             const restoredVersion = { ...mockContentlet, inode: mockContentlet.inode };
             dotVersionableService.bringBack.mockReturnValue(of(restoredVersion));
 
-            // Set non-dialog mode and ensure originalContentlet has the same inode
-            patchState(store, {
-                isDialogMode: false,
-                originalContentlet: mockContentlet
-            });
+            patchState(store, { originalContentlet: mockContentlet });
 
             store.restoreVersion('test-inode');
             tick();
 
             expect(dotVersionableService.bringBack).toHaveBeenCalledWith('test-inode');
-            expect(router.navigate).not.toHaveBeenCalled();
+            expect(mockHost.goToRestoredVersion).toHaveBeenCalledWith(
+                mockContentlet.inode,
+                mockContentlet.inode
+            );
         }));
 
         it('should handle restore errors', fakeAsync(() => {
