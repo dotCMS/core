@@ -1,7 +1,7 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { placeContent, type PlaceContentOptions } from '../lib/place-content';
+import { placeContent, type PlaceContentOptions } from '../lib/page-place-content';
 import { errorMessage, runtimeFromEnv } from '../lib/runtime';
 
 // A slot address: a 1-based index into the page's real slots, OR a container reference. `instance`

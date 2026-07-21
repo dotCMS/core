@@ -1,6 +1,6 @@
 import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
 
-import { placeContent } from './place-content';
+import { placeContent } from './page-place-content';
 
 /**
  * A page with two slots on the default file container (uuids "1" and "2") and one system-container
