@@ -1,8 +1,6 @@
-import type { createRuntime, RequestOptions } from '@dotcms/ai/runtime';
+import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
 
 import { createPage, splitUrlPath } from './page-create';
-
-type DotCMSRuntime = ReturnType<typeof createRuntime>;
 
 describe('splitUrlPath', () => {
     it('splits a path with an explicit leaf into folder + leaf', () => {

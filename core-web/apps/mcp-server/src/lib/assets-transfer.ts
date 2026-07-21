@@ -2,11 +2,9 @@ import { constants } from 'node:fs';
 import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 
-import { createRuntime, isBinaryResponseEnvelope } from '@dotcms/ai/runtime';
+import { type DotCMSRuntime, isBinaryResponseEnvelope } from '@dotcms/ai/runtime';
 
 import { errorMessage } from './runtime';
-
-type DotCMSRuntime = ReturnType<typeof createRuntime>;
 type OverwriteMode = 'skip' | 'overwrite' | 'error';
 
 export interface AssetManifestFile {

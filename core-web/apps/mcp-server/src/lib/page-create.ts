@@ -1,6 +1,4 @@
-import { createRuntime } from '@dotcms/ai/runtime';
-
-type DotCMSRuntime = ReturnType<typeof createRuntime>;
+import type { DotCMSRuntime } from '@dotcms/ai/runtime';
 
 /** The default page content type when the caller does not name one. */
 export const DEFAULT_PAGE_CONTENT_TYPE = 'htmlpageasset';
