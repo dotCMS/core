@@ -168,6 +168,37 @@ def test_promote_tracks_latest_never_moves_standard_or_trailing(mock_list_tags, 
     assert moved == {"latest"}, f"expected only 'latest' to move, got {moved}"
 
 
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_tracks_latest_ignores_held_standard(mock_list_tags, mock_point_tag):
+    """`--tracks latest` must not touch a HELD standard/trailing tag either.
+
+    cmd_promote has a second mutation path — the held-track reconciliation loop —
+    scoped only by `held = held & wanted`. A release run (--tracks latest) that
+    reconciled a drifted, held `standard` back to its hold marker would still roll
+    pods on that track. This pins that scoping so the release stays latest-only
+    even when a hold marker is present. Regression guard for issue #36520.
+    """
+    mock_list_tags.return_value = [
+        _make_tag("26.06.02-01", "sha256:aaa"),
+        _make_tag("26.06.16-01", "sha256:bbb"),
+        # standard is held to the older release, but its floating tag has drifted.
+        _make_tag("standard_hold", "sha256:aaa"),
+        _make_tag("standard", "sha256:bbb"),
+    ]
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--apply", "--tracks", "latest",
+         "--latest-days", "0", "--standard-days", "0", "--trailing-days", "0"]
+    )
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2026, 7, 15)
+        rc = cmd_promote(args)
+    assert rc == 0
+    moved = {c.args[1] for c in mock_point_tag.call_args_list}
+    assert "standard" not in moved, f"held 'standard' must not move on --tracks latest, got {moved}"
+    assert moved <= {"latest"}, f"expected at most 'latest' to move, got {moved}"
+
+
 # ---------------------------------------------------------------------------
 # _current_version — newest GA wins on a shared digest (FIX 1)
 # ---------------------------------------------------------------------------
