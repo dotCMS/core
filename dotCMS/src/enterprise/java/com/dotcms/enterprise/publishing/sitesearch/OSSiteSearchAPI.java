@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.sitesearch;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
@@ -387,6 +388,33 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             api.removeVersion(rebuilt.version());
         }
         api.clearCache();
+
+        // I-5 fallback invalidation. defaultSiteSearchIndex() falls back to the legacy IndiciesAPI
+        // pointer when the versioned slot is empty. In phases where ES is NOT a write provider
+        // (Phase 3), the router does not fan this deactivation out to ESSiteSearchAPI, so the legacy
+        // pointer would survive and the fallback would keep reporting this index as the active
+        // default — permanently blocking its deletion. Clear the legacy pointer here when it still
+        // points at the index being deactivated. In dual-write phases ESSiteSearchAPI also clears it
+        // via the fan-out, so this is idempotent (issue #36360 review).
+        clearLegacyPointerIfDefault(indexName);
+    }
+
+    /**
+     * Clears the legacy {@link com.dotmarketing.business.IndiciesAPI} site-search pointer when it
+     * still points at {@code indexName}. Complements the I-5 read-fallback in
+     * {@link #defaultSiteSearchIndex()} so a deactivated Phase-0 default is not resurrected by that
+     * fallback in phases where ES is not part of the write fan-out (e.g. Phase 3). Matches on the
+     * exact name so deactivating one index never clears a different index's legacy pointer.
+     */
+    private void clearLegacyPointerIfDefault(final String indexName) throws DotDataException {
+        final String legacyDefault = legacyDefaultSiteSearchIndex().orElse(null);
+        if (legacyDefault == null || !legacyDefault.equals(indexName)) {
+            return;
+        }
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+        builder.setSiteSearch(null);
+        APILocator.getIndiciesAPI().point(builder.build());
     }
 
     // =========================================================================
@@ -514,6 +542,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         // Deletes only from THIS engine (indexApi is the direct OSIndexAPIImpl, not the router).
         // Site-search OS indices are plain-named (no .os tag). Active-index protection is enforced
         // by the SiteSearchAPIImpl router before dispatch.
+        // Idempotent per engine: during migration a site-search index can exist on only one engine
+        // (e.g. a Phase-0 ES-only index has no OpenSearch twin), so skip when it is absent here
+        // rather than letting deleteMultiple throw index_not_found and crash the fan-out — which
+        // would otherwise abort the Site Search build mid-switch (issue #36360, I-7).
+        if (!indexApi.indexExists(indexName)) {
+            Logger.info(this.getClass(),
+                    "Site-search index '" + indexName + "' is absent on this engine; nothing to delete.");
+            return;
+        }
         indexApi.deleteMultiple(new String[]{indexName});
     }
 
@@ -844,7 +881,28 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      * note), so the tag is stripped here to keep comparisons and list lookups consistent.</p>
      */
     private Optional<String> defaultSiteSearchIndex() {
-        return loadDefaultIndices().flatMap(VersionedIndices::siteSearch).map(IndexTag::strip);
+        final Optional<String> versioned =
+                loadDefaultIndices().flatMap(VersionedIndices::siteSearch).map(IndexTag::strip);
+        if (versioned.isPresent()) {
+            return versioned;
+        }
+        // Fallback to the legacy pointer. A default activated before the migration started lives only
+        // in the legacy IndiciesAPI store — Phase 0 never populates VersionedIndices (the versioned
+        // site-search slot is written only when an index is activated in a dual-write phase). Without
+        // this fallback, switching reads to OpenSearch (Phase 2/3) leaves $sitesearch.search with no
+        // resolvable default until the operator manually re-activates one (issue #36360, I-5).
+        return legacyDefaultSiteSearchIndex();
+    }
+
+    /**
+     * The active site-search index name from the legacy {@link com.dotmarketing.business.IndiciesAPI}
+     * store, used as a fallback when the OpenSearch versioned store has no site-search pointer yet
+     * (e.g. a default carried over from Phase 0). Returns empty on any error or a blank pointer.
+     */
+    private Optional<String> legacyDefaultSiteSearchIndex() {
+        return Try.of(() -> APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())
+                .toJavaOptional()
+                .filter(UtilMethods::isSet);
     }
 
     private Optional<VersionedIndices> loadDefaultIndices() {
