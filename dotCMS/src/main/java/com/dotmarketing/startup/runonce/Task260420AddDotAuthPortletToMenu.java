@@ -5,6 +5,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
@@ -12,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.dotmarketing.util.PortletID.DOT_AUTH;
 
@@ -21,6 +23,15 @@ import static com.dotmarketing.util.PortletID.DOT_AUTH;
  * "Settings → Configuration") at the position immediately after Apps, since
  * {@code dotAuth} is the dedicated editor for the OAuth app and conceptually
  * sits alongside it.
+ * <p>
+ * This is registered as a <b>run-always</b> task, not a version-gated run-once
+ * upgrade: the bundled starter records a {@code db_version} newer than this
+ * task's number while its exported layouts predate the portlet, so a run-once
+ * task never fires on fresh installs. {@link #forceRun()} is a cheap COUNT that
+ * returns {@code false} once every Apps layout already has {@code dotAuth}, so
+ * steady-state startups skip the insert. Note this also means removing the
+ * portlet from an Apps layout re-adds it on the next restart — remove it via
+ * Roles &amp; Tools from a layout without Apps, or accept the reconcile.
  * <p>
  * Layouts that already contain the {@code dotAuth} portlet are skipped so the
  * task is safe to re-run and safe in clustered startup where multiple nodes
@@ -71,10 +82,11 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
                     .getInt("count");
             return pendingCount > 0;
         } catch (final Exception e) {
-            Logger.error(this, String.format("An error occurred when checking the 'dotAuth' portlet. " +
-                    "Please verify manually: %s", ExceptionUtil.getErrorMessage(e)), e);
+            // swallowing here would record the task as skipped-clean and the portlet would
+            // silently never be added — fail loudly so startup surfaces the real DB problem
+            throw new DotRuntimeException(String.format("An error occurred when checking the 'dotAuth' portlet: %s",
+                    ExceptionUtil.getErrorMessage(e)), e);
         }
-        return false;
     }
 
     @Override
@@ -95,7 +107,8 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
         int inserted = 0;
         int skipped = 0;
         for (final Map<String, Object> row : appsLayouts) {
-            final String layoutId = row.getOrDefault("layout_id", "").toString();
+            // getOrDefault doesn't help here: the columns can be present but null
+            final String layoutId = Objects.toString(row.get("layout_id"), "");
             if (!UtilMethods.isSet(layoutId)) {
                 continue;
             }
@@ -110,7 +123,7 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
                 continue;
             }
 
-            final int appsOrder = Integer.parseInt(row.getOrDefault("portlet_order", "0").toString());
+            final int appsOrder = Integer.parseInt(Objects.toString(row.get("portlet_order"), "0"));
             final int dotAuthOrder = appsOrder + 1;
 
             try {

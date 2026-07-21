@@ -613,7 +613,6 @@ public class TaskLocatorUtil {
         .add(Task260505AddPluginsPortletToMenu.class)
         .add(Task260507CreateS3VanityAliasTable.class)
         .add(Task260615AlterClusterIdLength.class)
-        .add(Task260420AddDotAuthPortletToMenu.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -640,6 +639,9 @@ public class TaskLocatorUtil {
 		ret.add(Task00002LoadClusterLicenses.class);
 		ret.add(Task00040CheckAnonymousUser.class);
 		ret.add(Task00050LoadAppsSecrets.class);
+		// run-always reconcile, not version-gated: the bundled starter can record a db_version
+		// past this task's number while its layouts predate the dotAuth portlet (fresh-install gap)
+		ret.add(Task260420AddDotAuthPortletToMenu.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
