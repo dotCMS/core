@@ -236,29 +236,36 @@ public class ESSiteSearchAPITest {
      */
     @Test
     public void test_deleteOldSiteSearchIndices() throws IOException, DotDataException {
-        final String timestamp = String.valueOf(new Date().getTime());
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230101000000", "Index1_deleteTest", 1);
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230201000000", "", 1);
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230301000000", "", 1);
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_" + timestamp, "", 1);
+        // Unique, strictly increasing timestamps per run so a class retry (rerunFailingTestsCount)
+        // never collides on a leftover fixed-name index (createSiteSearchIndex is fail-hard on
+        // already-exists). Order preserved: idxOldest < idxDefault < idxMiddle < idxNewest.
+        final long base = new Date().getTime();
+        final String idxOldest  = ES_SITE_SEARCH_NAME + "_" + (base - 3000);
+        final String idxDefault = ES_SITE_SEARCH_NAME + "_" + (base - 2000);
+        final String idxMiddle  = ES_SITE_SEARCH_NAME + "_" + (base - 1000);
+        final String idxNewest  = ES_SITE_SEARCH_NAME + "_" + base;
+        siteSearchAPI.createSiteSearchIndex(idxOldest, "Index1_deleteTest", 1);
+        siteSearchAPI.createSiteSearchIndex(idxDefault, "", 1);
+        siteSearchAPI.createSiteSearchIndex(idxMiddle, "", 1);
+        siteSearchAPI.createSiteSearchIndex(idxNewest, "", 1);
 
         //set index as default
-        siteSearchAPI.activateIndex(ES_SITE_SEARCH_NAME + "_20230201000000");
+        siteSearchAPI.activateIndex(idxDefault);
 
         //load all indices and check that all 4 indices are there
         List<String> indices = siteSearchAPI.listIndices();
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230101000000"));
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230201000000"));
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230301000000"));
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_" + timestamp));
+        assertTrue(indices.contains(idxOldest));
+        assertTrue(indices.contains(idxDefault));
+        assertTrue(indices.contains(idxMiddle));
+        assertTrue(indices.contains(idxNewest));
         final int originalSizeOfIndices = indices.size();
 
         //Delete Old Indices
         siteSearchAPI.deleteOldSiteSearchIndices();
 
-        //load all indices and check that the index from 20230301 is not there
+        //load all indices and check that the middle (old, non-default) index is not there
         indices = siteSearchAPI.listIndices();
-        assertFalse(indices.contains(ES_SITE_SEARCH_NAME + "_20230301000000"));
+        assertFalse(indices.contains(idxMiddle));
         assertNotEquals(originalSizeOfIndices, indices.size());
 
     }

@@ -204,14 +204,14 @@ public class FolderResourceSearchTest {
     }
 
     /**
-     * Given Scenario: 'name' is provided but shorter than 3 characters. <br>
+     * Given Scenario: 'name' is provided but shorter than 2 characters. <br>
      * Expected Result: 400 Bad Request.
      */
     @Test(expected = BadRequestException.class)
     public void test_searchFolders_nameTooShort_returns400() {
         resource.searchFolders(
                 getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
-                "ab", "/", true, "some-site-id",
+                "a", "/", true, "some-site-id",
                 "name", "ASC", 1, 40);
     }
 
@@ -308,6 +308,25 @@ public class FolderResourceSearchTest {
         Assert.assertEquals(1, views.size());
         Assert.assertFalse("hasChildren should be false when user lacks READ on children",
                 views.get(0).hasChildren());
+    }
+
+    /**
+     * Given Scenario: 'name' is exactly 2 characters, matching a real folder. <br>
+     * Expected Result: 200 with the matching folder (the minimum length is accepted, not rejected).
+     */
+    @Test
+    public void test_searchFolders_nameExactlyTwoChars_returnsMatchingFolders()
+            throws DotDataException, DotSecurityException {
+        final long ts = System.currentTimeMillis();
+        final Host site = new SiteDataGen().nextPersisted();
+        final String twoCharName = "f" + (ts % 10);
+        new FolderDataGen().site(site).name(twoCharName).nextPersisted();
+        new FolderDataGen().site(site).name("other-" + ts).nextPersisted();
+
+        final var result = search(twoCharName, null, true, site.getIdentifier());
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, ((List<?>) result.getEntity()).size());
     }
 
     /**

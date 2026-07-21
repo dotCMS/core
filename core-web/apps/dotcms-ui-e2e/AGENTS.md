@@ -1,6 +1,8 @@
 # E2E — dotCMS Playwright
 
-> **Source of truth.** `CLAUDE.md` in this directory only points here.
+> **Source of truth for code conventions.** `CLAUDE.md` in this directory points here.
+
+**How to run tests, CI parity, unit vs E2E cheat sheet, and AI workflow:** see [README.md](README.md).
 
 ## Layout
 
@@ -9,27 +11,12 @@ src/
   fixtures/     # auth, API setup (e.g. relationship.fixture.ts)
   pages/        # shared page objects (*.page.ts)
   utils/        # iframe, portlets, credentials
-  requests/     # content type / contentlet API
+  requests/     # REST API helpers for test data (content types, contentlets, sites, …)
   tests/edit-content/fields/{field-type}/
     helpers/    # locators for that field only
     *.spec.ts
 playwright.config.ts
 ```
-
-## Run
-
-```bash
-pnpm nx e2e dotcms-ui-e2e --grep "pattern"
-HEADLESS=true pnpm nx e2e dotcms-ui-e2e --grep "pattern"
-pnpm e2e:dev | e2e:dev:headless | e2e:ci | e2e:ui   # from core-web/
-npx playwright codegen http://localhost:4200/dotAdmin
-```
-
-| | `dev` (default) | `ci` |
-|---|---|---|
-| URL | `:4200` (proxy → `:8080`) | `:8080` direct |
-
-Env: `CURRENT_ENV`, `HEADLESS`, `E2E_BASE_URL`, `E2E_REUSE_EXISTING_SERVER`. Reports: `dist/.playwright/apps/dotcms-ui-e2e/`.
 
 ## Conventions
 
@@ -41,7 +28,7 @@ Env: `CURRENT_ENV`, `HEADLESS`, `E2E_BASE_URL`, `E2E_REUSE_EXISTING_SERVER`. Rep
 
 1. `getByRole` → 2. `getByTestId` → 3. `getByLabel` → 4. CSS **only** in Dojo iframe.
 
-Unsure? **Codegen first.** Avoid fragile `#dijit_*` IDs, CSS when `data-testid` exists, `.locator('button')` on `getByRole('button')`, and `isVisible()` for waits (use `waitFor` / `expect().toBeVisible`).
+Unsure? **Codegen first** (`npx playwright codegen http://localhost:4200/dotAdmin`). Avoid fragile `#dijit_*` IDs, CSS when `data-testid` exists, `.locator('button')` on `getByRole('button')`, and `isVisible()` for waits (use `waitFor` / `expect().toBeVisible`).
 
 ## Angular + Dojo
 
@@ -61,9 +48,22 @@ Field-specific selectors and flows: copy `tests/.../helpers/` and nearest `*.spe
 | Generic (iframe, URLs) | `utils/` |
 | HTTP setup | `requests/` + `fixtures/` |
 
+## REST API setup (`src/requests/`)
+
+**Always create test data through the REST API** — never via the UI during setup. Specs and fixtures import helpers from `src/requests/`; raw endpoint calls live there, not in test files.
+
+Modules: `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts`, `templates.ts`, `schemas.ts`, `workflow.ts`, `workflowActions.ts`, `field-variables.ts`, `updateFeatureFlag.ts`.
+
+**Adding a new helper:**
+
+1. Search `src/requests/` first — reuse an existing function if it covers your endpoint/payload.
+2. Do not duplicate the same API call in a spec, fixture, or another request file.
+3. If missing, add to the appropriate `src/requests/*.ts` file so all specs can reuse it.
+4. Multi-step orchestration → `fixtures/`; single-endpoint calls → `requests/`.
+
 ## Data & isolation
 
-- Assume **empty starter** — create types/content via API in `beforeEach`, delete in `afterEach`; unique names (`testSuffix`, `Date.now()`, UUID).
+- Assume **empty starter** — create types/content via API helpers in `src/requests/` inside `beforeEach`, delete in `afterEach`; unique names (`testSuffix`, `Date.now()`, UUID).
 - Content types need **SystemWorkflow** for Save — see existing fixtures/requests.
 - **Relationships:** reuse `fixtures/relationship.fixture.ts` and `tests/edit-content/fields/relationship-field/`; do not invent payloads or cardinality numbers.
 

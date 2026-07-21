@@ -40,6 +40,8 @@ export type DotFolderTreeNodeData = {
     path: string;
     hostname: string;
     id: string;
+    /** Folder inode — carried so the legacy content editor can pre-select this folder when creating content. */
+    inode?: string;
     fromTable?: boolean;
 };
 
