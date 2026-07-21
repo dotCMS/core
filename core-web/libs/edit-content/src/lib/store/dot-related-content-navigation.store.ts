@@ -144,7 +144,16 @@ export const DotRelatedContentNavigationStore = signalStore(
         };
     }),
     withMethods((store) => {
-        /** Caches a title so the breadcrumb can label a crumb by its inode. */
+        /**
+         * Caches a title so the breadcrumb can label a crumb by its inode.
+         *
+         * TODO: the cache has no cap/eviction, so it grows as more related contents
+         * are visited. Bounded in practice — it lives in sessionStorage (per-tab,
+         * cleared on tab close) and each entry is a short inode → title string, so
+         * reaching the storage quota needs an unrealistic number of distinct contents
+         * in one session. If a heavy-navigation use case ever appears, bound it here
+         * (e.g. keep the last N entries on write).
+         */
         const registerTitle = (inode: string | undefined, title: string | undefined): void => {
             if (!inode || !title) {
                 return;
