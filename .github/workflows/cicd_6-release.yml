@@ -200,7 +200,9 @@ jobs:
     permissions:
       contents: read
     # Share the registry-mutation lock with the promote/admin workflows so this
-    # on-demand promote can never race the daily cron or an admin run.
+    # on-demand promote can never race a manual promote apply or an admin run.
+    # The promote workflow holds this lock only in its post-approval apply job,
+    # so a promotion pending human approval never queues this job.
     concurrency:
       group: evergreen-tracks-registry
       cancel-in-progress: false

@@ -7,11 +7,12 @@ name: evergreen-tracks-promote
 # `latest` still moves per-release via cicd_6-release.yml (--tracks latest).
 #
 # Flow: the `plan` job always runs a dry-run and prints the tag moves; the
-# `apply` job then waits on the `evergreen-tracks-apply` environment's
-# required-reviewer gate. Nothing moves until a human reviews the plan and
-# approves the deployment. (One-time repo setup: Settings > Environments >
-# evergreen-tracks-apply > Required reviewers. Without reviewers configured the
-# apply job runs unattended — the gate is the protection rule, not the YAML.)
+# `gate` job then waits on the `evergreen-tracks-apply` environment's
+# required-reviewer gate; `apply` runs after approval. Nothing moves until a
+# human reviews the plan and approves the deployment. (One-time repo setup:
+# Settings > Environments > evergreen-tracks-apply > Required reviewers.
+# Without reviewers configured the gate passes unattended — the gate is the
+# protection rule, not the YAML.)
 on:
   workflow_dispatch:
     inputs:
@@ -31,17 +32,11 @@ on:
 permissions:
   contents: read
 
-# Serialize every registry mutation. A manual promote/admin dispatch and the
-# on-demand latest-promote in the release pipeline all read live registry state
-# and then apply tag moves, so two concurrent runs could act on stale state and
-# overwrite a hold/taint or move a track based on outdated data. A single static
-# group (not keyed by workflow/ref) makes them serialize across all three
-# workflows. For a tag-promotion engine queueing is safer than
-# cancelling, so cancel-in-progress is false: concurrent runs wait their turn
-# rather than aborting mid-promote and leaving tags half-moved.
-concurrency:
-  group: evergreen-tracks-registry
-  cancel-in-progress: false
+# The evergreen-tracks-registry concurrency lock lives at JOB level on `apply`
+# only (see below), NOT here. Workflow-level concurrency would hold the lock
+# for the whole run — including the minutes-to-days the approval gate sits
+# waiting — which would queue the release pipeline's latest-promote behind a
+# human. `latest` must move the instant a GA ships.
 
 jobs:
   # Dry-run: read live registry state and print the tag moves. No creds needed to
@@ -71,12 +66,38 @@ jobs:
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS"
 
-  # Apply: gated on the evergreen-tracks-apply environment's required-reviewer
-  # rule. Pauses after `plan` until a human reviews the plan output and approves.
-  apply:
+  # Approval gate: carries the evergreen-tracks-apply environment's
+  # required-reviewer rule and nothing else. Pauses after `plan` until a human
+  # reviews the plan output and approves. Deliberately a separate job from
+  # `apply`: GitHub acquires a job's concurrency slot BEFORE evaluating its
+  # environment protection rules (github.com/orgs/community/discussions/17401),
+  # so putting the registry lock on this waiting job would block the release
+  # pipeline's latest-promote for as long as the approval sits pending.
+  gate:
     needs: plan
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     environment: evergreen-tracks-apply
+    steps:
+      - run: echo "Plan approved — proceeding to apply"
+
+  # Apply: runs only after the gate is approved. Holds the registry-mutation
+  # lock (shared with cicd_6-release.yml's promote-latest and the admin
+  # workflow) only for the duration of the actual mutation — never during the
+  # human wait. Serializing matters because every mutator reads live registry
+  # state then applies tag moves; two concurrent runs could act on stale state.
+  # cancel-in-progress is false: queueing is safer than aborting mid-promote
+  # and leaving tags half-moved.
+  #
+  # Note: `apply` re-derives its plan from live registry state at run time —
+  # the approval authorizes the operation (repo + thresholds), not the exact
+  # digest set the plan job printed. Standard/trailing age slowly, so the plan
+  # rarely drifts between plan and approval; if in doubt, re-dispatch.
+  apply:
+    needs: [ plan, gate ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
