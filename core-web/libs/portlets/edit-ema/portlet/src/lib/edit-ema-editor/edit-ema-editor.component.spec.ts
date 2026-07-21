@@ -2228,6 +2228,47 @@ describe('EditEmaEditorComponent', () => {
                     // NOT to id=2 (which would cause an infinite loop)
                     expect(pageLoadSpy).toHaveBeenCalledWith({ language_id: '1' });
                 });
+
+                it('should NOT call pageLoad when no translated language exists and user rejects', () => {
+                    const confirmationService = spectator.inject(ConfirmationService, true);
+                    const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+
+                    store.pageLoad({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    spectator.flushEffects();
+                    spectator.detectChanges();
+
+                    expect(confirmSpy).toHaveBeenCalled();
+
+                    // Patch pageLanguages to only contain untranslated languages — no safe fallback.
+                    // #goBackToCurrentLanguage() must bail (no-op) to avoid looping.
+                    // protectedState:false on the root store makes patchState available in tests.
+                    patchState(store, {
+                        pageLanguages: [
+                            {
+                                id: 2,
+                                languageCode: 'es',
+                                countryCode: 'ES',
+                                language: 'Spanish',
+                                country: 'España',
+                                translated: false
+                            }
+                        ]
+                    });
+
+                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+
+                    const rejectCallback = (confirmSpy.mock.calls[0][0] as Confirmation).reject;
+                    rejectCallback?.();
+
+                    // No translated language → bail without reloading to avoid any loop
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
             });
 
             describe('handleOpenFullEditor', () => {

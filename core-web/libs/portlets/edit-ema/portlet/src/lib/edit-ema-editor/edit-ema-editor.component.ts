@@ -1729,15 +1729,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        const pageLanguages = this.uveStore.pageLanguages();
         // Must not navigate back to the current (untranslated) language — doing so would
-        // reload the same state and re-trigger the dialog. Navigate to the default translated
-        // language instead, falling back to the first translated language if needed.
-        const targetLanguage =
-            pageLanguages.find((l) => l.defaultLanguage && l.translated) ??
-            pageLanguages.find((l) => l.translated);
-        const targetLanguageId = targetLanguage?.id?.toString() ?? '1';
-        this.uveStore.pageLoad({ language_id: targetLanguageId });
+        // reload the same state and re-trigger the dialog.
+        // Note: the /api/v1/page/{id}/languages endpoint does not include defaultLanguage in
+        // its response (Language.toMap() omits it), so we simply take the first translated
+        // language. If none exists, bail without reloading to avoid any loop.
+        const targetLanguage = this.uveStore.pageLanguages().find((l) => l.translated);
+        if (targetLanguage) {
+            this.uveStore.pageLoad({ language_id: targetLanguage.id.toString() });
+        }
     }
 
     #clientPayload() {
