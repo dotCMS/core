@@ -22,7 +22,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import io.vavr.control.Try;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -518,9 +517,17 @@ public class OIDCProvider implements OAuthProvider {
         if (UtilMethods.isSet(groupsClaim) && userInfo != null && userInfo.containsKey(groupsClaim)) {
             return toStringList(userInfo.get(groupsClaim));
         }
-        // Fall back to a separate groups endpoint if configured
+        // Fall back to a separate groups endpoint if configured. Failures propagate — the
+        // caller must be able to tell "endpoint down" from "user has no groups", otherwise
+        // an IdP outage silently strips the user's roles during the role rebuild.
         if (UtilMethods.isSet(groupsUrl)) {
-            return Try.of(() -> fetchGroupsFromUrl(accessToken)).getOrElse(Collections.emptyList());
+            try {
+                return fetchGroupsFromUrl(accessToken);
+            } catch (final DotRuntimeException e) {
+                throw e;
+            } catch (final Exception e) {
+                throw new DotRuntimeException("OIDC groups fetch failed: " + e.getMessage(), e);
+            }
         }
         return Collections.emptyList();
     }
@@ -536,9 +543,12 @@ public class OIDCProvider implements OAuthProvider {
                 .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                 .build()
                 .doResponse();
+        if (resp == null) {
+            // CircuitBreakerUrl.doResponse() maps transport failures (DNS, refused, timeout) to null
+            throw new DotRuntimeException("OIDC groups endpoint unreachable: " + groupsUrl);
+        }
         if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
-            Logger.warn(this, "OIDC groups endpoint returned HTTP " + resp.getStatusCode());
-            return Collections.emptyList();
+            throw new DotRuntimeException("OIDC groups endpoint returned HTTP " + resp.getStatusCode());
         }
         // Accept either a JSON array of strings, or a JSON object with a "groups" array.
         final Object parsed = MAPPER.readValue(resp.getResponse(), Object.class);
