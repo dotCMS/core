@@ -262,6 +262,7 @@
                     <dot-auth-saml-config
                         #samlConfig
                         [saml]="store.draft().saml"
+                        [siteId]="store.siteId()"
                         [errors]="store.errors()"
                         (fieldChange)="onSamlChange($event)"
                         (fetchMetadata)="onFetchSamlMetadata($event)" />
