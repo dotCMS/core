@@ -24,7 +24,7 @@ Split the single **E2E Tests - Nx Playwright** CI job into **3 parallel matrix j
 
 # Single shard (local / CI parity)
 ./mvnw -pl :dotcms-ui-e2e verify -De2e.test.skip=false -De2e.test.env=ci \
-  -De2e.playwright.args=' -- --shard=1/3'
+  -De2e.playwright.args=--shard=1/3
 
 # Nx-only (stack already up)
 cd core-web && CI=true CURRENT_ENV=ci pnpm exec nx run dotcms-ui-e2e:e2e --configuration=ci -- --shard=1/3
@@ -35,7 +35,7 @@ cd core-web && CI=true CURRENT_ENV=ci pnpm exec nx run dotcms-ui-e2e:e2e --confi
 | Path | Role |
 |------|------|
 | `.github/test-matrix.yml` | Three `e2e` suites with distinct shard `maven_args` |
-| `core-web/apps/dotcms-ui-e2e/pom.xml` | `e2e.playwright.args` → appended to `e2e.test.cmd` |
+| `core-web/apps/dotcms-ui-e2e/pom.xml` | `e2e.playwright.args` (no spaces; e.g. `--shard=1/3`) → Nx passthrough `--` in `e2e.test.cmd` |
 | `SPEC-ci-sharding.md` | Living spec (this file) |
 | `README.md` | Local shard commands and how to add a 4th shard |
 
@@ -83,7 +83,7 @@ Sharding is orthogonal to `workers`: each shard job can still use CI workers fro
 ## How to add a 4th shard
 
 1. Choose new total `M` (e.g. 4). Update **every** existing suite’s `--shard=N/M` so `N` runs 1…M with the same `M`.
-2. In `.github/test-matrix.yml`, duplicate an e2e suite entry; set `name` / `stage_name` to `4/4` and `maven_args` to `-De2e.playwright.args=' -- --shard=4/4'` (plus existing `-De2e.test.env=ci -pl :dotcms-ui-e2e`).
+2. In `.github/test-matrix.yml`, duplicate an e2e suite entry; set `name` / `stage_name` to `4/4` and `maven_args` to include `-De2e.playwright.args=--shard=4/4` (plus `-De2e.test.env=ci -pl :dotcms-ui-e2e`). Values must not contain spaces (CI `maven-job` tokenizes args on spaces).
 3. Update this spec and `README.md` shard examples to use `/4`.
 4. Validate on a PR: four green jobs, disjoint coverage, acceptable runner cost.
 

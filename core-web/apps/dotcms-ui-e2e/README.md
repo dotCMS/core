@@ -150,7 +150,7 @@ Run one shard locally (Maven lifecycle, same as CI):
 ./mvnw -pl :dotcms-ui-e2e verify \
   -De2e.test.skip=false \
   -De2e.test.env=ci \
-  -De2e.playwright.args=' -- --shard=1/3'
+  -De2e.playwright.args=--shard=1/3
 ```
 
 With the stack already up:
