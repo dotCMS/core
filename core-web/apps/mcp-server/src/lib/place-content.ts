@@ -1,6 +1,4 @@
-import { createRuntime } from '@dotcms/ai/runtime';
-
-type DotCMSRuntime = ReturnType<typeof createRuntime>;
+import type { DotCMSRuntime } from '@dotcms/ai/runtime';
 
 /** The default variant when the caller does not name one. */
 export const DEFAULT_VARIANT = 'DEFAULT';

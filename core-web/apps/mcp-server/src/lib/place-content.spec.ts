@@ -1,8 +1,6 @@
-import type { createRuntime, RequestOptions } from '@dotcms/ai/runtime';
+import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
 
 import { placeContent } from './place-content';
-
-type DotCMSRuntime = ReturnType<typeof createRuntime>;
 
 /**
  * A page with two slots on the default file container (uuids "1" and "2") and one system-container
