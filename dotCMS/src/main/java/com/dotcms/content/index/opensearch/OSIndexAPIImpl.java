@@ -54,6 +54,8 @@ import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
 import org.opensearch.client.opensearch.indices.ExistsRequest;
 import org.opensearch.client.opensearch.indices.ForcemergeRequest;
 import org.opensearch.client.opensearch.indices.ForcemergeResponse;
+import com.google.common.collect.Lists;
+import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch.indices.GetAliasRequest;
 import org.opensearch.client.opensearch.indices.GetAliasResponse;
 import org.opensearch.client.opensearch.indices.PutIndicesSettingsRequest;
@@ -271,9 +273,29 @@ public class OSIndexAPIImpl implements IndexAPI {
             final var response = clientProvider.getClient().indices().delete(request);
             return response.acknowledged();
         } catch (Exception e) {
+            if (isIndexNotFound(e)) {
+                // Deleting an already-absent index is a no-op: the desired end state (index gone)
+                // already holds. ES tolerated this; OS must too, otherwise phase-2 cleanup paths
+                // (where OS is the write primary) fail hard on a missing shadow/working index.
+                Logger.debug(this.getClass(), "Index already absent; delete is a no-op: " + indexName);
+                return true;
+            }
             Logger.error(this.getClass(), "Error deleting index: " + indexName, e);
             throw new RuntimeException("Failed to delete index: " + indexName, e);
         }
+    }
+
+    /**
+     * True when {@code e} (or its cause) is an OpenSearch "index not found" (HTTP 404) error, so
+     * callers can treat delete/lookup of an absent index idempotently.
+     */
+    private static boolean isIndexNotFound(final Throwable e) {
+        if (e instanceof OpenSearchException && ((OpenSearchException) e).status() == 404) {
+            return true;
+        }
+        final Throwable root = (e.getCause() != null) ? e.getCause() : e;
+        final String msg = String.valueOf(root.getMessage()).toLowerCase();
+        return msg.contains("index_not_found") || msg.contains("no such index");
     }
 
     @Override
@@ -751,6 +773,13 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
     }
 
+    /**
+     * Max index names per {@code _alias} lookup request. Keeps the GET request line well under
+     * OpenSearch's ~4096-byte limit so a large index set never triggers
+     * {@code too_long_http_line_exception}.
+     */
+    private static final int ALIAS_LOOKUP_BATCH_SIZE = 50;
+
     @Override
     public Map<String, String> getIndexAlias(final List<String> indexNames) {
         final Map<String, String> aliases = new HashMap<>();
@@ -761,23 +790,27 @@ public class OSIndexAPIImpl implements IndexAPI {
             final List<String> physicalNames = indexNames.stream()
                     .map(this::getNameWithClusterIDPrefix)
                     .collect(Collectors.toList());
-            // ignoreUnavailable/allowNoIndices: tolerate names in the batch that are absent on this
-            // engine. During the ES→OS migration callers pass a MERGED ES∪OS index list, so an
-            // OS-only read here can receive ES-only names with no OpenSearch twin. Without these a
-            // single missing index throws index_not_found and drops EVERY alias in the batch
-            // (issue #36360, I-3 — same class as the ES-side fix).
-            final GetAliasResponse response = clientProvider.getClient().indices()
-                    .getAlias(GetAliasRequest.of(b -> b.index(physicalNames)
-                            .ignoreUnavailable(true).allowNoIndices(true)));
-            // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
-            response.result().forEach((indexName, indexAliases) -> {
-                final Map<String, ?> aliasMap = indexAliases.aliases();
-                if (UtilMethods.isSet(aliasMap)) {
-                    final String aliasName = aliasMap.keySet().iterator().next();
-                    aliases.put(removeClusterIdFromName(indexName),
-                            removeClusterIdFromName(aliasName));
-                }
-            });
+            // Batch the lookup so a large set (100+ site-search indices) never overflows the HTTP
+            // request line — otherwise OpenSearch returns too_long_http_line_exception and the whole
+            // lookup aborts. Within each batch, ignoreUnavailable/allowNoIndices tolerate names
+            // absent on this engine: during the ES→OS migration callers pass a MERGED ES∪OS index
+            // list, so an OS-only read can receive ES-only names with no OpenSearch twin — without
+            // these a single missing index throws index_not_found and drops EVERY alias in the batch
+            // (issue #36360, I-3).
+            for (final List<String> batch : Lists.partition(physicalNames, ALIAS_LOOKUP_BATCH_SIZE)) {
+                final GetAliasResponse response = clientProvider.getClient().indices()
+                        .getAlias(GetAliasRequest.of(b -> b.index(batch)
+                                .ignoreUnavailable(true).allowNoIndices(true)));
+                // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
+                response.result().forEach((indexName, indexAliases) -> {
+                    final Map<String, ?> aliasMap = indexAliases.aliases();
+                    if (UtilMethods.isSet(aliasMap)) {
+                        final String aliasName = aliasMap.keySet().iterator().next();
+                        aliases.put(removeClusterIdFromName(indexName),
+                                removeClusterIdFromName(aliasName));
+                    }
+                });
+            }
         } catch (Exception e) {
             // Consistent with the other OS read methods (listIndices, getClusterHealth, …):
             // log and return what was resolved rather than propagating provider errors.

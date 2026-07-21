@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -11,7 +10,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.IndexBulkRequest;
@@ -70,7 +68,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -81,14 +78,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1179,11 +1168,13 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
         try {
+            // Vendor-neutral, phase-aware read: SiteSearchAPI.search routes to ES or OS per the
+            // active migration phase, replacing the former ES-direct RestHighLevelClient search so
+            // this test works under any phase.
             Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                    .until(() ->
-                                    Objects.requireNonNull(
-                                                    indexSearch(indexName, String.format(ID_QUERY, id)))
-                                            .getTotalHits().value,
+                    .until(() -> APILocator.getSiteSearchAPI()
+                                    .search(indexName, String.format(ID_QUERY, id), 0, 10)
+                                    .getTotalResults(),
                             greaterThan(0L)
                     );
             return true;
@@ -1191,33 +1182,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             Logger.error(this.getClass(), e.getMessage(), e);
             return false;
         }
-    }
-
-    private SearchHits indexSearch(String indexName, String query) throws Exception {
-
-        String qq = ESContentFactoryImpl.translateQuery(query,
-                ContentletIndexAPIImplTest.MOD_DATA_SORT).getQuery();
-
-        if (indexName == null) {
-            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_"
-                    + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
-            APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, null, 1);
-            APILocator.getSiteSearchAPI().activateIndex(indexName);
-        }
-
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.queryStringQuery(qq));
-        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchSourceBuilder.fetchSource(new String[]{"inode"}, null);
-        searchSourceBuilder.storedField("id");
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.indices(esIndexAPI.getNameWithClusterIDPrefix(indexName));
-        searchRequest.source(searchSourceBuilder);
-
-        final SearchResponse response = Sneaky.sneak(() ->
-                RestHighLevelClientProvider
-                        .getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-        return response.getHits();
     }
 
     @Nullable
@@ -1360,10 +1324,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ContentletIndexAPI#getIndexDocumentCount(String)} Test Case: Tries to
      * get the document count of an index that does not exist Expected Results: Throws
-     * ElasticsearchStatusException
+     * a runtime exception, without coupling to a vendor-specific type.
      */
-    @Test(expected = ElasticsearchStatusException.class)
+    @Test
     public void testGetIndexDocumentCountWithInvalidIndexNameFails() {
-        indexAPI.getIndexDocumentCount("invalidIndexName");
+        // Vendor/phase-neutral: an invalid index name must fail. The concrete type differs by
+        // backend (ES throws ElasticsearchStatusException, the OS read path wraps as
+        // DotRuntimeException), so assert the common RuntimeException rather than a vendor type.
+        assertThrows(RuntimeException.class,
+                () -> indexAPI.getIndexDocumentCount("invalidIndexName"));
     }
 }

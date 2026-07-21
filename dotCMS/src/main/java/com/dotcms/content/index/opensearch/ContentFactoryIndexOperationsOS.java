@@ -334,6 +334,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
 
             final String finalDefaultSecondarySort = defaultSecondarySort;
             final SortOrder finalSecondaryOrder = defaultSecondaryOrder;
+            // Primary sort by relevance (_score DESC), then the secondary field — mirrors the ES path
+            // (ContentFactoryIndexOperationsES.addSorting). Without the _score sort, sortBy=score
+            // ordered only by the secondary field, so hit[0] was not the highest-scoring document.
+            searchRequestBuilder.sort(SortOptions.of(so -> so.score(sc -> sc.order(SortOrder.Desc))));
             searchRequestBuilder.sort(SortOptions.of(builder ->  builder.field(FieldSort.of(fs -> fs.field(finalDefaultSecondarySort).order(finalSecondaryOrder)))));
 
         } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")
