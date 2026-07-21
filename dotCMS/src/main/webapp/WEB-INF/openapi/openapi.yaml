@@ -27796,6 +27796,8 @@ components:
         longitude:
           type: number
           format: double
+        postal:
+          type: string
         subdivision:
           type: string
         subdivisionCode:
