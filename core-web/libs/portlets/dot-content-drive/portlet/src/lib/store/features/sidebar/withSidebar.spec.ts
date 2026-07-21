@@ -190,6 +190,17 @@ describe('withSidebar', () => {
                 });
             });
 
+            it('should thread the requested page through to the search endpoint', (done) => {
+                folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+
+                store.loadChildFolders('/documents/', 'demo.dotcms.com', 3).subscribe(() => {
+                    expect(folderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({ path: '/documents/', page: 3 })
+                    );
+                    done();
+                });
+            });
+
             it('should not need to call loadChildFolders when node already has children', () => {
                 // Create a node that already has children
                 const nodeWithChildren: DotFolderTreeNodeItem = {
