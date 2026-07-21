@@ -53,6 +53,30 @@ describe('Audio extension', () => {
         expect(html).toContain('src="/dA/song"');
     });
 
+    it('wraps the audio in a selectable .audio-block container', () => {
+        // A bare <audio controls> captures every click on its native controls, so the atom
+        // node could never be selected/deleted with the mouse. The node view wraps it in a
+        // container that provides a clickable, non-interactive selection surface.
+        editor = buildEditor('<audio src="/dA/song"></audio>');
+        const wrapper = editor.view.dom.querySelector('.audio-block');
+
+        expect(wrapper).toBeTruthy();
+        expect(wrapper?.querySelector('audio')).toBeTruthy();
+    });
+
+    it('toggles is-selected on the wrapper as the node is selected/deselected', () => {
+        // Trailing paragraph gives the selection somewhere to land that isn't the atom node,
+        // so we can observe both the selected and the deselected state.
+        editor = buildEditor('<audio src="/dA/song"></audio><p>after</p>');
+        const wrapper = editor.view.dom.querySelector('.audio-block');
+
+        editor.commands.setNodeSelection(0);
+        expect(wrapper?.classList.contains('is-selected')).toBe(true);
+
+        editor.commands.setTextSelection(editor.state.doc.content.size);
+        expect(wrapper?.classList.contains('is-selected')).toBe(false);
+    });
+
     it('serializes the mimeType attribute only when present', () => {
         editor = buildEditor();
         editor

@@ -72,21 +72,31 @@ export const Audio = Node.create({
 
     addNodeView() {
         return ({ node }) => {
-            const dom = document.createElement('audio');
-            dom.setAttribute('controls', '');
-            dom.classList.add('w-full');
+            // Wrap the <audio> in a container. A bare <audio controls> is 100% native
+            // controls, so every click lands on a control and ProseMirror can never turn it
+            // into a NodeSelection (unlike <video>, whose frame is clickable). The wrapper
+            // provides a non-interactive surface (its padding) that IS clickable, so the block
+            // can be selected — and thus deleted — like the image/video/contentlet blocks.
+            const dom = document.createElement('div');
+            dom.classList.add('audio-block');
+
+            const audio = document.createElement('audio');
+            audio.setAttribute('controls', '');
+            audio.classList.add('w-full');
 
             const resolvedSrc =
                 (node.attrs.src as string | null) ??
                 (node.attrs.data as DotAudioData | null)?.asset ??
                 null;
             if (resolvedSrc) {
-                dom.setAttribute('src', resolvedSrc);
+                audio.setAttribute('src', resolvedSrc);
             }
 
             if (node.attrs.title) {
-                dom.setAttribute('title', String(node.attrs.title));
+                audio.setAttribute('title', String(node.attrs.title));
             }
+
+            dom.appendChild(audio);
 
             return {
                 dom,

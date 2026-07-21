@@ -247,9 +247,18 @@
     vertical-align: top;
 }
 
+/* Audio has no visual frame — only the native control bar. The wrapper adds a small
+   clickable margin around it so the atom node can be selected (and then deleted) with the
+   mouse, matching the image/video/contentlet blocks. */
+:host ::ng-deep .ProseMirror .audio-block {
+    padding: 4px;
+    border-radius: 4px;
+}
+
 /* ─── Selected node ring ────────────────────────────────── */
 :host ::ng-deep .ProseMirror figure.is-selected img,
 :host ::ng-deep .ProseMirror video.is-selected,
+:host ::ng-deep .ProseMirror .audio-block.is-selected,
 :host ::ng-deep .ProseMirror [data-type='dot-content'].is-selected {
     outline: 2px solid #6366f1;
     outline-offset: 2px;
