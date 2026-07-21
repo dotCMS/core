@@ -32,16 +32,16 @@ the intended action and issues no write.
 | `--docker-image` | yes | Docker image tag stored in `dockerImage`. |
 | `--released-date` | no | Availability date `yyyy-MM-dd`; defaults to today (UTC). |
 | `--apply` | no | Actually search + fire. Omitted = dry-run (default). |
-| `--service-account` | no | The service account's `modUser` id for human-edit protection; or set `DOTCMS_DEVSITE_SERVICE_ACCOUNT`. |
+| `--service-account` | no | The service account's `modUser` id for human-edit protection; or set `DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT`. |
 | `--force` | no | **Operator override**: update in place even when the entry was last modified by a human (FR-011). The release workflow never passes this. |
 
 ### Credentials
 
 The backend base URL is read from `DOTCMS_DEVSITE_URL` (a repo variable in CI — deliberately
 never hardcoded, so a backend migration is a settings change, not a code change).
-The bearer token is read once from the `DOTCMS_DEVSITE_TOKEN` environment variable and is
+The bearer token is read once from the `DOTCMS_DEVSITE_RELEASENOTES_TOKEN` environment variable and is
 never logged or echoed. The service-account identity (a `modUser` id) is read from
-`--service-account` or `DOTCMS_DEVSITE_SERVICE_ACCOUNT`; without it, an existing entry with
+`--service-account` or `DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT`; without it, an existing entry with
 any last-modifier is treated protectively (skipped), never overwritten.
 
 ## Exit-code / stdout contract
@@ -69,8 +69,8 @@ triggered it. To catch up a version that was missed (e.g. published before this 
 went live, or after an outage), run the tool **once per version** by hand:
 
     export DOTCMS_DEVSITE_URL=...              # backend base URL (repo variable in CI; not hardcoded)
-    export DOTCMS_DEVSITE_TOKEN=...            # service-account token
-    export DOTCMS_DEVSITE_SERVICE_ACCOUNT=...  # service-account modUser id
+    export DOTCMS_DEVSITE_RELEASENOTES_TOKEN=...            # service-account token
+    export DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT=...  # service-account modUser id
     # generate the site notes for that version, then:
     uv run changelog-publisher publish --version 26.06.30-01 \
       --notes-file /tmp/site-release-notes.md \

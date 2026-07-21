@@ -16,7 +16,7 @@ import requests
 # not hardcoded (PR #36606 review): a backend migration is then a variable change, not a
 # code change. The 2026-07 authoring-backend migration is exactly why.
 BASE_URL = os.environ.get("DOTCMS_DEVSITE_URL", "").rstrip("/")
-TOKEN_ENV = "DOTCMS_DEVSITE_TOKEN"
+TOKEN_ENV = "DOTCMS_DEVSITE_RELEASENOTES_TOKEN"
 _TIMEOUT = 30
 
 # System Workflow Publish action (no approval step → firing publishes live). See data-model.md D5.

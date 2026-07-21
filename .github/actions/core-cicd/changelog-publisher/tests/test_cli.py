@@ -72,7 +72,7 @@ def test_is_current_track_rejects_garbage():
 
 @responses_lib.activate
 def test_cli_rejects_lts_version_before_network(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", "t")
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
     rc = main(_argv(tmp_path, "26.07.10-01_lts_v3", "--apply"))
     assert rc == 2
     assert len(responses_lib.calls) == 0  # no HTTP attempted
@@ -80,7 +80,7 @@ def test_cli_rejects_lts_version_before_network(tmp_path, monkeypatch):
 
 @responses_lib.activate
 def test_cli_rejects_cli_release_before_network(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", "t")
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
     rc = main(_argv(tmp_path, "dotcms-cli-1.2.3", "--apply"))
     assert rc == 2
     assert len(responses_lib.calls) == 0
@@ -94,7 +94,7 @@ def test_cli_rejects_cli_release_before_network(tmp_path, monkeypatch):
 def test_dry_run_default_issues_no_fire_call(tmp_path, monkeypatch, capsys):
     """Without --apply: a search may run, but the fire (PUT) call must not be issued,
     and the intended action is printed."""
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", "t")
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
     responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_empty.json"), status=200)
     responses_lib.add(responses_lib.PUT, _FIRE_URL, json={"entity": {}}, status=200)
 
@@ -110,7 +110,7 @@ def test_dry_run_default_issues_no_fire_call(tmp_path, monkeypatch, capsys):
 @responses_lib.activate
 def test_apply_issues_fire_call(tmp_path, monkeypatch):
     """With --apply: the fire (PUT) call is issued."""
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", "t")
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
     responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_empty.json"), status=200)
     responses_lib.add(responses_lib.PUT, _FIRE_URL, json={"entity": {}}, status=200)
 
@@ -133,7 +133,7 @@ _SECRET_TOKEN = "SUPERSECRET-devsite-TOKEN-abc123"
 def test_auth_error_exits_nonzero_without_leaking_token(tmp_path, monkeypatch, capsys, caplog):
     """A 401 on search -> non-zero exit; the bearer token never appears in
     stdout/stderr/logs, and no skip marker is emitted (FR-008, Constitution III)."""
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", _SECRET_TOKEN)
     responses_lib.add(responses_lib.POST, _SEARCH_URL, json={"message": "invalid token"}, status=401)
 
     with caplog.at_level("DEBUG"):
@@ -150,7 +150,7 @@ def test_auth_error_exits_nonzero_without_leaking_token(tmp_path, monkeypatch, c
 @responses_lib.activate
 def test_payload_rejected_exits_nonzero_without_skip_marker(tmp_path, monkeypatch, capsys):
     """A 4xx on the fire (payload rejected) -> non-zero exit, no skip marker."""
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", _SECRET_TOKEN)
     responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_empty.json"), status=200)
     responses_lib.add(responses_lib.PUT, _FIRE_URL, json={"message": "bad payload"}, status=400)
 
@@ -165,7 +165,7 @@ def test_payload_rejected_exits_nonzero_without_skip_marker(tmp_path, monkeypatc
 @responses_lib.activate
 def test_ambiguous_match_exits_nonzero(tmp_path, monkeypatch, capsys):
     """>1 hit -> non-zero exit (never guess), no skip marker."""
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", _SECRET_TOKEN)
     responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_two_hits.json"), status=200)
 
     rc = main(_argv(tmp_path, "26.07.10-01", "--apply", "--service-account", "user-devbot-0000"))
@@ -179,7 +179,7 @@ def test_ambiguous_match_exits_nonzero(tmp_path, monkeypatch, capsys):
 def test_protective_skip_exits_zero_with_marker(tmp_path, monkeypatch, capsys):
     """A human-edit protective skip exits 0 and emits the skip marker naming the version,
     so the workflow can branch to skip (not failure) Slack wording (T005 contract)."""
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", _SECRET_TOKEN)
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", _SECRET_TOKEN)
     responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_hit.json"), status=200)
 
     rc = main(_argv(tmp_path, "26.07.10-01", "--apply", "--service-account", "user-devbot-0000"))
@@ -193,7 +193,7 @@ def test_protective_skip_exits_zero_with_marker(tmp_path, monkeypatch, capsys):
 def test_missing_backend_url_exits_one_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
     """A missing/empty DOTCMS_DEVSITE_URL -> rc 1 with a clean one-line error (the URL is a
     repo variable, never hardcoded — an unset variable must fail loudly, not fall back)."""
-    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", "t")
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
     monkeypatch.setattr("changelog_publisher.client.BASE_URL", "")
 
     with caplog.at_level("ERROR"):
@@ -207,8 +207,8 @@ def test_missing_backend_url_exits_one_with_clean_error(tmp_path, monkeypatch, c
 
 
 def test_missing_token_exits_one_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
-    """A missing DOTCMS_DEVSITE_TOKEN -> rc 1 with a clean one-line error, not a traceback."""
-    monkeypatch.delenv("DOTCMS_DEVSITE_TOKEN", raising=False)
+    """A missing DOTCMS_DEVSITE_RELEASENOTES_TOKEN -> rc 1 with a clean one-line error, not a traceback."""
+    monkeypatch.delenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", raising=False)
 
     with caplog.at_level("ERROR"):
         rc = main(_argv(tmp_path, "26.07.10-01", "--apply"))
@@ -216,5 +216,5 @@ def test_missing_token_exits_one_with_clean_error(tmp_path, monkeypatch, capsys,
     assert rc == 1
     out, err = capsys.readouterr()
     assert "Traceback" not in out and "Traceback" not in err
-    assert any("DOTCMS_DEVSITE_TOKEN" in r.message for r in caplog.records)
+    assert any("DOTCMS_DEVSITE_RELEASENOTES_TOKEN" in r.message for r in caplog.records)
     assert len(responses_lib.calls) == 0  # failed before any network call

@@ -24,7 +24,7 @@ log = logging.getLogger("changelog_publisher")
 
 # Service-account identity (a modUser id) for human-edit protection (FR-011). CLI wins over
 # env; either may be unset for a create-only run (a 1-hit then skips protectively).
-_SERVICE_ACCOUNT_ENV = "DOTCMS_DEVSITE_SERVICE_ACCOUNT"
+_SERVICE_ACCOUNT_ENV = "DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT"
 
 
 def cmd_publish(args: argparse.Namespace) -> int:
@@ -57,7 +57,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
         )
     except (requests.RequestException, AmbiguousMatchError, RuntimeError) as exc:
         # Concise, token-free failure (the token lives in the session header, not the URL/body).
-        # RuntimeError covers a missing DOTCMS_DEVSITE_TOKEN — a clean one-line error, no traceback.
+        # RuntimeError covers a missing DOTCMS_DEVSITE_RELEASENOTES_TOKEN — a clean one-line error, no traceback.
         log.error("publish failed for %s: %s", args.version, exc)
         return 1
 

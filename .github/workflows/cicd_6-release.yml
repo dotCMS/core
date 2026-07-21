@@ -276,7 +276,7 @@ jobs:
       docker_tags: ${{ needs.deployment.outputs.docker_tags }}
       allow_failure: true
     secrets:
-      DOTCMS_DEVSITE_TOKEN: ${{ secrets.DOTCMS_DEVSITE_TOKEN }}
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 

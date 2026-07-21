@@ -44,7 +44,7 @@ on:
         type: string
         default: 'CE1TBQU00'  # #dot-releases (public). Pass an override to post elsewhere.
     secrets:
-      DOTCMS_DEVSITE_TOKEN:
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN:
         required: true
         description: 'Service-account bearer token for the corpsites-headless backend'
       SLACK_BOT_TOKEN:
@@ -108,10 +108,10 @@ jobs:
           # a backend migration is a variable change, not a code change.
           DOTCMS_DEVSITE_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
           # Read once by the tool; never echoed to logs / GITHUB_OUTPUT / step summary.
-          DOTCMS_DEVSITE_TOKEN: ${{ secrets.DOTCMS_DEVSITE_TOKEN }}
+          DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
           # Service-account modUser id for human-edit protection (FR-011). --force is never
           # passed here — override is a manual operator re-run only.
-          DOTCMS_DEVSITE_SERVICE_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_SERVICE_ACCOUNT }}
+          DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT }}
           DOCKER_TAGS: ${{ inputs.docker_tags }}
         run: |
           # Pick the sha-tagged dotcms/dotcms image (version_sha form, e.g.
