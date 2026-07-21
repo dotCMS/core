@@ -172,9 +172,10 @@ jobs:
   # Promote latest - move the floating `latest` Docker tag to this GA release.
   #
   # evergreen-tracks (cicd/evergreen-tracks) is the single controller of the
-  # latest/standard/trailing tags. Its daily cron ages standard/trailing, but
-  # `latest` must move the instant a GA ships — so the release pipeline invokes
-  # the same engine on-demand, scoped to the latest track only (--tracks latest).
+  # latest/standard/trailing tags. standard/trailing move only on a manual
+  # evergreen-tracks-promote dispatch, but `latest` must move the instant a GA
+  # ships — so the release pipeline invokes the same engine on-demand, scoped to
+  # the latest track only (--tracks latest).
   # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
   #
   # Runs for every GA release from main on dotcms/core by default — moving latest

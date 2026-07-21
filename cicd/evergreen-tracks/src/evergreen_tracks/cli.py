@@ -48,8 +48,9 @@ def cmd_promote(args: argparse.Namespace) -> int:
     ]
 
     # Optional subset (e.g. --tracks latest): the release pipeline invokes this
-    # engine on-demand to move only `latest` the instant a GA ships, while the
-    # daily cron ages standard/trailing. One engine, two triggers.
+    # engine on-demand to move only `latest` the instant a GA ships, while an
+    # operator manually dispatches a full promote to age standard/trailing.
+    # One engine, two triggers.
     if args.tracks:
         wanted = {t.strip() for t in args.tracks.split(",") if t.strip()}
         unknown = wanted - set(TRACKS)

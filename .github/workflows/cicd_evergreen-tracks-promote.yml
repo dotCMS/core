@@ -1,7 +1,11 @@
 name: evergreen-tracks-promote
+# Manual-only: standard/trailing move when an operator dispatches this workflow,
+# not on a schedule. A human running this action at a maintenance-window tag
+# update IS the cadence gate — customers get a predictable "your next update is
+# when we run this" answer without a cron moving tags off-window. No cron until
+# the customer-experience team green-lights automatic (e.g. daily) promotion.
+# `latest` still moves per-release via cicd_6-release.yml (--tracks latest).
 on:
-  schedule:
-    - cron: '17 6 * * *'   # daily at 06:17 UTC
   workflow_dispatch:
     inputs:
       repo:
@@ -24,12 +28,12 @@ on:
 permissions:
   contents: read
 
-# Serialize every registry mutation. The daily cron, a manual promote/admin
-# dispatch, and the on-demand latest-promote in the release pipeline all read
-# live registry state and then apply tag moves, so two concurrent runs could act
-# on stale state and overwrite a hold/taint or move a track based on outdated
-# data. A single static group (not keyed by workflow/ref) makes them serialize
-# across all three workflows. For a tag-promotion engine queueing is safer than
+# Serialize every registry mutation. A manual promote/admin dispatch and the
+# on-demand latest-promote in the release pipeline all read live registry state
+# and then apply tag moves, so two concurrent runs could act on stale state and
+# overwrite a hold/taint or move a track based on outdated data. A single static
+# group (not keyed by workflow/ref) makes them serialize across all three
+# workflows. For a tag-promotion engine queueing is safer than
 # cancelling, so cancel-in-progress is false: concurrent runs wait their turn
 # rather than aborting mid-promote and leaving tags half-moved.
 concurrency:
@@ -51,24 +55,19 @@ jobs:
       - name: Promote tracks
         working-directory: cicd/evergreen-tracks
         env:
-          # Scheduled runs default to dotcms/dotcms; dispatch can override.
-          REPO: ${{ github.event.inputs.repo || 'dotcms/dotcms' }}
-          STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
-          TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
-          EVENT_NAME: ${{ github.event_name }}
+          REPO: ${{ github.event.inputs.repo }}
+          STANDARD_DAYS: ${{ github.event.inputs.standard_days }}
+          TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
           DISPATCH_APPLY: ${{ github.event.inputs.apply }}
         run: |
-          # Scheduled (cron) runs always apply — this is the engine that ages
-          # standard/trailing forward. To pause promotion, disable this workflow
-          # in the Actions tab or `hold` the affected track; there is no separate
-          # apply gate. Manual dispatch defaults to dry-run unless apply=true.
+          # Dry-run by default: dispatch shows the plan and exits. Set apply=true
+          # to actually move the tags. To pause promotion entirely, just don't run
+          # this workflow (or `hold` the affected track).
           APPLY=""
-          if [ "$EVENT_NAME" = "schedule" ]; then
-            APPLY="--apply"
-          elif [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DISPATCH_APPLY" = "true" ]; then
+          if [ "$DISPATCH_APPLY" = "true" ]; then
             APPLY="--apply"
           fi
-          echo "event=$EVENT_NAME repo=$REPO apply=${APPLY:-<dry-run>}"
+          echo "repo=$REPO apply=${APPLY:-<dry-run>}"
           uv run evergreen-tracks promote \
             --repo "$REPO" \
             --standard-days "$STANDARD_DAYS" \
