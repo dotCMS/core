@@ -29,6 +29,19 @@
     }
 }
 
+// Stale-while-revalidate reload overlay. Spans BOTH the body and the sidebar (every
+// grid row except the top bar, so the breadcrumb stays visible) so the two share a
+// single loading state — a translucent scrim keeps the old data faintly visible for
+// continuity while blocking interaction until BOTH the content and the sidebar have
+// reloaded. Without spanning the sidebar, its faster reload would finish visibly out
+// of sync with the content.
+.edit-content-layout__reloading-overlay {
+    grid-column: 1 / -1;
+    grid-row: 2 / -1;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
 // Normalize every p-message banner in the top bar to the same compact banner padding
 // (12px vertical / 28px horizontal) so the info, lock and workflow messages all align with
 // each other. Done here once instead of per-instance styleClass so they can't drift apart.
