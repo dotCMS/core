@@ -333,26 +333,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         .build();
             }
 
-            // Replay protection: an id_token is single-use for the exchange. A leaked but
-            // still-unexpired token (browser history, server logs, a malicious RP that shares
-            // the IdP) must not be exchangeable a second time. The nonce check above is NOT
-            // replay protection here — the caller presents both the token and the nonce — so
-            // we fingerprint each consumed token and keep it until its own exp, rejecting any
-            // re-presentation in that window.
             final Long idpExpMillis = extractExpiryMillis(claims.get("exp"));
-            final long replayGuardExpiry = idpExpMillis != null
-                    ? idpExpMillis
-                    : System.currentTimeMillis()
-                            + MAX_DAYS_FALLBACK * ChronoUnit.DAYS.getDuration().toMillis();
-            final String tokenFingerprint = idTokenFingerprint(form.getIdToken());
-            if (!sessionCache.registerExchangeTokenUse(tokenFingerprint, replayGuardExpiry)) {
-                SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
-                        "OAuth exchange rejected: id_token already consumed (replay) from "
-                                + request.getRemoteAddr());
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(new ResponseEntityView<>("id_token has already been exchanged"))
-                        .build();
-            }
 
             // Build effective config: when a trusted IdP matched, overlay its per-IdP
             // claim mappings, role behavior, and provisioning settings onto the base config.
@@ -386,6 +367,29 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         "OAuth exchange user provisioning failed for request from " + request.getRemoteAddr(), e);
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                         .entity(new ResponseEntityView<>("User provisioning failed"))
+                        .build();
+            }
+
+            // Replay protection: an id_token is single-use for the exchange. A leaked but
+            // still-unexpired token (browser history, server logs, a malicious RP that shares
+            // the IdP) must not be exchangeable a second time. The nonce check above is NOT
+            // replay protection here — the caller presents both the token and the nonce — so
+            // we fingerprint each consumed token and keep it until its own exp, rejecting any
+            // re-presentation in that window. Registered only AFTER provisioning succeeds:
+            // a transient failure above must not burn the token and lock the client out of
+            // its natural retry. registerExchangeTokenUse is an atomic check-and-set, so of
+            // two concurrent exchanges of the same token exactly one reaches session creation.
+            final long replayGuardExpiry = idpExpMillis != null
+                    ? idpExpMillis
+                    : System.currentTimeMillis()
+                            + MAX_DAYS_FALLBACK * ChronoUnit.DAYS.getDuration().toMillis();
+            final String tokenFingerprint = idTokenFingerprint(form.getIdToken());
+            if (!sessionCache.registerExchangeTokenUse(tokenFingerprint, replayGuardExpiry)) {
+                SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                        "OAuth exchange rejected: id_token already consumed (replay) from "
+                                + request.getRemoteAddr());
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(new ResponseEntityView<>("id_token has already been exchanged"))
                         .build();
             }
 
