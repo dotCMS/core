@@ -41,9 +41,7 @@
                     class="font-normal"
                     [class.active]="$activeDropNode()?.id === node?.data.id">
                     {{
-                        node.key === ALL_FOLDER_KEY
-                            ? (node.label | dm)
-                            : (node.label | folderName)
+                        node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | folderName)
                     }}
                 </span>
             }

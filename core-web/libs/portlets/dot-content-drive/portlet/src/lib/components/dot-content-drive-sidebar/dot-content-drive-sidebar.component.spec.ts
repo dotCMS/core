@@ -314,7 +314,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 // Mock the store's loadChildFolders method to return a delayed observable
                 const mockChildFolders: DotFolderTreeNodeItem[] = [];
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ folders: mockChildFolders, totalEntries: mockChildFolders.length }).pipe(delay(500))
+                    of({ folders: mockChildFolders, totalEntries: mockChildFolders.length }).pipe(
+                        delay(500)
+                    )
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -423,7 +425,12 @@ describe('DotContentDriveSidebarComponent', () => {
                     {
                         key: 'c1',
                         label: '/big/c1/',
-                        data: { id: 'c1', hostname: 'demo.dotcms.com', path: '/big/c1/', type: 'folder' },
+                        data: {
+                            id: 'c1',
+                            hostname: 'demo.dotcms.com',
+                            path: '/big/c1/',
+                            type: 'folder'
+                        },
                         leaf: false
                     }
                 ];
@@ -435,7 +442,12 @@ describe('DotContentDriveSidebarComponent', () => {
                 const node: DotFolderTreeNodeItem = {
                     key: 'big-folder',
                     label: '/big/',
-                    data: { id: 'big-folder', hostname: 'demo.dotcms.com', path: '/big/', type: 'folder' },
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
                     leaf: false,
                     children: []
                 };
@@ -458,7 +470,12 @@ describe('DotContentDriveSidebarComponent', () => {
                     {
                         key: 'c1',
                         label: '/small/c1/',
-                        data: { id: 'c1', hostname: 'demo.dotcms.com', path: '/small/c1/', type: 'folder' },
+                        data: {
+                            id: 'c1',
+                            hostname: 'demo.dotcms.com',
+                            path: '/small/c1/',
+                            type: 'folder'
+                        },
                         leaf: false
                     }
                 ];
@@ -470,7 +487,12 @@ describe('DotContentDriveSidebarComponent', () => {
                 const node: DotFolderTreeNodeItem = {
                     key: 'small-folder',
                     label: '/small/',
-                    data: { id: 'small-folder', hostname: 'demo.dotcms.com', path: '/small/', type: 'folder' },
+                    data: {
+                        id: 'small-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/small/',
+                        type: 'folder'
+                    },
                     leaf: false,
                     children: []
                 };
@@ -510,7 +532,12 @@ describe('DotContentDriveSidebarComponent', () => {
                 const parent: DotFolderTreeNodeItem = {
                     key: 'big-folder',
                     label: '/big/',
-                    data: { id: 'big-folder', hostname: 'demo.dotcms.com', path: '/big/', type: 'folder' },
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
                     leaf: false,
                     expanded: true,
                     children: [existingChild, loadMoreNode]
@@ -521,7 +548,12 @@ describe('DotContentDriveSidebarComponent', () => {
                     {
                         key: 'b',
                         label: '/big/b/',
-                        data: { id: 'b', hostname: 'demo.dotcms.com', path: '/big/b/', type: 'folder' },
+                        data: {
+                            id: 'b',
+                            hostname: 'demo.dotcms.com',
+                            path: '/big/b/',
+                            type: 'folder'
+                        },
                         leaf: false
                     }
                 ];
@@ -537,7 +569,9 @@ describe('DotContentDriveSidebarComponent', () => {
                     2
                 );
                 expect(parent.children?.map((child) => child.key)).toEqual(['a', 'b']);
-                expect(parent.children?.some((child) => child.data.type === 'load-more')).toBe(false);
+                expect(parent.children?.some((child) => child.data.type === 'load-more')).toBe(
+                    false
+                );
                 expect(contentDriveStore.updateFolders).toHaveBeenCalled();
             });
 
@@ -559,14 +593,24 @@ describe('DotContentDriveSidebarComponent', () => {
                 const parent: DotFolderTreeNodeItem = {
                     key: 'big-folder',
                     label: '/big/',
-                    data: { id: 'big-folder', hostname: 'demo.dotcms.com', path: '/big/', type: 'folder' },
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
                     leaf: false,
                     expanded: true,
                     children: [
                         {
                             key: 'a',
                             label: '/big/a/',
-                            data: { id: 'a', hostname: 'demo.dotcms.com', path: '/big/a/', type: 'folder' },
+                            data: {
+                                id: 'a',
+                                hostname: 'demo.dotcms.com',
+                                path: '/big/a/',
+                                type: 'folder'
+                            },
                             leaf: false
                         },
                         loadMoreNode
@@ -578,7 +622,12 @@ describe('DotContentDriveSidebarComponent', () => {
                     {
                         key: 'b',
                         label: '/big/b/',
-                        data: { id: 'b', hostname: 'demo.dotcms.com', path: '/big/b/', type: 'folder' },
+                        data: {
+                            id: 'b',
+                            hostname: 'demo.dotcms.com',
+                            path: '/big/b/',
+                            type: 'folder'
+                        },
                         leaf: false
                     }
                 ];
