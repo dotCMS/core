@@ -107,7 +107,7 @@ export const DotAuthConfigStore = signalStore(
             }
             patchState(store, { status: 'saving', errors: {} });
             service
-                .saveConfig(store.siteId(), toPayload(draft))
+                .saveConfig(store.siteId(), toPayload(draft, store.siteId()))
                 .pipe(
                     take(1),
                     catchError((error) => {
