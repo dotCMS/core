@@ -27167,6 +27167,8 @@ components:
     Folder:
       type: object
       properties:
+        defaultBaseType:
+          type: string
         defaultFileType:
           type: string
         filesMasks:
@@ -27228,6 +27230,15 @@ components:
           type: string
           description: Default asset type for files uploaded to this folder
           example: FileAsset
+        defaultBaseType:
+          type: string
+          description: "Content Drive upload-mode preference for this folder, recorded\
+            \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
+            \ also accepts the alternate names DotAsset/File and stored canonically\
+            \ in uppercase). Omit or null means no preference (\"ask each time\").\
+            \ This is orthogonal to defaultAssetType and does not change FileAsset\
+            \ behavior."
+          example: DOTASSET
         fileMasks:
           type: array
           description: "List of file patterns that are allowed in this folder (e.g.,\
@@ -36927,6 +36938,15 @@ components:
           type: string
           description: Default asset type for files uploaded to this folder
           example: FileAsset
+        defaultBaseType:
+          type: string
+          description: "Content Drive upload-mode preference for this folder, recorded\
+            \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
+            \ also accepts the alternate names DotAsset/File and stored canonically\
+            \ in uppercase). Omit or null means no preference (\"ask each time\").\
+            \ This is orthogonal to defaultAssetType and does not change FileAsset\
+            \ behavior."
+          example: DOTASSET
         fileMasks:
           type: array
           description: "List of file patterns that are allowed in this folder (e.g.,\

@@ -1349,6 +1349,7 @@ create table folder (
    mod_date timestamptz,
    owner varchar(255),
    idate timestamptz,
+   default_base_type varchar(36),
    primary key (inode)
 );
 create table clickstream_404 (

@@ -226,6 +226,7 @@ public class WebAssetHelper {
                     .sortOrder(folder.getSortOrder())
                     .filesMasks(folder.getFilesMasks())
                     .defaultFileType(folder.getDefaultFileType())
+                    .defaultBaseType(folder.getDefaultBaseType())
                     .host(folder.getHost().getHostname())
                     .path(folder.getPath())
                     .name(folder.getName())
@@ -368,6 +369,7 @@ public class WebAssetHelper {
                 .host(folder.getHost().getHostname())
                 .filesMasks(folder.getFilesMasks())
                 .defaultFileType(folder.getDefaultFileType())
+                .defaultBaseType(folder.getDefaultBaseType())
                 .showOnMenu(folder.isShowOnMenu())
                 .modDate(folder.getModDate().toInstant())
                 .identifier(folder.getIdentifier())
@@ -855,6 +857,23 @@ public class WebAssetHelper {
                     );
                 }
                 folder.setDefaultFileType(contentType.id());
+            }
+
+            // Content Drive upload-mode preference (orthogonal to defaultAssetType/defaultFileType).
+            // A present value is validated against the DOTASSET/FILEASSET base types and stored as the
+            // canonical uppercase enum name; omit or null records "no preference".
+            final String defaultBaseType = meta.defaultBaseType();
+            if (UtilMethods.isSet(defaultBaseType)) {
+                final BaseContentType baseType = BaseContentType.getBaseContentType(defaultBaseType);
+                if (baseType != BaseContentType.DOTASSET && baseType != BaseContentType.FILEASSET) {
+                    throw new IllegalArgumentException(
+                            "The specified defaultBaseType [" + defaultBaseType
+                                    + "] must be one of DOTASSET or FILEASSET."
+                    );
+                }
+                folder.setDefaultBaseType(baseType.name());
+            } else {
+                folder.setDefaultBaseType(null);
             }
 
             if (UtilMethods.isSet(meta.fileMasks())) {

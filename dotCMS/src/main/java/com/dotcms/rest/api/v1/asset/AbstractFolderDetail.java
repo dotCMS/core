@@ -61,4 +61,16 @@ public interface AbstractFolderDetail {
     )
     String defaultAssetType();
 
+    @Nullable
+    @JsonProperty("defaultBaseType")
+    @Schema(
+        description = "Content Drive upload-mode preference for this folder, recorded as a base content type name "
+            + "(DOTASSET or FILEASSET; case-insensitive, also accepts the alternate names DotAsset/File and stored "
+            + "canonically in uppercase). Omit or null means no preference (\"ask each time\"). This is orthogonal to "
+            + "defaultAssetType and does not change FileAsset behavior.",
+        example = "DOTASSET",
+        requiredMode = RequiredMode.NOT_REQUIRED
+    )
+    String defaultBaseType();
+
 }

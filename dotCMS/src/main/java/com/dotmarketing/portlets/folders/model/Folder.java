@@ -69,6 +69,8 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 
     private String defaultFileType;
 
+    private String defaultBaseType;
+
     private Date modDate;
 
 	private String owner;
@@ -260,6 +262,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		this.setSortOrder(template.getSortOrder());
 		this.setTitle(template.getTitle());
 		this.setDefaultFileType(template.getDefaultFileType());
+		this.setDefaultBaseType(template.getDefaultBaseType());
 	}
 
 	public String getFilesMasks() {
@@ -277,6 +280,19 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 
 	public void setDefaultFileType(String defaultFileType) {
 		this.defaultFileType = defaultFileType;
+	}
+
+	/**
+	 * Returns the folder's Content Drive upload-mode preference: a {@link com.dotcms.contenttype.model.type.BaseContentType}
+	 * name ({@code DOTASSET}/{@code FILEASSET}) or {@code null} for no preference ("ask each time").
+	 * Orthogonal to {@link #getDefaultFileType()}.
+	 */
+	public String getDefaultBaseType() {
+		return defaultBaseType;
+	}
+
+	public void setDefaultBaseType(String defaultBaseType) {
+		this.defaultBaseType = defaultBaseType;
 	}
 
     public Date getModDate() {
@@ -301,6 +317,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		map.put("showOnMenu", this.showOnMenu);
 		map.put("sortOrder", this.sortOrder);
 		map.put("defaultFileType", this.defaultFileType);
+		map.put("defaultBaseType", this.defaultBaseType);
 		map.put("path", this.getPath());
 		map.put("modDate", this.getModDate());
         return map;
