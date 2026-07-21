@@ -51,6 +51,7 @@ import {
     FIELD_FILTER_CATEGORY_TYPE,
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TIME_TYPE,
+    FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTISELECT_TYPE,
     FIELD_FILTER_RADIO_TYPE,
     FIELD_FILTER_RELATIONSHIP_TYPE,
@@ -83,7 +84,8 @@ type FieldFilterControl =
     | 'radio'
     | 'lazy-multiselect'
     | 'relationship'
-    | 'date';
+    | 'date'
+    | 'key-value';
 
 interface FieldFilterOption {
     label: string;
@@ -198,6 +200,8 @@ export class DotContentDriveFieldFilterComponent {
                 return 'single-select';
             case FIELD_FILTER_RELATIONSHIP_TYPE:
                 return 'relationship';
+            case FIELD_FILTER_KEY_VALUE_TYPE:
+                return 'key-value';
             default:
                 return 'text';
         }

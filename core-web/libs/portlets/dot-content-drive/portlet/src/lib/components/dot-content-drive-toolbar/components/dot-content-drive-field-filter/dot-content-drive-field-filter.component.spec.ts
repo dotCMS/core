@@ -108,7 +108,14 @@ describe('DotContentDriveFieldFilterComponent', () => {
             { fieldType: 'Category', testId: 'field-filter-lazy-multiselect' },
             { fieldType: 'Date', testId: 'field-filter-date' },
             { fieldType: 'Date-and-Time', testId: 'field-filter-datetime' },
-            { fieldType: 'Time', testId: 'field-filter-time' }
+            { fieldType: 'Time', testId: 'field-filter-time' },
+            // Text-fallback types render the plain text control (contains).
+            { fieldType: 'JSON-Field', testId: 'field-filter-text' },
+            { fieldType: 'Story-Block', testId: 'field-filter-text' },
+            { fieldType: 'Custom-Field', testId: 'field-filter-text' },
+            { fieldType: 'Binary', testId: 'field-filter-text' },
+            // Key/Value renders its own single input.
+            { fieldType: 'Key-Value', testId: 'field-filter-key-value' }
         ];
 
         cases.forEach(({ fieldType, values, testId }) => {
@@ -156,6 +163,37 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
                 expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'hello' });
             });
+        });
+    });
+
+    describe('key-value', () => {
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
+        it('should render the input and the shorthand hint', () => {
+            spectator.setInput('field', field({ variable: 'meta', fieldType: 'Key-Value' }));
+            spectator.detectChanges();
+            openPopover();
+
+            expect(
+                spectator.query(byTestId('field-filter-key-value'), { root: true })
+            ).toBeTruthy();
+            expect(
+                spectator.query(byTestId('field-filter-key-value-hint'), { root: true })
+            ).toBeTruthy();
+        });
+
+        it('should store the literal input verbatim (translation happens at payload build)', () => {
+            spectator.setInput('field', field({ variable: 'meta', fieldType: 'Key-Value' }));
+            spectator.detectChanges();
+            openPopover();
+
+            const input = spectator.query(byTestId('field-filter-key-value'), { root: true });
+            spectator.typeInElement('color:red', input as HTMLInputElement);
+            jest.advanceTimersByTime(DEBOUNCE_TIME);
+
+            // The chip/URL keep the user's text; the `:`→`_` join is applied downstream.
+            expect(store.patchFilters).toHaveBeenCalledWith({ 'us.meta': 'color:red' });
         });
     });
 

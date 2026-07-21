@@ -899,6 +899,30 @@ describe('User-searchable field helpers', () => {
                 to: '2024-12-31'
             });
         });
+
+        describe('Key-Value translation', () => {
+            it('should join a key:value shorthand into a key_value term (exact pair)', () => {
+                expect(parseUserSearchableValue('color:red', 'Key-Value')).toBe('color_red');
+            });
+
+            it('should trim around the colon', () => {
+                expect(parseUserSearchableValue(' color : red ', 'Key-Value')).toBe('color_red');
+            });
+
+            it('should pass a bare term through (loose match on a key or value)', () => {
+                expect(parseUserSearchableValue('red', 'Key-Value')).toBe('red');
+            });
+
+            it('should fall back to the filled side when only one is given', () => {
+                expect(parseUserSearchableValue('color:', 'Key-Value')).toBe('color');
+                expect(parseUserSearchableValue(':red', 'Key-Value')).toBe('red');
+            });
+
+            it('should return undefined for an empty value', () => {
+                expect(parseUserSearchableValue('', 'Key-Value')).toBeUndefined();
+                expect(parseUserSearchableValue('   ', 'Key-Value')).toBeUndefined();
+            });
+        });
     });
 
     describe('serializeUserSearchableValue', () => {

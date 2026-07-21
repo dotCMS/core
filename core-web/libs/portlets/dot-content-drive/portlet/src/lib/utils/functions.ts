@@ -26,6 +26,7 @@ import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 import {
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTI_VALUE_TYPES,
     FOLDER_TREE_PAGE_SIZE,
     FOLDER_TREE_SEARCH_PAGE_SIZE,
@@ -468,7 +469,43 @@ export function parseUserSearchableValue(
         return values.length ? values : undefined;
     }
 
+    if (fieldType === FIELD_FILTER_KEY_VALUE_TYPE) {
+        return toKeyValueTerm(raw);
+    }
+
     return raw;
+}
+
+/**
+ * Translates a Key/Value filter input into the term the backend contains-matches against the
+ * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`). A `key:value`
+ * shorthand becomes the joined `key_value` (an exact pair match); a bare term is passed through
+ * (a loose match on a key or a value). A raw colon is never sent — that path is metadata-only and
+ * would not match a regular Key/Value field. Returns `undefined` when the input is empty.
+ *
+ * @param {string} raw - The literal value the user typed (also what's kept in the URL/chip).
+ * @return {*}  {(string | undefined)}
+ */
+function toKeyValueTerm(raw: string): string | undefined {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+
+    const separator = trimmed.indexOf(':');
+    if (separator === -1) {
+        return trimmed;
+    }
+
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+
+    if (key && value) {
+        return `${key}_${value}`;
+    }
+
+    // Only one side of the `key:value` was filled — match on whichever is present.
+    return key || value || undefined;
 }
 
 /** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
