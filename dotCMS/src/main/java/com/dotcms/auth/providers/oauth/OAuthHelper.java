@@ -599,7 +599,17 @@ public class OAuthHelper {
 
     private static String getEmail(final Map<String, Object> userInfo, final OAuthAppConfig config) {
         final String email = claimValue(userInfo, config == null ? null : config.emailClaim, EMAIL_CLAIMS, null);
-        return UtilMethods.isValidEmail(email) ? email : null;
+        if (UtilMethods.isSet(email) && !UtilMethods.isValidEmail(email)) {
+            // The regex caps TLDs at 4 chars (pre-2012 gTLDs), so real addresses like
+            // user@corp.systems get dropped here — the user is then provisioned with a
+            // synthetic @fakedotcms.com address and email-based matching never works.
+            // Silent was worse: at least tell the operator which address was rejected.
+            Logger.warn(OAuthHelper.class, "IdP-asserted email '" + email
+                    + "' failed dotCMS email validation and was DROPPED — the user will be"
+                    + " provisioned with a synthetic address and cannot be matched by email");
+            return null;
+        }
+        return UtilMethods.isSet(email) ? email : null;
     }
 
     /**
