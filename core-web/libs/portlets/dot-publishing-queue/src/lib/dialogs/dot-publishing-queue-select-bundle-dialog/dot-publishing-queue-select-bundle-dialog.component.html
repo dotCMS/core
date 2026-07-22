@@ -121,8 +121,7 @@
                             </ng-template>
                             <ng-template pTemplate="body" let-bundle>
                                 @if (
-                                    $bundlesStatus() === 'loading' ||
-                                    $bundlesStatus() === 'init'
+                                    $bundlesStatus() === 'loading' || $bundlesStatus() === 'init'
                                 ) {
                                     <tr class="cursor-default hover:bg-transparent!">
                                         <td><p-skeleton width="1rem" height="1rem" /></td>
