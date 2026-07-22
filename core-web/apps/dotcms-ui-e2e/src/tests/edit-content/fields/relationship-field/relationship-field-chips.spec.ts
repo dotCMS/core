@@ -17,9 +17,9 @@ import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fix
 test.describe('Status & Locale Chips', () => {
     // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
     // If a second test is added, move setup into each test with try/finally cleanup.
-    let authorTypeId: string;
+    let authorTypeId: string | undefined;
     let authorTypeVariable: string;
-    let blogTypeId: string;
+    let blogTypeId: string | undefined;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
@@ -50,8 +50,12 @@ test.describe('Status & Locale Chips', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        await apiHelpers.deleteContentType(blogTypeId);
-        await apiHelpers.deleteContentType(authorTypeId);
+        if (blogTypeId) {
+            await apiHelpers.deleteContentType(blogTypeId);
+        }
+        if (authorTypeId) {
+            await apiHelpers.deleteContentType(authorTypeId);
+        }
     });
 
     test('related row renders locale and status chips with correct severity @critical', async ({

@@ -444,9 +444,9 @@ test.describe('New Content Disabled (No New Editor)', () => {
 test.describe('Menu Disabled When Single Item Exists', () => {
     // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
     // If a second test is added, move setup into each test with try/finally cleanup.
-    let authorTypeId: string;
+    let authorTypeId: string | undefined;
     let authorTypeVariable: string;
-    let blogTypeId: string;
+    let blogTypeId: string | undefined;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
@@ -476,8 +476,12 @@ test.describe('Menu Disabled When Single Item Exists', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        await apiHelpers.deleteContentType(blogTypeId);
-        await apiHelpers.deleteContentType(authorTypeId);
+        if (blogTypeId) {
+            await apiHelpers.deleteContentType(blogTypeId);
+        }
+        if (authorTypeId) {
+            await apiHelpers.deleteContentType(authorTypeId);
+        }
     });
 
     test('existing content disabled after selecting item @smoke', async ({ adminPage }) => {
