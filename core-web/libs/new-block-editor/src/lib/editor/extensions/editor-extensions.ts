@@ -18,6 +18,7 @@ import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
+import { Audio } from './nodes/audio.extension';
 import { createCodeBlock } from './nodes/code-block/code-block.extension';
 import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
@@ -126,6 +127,7 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('video') ? [Video] : []),
+        ...(has('audio') ? [Audio] : []),
         ...(has('youtube')
             ? [
                   Youtube.configure({

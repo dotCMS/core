@@ -1,4 +1,6 @@
-import { buildContentletByTypeQuery } from './slash-menu-catalog';
+import type { Editor } from '@tiptap/core';
+
+import { buildContentletByTypeQuery, createSlashOverlayBlockItems } from './slash-menu-catalog';
 
 const PREFIX = '+contentType:Blog +languageId:1 +deleted:false +working:true';
 
@@ -42,5 +44,33 @@ describe('buildContentletByTypeQuery', () => {
         expect(buildContentletByTypeQuery('Blog', 1, '   beach   ')).toBe(
             `${PREFIX} +catchall:*beach* title:"beach"^15`
         );
+    });
+});
+
+describe('createSlashOverlayBlockItems — audio', () => {
+    type Params = Parameters<typeof createSlashOverlayBlockItems>;
+
+    const popovers = {} as Params[0];
+    const openAudioPicker = jest.fn();
+    const editorModal = { openAudioPicker } as unknown as Params[1];
+    const dotMessageService = { get: (key: string) => key } as unknown as Params[2];
+
+    it('exposes an audio entry with blockName "audio" and the audiotrack icon', () => {
+        const items = createSlashOverlayBlockItems(popovers, editorModal, dotMessageService);
+        const audio = items.find((item) => item.blockName === 'audio');
+
+        expect(audio).toBeDefined();
+        expect(audio?.icon).toBe('audiotrack');
+        expect(audio?.keywords).toContain('podcast');
+    });
+
+    it('opens the audio picker when the entry is selected', () => {
+        const items = createSlashOverlayBlockItems(popovers, editorModal, dotMessageService);
+        const audio = items.find((item) => item.blockName === 'audio');
+        const editor = {} as Editor;
+
+        audio?.onSelect?.(editor);
+
+        expect(openAudioPicker).toHaveBeenCalledWith(editor);
     });
 });

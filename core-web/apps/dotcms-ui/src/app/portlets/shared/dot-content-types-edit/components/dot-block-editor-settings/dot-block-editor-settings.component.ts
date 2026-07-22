@@ -24,6 +24,7 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
 const BLOCK_OPTIONS: { label: string; code: string }[] = [
     { label: 'AI Content', code: 'aiContentPrompt' },
     { label: 'AI Image', code: 'aiImagePrompt' },
+    { label: 'Audio', code: 'audio' },
     { label: 'Blockquote', code: 'blockquote' },
     { label: 'Code Block', code: 'codeBlock' },
     { label: 'Contentlet', code: 'dotContent' },
