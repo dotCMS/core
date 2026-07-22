@@ -442,13 +442,18 @@ test.describe('New Content Disabled (No New Editor)', () => {
 // ─── Menu Disabled in Single Mode (Item Already Exists) ─────────
 
 test.describe('Menu Disabled When Single Item Exists', () => {
+    // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
+    // If a second test is added, move setup into each test with try/finally cleanup.
+    let authorTypeId: string;
     let authorTypeVariable: string;
+    let blogTypeId: string;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`SingleFull_${testSuffix}`)
         );
+        authorTypeId = authorType.id;
         authorTypeVariable = authorType.variable;
 
         const blogType = await apiHelpers.createContentType(
@@ -461,12 +466,18 @@ test.describe('Menu Disabled When Single Item Exists', () => {
                 CARDINALITY.ONE_TO_ONE
             )
         );
+        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         await apiHelpers.createContentlet(authorTypeVariable, {
             title: `Author SingleFull ${testSuffix}`,
             bio: 'Bio'
         });
+    });
+
+    test.afterEach(async ({ apiHelpers }) => {
+        await apiHelpers.deleteContentType(blogTypeId);
+        await apiHelpers.deleteContentType(authorTypeId);
     });
 
     test('existing content disabled after selecting item @smoke', async ({ adminPage }) => {

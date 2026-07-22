@@ -15,13 +15,18 @@ import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fix
 // Published -> severity `success` -> class `p-tag-success`.
 
 test.describe('Status & Locale Chips', () => {
+    // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
+    // If a second test is added, move setup into each test with try/finally cleanup.
+    let authorTypeId: string;
     let authorTypeVariable: string;
+    let blogTypeId: string;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`Chips_${testSuffix}`)
         );
+        authorTypeId = authorType.id;
         authorTypeVariable = authorType.variable;
 
         const blogType = await apiHelpers.createContentType(
@@ -34,6 +39,7 @@ test.describe('Status & Locale Chips', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
+        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         // Published English contentlet -> deterministic status for the color assertion.
@@ -41,6 +47,11 @@ test.describe('Status & Locale Chips', () => {
             title: `Author Chips ${testSuffix}`,
             bio: 'Bio for chip author'
         });
+    });
+
+    test.afterEach(async ({ apiHelpers }) => {
+        await apiHelpers.deleteContentType(blogTypeId);
+        await apiHelpers.deleteContentType(authorTypeId);
     });
 
     test('related row renders locale and status chips with correct severity @critical', async ({

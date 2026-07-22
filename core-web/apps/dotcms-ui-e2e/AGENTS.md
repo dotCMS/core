@@ -64,7 +64,7 @@ Modules: `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts
 ## Data & isolation
 
 - Assume **empty starter** — create types/content via API helpers in `src/requests/` inside `beforeEach`, delete in `afterEach`; unique names (`testSuffix`, `Date.now()`, UUID).
-- **`mode: 'serial'`:** use only when tests truly share one contentlet inode/workflow step or strict ordering inside one test chain. Do **not** use serial to guard describe-level `let` — create content types inside each test (or `try/finally` delete) so `fullyParallel` and CI `workers: 2` can run tests in the same file concurrently. See [E2E serial parallelism](../../../docs/testing/E2E_SERIAL_PARALLELISM.md).
+- **`mode: 'serial'`:** use only when tests truly share one contentlet inode/workflow step or strict ordering inside one test chain. Do **not** use serial to guard describe-level `let` — create content types inside each test (or `try/finally` delete) so `fullyParallel` and CI `workers: 2` can run tests in the same file concurrently.
 - Content types need **SystemWorkflow** for Save — see existing fixtures/requests.
 - **Relationships:** reuse `fixtures/relationship.fixture.ts` and `tests/edit-content/fields/relationship-field/`; do not invent payloads or cardinality numbers.
 

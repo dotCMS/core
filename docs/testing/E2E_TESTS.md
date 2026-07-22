@@ -1,6 +1,6 @@
 # End-to-End (E2E) Tests
 
-> **Canonical Playwright suite:** [`core-web/apps/dotcms-ui-e2e/`](../../core-web/apps/dotcms-ui-e2e/) (Nx). CI uses `workers: 2` when `CI=true`. Serial describe blocks and parallelism: [E2E_SERIAL_PARALLELISM.md](./E2E_SERIAL_PARALLELISM.md). The legacy `e2e/dotcms-e2e-node/` tree is deprecated.
+> **Canonical Playwright suite:** [`core-web/apps/dotcms-ui-e2e/`](../../core-web/apps/dotcms-ui-e2e/) (Nx). CI uses `workers: 2` when `CI=true`. The legacy `e2e/dotcms-e2e-node/` tree is deprecated.
 
 ## Overview
 
@@ -9,28 +9,25 @@ dotCMS E2E tests validate complete user workflows across the entire application 
 ## Test Structure
 
 ### Location & Architecture
-- **Modern E2E**: `e2e/dotcms-e2e-node/` (Playwright + TypeScript)
+- **Canonical E2E (Playwright + Nx)**: [`core-web/apps/dotcms-ui-e2e/`](../../core-web/apps/dotcms-ui-e2e/) — preferred for new tests; CI uses `workers: 2` when `CI=true`
+- **Deprecated E2E**: `e2e/dotcms-e2e-node/` (legacy Playwright tree; do not add new tests here)
 - **Legacy E2E**: `e2e/dotcms-e2e-java/` (Selenium + Java)
-- **Status**: Playwright is preferred, legacy tests being gradually replaced
 - **Integration**: Partially integrated into CI/CD pipeline
 
 ### Project Structure
 ```
-e2e/
-├── dotcms-e2e-node/              # Modern Playwright tests
-│   ├── src/
-│   │   ├── tests/                # Test files
-│   │   ├── pages/                # Page Object Model
-│   │   ├── fixtures/             # Test data
-│   │   └── utils/                # Test utilities
-│   ├── playwright.config.ts      # Playwright configuration
-│   ├── package.json              # Node.js dependencies
-│   └── pom.xml                   # Maven integration
-├── dotcms-e2e-java/              # Legacy Selenium tests
-│   ├── src/test/java/            # Java test files
-│   ├── src/test/resources/       # Test resources
-│   └── pom.xml                   # Maven configuration
-└── docker/                       # Docker test environment
+core-web/apps/dotcms-ui-e2e/    # Canonical Playwright suite (Nx)
+├── src/
+│   ├── tests/                  # Test files
+│   ├── pages/                  # Page Object Model
+│   ├── fixtures/               # Test data & API helpers
+│   └── utils/                  # Test utilities
+└── playwright.config.ts
+
+e2e/                            # Legacy / deprecated trees
+├── dotcms-e2e-node/            # Deprecated Playwright (TypeScript)
+├── dotcms-e2e-java/            # Legacy Selenium tests
+└── docker/                     # Docker test environment
 ```
 
 ## Playwright E2E Tests (Modern)
