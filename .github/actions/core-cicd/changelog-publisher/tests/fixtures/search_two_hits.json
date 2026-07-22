@@ -1,0 +1,34 @@
+{
+  "entity": {
+    "contentTook": 1,
+    "jsonObjectView": {
+      "contentlets": [
+        {
+          "contentType": "Dotcmsbuilds",
+          "minor": "26.07.10-01",
+          "identifier": "aaaa1111-bbbb-2222-cccc-333344445555",
+          "inode": "1111",
+          "modUserName": "dotCMS Release Automation",
+          "modUser": "user-devbot-0000",
+          "showInChangeLog": true,
+          "lts": 3
+        },
+        {
+          "contentType": "Dotcmsbuilds",
+          "minor": "26.07.10-01",
+          "identifier": "dddd6666-eeee-7777-ffff-888899990000",
+          "inode": "2222",
+          "modUserName": "Jamie Mauro",
+          "modUser": "user-5a8a91c4-0cd7-4108-bece-549e466409bf",
+          "showInChangeLog": true,
+          "lts": 3
+        }
+      ]
+    },
+    "queryTook": 1,
+    "resultsSize": 2
+  },
+  "errors": [],
+  "messages": [],
+  "pagination": null
+}
