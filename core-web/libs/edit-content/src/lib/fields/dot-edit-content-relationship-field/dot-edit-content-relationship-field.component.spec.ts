@@ -29,6 +29,7 @@ import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-rel
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
@@ -122,12 +123,26 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             mockProvider(DotEditContentStore, {
                 contentType: jest.fn().mockReturnValue(null),
                 currentLocale: jest.fn().mockReturnValue(null),
-                isCopyingLocale: jest.fn().mockReturnValue(false)
+                isCopyingLocale: jest.fn().mockReturnValue(false),
+                isDialogMode: jest.fn().mockReturnValue(false),
+                contentlet: jest.fn().mockReturnValue(null)
             }),
             mockProvider(DotEditContentService, {
                 getContentById: jest.fn().mockReturnValue(of({}))
             }),
-            DialogService
+            DialogService,
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    inPlaceNavigation: false,
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn(),
+                    goToRelatedContent: jest.fn(),
+                    goToCrumb: jest.fn()
+                }
+            }
         ]
     });
 
@@ -604,7 +619,9 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         mockProvider(DotEditContentStore, {
             contentType: jest.fn().mockReturnValue(null),
             currentLocale: jest.fn().mockReturnValue(null),
-            isCopyingLocale: jest.fn().mockReturnValue(false)
+            isCopyingLocale: jest.fn().mockReturnValue(false),
+            isDialogMode: jest.fn().mockReturnValue(false),
+            contentlet: jest.fn().mockReturnValue(null)
         }),
         mockProvider(DotEditContentService, {
             getContentById: jest.fn().mockReturnValue(of({}))

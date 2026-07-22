@@ -68,6 +68,7 @@ import {
 } from '../../extensions';
 import {
     AIContentNode,
+    AudioNode,
     ContentletBlock,
     createGridColumn,
     GridBlock,
@@ -133,6 +134,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
+        ['audio', AudioNode],
         ['aiContent', AIContentNode],
         ['loader', LoaderNode],
         ['gridBlock', GridBlock]
@@ -513,12 +515,18 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     }
 
     private getEditorNodes(): AnyExtension[] {
+        // StarterKit v3 bundles Link and Underline, but this editor registers its own
+        // Link.extend(...) and Underline in getEditorMarks(). Always disable StarterKit's
+        // bundled copies (in BOTH branches) so we don't double-register them and trigger
+        // "Duplicate extension names found: ['link', 'underline']".
+        const baseConfig: Partial<StarterKitOptions> = { link: false, underline: false };
+
         // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
             this.allowedBlocks?.length > 1
-                ? StarterKit.configure(this.starterConfig())
-                : StarterKit;
+                ? StarterKit.configure({ ...baseConfig, ...this.starterConfig() })
+                : StarterKit.configure(baseConfig);
 
         const customNodes = this.getAllowedCustomNodes();
 

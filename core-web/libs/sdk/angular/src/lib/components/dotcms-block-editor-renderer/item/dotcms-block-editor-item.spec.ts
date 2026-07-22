@@ -9,6 +9,7 @@ import { getUVEState } from '@dotcms/uve';
 
 import { DotCMSBlockEditorItemComponent } from './dotcms-block-editor-item.component';
 
+import { DotAudioBlock } from '../blocks/audio.component';
 import { DotBlockQuote, DotCodeBlock } from '../blocks/code.component';
 import { DotContentletBlock } from '../blocks/dot-contentlet.component';
 import { DotImageBlock } from '../blocks/image.component';
@@ -227,6 +228,20 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.query(DotVideoBlock)).toBeTruthy();
+            });
+
+            it('should render audio component', () => {
+                const content: BlockEditorNode[] = [
+                    {
+                        type: BlockEditorDefaultBlocks.DOT_AUDIO,
+                        attrs: { src: 'audio.mp3' },
+                        content: []
+                    }
+                ];
+                spectator.setInput('content', content);
+                spectator.detectChanges();
+
+                expect(spectator.query(DotAudioBlock)).toBeTruthy();
             });
         });
 

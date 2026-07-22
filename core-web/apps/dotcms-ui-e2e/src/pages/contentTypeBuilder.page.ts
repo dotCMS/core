@@ -7,9 +7,8 @@ import { FieldsTypes, SiteorHostField, TextField } from '@models/newContentType.
  * Page object for the Angular content-type builder
  * (`/dotAdmin/#/content-types-angular/edit/{id}`).
  *
- * Recovers the drag-and-drop "add field" logic from the legacy
- * `e2e/dotcms-e2e-node/.../contentTypeForm.page.ts` and adds edit + persistence
- * verification used to guard the `DotFieldService` (`saveFields`/`updateField`) flow.
+ * Covers drag-and-drop "add field" in the builder plus edit and persistence
+ * verification for the `DotFieldService` (`saveFields`/`updateField`) flow.
  */
 export class ContentTypeBuilderPage {
     constructor(private page: Page) {}

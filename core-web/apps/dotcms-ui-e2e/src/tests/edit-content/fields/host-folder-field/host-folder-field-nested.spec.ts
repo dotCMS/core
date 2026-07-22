@@ -8,8 +8,9 @@ import { test } from '../../../../fixtures/host-folder.fixture';
  * Journey 3: Nested Folder Context Pre-fill
  */
 test.describe('Nested Folder Pre-fill', () => {
-    test.describe.configure({ mode: 'serial' });
-
+    // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
+    // If a second test is added, move setup into each test with try/finally cleanup.
+    let contentTypeId: string;
     let contentTypeVariable: string;
     let siteName: string;
     let folder1Name: string;
@@ -19,6 +20,7 @@ test.describe('Nested Folder Pre-fill', () => {
         const contentType = await apiHelpers.createContentType(
             apiHelpers.hostFolderPayload(testSuffix)
         );
+        contentTypeId = contentType.id;
         contentTypeVariable = contentType.variable;
 
         const defaultSite = await apiHelpers.getDefaultSite();
@@ -27,6 +29,10 @@ test.describe('Nested Folder Pre-fill', () => {
         folder2Name = `folder-2-${testSuffix}`;
 
         await apiHelpers.createFolders(siteName, [`/${folder1Name}/${folder2Name}`]);
+    });
+
+    test.afterEach(async ({ apiHelpers }) => {
+        await apiHelpers.deleteContentType(contentTypeId);
     });
 
     test('nested folderPath pre-fills with full depth @critical', async ({ adminPage }) => {

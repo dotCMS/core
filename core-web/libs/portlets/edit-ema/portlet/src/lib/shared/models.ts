@@ -110,6 +110,7 @@ export interface SaveStylePropertiesPayload {
     containerIdentifier: string;
     contentletIdentifier: string;
     styleProperties: StyleEditorProperties;
+    personaTag?: string;
 }
 
 export interface NavigationBarItem {

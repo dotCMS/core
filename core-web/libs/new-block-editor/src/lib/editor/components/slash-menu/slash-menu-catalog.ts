@@ -360,8 +360,8 @@ export function createBaseBlockItems(dotMessageService: DotMessageService): Bloc
 /**
  * Slash entries that open an overlay before mutating the document.
  *
- * Table is a caret-anchored popover via {@link EditorPopoverService}. Image and Video skip
- * the popover entirely and open the centered `DotBrowserSelectorComponent` directly via
+ * Table is a caret-anchored popover via {@link EditorPopoverService}. Image, Video, and Audio
+ * skip the popover entirely and open the centered `DotBrowserSelectorComponent` directly via
  * {@link EditorModalService} (per design + PM call — no in-popover Upload / URL tabs).
  */
 export function createSlashOverlayBlockItems(
@@ -406,6 +406,14 @@ export function createSlashOverlayBlockItems(
             keywords: ['video', 'mp4', 'upload', 'url', 'media'],
             blockName: 'video',
             onSelect: (editor) => editorModal.openVideoPicker(editor)
+        },
+        {
+            label: msg('dot.block.editor.slash-menu.audio.label'),
+            description: msg('dot.block.editor.slash-menu.audio.description'),
+            icon: 'audiotrack',
+            keywords: ['audio', 'mp3', 'sound', 'podcast', 'upload', 'url', 'media'],
+            blockName: 'audio',
+            onSelect: (editor) => editorModal.openAudioPicker(editor)
         }
     ];
 }
