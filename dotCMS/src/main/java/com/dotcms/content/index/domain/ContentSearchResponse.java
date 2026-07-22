@@ -209,7 +209,7 @@ public record ContentSearchResponse(
                             (org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option) optionObj;
                     final Map<String, Object> opt = new LinkedHashMap<>();
                     opt.put("text", option.getText() != null ? option.getText().string() : null);
-                    opt.put("score", option.getScore());
+                    opt.put("score", finiteScoreOrNull(option.getScore()));
                     options.add(opt);
                 }
                 final Map<String, Object> entryMap = new LinkedHashMap<>();
@@ -315,8 +315,18 @@ public record ContentSearchResponse(
     private static Map<String, Object> suggestOption(final String text, final double score) {
         final Map<String, Object> option = new LinkedHashMap<>();
         option.put("text", text);
-        option.put("score", score);
+        option.put("score", finiteScoreOrNull(score));
         return option;
+    }
+
+    /**
+     * Coerces a suggest-option score to {@code null} when it is non-finite ({@code NaN}/Infinity).
+     * The suggest map is serialized via {@code new JSONObject(map)}, and dotCMS's JSON writer rejects
+     * non-finite numbers ("JSON does not allow non-finite numbers", see #36478), so a stray NaN would
+     * fail the whole response. Returning {@code null} lets {@code JSONObject.wrap} emit a JSON null.
+     */
+    private static Object finiteScoreOrNull(final double score) {
+        return Double.isFinite(score) ? score : null;
     }
 
     /**
