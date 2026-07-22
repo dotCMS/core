@@ -218,6 +218,7 @@ export class ToolbarComponent implements OnDestroy {
             this.store.isAllowed('link') ||
             this.store.isAllowed('image') ||
             this.store.isAllowed('video') ||
+            this.store.isAllowed('audio') ||
             this.store.isAllowed('table') ||
             this.store.isAllowed('emoji') ||
             this.showAssetByUrl()
@@ -481,6 +482,12 @@ export class ToolbarComponent implements OnDestroy {
         event.preventDefault();
         event.stopPropagation();
         this.editorModal.openVideoPicker(this.editor());
+    }
+
+    protected openAudioDialog(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        this.editorModal.openAudioPicker(this.editor());
     }
 
     protected openTableDialog(event: MouseEvent): void {

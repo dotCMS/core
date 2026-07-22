@@ -15,16 +15,18 @@ import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fix
 // Published -> severity `success` -> class `p-tag-success`.
 
 test.describe('Status & Locale Chips', () => {
-    // Serial: beforeEach shares mutable `let` vars across tests.
-    test.describe.configure({ mode: 'serial' });
-
+    // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
+    // If a second test is added, move setup into each test with try/finally cleanup.
+    let authorTypeId: string | undefined;
     let authorTypeVariable: string;
+    let blogTypeId: string | undefined;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`Chips_${testSuffix}`)
         );
+        authorTypeId = authorType.id;
         authorTypeVariable = authorType.variable;
 
         const blogType = await apiHelpers.createContentType(
@@ -37,6 +39,7 @@ test.describe('Status & Locale Chips', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
+        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         // Published English contentlet -> deterministic status for the color assertion.
@@ -44,6 +47,15 @@ test.describe('Status & Locale Chips', () => {
             title: `Author Chips ${testSuffix}`,
             bio: 'Bio for chip author'
         });
+    });
+
+    test.afterEach(async ({ apiHelpers }) => {
+        if (blogTypeId) {
+            await apiHelpers.deleteContentType(blogTypeId);
+        }
+        if (authorTypeId) {
+            await apiHelpers.deleteContentType(authorTypeId);
+        }
     });
 
     test('related row renders locale and status chips with correct severity @critical', async ({

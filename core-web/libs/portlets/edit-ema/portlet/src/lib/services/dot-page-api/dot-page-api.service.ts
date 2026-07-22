@@ -107,6 +107,7 @@ export class DotPageApiService {
      * @param {Record<string, unknown>} payload.styleProperties - Style properties to apply.
      * @param {string} payload.pageId - The page ID where styles are being saved.
      * @param {string} payload.containerUUID - UUID of the container.
+     * @param {string} [payload.personaTag] - Persona key tag to personalize this style update for.
      * @returns {Observable<unknown>} Observable that completes when properties are saved.
      * @memberof DotPageApiService
      */
@@ -115,11 +116,13 @@ export class DotPageApiService {
         contentletIdentifier,
         styleProperties,
         pageId,
-        containerUUID
+        containerUUID,
+        personaTag
     }: SaveStylePropertiesPayload): Observable<unknown> {
         const payload = {
             identifier: containerIdentifier,
             uuid: containerUUID,
+            personaTag,
             [contentletIdentifier]: styleProperties
         };
 

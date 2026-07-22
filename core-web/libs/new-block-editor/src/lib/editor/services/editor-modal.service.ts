@@ -10,11 +10,15 @@ import { DotAIImagePromptComponent, DotBrowserSelectorComponent } from '@dotcms/
 
 import { AiContentDialogComponent } from '../components/ai-content-dialog/ai-content-dialog.component';
 import { OVERLAY_ABOVE_FULLSCREEN_Z_INDEX, buildBrowserSelectorConfig } from '../config.utils';
-import { insertDotImageFromContentlet, insertDotVideoFromContentlet } from '../editor.utils';
+import {
+    insertDotAudioFromContentlet,
+    insertDotImageFromContentlet,
+    insertDotVideoFromContentlet
+} from '../editor.utils';
 
 /**
  * Owns every centered modal dialog in the editor — all opened via PrimeNG's
- * {@link DialogService.open}: AI content, AI image, and the image / video pickers.
+ * {@link DialogService.open}: AI content, AI image, and the image / video / audio pickers.
  * Sibling to {@link EditorPopoverService}, which owns caret-anchored popovers
  * (table, link, emoji, image-properties).
  *
@@ -32,6 +36,9 @@ export class EditorModalService implements OnDestroy {
 
     /** Live ref for the video picker; cleared when the dialog closes or the service tears down. */
     private videoPickerRef: DynamicDialogRef | null = null;
+
+    /** Live ref for the audio picker; cleared when the dialog closes or the service tears down. */
+    private audioPickerRef: DynamicDialogRef | null = null;
 
     /**
      * Open state for the AI Image prompt modal. Tracking it as a signal lets other parts
@@ -94,6 +101,32 @@ export class EditorModalService implements OnDestroy {
                 this.zone.run(() => insertDotVideoFromContentlet(editor, contentlet));
             }
             this.videoPickerRef = null;
+        });
+    }
+
+    /**
+     * Opens {@link DotBrowserSelectorComponent} scoped to audio-mime contentlets. On accept,
+     * inserts the picked contentlet as a `dotAudio` node at the editor's current selection.
+     * Idempotent: a second call while the picker is already open is a no-op.
+     */
+    openAudioPicker(editor: Editor): void {
+        if (this.audioPickerRef) return;
+
+        this.audioPickerRef = this.dialogService.open(
+            DotBrowserSelectorComponent,
+            buildBrowserSelectorConfig({
+                header: this.dotMessageService.get(
+                    'dot.block-editor.extension.audio.dotcms.dialog-title'
+                ),
+                mimeTypes: ['audio']
+            })
+        );
+
+        this.audioPickerRef.onClose.subscribe((contentlet?: DotCMSContentlet) => {
+            if (contentlet) {
+                this.zone.run(() => insertDotAudioFromContentlet(editor, contentlet));
+            }
+            this.audioPickerRef = null;
         });
     }
 
@@ -183,6 +216,8 @@ export class EditorModalService implements OnDestroy {
         this.imagePickerRef = null;
         this.videoPickerRef?.close();
         this.videoPickerRef = null;
+        this.audioPickerRef?.close();
+        this.audioPickerRef = null;
         this.aiImageDialogRef?.close();
         this.aiImageDialogRef = null;
         this.aiContentDialogRef?.close();
