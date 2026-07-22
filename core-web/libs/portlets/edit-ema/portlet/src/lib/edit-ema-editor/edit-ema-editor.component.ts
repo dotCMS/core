@@ -51,7 +51,6 @@ import {
     DotCMSContentType,
     DotCMSContentlet,
     DotCMSTempFile,
-    DotLanguage,
     DotTreeNode,
     FeaturedFlags,
     SeoMetaTags,
@@ -421,7 +420,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
 
         if (currentLanguage && !currentLanguage?.translated) {
-            this.createNewTranslation(currentLanguage, page);
+            this.translatePage({ page, newLanguage: currentLanguage.id });
         }
     });
 
@@ -1692,30 +1691,99 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             });
     }
 
-    private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get(
-                'editpage.language-change-missing-lang-populate.confirm.header'
-            ),
-            message: this.dotMessageService.get(
-                'editpage.language-change-missing-lang-populate.confirm.message',
-                language.language
-            ),
-            rejectIcon: 'hidden',
-            acceptIcon: 'hidden',
-            key: 'shell-confirm-dialog',
-            accept: () => {
-                this.translatePage({ page, newLanguage: language.id });
-            },
-            reject: () => {
-                // If is rejected, bring back the current language on selector
-                this.#goBackToCurrentLanguage();
-            }
-        });
+    /**
+     * Create the page's language version on switch.
+     *
+     * Fires a programmatic workflow NEW action that copies the source page's field
+     * values into a new version in the target language, then re-renders via `pageLoad`.
+     */
+    translatePage(event: { page: DotCMSPage; newLanguage: number }) {
+        this.#autoCreateTranslation(event.page, event.newLanguage);
     }
 
-    translatePage(event: { page: DotCMSPage; newLanguage: number }) {
-        this.dialog.translatePage(event);
+    #autoCreateTranslation(page: DotCMSPage, newLanguage: number): void {
+        // Resolve the real content type so the payload is built from its actual
+        // field definitions instead of guessing which page properties to copy.
+        this.dotContentTypeService
+            .getContentType(page.contentType)
+            .pipe(
+                switchMap((contentType) => {
+                    const data = this.#buildTranslationData(contentType, page, newLanguage);
+
+                    return this.dotWorkflowActionsFireService.newContentlet(
+                        page.contentType,
+                        data
+                    );
+                }),
+                take(1),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe({
+                next: () => {
+                    const languageName =
+                        this.uveStore.pageLanguages().find((lang) => lang.id === newLanguage)
+                            ?.language ?? '';
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: this.dotMessageService.get('Workflow-Action'),
+                        detail: this.dotMessageService.get(
+                            'editpage.language-change-missing-lang-populate.success',
+                            languageName
+                        ),
+                        life: 3000
+                    });
+
+                    this.uveStore.pageLoad({ language_id: newLanguage.toString() });
+                },
+                error: (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error);
+                    // On failure, return to the language we came from.
+                    this.#goBackToCurrentLanguage();
+                }
+            });
+    }
+
+    /**
+     * Build the new-version payload from the content type's actual field definitions.
+     *
+     * Copies each defined field's value from the source page, preserves `identifier`
+     * (so it is a new language version of the same content, not a new one) and
+     * overrides `languageId`. Layout/divider fields carry no value on the page object,
+     * so they are skipped naturally.
+     */
+    #buildTranslationData(
+        contentType: DotCMSContentType,
+        page: DotCMSPage,
+        newLanguage: number
+    ): Record<string, string> {
+        const source = page as unknown as Record<string, unknown>;
+        const data: Record<string, string> = {};
+
+        (contentType.fields ?? []).forEach((field) => {
+            const key = field.variable;
+
+            if (!key) {
+                return;
+            }
+
+            const value = source[key];
+
+            // Only copy primitive field values that exist on the source page.
+            if (value === null || value === undefined || typeof value === 'object') {
+                return;
+            }
+
+            data[key] = String(value);
+        });
+
+        data.identifier = page.identifier;
+        data.languageId = newLanguage.toString();
+        // Wait for the new version to be indexed before pageLoad re-checks the
+        // `translated` flag — otherwise indexing lag could re-trigger the effect.
+        data.indexPolicy = 'WAIT_FOR';
+
+        return data;
     }
 
     /**
