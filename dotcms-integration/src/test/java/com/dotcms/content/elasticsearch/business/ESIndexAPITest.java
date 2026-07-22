@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
@@ -51,6 +53,10 @@ public class ESIndexAPITest {
 
     @Test
     public void test_createIndex_newIndexShouldHaveProperReplicasSetting() throws IOException {
+        // ESIndexAPI + the raw ES client target the ES cluster, decommissioned under Phase 3
+        // (OS-only). Index creation / replica settings on OS are covered by the OSIndexAPIImpl ITs.
+        assumeFalse("ES index-management test skipped under Phase 3 (OS-only)",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
         final String newIndexName = "mynewindex" + UUID.randomUUID().toString().toLowerCase();
         try {
             esIndexAPI.createIndex(newIndexName);
@@ -274,6 +280,11 @@ public class ESIndexAPITest {
     @Test
     @UseDataProvider("testDeleteOldIndicesDP")
     public void testDeleteOldIndices(final int inactiveLiveWorkingSetsToKeep) throws DotIndexException, IOException, InterruptedException {
+        // ESIndexAPI retention (deleteInactiveLiveWorkingIndices /
+        // getLiveWorkingIndicesSortedByCreationDateDesc) operates on the ES cluster, decommissioned
+        // under Phase 3 (OS-only). OS index retention is covered by the OSIndexAPIImpl ITs.
+        assumeFalse("ES index-retention test skipped under Phase 3 (OS-only)",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
         // get live and working active indices
         final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
                 .getOrNull();
