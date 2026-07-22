@@ -42,6 +42,22 @@ public class FieldStrategyEscapingTest {
     }
 
     @Test
+    public void textEscapesTheFullLuceneOperatorSet() {
+        // Not just hyphens: slash, parentheses, colon (and the rest of the Lucene set) are escaped
+        // too. (`+`, `,`, `|` and whitespace are token delimiters, so they never reach escaping.)
+        assertEquals("+(SSS.text:*a\\/\\(b\\)\\:c* SSS.text_dotraw:*a\\/\\(b\\)\\:c*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "a/(b):c")));
+    }
+
+    @Test
+    public void textNeutralizesLuceneInjection() {
+        // A query-injection-flavored term is escaped to a literal — it can't break out of the
+        // wildcard into query operators.
+        assertEquals("+(SSS.text:*x\\\"\\)OR* SSS.text_dotraw:*x\\\"\\)OR*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "x\")OR")));
+    }
+
+    @Test
     public void textQuotedPhraseIsNotEscaped() {
         // An explicit quoted phrase keeps its exact-phrase behavior (delimiter is ", not *).
         assertEquals("+(SSS.text:\"a-b\" SSS.text_dotraw:\"a-b\")",
