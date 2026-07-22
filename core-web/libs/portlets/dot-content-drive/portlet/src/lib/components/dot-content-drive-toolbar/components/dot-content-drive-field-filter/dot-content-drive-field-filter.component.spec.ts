@@ -148,6 +148,29 @@ describe('DotContentDriveFieldFilterComponent', () => {
             expect(input?.getAttribute('inputmode')).toBe('decimal');
         });
 
+        it('should use a filename-specific placeholder for a Binary field', () => {
+            spectator.setInput('field', field({ fieldType: 'Binary' }));
+            spectator.detectChanges();
+            openPopover();
+
+            // MockDotMessageService echoes the key, so the resolved key is asserted directly.
+            const input = spectator.query(byTestId('field-filter-text'), { root: true });
+            expect(input?.getAttribute('placeholder')).toBe(
+                'content-drive.field-filter.binary.placeholder'
+            );
+        });
+
+        it('should use the generic placeholder for a text-fallback field without its own copy', () => {
+            spectator.setInput('field', field({ fieldType: 'Custom-Field' }));
+            spectator.detectChanges();
+            openPopover();
+
+            const input = spectator.query(byTestId('field-filter-text'), { root: true });
+            expect(input?.getAttribute('placeholder')).toBe(
+                'content-drive.field-filter.text.placeholder'
+            );
+        });
+
         describe('debounce', () => {
             beforeEach(() => jest.useFakeTimers());
             afterEach(() => jest.useRealTimers());

@@ -142,11 +142,15 @@ export const FIELD_FILTER_DATE_TIME_TYPE = 'Date-and-Time';
  * render the same `text` control here and filter as a single contains term against the field's
  * indexed value (JSON/Story-Block/Custom = full text, Binary = file name).
  */
+export const FIELD_FILTER_JSON_TYPE = 'JSON-Field';
+export const FIELD_FILTER_STORY_BLOCK_TYPE = 'Story-Block';
+export const FIELD_FILTER_CUSTOM_TYPE = 'Custom-Field';
+export const FIELD_FILTER_BINARY_TYPE = 'Binary';
 export const FIELD_FILTER_TEXT_FALLBACK_TYPES = [
-    'JSON-Field',
-    'Story-Block',
-    'Custom-Field',
-    'Binary'
+    FIELD_FILTER_JSON_TYPE,
+    FIELD_FILTER_STORY_BLOCK_TYPE,
+    FIELD_FILTER_CUSTOM_TYPE,
+    FIELD_FILTER_BINARY_TYPE
 ] as const;
 /**
  * Key/Value field. Rendered with a single input + a `key:value` shorthand; the value is stored as
