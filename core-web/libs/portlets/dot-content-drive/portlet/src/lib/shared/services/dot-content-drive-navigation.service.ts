@@ -2,7 +2,7 @@ import { EMPTY } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -17,6 +17,7 @@ import {
     DotCMSContentlet,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { EditContentDialogData } from '@dotcms/edit-content';
 import { mapQueryParamsToCDParams } from '@dotcms/utils';
 
 @Injectable({
@@ -28,6 +29,15 @@ export class DotContentDriveNavigationService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+
+    readonly #editPanelRequest = signal<EditContentDialogData | null>(null);
+
+    /**
+     * The content to show in the Edit Content side panel, or `null` when it is closed. Set when
+     * the new editor should open for a content type/inode (instead of navigating to the
+     * full-screen route); the shell renders the panel while this is set.
+     */
+    readonly editPanelRequest = this.#editPanelRequest.asReadonly();
     /**
      * Navigates to the appropriate editor based on the content type.
      * Routes to the page editor for HTML pages, or the contentlet editor for other types.
@@ -106,14 +116,20 @@ export class DotContentDriveNavigationService {
                     return;
                 }
 
-                // The new content editor owns its own close/back navigation, so — like the edit
-                // flow (#editContentlet) — it does not need the CD_-prefixed return params that
-                // only the legacy editor's onClose consumes. It pre-selects the Host/Folder field
-                // from the `folderPath` query param (see hostFolderResolutionFn in edit-content).
-                this.#router.navigate([`content/new/${contentTypeVariable}`], {
-                    queryParams: folder.folderPath ? { folderPath: folder.folderPath } : {}
+                // New editor: open it in a side panel over Content Drive instead of navigating.
+                // Forward `folderPath` so the content is created in the folder being browsed.
+                this.#editPanelRequest.set({
+                    mode: 'new',
+                    contentTypeId: contentTypeVariable,
+                    folderPath: folder.folderPath,
+                    title: contentType.name
                 });
             });
+    }
+
+    /** Closes the Edit Content side panel. */
+    closeEditPanel(): void {
+        this.#editPanelRequest.set(null);
     }
 
     /**
@@ -142,16 +158,20 @@ export class DotContentDriveNavigationService {
                 const shouldRedirectToOldContentEditor =
                     !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
 
-                const mappedQueryParams = mapQueryParamsToCDParams(currentQueryParams);
-
                 if (shouldRedirectToOldContentEditor) {
+                    const mappedQueryParams = mapQueryParamsToCDParams(currentQueryParams);
                     this.#router.navigate([`c/content/${contentlet.inode}`], {
                         queryParams: mappedQueryParams
                     });
                     return;
                 }
 
-                this.#router.navigate([`content/${contentlet.inode}`]);
+                // New editor: open it in a side panel over Content Drive instead of navigating.
+                this.#editPanelRequest.set({
+                    mode: 'edit',
+                    contentletInode: contentlet.inode,
+                    title: contentlet.title
+                });
             });
     }
 }

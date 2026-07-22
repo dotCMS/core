@@ -115,3 +115,13 @@
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
 <input type="file" (change)="onFileChange($event)" #fileInput hidden />
+
+<!-- Edit Content side panel: opens the new editor over Content Drive instead of navigating away.
+     Mounted only while a content is requested, so each open is a fresh editor. -->
+@if ($editPanelRequest(); as data) {
+    <dot-edit-content-side-panel
+        data-testId="edit-content-side-panel"
+        [data]="data"
+        (saved)="onEditPanelSaved()"
+        (closed)="onEditPanelClosed()" />
+}

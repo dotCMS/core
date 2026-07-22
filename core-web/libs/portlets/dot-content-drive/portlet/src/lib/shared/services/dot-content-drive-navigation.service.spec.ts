@@ -97,10 +97,11 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('should navigate to new content editor when feature flag is enabled', () => {
+        it('should open the new editor side panel when feature flag is enabled', () => {
             const mockContentlet = createFakeContentlet({
                 contentType: 'blog',
-                inode: 'test-inode-123'
+                inode: 'test-inode-123',
+                title: 'My Blog Post'
             });
 
             const mockContentType = createFakeContentType({
@@ -114,7 +115,12 @@ describe('DotContentDriveNavigationService', () => {
             service.editContent(mockContentlet);
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(router.navigate).toHaveBeenCalledWith(['content/test-inode-123']);
+            expect(service.editPanelRequest()).toEqual({
+                mode: 'edit',
+                contentletInode: 'test-inode-123',
+                title: 'My Blog Post'
+            });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should navigate to old content editor when feature flag is disabled', () => {
@@ -225,7 +231,7 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     describe('createContent', () => {
-        it('should navigate to new content editor (empty query params) when feature flag is enabled and no folder given', () => {
+        it('should open the new editor side panel when feature flag is enabled and no folder given', () => {
             const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
@@ -237,12 +243,16 @@ describe('DotContentDriveNavigationService', () => {
             service.createContent('blog');
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
-                queryParams: {}
+            expect(service.editPanelRequest()).toEqual({
+                mode: 'new',
+                contentTypeId: 'blog',
+                folderPath: undefined,
+                title: 'Blog'
             });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
-        it('should forward folderPath to the new content editor so it is created in the current folder', () => {
+        it('should forward folderPath to the new editor side panel so it is created in the current folder', () => {
             const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
@@ -253,9 +263,13 @@ describe('DotContentDriveNavigationService', () => {
 
             service.createContent('blog', { folderPath: 'demo.dotcms.com/about-us/' });
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
-                queryParams: { folderPath: 'demo.dotcms.com/about-us/' }
+            expect(service.editPanelRequest()).toEqual({
+                mode: 'new',
+                contentTypeId: 'blog',
+                folderPath: 'demo.dotcms.com/about-us/',
+                title: 'Blog'
             });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should navigate to legacy content editor with mapped CD_ params when feature flag is disabled', () => {

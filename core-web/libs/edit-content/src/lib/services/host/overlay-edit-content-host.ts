@@ -64,7 +64,8 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
         return {
             inode: data?.contentletInode,
-            contentTypeId: data?.contentTypeId
+            contentTypeId: data?.contentTypeId,
+            folderPath: data?.folderPath
         };
     }
 

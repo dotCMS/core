@@ -35,6 +35,7 @@ import {
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
+import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
 import {
     DotFolderListViewComponent,
     DotContentDriveUploadFiles,
@@ -87,7 +88,8 @@ import { encodeFilters, isFolder } from '../utils/functions';
         MessageModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
-        DotSeverityIconComponent
+        DotSeverityIconComponent,
+        DotEditContentSidePanelComponent
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -108,6 +110,9 @@ export class DotContentDriveShellComponent {
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+
+    /** Edit Content side panel request, driven by the navigation service; read by the template. */
+    protected readonly $editPanelRequest = this.#navigationService.editPanelRequest;
 
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
@@ -357,6 +362,16 @@ export class DotContentDriveShellComponent {
      */
     protected onDialogHidden() {
         this.$activeDialog.set(undefined);
+    }
+
+    /** Closes the Edit Content side panel. */
+    protected onEditPanelClosed() {
+        this.#navigationService.closeEditPanel();
+    }
+
+    /** A save in the side panel can create or change an item, so refresh the list. */
+    protected onEditPanelSaved() {
+        this.#store.reloadContentDrive();
     }
 
     /**
