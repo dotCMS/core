@@ -1438,14 +1438,9 @@ public class FieldAPITest extends IntegrationTestBase {
 
             // Resolve the active index names through the phase-aware getter: loadIndicies() reports
             // the ES store, empty under Phase 3 (OS-only), so getWorking()/getLive() return null.
-            // getActiveIndexName returns the logical (cluster-prefix-stripped) name, so re-add the
-            // prefix — getFieldMappingAsMap's ES path uses the index name as-is (the OS path
-            // re-normalizes, so the prefixed name is accepted in every phase).
             final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
-            final String workingIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(
-                    contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()));
-            final String liveIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(
-                    contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix()));
+            final String workingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+            final String liveIndex = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
@@ -1493,14 +1488,9 @@ public class FieldAPITest extends IntegrationTestBase {
 
             // Resolve the active index names through the phase-aware getter: loadIndicies() reports
             // the ES store, empty under Phase 3 (OS-only), so getWorking()/getLive() return null.
-            // getActiveIndexName returns the logical (cluster-prefix-stripped) name, so re-add the
-            // prefix — getFieldMappingAsMap's ES path uses the index name as-is (the OS path
-            // re-normalizes, so the prefixed name is accepted in every phase).
             final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
-            final String workingIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(
-                    contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()));
-            final String liveIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(
-                    contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix()));
+            final String workingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+            final String liveIndex = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
@@ -1556,14 +1546,9 @@ public class FieldAPITest extends IntegrationTestBase {
 
             // Resolve the active index names through the phase-aware getter: loadIndicies() reports
             // the ES store, empty under Phase 3 (OS-only), so getWorking()/getLive() return null.
-            // getActiveIndexName returns the logical (cluster-prefix-stripped) name, so re-add the
-            // prefix — getFieldMappingAsMap's ES path uses the index name as-is (the OS path
-            // re-normalizes, so the prefixed name is accepted in every phase).
             final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
-            final String workingIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(
-                    contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()));
-            final String liveIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(
-                    contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix()));
+            final String workingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+            final String liveIndex = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
