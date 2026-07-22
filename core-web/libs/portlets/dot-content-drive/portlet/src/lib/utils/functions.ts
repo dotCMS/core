@@ -480,9 +480,12 @@ export function parseUserSearchableValue(
  * Translates a Key/Value filter input into the term the backend contains-matches against the
  * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`).
  *
+ * The term is lowercased to match the indexed `.key_value` sub-field, which dotCMS stores as
+ * `(key + "_" + value).toLowerCase()` — so `Color:Red` matches the same content as `color:red`.
+ *
  * Shorthand rules (the **first** colon is the key/value separator — everything after it is the
  * value, so a value may itself contain colons):
- * - `key:value`         → `key_value`           (exact-pair match; e.g. `deploy:https://x` → `deploy_https://x`)
+ * - `key:value`         → `key_value`           (exact-pair match; e.g. `Deploy:HTTPS://x` → `deploy_https://x`)
  * - `key:` / `:value`   → `key` / `value`       (only the filled side)
  * - bare term (no `:`)  → the term              (loose match on a key OR a value)
  *
@@ -504,19 +507,21 @@ function toKeyValueTerm(raw: string): string | undefined {
 
     // Split on the FIRST colon only, so a value may contain further colons (e.g. `key:12:30`).
     const separator = trimmed.indexOf(':');
+    // The index stores `.key_value` as `(key + "_" + value).toLowerCase()`, so the term is
+    // lowercased to match regardless of the case the user typed (e.g. `Color:Red` → `color_red`).
     if (separator === -1) {
-        return trimmed;
+        return trimmed.toLowerCase();
     }
 
     const key = trimmed.slice(0, separator).trim();
     const value = trimmed.slice(separator + 1).trim();
 
     if (key && value) {
-        return `${key}_${value}`;
+        return `${key}_${value}`.toLowerCase();
     }
 
     // Only one side of the `key:value` was filled — match on whichever is present.
-    return key || value || undefined;
+    return (key || value).toLowerCase() || undefined;
 }
 
 /** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */

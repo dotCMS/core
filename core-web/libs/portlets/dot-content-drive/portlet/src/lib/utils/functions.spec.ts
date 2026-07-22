@@ -926,6 +926,14 @@ describe('User-searchable field helpers', () => {
                 expect(parseUserSearchableValue('start:12:30', 'Key-Value')).toBe('start_12:30');
             });
 
+            it('should lowercase the term to match the lowercased .key_value index', () => {
+                // The index stores (key + "_" + value).toLowerCase(); the FE-typed case must not
+                // cause a miss.
+                expect(parseUserSearchableValue('Color:Red', 'Key-Value')).toBe('color_red');
+                expect(parseUserSearchableValue('COLOR_RED', 'Key-Value')).toBe('color_red');
+                expect(parseUserSearchableValue('Blue', 'Key-Value')).toBe('blue');
+            });
+
             it('should return undefined for an empty value', () => {
                 expect(parseUserSearchableValue('', 'Key-Value')).toBeUndefined();
                 expect(parseUserSearchableValue('   ', 'Key-Value')).toBeUndefined();

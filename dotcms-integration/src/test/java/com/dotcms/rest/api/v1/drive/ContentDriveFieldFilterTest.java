@@ -174,14 +174,16 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
 
         angularWithTags = new ContentletDataGen(typeWithFields.id())
                 .setProperty("title", "Angular with tags " + uniqueId)
-                .setProperty(TEXT_VAR, "angular")
+                // Hyphenated text value — exercises special-char escaping end-to-end on a Text field.
+                .setProperty(TEXT_VAR, "angular-cms")
                 .setProperty(TAG_VAR, "angular,cms")
                 .setProperty(DATE_VAR, date(2024))
                 .setProperty(MULTI_VAR, "news")
                 .setProperty(BOOL_VAR, "true")
-                .setProperty(JSON_VAR, "{\"env\":\"prod\",\"sku\":\"ab-cd\"}")
+                .setProperty(JSON_VAR, "{\"env\":\"prod\"}")
                 .setProperty(CUSTOM_VAR, "alpha")
-                .setProperty(KV_VAR, "{\"color\":\"red\"}")
+                // Mixed-case key/value — the index lowercases it to `color_red`.
+                .setProperty(KV_VAR, "{\"Color\":\"Red\"}")
                 .setProperty(STORY_VAR, story("launch announcement"))
                 .setProperty(BINARY_VAR, binaryFile)
                 .folder(testFolder)
@@ -548,21 +550,22 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     }
 
     /**
-     * A filter term containing a Lucene special character (a hyphen) must be escaped so it doesn't
-     * break query parsing — the search runs and matches via the escaped term (against {@code
-     * _dotraw}) instead of erroring. angularWithTags's JSON carries {@code "sku":"ab-cd"}.
+     * A Text-field filter term containing a Lucene special character (a hyphen) must be escaped so
+     * it doesn't break query parsing — the search runs and matches the value via the escaped term
+     * (against {@code _dotraw}) instead of erroring. angularWithTags's Text value is
+     * {@code "angular-cms"}; angularNoTags's is the plain {@code "angular"}.
      */
     @Test
     public void testHyphenatedTermIsEscapedAndMatches()
             throws DotDataException, DotSecurityException {
         final Set<String> inodes = driveInodes(baseRequest()
-                .userSearchable(Map.of(JSON_VAR, "ab-cd"))
+                .userSearchable(Map.of(TEXT_VAR, "angular-cms"))
                 .build());
-        assertTrue("hyphenated 'ab-cd' must match the JSON that contains it",
+        assertTrue("hyphenated 'angular-cms' must match the text that equals it",
                 inodes.contains(angularWithTags.getInode()));
-        assertFalse("item without that value must not match", inodes.contains(reactWithVue.getInode()));
-        assertFalse("item without a JSON value must not match",
+        assertFalse("plain 'angular' text must not match 'angular-cms'",
                 inodes.contains(angularNoTags.getInode()));
+        assertFalse("unrelated 'react' text must not match", inodes.contains(reactWithVue.getInode()));
     }
 
     /**
@@ -582,11 +585,13 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     /**
      * Key/Value field: the FE sends the joined {@code key_value} term for an exact-pair match, or a
      * bare term for a loose match against the indexed {@code .key_value} sub-field (stored as
-     * {@code (key + "_" + value).toLowerCase()}). Angular=red, React=blue.
+     * {@code (key + "_" + value).toLowerCase()}). Angular's pair is stored mixed-case
+     * ({@code "Color":"Red"}) but the index lowercases it, so the lowercase {@code color_red} term
+     * the FE sends still matches — covering the mixed-case path. React=blue.
      */
     @Test
     public void testKeyValueFieldFiltersExactPairAndLoose() throws DotDataException, DotSecurityException {
-        // Exact pair: `color_red` matches only the red item.
+        // Exact pair: `color_red` matches the mixed-case-stored red item (index lowercased it).
         final Set<String> exact = driveInodes(baseRequest()
                 .userSearchable(Map.of(KV_VAR, "color_red")).build());
         assertTrue("color_red must match the red item", exact.contains(angularWithTags.getInode()));
