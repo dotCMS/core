@@ -376,6 +376,13 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                 final org.opensearch.client.opensearch.core.DeleteByQueryRequest deleteByQuery =
                         org.opensearch.client.opensearch.core.DeleteByQueryRequest.of(r -> r
                                 .index(physical)
+                                // Proceed past version conflicts instead of aborting: a document
+                                // updated concurrently (e.g. just published) would otherwise return
+                                // HTTP 409 version_conflict_engine_exception and fail the whole
+                                // content-type removal, which callers swallow — orphaning downstream
+                                // cleanup (e.g. the unique_fields table). Matches ES delete_by_query
+                                // tolerance and keeps the operation best-effort.
+                                .conflicts(org.opensearch.client.opensearch._types.Conflicts.Proceed)
                                 .query(q -> q.queryString(
                                         QueryStringQuery.of(qs -> qs.query(
                                                 "contenttype:" + structureName.toLowerCase())))));
