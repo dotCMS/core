@@ -14,12 +14,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <node.js.version>v22.22.3</node.js.version>
         <pnpm.version>10.17.1</pnpm.version>
-        <!-- Yarn is kept ONLY for the legacy e2e/dotcms-e2e-node module, which is
-             being sunset in favor of the e2e app in core-web/apps/dotcms-ui-e2e.
-             core-web, dotcms-ui-e2e and dotcms-postman all use pnpm. Remove this
-             yarn provisioning (property + install-node-and-yarn execution below)
-             once e2e/dotcms-e2e-node is deleted. -->
-        <yarn.version>v1.22.19</yarn.version>
         <node.install.dir>${maven.multiModuleProjectDirectory}/installs/node</node.install.dir>
     </properties>
     <build>
@@ -31,24 +25,12 @@
                     <workingDirectory>${project.basedir}</workingDirectory>
                     <installDirectory>${maven.multiModuleProjectDirectory}/installs</installDirectory>
                     <nodeVersion>${node.js.version}</nodeVersion>
-                    <yarnVersion>${yarn.version}</yarnVersion>
                 </configuration>
                 <executions>
                     <execution>
                         <id>install node and npm</id>
                         <goals>
                             <goal>install-node-and-npm</goal>
-                        </goals>
-                        <phase>validate</phase>
-                    </execution>
-                    <!-- Yarn is still required only by the legacy e2e/dotcms-e2e-node
-                         module (being sunset in favor of core-web/apps/dotcms-ui-e2e).
-                         Node is already installed by the previous execution so this only
-                         adds yarn to installs/node/yarn. Drop this once that module is gone. -->
-                    <execution>
-                        <id>install node and yarn</id>
-                        <goals>
-                            <goal>install-node-and-yarn</goal>
                         </goals>
                         <phase>validate</phase>
                     </execution>
