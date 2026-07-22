@@ -442,9 +442,6 @@ test.describe('New Content Disabled (No New Editor)', () => {
 // ─── Menu Disabled in Single Mode (Item Already Exists) ─────────
 
 test.describe('Menu Disabled When Single Item Exists', () => {
-    // Serial: beforeEach shares mutable `let` vars across tests.
-    test.describe.configure({ mode: 'serial' });
-
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 

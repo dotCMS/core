@@ -15,9 +15,6 @@ import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fix
 // Published -> severity `success` -> class `p-tag-success`.
 
 test.describe('Status & Locale Chips', () => {
-    // Serial: beforeEach shares mutable `let` vars across tests.
-    test.describe.configure({ mode: 'serial' });
-
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 

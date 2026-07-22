@@ -1,5 +1,7 @@
 # End-to-End (E2E) Tests
 
+> **Canonical Playwright suite:** [`core-web/apps/dotcms-ui-e2e/`](../../core-web/apps/dotcms-ui-e2e/) (Nx). CI uses `workers: 2` when `CI=true`. Serial describe blocks and parallelism: [E2E_SERIAL_PARALLELISM.md](./E2E_SERIAL_PARALLELISM.md). The legacy `e2e/dotcms-e2e-node/` tree is deprecated.
+
 ## Overview
 
 dotCMS E2E tests validate complete user workflows across the entire application stack. The project includes both modern Playwright-based tests and legacy Selenium tests, with Playwright being the preferred approach for new test development.

@@ -8,8 +8,6 @@ import { test } from '../../../../fixtures/host-folder.fixture';
  * Journey 3: Nested Folder Context Pre-fill
  */
 test.describe('Nested Folder Pre-fill', () => {
-    test.describe.configure({ mode: 'serial' });
-
     let contentTypeVariable: string;
     let siteName: string;
     let folder1Name: string;
