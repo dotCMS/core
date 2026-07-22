@@ -33,16 +33,6 @@ interface DotAppsListState {
     displayedApps: DotApp[];
 }
 
-/**
- * App keys whose config is edited through a dedicated portlet rather than the
- * generic Apps UI. The cards are hidden from the grid; navigation to
- * `/apps/<key>` is separately redirected by {@link dotAppsSamlRedirectGuard}.
- */
-const HIDDEN_APP_KEYS: ReadonlySet<string> = new Set(['dotsaml-config']);
-
-const withoutHiddenApps = (apps: DotApp[]): DotApp[] =>
-    apps.filter((app) => !HIDDEN_APP_KEYS.has(app.key));
-
 @Component({
     selector: 'dot-apps-list',
     templateUrl: './dot-apps-list.component.html',
@@ -135,7 +125,7 @@ export class DotAppsListComponent implements AfterViewInit {
     private initAppsState(apps: DotApp[]): void {
         patchState(this.state, {
             allApps: apps,
-            displayedApps: withoutHiddenApps(apps)
+            displayedApps: apps
         });
 
         this.attachFilterEvents();
@@ -160,7 +150,7 @@ export class DotAppsListComponent implements AfterViewInit {
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((apps: DotApp[]) => {
                 patchState(this.state, {
-                    displayedApps: withoutHiddenApps(apps)
+                    displayedApps: apps
                 });
             });
     }
