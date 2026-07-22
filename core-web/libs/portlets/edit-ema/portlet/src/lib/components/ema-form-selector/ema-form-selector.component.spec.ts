@@ -97,7 +97,7 @@ describe('EmaFormSelectorComponent', () => {
     });
 
     it('should call getContentTypesWithPagination with filter after debounce', () => {
-        const service = spectator.inject(DotContentTypeService);
+        const service = spectator.debugElement.injector.get(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockClear();
         spectator.component.searchControl.setValue('test form');
         jest.advanceTimersByTime(300);
@@ -107,7 +107,7 @@ describe('EmaFormSelectorComponent', () => {
     });
 
     it('should reset to page 1 and re-fetch when search changes', () => {
-        const service = spectator.inject(DotContentTypeService);
+        const service = spectator.debugElement.injector.get(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockClear();
         spectator.component.searchControl.setValue('form');
         jest.advanceTimersByTime(300);
@@ -121,7 +121,7 @@ describe('EmaFormSelectorComponent', () => {
     });
 
     it('should show empty state when no forms are returned', () => {
-        const service = spectator.inject(DotContentTypeService);
+        const service = spectator.debugElement.injector.get(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockReturnValue(
             of({ contentTypes: [], pagination: { totalEntries: 0, currentPage: 1, perPage: 40 } })
         );
@@ -131,7 +131,7 @@ describe('EmaFormSelectorComponent', () => {
     });
 
     it('should fetch page 2 and update $first when paginator changes', () => {
-        const service = spectator.inject(DotContentTypeService);
+        const service = spectator.debugElement.injector.get(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockClear();
         spectator.component['onPageChange']({ page: 1, first: 40, rows: 40, pageCount: 3 });
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
@@ -141,7 +141,7 @@ describe('EmaFormSelectorComponent', () => {
     });
 
     it('should handle HTTP errors without terminating the stream', () => {
-        const service = spectator.inject(DotContentTypeService);
+        const service = spectator.debugElement.injector.get(DotContentTypeService);
         const errorManager = spectator.inject(DotHttpErrorManagerService);
         (service.getContentTypesWithPagination as jest.Mock).mockReturnValue(
             throwError(() => new Error('Network error'))
