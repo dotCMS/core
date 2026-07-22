@@ -35,6 +35,7 @@
 </p-table>
 <p-paginator
     [rows]="perPage"
+    [first]="$first()"
     [totalRecords]="$totalRecords()"
     (onPageChange)="onPageChange($event)"
     data-testid="form-paginator" />

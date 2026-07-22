@@ -1,5 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { of, throwError } from 'rxjs';
 
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -10,7 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaFormSelectorComponent } from './ema-form-selector.component';
@@ -51,7 +51,8 @@ describe('EmaFormSelectorComponent', () => {
                             of({ contentTypes: mockForms, pagination: mockPagination })
                         )
                 }
-            }
+            },
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
@@ -119,5 +120,34 @@ describe('EmaFormSelectorComponent', () => {
         spectator.component['fetch$'].next();
         spectator.detectChanges();
         expect(spectator.query('td[colspan="3"]')).not.toBeNull();
+    });
+
+    it('should fetch page 2 and update $first when paginator changes', () => {
+        const service = spectator.inject(DotContentTypeService);
+        (service.getContentTypesWithPagination as jest.Mock).mockClear();
+        spectator.component.onPageChange({ page: 1, first: 40, rows: 40, pageCount: 3 });
+        expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
+            expect.objectContaining({ page: 2 })
+        );
+        expect(spectator.component['$first']()).toBe(40);
+    });
+
+    it('should handle HTTP errors without terminating the stream', () => {
+        const service = spectator.inject(DotContentTypeService);
+        const errorManager = spectator.inject(DotHttpErrorManagerService);
+        (service.getContentTypesWithPagination as jest.Mock).mockReturnValue(
+            throwError(() => new Error('Network error'))
+        );
+        spectator.component['fetch$'].next();
+        spectator.detectChanges();
+        expect(errorManager.handle).toHaveBeenCalled();
+
+        // Stream must still be alive: a subsequent fetch with a good response should work
+        (service.getContentTypesWithPagination as jest.Mock).mockReturnValue(
+            of({ contentTypes: mockForms, pagination: mockPagination })
+        );
+        spectator.component['fetch$'].next();
+        spectator.detectChanges();
+        expect(spectator.component['$forms']()).toEqual(mockForms);
     });
 });
