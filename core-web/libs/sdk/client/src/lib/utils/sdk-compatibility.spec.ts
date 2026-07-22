@@ -1,4 +1,8 @@
-import { checkSdkCompatibility, compareVersions, resetSdkCompatibilityWarnings } from './sdk-compatibility';
+import {
+    checkSdkCompatibility,
+    compareVersions,
+    resetSdkCompatibilityWarnings
+} from './sdk-compatibility';
 
 describe('compareVersions', () => {
     it('returns 0 for equal versions', () => {

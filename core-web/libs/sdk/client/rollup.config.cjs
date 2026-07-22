@@ -48,7 +48,9 @@ function sdkVersionPlugin() {
                 return null;
             }
 
-            const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'));
+            const pkg = JSON.parse(
+                fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')
+            );
 
             return `export const SDK_VERSION = ${JSON.stringify(pkg.version)};`;
         }
