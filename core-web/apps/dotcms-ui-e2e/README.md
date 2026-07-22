@@ -1,6 +1,6 @@
 # dotCMS UI E2E Tests
 
-Browser end-to-end tests for the dotCMS admin UI. This is the **canonical** E2E suite — Playwright, Nx, and **pnpm**. The legacy suite at `e2e/dotcms-e2e-node` is deprecated and will be removed; do not add tests there.
+Browser end-to-end tests for the dotCMS admin UI. This is the **canonical** E2E suite — Playwright, Nx, and **pnpm**.
 
 ## Prerequisites
 
