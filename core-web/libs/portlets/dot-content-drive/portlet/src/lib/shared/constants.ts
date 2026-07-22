@@ -17,6 +17,20 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     offset: 0
 };
 
+/**
+ * Page size used when loading the initial folder hierarchy (deep-link restore) via
+ * `GET /api/v1/folder/search`. Each ancestor level of the target path is fetched in full so the
+ * selected folder is always present and the tree can expand to it. Matches the backend's
+ * `SUB_FOLDER_UNLIMITED_SAFETY_CAP` (10000) — the ceiling the server itself enforces.
+ */
+export const FOLDER_TREE_SEARCH_PAGE_SIZE = 10000;
+
+/**
+ * Page size used when a user expands a folder node. Children load one page at a time; if more
+ * remain, a "Load more" node is appended so the DOM stays bounded on large levels.
+ */
+export const FOLDER_TREE_PAGE_SIZE = 50;
+
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC

@@ -21,10 +21,12 @@ import {
     DotContentDriveMoveItems,
     DotContentDriveUploadFiles,
     DotFolderTreeNodeItem,
-    DotTreeFolderComponent
+    DotTreeFolderComponent,
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { buildLoadMoreNode } from '../../utils/functions';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
@@ -120,13 +122,103 @@ export class DotContentDriveSidebarComponent {
         }
 
         node.loading = true;
-        this.#store.loadChildFolders(path, hostname).subscribe(({ folders }) => {
+        this.#store.loadChildFolders(path, hostname).subscribe(({ folders, totalEntries }) => {
             node.loading = false;
             node.expanded = true;
             node.leaf = folders.length === 0;
-            node.children = [...folders];
+            // First page; append a "Load more" node if the level has more children than this page.
+            node.children = this.#appendLoadMore(folders, totalEntries, path, hostname, 2);
             this.#store.updateFolders([...this.$folders()]);
         });
+    }
+
+    /**
+     * Loads the next page of children for a folder level when its "Load more" node is clicked,
+     * appending them and refreshing (or removing) the "Load more" node.
+     *
+     * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
+     */
+    protected onLoadMore(node: DotFolderTreeNodeItem): void {
+        const { path, hostname, nextPage } = node.data;
+
+        node.loading = true;
+        this.#store.updateFolders([...this.$folders()]);
+
+        this.#store
+            .loadChildFolders(path, hostname, nextPage)
+            .subscribe(({ folders, totalEntries }) => {
+                const parent = this.#findNodeByPath(path, this.$folders());
+                if (!parent) {
+                    return;
+                }
+
+                // Keep the already-loaded folders, drop the old "Load more", append the new page.
+                const loaded = (parent.children ?? []).filter(
+                    (child) => child.data.type !== LOAD_MORE_NODE_TYPE
+                );
+                const combined = [...loaded, ...folders];
+
+                parent.children = this.#appendLoadMore(
+                    combined,
+                    totalEntries,
+                    path,
+                    hostname,
+                    (nextPage ?? 1) + 1
+                );
+                this.#store.updateFolders([...this.$folders()]);
+            });
+    }
+
+    /**
+     * Appends a "Load more" node to a level's children when more folders remain to be loaded.
+     *
+     * @param {DotFolderTreeNodeItem[]} children - The child folder nodes loaded so far
+     * @param {number} totalEntries - Total number of folders in the level
+     * @param {string} path - Full path of the parent folder
+     * @param {string} hostname - Hostname of the site
+     * @param {number} nextPage - The next 1-based page to request
+     * @returns {DotFolderTreeNodeItem[]} children, plus a "Load more" node when more remain
+     */
+    #appendLoadMore(
+        children: DotFolderTreeNodeItem[],
+        totalEntries: number,
+        path: string,
+        hostname: string,
+        nextPage: number
+    ): DotFolderTreeNodeItem[] {
+        if (children.length >= totalEntries) {
+            return [...children];
+        }
+
+        return [
+            ...children,
+            buildLoadMoreNode(path, hostname, nextPage, totalEntries - children.length)
+        ];
+    }
+
+    /**
+     * Depth-first search for the folder node with the given path (ignoring "Load more" nodes).
+     *
+     * @param {string} path - Folder path to find
+     * @param {DotFolderTreeNodeItem[]} nodes - Nodes to search
+     * @returns {DotFolderTreeNodeItem | undefined} the matching node, if any
+     */
+    #findNodeByPath(
+        path: string,
+        nodes: DotFolderTreeNodeItem[]
+    ): DotFolderTreeNodeItem | undefined {
+        for (const node of nodes) {
+            if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data?.path === path) {
+                return node;
+            }
+
+            const found = node.children ? this.#findNodeByPath(path, node.children) : undefined;
+            if (found) {
+                return found;
+            }
+        }
+
+        return undefined;
     }
 
     /**
