@@ -1,4 +1,13 @@
-<p-table [value]="data | async" [tableStyle]="{ 'min-width': '100%' }">
+<p-iconField>
+    <p-inputIcon styleClass="pi pi-search" />
+    <input
+        pInputText
+        type="text"
+        [placeholder]="'search' | dm"
+        [formControl]="searchControl"
+        data-testid="form-search-input" />
+</p-iconField>
+<p-table [value]="$forms()" [tableStyle]="{ 'min-width': '100%' }">
     <ng-template pTemplate="header">
         <tr>
             <th id="name">{{ 'name' | dm }}</th>
@@ -18,4 +27,14 @@
             </td>
         </tr>
     </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="3">{{ 'No-Results-Found' | dm }}</td>
+        </tr>
+    </ng-template>
 </p-table>
+<p-paginator
+    [rows]="perPage"
+    [totalRecords]="$totalRecords()"
+    (onPageChange)="onPageChange($event)"
+    data-testid="form-paginator" />
