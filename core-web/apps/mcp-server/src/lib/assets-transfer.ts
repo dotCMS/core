@@ -182,18 +182,26 @@ export async function uploadAssets(options: {
         );
     }
 
-    const localFiles = await collectLocalFiles(src, options.include);
+    const { files: localFiles, totalSeen } = await collectLocalFiles(src, options.include);
     const files: AssetManifestFile[] = [];
     const failures: AssetManifestFailure[] = [];
     const skipped: AssetManifestSkipped[] = [];
     const warnings: string[] = [];
 
     if (localFiles.length === 0) {
-        warnings.push(
-            options.include
-                ? `No files under "${src}" matched the include filter "${options.include}".`
-                : `No files found under "${src}".`
-        );
+        if (options.include && totalSeen > 0) {
+            // The source dir is NOT empty — the include pattern is the problem. Say so distinctly so
+            // this never reads as "nothing to upload" in an unattended run. The matcher supports
+            // *, ? , ** globstar, and {a,b,c} brace expansion, all relative to `src`.
+            warnings.push(
+                `Include pattern "${options.include}" matched 0 of ${totalSeen} file(s) under ` +
+                    `"${src}" — check the glob syntax. Patterns are relative to the source dir and ` +
+                    `support *, ?, ** (globstar), and {png,webp,jpg} brace expansion (e.g. ` +
+                    `"*.{png,webp,jpg}" or "**/*.png"). Nothing was uploaded.`
+            );
+        } else {
+            warnings.push(`No files found under "${src}".`);
+        }
     }
 
     for (const file of localFiles) {
@@ -383,9 +391,19 @@ async function isLive(dotcms: DotCMSRuntime, identifier: string): Promise<boolea
     return contentlet?.live === true;
 }
 
-async function collectLocalFiles(src: string, include?: string): Promise<LocalFile[]> {
+/**
+ * Walk `src` and return the files matching `include` (all files when no `include`), plus
+ * `totalSeen` — the count of files present regardless of the filter. `totalSeen` lets the caller
+ * distinguish "the source dir is empty" from "your include pattern matched none of N real files",
+ * so a mistyped glob is reported as a syntax problem instead of silent success.
+ */
+async function collectLocalFiles(
+    src: string,
+    include?: string
+): Promise<{ files: LocalFile[]; totalSeen: number }> {
     const matches = includeMatcher(include);
     const files: LocalFile[] = [];
+    let totalSeen = 0;
 
     async function walk(dir: string) {
         for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -400,6 +418,8 @@ async function collectLocalFiles(src: string, include?: string): Promise<LocalFi
                 continue;
             }
 
+            totalSeen++;
+
             const rel = relative(src, abs).split(sep).join(posix.sep);
             if (!matches(rel)) {
                 continue;
@@ -412,7 +432,7 @@ async function collectLocalFiles(src: string, include?: string): Promise<LocalFi
 
     await walk(src);
 
-    return files.sort((a, b) => a.rel.localeCompare(b.rel));
+    return { files: files.sort((a, b) => a.rel.localeCompare(b.rel)), totalSeen };
 }
 
 function normalizeDotCMSPath(input: string): { siteQualified?: string; path: string } {
@@ -521,13 +541,51 @@ function safeJoin(root: string, rel: string): string {
     return output;
 }
 
-function includeMatcher(include?: string): (rel: string) => boolean {
-    const patterns = include
-        ?.split(',')
-        .map((pattern) => pattern.trim())
-        .filter(Boolean);
+/**
+ * Split an `include` string into its comma-separated patterns — but NOT on commas inside a brace
+ * group, so `*.{png,webp,jpg}` stays one pattern while `*.vtl,*.scss` is two. Exported for tests.
+ */
+export function splitIncludePatterns(include?: string): string[] {
+    if (!include) {
+        return [];
+    }
+    const patterns: string[] = [];
+    let current = '';
+    let braceDepth = 0;
+    for (const ch of include) {
+        if (ch === '{') {
+            braceDepth++;
+            current += ch;
+        } else if (ch === '}') {
+            braceDepth = Math.max(0, braceDepth - 1);
+            current += ch;
+        } else if (ch === ',' && braceDepth === 0) {
+            patterns.push(current);
+            current = '';
+        } else {
+            current += ch;
+        }
+    }
+    patterns.push(current);
+    return patterns.map((p) => p.trim()).filter(Boolean);
+}
 
-    if (!patterns?.length) {
+/**
+ * Build a matcher over relative POSIX paths from a comma-separated `include` string. A file matches
+ * if it matches ANY pattern. No `include` → matches everything. Exported for tests.
+ *
+ * Supports the glob features callers reasonably assume from a standard glob:
+ *   - `*`  matches any run of chars WITHIN a path segment (does not cross `/`)
+ *   - `**` matches across segments, including zero (so a leading globstar also matches a top-level file)
+ *   - `?`  matches a single non-`/` char
+ *   - `{png,webp,jpg}` brace expansion (alternation)
+ * A pattern with no `/` matches the file's basename anywhere in the tree; a pattern with a `/` is
+ * anchored at the root of `src`.
+ */
+export function includeMatcher(include?: string): (rel: string) => boolean {
+    const patterns = splitIncludePatterns(include);
+
+    if (!patterns.length) {
         return () => true;
     }
 
@@ -537,12 +595,109 @@ function includeMatcher(include?: string): (rel: string) => boolean {
     return (rel: string) => regexes.some((re) => re.test(rel));
 }
 
+/**
+ * Compile a single glob pattern to a RegExp with a single left-to-right character scan.
+ *
+ * A scanner (rather than chained `.replace()` passes) is used deliberately: it has no ordering
+ * hazard between `**` and `*`, needs no placeholder sentinels, and each glob token emits its regex
+ * exactly once. The old chained-replace version turned every `*` into `[^/]*`, so a `**` + `/*.png`
+ * pattern compiled to "exactly one subdirectory" and silently matched nothing for top-level files.
+ *
+ * Tokens:
+ *   - `**` (with an optional adjacent `/`) crosses directory boundaries, matching zero or more
+ *     segments, so a leading `**` also matches a top-level file.
+ *   - `*` matches any run of chars within one segment (never crosses `/`).
+ *   - `?` matches a single non-`/` char.
+ *   - `{png,webp,jpg}` expands to alternation `(?:png|webp|jpg)` (nested wildcards are honored).
+ * A pattern containing `/` is anchored at the root of `src`; otherwise it matches a basename
+ * anywhere in the tree.
+ */
 function globToRegExp(pattern: string): RegExp {
     const normalized = pattern.split(sep).join(posix.sep);
-    const source = normalized.replace(/[|\\{}()[\]^$+?.]/g, '\\$&').replace(/\*/g, '[^/]*');
-
-    return new RegExp(`${normalized.includes('/') ? '^' : '(^|/)'}${source}$`, 'i');
+    const anchored = normalized.includes('/');
+    const source = compileGlob(normalized, 0, normalized.length);
+    return new RegExp(`${anchored ? '^' : '(^|/)'}${source}$`, 'i');
 }
+
+/** Regex-escape a single literal character. */
+function escapeRegexChar(ch: string): string {
+    return /[|\\{}()[\]^$+.*?]/.test(ch) ? `\\${ch}` : ch;
+}
+
+/**
+ * Translate the glob in `input[start..end)` to a regex source string. Recurses into brace groups so
+ * `{a*,b}` honors the wildcard inside each alternative.
+ */
+function compileGlob(input: string, start: number, end: number): string {
+    let out = '';
+    let i = start;
+
+    while (i < end) {
+        const ch = input[i];
+
+        if (ch === '*') {
+            if (input[i + 1] === '*') {
+                // `**` crosses directory boundaries. Consume it plus one adjacent `/` (leading or
+                // trailing) and emit an optional "any number of full segments" fragment.
+                i += 2;
+                if (input[i] === '/') {
+                    i++;
+                } else if (out.endsWith('/')) {
+                    out = out.slice(0, -1);
+                }
+                out += '(?:.*/)?';
+            } else {
+                out += '[^/]*';
+                i++;
+            }
+        } else if (ch === '?') {
+            out += '[^/]';
+            i++;
+        } else if (ch === '{') {
+            const close = input.indexOf('}', i);
+            if (close === -1 || close >= end) {
+                // Unbalanced brace: treat the `{` literally rather than throwing.
+                out += '\\{';
+                i++;
+            } else {
+                const alternatives = splitTopLevelCommas(input.slice(i + 1, close)).map((alt) =>
+                    compileGlob(alt, 0, alt.length)
+                );
+                out += `(?:${alternatives.join('|')})`;
+                i = close + 1;
+            }
+        } else {
+            out += escapeRegexChar(ch);
+            i++;
+        }
+    }
+
+    return out;
+}
+
+/** Split on commas that are NOT inside a nested brace group (for brace-group alternatives). */
+function splitTopLevelCommas(group: string): string[] {
+    const parts: string[] = [];
+    let current = '';
+    let depth = 0;
+    for (const ch of group) {
+        if (ch === '{') {
+            depth++;
+            current += ch;
+        } else if (ch === '}') {
+            depth = Math.max(0, depth - 1);
+            current += ch;
+        } else if (ch === ',' && depth === 0) {
+            parts.push(current);
+            current = '';
+        } else {
+            current += ch;
+        }
+    }
+    parts.push(current);
+    return parts;
+}
+
 
 function extractContentlets(response: unknown): AssetContentlet[] {
     const root = response as {

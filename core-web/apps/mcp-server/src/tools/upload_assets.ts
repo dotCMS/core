@@ -30,7 +30,13 @@ export const schema = {
     include: z
         .string()
         .optional()
-        .describe('Optional comma-separated glob filter, e.g. *.vtl,*.scss'),
+        .describe(
+            'Optional comma-separated glob filter, matched against each file path RELATIVE to `src`. ' +
+                'Supports *, ? (single non-slash char), ** (globstar, crosses directories), and ' +
+                '{a,b,c} brace expansion. A pattern with no "/" matches the basename anywhere in the ' +
+                'tree; a pattern with a "/" is anchored at the top of `src`. Examples: "*.vtl,*.scss", ' +
+                '"*.{png,webp,jpg}", "**/*.png". A comma inside {…} does not split patterns.'
+        ),
     publish: lenientBoolean(true).describe(
         'Use /api/v2/assets/publish when true, otherwise /api/v2/assets/save'
     ),
