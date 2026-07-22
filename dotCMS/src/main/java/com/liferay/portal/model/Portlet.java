@@ -6,6 +6,8 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletPK;
 import com.liferay.portlet.ConcretePortletWrapper;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +27,7 @@ public class Portlet extends PortletModel {
 
   private static final long serialVersionUID = 1L;
 
-  protected transient Map<String, String> initParams;
+  protected Map<String, String> initParams;
   protected String portletId;
   protected String portletClass;
   protected String portletSource;
@@ -243,6 +245,20 @@ public class Portlet extends PortletModel {
     }
 
     return cachedInstance;
+  }
+
+  /**
+   * Custom deserialization guard. The {@code initParams} field was historically {@code transient},
+   * so any {@link Portlet} serialized by an earlier version — or by any cache provider that drops
+   * transient state (e.g. the Redis provider) — deserializes it as {@code null}. Default it to an
+   * empty map so downstream {@code PortletConfig} look-ups never throw a {@link NullPointerException}
+   * on stale cached objects that survive a container restart.
+   */
+  private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+    in.defaultReadObject();
+    if (this.initParams == null) {
+      this.initParams = new HashMap<>();
+    }
   }
 
 }
