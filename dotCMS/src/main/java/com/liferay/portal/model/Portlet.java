@@ -257,6 +257,8 @@ public class Portlet extends PortletModel {
   private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
     in.defaultReadObject();
     if (this.initParams == null) {
+      Logger.warn(this, "Portlet '" + this.portletId + "' deserialized with null initParams "
+          + "(a transient field lost during cache deserialization); defaulting to an empty map.");
       this.initParams = new HashMap<>();
     }
   }
