@@ -10,7 +10,8 @@ import {
     inject,
     input,
     output,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -60,10 +61,11 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
     template: `
         <p-drawer
             [visible]="!!data()"
-            [modal]="false"
+            [modal]="true"
             [dismissible]="false"
             [closeOnEscape]="false"
             [closable]="false"
+            [maskStyle]="{ background: 'transparent !important' }"
             [pt]="{
                 root: {
                     style: {
@@ -74,7 +76,8 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
                 },
                 content: { style: { padding: '0' } }
             }"
-            position="right">
+            position="right"
+            (keydown.escape)="requestClose()">
             <ng-template #header>
                 <div class="flex w-full items-center justify-between gap-4">
                     <span class="truncate text-lg font-semibold" data-testId="side-panel-title">
@@ -93,7 +96,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
                             severity="secondary"
                             icon="pi pi-times"
                             aria-label="Close panel"
-                            (onClick)="closed.emit()"
+                            (onClick)="requestClose()"
                             data-testId="side-panel-close" />
                     </div>
                 </div>
@@ -108,6 +111,9 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
 export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
+
+    /** The hosted editor; used to run its unsaved-changes guard before closing. */
+    protected readonly $layout = viewChild(DotEditContentLayoutComponent);
 
     /** Identity (and header title) of the content to create/edit, or `null` when closed. */
     readonly data = input<EditContentDialogData | null>(null);
@@ -145,6 +151,20 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
                 .saved$.pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((contentlet) => this.saved.emit(contentlet));
         });
+    }
+
+    /**
+     * Close intent (X button or ESC). Routes through the editor's unsaved-changes guard so the
+     * user is prompted when the form is dirty; only closes (emits `closed`) once it is safe.
+     */
+    protected requestClose(): void {
+        const layout = this.$layout();
+
+        if (layout) {
+            layout.confirmClose(() => this.closed.emit());
+        } else {
+            this.closed.emit();
+        }
     }
 
     ngOnDestroy(): void {
