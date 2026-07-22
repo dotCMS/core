@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
 import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
@@ -27,6 +27,7 @@ import { GlobalStore } from '@dotcms/store';
 import { withWorkflow } from './workflow.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import {
     MOCK_CONTENTLET_1_TAB,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
@@ -42,11 +43,18 @@ describe('WorkflowFeature', () => {
     let store: any;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
-    let router: SpyObject<Router>;
     let messageService: SpyObject<MessageService>;
     let dotMessageService: SpyObject<DotMessageService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
+
+    // Post-save navigation is delegated to the EditContentHost port.
+    const mockHost = {
+        setContentTitle: jest.fn(),
+        addBreadcrumb: jest.fn(),
+        goToSavedContent: jest.fn(),
+        goToRestoredVersion: jest.fn()
+    };
 
     const createStore = createServiceFactory({
         service: signalStore(
@@ -82,15 +90,19 @@ describe('WorkflowFeature', () => {
             DotSystemConfigService,
             GlobalStore
         ],
-        providers: [provideHttpClient(), provideHttpClientTesting()]
+        providers: [
+            { provide: EDIT_CONTENT_HOST, useValue: mockHost },
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
     });
 
     beforeEach(() => {
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
         spectator = createStore();
         store = spectator.service;
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-        router = spectator.inject(Router);
         messageService = spectator.inject(MessageService);
         dotMessageService = spectator.inject(DotMessageService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
@@ -128,10 +140,12 @@ describe('WorkflowFeature', () => {
                     parseCurrentActions(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
 
-                expect(router.navigate).toHaveBeenCalledWith(
-                    ['/content', updatedContentlet.inode],
-                    expect.any(Object)
-                );
+                expect(mockHost.goToSavedContent).toHaveBeenCalled();
+                const [savedArg] = mockHost.goToSavedContent.mock.calls[0];
+                expect(savedArg).toEqual({
+                    inode: updatedContentlet.inode,
+                    title: updatedContentlet.title
+                });
                 expect(messageService.add).toHaveBeenCalled();
             }));
 

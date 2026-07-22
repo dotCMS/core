@@ -171,6 +171,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.identifier(UtilMethods.isNotSet(contentlet.getIdentifier()) ? StringPool.BLANK : contentlet.getIdentifier() );
         builder.inode( UtilMethods.isNotSet(contentlet.getInode()) ? StringPool.BLANK : contentlet.getInode() );
 
+        
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
             if (isNotMappable(field)) {
@@ -305,7 +306,8 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 value = identifierAPI.find(identifier).getAssetName();
             } else {
                 if (field instanceof BinaryField) {
-                    value = getBinary(field, inode).orElse(null);
+                    value = getBinary(field, inode, contentletFields.get(field.variable()))
+                            .orElse(null);
                 } else {
                     value = getValue(contentletFields, field);
                 }
@@ -393,9 +395,12 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * Once a BinaryField is found this will rebuild it.
      * @param field
      * @param inode
+     * @param storedValue the field's {@link FieldValue} from the persisted json, which carries
+     *                    the binary's file name; may be null on legacy json
      * @return
      */
-    private Optional<File> getBinary(final Field field, final String inode) {
+    private Optional<File> getBinary(final Field field, final String inode,
+            final FieldValue<?> storedValue) {
         // This validation is here to prevent an exception.
         // Cause the json gets saved twice by internalCheckin and the first time it does it no inode is set yet
 
@@ -409,11 +414,22 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                         + inode
                         + java.io.File.separator
                         + field.variable());
-        if (binaryFileFolder.exists()) {
-            final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
-            if (files != null && files.length > 0) {
-                return Optional.of(files[0]);
-            }
+
+        // The json stores the binary's file name (see BinaryField#fieldValue), so the path can
+        // be rebuilt with zero filesystem access. Listing the folder here — once per binary
+        // field per contentlet load — wedged the reindex pipeline on a hung S3-FUSE mount and
+        // is a per-load tax on any network-backed storage (issue #36498).
+        final Object storedName = null != storedValue ? storedValue.value() : null;
+        if (storedName instanceof String && isSet((String) storedName)
+                && !((String) storedName).contains("/") && !((String) storedName).contains("\\")) {
+            return Optional.of(new java.io.File(binaryFileFolder, (String) storedName));
+        }
+
+        // Legacy json without a stored file name: fall back to listing the folder. No exists()
+        // pre-check — listFiles() returns null for a missing folder.
+        final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
+        if (files != null && files.length > 0) {
+            return Optional.of(files[0]);
         }
 
         return Optional.empty();

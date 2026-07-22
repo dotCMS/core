@@ -1,0 +1,168 @@
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { OverlayEditContentHost } from './overlay-edit-content-host';
+
+import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
+
+describe('OverlayEditContentHost', () => {
+    let spectator: SpectatorService<OverlayEditContentHost>;
+    let host: OverlayEditContentHost;
+    let relatedNav: { appendToTrail: jest.Mock; titleCache: jest.Mock; registerTitle: jest.Mock };
+    let config: DynamicDialogConfig;
+
+    const createHost = createServiceFactory({
+        service: OverlayEditContentHost,
+        providers: [
+            mockProvider(DotRelatedContentNavigationStore, {
+                appendToTrail: jest.fn().mockReturnValue(['inode-a', 'inode-b']),
+                titleCache: jest.fn().mockReturnValue({ 'inode-a': 'A', 'inode-b': 'B' }),
+                registerTitle: jest.fn()
+            }),
+            mockProvider(DynamicDialogConfig, { data: undefined })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createHost();
+        host = spectator.service;
+        relatedNav = spectator.inject(
+            DotRelatedContentNavigationStore
+        ) as unknown as typeof relatedNav;
+        config = spectator.inject(DynamicDialogConfig);
+    });
+
+    it('reports that it navigates in place', () => {
+        expect(host.inPlaceNavigation).toBe(true);
+        expect(host.inPlaceNavigation$).toBeDefined();
+    });
+
+    it('starts with an empty per-instance trail (does not touch the shared store)', () => {
+        expect(host.trail()).toEqual([]);
+    });
+
+    describe('resolveIdentity', () => {
+        it('returns empty when the dialog config has no data', () => {
+            config.data = undefined;
+            expect(host.resolveIdentity()).toEqual({
+                inode: undefined,
+                contentTypeId: undefined
+            });
+        });
+
+        it('maps contentletInode and contentTypeId from the dialog config', () => {
+            config.data = { contentletInode: 'inode-9', contentTypeId: 'Blog' };
+            expect(host.resolveIdentity()).toEqual({
+                inode: 'inode-9',
+                contentTypeId: 'Blog'
+            });
+        });
+    });
+
+    describe('saved$', () => {
+        it('emits the contentlet reported via reportSaved', (done) => {
+            const contentlet = { inode: 'x', title: 't' } as DotCMSContentlet;
+            host.saved$.subscribe((c) => {
+                expect(c).toBe(contentlet);
+                done();
+            });
+
+            host.reportSaved(contentlet);
+        });
+    });
+
+    // Chrome intents overlay another context, so they are safe no-ops.
+    it('treats title/breadcrumb as no-ops', () => {
+        expect(() => host.setContentTitle('x')).not.toThrow();
+        expect(() => host.addBreadcrumb({ label: 'x', url: '/y' })).not.toThrow();
+    });
+
+    describe('goToRestoredVersion', () => {
+        it('emits an in-place reload for the restored inode (no route to navigate)', (done) => {
+            host.inPlaceNavigation$.subscribe((request) => {
+                expect(request).toEqual({ inode: 'inode-restored' });
+                done();
+            });
+
+            host.goToRestoredVersion('inode-restored');
+        });
+    });
+
+    describe('goToSavedContent', () => {
+        it('repoints the trail current crumb to the new inode after a save', () => {
+            // A→B trail; save B into a new inode B'. The last crumb must follow.
+            host.setTrail(['inode-a', 'inode-b']);
+
+            host.goToSavedContent({ inode: 'inode-b2', title: 'B saved' }, 'inode-b');
+
+            expect(relatedNav.registerTitle).toHaveBeenCalledWith('inode-b2', 'B saved');
+            expect(host.trail().map((c) => c.inode)).toEqual(['inode-a', 'inode-b2']);
+        });
+
+        it('does nothing when the inode did not change', () => {
+            host.setTrail(['inode-a', 'inode-b']);
+
+            host.goToSavedContent({ inode: 'inode-b', title: 'B' }, 'inode-b');
+
+            expect(host.trail().map((c) => c.inode)).toEqual(['inode-a', 'inode-b']);
+        });
+    });
+
+    describe('goToRelatedContent', () => {
+        it('emits a reload request carrying the DEFERRED trail (not committed yet)', (done) => {
+            host.inPlaceNavigation$.subscribe((request) => {
+                expect(request).toEqual({ inode: 'inode-b', trail: ['inode-a', 'inode-b'] });
+                // Trail is NOT committed until setTrail is called by the layout.
+                expect(host.trail()).toEqual([]);
+                done();
+            });
+
+            host.goToRelatedContent(
+                { inode: 'inode-a', title: 'A' },
+                { inode: 'inode-b', title: 'B' }
+            );
+
+            expect(relatedNav.appendToTrail).toHaveBeenCalledWith(
+                [],
+                { inode: 'inode-a', title: 'A' },
+                { inode: 'inode-b', title: 'B' }
+            );
+        });
+    });
+
+    describe('goToCrumb', () => {
+        it('emits a reload request with the trimmed trail (deferred)', (done) => {
+            host.inPlaceNavigation$.subscribe((request) => {
+                expect(request).toEqual({ inode: 'inode-a', trail: ['inode-a'] });
+                done();
+            });
+
+            host.goToCrumb('inode-a', ['inode-a']);
+        });
+    });
+
+    describe('reloadContent (locale switch)', () => {
+        it('emits a reload request WITHOUT a trail (keeps the current trail)', (done) => {
+            host.inPlaceNavigation$.subscribe((request) => {
+                expect(request).toEqual({ inode: 'inode-5' });
+                expect(request.trail).toBeUndefined();
+                done();
+            });
+
+            host.reloadContent('inode-5');
+        });
+    });
+
+    describe('setTrail', () => {
+        it('commits the trail as this host instance current trail', () => {
+            host.setTrail(['inode-a', 'inode-b']);
+            expect(host.trail()).toEqual([
+                { inode: 'inode-a', title: 'A' },
+                { inode: 'inode-b', title: 'B' }
+            ]);
+        });
+    });
+});

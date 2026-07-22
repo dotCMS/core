@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { Subject, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -30,6 +30,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 
 describe('DotEditContentDialogComponent', () => {
     let spectator: Spectator<DotEditContentDialogComponent>;
@@ -146,7 +147,8 @@ describe('DotEditContentDialogComponent', () => {
         spectator.detectChanges();
 
         const contentlet = { inode: 'inode' } as DotCMSContentlet;
-        component.onContentSaved(contentlet);
+        // The editor reports the save through the host; the dialog tracks it.
+        spectator.inject(OverlayEditContentHost, true).reportSaved(contentlet);
 
         // Callback must NOT fire before the close actually completes
         component.closeDialog();
@@ -177,7 +179,7 @@ describe('DotEditContentDialogComponent', () => {
 
         const contentlet = { inode: 'inode', title: 'Test Content' } as DotCMSContentlet;
 
-        component.onContentSaved(contentlet);
+        spectator.inject(OverlayEditContentHost, true).reportSaved(contentlet);
         component.closeDialog();
 
         // closeSpy is the original close fn captured before #interceptDirtyClose overrides it.

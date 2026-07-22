@@ -59,7 +59,24 @@ export class DotContentDriveDialogContentTypeSelectorComponent {
         }
 
         this.#store.closeDialog();
-        this.#navigationService.createContent(variable);
+        this.#navigationService.createContent(variable, this.#getCurrentFolder());
+    }
+
+    /**
+     * Resolves the folder the user is currently browsing so the new content lands there.
+     * - `folderPath` (`hostname/path`) pre-selects the Host/Folder field in the new editor.
+     * - `folderInode` pre-selects the target folder in the legacy editor.
+     * At the site root both fall back to the current site (empty path / no inode).
+     */
+    #getCurrentFolder(): { folderPath?: string; folderInode?: string } {
+        const hostname = this.#store.currentSite()?.hostname;
+        const path = this.#store.path();
+        const inode = this.#store.selectedNode()?.data?.inode;
+
+        return {
+            folderPath: hostname ? `${hostname}${path ?? ''}` : undefined,
+            folderInode: inode || undefined
+        };
     }
 
     protected onCancel(): void {

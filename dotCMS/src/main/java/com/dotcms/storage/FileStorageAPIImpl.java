@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -195,24 +196,36 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     @Override
     public Map<String, Serializable> generateMetaData(final File binary,
             final GenerateMetadataConfig configuration) throws DotDataException {
+        return generateMetaData(() -> binary, configuration);
+    }
+
+    @Override
+    public Map<String, Serializable> generateMetaData(final Supplier<File> binary,
+            final GenerateMetadataConfig configuration) throws DotDataException {
         final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
         if(configuration.isStore()) {
-            //if the group/bucket doesn't exist create it.
-            this.checkBucket(storageKey, storage);
             //if config states we need to remove and force regeneration of the metadata
             this.checkOverride(storage, configuration);
         }
-        final boolean objectExists = storage.existsObject(storageKey.getGroup(), storageKey.getPath());
-
-        Map<String, Serializable> metadataMap = objectExists ? retrieveMetaData(storageKey, storage) : Map.of();
+        // Assume the metadata object is there and read it directly — a stat-then-read pattern
+        // doubles the filesystem round-trips, and on network-backed storage every extra stat is
+        // a chance to hang (issue #36498). When the override just removed it, don't bother.
+        final boolean skipRead = configuration.isOverride() && configuration.isStore();
+        Map<String, Serializable> metadataMap = skipRead
+                ? null : tryRetrieveMetaData(storageKey, storage);
+        final boolean objectExists = metadataMap != null;
+        if (!objectExists) {
+            metadataMap = Map.of();
+        }
         final Map<String, Serializable> onlyHasCustomMetadataMap = configuration.getIfOnlyHasCustomMetadata().apply(metadataMap);
 
         // here we test quite a few things:
         // if the metadata did not exist at all we need to generate it for sure .
         // But if there was any metadata already, and it only contained custom metadata attributes, we need to generate it.
         if (!objectExists || (null != onlyHasCustomMetadataMap && !onlyHasCustomMetadataMap.isEmpty())) {
-            metadataMap = generateMetadataFromFile(binary, configuration, storageKey, onlyHasCustomMetadataMap, storage);
+            // only now is the binary needed — resolving it may stat the filesystem
+            metadataMap = generateMetadataFromFile(binary.get(), configuration, storageKey, onlyHasCustomMetadataMap, storage);
         }
 
         if (configuration.isCache()) {
@@ -220,6 +233,25 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         }
 
         return metadataMap;
+    }
+
+    /**
+     * Reads the metadata object assuming it exists, returning {@code null} when it is absent,
+     * empty or unreadable so the caller regenerates it from the binary instead. This replaces
+     * the exists-then-read pattern: one read attempt instead of several stats plus a read.
+     */
+    private Map<String, Serializable> tryRetrieveMetaData(final StorageKey storageKey,
+            final StoragePersistenceAPI storage) {
+        try {
+            final Map<String, Serializable> metadataMap = retrieveMetaData(storageKey, storage);
+            return null == metadataMap || metadataMap.isEmpty() ? null : metadataMap;
+        } catch (final Exception absentOrUnreadable) {
+            Logger.debug(FileStorageAPIImpl.class,
+                    () -> "No readable metadata at path: " + storageKey.getPath()
+                            + " — it will be regenerated. Reason: "
+                            + absentOrUnreadable.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -248,6 +280,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         Map<String, Serializable> metadataMap = generateMetaDataBasedOnConfig(binary, configuration, maxLength);
 
         if (configuration.isStore()) {
+            //if the group/bucket doesn't exist create it — only needed when actually writing.
+            this.checkBucket(storageKey, storage);
             metadataMap = prepareMetadataForStorage(configuration, onlyHasCustomMetadataMap, metadataMap);
             storeMetadata(storageKey, storage, metadataMap);
         }
@@ -437,10 +471,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             throws DotDataException {
         final StorageKey storageKey = requestMetaData.getStorageKey();
         final StoragePersistenceAPI storage = this.persistenceProvider.getStorage(storageKey.getStorage());
-        this.checkBucket(storageKey, storage);
-        Map<String, Serializable>  metadataMap = null;
-        if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-            metadataMap = retrieveMetaData(storageKey, storage);
+        // Assume the metadata object is there and read it directly instead of stat-then-read:
+        // this is a pure read path and every avoided stat matters on network-backed storage
+        // (issue #36498). Absent/unreadable simply returns null, as before.
+        final Map<String, Serializable> metadataMap = tryRetrieveMetaData(storageKey, storage);
+        if (null != metadataMap) {
             Logger.debug(FileStorageAPIImpl.class, () -> "Retrieve the meta data from storage path: " + storageKey.getPath());
             checkUpdateEditableAsText(metadataMap);
             if (null != cacheKey) {

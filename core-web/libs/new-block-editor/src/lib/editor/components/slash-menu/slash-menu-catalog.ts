@@ -8,7 +8,7 @@ import type {
     DotContentTypeService,
     DotMessageService
 } from '@dotcms/data-access';
-import type { Action, DotCMSContentlet } from '@dotcms/dotcms-models';
+import type { Action, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DOT_CONTENTLET_NODE_NAME } from '../../extensions/nodes/contentlet/contentlet.extension';
 
@@ -18,8 +18,10 @@ import type { EditorPopoverService } from '../../services/editor-popover.service
 
 // Narrow interface so the catalog doesn't import the full service class
 interface SlashMenuSubMenuHost {
-    openSubmenu(): void;
-    setItems(items: BlockItem[], commandFn: (item: BlockItem) => void): void;
+    openAsyncSubmenu(
+        search: (query: string) => Promise<BlockItem[]>,
+        commandFn: (item: BlockItem) => void
+    ): void;
     close(): void;
 }
 
@@ -39,14 +41,40 @@ function clearActiveSuggestionRange(editor: Editor): void {
     }
 }
 
+// Strict UUID-v4 shape (8-4-4-4-12 hex): a real identifier searches without wildcards/title boost.
+const UUID_LIKE = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+// Lucene query-syntax characters that must be escaped before user input is interpolated.
+const LUCENE_SPECIAL_CHARS = /[+\-!(){}[\]^"~*?:\\/&|]/g;
+const escapeLucene = (value: string): string => value.replace(LUCENE_SPECIAL_CHARS, '\\$&');
+
 /**
- * Lucene query for the slash-menu's content-type sub-picker. The trailing
- * `+catchall:** title:''^15` boosts results that have a non-empty `title`,
- * keeping titled contentlets at the top of the picker even when the query
- * scope is broad. Mirrors the legacy block-editor's behaviour.
+ * Lucene query for the contentlet sub-picker of a given content type.
+ *
+ * With no `filter` the trailing `+catchall:** title:''^15` lists the type's working content with
+ * titled items boosted to the top. With a `filter` it searches SERVER-SIDE — each whitespace/hyphen
+ * token becomes a mandatory wildcard clause (Lucene's analyzer splits on hyphens, so a wildcard over
+ * a hyphenated token would never match) plus a title-phrase boost — so results aren't limited to the
+ * first page. Mirrors the legacy block-editor's `getContentlets` behaviour, including Lucene escaping.
  */
-function buildContentletByTypeQuery(variable: string, languageId: number): string {
-    return `+contentType:${variable} +languageId:${languageId} +deleted:false +working:true +catchall:** title:''^15`;
+export function buildContentletByTypeQuery(
+    variable: string,
+    languageId: number,
+    filter = ''
+): string {
+    const trimmed = filter.trim();
+    let searchClauses = `+catchall:** title:''^15`;
+    if (UUID_LIKE.test(trimmed)) {
+        searchClauses = `+catchall:${escapeLucene(trimmed)}`;
+    } else if (trimmed.length > 0) {
+        const tokenClauses = trimmed
+            .split(/[-\s]+/)
+            .filter((token) => token.length > 0)
+            .map((token) => `+catchall:*${escapeLucene(token)}*`)
+            .join(' ');
+        searchClauses = `${tokenClauses} title:"${escapeLucene(trimmed)}"^15`;
+    }
+
+    return `+contentType:${variable} +languageId:${languageId} +deleted:false +working:true ${searchClauses}`;
 }
 
 interface ContentletSearchEntity {
@@ -62,6 +90,122 @@ export function createContentTypeItem(
     dotMessageService: DotMessageService
 ): BlockItem {
     const msg = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
+
+    /** Single-row error state, reused for a failed content-type or contentlet request. */
+    const errorItem = (kind: 'content-type' | 'contentlet'): BlockItem[] => [
+        {
+            label: msg(`dot.block.editor.slash-menu.${kind}.error.label`),
+            description: msg(`dot.block.editor.slash-menu.${kind}.error.description`),
+            icon: 'cloud_off',
+            keywords: ['error', kind],
+            isEmptyState: true
+        }
+    ];
+
+    /** Maps content types to display rows; `keywords[0]` is the variable the drill-down reads back. */
+    const toTypeItems = (types: DotCMSContentType[]): BlockItem[] =>
+        types.length > 0
+            ? types.map((ct) => ({
+                  label: ct.name,
+                  description: ct.description || ct.variable,
+                  icon: materialIconOrFallback(ct.icon, 'folder_special'),
+                  keywords: [ct.variable, ct.baseType.toLowerCase()]
+              }))
+            : [
+                  {
+                      label: msg('dot.block.editor.slash-menu.content-type.empty.label'),
+                      description: msg(
+                          'dot.block.editor.slash-menu.content-type.empty.description'
+                      ),
+                      icon: 'folder_off',
+                      keywords: ['no', 'empty', 'content', 'types'],
+                      isEmptyState: true
+                  }
+              ];
+
+    /** Maps contentlets to rows whose `onSelect` inserts the embedded contentlet node. */
+    const toContentletItems = (contentlets: DotCMSContentlet[], typeLabel: string): BlockItem[] =>
+        contentlets.length > 0
+            ? contentlets.map((cl) => ({
+                  label: cl.title || cl.identifier,
+                  description: cl.contentType,
+                  icon: 'note_stack',
+                  keywords: [cl.contentType, cl.identifier],
+                  onSelect: (ed: Editor) => {
+                      const match = SuggestionPluginKey.getState(ed.state);
+                      const chain = ed.chain().focus();
+                      if (match?.active) {
+                          chain.deleteRange(match.range);
+                      }
+                      chain
+                          .insertContent({
+                              type: DOT_CONTENTLET_NODE_NAME,
+                              attrs: {
+                                  // Full contentlet at runtime; the JSON-strip helper reduces it to
+                                  // {identifier, languageId} when the document is serialised for storage.
+                                  data: {
+                                      ...cl,
+                                      languageId:
+                                          (cl as { languageId?: number }).languageId ??
+                                          getLanguageId()
+                                  }
+                              }
+                          })
+                          .run();
+                  }
+              }))
+            : [
+                  {
+                      label: msg('dot.block.editor.slash-menu.contentlet.empty.label'),
+                      description: msg(
+                          'dot.block.editor.slash-menu.contentlet.empty.description',
+                          typeLabel
+                      ),
+                      icon: 'search_off',
+                      keywords: ['no', 'empty', 'contentlets'],
+                      isEmptyState: true
+                  }
+              ];
+
+    // Deletes the text typed after the "/" (keeps the slash) so a sub-menu search starts empty.
+    const clearQueryKeepSlash = (editor: Editor): void => {
+        const match = SuggestionPluginKey.getState(editor.state);
+        if (match?.active && match.range.from + 1 < match.range.to) {
+            editor
+                .chain()
+                .deleteRange({ from: match.range.from + 1, to: match.range.to })
+                .run();
+        }
+    };
+
+    // Level 2 — contentlets of the chosen type, searched server-side (debounced) as the user types.
+    const openContentletSearch = (editor: Editor, ctVariable: string, typeLabel: string): void => {
+        menuService.openAsyncSubmenu(
+            (query) =>
+                firstValueFrom(
+                    contentSearchService.get<ContentletSearchEntity>({
+                        query: buildContentletByTypeQuery(ctVariable, getLanguageId(), query),
+                        sort: 'modDate desc',
+                        offset: 0,
+                        limit: 40
+                    })
+                )
+                    .then((entity) =>
+                        toContentletItems(entity?.jsonObjectView?.contentlets ?? [], typeLabel)
+                    )
+                    .catch(() => errorItem('contentlet')),
+            (contentletItem) => {
+                // empty / error rows have no onSelect — just dismiss.
+                if (contentletItem.onSelect) {
+                    contentletItem.onSelect(editor);
+                } else {
+                    clearActiveSuggestionRange(editor);
+                }
+                menuService.close();
+            }
+        );
+    };
+
     return {
         label: msg('dot.block.editor.slash-menu.content-type.label'),
         description: msg('dot.block.editor.slash-menu.content-type.description'),
@@ -70,13 +214,9 @@ export function createContentTypeItem(
         blockName: 'dotContent',
         keepRange: true,
         onSelect: (editor, range) => {
-            // keepRange=true: deleteRange was skipped, suggestion session stays alive.
-            menuService.openSubmenu();
-
-            // Delete the query text (e.g. "content") but keep the "/" so Tiptap's
-            // suggestion resets to an empty query. The user can then type to filter
-            // content types. range.from is the position of "/", range.from+1 onwards
-            // is the query text.
+            // keepRange=true: deleteRange was skipped, suggestion session stays alive. Delete the
+            // typed query text (e.g. "content") but keep the "/" so the content-type search starts
+            // from an empty query and the user can then type to filter server-side.
             if (range && range.from + 1 < range.to) {
                 editor
                     .chain()
@@ -84,172 +224,28 @@ export function createContentTypeItem(
                     .run();
             }
 
-            firstValueFrom(contentTypeService.filterContentTypes('', getAllowedContentTypes()))
-                .then((types) => {
-                    const resolvedTypes = types ?? [];
-                    // Content type items are plain display items — drill-down logic lives in the
-                    // commandFn below (closure over editor and services).
-                    const typeItems: BlockItem[] =
-                        resolvedTypes.length > 0
-                            ? resolvedTypes.map((ct) => ({
-                                  label: ct.name,
-                                  description: ct.description || ct.variable,
-                                  icon: materialIconOrFallback(ct.icon, 'folder_special'),
-                                  keywords: [ct.variable, ct.baseType.toLowerCase()]
-                              }))
-                            : [
-                                  {
-                                      label: msg(
-                                          'dot.block.editor.slash-menu.content-type.empty.label'
-                                      ),
-                                      description: msg(
-                                          'dot.block.editor.slash-menu.content-type.empty.description'
-                                      ),
-                                      icon: 'folder_off',
-                                      keywords: ['no', 'empty', 'content', 'types'],
-                                      isEmptyState: true
-                                  }
-                              ];
-
-                    menuService.setItems(typeItems, (selectedItem) => {
-                        if (selectedItem.isEmptyState) {
-                            clearActiveSuggestionRange(editor);
-                            menuService.close();
-                            return;
-                        }
-
-                        menuService.openSubmenu();
-
-                        const slashMatch = SuggestionPluginKey.getState(editor.state);
-                        if (slashMatch?.active && slashMatch.range.from + 1 < slashMatch.range.to) {
-                            editor
-                                .chain()
-                                .deleteRange({
-                                    from: slashMatch.range.from + 1,
-                                    to: slashMatch.range.to
-                                })
-                                .run();
-                        }
-
-                        // keywords[0] is ct.variable (stored above)
-                        const ctVariable = selectedItem.keywords[0];
-
-                        firstValueFrom(
-                            contentSearchService.get<ContentletSearchEntity>({
-                                query: buildContentletByTypeQuery(ctVariable, getLanguageId()),
-                                sort: 'modDate desc',
-                                offset: 0,
-                                limit: 40
-                            })
-                        )
-                            .then((entity) => {
-                                const resolvedContentlets =
-                                    entity?.jsonObjectView?.contentlets ?? [];
-                                const contentletItems: BlockItem[] = resolvedContentlets.map(
-                                    (cl) => ({
-                                        label: cl.title || cl.identifier,
-                                        description: cl.contentType,
-                                        icon: 'note_stack',
-                                        keywords: [cl.contentType, cl.identifier],
-                                        onSelect: (ed) => {
-                                            const match = SuggestionPluginKey.getState(ed.state);
-                                            const chain = ed.chain().focus();
-                                            if (match?.active) {
-                                                chain.deleteRange(match.range);
-                                            }
-                                            chain
-                                                .insertContent({
-                                                    type: DOT_CONTENTLET_NODE_NAME,
-                                                    attrs: {
-                                                        // Full contentlet at runtime; the JSON-strip
-                                                        // helper reduces it to {identifier, languageId}
-                                                        // when the document is serialised for storage.
-                                                        data: {
-                                                            ...cl,
-                                                            languageId:
-                                                                (cl as { languageId?: number })
-                                                                    .languageId ?? getLanguageId()
-                                                        }
-                                                    }
-                                                })
-                                                .run();
-                                        }
-                                    })
-                                );
-
-                                const finalItems: BlockItem[] =
-                                    contentletItems.length === 0
-                                        ? [
-                                              {
-                                                  label: msg(
-                                                      'dot.block.editor.slash-menu.contentlet.empty.label'
-                                                  ),
-                                                  description: msg(
-                                                      'dot.block.editor.slash-menu.contentlet.empty.description',
-                                                      selectedItem.label
-                                                  ),
-                                                  icon: 'search_off',
-                                                  keywords: ['no', 'empty', 'contentlets'],
-                                                  isEmptyState: true
-                                              }
-                                          ]
-                                        : contentletItems;
-
-                                menuService.setItems(finalItems, (contentletItem) => {
-                                    if (contentletItem.onSelect) {
-                                        contentletItem.onSelect(editor);
-                                    } else {
-                                        clearActiveSuggestionRange(editor);
-                                    }
-                                    menuService.close();
-                                });
-                            })
-                            .catch(() => {
-                                menuService.setItems(
-                                    [
-                                        {
-                                            label: msg(
-                                                'dot.block.editor.slash-menu.contentlet.error.label'
-                                            ),
-                                            description: msg(
-                                                'dot.block.editor.slash-menu.contentlet.error.description'
-                                            ),
-                                            icon: 'cloud_off',
-                                            keywords: ['error', 'contentlets'],
-                                            isEmptyState: true
-                                        }
-                                    ],
-                                    (contentletItem) => {
-                                        if (!contentletItem.onSelect) {
-                                            clearActiveSuggestionRange(editor);
-                                        }
-                                        menuService.close();
-                                    }
-                                );
-                            });
-                    });
-                })
-                .catch(() => {
-                    menuService.setItems(
-                        [
-                            {
-                                label: msg('dot.block.editor.slash-menu.content-type.error.label'),
-                                description: msg(
-                                    'dot.block.editor.slash-menu.content-type.error.description'
-                                ),
-                                icon: 'cloud_off',
-                                keywords: ['error', 'content', 'types'],
-                                isEmptyState: true
-                            }
-                        ],
-                        (item) => {
-                            if (item.isEmptyState) {
-                                clearActiveSuggestionRange(editor);
-                            }
-                            menuService.close();
-                        }
-                    );
-                });
+            // Level 1 — content types, searched server-side (debounced) as the user types. This
+            // replaces the previous one-shot top-40 fetch + client-side filter, which hid every
+            // content type past the alphabetical cap (the "list ends after Image Asset" report).
+            menuService.openAsyncSubmenu(
+                (query) =>
+                    firstValueFrom(
+                        contentTypeService.filterContentTypes(query, getAllowedContentTypes())
+                    )
+                        .then((types) => toTypeItems(types ?? []))
+                        .catch(() => errorItem('content-type')),
+                (selectedType) => {
+                    if (selectedType.isEmptyState) {
+                        clearActiveSuggestionRange(editor);
+                        menuService.close();
+                        return;
+                    }
+                    // Clear the type-filter text (keep "/") before drilling into the contentlets.
+                    clearQueryKeepSlash(editor);
+                    // keywords[0] is ct.variable (stored by toTypeItems).
+                    openContentletSearch(editor, selectedType.keywords[0], selectedType.label);
+                }
+            );
         }
     };
 }

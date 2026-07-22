@@ -1,0 +1,28 @@
+{
+  "entity": {
+    "contentTook": 1,
+    "jsonObjectView": {
+      "contentlets": [
+        {
+          "contentType": "Dotcmsbuilds",
+          "minor": "26.06.30-01",
+          "identifier": "d6d34add-14d7-43df-8270-03cb104063f3",
+          "inode": "f0e35348-ce61-4a0a-a32b-e4acfa9c661b",
+          "modUserName": "Jamie Mauro",
+          "modUser": "user-5a8a91c4-0cd7-4108-bece-549e466409bf",
+          "dockerImage": "dotcms/dotcms:26.06.30-01_84b0486",
+          "releasedDate": "2026-06-30 00:00:00.0",
+          "showInChangeLog": true,
+          "lts": 3,
+          "released": true,
+          "download": 1
+        }
+      ]
+    },
+    "queryTook": 1,
+    "resultsSize": 1
+  },
+  "errors": [],
+  "messages": [],
+  "pagination": null
+}

@@ -4,6 +4,7 @@
 @let isDisabled = $isDisabled();
 @let isEmpty = store.data().length === 0;
 @let showThumbnail = store.showThumbnail();
+@let canNavigate = $canNavigate();
 
 <p-table
     [value]="data"
@@ -26,7 +27,7 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <th scope="col" class="min-w-0 flex-1">
+                        <th scope="col" class="min-w-0 flex-1" [class.text-right!]="$last">
                             {{ 'dot.file.relationship.field.table.title' | dm }}
                         </th>
                     }
@@ -34,6 +35,7 @@
                         <th
                             scope="col"
                             class="w-32 max-w-32 min-w-32"
+                            [class.text-right!]="$last"
                             data-testid="relationship-locale-header">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
@@ -41,18 +43,19 @@
                     @case ('status') {
                         <th
                             scope="col"
-                            class="w-32 max-w-32 min-w-32 text-right!"
+                            class="w-32 max-w-32 min-w-32"
+                            [class.text-right!]="$last"
                             data-testid="relationship-status-header">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
                     @case ('image') {
-                        <th scope="col" class="w-24 max-w-24 min-w-24">
+                        <th scope="col" class="w-24 max-w-24 min-w-24" [class.text-right!]="$last">
                             <p class="truncate capitalize">{{ column.header }}</p>
                         </th>
                     }
                     @default {
-                        <th scope="col" class="w-32 max-w-32 min-w-32">
+                        <th scope="col" class="w-32 max-w-32 min-w-32" [class.text-right!]="$last">
                             <span class="capitalize">{{ column.header }}</span>
                         </th>
                     }
@@ -122,24 +125,39 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <td class="min-w-0 flex-1" [class.cursor-not-allowed]="isDisabled">
+                        <td
+                            class="min-w-0 flex-1"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
                             <div class="flex items-center gap-3">
                                 @if (showThumbnail) {
                                     <div
                                         class="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
-                                        <dot-contentlet-thumbnail
-                                            [iconSize]="'24px'"
+                                        <dot-content-thumbnail
                                             [contentlet]="item"
-                                            [playableVideo]="false"
+                                            iconSize="24px"
                                             data-testId="contentlet-thumbnail" />
                                     </div>
                                 }
-                                <p class="truncate">{{ item.title }}</p>
+                                @if (canNavigate) {
+                                    <button
+                                        type="button"
+                                        class="cursor-pointer truncate border-0 bg-transparent p-0 text-left text-inherit focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-hidden"
+                                        (click)="openRelated(item)"
+                                        data-testid="relationship-navigate-link">
+                                        {{ item.title }}
+                                    </button>
+                                } @else {
+                                    <p class="truncate">{{ item.title }}</p>
+                                }
                             </div>
                         </td>
                     }
                     @case ('language') {
-                        <td class="w-32 max-w-32 min-w-32" [class.cursor-not-allowed]="isDisabled">
+                        <td
+                            class="w-32 max-w-32 min-w-32"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
                             @if (item.language | language; as localeLabel) {
                                 <p-tag
                                     class="whitespace-nowrap"
@@ -151,24 +169,29 @@
                     }
                     @case ('status') {
                         <td
-                            class="w-32 max-w-32 min-w-32 text-right!"
-                            [class.cursor-not-allowed]="isDisabled">
+                            class="w-32 max-w-32 min-w-32"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
                             <dot-contentlet-status-badge [state]="item" />
                         </td>
                     }
                     @case ('image') {
-                        <td class="w-24 max-w-24 min-w-24" [class.cursor-not-allowed]="isDisabled">
+                        <td
+                            class="w-24 max-w-24 min-w-24"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
                             <div class="flex items-center justify-center">
-                                <dot-contentlet-thumbnail
-                                    [iconSize]="'30px'"
-                                    [contentlet]="item"
-                                    [playableVideo]="false"
-                                    data-testId="contentlet-thumbnail" />
+                                <div class="h-14 w-20 shrink-0 overflow-hidden rounded-md">
+                                    <dot-content-thumbnail
+                                        [contentlet]="item"
+                                        iconSize="30px"
+                                        data-testId="contentlet-thumbnail" />
+                                </div>
                             </div>
                         </td>
                     }
                     @default {
-                        <td class="w-32 max-w-32 min-w-32">
+                        <td class="w-32 max-w-32 min-w-32" [class.text-right!]="$last">
                             <p class="truncate">{{ item[column.nameField] }}</p>
                         </td>
                     }

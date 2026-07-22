@@ -1,6 +1,6 @@
 import { describe } from '@jest/globals';
 import { MonacoEditorLoaderService, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -57,6 +57,7 @@ import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
@@ -103,11 +104,25 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             mockProvider(DotEditContentStore, {
                 contentType: signal(null),
                 isCopyingLocale: signal(false),
-                currentLocale: signal(undefined)
+                currentLocale: signal(undefined),
+                isDialogMode: signal(false),
+                contentlet: signal(null)
             }),
             mockProvider(DotEditContentService, {
                 getContentById: jest.fn().mockReturnValue(of({}))
-            })
+            }),
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    inPlaceNavigation: false,
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn(),
+                    goToRelatedContent: jest.fn(),
+                    goToCrumb: jest.fn()
+                }
+            }
         ]
     },
     [FIELD_TYPES.FILE]: {

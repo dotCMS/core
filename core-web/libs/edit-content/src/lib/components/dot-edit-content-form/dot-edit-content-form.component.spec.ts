@@ -1,12 +1,12 @@
 import { expect } from '@jest/globals';
+import { patchState } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -38,6 +38,7 @@ import {
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
+    DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotContentletCanLock,
@@ -54,6 +55,7 @@ import {
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
@@ -81,6 +83,15 @@ describe('DotFormComponent', () => {
 
         providers: [
             DotEditContentStore,
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn()
+                }
+            },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
             // Due using the store directly
             mockProvider(DotWorkflowsActionsService),
@@ -299,6 +310,73 @@ describe('DotFormComponent', () => {
             // Clean up any pending async operations
             flush();
         }));
+    });
+
+    describe('Field padding and form max-width (issue #36615)', () => {
+        // MOCK_CONTENTTYPE_1_TAB has a single row with two columns, i.e. a multi-column tab.
+        it('should apply the wider max-width and gap classes for a multi-column layout', () => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeNewContent('TestMock');
+            spectator.detectChanges();
+
+            const container = spectator.query(byTestId('tab-layout-container'));
+            expect(container?.classList.contains('max-w-286')).toBe(true);
+            expect(container?.classList.contains('max-w-206')).toBe(false);
+            expect(container?.classList.contains('mx-auto')).toBe(true);
+
+            const row = spectator.query(byTestId('row'));
+            const column = spectator.query(byTestId('column'));
+            expect(row?.classList.contains('gap-5')).toBe(true);
+            expect(row?.classList.contains('mb-5')).toBe(true);
+            expect(column?.classList.contains('gap-5')).toBe(true);
+        });
+
+        it('should apply the narrower max-width for a single-column layout (every row has exactly one column)', () => {
+            const singleColumnRow = MOCK_CONTENTTYPE_1_TAB.layout[0];
+            const singleColumnContentType: DotCMSContentType = {
+                ...MOCK_CONTENTTYPE_1_TAB,
+                layout: [
+                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns[0]] },
+                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns[1]] }
+                ]
+            };
+
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(singleColumnContentType)
+            );
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeNewContent('TestMock');
+            spectator.detectChanges();
+
+            const container = spectator.query(byTestId('tab-layout-container'));
+            expect(container?.classList.contains('max-w-206')).toBe(true);
+            expect(container?.classList.contains('max-w-286')).toBe(false);
+            expect(container?.classList.contains('mx-auto')).toBe(true);
+
+            const rows = spectator.queryAll(byTestId('row'));
+            expect(rows.length).toBe(2);
+        });
     });
 
     describe('With multiple tabs and existing content', () => {

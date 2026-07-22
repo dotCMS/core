@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorHost, createHostFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
