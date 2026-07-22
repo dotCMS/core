@@ -1501,12 +1501,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 }
                 first = false;
 
-                // Build individual SELECT for this type
-                if (LOAD_FROM_CACHE.get()) {
-                    unionQuery.append(ContentTypeSql.SELECT_ONLY_INODE_FIELD);
-                } else {
-                    unionQuery.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
-                }
+                // Build individual SELECT for this type. Both cache and non-cache modes select the
+                // full structure columns so the UNION's ORDER BY can reference the sort column(s):
+                // a UNION ORDER BY may only reference SELECT-list columns. In cache mode we still
+                // hydrate each row's ContentType from cache by inode (see below), so only the
+                // current page's columns are materialized.
+                unionQuery.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
 
                 unionQuery.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
 
@@ -1567,30 +1567,20 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                     unionQuery.append(" AND inode.inode NOT IN (").append(notInPlaceholders).append(") ");
                     parameters.addAll(excludeList);
                 }
-
-                if (LOAD_FROM_CACHE.get()) {
-                    unionQuery.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
-                }
             }
 
-            // Add ORDER BY only when NOT loading from cache.
-            // In cache mode the UNION selects inode only, so ORDER BY columns aren't available in
-            // SQL; the global ordering is applied in Java below, before pagination.
-            if (!LOAD_FROM_CACHE.get()) {
-                unionQuery.append(" order by ").append(sanitizedOrderBy);
-            }
+            // Order the UNION globally BEFORE pagination, in both cache and non-cache modes. The
+            // trailing `inode` key makes this a total order (stable tie-break) so pages are
+            // disjoint and reproducible across separate page requests (no reappearance).
+            unionQuery.append(" order by ").append(sanitizedOrderBy).append(", ").append(INODE_COLUMN);
 
             // Execute the UNION query
             dc.setSQL(unionQuery.toString());
-            // In non-cache mode the UNION is globally ordered in SQL, so paginate at the DB.
-            // In cache mode we must NOT paginate the raw UNION here: it is unordered (inode-only
-            // select), so a DB-level LIMIT/OFFSET would return an arbitrary per-type slice and
-            // break global ordering across pages. Instead fetch the full matching set and
-            // sort + paginate in Java below.
-            if (!LOAD_FROM_CACHE.get()) {
-                dc.setMaxRows(remainingLimit);
-                dc.setStartRow(adjustedOffset);
-            }
+            // Paginate at the DB in both modes: the UNION is globally ordered, so setMaxRows/
+            // setStartRow yield the correct global page (~perPage rows materialized, not the whole
+            // set). In cache mode we then hydrate only those rows' ContentTypes from cache by inode.
+            dc.setMaxRows(remainingLimit);
+            dc.setStartRow(adjustedOffset);
 
             // Add all parameters in order
             for (Object param : parameters) {
@@ -1602,11 +1592,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // Transform results
             final List<ContentType> queryResults;
             if (LOAD_FROM_CACHE.get()) {
-                // Hydrate the full matching set from cache, sort globally BEFORE paginating, then
-                // apply the page slice. The comparator is given a stable tie-breaker (inode) so it
-                // defines a total order: pages are disjoint and reproducible across separate page
-                // requests (no reappearance), matching the exact global total.
-                final List<ContentType> globallySorted = dc.loadObjectResults()
+                // The DB already returned this page globally ordered and paginated; hydrate only
+                // the page's rows from cache by inode, preserving the DB order.
+                queryResults = dc.loadObjectResults()
                         .stream()
                         .map(typeMap -> Try.of(() -> find((String) typeMap.get(INODE_COLUMN)))
                                 .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
@@ -1614,15 +1602,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                                                 typeMap.get(INODE_COLUMN), getErrorMessage(e)), e))
                                 .getOrNull())
                         .filter(Objects::nonNull)
-                        .sorted(createContentTypeComparator(orderByForComparator)
-                                .thenComparing(ct -> ct.inode() != null ? ct.inode() : ""))
                         .collect(Collectors.toList());
-
-                final int fromIndex = Math.min(Math.max(adjustedOffset, 0), globallySorted.size());
-                final int toIndex = (remainingLimit < 0)
-                        ? globallySorted.size()
-                        : Math.min(fromIndex + remainingLimit, globallySorted.size());
-                queryResults = new ArrayList<>(globallySorted.subList(fromIndex, toIndex));
             } else {
                 queryResults = new DbContentTypeTransformer(dc.loadObjectResults()).asList();
             }
