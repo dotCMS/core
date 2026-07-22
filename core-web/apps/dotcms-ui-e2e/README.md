@@ -142,7 +142,9 @@ Prefer `just test-e2e` when validating before merge — it matches the CI pipeli
 
 ### CI sharding
 
-PR CI runs the Playwright suite as **three parallel jobs** (Playwright `--shard=1/3`, `2/3`, `3/3`; GitHub job names use “1 of 3” to keep artifact names valid). Each job boots its own dotCMS stack from the prebuilt Docker artifact. Rationale and how to add a 4th shard: [SPEC-ci-sharding.md](SPEC-ci-sharding.md).
+PR CI runs the Playwright suite as **three parallel jobs** (Playwright `--shard=1/3`, `2/3`, `3/3`; GitHub job names use “1 of 3” to keep artifact names valid — artifact names reject `/`). Each job boots its own dotCMS stack from the prebuilt Docker artifact. Suites are defined in `.github/test-matrix.yml`; `pom.xml` passes `e2e.playwright.args` through to Nx (no spaces in the Maven property — CI tokenizes on spaces).
+
+**Why 3 shards?** A single job with workers still exceeded the ~25m E2E phase target. Three parallel jobs each run ~⅓ of the suite; phase wall-clock is `max(shard durations)`, not the sum. Sharding is orthogonal to Playwright `workers` in `playwright.config.ts`.
 
 Run one shard locally (Maven lifecycle, same as CI):
 
@@ -158,6 +160,15 @@ With the stack already up:
 ```bash
 cd core-web && CI=true CURRENT_ENV=ci pnpm exec nx run dotcms-ui-e2e:e2e --configuration=ci -- --shard=1/3
 ```
+
+#### How to add a 4th shard
+
+1. Choose new total `M` (e.g. 4). Update **every** existing suite’s `--shard=N/M` so `N` runs 1…M with the same `M`.
+2. In `.github/test-matrix.yml`, duplicate an e2e suite entry; set `name` / `stage_name` to **4 of 4** (no `/`) and `maven_args` to include `-De2e.playwright.args=--shard=4/4` (plus `-De2e.test.env=ci -pl :dotcms-ui-e2e`).
+3. Update the shard examples in this README to use `/4`.
+4. Validate on a PR: four green jobs, disjoint coverage, acceptable runner cost.
+
+No workflow JavaScript changes are required if args continue to flow through Maven properties.
 
 ## Environment reference
 
