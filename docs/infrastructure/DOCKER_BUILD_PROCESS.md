@@ -272,7 +272,7 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 | **Integration Tests** | `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false` | `just test-integration` | JUnit integration tests (auto-starts DB/ES) | **Full suite: 60+ min** ⚠️ |
 | **Postman Tests** | `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false` | `just test-postman` | API testing with Postman/Newman (auto-starts services) | ~1-3 min |
 | **Karate Tests** | `./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false` | `just test-karate` | BDD API testing (auto-starts services) | ~1-2 min |
-| **E2E Tests (Playwright)** | `./mvnw verify -pl :dotcms-ui-e2e -De2e.test.skip=false` | `just test-e2e` | Nx Playwright admin UI E2E (full Docker environment) | ~2-5 min |
+| **E2E Tests (Playwright)** | `./mvnw verify -pl :dotcms-ui-e2e -De2e.test.skip=false -De2e.test.env=ci` | `just test-e2e` | Nx Playwright admin UI E2E (full Docker environment) | ~2-5 min |
 
 ⚠️ **PERFORMANCE WARNING**: The **FULL** integration test suite takes 30+ minutes to complete. Always target specific test classes during development!
 
@@ -382,7 +382,7 @@ just test-integration-ide  # Start services once
 # Run E2E test with specific spec (from core-web, or via Maven module)
 cd core-web && pnpm nx e2e dotcms-ui-e2e src/tests/login/login.spec.ts
 # Or full Maven lifecycle:
-./mvnw verify -pl :dotcms-ui-e2e -De2e.test.skip=false -De2e.test.env=local
+./mvnw verify -pl :dotcms-ui-e2e -De2e.test.skip=false -De2e.test.env=ci
 ```
 
 **For IDE-based testing (start services manually, then run tests in IDE):**
