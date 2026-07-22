@@ -178,11 +178,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     readonly assetsPerPage = ASSETS_PER_PAGE;
 
-    /** Placeholder rows for the skeleton state. PrimeNG's `dataKey` resolution
-     * needs a defined key per item; using bare `undefined` slots (as
-     * `Array.from({length:N})` produces) makes the table skip rendering the
-     * skeleton row. Objects with a stable `id`/`asset` field are the pattern
-     * from PrimeNG's official loading-skeleton example. */
+    /** Stable per-row keys — PrimeNG's `dataKey` skips `undefined` slots. */
     readonly bundlesSkeleton = Array.from({ length: 6 }, (_, i) => ({
         id: `__skel_${i}`
     }));
