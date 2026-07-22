@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.StringUtils;
+import org.apache.lucene.queryparser.classic.QueryParser;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -31,7 +32,12 @@ public class KeyValueFieldStrategy implements FieldStrategy {
             fieldValue = fieldValue.substring(0, fieldValue.length()-1);
         }
         final String[] splitter = fieldValue.split(":");
-        if (splitter.length > 1) {
+        // The `key:value` metadata shorthand transform intentionally injects `*` wildcards, so the
+        // tokens it produces must NOT be re-escaped; a plain term (the regular contains case, and
+        // what Content Drive sends — a `key_value`-joined term) is escaped so a hyphen/colon/etc.
+        // can't break query parsing.
+        final boolean colonTransformed = splitter.length > 1;
+        if (colonTransformed) {
             StringBuilder metakey = new StringBuilder();
             for (int x = 0; x < splitter.length - 1; x++) {
                 metakey.append(splitter[x]);
@@ -47,6 +53,7 @@ public class KeyValueFieldStrategy implements FieldStrategy {
         return Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                 .map(String::trim)
                 .filter(token -> !token.isEmpty())
+                .map(token -> colonTransformed ? token : QueryParser.escape(token))
                 .map(token -> String.format("+%s%s:%s%s%s",
                         fieldName, ".key_value", "*", token, "*"))
                 .collect(Collectors.joining(SPACE));
