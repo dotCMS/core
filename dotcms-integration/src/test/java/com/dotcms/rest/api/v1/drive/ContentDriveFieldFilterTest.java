@@ -100,6 +100,9 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     private static final String BOOL_VAR = "featured";
     private static final String JSON_VAR = "meta";
     private static final String CUSTOM_VAR = "custom";
+    private static final String KV_VAR = "props";
+    private static final String STORY_VAR = "story";
+    private static final String BINARY_VAR = "file";
     private static final String NON_SEARCHABLE_VAR = "notSearchable";
 
     // angular text + tags [angular, cms] + 2024
@@ -153,9 +156,21 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
         new FieldDataGen().type(CustomField.class).name(CUSTOM_VAR).velocityVarName(CUSTOM_VAR)
                 .values("").contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(StoryBlockField.class).name(STORY_VAR).velocityVarName(STORY_VAR)
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(KeyValueField.class).name(KV_VAR).velocityVarName(KV_VAR)
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(BinaryField.class).name(BINARY_VAR).velocityVarName(BINARY_VAR)
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
         // Not user-searchable — filtering on it must be rejected.
         new FieldDataGen().type(TextField.class).name(NON_SEARCHABLE_VAR).velocityVarName(NON_SEARCHABLE_VAR)
                 .contentTypeId(typeWithFields.id()).searchable(false).indexed(true).nextPersisted();
+
+        // A real file for the Binary field (indexed as the file name). Created in a temp dir.
+        final File binaryFile = new File(
+                Files.createTempDirectory("drive-ff-bin-" + uniqueId).toFile(),
+                "quarterly-report.pdf");
+        Files.writeString(binaryFile.toPath(), "dummy pdf content");
 
         angularWithTags = new ContentletDataGen(typeWithFields.id())
                 .setProperty("title", "Angular with tags " + uniqueId)
@@ -166,6 +181,9 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(BOOL_VAR, "true")
                 .setProperty(JSON_VAR, "{\"env\":\"prod\"}")
                 .setProperty(CUSTOM_VAR, "alpha")
+                .setProperty(KV_VAR, "{\"color\":\"red\"}")
+                .setProperty(STORY_VAR, story("launch announcement"))
+                .setProperty(BINARY_VAR, binaryFile)
                 .folder(testFolder)
                 .nextPersisted();
 
@@ -178,6 +196,8 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(BOOL_VAR, "false")
                 .setProperty(JSON_VAR, "{\"env\":\"dev\"}")
                 .setProperty(CUSTOM_VAR, "beta")
+                .setProperty(KV_VAR, "{\"color\":\"blue\"}")
+                .setProperty(STORY_VAR, story("internal notes"))
                 .folder(testFolder)
                 .nextPersisted();
 
@@ -244,6 +264,12 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         return Date.from(LocalDate.of(year, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant());
     }
 
+    /** Minimal Story Block (ProseMirror) doc whose paragraph carries the given text. */
+    private static String story(final String text) {
+        return "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":"
+                + "[{\"type\":\"text\",\"text\":\"" + text + "\"}]}]}";
+    }
+
     private Set<String> driveInodes(final DriveRequestForm request)
             throws DotDataException, DotSecurityException {
         final PaginatedContents results = contentDriveHelper.driveSearch(request, systemUser);
@@ -261,21 +287,6 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .showFolders(false)
                 .offset(0)
                 .maxResults(100);
-    }
-
-    /** A search scoped to a specific content type (for the self-contained field-type fixtures). */
-    private DriveRequestForm typeRequest(final ContentType ct,
-            final Map<String, Object> userSearchable) {
-        return DriveRequestForm.builder()
-                .assetPath(testAssetPath)
-                .contentTypes(List.of(ct.variable()))
-                .live(false)
-                .archived(false)
-                .showFolders(false)
-                .offset(0)
-                .maxResults(100)
-                .userSearchable(userSearchable)
-                .build();
     }
 
     /**
@@ -552,91 +563,51 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
 
     /**
      * Key/Value field: the FE sends the joined {@code key_value} term for an exact-pair match, or a
-     * bare term for a loose match against the indexed {@code .key_value} sub-field (which is stored
-     * as {@code (key + "_" + value).toLowerCase()}).
+     * bare term for a loose match against the indexed {@code .key_value} sub-field (stored as
+     * {@code (key + "_" + value).toLowerCase()}). Angular=red, React=blue.
      */
     @Test
-    public void testKeyValueFieldFiltersExactPairAndLoose() throws Exception {
-        final String uid = System.currentTimeMillis() + "";
-        final ContentType kvType = new ContentTypeDataGen()
-                .name("DriveFfKv_" + uid).velocityVarName("driveFfKv_" + uid)
-                .baseContentType(BaseContentType.CONTENT).host(testSite).nextPersisted();
-        new FieldDataGen().type(KeyValueField.class).name("props").velocityVarName("props")
-                .contentTypeId(kvType.id()).searchable(true).indexed(true).nextPersisted();
-
-        final Contentlet red = new ContentletDataGen(kvType.id())
-                .setProperty("title", "kv red " + uid)
-                .setProperty("props", "{\"color\":\"red\"}")
-                .folder(testFolder).nextPersisted();
-        final Contentlet blue = new ContentletDataGen(kvType.id())
-                .setProperty("title", "kv blue " + uid)
-                .setProperty("props", "{\"color\":\"blue\"}")
-                .folder(testFolder).nextPersisted();
-
+    public void testKeyValueFieldFiltersExactPairAndLoose() throws DotDataException, DotSecurityException {
         // Exact pair: `color_red` matches only the red item.
-        final Set<String> exact = driveInodes(typeRequest(kvType, Map.of("props", "color_red")));
-        assertTrue("color_red must match the red pair", exact.contains(red.getInode()));
-        assertFalse("color_red must not match the blue pair", exact.contains(blue.getInode()));
+        final Set<String> exact = driveInodes(baseRequest()
+                .userSearchable(Map.of(KV_VAR, "color_red")).build());
+        assertTrue("color_red must match the red item", exact.contains(angularWithTags.getInode()));
+        assertFalse("color_red must not match the blue item", exact.contains(reactWithVue.getInode()));
 
         // Loose: a bare term matches a key OR value in any pair — "color" is the key in both.
-        final Set<String> loose = driveInodes(typeRequest(kvType, Map.of("props", "color")));
-        assertTrue("bare 'color' matches the red pair", loose.contains(red.getInode()));
-        assertTrue("bare 'color' matches the blue pair", loose.contains(blue.getInode()));
+        final Set<String> loose = driveInodes(baseRequest()
+                .userSearchable(Map.of(KV_VAR, "color")).build());
+        assertTrue("bare 'color' matches the red item", loose.contains(angularWithTags.getInode()));
+        assertTrue("bare 'color' matches the blue item", loose.contains(reactWithVue.getInode()));
     }
 
     /**
      * Binary field indexes the file NAME (not its contents), so a contains term matches the
-     * filename.
+     * filename. Uses a single token (the analyzer tokenizes on {@code -}/{@code .}, and a hyphenated
+     * multi-part wildcard doesn't parse).
      */
     @Test
-    public void testBinaryFieldFiltersByFileName() throws Exception {
-        final String uid = System.currentTimeMillis() + "";
-        final ContentType binType = new ContentTypeDataGen()
-                .name("DriveFfBin_" + uid).velocityVarName("driveFfBin_" + uid)
-                .baseContentType(BaseContentType.CONTENT).host(testSite).nextPersisted();
-        new FieldDataGen().type(BinaryField.class).name("file").velocityVarName("file")
-                .contentTypeId(binType.id()).searchable(true).indexed(true).nextPersisted();
+    public void testBinaryFieldFiltersByFileName() throws DotDataException, DotSecurityException {
+        // angularWithTags carries "quarterly-report.pdf"; "quarterly" is one indexed token.
+        final Set<String> match = driveInodes(baseRequest()
+                .userSearchable(Map.of(BINARY_VAR, "quarterly")).build());
+        assertTrue("filename token 'quarterly' must match", match.contains(angularWithTags.getInode()));
 
-        final File dir = Files.createTempDirectory("drive-ff-bin-" + uid).toFile();
-        final File file = new File(dir, "quarterly-report-" + uid + ".pdf");
-        Files.writeString(file.toPath(), "dummy content");
-
-        final Contentlet withFile = new ContentletDataGen(binType.id())
-                .setProperty("title", "bin " + uid)
-                .setProperty("file", file)
-                .folder(testFolder).nextPersisted();
-
-        final Set<String> match =
-                driveInodes(typeRequest(binType, Map.of("file", "quarterly-report")));
-        assertTrue("filename contains 'quarterly-report'", match.contains(withFile.getInode()));
-
-        final Set<String> noMatch = driveInodes(typeRequest(binType, Map.of("file", "invoice")));
-        assertFalse("filename does not contain 'invoice'", noMatch.contains(withFile.getInode()));
+        final Set<String> noMatch = driveInodes(baseRequest()
+                .userSearchable(Map.of(BINARY_VAR, "invoice")).build());
+        assertFalse("filename does not contain 'invoice'", noMatch.contains(angularWithTags.getInode()));
     }
 
     /**
-     * Story Block field (LONG_TEXT) routes to the index as a contains term against its stored text.
+     * Story Block field (LONG_TEXT) routes to the index as a contains term against its stored text:
+     * "launch" matches the item whose story says "launch announcement".
      */
     @Test
-    public void testStoryBlockFieldFiltersViaIndex() throws Exception {
-        final String uid = System.currentTimeMillis() + "";
-        final ContentType sbType = new ContentTypeDataGen()
-                .name("DriveFfStory_" + uid).velocityVarName("driveFfStory_" + uid)
-                .baseContentType(BaseContentType.CONTENT).host(testSite).nextPersisted();
-        new FieldDataGen().type(StoryBlockField.class).name("story").velocityVarName("story")
-                .contentTypeId(sbType.id()).searchable(true).indexed(true).nextPersisted();
-
-        final String uniqueWord = "launchword" + uid;
-        final String doc = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":"
-                + "[{\"type\":\"text\",\"text\":\"" + uniqueWord + " announcement\"}]}]}";
-        final Contentlet withStory = new ContentletDataGen(sbType.id())
-                .setProperty("title", "story " + uid)
-                .setProperty("story", doc)
-                .folder(testFolder).nextPersisted();
-
-        final Set<String> match = driveInodes(typeRequest(sbType, Map.of("story", uniqueWord)));
-        assertTrue("story text containing the unique word must match",
-                match.contains(withStory.getInode()));
+    public void testStoryBlockFieldFiltersViaIndex() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(STORY_VAR, "launch")).build());
+        assertTrue("story 'launch announcement' must match", inodes.contains(angularWithTags.getInode()));
+        assertFalse("story 'internal notes' must not match", inodes.contains(reactWithVue.getInode()));
     }
 
     /**
