@@ -7,11 +7,13 @@ import {
     DestroyRef,
     forwardRef,
     inject,
+    Injector,
     input,
-    OnInit
+    OnInit,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NG_VALUE_ACCESSOR } from '@angular/forms';
+import { AbstractControl, NgControl, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -38,6 +40,7 @@ import { PaginationComponent } from './../pagination/pagination.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
+import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
@@ -95,6 +98,31 @@ export class DotRelationshipFieldComponent
     readonly #destroyRef = inject(DestroyRef);
 
     /**
+     * Injector used to resolve this control's `NgControl` lazily (in an effect,
+     * not the constructor) so we can reset its dirty state after programmatic
+     * value syncs — resolving `NgControl` in the constructor would create a
+     * circular dependency with the `formControlName` directive.
+     */
+    readonly #injector = inject(Injector);
+    #ngControl: NgControl | null | undefined;
+
+    /**
+     * The form control backing this field, or null if not yet available.
+     * Resolved on first use and cached.
+     */
+    #control(): AbstractControl | null {
+        this.#ngControl ??= this.#injector.get(NgControl, null);
+
+        return this.#ngControl?.control ?? null;
+    }
+
+    /**
+     * Presentation port. Related-content navigation is delegated to it so it works
+     * the same in full-screen (router) and dialog (in-place reload).
+     */
+    readonly #host = inject(EDIT_CONTENT_HOST);
+
+    /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
      * It is used to manage dialog interactions within the component.
@@ -107,14 +135,6 @@ export class DotRelationshipFieldComponent
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
-
-    /**
-     * Tracks whether the initial value synchronization has already happened.
-     * Used to avoid marking the control as touched on the first (programmatic)
-     * value sync so a required, empty field does not show its validation error
-     * before the user interacts with it.
-     */
-    #hasSyncedInitialValue = false;
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -201,6 +221,16 @@ export class DotRelationshipFieldComponent
     $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
 
     /**
+     * Whether related content can be navigated to by clicking its title. Enabled
+     * whenever the field is enabled — the host decides how navigation happens
+     * (router in full-screen, in-place reload in a dialog). A disabled/read-only
+     * field renders plain (non-link) titles.
+     *
+     * @memberof DotRelationshipFieldComponent
+     */
+    $canNavigate = computed(() => !this.$isDisabled());
+
+    /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
      * It sets the value of the field to the formatted relationship.
      *
@@ -236,6 +266,53 @@ export class DotRelationshipFieldComponent
         }
 
         this.store.deleteItem(inode);
+    }
+
+    /**
+     * Opens the editor for a related content, restoring the legacy editor's
+     * related-content navigation. The current content is seeded as the origin of
+     * the navigation trail so the "Relating content" banner shows the full path.
+     * The host performs the navigation: a route change in full-screen, an in-place
+     * reload in a dialog.
+     *
+     * No-op when navigation is disabled (a disabled field), when the item has no
+     * inode, or when it points at the content already open.
+     *
+     * @param item The related contentlet whose title was clicked.
+     */
+    openRelated(item: DotCMSContentlet): void {
+        if (!this.$canNavigate() || !item?.inode) {
+            return;
+        }
+
+        const current = this.#editContentStore.contentlet();
+        // Navigating to the content already open is a no-op.
+        if (current?.inode === item.inode) {
+            return;
+        }
+
+        // The current content may have no inode yet — an unsaved new translation
+        // (locale switch → populate/manual). In that case seed the trail with the
+        // version we came from (translationSourceInode) as the origin.
+        const originInode = current?.inode ?? this.#editContentStore.translationSourceInode();
+
+        // No usable origin (or it is the target itself): start a fresh trail.
+        if (!originInode || originInode === item.inode) {
+            this.#host.goToCrumb(item.inode, [item.inode]);
+            return;
+        }
+
+        // Only label the origin crumb with the current content's title when the
+        // origin IS the current content. For a new translation the origin is the
+        // source version (translationSourceInode), a different content, so don't
+        // relabel it with the translation's title — pass '' and let the source's
+        // already-cached title stand (registerTitle ignores empty titles).
+        const originTitle = originInode === current?.inode ? (current?.title ?? '') : '';
+
+        this.#host.goToRelatedContent(
+            { inode: originInode, title: originTitle },
+            { inode: item.inode, title: item.title ?? '' }
+        );
     }
 
     /**
@@ -382,9 +459,17 @@ export class DotRelationshipFieldComponent
     /**
      * Syncs the formatted relationship value to the form control.
      *
-     * The control is only marked as touched on user-driven changes (second and
-     * subsequent emissions), never on the initial programmatic sync, so a
-     * required, empty field does not display its validation error on first render.
+     * `onChange` marks the control dirty and touched. That is correct for genuine
+     * user edits (relate/unrelate/reorder), but NOT for programmatic population —
+     * the initial load and locale re-init both flow through here, and the
+     * relationship items are fetched asynchronously, so a load-driven sync can
+     * re-dirty the form AFTER the editor's pristine-after-init window and make the
+     * unsaved-changes guard fire on a content the user never touched.
+     *
+     * We therefore drive dirty/touched off the store's `lastChangeSource`:
+     * - `'user'`: keep the control dirty and mark it touched.
+     * - `'load'`: revert the dirty state `onChange` just set (mark pristine), and
+     *   never mark touched (so a required empty field shows no error on render).
      *
      * @param value - The value to update.
      */
@@ -395,13 +480,14 @@ export class DotRelationshipFieldComponent
 
         this.onChange(value);
 
-        // Only mark the control as touched on genuine user-driven changes, not on the
-        // initial value sync — otherwise a required, empty field shows its validation
-        // error as soon as the form renders.
-        if (this.#hasSyncedInitialValue) {
+        // Read the source untracked: it is patched together with the data that
+        // drives this method, so it must not add itself as a reactive dependency.
+        const isUserChange = untracked(() => this.store.lastChangeSource()) === 'user';
+
+        if (isUserChange) {
             this.onTouched();
         } else {
-            this.#hasSyncedInitialValue = true;
+            this.#control()?.markAsPristine();
         }
     });
 

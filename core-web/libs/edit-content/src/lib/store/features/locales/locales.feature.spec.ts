@@ -4,7 +4,6 @@ import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spect
 import { of } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
-import { Router } from '@angular/router';
 
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -21,6 +20,7 @@ import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 import { withLocales } from './locales.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { initialRootState } from '../../edit-content.store';
 
 const MOCK_LANGUAGES = [
@@ -34,10 +34,6 @@ const SYSTEM_LANGUAGES = [
     { id: 2, isoCode: 'it-it', defaultLanguage: true }
 ] as DotLanguage[];
 
-// Module-level mock used to track initializeExistingContent calls from within
-// withLocales() closures, where jest.spyOn can't reach the closure's store reference.
-const initializeExistingContentMock = jest.fn();
-
 const withTest = () =>
     signalStoreFeature(
         withState({
@@ -47,17 +43,6 @@ const withTest = () =>
         withMethods((store) => ({
             updateContent: (content) => {
                 patchState(store, { contentlet: content });
-            },
-            setDialogMode: (isDialogMode: boolean) => {
-                patchState(store, { isDialogMode });
-            },
-            setPendingLocaleInode: (inode: string | null) => {
-                patchState(store, { pendingLocaleInode: inode });
-            },
-            initializeExistingContent: (
-                ...args: Parameters<typeof initializeExistingContentMock>
-            ) => {
-                initializeExistingContentMock(...args);
             }
         }))
     );
@@ -72,8 +57,18 @@ describe('LocalesFeature', () => {
     let dotContentletService: SpyObject<DotContentletService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dialogService: SpyObject<DialogService>;
-    let router: SpyObject<Router>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
+
+    // Locale reloads are delegated to the host (router vs in-place is its call).
+    const mockHost = {
+        reloadContent: jest.fn(),
+        resolveIdentity: jest.fn().mockReturnValue({}),
+        reportSaved: jest.fn(),
+        setContentTitle: jest.fn(),
+        addBreadcrumb: jest.fn(),
+        goToSavedContent: jest.fn(),
+        goToRestoredVersion: jest.fn()
+    };
 
     const createStore = createServiceFactory({
         service: Store,
@@ -86,20 +81,19 @@ describe('LocalesFeature', () => {
             DialogService,
             DynamicDialogConfig,
             DynamicDialogRef,
-            Router,
             DotWorkflowsActionsService
-        ]
+        ],
+        providers: [{ provide: EDIT_CONTENT_HOST, useValue: mockHost }]
     });
 
     beforeEach(() => {
-        initializeExistingContentMock.mockClear();
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
         spectator = createStore();
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
         dotContentletService = spectator.inject(DotContentletService);
         dotEditContentService = spectator.inject(DotEditContentService);
         dialogService = spectator.inject(DialogService);
-        router = spectator.inject(Router);
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
 
         workflowActionService.getDefaultActions.mockReturnValue(of(MOCK_SINGLE_WORKFLOW_ACTIONS));
@@ -143,7 +137,7 @@ describe('LocalesFeature', () => {
             store.updateContent({ identifier: '123', languageId: 1 } as DotCMSContentlet);
         });
 
-        it('should switch to a translated locale in portlet mode', fakeAsync(() => {
+        it('should delegate a translated-locale switch to the host', fakeAsync(() => {
             spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[1]);
             spectator.flushEffects();
@@ -153,27 +147,9 @@ describe('LocalesFeature', () => {
                 languageId: 2
             });
 
-            expect(router.navigate).toHaveBeenCalledWith(['/content', '456'], {
-                replaceUrl: true,
-                queryParamsHandling: 'preserve'
-            });
-        }));
-
-        it('should set pendingLocaleInode instead of navigating in dialog mode', fakeAsync(() => {
-            store.setDialogMode(true);
-
-            spectator.flushEffects();
-            store.switchLocale(MOCK_LANGUAGES[1]);
-            tick();
-
-            expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
-                id: '123',
-                languageId: 2
-            });
-
-            expect(store.pendingLocaleInode()).toEqual('456');
-            expect(initializeExistingContentMock).not.toHaveBeenCalled();
-            expect(router.navigate).not.toHaveBeenCalled();
+            // The host decides router vs in-place reload; the feature just states
+            // the intent with the resolved inode.
+            expect(mockHost.reloadContent).toHaveBeenCalledWith('456');
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {
@@ -236,47 +212,5 @@ describe('LocalesFeature', () => {
 
             expect(store.isManualTranslation()).toBe(false);
         }));
-
-        describe('after a translated-locale switch in dialog mode', () => {
-            beforeEach(fakeAsync(() => {
-                store.setDialogMode(true);
-                spectator.flushEffects();
-                store.switchLocale(MOCK_LANGUAGES[1]);
-                tick();
-                // pendingLocaleInode is now '456' (mocked inode from outer beforeEach)
-            }));
-
-            describe('confirmPendingLocaleSwitch', () => {
-                it('should clear pendingLocaleInode and call initializeExistingContent', fakeAsync(() => {
-                    expect(store.pendingLocaleInode()).toEqual('456');
-
-                    store.confirmPendingLocaleSwitch();
-
-                    expect(store.pendingLocaleInode()).toBeNull();
-                    expect(initializeExistingContentMock).toHaveBeenCalledWith({
-                        inode: '456',
-                        depth: '2'
-                    });
-                }));
-            });
-
-            describe('cancelPendingLocaleSwitch', () => {
-                it('should clear pendingLocaleInode without switching', fakeAsync(() => {
-                    expect(store.pendingLocaleInode()).toEqual('456');
-
-                    store.cancelPendingLocaleSwitch();
-
-                    expect(store.pendingLocaleInode()).toBeNull();
-                }));
-            });
-        });
-    });
-
-    describe('confirmPendingLocaleSwitch', () => {
-        it('should be a no-op when pendingLocaleInode is null', () => {
-            store.confirmPendingLocaleSwitch();
-
-            expect(initializeExistingContentMock).not.toHaveBeenCalled();
-        });
     });
 });
