@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { ReactiveFormsModule } from '@angular/forms';
@@ -47,6 +47,12 @@ describe('EmaFormSelectorComponent', () => {
                 })
             },
             {
+                provide: DotHttpErrorManagerService,
+                useValue: { handle: jest.fn() }
+            }
+        ],
+        componentProviders: [
+            {
                 provide: DotContentTypeService,
                 useValue: {
                     getContentTypesWithPagination: jest
@@ -55,8 +61,7 @@ describe('EmaFormSelectorComponent', () => {
                             of({ contentTypes: mockForms, pagination: mockPagination })
                         )
                 }
-            },
-            mockProvider(DotHttpErrorManagerService)
+            }
         ]
     });
 
@@ -82,8 +87,8 @@ describe('EmaFormSelectorComponent', () => {
 
     it('should emit selected event when button is clicked', () => {
         jest.spyOn(spectator.component.selected, 'emit');
-        const selectButton = spectator.query('p-button');
-        spectator.click(selectButton);
+        const btn = spectator.query('[data-testid="form-select-button"]')?.querySelector('button');
+        spectator.click(btn as HTMLElement);
         expect(spectator.component.selected.emit).toHaveBeenCalledWith('1');
     });
 
@@ -93,8 +98,8 @@ describe('EmaFormSelectorComponent', () => {
 
     it('should call getContentTypesWithPagination with filter after debounce', () => {
         const service = spectator.inject(DotContentTypeService);
-        const searchInput = spectator.query<HTMLInputElement>('[data-testid="form-search-input"]');
-        spectator.typeInElement('test form', searchInput);
+        (service.getContentTypesWithPagination as jest.Mock).mockClear();
+        spectator.component.searchControl.setValue('test form');
         jest.advanceTimersByTime(300);
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ filter: 'test form', page: 1 })
@@ -104,8 +109,7 @@ describe('EmaFormSelectorComponent', () => {
     it('should reset to page 1 and re-fetch when search changes', () => {
         const service = spectator.inject(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockClear();
-        const searchInput = spectator.query<HTMLInputElement>('[data-testid="form-search-input"]');
-        spectator.typeInElement('form', searchInput);
+        spectator.component.searchControl.setValue('form');
         jest.advanceTimersByTime(300);
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ filter: 'form', page: 1 })
@@ -129,7 +133,7 @@ describe('EmaFormSelectorComponent', () => {
     it('should fetch page 2 and update $first when paginator changes', () => {
         const service = spectator.inject(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockClear();
-        spectator.component.onPageChange({ page: 1, first: 40, rows: 40, pageCount: 3 });
+        spectator.component['onPageChange']({ page: 1, first: 40, rows: 40, pageCount: 3 });
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ page: 2 })
         );

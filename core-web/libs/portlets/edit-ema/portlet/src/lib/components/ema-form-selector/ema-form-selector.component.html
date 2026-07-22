@@ -21,6 +21,7 @@
             <td headers="description">{{ contenttype.description }}</td>
             <td headers="action" style="min-width: fit-content; text-align: right">
                 <p-button
+                    data-testid="form-select-button"
                     (click)="selected.emit(contenttype.id)"
                     styleClass="p-button-outlined"
                     label="Select" />
