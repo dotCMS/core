@@ -179,7 +179,7 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(DATE_VAR, date(2024))
                 .setProperty(MULTI_VAR, "news")
                 .setProperty(BOOL_VAR, "true")
-                .setProperty(JSON_VAR, "{\"env\":\"prod\"}")
+                .setProperty(JSON_VAR, "{\"env\":\"prod\",\"sku\":\"ab-cd\"}")
                 .setProperty(CUSTOM_VAR, "alpha")
                 .setProperty(KV_VAR, "{\"color\":\"red\"}")
                 .setProperty(STORY_VAR, story("launch announcement"))
@@ -543,6 +543,24 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .build());
         assertTrue("JSON containing 'prod' must match", inodes.contains(angularWithTags.getInode()));
         assertFalse("JSON containing 'dev' must not match", inodes.contains(reactWithVue.getInode()));
+        assertFalse("item without a JSON value must not match",
+                inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * A filter term containing a Lucene special character (a hyphen) must be escaped so it doesn't
+     * break query parsing — the search runs and matches via the escaped term (against {@code
+     * _dotraw}) instead of erroring. angularWithTags's JSON carries {@code "sku":"ab-cd"}.
+     */
+    @Test
+    public void testHyphenatedTermIsEscapedAndMatches()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(JSON_VAR, "ab-cd"))
+                .build());
+        assertTrue("hyphenated 'ab-cd' must match the JSON that contains it",
+                inodes.contains(angularWithTags.getInode()));
+        assertFalse("item without that value must not match", inodes.contains(reactWithVue.getInode()));
         assertFalse("item without a JSON value must not match",
                 inodes.contains(angularNoTags.getInode()));
     }
