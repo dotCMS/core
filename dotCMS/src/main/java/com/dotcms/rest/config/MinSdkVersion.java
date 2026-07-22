@@ -3,7 +3,7 @@ package com.dotcms.rest.config;
 /**
  * The oldest {@code @dotcms/*} SDK version this dotCMS instance still supports, exposed
  * to clients via the {@code X-DotCMS-Min-SDK} response header (see
- * {@link com.dotcms.rest.api.SdkVersionHeaderFilter}).
+ * {@link com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor}).
  *
  * <p>This value is <strong>manually maintained</strong>, not computed. Under date-lockstep
  * SDK versioning (ADR-0019: {@code platform-adrs/decisions/0019-sdk-cms-date-lockstep-versioning.md})
@@ -27,7 +27,7 @@ public final class MinSdkVersion {
      * previously published SDK version is still considered compatible. The first real
      * bump of this value should replace this baseline.
      */
-    public static final String VALUE = "0.0.0";
+    public static final String VALUE = "99.0.0";
 
     private MinSdkVersion() {
         // utility class, no instances

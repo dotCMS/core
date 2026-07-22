@@ -58,7 +58,7 @@ export const resetSdkCompatibilityWarnings = (): void => {
 
 /**
  * Reads the dotCMS server's advertised version and minimum supported SDK version off a
- * response (see `SdkVersionHeaderFilter` on the server) and logs a console error/warning
+ * response (see `SdkVersionWebInterceptor` on the server) and logs a console error/warning
  * if this SDK is outside the compatible range:
  *
  * - `ownVersion < X-DotCMS-Min-SDK` → console.error, the SDK must be upgraded.
@@ -86,7 +86,6 @@ export const checkSdkCompatibility = (headers: Headers, ownVersion: string): voi
 
         if (!hasWarnedOutdatedSdk && (compareVersions(ownVersion, minSdkVersion) ?? 0) < 0) {
             hasWarnedOutdatedSdk = true;
-             
             console.error(
                 `[dotCMS SDK] SDK ${ownVersion} is not supported by dotCMS ${serverVersion} ` +
                     `(minimum required: ${minSdkVersion}). Install @dotcms/client@${minSdkVersion} or newer.`
@@ -95,7 +94,6 @@ export const checkSdkCompatibility = (headers: Headers, ownVersion: string): voi
 
         if (!hasWarnedNewerSdk && (compareVersions(ownVersion, serverVersion) ?? 0) > 0) {
             hasWarnedNewerSdk = true;
-             
             console.warn(
                 `[dotCMS SDK] SDK ${ownVersion} is newer than dotCMS ${serverVersion} ` +
                     'and may call APIs the server does not have yet.'
