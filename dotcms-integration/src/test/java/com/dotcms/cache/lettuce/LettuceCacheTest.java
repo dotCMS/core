@@ -156,24 +156,29 @@ public class LettuceCacheTest {
     public void test_portlet_initParams_survive_redis_roundtrip() {
 
         if (RedisClientFactory.getClient("cache").ping()) {
-            final String group = "portletcache";
+            // Isolated test-only group so we never pollute the real "portletcache" namespace that
+            // PortletCache and admin tooling use; RedisCache has no default TTL, so a leaked key
+            // would persist indefinitely on the shared integration Redis.
+            final String group = "portletcache_test_" + System.currentTimeMillis();
             final String key = "portlet" + System.currentTimeMillis();
-            cache.remove(group, key);
 
-            final Map<String, String> initParams = new HashMap<>();
-            initParams.put("view-action", "/ext/contentlet/view_contentlets");
-            initParams.put("name", "content");
-            final Portlet portlet = new Portlet("content", "com.liferay.portlet.StrutsPortlet", initParams);
+            try {
+                final Map<String, String> initParams = new HashMap<>();
+                initParams.put("view-action", "/ext/contentlet/view_contentlets");
+                initParams.put("name", "content");
+                final Portlet portlet = new Portlet("content", "com.liferay.portlet.StrutsPortlet", initParams);
 
-            cache.put(group, key, portlet);
+                cache.put(group, key, portlet);
 
-            final Portlet cached = (Portlet) cache.get(group, key);
-            Assert.assertNotNull("Portlet should be returned from Redis cache", cached);
-            Assert.assertNotNull("initParams must survive the Redis serialization round-trip",
-                    cached.getInitParams());
-            Assert.assertEquals(initParams, cached.getInitParams());
-
-            cache.remove(group, key);
+                final Portlet cached = (Portlet) cache.get(group, key);
+                Assert.assertNotNull("Portlet should be returned from Redis cache", cached);
+                Assert.assertNotNull("initParams must survive the Redis serialization round-trip",
+                        cached.getInitParams());
+                Assert.assertEquals(initParams, cached.getInitParams());
+            } finally {
+                // Clean up even if an assertion above fails, so no stray key is left behind.
+                cache.remove(group, key);
+            }
         }
     }
 }
