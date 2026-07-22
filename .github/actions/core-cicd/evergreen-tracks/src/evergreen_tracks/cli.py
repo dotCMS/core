@@ -48,8 +48,9 @@ def cmd_promote(args: argparse.Namespace) -> int:
     ]
 
     # Optional subset (e.g. --tracks latest): the release pipeline invokes this
-    # engine on-demand to move only `latest` the instant a GA ships, while the
-    # daily cron ages standard/trailing. One engine, two triggers.
+    # engine on-demand to move only `latest` the instant a GA ships, while an
+    # operator manually dispatches a full promote to age standard/trailing.
+    # One engine, two triggers.
     if args.tracks:
         wanted = {t.strip() for t in args.tracks.split(",") if t.strip()}
         unknown = wanted - set(TRACKS)
@@ -165,7 +166,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    # Log to stdout (not the default stderr) so the plan is the command's stdout:
+    # the promote workflow captures a dry-run's stdout and diffs it against the
+    # approved plan, and uv's own chatter stays on stderr where it's discarded.
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     args = build_parser().parse_args(argv)
     return args.func(args)
 
