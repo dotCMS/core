@@ -136,8 +136,8 @@ describe('DotAppsListComponent', () => {
             expect(spectator.component.hasExportableApps()).toBe(false);
         });
 
-        it('should enable export when only hidden SAML app has configurations', () => {
-            const appsWithOnlyHiddenConfig: DotApp[] = [
+        it('should show the SAML app in the grid alongside the others', () => {
+            const appsWithSamlConfig: DotApp[] = [
                 { ...appsResponse[0], configurationsCount: 0 },
                 { ...appsResponse[1], configurationsCount: 0 },
                 {
@@ -148,7 +148,7 @@ describe('DotAppsListComponent', () => {
                     description: 'SAML config'
                 }
             ];
-            mockDotAppsService.get.mockReturnValue(of(appsWithOnlyHiddenConfig));
+            mockDotAppsService.get.mockReturnValue(of(appsWithSamlConfig));
 
             spectator.component.reloadAppsData();
             spectator.detectChanges();
@@ -158,7 +158,7 @@ describe('DotAppsListComponent', () => {
                 spectator.component.state
                     .displayedApps()
                     .some((app) => app.key === 'dotsaml-config')
-            ).toBe(false);
+            ).toBe(true);
         });
     });
 
