@@ -478,13 +478,23 @@ export function parseUserSearchableValue(
 
 /**
  * Translates a Key/Value filter input into the term the backend contains-matches against the
- * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`). A `key:value`
- * shorthand becomes the joined `key_value` (an exact pair match); a bare term is passed through
- * (a loose match on a key or a value). A raw colon is never sent — that path is metadata-only and
- * would not match a regular Key/Value field. Returns `undefined` when the input is empty.
+ * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`).
+ *
+ * Shorthand rules (the **first** colon is the key/value separator — everything after it is the
+ * value, so a value may itself contain colons):
+ * - `key:value`         → `key_value`           (exact-pair match; e.g. `deploy:https://x` → `deploy_https://x`)
+ * - `key:` / `:value`   → `key` / `value`       (only the filled side)
+ * - bare term (no `:`)  → the term              (loose match on a key OR a value)
+ *
+ * ⚠️ Greedy shorthand: because *any* colon is treated as the separator, a **bare** value that
+ * happens to contain a colon (a URL like `https://x`, a time like `12:30`, a ratio like `16:9`) is
+ * read as `key:value` (`https_//x`, `12_30`, `16_9`) and will likely match nothing. To search a
+ * colon-bearing value, prefix it with its key (`myKey:12:30`) so the intended value is preserved.
+ * A raw colon is never sent to the backend — that path is metadata-only and wouldn't match a
+ * regular Key/Value field anyway.
  *
  * @param {string} raw - The literal value the user typed (also what's kept in the URL/chip).
- * @return {*}  {(string | undefined)}
+ * @return {*}  {(string | undefined)} Returns `undefined` when the input is empty.
  */
 function toKeyValueTerm(raw: string): string | undefined {
     const trimmed = raw.trim();
@@ -492,6 +502,7 @@ function toKeyValueTerm(raw: string): string | undefined {
         return undefined;
     }
 
+    // Split on the FIRST colon only, so a value may contain further colons (e.g. `key:12:30`).
     const separator = trimmed.indexOf(':');
     if (separator === -1) {
         return trimmed;

@@ -918,6 +918,14 @@ describe('User-searchable field helpers', () => {
                 expect(parseUserSearchableValue(':red', 'Key-Value')).toBe('red');
             });
 
+            it('should split on the first colon only, keeping colons in the value', () => {
+                // A keyed colon-bearing value (URL / time) is preserved after the first colon.
+                expect(parseUserSearchableValue('link:https://x', 'Key-Value')).toBe(
+                    'link_https://x'
+                );
+                expect(parseUserSearchableValue('start:12:30', 'Key-Value')).toBe('start_12:30');
+            });
+
             it('should return undefined for an empty value', () => {
                 expect(parseUserSearchableValue('', 'Key-Value')).toBeUndefined();
                 expect(parseUserSearchableValue('   ', 'Key-Value')).toBeUndefined();
