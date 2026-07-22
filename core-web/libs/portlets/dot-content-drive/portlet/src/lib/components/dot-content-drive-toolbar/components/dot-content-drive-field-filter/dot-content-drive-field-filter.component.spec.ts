@@ -160,6 +160,28 @@ describe('DotContentDriveFieldFilterComponent', () => {
             );
         });
 
+        it('should use a JSON-specific placeholder for a JSON field', () => {
+            spectator.setInput('field', field({ fieldType: 'JSON-Field' }));
+            spectator.detectChanges();
+            openPopover();
+
+            const input = spectator.query(byTestId('field-filter-text'), { root: true });
+            expect(input?.getAttribute('placeholder')).toBe(
+                'content-drive.field-filter.json.placeholder'
+            );
+        });
+
+        it('should use a text-content placeholder for a Story Block field', () => {
+            spectator.setInput('field', field({ fieldType: 'Story-Block' }));
+            spectator.detectChanges();
+            openPopover();
+
+            const input = spectator.query(byTestId('field-filter-text'), { root: true });
+            expect(input?.getAttribute('placeholder')).toBe(
+                'content-drive.field-filter.story-block.placeholder'
+            );
+        });
+
         it('should use the generic placeholder for a text-fallback field without its own copy', () => {
             spectator.setInput('field', field({ fieldType: 'Custom-Field' }));
             spectator.detectChanges();
