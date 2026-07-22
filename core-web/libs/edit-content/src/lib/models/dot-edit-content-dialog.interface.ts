@@ -20,6 +20,12 @@ export interface EditContentDialogData {
     contentletInode?: string;
 
     /**
+     * For edit content: the stable identifier of the content (does not change across saves/
+     * versions, unlike the inode). Used to build a shareable URL that reopens this content.
+     */
+    identifier?: string;
+
+    /**
      * Depth for loading existing content (defaults to TWO)
      */
     depth?: number;

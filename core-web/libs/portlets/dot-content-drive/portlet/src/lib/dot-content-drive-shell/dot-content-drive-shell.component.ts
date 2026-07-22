@@ -13,7 +13,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
@@ -102,6 +102,7 @@ export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
+    readonly #route = inject(ActivatedRoute);
 
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
@@ -199,6 +200,13 @@ export class DotContentDriveShellComponent {
 
     constructor() {
         this.#syncDialog(this.#store.dialog);
+
+        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
+        // once from the snapshot (the portlet is not re-created on in-session query-param changes).
+        const editContent = this.#route.snapshot.queryParams['editContent'];
+        if (editContent) {
+            this.#navigationService.openEditByIdentifier(editContent);
+        }
     }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
@@ -245,6 +253,13 @@ export class DotContentDriveShellComponent {
         } else {
             queryParams['filters'] = null;
         }
+
+        // Reflect the open edit panel in a shareable `editContent=<identifier>` param (edit only;
+        // creating is not shareable). Cleared when the panel is closed. Written here — via
+        // Location.go — so it does not trigger a navigation or a content reload.
+        const editRequest = this.$editPanelRequest();
+        queryParams['editContent'] =
+            editRequest?.mode === 'edit' ? (editRequest.identifier ?? null) : null;
 
         const urlTree = this.#router.createUrlTree([], {
             queryParams,

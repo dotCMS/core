@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { catchError, take } from 'rxjs/operators';
 
 import {
+    DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotRouterService
@@ -20,6 +21,11 @@ import {
 import { EditContentDialogData } from '@dotcms/edit-content';
 import { mapQueryParamsToCDParams } from '@dotcms/utils';
 
+/** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
+interface ContentSearchEntity {
+    jsonObjectView: { contentlets: DotCMSContentlet[] };
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -29,6 +35,7 @@ export class DotContentDriveNavigationService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+    readonly #contentSearch = inject(DotContentSearchService);
 
     readonly #editPanelRequest = signal<EditContentDialogData | null>(null);
 
@@ -170,6 +177,42 @@ export class DotContentDriveNavigationService {
                 this.#editPanelRequest.set({
                     mode: 'edit',
                     contentletInode: contentlet.inode,
+                    identifier: contentlet.identifier,
+                    title: contentlet.title
+                });
+            });
+    }
+
+    /**
+     * Opens the Edit Content side panel for a content addressed by its stable `identifier`
+     * (e.g. from a shared `?editContent=<identifier>` URL). Resolves the identifier to its
+     * current working inode — the editor loads by inode — and opens the panel. No-op when the
+     * content can't be resolved (deleted, no permission, bad id).
+     */
+    openEditByIdentifier(identifier: string): void {
+        this.#contentSearch
+            .get<ContentSearchEntity>({
+                query: `+identifier:${identifier} +working:true`,
+                limit: 1
+            })
+            .pipe(
+                take(1),
+                catchError((error: HttpErrorResponse) => {
+                    this.#httpErrorManager.handle(error);
+
+                    return EMPTY;
+                })
+            )
+            .subscribe((entity) => {
+                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
+                if (!contentlet?.inode) {
+                    return;
+                }
+
+                this.#editPanelRequest.set({
+                    mode: 'edit',
+                    contentletInode: contentlet.inode,
+                    identifier,
                     title: contentlet.title
                 });
             });

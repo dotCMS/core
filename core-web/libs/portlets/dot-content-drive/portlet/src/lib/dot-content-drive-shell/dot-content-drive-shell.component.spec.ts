@@ -111,7 +111,11 @@ describe('DotContentDriveShellComponent', () => {
                 get: jest.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn()
+                editContent: jest.fn(),
+                createContent: jest.fn(),
+                closeEditPanel: jest.fn(),
+                openEditByIdentifier: jest.fn(),
+                editPanelRequest: signal(null)
             }),
             LoggerService,
             StringUtils,
@@ -248,7 +252,8 @@ describe('DotContentDriveShellComponent', () => {
                 queryParams: {
                     isTreeExpanded: 'false',
                     path: '/another/path',
-                    filters: 'contentType:Blog;baseType:1,2,3'
+                    filters: 'contentType:Blog;baseType:1,2,3',
+                    editContent: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -269,7 +274,8 @@ describe('DotContentDriveShellComponent', () => {
                 queryParams: {
                     isTreeExpanded: 'false',
                     path: '/another/path',
-                    filters: 'contentType:Blog;baseType:1,2,3'
+                    filters: 'contentType:Blog;baseType:1,2,3',
+                    editContent: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -284,7 +290,8 @@ describe('DotContentDriveShellComponent', () => {
                 queryParams: {
                     isTreeExpanded: 'false',
                     path: '/another/path',
-                    filters: null // With merge, null removes the param
+                    filters: null, // With merge, null removes the param
+                    editContent: null
                 },
                 queryParamsHandling: 'merge'
             });

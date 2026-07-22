@@ -12,6 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 
 import {
+    DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotRouterService
@@ -29,6 +30,7 @@ describe('DotContentDriveNavigationService', () => {
     let dotRouterService: jest.Mocked<DotRouterService>;
     let location: SpyObject<Location>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
+    let contentSearch: jest.Mocked<DotContentSearchService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
@@ -47,6 +49,9 @@ describe('DotContentDriveNavigationService', () => {
             }),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn()
             })
         ]
     });
@@ -59,6 +64,7 @@ describe('DotContentDriveNavigationService', () => {
         dotRouterService = spectator.inject(DotRouterService);
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
+        contentSearch = spectator.inject(DotContentSearchService);
     });
 
     afterEach(() => {
@@ -101,6 +107,7 @@ describe('DotContentDriveNavigationService', () => {
             const mockContentlet = createFakeContentlet({
                 contentType: 'blog',
                 inode: 'test-inode-123',
+                identifier: 'test-identifier-123',
                 title: 'My Blog Post'
             });
 
@@ -118,6 +125,7 @@ describe('DotContentDriveNavigationService', () => {
             expect(service.editPanelRequest()).toEqual({
                 mode: 'edit',
                 contentletInode: 'test-inode-123',
+                identifier: 'test-identifier-123',
                 title: 'My Blog Post'
             });
             expect(router.navigate).not.toHaveBeenCalled();
@@ -443,6 +451,48 @@ describe('DotContentDriveNavigationService', () => {
                 url: '/blog-post',
                 language_id: 5
             });
+        });
+    });
+
+    describe('openEditByIdentifier', () => {
+        it('should resolve the identifier to its working inode and open the edit panel', () => {
+            const resolved = createFakeContentlet({
+                inode: 'working-inode-1',
+                identifier: 'shared-identifier',
+                title: 'Shared Content'
+            });
+            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [resolved] } }));
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true',
+                limit: 1
+            });
+            expect(service.editPanelRequest()).toEqual({
+                mode: 'edit',
+                contentletInode: 'working-inode-1',
+                identifier: 'shared-identifier',
+                title: 'Shared Content'
+            });
+        });
+
+        it('should not open the panel when the identifier resolves to nothing', () => {
+            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
+
+            service.openEditByIdentifier('missing-identifier');
+
+            expect(service.editPanelRequest()).toBeNull();
+        });
+
+        it('should surface the error and not open the panel when the search fails', () => {
+            const error = new HttpErrorResponse({ status: 500 });
+            contentSearch.get.mockReturnValue(throwError(() => error));
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(service.editPanelRequest()).toBeNull();
         });
     });
 });
