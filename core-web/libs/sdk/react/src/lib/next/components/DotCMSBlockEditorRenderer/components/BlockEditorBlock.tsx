@@ -2,6 +2,7 @@ import { BlockEditorNode } from '@dotcms/types';
 import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
 
+import { DotCMSAudio } from './blocks/Audio';
 import { BlockQuote, CodeBlock } from './blocks/Code';
 import { DotContent } from './blocks/DotContent';
 import { GridBlock } from './blocks/GridBlock';
@@ -143,6 +144,9 @@ export const BlockEditorBlock = ({
 
             case BlockEditorDefaultBlocks.DOT_VIDEO:
                 return <DotCMSVideo key={key} node={node} />;
+
+            case BlockEditorDefaultBlocks.DOT_AUDIO:
+                return <DotCMSAudio key={key} node={node} />;
 
             case BlockEditorDefaultBlocks.TABLE:
                 return (

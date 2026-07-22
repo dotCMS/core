@@ -4,6 +4,7 @@ import { Component, Input } from '@angular/core';
 import { BlockEditorNode } from '@dotcms/types';
 import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 
+import { DotAudioBlock } from '../blocks/audio.component';
 import { DotCodeBlock, DotBlockQuote } from '../blocks/code.component';
 import { DotContentletBlock } from '../blocks/dot-contentlet.component';
 import { DotGridBlock } from '../blocks/grid-block.component';
@@ -33,6 +34,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
         DotBlockQuote,
         DotImageBlock,
         DotVideoBlock,
+        DotAudioBlock,
         DotTableBlock,
         DotGridBlock,
         DotContentletBlock,
