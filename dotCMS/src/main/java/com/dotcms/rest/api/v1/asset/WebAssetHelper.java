@@ -861,7 +861,8 @@ public class WebAssetHelper {
 
             // Content Drive upload-mode preference (orthogonal to defaultAssetType/defaultFileType).
             // A present value is validated against the DOTASSET/FILEASSET base types and stored as the
-            // canonical uppercase enum name; omit or null records "no preference".
+            // canonical uppercase enum name. Consistent with every other field here, an absent/null
+            // value leaves the current preference unchanged (a new folder defaults to none).
             final String defaultBaseType = meta.defaultBaseType();
             if (UtilMethods.isSet(defaultBaseType)) {
                 final BaseContentType baseType = BaseContentType.getBaseContentType(defaultBaseType);
@@ -872,8 +873,6 @@ public class WebAssetHelper {
                     );
                 }
                 folder.setDefaultBaseType(baseType.name());
-            } else {
-                folder.setDefaultBaseType(null);
             }
 
             if (UtilMethods.isSet(meta.fileMasks())) {
