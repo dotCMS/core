@@ -5,7 +5,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
-import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import { switchMap } from 'rxjs/operators';
@@ -24,24 +23,12 @@ import {
     DotContentletDepth,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { transformFormDataFn } from '../../../utils/functions.util';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
-
-const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
-
-/**
- * Options for initializing the store in dialog mode
- */
-export interface DialogInitializationOptions {
-    /** Content type ID for creating new content */
-    contentTypeId?: string;
-    /** Contentlet inode for editing existing content */
-    contentletInode?: string;
-}
 
 export function withContent() {
     return signalStoreFeature(
@@ -128,7 +115,51 @@ export function withContent() {
             /**
              * Computed property that determines if the store's status is equal to ComponentStatus.SAVING.
              */
-            isSaving: computed(() => store.state() === ComponentStatus.SAVING)
+            isSaving: computed(() => store.state() === ComponentStatus.SAVING),
+
+            /**
+             * True while new content is being fetched but the previously loaded
+             * content is still in the store (an in-place reload — e.g. navigating
+             * the related-content breadcrumb). `initializeExistingContent` sets the
+             * state to LOADING without clearing `contentType`/`contentlet`, so the
+             * layout can keep the old data on screen behind a non-destructive
+             * loading overlay (stale-while-revalidate) instead of collapsing the
+             * whole editor to a blank screen. False on the very first load, when
+             * there is no prior content to show.
+             */
+            isReloading: computed(
+                () => store.state() === ComponentStatus.LOADING && !!store.contentType()
+            ),
+
+            /**
+             * True when BOTH sides of the editor are ready: the content (left) is
+             * LOADED and the sidebar's initial data (right — reference pages and
+             * activities) has settled. Used to hold the initial loading state until
+             * the whole screen is populated, instead of revealing the form while the
+             * sidebar still loads.
+             *
+             * There is nothing to wait for — so it returns as soon as the content is
+             * LOADED — when the sidebar is closed (its data never loads) or the
+             * content is new / has no identifier (reference pages and activities only
+             * load for existing content). ERROR counts as settled so a failed sidebar
+             * request never hangs the editor behind the loader.
+             */
+            isFullyLoaded: computed(() => {
+                if (store.state() !== ComponentStatus.LOADED) {
+                    return false;
+                }
+
+                if (!store.uiState().isSidebarOpen || !store.contentlet()?.identifier) {
+                    return true;
+                }
+
+                const settled = (status: ComponentStatus) =>
+                    status === ComponentStatus.LOADED || status === ComponentStatus.ERROR;
+
+                return (
+                    settled(store.information().status) && settled(store.activitiesStatus().status)
+                );
+            })
         })),
         withMethods(
             (
@@ -139,9 +170,8 @@ export function withContent() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 router = inject(Router),
                 dotWorkflowService = inject(DotWorkflowService),
-                title = inject(Title),
                 dotMessageService = inject(DotMessageService),
-                globalStore = inject(GlobalStore)
+                host = inject(EDIT_CONTENT_HOST)
             ) => ({
                 /**
                  * Initializes the state for creating new content of a specified type.
@@ -188,19 +218,14 @@ export function withContent() {
 
                                         const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
 
-                                        // Dialog overlays another route context (e.g. UVE); skip title
-                                        // and breadcrumb updates to avoid overwriting the host page title
-                                        // and stacking duplicate trails with the shell breadcrumb.
-                                        if (!store.isDialogMode()) {
-                                            title.setTitle(
-                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                            );
-                                            globalStore.addNewBreadcrumb({
-                                                label: titleString,
-                                                target: '_self',
-                                                url: `/dotAdmin/#/content/new/${contentType.variable}`
-                                            });
-                                        }
+                                        // The host decides whether these apply: the full-screen
+                                        // host updates the title/breadcrumb, the dialog host
+                                        // no-ops them (it overlays another route context).
+                                        host.setContentTitle(titleString);
+                                        host.addBreadcrumb({
+                                            label: titleString,
+                                            url: `/dotAdmin/#/content/new/${contentType.variable}`
+                                        });
 
                                         patchState(store, {
                                             contentType,
@@ -249,7 +274,49 @@ export function withContent() {
                         switchMap(({ inode, depth }) => {
                             patchState(store, {
                                 state: ComponentStatus.LOADING,
-                                hiddenFields: {}
+                                hiddenFields: {},
+                                // The full-screen editor now reuses its component across
+                                // content navigations, so the store persists. Clear the
+                                // previous content's volatile, content-scoped slices to
+                                // prevent leaks (version/push-publish lists accumulate for
+                                // infinite scroll; the compare/historical views belong to
+                                // the old inode). `contentlet`/`contentType` are kept on
+                                // purpose so the previous content stays rendered until the
+                                // new data loads (stale-while-revalidate).
+                                //
+                                // Reference pages + activities are reset to LOADING so that,
+                                // during an in-place reload, `isFullyLoaded` stays false until
+                                // the sidebar re-fetches them for the new content (the sidebar's
+                                // identifier effect refires when the contentlet swaps). Without
+                                // this, their stale LOADED status from the previous content would
+                                // make `isFullyLoaded` briefly true and drop the reload overlay
+                                // before the sidebar actually reloaded.
+                                information: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null,
+                                    relatedContent: '0'
+                                },
+                                activitiesStatus: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null
+                                },
+                                versions: [],
+                                versionsPagination: null,
+                                versionsStatus: {
+                                    status: ComponentStatus.INIT,
+                                    error: null
+                                },
+                                pushPublishHistory: [],
+                                pushPublishHistoryPagination: null,
+                                pushPublishHistoryStatus: {
+                                    status: ComponentStatus.INIT,
+                                    error: null
+                                },
+                                isViewingHistoricalVersion: false,
+                                historicalVersionInode: null,
+                                originalContentlet: null,
+                                compareContentlet: null,
+                                translationSourceInode: null
                             });
 
                             return dotEditContentService.getContentById({ id: inode, depth }).pipe(
@@ -303,19 +370,14 @@ export function withContent() {
 
                                         const titleString = `${contentlet.title}`;
 
-                                        // Dialog overlays another route context (e.g. UVE); skip title
-                                        // and breadcrumb updates to avoid overwriting the host page title
-                                        // and stacking duplicate trails with the shell breadcrumb.
-                                        if (!store.isDialogMode()) {
-                                            title.setTitle(
-                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                            );
-                                            globalStore.addNewBreadcrumb({
-                                                label: titleString,
-                                                target: '_self',
-                                                url: `/dotAdmin/#/content/${contentlet.inode}`
-                                            });
-                                        }
+                                        // The host decides whether these apply: the full-screen
+                                        // host updates the title/breadcrumb, the dialog host
+                                        // no-ops them (it overlays another route context).
+                                        host.setContentTitle(titleString);
+                                        host.addBreadcrumb({
+                                            label: titleString,
+                                            url: `/dotAdmin/#/content/${contentlet.inode}`
+                                        });
 
                                         patchState(store, {
                                             contentType,

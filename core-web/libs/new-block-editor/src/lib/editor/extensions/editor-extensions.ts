@@ -2,7 +2,7 @@ import { common, createLowlight } from 'lowlight';
 
 import type { Injector } from '@angular/core';
 
-import type { AnyExtension, Extensions } from '@tiptap/core';
+import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -68,7 +68,7 @@ export function createEditorExtensions(
               : { levels: allowedHeadingLevels };
     const lowlight = createLowlight(common);
 
-    return [
+    const baseExtensions: Extensions = [
         StarterKit.configure({
             dropcursor: {
                 color: '#6366f1',
@@ -79,6 +79,9 @@ export function createEditorExtensions(
             orderedList: has('orderedList') ? {} : false,
             blockquote: has('blockquote') ? {} : false,
             codeBlock: false,
+            // StarterKit v3 bundles Link; the editor registers its own DotLink (name
+            // 'link') below, so disable StarterKit's to avoid a duplicate 'link' extension.
+            link: false,
             horizontalRule: has('horizontalRule') ? {} : false
         }),
         ...(has('codeBlock') ? [createCodeBlock(injector, lowlight)] : []),
@@ -169,25 +172,47 @@ export function createEditorExtensions(
               ]
             : []),
         SelectionPreserveExtension,
-        createSlashCommandExtension(menuService),
-        ...remoteExtensions,
-        Placeholder.configure({
-            showOnlyCurrent: true,
-            placeholder: ({ node, editor }) => {
-                if (editor.isEmpty && node.type.name === 'paragraph') {
-                    return t('dot.block.editor.placeholder.empty-paragraph');
-                }
-                if (node.type.name === 'heading') {
-                    return t('block-editor.placeholder.heading', String(node.attrs['level']));
-                }
-                if (node.type.name === 'paragraph') {
-                    return t('dot.block.editor.placeholder.paragraph');
-                }
-                if (node.type.name === 'blockquote') {
-                    return t('dot.block.editor.placeholder.blockquote');
-                }
-                return '';
-            }
-        })
+        createSlashCommandExtension(menuService)
     ];
+
+    const placeholder = Placeholder.configure({
+        showOnlyCurrent: true,
+        placeholder: ({ node, editor }) => {
+            if (editor.isEmpty && node.type.name === 'paragraph') {
+                return t('dot.block.editor.placeholder.empty-paragraph');
+            }
+            if (node.type.name === 'heading') {
+                return t('block-editor.placeholder.heading', String(node.attrs['level']));
+            }
+            if (node.type.name === 'paragraph') {
+                return t('dot.block.editor.placeholder.paragraph');
+            }
+            if (node.type.name === 'blockquote') {
+                return t('dot.block.editor.placeholder.blockquote');
+            }
+            return '';
+        }
+    });
+
+    // Drop any remote (customBlocks) extension whose name collides with a built-in.
+    // StarterKit bundles several extensions internally (e.g. `underline`), so we compare
+    // against the FLATTENED built-in set — not just the top-level array — otherwise a remote
+    // bundle that ships its own copies of core marks/nodes would double-register and TipTap
+    // warns "Duplicate extension names found". The editor's own extension always wins.
+    const builtInNames = new Set(
+        flattenExtensions([...baseExtensions, placeholder]).map((ext) => ext.name)
+    );
+    const dedupedRemoteExtensions = remoteExtensions.filter((ext) => {
+        if (builtInNames.has(ext.name)) {
+            console.warn(
+                `[remote-extension] skipping "${ext.name}": already registered by the editor`
+            );
+
+            return false;
+        }
+
+        return true;
+    });
+
+    return [...baseExtensions, ...dedupedRemoteExtensions, placeholder];
 }

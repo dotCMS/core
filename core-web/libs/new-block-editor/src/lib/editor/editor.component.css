@@ -61,6 +61,16 @@
     display: block;
 }
 
+/* Fill-height mode (see `fillHeight` input): the host becomes a full-height flex column so
+   the wrapper/panel chain can stretch to fill a bounded parent (e.g. the UVE sidebar drawer).
+   `min-height: 0` lets the host shrink when it is itself a flex child of the parent. */
+:host(.dot-block-editor--fill-height) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
 /* ─── ProseMirror base ──────────────────────────────────── */
 :host ::ng-deep .ProseMirror {
     outline: none;
