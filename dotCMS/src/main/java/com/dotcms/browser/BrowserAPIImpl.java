@@ -1865,8 +1865,12 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         // Detect archive-target steps once per request (cached WorkflowAPI lookups, never per row).
         // Only step-pinned entries can be archive-target; scheme-only entries always stay live-only.
-        final Set<String> archiveStepIds = resolveArchiveTargetSteps(browserQuery.workflowStepIds,
-                browserQuery.user);
+        // Skipped when showArchived is true: everything archived already shows, so the archive-step
+        // logic must not run (it would force cvi.deleted='false' on the live branch and hide the
+        // archived content the caller explicitly asked for). See spec §3.5.
+        final Set<String> archiveStepIds = browserQuery.showArchived
+                ? Set.of()
+                : resolveArchiveTargetSteps(browserQuery.workflowStepIds);
         appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
                 browserQuery.workflowStepIds, archiveStepIds, parameters);
         //We only build the filtering bits of the SQL Query if we're not using ES
@@ -2294,11 +2298,9 @@ public class BrowserAPIImpl implements BrowserAPI {
      * live-only behavior — never fails the browse.
      *
      * @param workflowStepIds the step-pinned ids from the request (may be empty).
-     * @param user            the user executing the browse (for permission-aware action lookups).
      * @return the subset of {@code workflowStepIds} that are archive-target; never {@code null}.
      */
-    private Set<String> resolveArchiveTargetSteps(final Set<String> workflowStepIds,
-            final User user) {
+    private Set<String> resolveArchiveTargetSteps(final Set<String> workflowStepIds) {
         if (!UtilMethods.isSet(workflowStepIds)) {
             return Set.of();
         }
@@ -2311,7 +2313,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 continue;
             }
             final Set<String> targets = archiveTargetsByScheme.computeIfAbsent(step.getSchemeId(),
-                    schemeId -> archiveTargetStepsForScheme(workflowAPI, schemeId, user));
+                    schemeId -> archiveTargetStepsForScheme(workflowAPI, schemeId));
             if (targets.contains(stepId)) {
                 archiveStepIds.add(stepId);
             }
@@ -2325,13 +2327,18 @@ public class BrowserAPIImpl implements BrowserAPI {
      * points to it and that action carries {@link ArchiveContentActionlet}. Archive-in-place
      * actions ({@code nextStep == CURRENT_STEP}) are excluded (spec §3.6). Never throws — on failure
      * an empty set is returned so the browse falls back to live-only behavior.
+     *
+     * <p>Whether a step is archive-target is a property of the scheme's configuration, not of who
+     * is browsing, so actions are resolved with the {@link APILocator#systemUser()} — a user
+     * lacking permission on the archive action must not silently see the step as non-archive.</p>
      */
     private Set<String> archiveTargetStepsForScheme(final WorkflowAPI workflowAPI,
-            final String schemeId, final User user) {
+            final String schemeId) {
         final Set<String> targets = new HashSet<>();
         try {
             final WorkflowScheme scheme = workflowAPI.findScheme(schemeId);
-            final List<WorkflowAction> actions = workflowAPI.findActions(scheme, user);
+            final List<WorkflowAction> actions = workflowAPI.findActions(scheme,
+                    APILocator.systemUser());
             final String archiveActionletClass = ArchiveContentActionlet.class.getName();
             for (final WorkflowAction action : actions) {
                 if (action.isNextStepCurrentStep() || !UtilMethods.isSet(action.getNextStep())) {

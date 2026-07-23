@@ -294,4 +294,57 @@ public class ContentDriveWorkflowArchiveStepTest extends IntegrationTestBase {
         assertFalse("Archived-in-place content must stay excluded when no workflow filter is present",
                 inodes.contains(archivedInPlaceAtNormalStep.getInode()));
     }
+
+    /**
+     * With {@code showArchived=true} the archive-step logic must NOT run (spec §3.5): everything
+     * archived already shows, so the per-branch {@code cvi.deleted='false'} must not be forced on
+     * the live branch. Guards the bug where a filter that includes an archive-target step would
+     * hide archived content the caller explicitly asked for. Here a mixed filter (normal step +
+     * archive step) with {@code archived=true} must return archived content in <b>both</b> branches.
+     */
+    @Test
+    public void testShowArchivedReturnsArchivedInAllBranches()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .archived(true)
+                .workflow(List.of(
+                        WorkflowFilterForm.builder()
+                                .scheme(scheme.getId()).step(normalStep.getId()).build(),
+                        WorkflowFilterForm.builder()
+                                .scheme(scheme.getId()).step(archiveStep.getId()).build()))
+                .build());
+
+        assertTrue("Live content at the normal step must be returned",
+                inodes.contains(liveAtNormalStep.getInode()));
+        assertTrue("Archived content at the archive step must be returned",
+                inodes.contains(archivedAtArchiveStep.getInode()));
+        assertTrue("Archived-in-place content at the normal step must NOT be hidden when the "
+                        + "caller asked for archived content (showArchived=true)",
+                inodes.contains(archivedInPlaceAtNormalStep.getInode()));
+    }
+
+    /**
+     * When a pinned step cannot be resolved/classified (WorkflowAPI can't help), detection degrades
+     * to non-archive: the browse must complete without throwing and stay live-only. Pins a bogus
+     * step id alongside the real normal step; the bogus id is skipped, the normal step stays
+     * live-only, and archived-in-place content is not surfaced.
+     */
+    @Test
+    public void testUnresolvableStepFallsBackToLiveOnly()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .workflow(List.of(
+                        WorkflowFilterForm.builder()
+                                .scheme(scheme.getId()).step(normalStep.getId()).build(),
+                        WorkflowFilterForm.builder()
+                                .scheme(scheme.getId()).step("bogus-step-" + uniqueId).build()))
+                .build());
+
+        assertTrue("Live content at the normal step must still be returned",
+                inodes.contains(liveAtNormalStep.getInode()));
+        assertFalse("An unresolvable step must not flip the browse into surfacing archived content",
+                inodes.contains(archivedInPlaceAtNormalStep.getInode()));
+        assertFalse("An unresolvable step must not surface archived-at-archive-step content",
+                inodes.contains(archivedAtArchiveStep.getInode()));
+    }
 }
