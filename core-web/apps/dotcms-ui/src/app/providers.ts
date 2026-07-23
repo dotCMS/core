@@ -66,6 +66,7 @@ import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.
 import { NotificationsService } from './api/services/notifications-service';
 import { ColorUtil } from './api/util/ColorUtil';
 import { StringFormat } from './api/util/stringFormat';
+import { DotPageListService } from './portlets/dot-pages/services/dot-page-list.service';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
 import { DotTitleStrategy } from './shared/services/dot-title-strategy.service';
 import { DotIframePortletLegacyResolver } from './view/components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
@@ -140,6 +141,7 @@ const PROVIDERS: (Provider | EnvironmentProviders)[] = [
     DotSessionStorageService,
     DotAppsService,
     DotDownloadBundleDialogService,
+    DotPageListService,
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy

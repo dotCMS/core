@@ -359,3 +359,17 @@ check-git-mac:
         git --version; \
         echo "Git is already installed."; \
     fi
+
+# OPOC command: starts AI Chat backend for local testing only.
+# OPOC usage: just dev-ai-chat <OPENAI_API_KEY>
+dev-ai-chat openai_api_key:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "{{ openai_api_key }}" ]; then
+        echo "OPENAI_API_KEY is required."
+        echo "Usage: just dev-ai-chat <OPENAI_API_KEY>"
+        exit 1
+    fi
+
+    cd core-web
+    OPENAI_API_KEY="{{ openai_api_key }}" yarn nx serve api-dot-ai-chat

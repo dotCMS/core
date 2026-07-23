@@ -33,6 +33,7 @@ import {
     DotWorkflowService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { HashbrownChatBridgeService } from '@dotcms/dot-ai-chat';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -93,6 +94,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private dotLicenseService = inject(DotLicenseService);
     private dotMessageService = inject(DotMessageService);
     private readonly route = inject(ActivatedRoute);
+    private readonly hashbrownChatBridgeService = inject(HashbrownChatBridgeService);
 
     readonly $inputName = viewChild.required<ElementRef>('name');
 
@@ -404,5 +406,12 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
             ...form,
             metadata
         };
+    }
+
+    sendMessageToAIAssistant(): void {
+        const message = 'What is the new editor mode?';
+
+        this.hashbrownChatBridgeService.requestOpenChat();
+        this.hashbrownChatBridgeService.sendUserMessage(message);
     }
 }

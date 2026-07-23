@@ -106,6 +106,7 @@
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
             "sdk-create-app": ["libs/sdk/create-app/src/index.ts"],
+            "@dotcms/dot-ai-chat": ["libs/dot-ai-chat/src/index.ts"],
             "@dotcms/agentic-tools": ["libs/agentic-tools/src/index.ts"],
             "@dotcms/image-editor": ["libs/image-editor/src/index.ts"],
             "@dotcms/ai/runtime": ["libs/sdk/ai/src/runtime.ts"],

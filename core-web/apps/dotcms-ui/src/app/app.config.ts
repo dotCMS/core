@@ -1,3 +1,4 @@
+import { provideHashbrown } from '@hashbrownai/angular';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
@@ -54,6 +55,9 @@ export const appConfig: ApplicationConfig = {
             // Shared modules
             DotDirectivesModule,
             SharedModule.forRoot()
-        )
+        ),
+        provideHashbrown({
+            baseUrl: 'http://localhost:3333/dotaichat/chat'
+        })
     ]
 };

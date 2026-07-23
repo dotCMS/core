@@ -1,0 +1,36 @@
+<section class="flex h-full min-h-96 flex-col gap-4 rounded-xl bg-surface-0">
+    <div class="flex-1 space-y-3 overflow-y-auto rounded-lg">
+        @for (message of messagesWithContentTypes(); track $index) {
+            @if (message.role === 'assistant') {
+                <div class="rounded-lg bg-surface-100 p-3">
+                    <hb-render-message [message]="$any(message)" />
+                </div>
+            } @else if (message.role === 'user') {
+                <div
+                    class="ml-auto max-w-[85%] rounded-lg bg-primary-500 p-3 text-primary-contrast">
+                    {{ message.content }}
+                </div>
+            } @else {
+                <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+                    {{ message.content }}
+                </div>
+            }
+        }
+    </div>
+
+    <div class="flex items-center gap-2">
+        <input
+            pInputText
+            class="w-full"
+            placeholder="Ask for content types or favorite pages..."
+            [ngModel]="userMessage()"
+            (ngModelChange)="userMessage.set($event)"
+            (keyup.enter)="send()" />
+        <button
+            pButton
+            type="button"
+            label="Send"
+            (click)="send()"
+            [disabled]="!userMessage().trim()"></button>
+    </div>
+</section>
