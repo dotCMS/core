@@ -16,11 +16,13 @@ import { DotAgentMessageComponent } from '../dot-agent-message/dot-agent-message
 /**
  * The shared "watch the agent work" surface — a thin composer.
  *
- * It renders one bubble per message ({@link DotAgentMessageComponent}) and, while
- * the agent is running, marks the LAST bubble as the live/in-progress step
- * (spinner + primary tint). There is no separate "now doing" banner: the live cue
- * rides on the real list item, so the current step never appears twice. The log
- * auto-scrolls to the latest entry as the stream grows.
+ * It renders one settled bubble per message ({@link DotAgentMessageComponent}) and,
+ * while the agent is running, appends ONE live "working" bubble at the end
+ * (spinner + primary tint). That live bubble is a separate item from the settled
+ * steps — its text is driven by {@link workingMessage} (which a consumer updates
+ * from the agent's current step + keep-alive heartbeat), so a long, quiet step
+ * shows reassuring, ticking copy instead of looking hung. There is no separate
+ * "now doing" banner. The log auto-scrolls to the latest entry as it grows.
  *
  * Layout is the consumer's: the component imposes NO sizing on its own box (no
  * height, no flex, no overflow, no margins) — it just grows with its content.
@@ -40,23 +42,24 @@ import { DotAgentMessageComponent } from '../dot-agent-message/dot-agent-message
     host: { class: 'block' }
 })
 export class DotAgentActivityLogComponent {
-    /** The bubbles to render — live steps and/or the expanded terminal result. */
+    /** The settled bubbles — completed steps and/or the expanded terminal result. */
     readonly messages = input<AgentMessage[]>([]);
 
     /**
-     * The step the agent is currently working on. When the run has produced steps
-     * this is normally the last of {@link messages}; it's used only as the live
-     * fallback bubble when the agent is working but hasn't reported a step yet.
-     * Null → no explicit active step.
+     * The live "working" bubble appended at the end while {@link working} is true.
+     * The consumer updates its text from the agent's current step + heartbeat, so
+     * it reads as "still working…" and ticks even when no new step has landed. When
+     * null (working but nothing to say yet) a fallback bubble is synthesized from
+     * {@link workingFallbackKey}.
      */
-    readonly activeMessage = input<AgentMessage | null>(null);
+    readonly workingMessage = input<AgentMessage | null>(null);
 
-    /** Whether the agent is actively running (marks the last bubble as live). */
+    /** Whether the agent is actively running (appends the live working bubble). */
     readonly working = input<boolean>(false);
 
     /**
-     * i18n key for the fallback bubble text when the agent is working but hasn't
-     * reported a step yet. Consumers override it with their own key.
+     * i18n key for the fallback working-bubble text when the agent is working but
+     * has nothing specific to show yet. Consumers override it with their own key.
      */
     readonly workingFallbackKey = input<string>('agent.activity.working');
 
@@ -64,28 +67,29 @@ export class DotAgentActivityLogComponent {
     private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
     /**
-     * The bubbles actually rendered. Normally just {@link messages}, but when the
-     * agent is working with nothing streamed yet we synthesize a single live
-     * fallback bubble so the user sees the agent has started.
+     * The bubbles actually rendered: the settled {@link messages}, plus — while the
+     * agent is working — one live working bubble appended at the end. The live
+     * bubble is always the last item, so it reads as "happening now" beneath the
+     * finished steps.
      */
     readonly displayMessages = computed<AgentMessage[]>(() => {
         const messages = this.messages();
-        if (this.working() && messages.length === 0) {
-            return [
-                this.activeMessage() ?? {
-                    id: 'agent-working',
-                    icon: 'pi pi-spin pi-spinner',
-                    text: this.dm.get(this.workingFallbackKey()),
-                    tone: 'info'
-                }
-            ];
+        if (!this.working()) {
+            return messages;
         }
-        return messages;
+        const live: AgentMessage = this.workingMessage() ?? {
+            id: 'agent-working',
+            icon: 'pi pi-spin pi-spinner',
+            text: this.dm.get(this.workingFallbackKey()),
+            tone: 'info'
+        };
+
+        return [...messages, { ...live, id: 'agent-working' }];
     });
 
     /**
-     * Index of the bubble to render as the live/in-progress step — the last one
-     * while the agent is working, otherwise none (-1).
+     * Index of the live/working bubble — the last one while working (it's the
+     * appended item), otherwise none (-1).
      */
     readonly activeIndex = computed<number>(() =>
         this.working() ? this.displayMessages().length - 1 : -1

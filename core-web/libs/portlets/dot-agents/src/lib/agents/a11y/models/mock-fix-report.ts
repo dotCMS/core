@@ -112,13 +112,29 @@ export const MOCK_FIX_REPORT: FixReport = {
         }
     ],
     // Distinct files left changed (the fixed-to-working ones, deduped). The
-    // reported .scss files were not modified, so they're excluded.
+    // reported .scss files were not modified, so they're excluded. Each entry is
+    // the changed asset's host-qualified path + its content identifier.
     changedFiles: [
-        '//demo.dotcms.com/application/themes/travel/templates/travel-header.vtl',
-        '//demo.dotcms.com/application/themes/travel/html-head.vtl',
-        '//demo.dotcms.com/application/themes/travel/default-template.vtl',
-        '//demo.dotcms.com/application/containers/newsletter/newsletter-container.vtl',
-        '//demo.dotcms.com/application/containers/cards/destination-card.vtl'
+        {
+            path: '//demo.dotcms.com/application/themes/travel/templates/travel-header.vtl',
+            identifier: 'a1b2c3d4-travel-header'
+        },
+        {
+            path: '//demo.dotcms.com/application/themes/travel/html-head.vtl',
+            identifier: 'a1b2c3d4-html-head'
+        },
+        {
+            path: '//demo.dotcms.com/application/themes/travel/default-template.vtl',
+            identifier: 'a1b2c3d4-default-template'
+        },
+        {
+            path: '//demo.dotcms.com/application/containers/newsletter/newsletter-container.vtl',
+            identifier: 'a1b2c3d4-newsletter'
+        },
+        {
+            path: '//demo.dotcms.com/application/containers/cards/destination-card.vtl',
+            identifier: 'a1b2c3d4-destination-card'
+        }
     ],
     publishRequired: true
 };

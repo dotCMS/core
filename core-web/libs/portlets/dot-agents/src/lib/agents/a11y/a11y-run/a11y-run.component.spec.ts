@@ -5,7 +5,7 @@ import { signal } from '@angular/core';
 import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { AgentRunStep } from '@dotcms/dotcms-models';
+import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -50,6 +50,7 @@ describe('DotA11yRunComponent', () => {
     let steps: AgentRunStep[] = [];
     let fixError: string | null = null;
     let rehydrateStatus: 'idle' | 'loading' | 'not-found' = 'idle';
+    let heartbeat: AgentHeartbeat | null = null;
     // Whether a scan result is present (drives report vs. iframe in the pane).
     let hasScan = false;
     // The page path (as URL segments) the run component reads on init.
@@ -101,10 +102,13 @@ describe('DotA11yRunComponent', () => {
         steps: () => steps,
         fixError: () => fixError,
         latestStep: () => (steps.length ? steps[steps.length - 1] : null),
+        heartbeat: () => heartbeat,
         selected: () => MOCK_PAGE,
         skipCss: () => false,
         scanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
+        liveScanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
         a11yGroups: () => (hasScan ? MOCK_GROUPS : []),
+        liveA11yGroups: () => (hasScan ? MOCK_GROUPS : []),
         errorCount: () => (hasScan ? 5 : 0),
         warningCount: () => (hasScan ? 2 : 0),
         isReady: () => phase === 'ready',
@@ -153,7 +157,17 @@ describe('DotA11yRunComponent', () => {
             mockProvider(A11yMarkerService)
         ],
         providers: [
-            { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'accessibility.studio.working.thinking': 'Thinking…',
+                    'accessibility.studio.working.analyzing': 'Analyzing the page…',
+                    'accessibility.studio.working.reasoning': 'Working through the fix…',
+                    'accessibility.studio.working.stillworking': 'Still working on it…',
+                    'accessibility.studio.working.almost': 'Hang tight…',
+                    'accessibility.studio.working.elapsed': '{0}s'
+                })
+            },
             { provide: Router, useValue: { navigate } },
             {
                 provide: GlobalStore,
@@ -197,6 +211,7 @@ describe('DotA11yRunComponent', () => {
         steps = [];
         fixError = null;
         rehydrateStatus = 'idle';
+        heartbeat = null;
         hasScan = false;
         pathSegments = ['about-us'];
         currentSiteIdSignal.set('site-1');
@@ -294,24 +309,20 @@ describe('DotA11yRunComponent', () => {
     });
 
     describe('marker visibility (showMarkers)', () => {
+        // Markers only ever go on the LIVE frame, which always still carries the
+        // original scan's violations. The only gate is: a scan has produced findings.
         it('is off before a scan', () => {
             render('ready');
             expect(spectator.component.showMarkers()).toBe(false);
         });
 
-        it('is on in BOTH preview modes while scanned (pre-fix)', () => {
+        it('is on once scanned (pre-fix)', () => {
             render('scanned', MOCK_FIX_REPORT);
-            spectator.component.previewMode.set('PREVIEW_MODE');
-            expect(spectator.component.showMarkers()).toBe(true);
-            spectator.component.previewMode.set('LIVE');
             expect(spectator.component.showMarkers()).toBe(true);
         });
 
-        it('is LIVE-only once fixes exist (done) — PREVIEW would be stale', () => {
+        it('stays on after fixes exist (done) — the LIVE frame is still unfixed', () => {
             render('done', MOCK_FIX_REPORT);
-            spectator.component.previewMode.set('PREVIEW_MODE');
-            expect(spectator.component.showMarkers()).toBe(false);
-            spectator.component.previewMode.set('LIVE');
             expect(spectator.component.showMarkers()).toBe(true);
         });
     });
@@ -360,18 +371,30 @@ describe('DotA11yRunComponent', () => {
             expect(stopAgent).toHaveBeenCalled();
         });
 
-        it('renders one live activity step per streamed event', () => {
-            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
+        it('renders a settled bubble per streamed step plus the live working bubble', () => {
+            // 3 streamed steps (settled) + 1 appended live "working" bubble = 4.
+            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(4);
         });
 
-        it('marks the last step as the live one, with the role prefix stripped', () => {
-            const steps = spectator.queryAll(byTestId('agent-message'));
-            const lastStep = steps[steps.length - 1];
-            // The latest step reads as live (spinner) and shows just the action.
-            expect(lastStep).toHaveText('reading activity.vtl');
-            expect(lastStep.querySelector('.pi-spinner')).not.toBeNull();
-            // Only the last step is live — earlier ones keep their settled icons.
+        it('appends a single live working bubble (spinner) below the settled steps', () => {
+            const bubbles = spectator.queryAll(byTestId('agent-message'));
+            const working = bubbles[bubbles.length - 1];
+            // Only the working bubble is live; settled steps keep their own icons.
             expect(spectator.queryAll('.pi-spinner').length).toBe(1);
+            expect(working.querySelector('.pi-spinner')).not.toBeNull();
+            // With no heartbeat yet it mirrors the latest step (role prefix stripped).
+            expect(working).toHaveText('reading activity.vtl');
+        });
+
+        it('swaps the working bubble to reassurance copy on a long, quiet heartbeat', () => {
+            heartbeat = { elapsedMs: 20000, sinceLastEventMs: 12000 };
+            render('fixing', null, LIVE_STEPS);
+            const bubbles = spectator.queryAll(byTestId('agent-message'));
+            const working = bubbles[bubbles.length - 1];
+            // Quiet (>6s since last event) → cycling reassurance key, not the step text.
+            expect(working).not.toHaveText('reading activity.vtl');
+            // Elapsed seconds on the current action ride along as the sub-line.
+            expect(working).toHaveText('12s');
         });
     });
 
@@ -430,10 +453,10 @@ describe('DotA11yRunComponent', () => {
         });
     });
 
-    describe('preview pane', () => {
+    describe('preview pane (side-by-side diff)', () => {
         beforeEach(() => render('ready'));
 
-        it('renders the preview iframe with a /dot-page PREVIEW_MODE URL by default', () => {
+        it('renders the PREVIEW (with-fixes) iframe on a /dot-page PREVIEW_MODE URL', () => {
             const iframe = spectator.query(byTestId('studio-preview-iframe'));
             expect(iframe).toBeTruthy();
             expect(iframe?.getAttribute('src')).toContain('/dot-page/about-us');
@@ -441,16 +464,77 @@ describe('DotA11yRunComponent', () => {
             expect(iframe?.getAttribute('src')).toContain('mode=PREVIEW_MODE');
         });
 
-        it('shows the preview/live mode select', () => {
-            expect(spectator.query(byTestId('studio-preview-mode-select'))).toBeTruthy();
-        });
-
-        it('switches the iframe to LIVE when previewMode is set to LIVE', () => {
-            spectator.component.previewMode.set('LIVE');
-            spectator.detectChanges();
-            const iframe = spectator.query(byTestId('studio-preview-iframe'));
+        it('renders the LIVE (published) iframe on a /dot-page LIVE URL', () => {
+            const iframe = spectator.query(byTestId('studio-live-iframe'));
+            expect(iframe).toBeTruthy();
+            expect(iframe?.getAttribute('src')).toContain('/dot-page/about-us');
+            expect(iframe?.getAttribute('src')).toContain('host_id=host-id-1');
             expect(iframe?.getAttribute('src')).toContain('mode=LIVE');
             expect(iframe?.getAttribute('src')).not.toContain('PREVIEW_MODE');
+        });
+
+        it('shows both frames at once with their before/after labels', () => {
+            expect(spectator.query(byTestId('studio-live-label'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-preview-label'))).toBeTruthy();
+            // No dropdown anymore — the two versions are shown simultaneously.
+            expect(spectator.query(byTestId('studio-preview-mode-select'))).toBeFalsy();
+        });
+    });
+
+    describe('scroll sync', () => {
+        // jsdom iframes don't lay out or scroll, so drive the same-origin
+        // contentWindows directly and assert the mirror direction + guard.
+        beforeEach(() => render('ready'));
+
+        function fakeFrame(scrollX: number, scrollY: number) {
+            const listeners: Array<() => void> = [];
+            const win = {
+                scrollX,
+                scrollY,
+                addEventListener: (_evt: string, cb: () => void) => listeners.push(cb),
+                scrollTo: jest.fn((x: number, y: number) => {
+                    win.scrollX = x;
+                    win.scrollY = y;
+                })
+            };
+            return {
+                emitScroll: () => listeners.forEach((cb) => cb()),
+                nativeElement: { contentWindow: win },
+                win
+            };
+        }
+
+        it('mirrors the live frame scroll onto the preview frame', () => {
+            const live = fakeFrame(0, 0);
+            const preview = fakeFrame(0, 0);
+            jest.spyOn(spectator.component as never, 'liveFrame').mockReturnValue(live);
+            jest.spyOn(spectator.component as never, 'previewFrame').mockReturnValue(preview);
+
+            spectator.component.onLiveLoad();
+            live.win.scrollX = 40;
+            live.win.scrollY = 120;
+            live.emitScroll();
+
+            expect(preview.win.scrollTo).toHaveBeenCalledWith(40, 120);
+        });
+
+        it('does not bounce back (re-entrancy guard)', () => {
+            const live = fakeFrame(0, 0);
+            const preview = fakeFrame(0, 0);
+            jest.spyOn(spectator.component as never, 'liveFrame').mockReturnValue(live);
+            jest.spyOn(spectator.component as never, 'previewFrame').mockReturnValue(preview);
+
+            // Wire BOTH directions, then scroll live once.
+            spectator.component.onLiveLoad();
+            spectator.component.onPreviewLoad();
+            live.win.scrollY = 200;
+            live.emitScroll();
+
+            // preview mirrored live once; the echoed preview-scroll must NOT scroll
+            // live back while the guard is set.
+            expect(preview.win.scrollTo).toHaveBeenCalledTimes(1);
+            preview.emitScroll();
+            expect(live.win.scrollTo).not.toHaveBeenCalled();
         });
     });
 

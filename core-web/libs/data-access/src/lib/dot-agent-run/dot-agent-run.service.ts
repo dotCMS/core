@@ -10,10 +10,15 @@ import { AgentRunStep, AgentStreamEvent } from '@dotcms/dotcms-models';
  *
  * dotCMS agents (Accessibility, SEO, broken-links, …) run a loop server-side and
  * stream their progress over Server-Sent Events:
- *   event: step  → { message, ...meta }        (live, many)
- *   event: done  → { ...result }                (terminal — the agent's result)
- *   event: aborted → { ...result }              (terminal — partial result after stop)
- *   event: error → { message }                  (terminal)
+ *   event: run            → { runId }                       (first frame)
+ *   event: phase          → { phase, message }              (live, many)
+ *   event: progress       → { baseline, current, cleared }  (live, many)
+ *   event: workingChanged → { changedFiles:[{path,identifier}] } (live, many)
+ *   event: heartbeat      → { elapsedMs, sinceLastEventMs }  (live keep-alive, many)
+ *   event: done           → { ...result }                   (terminal — the agent's result)
+ *   event: aborted        → { ...result }                   (terminal — partial result after stop)
+ *   event: error          → { message }                     (terminal)
+ *   event: step           → legacy alias of `phase` (still parsed)
  *
  * Angular's HttpClient can't read a streaming response incrementally, so this
  * uses the fetch() ReadableStream and hand-parses SSE frames, surfacing each
@@ -157,12 +162,24 @@ export class DotAgentRunService {
         // ahead of the switch so it works regardless of the (possibly absent)
         // event name — but only for non-terminal, non-step frames, so a step (whose
         // meta may carry a runId) or a bare-report done/aborted isn't misread.
-        const KNOWN = event === 'step' || event === 'done' || event === 'aborted' || event === 'error';
+        const KNOWN =
+            event === 'phase' ||
+            event === 'progress' ||
+            event === 'workingChanged' ||
+            event === 'heartbeat' ||
+            event === 'step' ||
+            event === 'done' ||
+            event === 'aborted' ||
+            event === 'error';
         if (!KNOWN && typeof data['runId'] === 'string' && !('message' in data)) {
             return { type: 'run', runId: data['runId'] as string };
         }
 
         switch (event) {
+            // `phase` (and its legacy alias `step`) → a live progress entry. Split
+            // off `message`; keep the rest (e.g. the `phase` tag) as `meta` so a
+            // presenter can read domain fields.
+            case 'phase':
             case 'step': {
                 const message = typeof data['message'] === 'string' ? data['message'] : '';
                 const meta: Record<string, unknown> = {};
@@ -176,7 +193,51 @@ export class DotAgentRunService {
                     step.meta = meta;
                 }
 
-                return { type: 'step', step };
+                // Emit under the frame's own name so callers can distinguish the
+                // modern `phase` stream from the legacy `step` stream if needed.
+                return event === 'phase'
+                    ? { type: 'phase', step }
+                    : { type: 'step', step };
+            }
+            case 'progress': {
+                const num = (key: string): number =>
+                    typeof data[key] === 'number' ? (data[key] as number) : 0;
+
+                return {
+                    type: 'progress',
+                    progress: {
+                        baseline: num('baseline'),
+                        current: num('current'),
+                        cleared: num('cleared')
+                    }
+                };
+            }
+            case 'workingChanged': {
+                const raw = Array.isArray(data['changedFiles']) ? data['changedFiles'] : [];
+                const changedFiles = raw
+                    .map((f) => f as Record<string, unknown>)
+                    .filter(
+                        (f) =>
+                            typeof f['path'] === 'string' && typeof f['identifier'] === 'string'
+                    )
+                    .map((f) => ({
+                        path: f['path'] as string,
+                        identifier: f['identifier'] as string
+                    }));
+
+                return { type: 'workingChanged', changedFiles };
+            }
+            case 'heartbeat': {
+                const num = (key: string): number =>
+                    typeof data[key] === 'number' ? (data[key] as number) : 0;
+
+                return {
+                    type: 'heartbeat',
+                    heartbeat: {
+                        elapsedMs: num('elapsedMs'),
+                        sinceLastEventMs: num('sinceLastEventMs')
+                    }
+                };
             }
             case 'done':
                 return { type: 'done', result: payload as TResult };

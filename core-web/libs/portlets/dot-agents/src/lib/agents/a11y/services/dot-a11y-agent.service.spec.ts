@@ -83,12 +83,22 @@ describe('DotA11yAgentService', () => {
         expect(received).toEqual({ type: 'done', result: FIX_REPORT });
     });
 
-    it('passes step events through untouched', () => {
-        const step = { type: 'step', step: { message: 'scanning' } } as AgentStreamEvent<unknown>;
-        runService.run.mockReturnValue(of(step));
-        let received: unknown;
-        service.fixStream(REQUEST).subscribe((e) => (received = e));
-        expect(received).toEqual(step);
+    it('passes non-terminal events (phase / progress / workingChanged) through untouched', () => {
+        const events = [
+            { type: 'phase', step: { message: 'scanning', meta: { phase: 'scan' } } },
+            { type: 'progress', progress: { baseline: 29, current: 3, cleared: 26 } },
+            {
+                type: 'workingChanged',
+                changedFiles: [{ path: '//site/a.css', identifier: 'id-a' }]
+            }
+        ] as AgentStreamEvent<unknown>[];
+
+        for (const event of events) {
+            runService.run.mockReturnValue(of(event));
+            let received: unknown;
+            service.fixStream(REQUEST).subscribe((e) => (received = e));
+            expect(received).toEqual(event);
+        }
     });
 
     it('unwraps a real backend done payload so the report fields are readable', () => {
@@ -102,7 +112,7 @@ describe('DotA11yAgentService', () => {
                     { ruleId: 'color-contrast', status: 'reported', reason: 'no match' },
                     { ruleId: 'agentic-research', status: 'fixed-to-working', file: '/a.vtl' }
                 ],
-                changedFiles: ['/a.vtl'],
+                changedFiles: [{ path: '/a.vtl', identifier: 'id-a' }],
                 publishRequired: true
             }
         };

@@ -17,7 +17,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
-import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -63,7 +62,6 @@ interface SeverityRow {
         FormsModule,
         ButtonModule,
         ChartModule,
-        SelectModule,
         ToggleSwitchModule,
         TooltipModule,
         DotMessagePipe,
@@ -120,10 +118,17 @@ export class DotA11yRunComponent {
     /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
     private countRaf: number | null = null;
 
-    /** Maps the agent stream + FixReport into shared activity-log bubbles. */
-    private readonly presenter = new A11yAgentPresenter(inject(DotMessageService));
+    private readonly dm = inject(DotMessageService);
 
-    /** The preview iframe — markers are injected into its (same-origin) document. */
+    /** Maps the agent stream + FixReport into shared activity-log bubbles. */
+    private readonly presenter = new A11yAgentPresenter(this.dm);
+
+    /**
+     * The two side-by-side preview iframes. Markers are injected only into the
+     * LIVE frame's (same-origin) document — it always still carries the original
+     * scan's violations (see {@link showMarkers}).
+     */
+    private readonly liveFrame = viewChild<ElementRef<HTMLIFrameElement>>('liveFrame');
     private readonly previewFrame =
         viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
 
@@ -161,12 +166,23 @@ export class DotA11yRunComponent {
             }
         });
 
-        // Redraw markers whenever the findings, preview mode, or phase change.
+        // Redraw both frames' marker layers whenever their scans (or the phase)
+        // change. Each frame gets its OWN scan's findings: the preview frame from
+        // the primary/working scan (a11yGroups), the live frame from the
+        // comparison scan (liveA11yGroups). We run separate scans, so a fix that
+        // isn't published yet clears the preview markers while the live markers
+        // (still-published violations) remain.
         effect(() => {
-            const groups = this.store.a11yGroups();
+            const show = this.showMarkers();
+            const previewGroups = this.store.a11yGroups();
+            const liveGroups = this.store.liveA11yGroups();
             this.markerService.render(
                 this.previewFrame()?.nativeElement,
-                this.showMarkers() ? groups : []
+                show ? previewGroups : []
+            );
+            this.markerService.render(
+                this.liveFrame()?.nativeElement,
+                show ? liveGroups : []
             );
         });
 
@@ -233,32 +249,91 @@ export class DotA11yRunComponent {
         this.router.navigate(['..'], { relativeTo: this.route });
     }
 
-    /** Iframe finished (re)loading — (re)draw markers (see showMarkers()). */
+    /**
+     * Re-entrancy guard for scroll mirroring: setting frame B's scroll fires B's
+     * own `scroll` event, which would mirror straight back to A — an infinite
+     * bounce. While we're programmatically scrolling the target, ignore its echo.
+     */
+    private syncingScroll = false;
+
+    /**
+     * LIVE iframe finished (re)loading — (re)draw its markers from the LIVE
+     * (comparison) scan + (re)wire scroll sync. A load replaces the document, so
+     * the effect-drawn layer is gone and must be redrawn here.
+     */
+    onLiveLoad(): void {
+        this.markerService.render(
+            this.liveFrame()?.nativeElement,
+            this.showMarkers() ? this.store.liveA11yGroups() : []
+        );
+        this.wireScrollSync(this.liveFrame(), this.previewFrame());
+    }
+
+    /**
+     * PREVIEW iframe finished (re)loading — (re)draw its markers from the primary
+     * (working) scan + (re)wire scroll sync.
+     */
     onPreviewLoad(): void {
         this.markerService.render(
             this.previewFrame()?.nativeElement,
             this.showMarkers() ? this.store.a11yGroups() : []
         );
+        this.wireScrollSync(this.previewFrame(), this.liveFrame());
     }
 
     /**
-     * Whether the violation overlay should be drawn in the current preview render.
-     * Markers come from the ORIGINAL scan, so they're only valid where those
-     * violations still exist:
-     *   - PRE-fix (scanned): both PREVIEW and LIVE still have them → show in either.
-     *   - POST-fix (fixing/done/published): PREVIEW carries the agent's fixes so the
-     *     old markers would be stale there → show on LIVE only.
-     * Never before a scan has produced findings.
+     * Mirror `source`'s scroll onto `target` so the two side-by-side renders stay
+     * aligned — makes the before/after diff scannable without scrolling each pane
+     * separately. Both frames are same-origin (the `/dot-page` proxy / BE origin),
+     * so we can read/write `contentWindow.scroll*` directly; cross-origin access
+     * throws and we no-op.
+     *
+     * Wired on every `load`: a reload/navigation replaces the frame's window, which
+     * drops the old listener for free, so we just attach a fresh one each time.
      */
-    readonly showMarkers = computed<boolean>(() => {
-        if (!this.store.scanned()) {
-            return false;
+    private wireScrollSync(
+        source: ElementRef<HTMLIFrameElement> | undefined,
+        target: ElementRef<HTMLIFrameElement> | undefined
+    ): void {
+        const srcWin = this.frameWindow(source);
+        if (!srcWin) {
+            return;
         }
-        if (this.store.isScanned()) {
-            return true; // pre-fix: valid in both PREVIEW and LIVE
+        srcWin.addEventListener(
+            'scroll',
+            () => {
+                if (this.syncingScroll) {
+                    return;
+                }
+                const tgtWin = this.frameWindow(target);
+                if (!tgtWin) {
+                    return;
+                }
+                this.syncingScroll = true;
+                tgtWin.scrollTo(srcWin.scrollX, srcWin.scrollY);
+                // Release after the target's echoed scroll event has fired.
+                requestAnimationFrame(() => (this.syncingScroll = false));
+            },
+            { passive: true }
+        );
+    }
+
+    /** The iframe's window; null when cross-origin or not yet loaded. */
+    private frameWindow(frame: ElementRef<HTMLIFrameElement> | undefined): Window | null {
+        try {
+            return frame?.nativeElement.contentWindow ?? null;
+        } catch {
+            return null;
         }
-        return this.previewMode() === 'LIVE'; // post-fix: only the unfixed LIVE render
-    });
+    }
+
+    /**
+     * Whether the violation overlays should be drawn. Each frame draws its OWN
+     * scan's findings (preview ← primary scan, live ← comparison scan), so the
+     * only shared gate is: a scan pass has run. Empty groups (e.g. the live scan
+     * hasn't landed yet, or a frame came back clean) simply draw no markers.
+     */
+    readonly showMarkers = computed<boolean>(() => this.store.scanned());
 
 
     /**
@@ -354,8 +429,10 @@ export class DotA11yRunComponent {
 
 
     /**
-     * The bubbles for the shared activity log, via the a11y presenter:
-     *   - while fixing → one bubble per live SSE `step` (watch it work)
+     * The SETTLED bubbles for the shared activity log, via the a11y presenter:
+     *   - while fixing → one bubble per streamed SSE `phase` step (the completed
+     *     actions); the live "now working" item is {@link workingMessage}, appended
+     *     by the log itself
      *   - after done   → the final report expanded into bubbles (scan/fixed/reported/rescan)
      */
     readonly activityMessages = computed<AgentMessage[]>(() => {
@@ -369,11 +446,62 @@ export class DotA11yRunComponent {
         return [];
     });
 
-    /** The "now doing" banner content — the latest live step while fixing. */
-    readonly activeMessage = computed<AgentMessage | null>(() => {
-        const step = this.store.latestStep();
-        return step ? this.presenter.liveStep(step, this.store.steps().length - 1) : null;
+    /**
+     * The live "working" bubble shown at the bottom of the log while fixing. It
+     * shows what the agent is doing now — the latest streamed step's text — and,
+     * when a step runs long and quiet (only heartbeats arriving), swaps to cycling
+     * reassurance copy so it never looks hung. The elapsed seconds on the current
+     * action (from the heartbeat) ride along as the sub-line.
+     */
+    readonly workingMessage = computed<AgentMessage | null>(() => {
+        if (!this.store.isFixing()) {
+            return null;
+        }
+        const heartbeat = this.store.heartbeat();
+        const latest = this.store.latestStep();
+
+        // Long, quiet step (agent thinking) → reassurance copy; else the step text.
+        const QUIET_MS = 6000;
+        const quiet = (heartbeat?.sinceLastEventMs ?? 0) >= QUIET_MS;
+        const text =
+            quiet || !latest
+                ? this.dm.get(this.workingReassuranceKey(heartbeat?.sinceLastEventMs ?? 0))
+                : latest.message;
+
+        // Elapsed on the current action, once it's been running a beat.
+        const sinceSec = Math.floor((heartbeat?.sinceLastEventMs ?? 0) / 1000);
+        const sub =
+            sinceSec >= 3
+                ? this.dm.get('accessibility.studio.working.elapsed', String(sinceSec))
+                : undefined;
+
+        return {
+            id: 'agent-working',
+            icon: 'pi pi-spin pi-spinner',
+            text,
+            sub,
+            tone: 'info'
+        };
     });
+
+    /**
+     * Pick a reassurance line for a long, quiet step. Cycles by how long the
+     * current action has run so the copy visibly changes as heartbeats arrive
+     * (rather than freezing on one phrase).
+     */
+    private workingReassuranceKey(sinceLastEventMs: number): string {
+        const KEYS = [
+            'accessibility.studio.working.thinking',
+            'accessibility.studio.working.analyzing',
+            'accessibility.studio.working.reasoning',
+            'accessibility.studio.working.stillworking',
+            'accessibility.studio.working.almost'
+        ];
+        // Advance one phrase roughly every 5s of quiet, capping at the last.
+        const index = Math.min(KEYS.length - 1, Math.floor(sinceLastEventMs / 5000));
+
+        return KEYS[index];
+    }
 
     /** Footer title + sub keys derived from the current phase — single switch. */
     readonly footerKeys = computed(() => {
@@ -412,24 +540,9 @@ export class DotA11yRunComponent {
     });
 
     /**
-     * Which version of the page the iframe shows, so the user can compare the
-     * agent's working fixes against the currently-published page:
-     *   PREVIEW_MODE — the working/draft render (carries the agent's fixes, no chrome)
-     *   LIVE         — the published render (what visitors see today, pre-fix)
-     * Defaults to PREVIEW so the post-fix result is shown first.
-     */
-    readonly previewMode = signal<'PREVIEW_MODE' | 'LIVE'>('PREVIEW_MODE');
-
-    /** Options for the preview/live p-select. */
-    readonly previewModeOptions = [
-        { label: 'accessibility.studio.preview.mode.preview', value: 'PREVIEW_MODE' },
-        { label: 'accessibility.studio.preview.mode.live', value: 'LIVE' }
-    ] as const;
-
-    /**
-     * Same-origin prefix for the preview iframe URL.
+     * Same-origin prefix for the preview iframe URLs.
      *
-     * In DEV the Angular dev server can't render dotCMS pages, so the iframe must
+     * In DEV the Angular dev server can't render dotCMS pages, so the iframes must
      * hit the backend. The dev proxy maps the `/dot-page` sentinel → the BE page
      * renderer (see apps/dotcms-ui/proxy-dev.conf.mjs). In PROD the portlet is
      * served from the dotCMS origin, so the page lives at its own path with NO
@@ -440,19 +553,25 @@ export class DotA11yRunComponent {
     private readonly previewPathPrefix = isDevMode() ? '/dot-page' : '';
 
     /**
-     * Preview URL for the iframe — the page rendered in the selected mode (§8.2).
-     * `host_id` disambiguates which site's copy renders. PREVIEW_MODE shows the
-     * working version (agent fixes); LIVE shows the published version — letting
-     * the user compare before/after.
+     * The page rendered in the given mode. `host_id` disambiguates which site's
+     * copy renders. Shared by the two side-by-side frames (§8.2).
      */
-    readonly previewUrl = computed(() => {
+    private urlFor(mode: 'PREVIEW_MODE' | 'LIVE'): string {
         const page = this.store.selected();
         if (!page) {
             return '';
         }
         const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
-        return `${this.previewPathPrefix}${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=${this.previewMode()}`;
-    });
+        return `${this.previewPathPrefix}${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=${mode}`;
+    }
+
+    /**
+     * The two frames shown side by side so the diff reads at a glance:
+     *   LIVE     — the published render (what visitors see today, pre-fix) + markers
+     *   PREVIEW  — the working render (carries the agent's fixes, the "after")
+     */
+    readonly liveUrl = computed(() => this.urlFor('LIVE'));
+    readonly previewUrl = computed(() => this.urlFor('PREVIEW_MODE'));
 
     backToPicker(): void {
         this.store.backToPicker();

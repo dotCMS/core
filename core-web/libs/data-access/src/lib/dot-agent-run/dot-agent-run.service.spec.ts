@@ -74,6 +74,88 @@ describe('DotAgentRunService', () => {
             ]);
         });
 
+        it('maps a phase event to a phase-typed step (message split from meta)', async () => {
+            fetchMock.mockResolvedValue(
+                mockSseResponse([
+                    'event: phase\ndata: {"phase":"scan","message":"Scanning live + working (preview) baseline"}\n\n',
+                    'event: phase\ndata: {"phase":"read","message":"Agent: reading template.vtl"}\n\n'
+                ])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            expect(events).toEqual<AgentStreamEvent<DemoResult>[]>([
+                {
+                    type: 'phase',
+                    step: {
+                        message: 'Scanning live + working (preview) baseline',
+                        meta: { phase: 'scan' }
+                    }
+                },
+                {
+                    type: 'phase',
+                    step: { message: 'Agent: reading template.vtl', meta: { phase: 'read' } }
+                }
+            ]);
+        });
+
+        it('maps a progress event to a typed running count', async () => {
+            fetchMock.mockResolvedValue(
+                mockSseResponse(['event: progress\ndata: {"baseline":29,"current":3,"cleared":26}\n\n'])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            expect(events).toEqual<AgentStreamEvent<DemoResult>[]>([
+                { type: 'progress', progress: { baseline: 29, current: 3, cleared: 26 } }
+            ]);
+        });
+
+        it('maps a workingChanged event to the typed changed-file list (dropping malformed entries)', async () => {
+            fetchMock.mockResolvedValue(
+                mockSseResponse([
+                    'event: workingChanged\ndata: {"changedFiles":[' +
+                        '{"path":"//site/a.css","identifier":"id-a"},' +
+                        '{"path":"//site/b.vtl"},' + // no identifier → dropped
+                        '{"path":"//site/c.vtl","identifier":"id-c"}]}\n\n'
+                ])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            expect(events).toEqual<AgentStreamEvent<DemoResult>[]>([
+                {
+                    type: 'workingChanged',
+                    changedFiles: [
+                        { path: '//site/a.css', identifier: 'id-a' },
+                        { path: '//site/c.vtl', identifier: 'id-c' }
+                    ]
+                }
+            ]);
+        });
+
+        it('maps a heartbeat event to the typed keep-alive timings', async () => {
+            fetchMock.mockResolvedValue(
+                mockSseResponse([
+                    'event: heartbeat\ndata: {"elapsedMs":45000,"sinceLastEventMs":8000}\n\n'
+                ])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            expect(events).toEqual<AgentStreamEvent<DemoResult>[]>([
+                { type: 'heartbeat', heartbeat: { elapsedMs: 45000, sinceLastEventMs: 8000 } }
+            ]);
+        });
+
         it('emits a run event for the first run-id frame (no event name, no message)', async () => {
             fetchMock.mockResolvedValue(
                 mockSseResponse([

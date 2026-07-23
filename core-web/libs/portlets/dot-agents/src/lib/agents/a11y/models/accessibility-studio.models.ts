@@ -1,4 +1,4 @@
-import { AgentStreamEvent } from '@dotcms/dotcms-models';
+import { AgentChangedFile, AgentStreamEvent } from '@dotcms/dotcms-models';
 
 // ── Agent wire contract (plan §5/§6) ────────────────────────────────────────
 
@@ -27,8 +27,12 @@ export interface FixReport {
     page: { uri: string; host: string; languageId: number };
     scan: { before: ScanCount; after: ScanCount };
     results: FixResult[];
-    changedFiles: string[];
-    publishRequired: true;
+    /** Files the agent changed in the working version (path + identifier). */
+    changedFiles: AgentChangedFile[];
+    /** True when the working fixes still need publishing to reach the live site. */
+    publishRequired: boolean;
+    /** Terminal status the agent reports on the `done` frame. */
+    status?: string;
 }
 
 /**

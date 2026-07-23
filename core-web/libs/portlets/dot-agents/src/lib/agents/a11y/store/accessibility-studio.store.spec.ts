@@ -14,11 +14,19 @@ import { A11yAgentStreamEvent, StudioPageRow } from '../models/accessibility-stu
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
-/** A canned SSE run: the run-id frame, two steps, then `done` with the mock report. */
+/**
+ * A canned SSE run in the current contract: the run-id frame, two `phase` steps,
+ * a `progress` count, a `workingChanged` file set, then `done` with the report.
+ */
 const MOCK_FIX_STREAM: A11yAgentStreamEvent[] = [
     { type: 'run', runId: 'r_test_123' },
-    { type: 'step', step: { message: 'Scanning live + working baseline', meta: { phase: 'scan' } } },
-    { type: 'step', step: { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } } },
+    { type: 'phase', step: { message: 'Scanning live + working baseline', meta: { phase: 'scan' } } },
+    { type: 'phase', step: { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } } },
+    { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } },
+    {
+        type: 'workingChanged',
+        changedFiles: [{ path: '//site/application/themes/x/style.css', identifier: 'css-id' }]
+    },
     { type: 'done', result: MOCK_FIX_REPORT }
 ];
 
@@ -344,14 +352,43 @@ describe('AccessibilityStudioStore', () => {
             });
         });
 
-        it('runScan calls the real scanner with an EDIT_MODE URL on the app origin', () => {
+        it('runScan fires two scans: the primary EDIT_MODE (working) scan and the comparison LIVE scan', () => {
             store.runScan();
-            expect(scannerService.checkA11y).toHaveBeenCalledTimes(1);
-            const url = scannerService.checkA11y.mock.calls[0][0];
-            expect(url).toContain(`${window.location.origin}/about-us`);
-            expect(url).toContain('host_id=host-id-1');
-            expect(url).toContain('language_id=1');
-            expect(url).toContain('mode=EDIT_MODE');
+            // One scan for the UI-driving preview render, one comparison scan for
+            // the live-frame markers.
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
+
+            const previewUrl = scannerService.checkA11y.mock.calls[0][0];
+            expect(previewUrl).toContain(`${window.location.origin}/about-us`);
+            expect(previewUrl).toContain('host_id=host-id-1');
+            expect(previewUrl).toContain('language_id=1');
+            expect(previewUrl).toContain('mode=EDIT_MODE');
+
+            const liveUrl = scannerService.checkA11y.mock.calls[1][0];
+            expect(liveUrl).toContain(`${window.location.origin}/about-us`);
+            expect(liveUrl).toContain('host_id=host-id-1');
+            expect(liveUrl).toContain('mode=LIVE');
+        });
+
+        it('runScan populates liveScanResult (comparison-only) alongside scanResult', () => {
+            store.runScan();
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.liveScanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.liveA11yGroups().length).toBe(3);
+        });
+
+        it('a failing LIVE scan does not derail the UI (comparison-only, error swallowed)', () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            // First call = preview (succeeds), second = live (fails).
+            scannerService.checkA11y
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE))
+                .mockReturnValueOnce(throwError(() => new Error('live boom')));
+            store.runScan();
+            // Preview scan drove the UI to scanned; the live failure is silent.
+            expect(store.phase()).toBe('scanned');
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.liveScanResult()).toBeNull();
+            expect(errorManager.handle).not.toHaveBeenCalled();
         });
 
         it('runScan stores the scan result and the real error/warning counts', () => {
@@ -366,9 +403,10 @@ describe('AccessibilityStudioStore', () => {
         });
 
         it('runScan re-scans from the scanned phase (the re-scan button)', () => {
-            store.runScan(); // ready → scanned
+            store.runScan(); // ready → scanned  (preview + live scan)
             store.runScan(); // scanned → scanning → scanned again (re-scan)
-            expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
+            // Two scans per run (preview + comparison live) × two runs = 4.
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(4);
             expect(store.phase()).toBe('scanned');
         });
 
@@ -390,10 +428,10 @@ describe('AccessibilityStudioStore', () => {
             expect(store.scanResult()).toBeNull();
         });
 
-        it('startFix streams steps then moves scanned → done with the full report', () => {
+        it('startFix streams phase steps then moves scanned → done with the full report', () => {
             store.runScan();
             store.startFix();
-            // Each SSE `step` event was appended to the live activity log…
+            // Each SSE `phase` event was appended to the live activity log…
             expect(agentService.fixStream).toHaveBeenCalledTimes(1);
             expect(store.steps()).toHaveLength(2);
             expect(store.steps()[0]).toEqual({
@@ -406,6 +444,42 @@ describe('AccessibilityStudioStore', () => {
             expect(store.fixedCount()).toBe(7);
             expect(store.reportedCount()).toBe(5);
             expect(store.afterCount()).toBe(MOCK_FIX_REPORT.scan.after.violations);
+            // On done, changedFiles is synced to the report's authoritative set.
+            expect(store.changedFiles()).toBe(MOCK_FIX_REPORT.changedFiles);
+        });
+
+        it('progress events drive the live openCount down while fixing', () => {
+            // Hold the stream open right after a progress frame (no done yet) so we
+            // observe the live count rather than the terminal report's after-count.
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('fixing'); // no terminal event → still fixing
+            // openCount reflects the live `current`, not the scan's before-count (5).
+            expect(store.openCount()).toBe(2);
+        });
+
+        it('workingChanged events accumulate the changed-file set while fixing', () => {
+            const files = [
+                { path: '//site/a.css', identifier: 'id-a' },
+                { path: '//site/b.vtl', identifier: 'id-b' }
+            ];
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'workingChanged', changedFiles: [files[0]] },
+                    { type: 'workingChanged', changedFiles: files } // full set each frame
+                )
+            );
+            store.runScan();
+            store.startFix();
+            // The latest frame carries the full set — replace, not append.
+            expect(store.changedFiles()).toEqual(files);
         });
 
         it('captures the run id from the stream and targets stop at it', () => {

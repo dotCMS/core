@@ -35,24 +35,45 @@ describe('DotAgentActivityLogComponent', () => {
         expect(steps[1]).toHaveText('Fixed alt text');
     });
 
-    it('marks no bubble as live when not working', () => {
+    it('renders no live bubble and no spinner when not working', () => {
         spectator.setInput({ messages: MESSAGES, working: false });
+        expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
         expect(spectator.query('.pi-spinner')).toBeNull();
     });
 
-    it('marks only the last bubble as the live step while working', () => {
+    it('appends one live working bubble (spinner) below the settled steps while working', () => {
         spectator.setInput({ messages: MESSAGES, working: true });
         const bubbles = spectator.queryAll(byTestId('agent-message'));
-        // Exactly one live spinner, and it is on the last bubble.
+        // 3 settled + 1 appended live bubble.
+        expect(bubbles.length).toBe(4);
+        // Exactly one live spinner, on the appended (last) bubble.
         expect(spectator.queryAll('.pi-spinner').length).toBe(1);
         expect(bubbles[bubbles.length - 1].querySelector('.pi-spinner')).not.toBeNull();
     });
 
-    it('synthesizes a live fallback bubble when working with no steps yet', () => {
+    it('renders the supplied workingMessage as the live bubble', () => {
+        spectator.setInput({
+            messages: MESSAGES,
+            working: true,
+            workingMessage: {
+                id: 'agent-working',
+                icon: 'pi pi-spin pi-spinner',
+                text: 'Still working…',
+                sub: '8s',
+                tone: 'info'
+            } as AgentMessage
+        });
+        const bubbles = spectator.queryAll(byTestId('agent-message'));
+        expect(bubbles.length).toBe(4);
+        expect(bubbles[bubbles.length - 1]).toHaveText('Still working…');
+        expect(bubbles[bubbles.length - 1]).toHaveText('8s');
+    });
+
+    it('synthesizes a fallback working bubble when working with no workingMessage', () => {
         spectator.setInput({
             messages: [],
             working: true,
-            activeMessage: null,
+            workingMessage: null,
             workingFallbackKey: 'my.working.key'
         });
         const bubbles = spectator.queryAll(byTestId('agent-message'));

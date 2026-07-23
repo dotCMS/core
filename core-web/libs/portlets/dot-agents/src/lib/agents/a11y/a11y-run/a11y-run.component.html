@@ -275,10 +275,12 @@
             </div>
         }
 
-        <!-- Live agent activity + final report timeline (shared, agent-agnostic). -->
+        <!-- Live agent activity + final report timeline (shared, agent-agnostic).
+             The log appends the live "working" bubble (workingMessage) below the
+             settled steps while fixing. -->
         <dot-agent-activity-log
             [messages]="activityMessages()"
-            [activeMessage]="activeMessage()"
+            [workingMessage]="workingMessage()"
             [working]="store.isFixing()"
             workingFallbackKey="accessibility.studio.fixing"
             data-testid="studio-activity-log" />
@@ -455,43 +457,24 @@
     </div>
 </aside>
 
-<!-- ============ PREVIEW PANE ============ -->
-<main class="flex min-h-0 flex-col bg-surface-100">
-    <div class="flex h-13 flex-none items-center gap-3 px-5">
-        <!-- Preview vs Live: compare the agent's working fixes against the
-             currently-published page. -->
-        <p-select
-            [options]="previewModeOptions"
-            optionValue="value"
-            [ngModel]="previewMode()"
-            (ngModelChange)="previewMode.set($event)"
-            [attr.aria-label]="'accessibility.studio.preview.mode.label' | dm"
-            data-testid="studio-preview-mode-select">
-            <ng-template #selectedItem let-opt>
-                <span class="flex items-center gap-2 text-xs font-semibold">
-                    <i
-                        [class]="previewMode() === 'LIVE' ? 'pi pi-globe' : 'pi pi-pencil'"
-                        aria-hidden="true"></i>
-                    {{ (previewMode() === 'LIVE'
-                        ? 'accessibility.studio.preview.mode.live'
-                        : 'accessibility.studio.preview.mode.preview') | dm }}
-                </span>
-            </ng-template>
-            <ng-template #item let-opt>
-                <span class="text-xs">{{ opt.label | dm }}</span>
-            </ng-template>
-        </p-select>
-    </div>
-
-    <div
-        class="mx-5 mb-5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
+<!-- ============ PREVIEW PANE — side-by-side diff ============ -->
+<!-- Two frames at once so the before/after reads at a glance: PREVIEW (the
+     agent's working fixes) on the left, LIVE (published, what visitors see
+     today, with the violation markers) on the right. -->
+<main class="grid min-h-0 grid-cols-2 gap-4 bg-surface-100 p-5">
+    <!-- AFTER — the working render carrying the agent's fixes -->
+    <section
+        class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-primary-200 bg-white shadow-lg">
         <div
-            class="flex h-10 flex-none items-center gap-2 border-b border-surface-100 bg-surface-50 px-3.5">
-            <span class="size-2.75 rounded-full bg-red-400"></span>
-            <span class="size-2.75 rounded-full bg-yellow-400"></span>
-            <span class="size-2.75 rounded-full bg-green-400"></span>
+            class="flex h-10 flex-none items-center gap-2 border-b border-surface-100 bg-primary-50 px-3.5">
+            <span
+                class="inline-flex items-center gap-1.5 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white"
+                data-testid="studio-preview-label">
+                <i class="pi pi-sparkles text-[11px]!" aria-hidden="true"></i>
+                {{ 'accessibility.studio.preview.mode.preview' | dm }}
+            </span>
             <div
-                class="mx-auto flex h-6.5 max-w-[460px] flex-1 items-center gap-1.5 rounded-full border border-surface-200 bg-white px-3">
+                class="mx-auto flex h-6.5 max-w-[420px] flex-1 items-center gap-1.5 rounded-full border border-surface-200 bg-white px-3">
                 <i class="pi pi-lock text-[11px]! text-gray-400" aria-hidden="true"></i>
                 <span class="truncate text-xs text-gray-500">
                     {{ store.selected()?.hostName }}{{ store.selected()?.path }}
@@ -506,9 +489,42 @@
                     [src]="previewUrl() | safeUrl"
                     (load)="onPreviewLoad()"
                     class="size-full border-0"
-                    [title]="'accessibility.studio.preview.label' | dm"
+                    [title]="'accessibility.studio.preview.mode.preview' | dm"
                     data-testid="studio-preview-iframe"></iframe>
             }
         </div>
-    </div>
+    </section>
+
+    <!-- BEFORE — the published page + markers -->
+    <section
+        class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
+        <div
+            class="flex h-10 flex-none items-center gap-2 border-b border-surface-100 bg-surface-50 px-3.5">
+            <span
+                class="inline-flex items-center gap-1.5 rounded-full bg-surface-200 px-2 py-0.5 text-[11px] font-semibold text-gray-600"
+                data-testid="studio-live-label">
+                <i class="pi pi-globe text-[11px]!" aria-hidden="true"></i>
+                {{ 'accessibility.studio.preview.mode.live' | dm }}
+            </span>
+            <div
+                class="mx-auto flex h-6.5 max-w-[420px] flex-1 items-center gap-1.5 rounded-full border border-surface-200 bg-white px-3">
+                <i class="pi pi-lock text-[11px]! text-gray-400" aria-hidden="true"></i>
+                <span class="truncate text-xs text-gray-500">
+                    {{ store.selected()?.hostName }}{{ store.selected()?.path }}
+                </span>
+            </div>
+        </div>
+
+        <div class="min-h-0 flex-1 bg-white">
+            @if (liveUrl()) {
+                <iframe
+                    #liveFrame
+                    [src]="liveUrl() | safeUrl"
+                    (load)="onLiveLoad()"
+                    class="size-full border-0"
+                    [title]="'accessibility.studio.preview.mode.live' | dm"
+                    data-testid="studio-live-iframe"></iframe>
+            }
+        </div>
+    </section>
 </main>

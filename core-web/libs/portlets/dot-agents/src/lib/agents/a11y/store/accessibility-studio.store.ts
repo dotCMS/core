@@ -13,7 +13,13 @@ import { computed, effect, inject, untracked } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { AgentRunStep, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    AgentChangedFile,
+    AgentHeartbeat,
+    AgentProgress,
+    AgentRunStep,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -59,15 +65,44 @@ interface AccessibilityStudioState {
     rehydrateStatus: RehydrateStatus;
     /** Per-run opt-out: when true, the agent reports CSS contrast instead of fixing it (§3). */
     skipCss: boolean;
-    /** The real axe scan result — populated by runScan() via DotPageScannerService. */
+    /**
+     * The real axe scan result of the PREVIEW (working) render — populated by
+     * runScan() via DotPageScannerService. This is the scan that owns the whole
+     * UI: score donut, issue list, fix flow, and the preview-frame markers.
+     */
     scanResult: PageScannerA11yResponse | null;
-    /** Live agent activity log — appended from SSE `step` events during a fix run. */
+    /**
+     * The axe scan result of the LIVE (published) render. Used ONLY for the
+     * side-by-side comparison — it draws the live-frame marker layer so the user
+     * sees the violations that still exist on the published page (which may lag
+     * the preview when fixes aren't published yet). Feeds no other widget.
+     */
+    liveScanResult: PageScannerA11yResponse | null;
+    /** Live agent activity log — appended from SSE `phase` events during a fix run. */
     steps: AgentRunStep[];
+    /**
+     * Live violation count from SSE `progress` events — the authoritative running
+     * score while fixing (baseline → current, cleared so far). Null until the
+     * first progress frame arrives.
+     */
+    progress: AgentProgress | null;
+    /**
+     * Files the agent has changed in the working version so far — accumulated from
+     * SSE `workingChanged` events during the run (each frame carries the full set,
+     * so we replace rather than append). Confirmed by the terminal report.
+     */
+    changedFiles: AgentChangedFile[];
     /**
      * The current run's id — captured from the stream's first `run` event, used to
      * target the /stop request at this specific run. Null when no run is active.
      */
     runId: string | null;
+    /**
+     * Latest keep-alive tick from SSE `heartbeat` events — how long the run and the
+     * current action have been going. Drives the "still working…" indicator so a
+     * long, quiet step (a model call) doesn't look hung. Null between runs.
+     */
+    heartbeat: AgentHeartbeat | null;
     /** Set when a fix run fails — surfaced inline so the user can retry. */
     fixError: string | null;
     /** The §6 run report — populated when the fix pass completes (SSE `done`). */
@@ -86,8 +121,12 @@ const initialState: AccessibilityStudioState = {
     rehydrateStatus: 'idle',
     skipCss: false,
     scanResult: null,
+    liveScanResult: null,
     steps: [],
+    progress: null,
+    changedFiles: [],
     runId: null,
+    heartbeat: null,
     fixError: null,
     report: null
 };
@@ -151,6 +190,12 @@ export const AccessibilityStudioStore = signalStore(
         ),
         /** Real axe findings grouped per rule (violations → error, incomplete → warning). */
         a11yGroups: computed<A11yGroup[]>(() => buildA11yGroups(store.scanResult())),
+        /**
+         * The LIVE (published) render's findings, grouped per rule — drives ONLY the
+         * live-frame marker layer for the side-by-side comparison. Empty until the
+         * live scan lands (it runs alongside the preview scan on Scan / Re-scan).
+         */
+        liveA11yGroups: computed<A11yGroup[]>(() => buildA11yGroups(store.liveScanResult())),
         /** Real axe error-element count (confirmed violations). */
         errorCount: computed(() =>
             buildA11yGroups(store.scanResult())
@@ -214,32 +259,28 @@ export const AccessibilityStudioStore = signalStore(
         ),
         /**
          * Live "open" count for the score widget. After the run finishes it's the
-         * report's authoritative after-count; while fixing it's an optimistic
-         * estimate (before − violations cleared so far) so the donut animates down
-         * as fixes land; before any run it's the scan's before-count.
+         * report's authoritative after-count; while fixing it's the live count from
+         * the agent's `progress` stream (`current`) so the donut animates down as
+         * fixes land; before any run it's the scan's before-count.
          */
         openCount: computed<number>(() => {
-            const errorGroups = buildA11yGroups(store.scanResult()).filter(
-                (g) => g.type === 'error'
-            );
-            const before = errorGroups.reduce((total, g) => total + g.count, 0);
             const report = store.report();
             if (report) {
                 return report.scan.after.violations;
             }
             if (store.phase() === 'fixing') {
-                // a11y-only optimistic estimate: count fix-phase steps whose message
-                // reads as a completed fix, so the donut animates down as fixes land.
-                const cleared = store
-                    .steps()
-                    .filter(
-                        (s) =>
-                            s.meta?.['phase'] === 'fix' &&
-                            /^Fixed |Added |Set |Wrapped |Named /.test(s.message)
-                    ).length;
-                return Math.max(0, before - cleared);
+                // Authoritative live count straight from the agent's `progress`
+                // events. Before the first progress frame lands, fall back to the
+                // baseline (the scan's before-count).
+                const progress = store.progress();
+                if (progress) {
+                    return Math.max(0, progress.current);
+                }
             }
-            return before;
+            const errorGroups = buildA11yGroups(store.scanResult()).filter(
+                (g) => g.type === 'error'
+            );
+            return errorGroups.reduce((total, g) => total + g.count, 0);
         }),
         fixedCount: computed<number>(() =>
             store.report()?.results.filter((r) => r.status === 'fixed-to-working').length ?? 0
@@ -263,6 +304,9 @@ export const AccessibilityStudioStore = signalStore(
         // The in-flight scan / fix-stream subscription, held so Stop can cancel it
         // (unsubscribing aborts the underlying fetch). Not reactive UI state.
         let activeSub: Subscription | null = null;
+        // The comparison-only LIVE scan, tracked separately so Stop cancels it too
+        // without coupling it to the UI-driving preview scan's lifecycle.
+        let liveScanSub: Subscription | null = null;
 
         /**
          * The dotCMS backend origin the agent must render + call against. In prod the
@@ -287,15 +331,23 @@ export const AccessibilityStudioStore = signalStore(
         /**
          * Build the absolute URL the scanner renders + checks. It must be on the
          * backend origin (never the content-site hostname, which may not be publicly
-         * reachable) with `host_id` to disambiguate the site and `mode=EDIT_MODE` for
-         * the working version (§8.2). Mirrors DotEmaShellComponent.handleScannerToolClick.
+         * reachable) with `host_id` to disambiguate the site.
+         *
+         * `mode` selects which render to scan:
+         *   - `EDIT_MODE` (default) — the working version. NOTE: DotPageScannerService
+         *     rewrites EDIT_MODE → PREVIEW_MODE at its chokepoint (editor chrome would
+         *     produce phantom violations), so this scans the PREVIEW render — the same
+         *     one the left "with fixes" frame shows. This is the scan that owns the UI.
+         *   - `LIVE` — the published render, for the comparison-only live scan. `LIVE`
+         *     passes through the scanner untouched.
+         * Mirrors DotEmaShellComponent.handleScannerToolClick.
          */
-        function buildScanUrl(page: StudioPageRow): string {
+        function buildScanUrl(page: StudioPageRow, mode: 'EDIT_MODE' | 'LIVE' = 'EDIT_MODE'): string {
             const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
             const url = new URL(path, backendOrigin());
             url.searchParams.set('host_id', page.hostId);
             url.searchParams.set('language_id', String(page.languageId));
-            url.searchParams.set('mode', 'EDIT_MODE');
+            url.searchParams.set('mode', mode);
             return url.toString();
         }
 
@@ -348,8 +400,12 @@ export const AccessibilityStudioStore = signalStore(
                 phase: 'ready',
                 rehydrateStatus: 'idle',
                 scanResult: null,
+                liveScanResult: null,
                 steps: [],
+                progress: null,
+                changedFiles: [],
                 runId: null,
+                heartbeat: null,
                 fixError: null,
                 report: null
             });
@@ -439,8 +495,12 @@ export const AccessibilityStudioStore = signalStore(
                     selected: null,
                     rehydrateStatus: 'idle',
                     scanResult: null,
+                    liveScanResult: null,
                     steps: [],
+                    progress: null,
+                    changedFiles: [],
                     runId: null,
+                    heartbeat: null,
                     fixError: null,
                     report: null
                 });
@@ -459,10 +519,18 @@ export const AccessibilityStudioStore = signalStore(
                     return;
                 }
                 // Drop any prior scan/report so the widgets reflect the fresh scan.
-                patchState(store, { phase: 'scanning', scanResult: null, report: null, fixError: null });
+                patchState(store, {
+                    phase: 'scanning',
+                    scanResult: null,
+                    liveScanResult: null,
+                    report: null,
+                    fixError: null
+                });
 
+                // Primary scan — the PREVIEW (working) render. Owns the phase + all
+                // widgets. Failure returns to `ready` so the user can retry.
                 activeSub = scannerService
-                    .checkA11y(buildScanUrl(page))
+                    .checkA11y(buildScanUrl(page, 'EDIT_MODE'))
                     .pipe(
                         take(1),
                         catchError((error) => {
@@ -476,6 +544,20 @@ export const AccessibilityStudioStore = signalStore(
                     .subscribe((scanResult) => {
                         patchState(store, { scanResult, phase: 'scanned' });
                     });
+
+                // Comparison-only scan — the LIVE (published) render. Draws the
+                // live-frame markers and nothing else, so its failure must NOT touch
+                // the phase or surface an error dialog: swallow it and leave the live
+                // markers empty. Runs in parallel with the primary scan.
+                liveScanSub = scannerService
+                    .checkA11y(buildScanUrl(page, 'LIVE'))
+                    .pipe(
+                        take(1),
+                        catchError(() => EMPTY)
+                    )
+                    .subscribe((liveScanResult) => {
+                        patchState(store, { liveScanResult });
+                    });
             },
 
             /** Cancel the in-flight scan (unsubscribe aborts the request) → back to ready. */
@@ -485,15 +567,20 @@ export const AccessibilityStudioStore = signalStore(
                 }
                 activeSub?.unsubscribe();
                 activeSub = null;
+                // Cancel the parallel comparison scan too.
+                liveScanSub?.unsubscribe();
+                liveScanSub = null;
                 patchState(store, { phase: 'ready' });
             },
 
             /**
              * Run the real fix pass: POST the page to the agent and stream its
-             * progress over SSE. Each `step` event appends to the live activity
-             * log; `done` sets the §6 report and moves to "done"; `error` returns
-             * to "scanned" so the user can retry. The browser holds no token — the
-             * dev/prod proxy injects the bearer (see DotA11yAgentService).
+             * progress over SSE. Each `phase` event appends to the live activity
+             * log; `progress` updates the live violation count; `workingChanged`
+             * tracks the files touched so far; `done` sets the §6 report and moves
+             * to "done"; `error` returns to "scanned" so the user can retry. The
+             * browser holds no token — the dev/prod proxy injects the bearer (see
+             * DotA11yAgentService).
              */
             startFix() {
                 const page = store.selected();
@@ -503,7 +590,10 @@ export const AccessibilityStudioStore = signalStore(
                 patchState(store, {
                     phase: 'fixing',
                     steps: [],
+                    progress: null,
+                    changedFiles: [],
                     runId: null,
+                    heartbeat: null,
                     fixError: null,
                     report: null
                 });
@@ -528,19 +618,53 @@ export const AccessibilityStudioStore = signalStore(
                         })
                     )
                     .subscribe((event) => {
-                        if (event.type === 'run') {
-                            // First frame: capture the run id so Stop can target it.
-                            patchState(store, { runId: event.runId });
-                        } else if (event.type === 'step') {
-                            patchState(store, { steps: [...store.steps(), event.step] });
-                        } else if (event.type === 'done' || event.type === 'aborted') {
-                            // done = full run; aborted = stopped early with a partial
-                            // report (fixes already applied are kept). Both land on the
-                            // done screen with the report the agent returned.
-                            patchState(store, { phase: 'done', report: event.result });
-                        } else {
-                            // Terminal error event from the agent.
-                            patchState(store, { phase: 'scanned', fixError: event.message });
+                        switch (event.type) {
+                            case 'run':
+                                // First frame: capture the run id so Stop can target it.
+                                patchState(store, { runId: event.runId });
+                                break;
+                            // `step` is the legacy alias of `phase` — treat identically.
+                            case 'phase':
+                            case 'step':
+                                patchState(store, { steps: [...store.steps(), event.step] });
+                                break;
+                            case 'progress':
+                                // Live violation count → drives the score donut down.
+                                patchState(store, { progress: event.progress });
+                                break;
+                            case 'workingChanged':
+                                // Each frame carries the full set of changed files so
+                                // far — replace, don't append.
+                                patchState(store, { changedFiles: event.changedFiles });
+                                break;
+                            case 'heartbeat':
+                                // Keep-alive while the agent is thinking between
+                                // actions — drives the "still working…" indicator so a
+                                // long, quiet step doesn't look hung.
+                                patchState(store, { heartbeat: event.heartbeat });
+                                break;
+                            case 'done':
+                            case 'aborted':
+                                // done = full run; aborted = stopped early with a partial
+                                // report (fixes already applied are kept). Both land on
+                                // the done screen with the report the agent returned; sync
+                                // the changed-file list to the report's authoritative set.
+                                patchState(store, {
+                                    phase: 'done',
+                                    report: event.result,
+                                    changedFiles: event.result.changedFiles ?? store.changedFiles()
+                                });
+                                break;
+                            case 'error':
+                                // Terminal error event from the agent.
+                                patchState(store, {
+                                    phase: 'scanned',
+                                    fixError: event.message
+                                });
+                                break;
+                            default:
+                                // Exhaustive: any unhandled event type is ignored.
+                                break;
                         }
                     });
             },
