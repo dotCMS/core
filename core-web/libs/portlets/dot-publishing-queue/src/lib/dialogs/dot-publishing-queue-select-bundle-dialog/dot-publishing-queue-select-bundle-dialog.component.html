@@ -14,13 +14,14 @@
             @case ('configure') {
                 <div class="flex min-w-0 items-center gap-3">
                     <p-button
-                        icon="pi pi-arrow-left"
                         [text]="true"
                         [rounded]="true"
                         severity="secondary"
                         [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
                         (onClick)="onBackToList()"
-                        data-testid="pq-select-bundle-back-btn" />
+                        data-testid="pq-select-bundle-back-btn">
+                        <span class="material-symbols-rounded w-6 text-center">arrow_back</span>
+                    </p-button>
                     <h2
                         class="m-0 text-xl font-bold text-color"
                         data-testid="pq-select-bundle-configure-title">
@@ -43,14 +44,15 @@
             @case ('download') {
                 <div class="flex min-w-0 items-center gap-3">
                     <p-button
-                        icon="pi pi-arrow-left"
                         [text]="true"
                         [rounded]="true"
                         severity="secondary"
                         [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
                         (onClick)="onBackToList()"
                         [disabled]="$isDownloading()"
-                        data-testid="pq-select-bundle-download-back-btn" />
+                        data-testid="pq-select-bundle-download-back-btn">
+                        <span class="material-symbols-rounded w-6 text-center">arrow_back</span>
+                    </p-button>
                     <h2
                         class="m-0 text-xl font-bold text-color"
                         data-testid="pq-select-bundle-download-title">
@@ -60,13 +62,14 @@
             }
         }
         <p-button
-            icon="pi pi-times"
             [text]="true"
             [rounded]="true"
             severity="secondary"
             [attr.aria-label]="'publishing-queue.close' | dm"
             (onClick)="closeDialog()"
-            data-testid="pq-select-bundle-close-btn" />
+            data-testid="pq-select-bundle-close-btn">
+            <span class="material-symbols-rounded w-6 text-center">close</span>
+        </p-button>
     </div>
 
     @switch ($step()) {
@@ -78,7 +81,11 @@
                     data-testid="pq-select-bundle-left">
                     <div class="px-4 py-3">
                         <p-iconField iconPosition="left">
-                            <p-inputIcon styleClass="pi pi-search" />
+                            <p-inputIcon>
+                                <span class="material-symbols-rounded text-xl! leading-none!">
+                                    search
+                                </span>
+                            </p-inputIcon>
                             <input
                                 pInputText
                                 type="text"
@@ -165,6 +172,7 @@
                                                         </span>
                                                         <dot-copy-button
                                                             [copy]="bundle.id"
+                                                            iconStyle="material-symbols-rounded"
                                                             [tooltipText]="
                                                                 'publishing-queue.copy-bundle-id'
                                                                     | dm
@@ -174,15 +182,17 @@
                                                             data-testid="pq-select-bundle-id-copy" />
                                                     </div>
                                                 </div>
-                                                <i
-                                                    class="pi pi-chevron-right text-color-secondary text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                                                <span
+                                                    class="material-symbols-rounded text-color-secondary text-sm! opacity-0 transition-opacity group-hover:opacity-100"
                                                     [class.opacity-100]="
                                                         $activeBundleId() === bundle.id
                                                     "
                                                     [class.text-primary-500]="
                                                         $activeBundleId() === bundle.id
                                                     "
-                                                    aria-hidden="true"></i>
+                                                    aria-hidden="true">
+                                                    chevron_right
+                                                </span>
                                             </div>
                                         </td>
                                     </tr>
@@ -209,7 +219,6 @@
                             {{ 'publishing-queue.select-bundle.page' | dm }} {{ $bundlesPage() }}
                         </span>
                         <p-button
-                            icon="pi pi-chevron-left"
                             [text]="true"
                             [rounded]="true"
                             size="small"
@@ -217,9 +226,12 @@
                             [disabled]="$bundlesPage() <= 1"
                             (onClick)="onBundlesPagePrev()"
                             [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
-                            data-testid="pq-select-bundle-prev" />
+                            data-testid="pq-select-bundle-prev">
+                            <span class="material-symbols-rounded w-6 text-center">
+                                keyboard_arrow_left
+                            </span>
+                        </p-button>
                         <p-button
-                            icon="pi pi-chevron-right"
                             [text]="true"
                             [rounded]="true"
                             size="small"
@@ -227,7 +239,11 @@
                             [disabled]="!$bundlesHasMore()"
                             (onClick)="onBundlesPageNext()"
                             [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
-                            data-testid="pq-select-bundle-next" />
+                            data-testid="pq-select-bundle-next">
+                            <span class="material-symbols-rounded w-6 text-center">
+                                keyboard_arrow_right
+                            </span>
+                        </p-button>
                     </div>
                 </div>
 
@@ -271,10 +287,11 @@
                                         data-testid="pq-select-bundle-asset-row">
                                         <td>
                                             <div class="flex min-w-0 items-center gap-2">
-                                                <i
-                                                    [class]="typeIcon(asset.type)"
-                                                    class="shrink-0"
-                                                    aria-hidden="true"></i>
+                                                <span
+                                                    class="material-symbols-rounded shrink-0 text-base!"
+                                                    aria-hidden="true">
+                                                    {{ typeIcon(asset.type) }}
+                                                </span>
                                                 <span
                                                     class="min-w-0 flex-1 truncate text-color"
                                                     [title]="asset.title || asset.asset"
@@ -297,7 +314,6 @@
                                             class="pr-5 text-right"
                                             (click)="$event.stopPropagation()">
                                             <p-button
-                                                icon="pi pi-trash"
                                                 [text]="true"
                                                 [rounded]="true"
                                                 size="small"
@@ -313,7 +329,12 @@
                                                     'publishing-queue.select-bundle.delete-tooltip'
                                                         | dm
                                                 "
-                                                data-testid="pq-select-bundle-asset-delete" />
+                                                data-testid="pq-select-bundle-asset-delete">
+                                                <span
+                                                    class="material-symbols-rounded w-6 text-center">
+                                                    delete
+                                                </span>
+                                            </p-button>
                                         </td>
                                     </tr>
                                 }
@@ -339,7 +360,6 @@
                             {{ 'publishing-queue.select-bundle.page' | dm }} {{ $assetsPage() }}
                         </span>
                         <p-button
-                            icon="pi pi-chevron-left"
                             [text]="true"
                             [rounded]="true"
                             size="small"
@@ -347,9 +367,12 @@
                             [disabled]="$assetsPage() <= 1"
                             (onClick)="onAssetsPagePrev()"
                             [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
-                            data-testid="pq-select-bundle-asset-prev" />
+                            data-testid="pq-select-bundle-asset-prev">
+                            <span class="material-symbols-rounded w-6 text-center">
+                                keyboard_arrow_left
+                            </span>
+                        </p-button>
                         <p-button
-                            icon="pi pi-chevron-right"
                             [text]="true"
                             [rounded]="true"
                             size="small"
@@ -357,7 +380,11 @@
                             [disabled]="$assetsPage() * assetsPerPage >= $assetsTotal()"
                             (onClick)="onAssetsPageNext()"
                             [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
-                            data-testid="pq-select-bundle-asset-next" />
+                            data-testid="pq-select-bundle-asset-next">
+                            <span class="material-symbols-rounded w-6 text-center">
+                                keyboard_arrow_right
+                            </span>
+                        </p-button>
                     </div>
                 </div>
             </div>
@@ -373,7 +400,9 @@
                 data-testid="pq-select-bundle-actions">
                 <div class="flex min-w-0 items-center gap-2 text-sm">
                     @if ($validationWarningKey(); as warningKey) {
-                        <i class="pi pi-exclamation-triangle text-red-600" aria-hidden="true"></i>
+                        <span class="material-symbols-rounded text-red-600" aria-hidden="true">
+                            warning
+                        </span>
                         <span
                             class="font-medium text-red-600"
                             data-testid="pq-select-bundle-warning">
@@ -420,7 +449,7 @@
             <div
                 class="text-color-secondary flex shrink-0 items-center gap-2 px-4 py-3 text-sm"
                 data-testid="pq-select-bundle-configure-hint">
-                <i class="pi pi-replay" aria-hidden="true"></i>
+                <span class="material-symbols-rounded text-lg!" aria-hidden="true">replay</span>
                 <span>{{ 'publishing-queue.select-bundle.hint.auto-retry' | dm }}</span>
             </div>
 
@@ -429,7 +458,9 @@
                 data-testid="pq-select-bundle-configure-footer">
                 <div class="flex min-w-0 items-center gap-2 text-sm">
                     @if ($validationWarningKey(); as warningKey) {
-                        <i class="pi pi-exclamation-triangle text-red-600" aria-hidden="true"></i>
+                        <span class="material-symbols-rounded text-red-600" aria-hidden="true">
+                            warning
+                        </span>
                         <span
                             class="font-medium text-red-600"
                             data-testid="pq-select-bundle-configure-warning">

@@ -1,21 +1,45 @@
-<p-button
-    #copyButton
-    (click)="copyUrlToClipboard($event)"
-    [class]="$clazz()"
-    [label]="label()"
-    [pTooltip]="tooltipContent"
-    [tooltipPosition]="tooltipPosition()"
-    [tooltipOptions]="{
-        showDelay: 800,
-        hideDelay: 800,
-        escape: false,
-        positionStyle: 'absolute',
-        appendTo: 'body'
-    }"
-    size="small"
-    icon="pi pi-copy"
-    data-testid="copy-to-clipboard"
-    variant="text" />
+@if (iconStyle() === 'material-symbols-rounded') {
+    <p-button
+        #copyButton
+        (click)="copyUrlToClipboard($event)"
+        [class]="$clazz()"
+        [pTooltip]="tooltipContent"
+        [tooltipPosition]="tooltipPosition()"
+        [tooltipOptions]="{
+            showDelay: 800,
+            hideDelay: 800,
+            escape: false,
+            positionStyle: 'absolute',
+            appendTo: 'body'
+        }"
+        size="small"
+        data-testid="copy-to-clipboard"
+        variant="text">
+        <span class="material-symbols-rounded text-base!">content_copy</span>
+        @if (label()) {
+            <span>{{ label() }}</span>
+        }
+    </p-button>
+} @else {
+    <p-button
+        #copyButton
+        (click)="copyUrlToClipboard($event)"
+        [class]="$clazz()"
+        [label]="label()"
+        [pTooltip]="tooltipContent"
+        [tooltipPosition]="tooltipPosition()"
+        [tooltipOptions]="{
+            showDelay: 800,
+            hideDelay: 800,
+            escape: false,
+            positionStyle: 'absolute',
+            appendTo: 'body'
+        }"
+        size="small"
+        icon="pi pi-copy"
+        data-testid="copy-to-clipboard"
+        variant="text" />
+}
 
 <ng-template #tooltipContent>
     <span data-testid="tooltip-content" class="whitespace-nowrap">{{ $tooltipText() }}</span>

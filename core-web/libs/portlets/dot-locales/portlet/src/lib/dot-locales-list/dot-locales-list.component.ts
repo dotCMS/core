@@ -183,7 +183,7 @@ export class DotLocalesListComponent implements OnInit {
                 ),
                 data: {
                     acceptLabel: this.#dotMessageService.get(acceptLabel),
-                    icon: 'pi pi-exclamation-triangle',
+                    icon: 'warning',
                     ISOCode: getLocaleISOCode(locale),
                     locale,
                     message: this.#dotMessageService.get(

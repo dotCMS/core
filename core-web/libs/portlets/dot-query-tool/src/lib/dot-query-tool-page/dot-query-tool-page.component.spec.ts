@@ -50,9 +50,12 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
         .fn()
         .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
     limitWasCapped: jest.fn().mockReturnValue(false),
-    emptyStateConfig: jest
-        .fn()
-        .mockReturnValue({ title: 'Empty', icon: 'pi-search', subtitle: '' }),
+    emptyStateConfig: jest.fn().mockReturnValue({
+        title: 'Empty',
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded',
+        subtitle: ''
+    }),
     setQuery: jest.fn(),
     setSort: jest.fn(),
     setOffset: jest.fn(),

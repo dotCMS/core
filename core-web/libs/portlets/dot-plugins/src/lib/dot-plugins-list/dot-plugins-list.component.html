@@ -11,7 +11,9 @@
             <div
                 class="absolute inset-0 rounded-lg border-2 border-dashed border-primary bg-primary-50 opacity-90"></div>
             <div class="relative flex h-full flex-col items-center justify-center gap-4">
-                <i class="pi pi-upload text-6xl! text-primary" aria-hidden="true"></i>
+                <span class="material-symbols-rounded text-6xl! text-primary" aria-hidden="true">
+                    upload
+                </span>
                 <p class="m-0 text-xl font-semibold text-primary">
                     {{ 'plugins.drag-and-drop.drop-here' | dm }}
                 </p>
@@ -21,7 +23,9 @@
     <p-toolbar class="shrink-0 justify-start gap-1 border-x-0! border-t-0! px-3">
         <div class="flex w-full items-center gap-4 py-3">
             <p-iconfield iconPosition="left">
-                <p-inputicon class="pi pi-search" />
+                <p-inputicon>
+                    <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                </p-inputicon>
                 <input
                     #searchInput
                     pInputText
@@ -44,12 +48,13 @@
             </div>
             <div class="ml-auto flex items-center gap-3">
                 <p-button
-                    [label]="'plugins.refresh-table' | dm"
-                    icon="pi pi-refresh"
                     severity="secondary"
                     [text]="true"
                     (onClick)="refresh()"
-                    data-testid="plugins-refresh-btn" />
+                    data-testid="plugins-refresh-btn">
+                    <span class="material-symbols-rounded">refresh</span>
+                    {{ 'plugins.refresh-table' | dm }}
+                </p-button>
                 <p-button
                     [label]="'plugins.extra-packages' | dm"
                     [outlined]="true"
@@ -60,12 +65,14 @@
                     (onClick)="openUploadDialog()"
                     data-testid="plugins-upload-btn" />
                 <p-button
-                    icon="pi pi-ellipsis-v"
                     [rounded]="true"
                     [outlined]="true"
+                    styleClass="w-12 h-12 p-0"
                     (onClick)="onToolbarMenuToggle($event)"
                     data-testid="plugins-toolbar-menu-btn"
-                    [attr.aria-label]="'plugins.more-actions' | dm" />
+                    [attr.aria-label]="'plugins.more-actions' | dm">
+                    <span class="material-symbols-rounded">more_vert</span>
+                </p-button>
             </div>
         </div>
     </p-toolbar>
@@ -75,7 +82,11 @@
             <div
                 class="flex flex-1 flex-col items-center justify-center gap-4"
                 data-testid="plugins-restarting-state">
-                <i class="pi pi-sync pi-spin text-6xl! text-primary" aria-hidden="true"></i>
+                <span
+                    class="material-symbols-rounded animate-spin text-6xl! text-primary"
+                    aria-hidden="true">
+                    progress_activity
+                </span>
                 <div class="flex flex-col text-center">
                     <h3 class="m-0 text-lg font-medium text-gray-800">
                         {{ 'plugins.restarting.title' | dm }}
@@ -109,7 +120,11 @@
             <div
                 class="flex flex-1 flex-col items-center justify-center gap-4"
                 data-testid="plugins-empty-state">
-                <i class="pi pi-box text-6xl! text-surface-500" aria-hidden="true"></i>
+                <span
+                    class="material-symbols-rounded text-6xl! text-surface-500"
+                    aria-hidden="true">
+                    inventory_2
+                </span>
                 <div class="flex flex-col text-center">
                     <h3 class="m-0 text-lg font-medium text-gray-800">
                         {{ 'plugins.empty.state.title' | dm }}
@@ -209,13 +224,16 @@
                             <td data-testid="plugin-actions" style="width: 7rem">
                                 <p-button
                                     class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                                    icon="pi pi-ellipsis-v"
                                     [text]="true"
                                     [rounded]="true"
                                     size="small"
                                     (onClick)="onContextMenu($event, bundle)"
                                     data-testid="plugin-actions-btn"
-                                    [attr.aria-label]="'plugins.table.actions' | dm" />
+                                    [attr.aria-label]="'plugins.table.actions' | dm">
+                                    <span class="material-symbols-rounded w-6 text-center">
+                                        more_vert
+                                    </span>
+                                </p-button>
                             </td>
                         </tr>
                     }
@@ -226,9 +244,11 @@
                             <div
                                 class="flex flex-col items-center justify-center gap-4 py-24"
                                 data-testid="plugins-filter-empty-state">
-                                <i
-                                    class="pi pi-search text-6xl! text-surface-500"
-                                    aria-hidden="true"></i>
+                                <span
+                                    class="material-symbols-rounded text-6xl! text-surface-500"
+                                    aria-hidden="true">
+                                    search
+                                </span>
                                 <div class="flex flex-col text-center">
                                     <h3 class="m-0 text-lg font-medium text-gray-800">
                                         {{ 'plugins.empty.filter.title' | dm }}

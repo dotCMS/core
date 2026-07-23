@@ -62,12 +62,10 @@ export class DotPublishingQueueToolbarComponent {
     readonly addBundleItems: MenuItem[] = [
         {
             label: this.#dotMessageService.get('publishing-queue.add-bundle.select'),
-            icon: 'pi pi-table',
             command: () => this.$selectBundleClick.emit()
         },
         {
             label: this.#dotMessageService.get('publishing-queue.add-bundle.upload'),
-            icon: 'pi pi-upload',
             command: () => this.$uploadClick.emit()
         }
     ];
