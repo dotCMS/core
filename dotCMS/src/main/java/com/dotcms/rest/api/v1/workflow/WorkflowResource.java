@@ -3241,6 +3241,12 @@ public class WorkflowResource {
                     "by name on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**Use `PUT` for a single contentlet.** This path also accepts `POST`, but that is a " +
+                    "**different** operation that fires over *multiple* contentlets and returns a different envelope " +
+                    "(`entity.results[]`, a list). Sending a single-contentlet body via `POST` will not return the " +
+                    "created contentlet's `identifier` where you expect it, even though the record may still be " +
+                    "(half-)created by the content type's default workflow — a common silent trap. For one item, " +
+                    "always use `PUT`.\n\n" +
                     "**Request body** — wrap field values in a `contentlet` key:\n\n" +
                     "```json\n" +
                     "{\n" +
@@ -3530,7 +3536,10 @@ public class WorkflowResource {
             description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "by name on multiple target contentlets.\n\nReturns a list of resultant contentlet maps, each with an additional  " +
             "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-            "services that handle automatically assigning workflow schemes to content with none.",
+            "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+            "This is the **multi-contentlet** variant and returns a list envelope (`entity.results[]`). " +
+            "To fire on a **single** contentlet, use `PUT` on this same path instead — it returns the single " +
+            "resultant contentlet map (with its `identifier`) directly.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",

@@ -2668,6 +2668,11 @@ paths:
   /v1/agent/a11y/stop:
     post:
       operationId: stop
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/A11yAgentStopForm"
       responses:
         default:
           content:
@@ -7829,7 +7834,7 @@ paths:
           - `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs
 
           **Field object schema** (each item in `fields[]`):
-          - `clazz` *(string, required)* — e.g. `com.dotcms.contenttype.model.field.ImmutableTextField`, `ImmutableTextAreaField`, `ImmutableStoryBlockField`, `ImmutableBinaryField`, `ImmutableTagField`, `ImmutableRadioField`, `ImmutableSelectField`, `ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*
+          - `clazz` *(string, required)* — the field type as a case-insensitive short name: `TEXT`, `TEXT_AREA`, `STORY_BLOCK_FIELD`, `WYSIWYG`, `BINARY`, `IMAGE`, `FILE`, `TAG`, `CATEGORY`, `CHECKBOX`, `RADIO`, `SELECT`, `MULTI_SELECT`, `DATE`, `TIME`, `DATE_TIME`, `KEY_VALUE`, `JSON_FIELD`, `CONSTANT`, `HIDDEN`, `CUSTOM_FIELD`, `RELATIONSHIP`, `ROW_FIELD` *(layout marker)*, `COLUMN_FIELD` *(layout marker)*. The fully-qualified `Immutable*` class name is also accepted.
           - `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), `required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*
           - ⚠️ **`dataType` is the storage type, not the UI type.** Asset-reference fields — `ImmutableImageField`, `ImmutableFileField`, `ImmutableBinaryField` — use `dataType: TEXT` (they store a reference in a text column), **never** `SYSTEM`. Reserve `SYSTEM` for true layout/tab/relationship system fields (rows, columns, dividers, permission/relationship tabs).
           - `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\r\nFalse|false'` — there is no dedicated Boolean field class.
@@ -18698,6 +18703,8 @@ paths:
         Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) by name on multiple target contentlets.
 
         Returns a list of resultant contentlet maps, each with an additional  `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        This is the **multi-contentlet** variant and returns a list envelope (`entity.results[]`). To fire on a **single** contentlet, use `PUT` on this same path instead — it returns the single resultant contentlet map (with its `identifier`) directly.
       operationId: postFireSystemActionByNameMulti
       parameters:
       - description: Default system action.
@@ -18818,6 +18825,8 @@ paths:
         Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) by name on a target contentlet.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **Use `PUT` for a single contentlet.** This path also accepts `POST`, but that is a **different** operation that fires over *multiple* contentlets and returns a different envelope (`entity.results[]`, a list). Sending a single-contentlet body via `POST` will not return the created contentlet's `identifier` where you expect it, even though the record may still be (half-)created by the content type's default workflow — a common silent trap. For one item, always use `PUT`.
 
         **Request body** — wrap field values in a `contentlet` key:
 
@@ -22868,40 +22877,59 @@ paths:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:
     delete:
-      operationId: deleteFields_1
+      description: Deletes one or more fields from a Content Type and returns the
+        updated field layout together with the IDs that were actually deleted. A field
+        being used as the Content Type's Publish or Expire date field cannot be deleted
+        until it is unlinked.
+      operationId: deleteContentTypeFields
       parameters:
-      - in: path
+      - description: The ID or Velocity Variable Name of the Content Type.
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/DeleteFieldsForm"
+        description: The IDs of the fields to delete.
+        required: true
       responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+        "200":
+          description: Fields deleted; returns the new layout and deleted IDs
+        "401":
+          description: Unauthorized access
+        "404":
+          description: Content Type not found
+        "500":
+          description: Internal Server Error
+      summary: Deletes fields from a Content Type
       tags:
       - Content Type Field
     get:
-      operationId: getContentTypeFields_1
+      description: "Returns the Content Type's current field layout (rows, columns\
+        \ and the fields within them). If the layout is invalid it is repaired before\
+        \ being returned; this endpoint does not modify data in the database."
+      operationId: getContentTypeFieldLayout
       parameters:
-      - in: path
+      - description: The ID or Velocity Variable Name of the Content Type.
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
       responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+        "200":
+          description: The Content Type's field layout
+        "401":
+          description: Unauthorized access
+        "404":
+          description: Content Type not found
+        "500":
+          description: Internal Server Error
+      summary: Gets a Content Type's field layout
       tags:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/allfields:
@@ -23943,6 +23971,11 @@ components:
           format: int32
         skipCss:
           type: boolean
+    A11yAgentStopForm:
+      type: object
+      properties:
+        runId:
+          type: string
     AIImageRequestDTO:
       type: object
       properties:
@@ -25746,38 +25779,42 @@ components:
       properties:
         clazz:
           type: string
-          description: Fully-qualified class name of the field implementation (the
-            'Immutable' generated type). Determines the kind of field.
+          description: "Field type, as a case-insensitive short field-type name (the\
+            \ discriminator that selects the concrete field). The fully-qualified\
+            \ 'Immutable*' class name and the bare simple class name (e.g. 'TextField')\
+            \ are also still accepted, but the short names below are the preferred\
+            \ form. Example: \"TEXT\"."
           enum:
-          - com.dotcms.contenttype.model.field.ImmutableTextField
-          - com.dotcms.contenttype.model.field.ImmutableTextAreaField
-          - com.dotcms.contenttype.model.field.ImmutableStoryBlockField
-          - com.dotcms.contenttype.model.field.ImmutableWysiwygField
-          - com.dotcms.contenttype.model.field.ImmutableConstantField
-          - com.dotcms.contenttype.model.field.ImmutableHiddenField
-          - com.dotcms.contenttype.model.field.ImmutableCustomField
-          - com.dotcms.contenttype.model.field.ImmutableJSONField
-          - com.dotcms.contenttype.model.field.ImmutableBinaryField
-          - com.dotcms.contenttype.model.field.ImmutableImageField
-          - com.dotcms.contenttype.model.field.ImmutableFileField
-          - com.dotcms.contenttype.model.field.ImmutableTagField
-          - com.dotcms.contenttype.model.field.ImmutableCategoryField
-          - com.dotcms.contenttype.model.field.ImmutableCheckboxField
-          - com.dotcms.contenttype.model.field.ImmutableRadioField
-          - com.dotcms.contenttype.model.field.ImmutableSelectField
-          - com.dotcms.contenttype.model.field.ImmutableMultiSelectField
-          - com.dotcms.contenttype.model.field.ImmutableDateField
-          - com.dotcms.contenttype.model.field.ImmutableTimeField
-          - com.dotcms.contenttype.model.field.ImmutableDateTimeField
-          - com.dotcms.contenttype.model.field.ImmutableKeyValueField
-          - com.dotcms.contenttype.model.field.ImmutableHostFolderField
-          - com.dotcms.contenttype.model.field.ImmutableRelationshipField
-          - com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField
-          - com.dotcms.contenttype.model.field.ImmutablePermissionTabField
-          - com.dotcms.contenttype.model.field.ImmutableLineDividerField
-          - com.dotcms.contenttype.model.field.ImmutableTabDividerField
-          - com.dotcms.contenttype.model.field.ImmutableRowField
-          - com.dotcms.contenttype.model.field.ImmutableColumnField
+          - TEXT
+          - TEXT_AREA
+          - STORY_BLOCK_FIELD
+          - WYSIWYG
+          - CONSTANT
+          - HIDDEN
+          - CUSTOM_FIELD
+          - JSON_FIELD
+          - BINARY
+          - IMAGE
+          - FILE
+          - TAG
+          - CATEGORY
+          - CHECKBOX
+          - RADIO
+          - SELECT
+          - MULTI_SELECT
+          - DATE
+          - TIME
+          - DATE_TIME
+          - KEY_VALUE
+          - HOST_OR_FOLDER
+          - RELATIONSHIP
+          - RELATIONSHIPS_TAB
+          - PERMISSIONS_TAB
+          - LINE_DIVIDER
+          - TAB_DIVIDER
+          - ROW_FIELD
+          - COLUMN_FIELD
+          example: TEXT
         dataType:
           type: string
           description: "Storage/column data type backing the field. This is the **storage**\
@@ -27495,6 +27532,8 @@ components:
 
               ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
 
+              **Host defaulting (common wrong-host trap):** if you omit `contentHost`/`hostFolder` when creating, the content does NOT go to the current/default site — it inherits the **content type's own host**, which is `SYSTEM_HOST` unless the type was explicitly created on a site. So content of a `SYSTEM_HOST` content type silently lands on `SYSTEM_HOST`, where it is invisible to another site's URL-maps and to host-scoped searches (`+conHost:<siteId>`). Always pass `contentHost:<siteId>` (the site **identifier UUID**, not the hostname) to place content on a specific site.
+
               **Pages (`contentType: 'htmlpageasset'`)** additionally use:
               - `title` *(string)* — the page title.
               - `url` *(string)* — the page name (the last URL segment) within `hostFolder`.
@@ -27522,6 +27561,8 @@ components:
             - `inode` / `identifier` *(string)* — include the existing identifier (and optionally inode) to edit existing content; omit both to create new.
 
             ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
+
+            **Host defaulting (common wrong-host trap):** if you omit `contentHost`/`hostFolder` when creating, the content does NOT go to the current/default site — it inherits the **content type's own host**, which is `SYSTEM_HOST` unless the type was explicitly created on a site. So content of a `SYSTEM_HOST` content type silently lands on `SYSTEM_HOST`, where it is invisible to another site's URL-maps and to host-scoped searches (`+conHost:<siteId>`). Always pass `contentHost:<siteId>` (the site **identifier UUID**, not the hostname) to place content on a specific site.
 
             **Pages (`contentType: 'htmlpageasset'`)** additionally use:
             - `title` *(string)* — the page title.
@@ -27618,6 +27659,8 @@ components:
 
               ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
 
+              **Host defaulting (common wrong-host trap):** if you omit `contentHost`/`hostFolder` when creating, the content does NOT go to the current/default site — it inherits the **content type's own host**, which is `SYSTEM_HOST` unless the type was explicitly created on a site. So content of a `SYSTEM_HOST` content type silently lands on `SYSTEM_HOST`, where it is invisible to another site's URL-maps and to host-scoped searches (`+conHost:<siteId>`). Always pass `contentHost:<siteId>` (the site **identifier UUID**, not the hostname) to place content on a specific site.
+
               **Pages (`contentType: 'htmlpageasset'`)** additionally use:
               - `title` *(string)* — the page title.
               - `url` *(string)* — the page name (the last URL segment) within `hostFolder`.
@@ -27645,6 +27688,8 @@ components:
             - `inode` / `identifier` *(string)* — include the existing identifier (and optionally inode) to edit existing content; omit both to create new.
 
             ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
+
+            **Host defaulting (common wrong-host trap):** if you omit `contentHost`/`hostFolder` when creating, the content does NOT go to the current/default site — it inherits the **content type's own host**, which is `SYSTEM_HOST` unless the type was explicitly created on a site. So content of a `SYSTEM_HOST` content type silently lands on `SYSTEM_HOST`, where it is invisible to another site's URL-maps and to host-scoped searches (`+conHost:<siteId>`). Always pass `contentHost:<siteId>` (the site **identifier UUID**, not the hostname) to place content on a specific site.
 
             **Pages (`contentType: 'htmlpageasset'`)** additionally use:
             - `title` *(string)* — the page title.
@@ -35932,29 +35977,68 @@ components:
           type: string
     SearchForm:
       type: object
+      description: "Content search request. `query` is a Lucene expression; the remaining\
+        \ fields control paging, sorting, language, and how results are rendered."
       properties:
         allCategoriesInfo:
           type: boolean
+          description: "When `true`, include full category metadata for category fields\
+            \ in the results."
         depth:
           type: integer
           format: int32
+          default: -1
+          description: "Relationship-loading depth (0-3): how many levels of related\
+            \ content to inline. `-1` (default) loads none."
+          example: 1
         languageId:
           type: integer
           format: int64
+          description: Language id to search in. Defaults to the system default language
+            when omitted.
+          example: 1
         limit:
           type: integer
           format: int32
+          default: 20
+          description: Maximum number of contentlets to return (page size).
+          example: 20
         offset:
           type: integer
           format: int32
+          default: 0
+          description: Zero-based result offset for paging.
+          example: 0
         query:
           type: string
+          description: "Lucene query. IMPORTANT: custom (user-defined) fields MUST\
+            \ be qualified with the content type's variable name — `ContentTypeVar.fieldVar`.\
+            \ A BARE field name matches nothing and returns zero results with NO error\
+            \ (a common silent failure). For example, to find featured Books use `+AwazonBook.featured:true`,\
+            \ not `+featured:true`; to match a slug use `+AwazonBook.slug:my-slug`.\
+            \ Restrict the type with `+contentType:AwazonBook` (contentType is a system\
+            \ field, unqualified). \n\nResults are also HOST-scoped: unless you add\
+            \ a host clause, the search resolves against the current request's site\
+            \ and will NOT return content that lives on a different host (e.g. content\
+            \ saved to `SYSTEM_HOST`/default while you query as another site). Constrain\
+            \ the host explicitly with `+conHost:<siteIdentifier>` (or `+conHost:SYSTEM_HOST`),\
+            \ and add `+live:true` / `+working:true` and `+deleted:false` as needed.\
+            \ See the Lucene content-search syntax docs."
+          example: +contentType:AwazonBook +AwazonBook.featured:true +live:true +deleted:false
         render:
           type: string
+          description: "When set to `true`, each matching contentlet's `htmlpageasset`/widget\
+            \ content is rendered and included in the response. Omit for raw field\
+            \ data only."
         sort:
           type: string
+          description: "Sort clause, e.g. `AwazonBook.title asc` or `modDate desc`.\
+            \ Custom fields are qualified the same way as in `query`."
+          example: modDate desc
         userId:
           type: string
+          description: Optional user id to run the search as (permissions are applied
+            for this user). Defaults to the authenticated caller when omitted.
     SearchSiteByNameForm:
       type: object
       properties:

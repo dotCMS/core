@@ -505,9 +505,11 @@ public class ContentTypeResource implements Serializable {
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
 														   "**Field object schema** (each item in `fields[]`):\n" +
-														   "- `clazz` *(string, required)* — e.g. `com.dotcms.contenttype.model.field.ImmutableTextField`, `ImmutableTextAreaField`, " +
-														   "`ImmutableStoryBlockField`, `ImmutableBinaryField`, `ImmutableTagField`, `ImmutableRadioField`, `ImmutableSelectField`, " +
-														   "`ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*\n" +
+														   "- `clazz` *(string, required)* — the field type as a case-insensitive short name: " +
+														   "`TEXT`, `TEXT_AREA`, `STORY_BLOCK_FIELD`, `WYSIWYG`, `BINARY`, `IMAGE`, `FILE`, `TAG`, `CATEGORY`, " +
+														   "`CHECKBOX`, `RADIO`, `SELECT`, `MULTI_SELECT`, `DATE`, `TIME`, `DATE_TIME`, `KEY_VALUE`, `JSON_FIELD`, " +
+														   "`CONSTANT`, `HIDDEN`, `CUSTOM_FIELD`, `RELATIONSHIP`, `ROW_FIELD` *(layout marker)*, `COLUMN_FIELD` *(layout marker)*. " +
+														   "The fully-qualified `Immutable*` class name is also accepted.\n" +
 														   "- `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), " +
 														   "`required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*\n" +
 														   "- ⚠️ **`dataType` is the storage type, not the UI type.** Asset-reference fields — " +

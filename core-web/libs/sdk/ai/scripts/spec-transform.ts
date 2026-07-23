@@ -13,6 +13,11 @@
 
 export const ALLOWED_PREFIXES = [
     '/api/v1/contenttype',
+    // Active v3 field API (move/add, update, list, delete). The v1 `.../fields`
+    // CRUD endpoints are deprecated and dropped by the transform, so this is the
+    // only field-mutation surface agents get. `.../fields/move` is what the admin
+    // UI uses to add a field to a content type (drag-and-drop).
+    '/api/v3/contenttype',
     '/api/v1/page',
     '/api/v1/page-scanner/a11y/check',
     '/api/v1/page-scanner/geo/check',
@@ -36,6 +41,13 @@ export const EXCLUDED_PATTERNS = [
     '/api/v1/workflow/tasks/**',
     '/api/v1/contenttype/page',
     '/api/v1/contenttype/render/id/**',
+    // Deprecated v1 field CRUD — superseded by the active v3 field API
+    // (/api/v3/contenttype/.../fields[/move|/{id}|/allfields]). Excluded explicitly so
+    // agents never see them even if the `deprecated` flag is ever removed upstream. The
+    // v1 field-VARIABLE subpaths (.../fields/**/variables) are NOT matched here and stay.
+    '/api/v1/contenttype/{typeId}/fields',
+    '/api/v1/contenttype/{typeId}/fields/id/{fieldId}',
+    '/api/v1/contenttype/{typeId}/fields/var/{fieldVar}',
     '/api/v1/categories/_export',
     '/api/v1/categories/_sort',
     '/api/v1/folder/{id}/file-browser-selected',

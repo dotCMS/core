@@ -2,8 +2,14 @@
 
 Draft content for the future `dotcms-content-authoring` skill. This is the *rule list*, not the
 skill itself — each rule is a trap seen in a real build session (Awazon / Carlos Swager / Golden
-Gate Coverage) plus the correct move. Rules marked **[needs release]** are formalized by a backend
-OpenAPI fix (PR 2); until that ships + demo upgrades, trust this doc over the live spec text.
+Gate Coverage) plus the correct move.
+
+> **Spec status (updated):** The backend OpenAPI annotations for these traps landed on
+> `fmontes/dotcms-openapi-authoring-fixes`. Rules that the spec now documents fully have been
+> **removed from this doc** — the live `search` text is the source of truth for them (once the demo
+> instance that sources the spec is upgraded). What remains is what the curated spec *can't* express:
+> traps on endpoints not included in the spec, or behavioral details no annotation captures. A few
+> rules were also **corrected** where the original guidance turned out to be inaccurate.
 
 Legend: 🔴 blocks the build (needs a real recovery) · 🟡 quick retry / discovery · 🔵 caller hygiene.
 
@@ -27,25 +33,25 @@ Legend: 🔴 blocks the build (needs a real recovery) · 🟡 quick retry / disc
 
 ## 1. Content types
 
-### 1.1 🔴 POST the content type BARE — no `contentType` envelope **[needs release]**
-`POST /api/v1/contenttype` reads the content-type object directly (or an array of them). Do NOT wrap
-it in `{ "contentType": {...} }` — that hides `clazz` and 400s with
-`missing type id property 'clazz'`. The `@Schema` currently mis-advertises a wrapper; ignore it.
-- ✅ `{ "clazz": "...ImmutableSimpleContentType", "name": "Book", "fields": [...] }`
-- ✅ or an array `[ {...}, {...} ]` to create several at once.
-
 ### 1.2 🔴 Avoid reserved / colliding content-type variable names
 Names like `Hero`, `Contact`, `SectionTitle`, `Category`, `Tag`, `Host`, `Folder`, `File`,
 `Template`, `Container` collide with system vars → `Invalid content type variable: Hero`.
 - ✅ Prefix with a project token: `AwazonHero`, `AwazonContact`, `AwazonSectionTitle`.
 - `Newsletter`, `Book`, etc. are fine — only prefix the collision-prone ones. When in doubt, prefix.
 
-### 1.3 🔴 Add multiple fields with PUT or inline — NOT array-to-POST **[needs release]**
-`POST /api/v1/contenttype/{typeId}/fields` saves only ONE field. Passing an array returns 200 but
-**silently persists only element [0]** and drops the rest.
-- ✅ Include all fields inline as `fields[]` in the content-type POST (best — one call).
-- ✅ Or `PUT /api/v1/contenttype/{typeId}/fields` with the array to save many at once.
-- ✅ Or loop `POST .../fields` once per field.
+### 1.3 🔴 Add fields inline on the type, or via the v3 field API — NOT the v1 `/fields` endpoints
+The v1 `POST/PUT /api/v1/contenttype/{typeId}/fields` endpoints are **deprecated and removed from
+the curated spec** — you won't see them, and you shouldn't use them. (Historically `POST .../fields`
+was a trap anyway: it saved only ONE field, returning 200 while silently dropping the rest of an
+array.) The current field API is v3.
+- ✅ Include all fields inline as `fields[]` in the content-type POST (best — one call, and what
+  the fire/content-type docs steer you toward). This is the way to create a type *with* its fields.
+- ✅ To add or move a field on an **existing** type: `PUT /api/v3/contenttype/{typeIdOrVarName}/fields/move`
+  (`MoveFieldsForm` — the layout array; a field not already present is created where you place it).
+  This is what the dotCMS admin UI itself calls.
+- ✅ To update one field: `PUT /api/v3/contenttype/{typeIdOrVarName}/fields/{id}`.
+- ✅ To delete fields: `DELETE /api/v3/contenttype/{typeIdOrVarName}/fields` (body: `{ "fieldsID": [...] }`).
+- ✅ Field *variables* still live under v1: `.../fields/id/{fieldId}/variables` (and the `var/{fieldVar}` form).
 
 ### 1.4 🔵 `type=` query filter takes a BASE-TYPE enum, not a variable name
 `GET /api/v1/contenttype?type=webPageContent` → 400 `BaseContentType webPageContent does not Exist`.
@@ -56,9 +62,18 @@ Names like `Hero`, `Contact`, `SectionTitle`, `Category`, `Tag`, `Host`, `Folder
 On the CT POST/PUT body the key is `workflow: ["<schemeId>"]` (array of scheme UUIDs). GET responses
 return `workflows` (plural, array of objects). Round-tripping a fetched CT? Rename the key.
 
-### 1.6 🔵 Boolean fields have no dedicated class
-Use `ImmutableRadioField` + `dataType: BOOL` + `values: "True|true\r\nFalse|false"`. Layout rows/cols
-are field entries too: `ImmutableRowField` / `ImmutableColumnField` mark the grid.
+### 1.6 🔵 Field `clazz` accepts short type names — no FQCN needed
+When you send a field (inline `fields[]`, v3 `/fields/move`, v3 `/fields/{id}`), `clazz` accepts a
+case-insensitive short field-type name — `TEXT`, `TEXT_AREA`, `STORY_BLOCK_FIELD`, `WYSIWYG`,
+`CHECKBOX`, `RADIO`, `SELECT`, `MULTI_SELECT`, `DATE`, `DATE_TIME`, `BINARY`, `IMAGE`, `FILE`, `TAG`,
+`CATEGORY`, `KEY_VALUE`, `JSON_FIELD`, `CONSTANT`, `HIDDEN`, `CUSTOM_FIELD`, `RELATIONSHIP`,
+`ROW_FIELD`, `COLUMN_FIELD`, … The FQCN (`com.dotcms.contenttype.model.field.ImmutableTextField`) and
+bare simple name (`TextField`) still work. **GET responses still return the FQCN** — so read
+`fields[].clazz` as a full class name, but you don't have to write it that way.
+
+### 1.7 🔵 Boolean fields have no dedicated class
+Use `clazz: "RADIO"` + `dataType: BOOL` + `values: "True|true\r\nFalse|false"`. Layout rows/cols
+are field entries too: `clazz: "ROW_FIELD"` / `clazz: "COLUMN_FIELD"` mark the grid.
 
 ---
 
@@ -89,7 +104,8 @@ follow-up read can return stale data. `FORCE` is expensive — debugging only.
 
 ### 2.5 🔵 Story Block (Block Editor) fields take an HTML/Markdown STRING
 Send `body: "<h2>Intro</h2><p>…</p>"` — do NOT hand-author ProseMirror JSON. Identify via
-`fields[].clazz === "...ImmutableStoryBlockField"`.
+`fields[].clazz === "...ImmutableStoryBlockField"` (GET responses return the FQCN; to *create* one,
+`clazz: "STORY_BLOCK_FIELD"` — see 1.6).
 
 ### 2.6 🔵 Read a contentlet by identifier at the right path
 `GET /api/v1/content/{identifier}` (or `/api/content/_search`). NOT `/api/v1/content/id/{id}`.
@@ -98,14 +114,13 @@ Send `body: "<h2>Intro</h2><p>…</p>"` — do NOT hand-author ProseMirror JSON.
 
 ## 3. Templates
 
-### 3.1 🔴 `drawed: true` requires `body` (and a real theme folder + `drawedBody`) **[needs release]**
-A drawn template with no `body` → 400 `body required when drawed`. A `theme` that isn't a theme-
-folder id → `theme must be a folder identifier`. And if `themeName` isn't resolved when the body is
-generated, dotCMS bakes `/application/themes/null/` into it and leaves `drawedBody` empty (so it's
-not really a drawn template).
-- ✅ Set `drawed: true`, a non-empty `body`, the theme **folder** id, `themeName`, and a real
-  `drawedBody` layout JSON. Verify the persisted `body` doesn't contain `/themes/null/` and that
-  `drawedBody` is populated; if not, PUT-update the template with the correct body + drawedBody, then
+### 3.1 🔴 Drawn-template `body` sanity: watch for `/themes/null/` and empty `drawedBody`
+(The hard rules — `body` required when `drawed`, `theme` must be a folder id — are now in the spec.
+This is the behavioral residue no annotation captures.) If `themeName` isn't resolved when the body
+is generated, dotCMS bakes `/application/themes/null/` into the persisted `body` and leaves
+`drawedBody` empty — so it saves "successfully" but isn't really a drawn template.
+- ✅ After creating a drawn template, verify the persisted `body` doesn't contain `/themes/null/` and
+  that `drawedBody` is populated; if not, PUT-update with the correct `body` + `drawedBody`, then
   publish.
 
 ### 3.2 🟡 `_publish` / `_unpublish` take a JSON ARRAY of identifier strings
@@ -116,30 +131,25 @@ not really a drawn template).
 `GET /api/v1/templates/{templateId}/working`. This endpoint is now included in the filtered spec, so
 `spec.paths['/api/v1/templates/{templateId}/working']?.get` resolves — but still guard with `?.`.
 
-### 3.4 🔵 Layout containers must reference the host-qualified container PATH, not a DB inode
-If a template layout stores the system default container (`//default/application/containers/`),
-page-content placement 404s `Container … not found`. Set
-`layout.containers[0].identifier = "//<site>/application/containers/<name>/"`, republish the template,
-re-read page-json, then place content.
+### 3.4 🔵 Layout container `identifier` must RESOLVE — path or DB id both valid (corrected)
+Correction to the earlier "path, not inode" framing: `layout.containers[].identifier`
+(`ContainerUUID.identifier`) legitimately accepts **either** a database identifier (a full UUID or a
+dotCMS shorty id) for a DB container, **or** a host-qualified file path
+(`//<site>/application/containers/<name>/`) for a Container-as-File — the spec now documents all
+accepted forms. The real trap is a value that **doesn't resolve on the target site**: it produces no
+container at render time (the slot renders empty / placement can't find the slot), with no hard
+error. It does NOT silently fall back to the system container.
+- ✅ For a file container, use the full host-qualified path for the site you're building on:
+  `"//<site>/application/containers/<name>/"` (a relative path resolves against the *current* site,
+  which may not be yours).
+- ✅ For a DB container, pass its exact identifier.
+- After setting the layout, republish the template, re-read page-json, then place content.
 
 ---
 
 ## 4. Pages, folders & rendering
 
-### 4.1 🔴 Render a NON-default site with `?host_id=<site UUID>` **[needs release]**
-`/api/v1/page/render/{uri}`, `/json/{uri}`, `/renderHTML/{uri}` resolve the DEFAULT site unless you
-pass `host_id`. A non-default-site page 404s `Page 'index' not found` without it.
-- ✅ `GET /api/v1/page/renderHTML/index?mode=LIVE&host_id=<site-uuid>` (host_id is for backend users).
-- ❌ The `//hostname/uri` path form does NOT work here (`//` is rejected); the `Host` header does not
-  set the render site context either — use `host_id`.
-- `uri` is a plain page path (`index`, `about/team`), no leading host segment.
-
-### 4.2 🔵 Folder `uri` param is a RAW path — don't URL-encode it **[needs release]**
-`GET /api/v1/folder/sitename/{siteName}/uri/{uri}` — pass `application/themes/golden-gate/` raw.
-Percent-encoding it (`%2Fapplication%2F…`) 404s. Leading slash optional (added if missing);
-embedded slashes are fine.
-
-### 4.3 🔵 `hostFolder` = site id for a root page, folder id for a sub-folder page
+### 4.1 🔵 `hostFolder` = site id for a root page, folder id for a sub-folder page
 When hand-firing (vs `page_create`): root page anchors on the site; `/books`, `/contact` anchor on
 their folder id. `page_create` derives this for you.
 
@@ -193,7 +203,15 @@ Index into `rendered["uuid-1"]` before string ops like `.slice`.
 ---
 
 ## Cross-reference note for the skill
-Rules tagged **[needs release]** (1.1, 1.3, 4.1, 4.2, 3.1) are being fixed at the OpenAPI-annotation
-level in a separate backend PR. Until that ships and the demo instance (the default spec source) is
-upgraded, the live `search` spec text may still be wrong for those endpoints — this skill is the
-source of truth for them in the meantime.
+The OpenAPI-annotation fixes for these traps landed on `fmontes/dotcms-openapi-authoring-fixes`.
+Rules the spec now documents fully were **removed** from this doc (bare content-type POST,
+`host_id` render, raw folder `uri`); the live `search` spec is the source of truth once the demo
+instance that sources the spec is upgraded. What remains is deliberately spec-*un*expressible:
+- **1.3** — steering to inline `fields[]` / the v3 field API. The deprecated v1 `/fields` CRUD is
+  now excluded from the curated spec and the active v3 field endpoints were added, so the endpoint
+  choice is largely enforced by the spec; the "prefer inline on create" guidance stays skill-side.
+- **3.1** — the `/themes/null/` + empty-`drawedBody` behavioral check (the hard 400s are in the spec).
+- **3.4** — corrected: layout container `identifier` accepts a DB id *or* a host-qualified path; the
+  real trap is a value that doesn't resolve (empty render), not "path vs inode."
+
+Everything else here is a build-session trap on tooling or behavior that no annotation covers.
