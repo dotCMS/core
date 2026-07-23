@@ -22,6 +22,9 @@
 
 package com.liferay.portal.model;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
@@ -97,6 +100,7 @@ public class CompanyModel extends BaseModel {
 	public static long LOCK_EXPIRATION_TIME = GetterUtil.getLong(PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.CompanyModel"));
 
+
 	public CompanyModel() {
 	}
 
@@ -170,22 +174,21 @@ public class CompanyModel extends BaseModel {
 		}
 	}
 
+    @JsonIgnore
+    public String getOldPortalURL() {
+        return _portalURL;
+    }
+
 	public String getPortalURL() {
-		return _portalURL;
+        return APILocator.getAdminSiteAPI().getAdminSiteUrl();
+
 	}
 
-	public void setPortalURL(String portalURL) {
-		if (((portalURL == null) && (_portalURL != null)) ||
-				((portalURL != null) && (_portalURL == null)) ||
-				((portalURL != null) && (_portalURL != null) &&
-				!portalURL.equals(_portalURL))) {
-			if (!XSS_ALLOW_PORTALURL) {
-				portalURL = Xss.strip(portalURL);
-			}
-
-			_portalURL = portalURL;
-			setModified(true);
-		}
+	public void setPortalURL(final String portalURL) {
+        Logger.warn(this.getClass(),
+                "Set the portal URL using the  ADMIN_SITE_URL configuration variable, e.g. e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
+        //setModified(true);
+		
 	}
 
 	public String getHomeURL() {
@@ -413,7 +416,7 @@ public class CompanyModel extends BaseModel {
 	}
 
 	public String getAuthType() {
-		return _authType;
+        return (Company.AUTH_TYPE_EA.equalsIgnoreCase(this._authType)) ? Company.AUTH_TYPE_EA : Company.AUTH_TYPE_ID;
 	}
 
 	public void setAuthType(String authType) {
