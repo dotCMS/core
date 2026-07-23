@@ -253,11 +253,16 @@ export function coerceValueToDataType(dataType: string | undefined, value: unkno
 
 /**
  * Reconstruct the page-asset-compatible properties for the optimistic
- * update path. Two normalizations happen here:
+ * update path. Three normalizations happen here:
  *
  * 1. IMAGE/FILE/BINARY: the form stores identifier strings; the page asset
  *    stores objects keyed by `identifier` (image/file) or `idPath` (binary).
- * 2. Scalar fields: coerce each value to the primitive its `dataType`
+ * 2. CHECKBOX (with options) / MULTI_SELECT: the form stores an array of
+ *    selected values, but the Page API represents them as a comma-joined
+ *    string ("a,b,c"). Re-join so the iframe doesn't receive an array where
+ *    the headless app expects a string (arrays interpolate without commas,
+ *    e.g. "a,b,c" → "abc").
+ * 3. Scalar fields: coerce each value to the primitive its `dataType`
  *    implies (BOOL → boolean, INTEGER/FLOAT → number) so the iframe
  *    receives the same types the Page API returns instead of raw strings.
  *
@@ -275,15 +280,20 @@ export function toPageAssetProperties(
             continue;
         }
 
+        const value = formValues[field.variable];
+
         if (field.clazz === DotCMSClazzes.IMAGE || field.clazz === DotCMSClazzes.FILE) {
-            result[field.variable] = { identifier: formValues[field.variable] };
+            result[field.variable] = { identifier: value };
         } else if (field.clazz === DotCMSClazzes.BINARY) {
-            result[field.variable] = { idPath: formValues[field.variable] };
+            result[field.variable] = { idPath: value };
+        } else if (
+            (field.clazz === DotCMSClazzes.CHECKBOX ||
+                field.clazz === DotCMSClazzes.MULTI_SELECT) &&
+            Array.isArray(value)
+        ) {
+            result[field.variable] = value.join(',');
         } else {
-            result[field.variable] = coerceValueToDataType(
-                field.dataType,
-                formValues[field.variable]
-            );
+            result[field.variable] = coerceValueToDataType(field.dataType, value);
         }
     }
 

@@ -466,6 +466,53 @@ describe('quick-edit-form-builder', () => {
             expect(result).toEqual({ price: 9.99 });
         });
 
+        it('re-joins MULTI_SELECT arrays into a comma string', () => {
+            const result = toPageAssetProperties(
+                [field({ variable: 'tags', clazz: DotCMSClazzes.MULTI_SELECT })],
+                { tags: ['a', 'b', 'c'] }
+            );
+            expect(result).toEqual({ tags: 'a,b,c' });
+        });
+
+        it('re-joins CHECKBOX-with-options arrays into a comma string', () => {
+            const result = toPageAssetProperties(
+                [
+                    field({
+                        variable: 'opts',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        options: [
+                            { label: 'A', value: 'a' },
+                            { label: 'B', value: 'b' }
+                        ]
+                    })
+                ],
+                { opts: ['a', 'b'] }
+            );
+            expect(result).toEqual({ opts: 'a,b' });
+        });
+
+        it('joins a single-element multi-value array without a trailing comma', () => {
+            const result = toPageAssetProperties(
+                [field({ variable: 'tags', clazz: DotCMSClazzes.MULTI_SELECT })],
+                { tags: ['only'] }
+            );
+            expect(result).toEqual({ tags: 'only' });
+        });
+
+        it('leaves a binary CHECKBOX boolean untouched (not treated as multi-value)', () => {
+            const result = toPageAssetProperties(
+                [
+                    field({
+                        variable: 'flag',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        dataType: DotCMSDataTypes.BOOLEAN
+                    })
+                ],
+                { flag: true }
+            );
+            expect(result).toEqual({ flag: true });
+        });
+
         it('leaves untouched typed fields coerced too (not just the edited one)', () => {
             const result = toPageAssetProperties(
                 [
