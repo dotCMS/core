@@ -228,9 +228,11 @@ jobs:
     env:
       MAVEN_OPTS: ${{ matrix.maven_opts }}
     strategy:
-      # Keep the current fast-fail for normal runs, but let a phased sweep run every
-      # suite/phase to completion so failures are attributable per phase.
-      fail-fast: ${{ !contains(fromJSON('["1","2","3","all"]'), inputs.opensearch_phase) }}
+      # Keep the current fast-fail for normal runs, but let ANY phased run (single phase,
+      # a comma-list subset like '1,2', or 'all') run every suite/phase to completion so
+      # failures are attributable per phase. Derived from "phase off" rather than an
+      # exact-match list so comma-list subsets are covered too.
+      fail-fast: ${{ inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0' }}
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
     steps:          

@@ -34,7 +34,7 @@ on:
   workflow_dispatch:
     inputs:
       opensearch_phase:
-        description: 'ES->OS migration phase(s) to sweep. all = 1,2,3; or pick a single phase.'
+        description: 'ES->OS migration phase(s) to sweep. all = 1,2,3; a subset (1,2 / 1,3 / 2,3); or a single phase.'
         type: choice
         required: false
         default: 'all'
@@ -43,6 +43,9 @@ on:
           - '1'
           - '2'
           - '3'
+          - '1,2'
+          - '1,3'
+          - '2,3'
       use-latest-commit:
         description: 'Build from current HEAD of main (default) — kept for parity with the nightly dispatch.'
         type: boolean

@@ -63,7 +63,7 @@ on:
         type: boolean
         default: false
       opensearch_phase:
-        description: 'Run the integration suites under ES->OS migration phase(s). none=off/default; 1/2/3 = single phase; all = sweep 1,2,3. Any active value skips deployment (test-only run).'
+        description: 'Run the integration suites under ES->OS migration phase(s). none=off/default; 1/2/3 = single phase; 1,2 / 1,3 / 2,3 = subset; all = sweep 1,2,3. Any active value skips deployment (test-only run).'
         type: choice
         required: false
         default: 'none'
@@ -72,6 +72,9 @@ on:
           - '1'
           - '2'
           - '3'
+          - '1,2'
+          - '1,3'
+          - '2,3'
           - 'all'
 
 jobs:
@@ -180,11 +183,12 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
 
   # Deployment job - deploys to the nightly environment.
-  # Skipped for on-demand ES->OS phased runs (opensearch_phase 1/2/3/all): those are test-only,
-  # so we never deploy a build that ran under a non-default migration phase.
+  # Skipped for ANY on-demand ES->OS phased run (single phase, a subset like 1,2, or all):
+  # those are test-only, so we never deploy a build that ran under a non-default migration
+  # phase. Derived from "phase off" so comma-list subsets are covered too.
   deployment:
     needs: [ setup, initialize,build-cli,test ]
-    if: always() && !failure() && !cancelled() && !contains(fromJSON('["1","2","3","all"]'), inputs.opensearch_phase)
+    if: always() && !failure() && !cancelled() && (inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0')
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
