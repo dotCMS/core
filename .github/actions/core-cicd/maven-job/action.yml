@@ -97,7 +97,7 @@ inputs:
     description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
     required: false
   artifact-suffix:
-    description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Dash prefix added automatically for Maven artifacts. Computed from java-version if not provided.'
+    description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Dash prefix added automatically for Maven artifacts. Fallback only: computed as java${major} from java-version when not provided. The release variant workflow always passes an explicit suffix derived once in its extract-version job (java-${major}), so cross-phase artifact names stay consistent — pass an explicit value from any caller that downloads artifacts in a later phase.'
     required: false
   docker-io-username:
     description: 'Docker Hub username for authenticated pulls (avoids rate limiting)'
@@ -307,6 +307,14 @@ runs:
           echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
         fi
 
+        # When building a Java variant, the Docker image produced by the Maven build must embed
+        # the variant JDK, not the committed .sdkmanrc default. The pom resolves the image's JDK
+        # from sdkman.java.version (.sdkmanrc via ext.java), so override it explicitly here.
+        if [[ -n "${{ inputs.java-version }}" ]]; then
+          COMPILER_ARGS="$COMPILER_ARGS -Dsdkman.java.version=${{ inputs.java-version }}"
+          echo "Overriding sdkman.java.version=${{ inputs.java-version }} for Docker image base JDK"
+        fi
+
         FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
@@ -353,6 +361,19 @@ runs:
           exit 1
         fi
         echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
+
+    # Self-heal the JDK base image the dotCMS Dockerfile builds FROM. Same resolved
+    # SDKMAN_JAVA_VERSION as below, so the base tag and the FROM build-arg stay in lockstep.
+    # No-op on the common path (base already published); builds it when missing — pushed
+    # multi-arch when Docker Hub creds are present, otherwise loaded locally for this build.
+    - id: ensure-java-base
+      name: Ensure Java Base Image
+      if: ${{ inputs.generate-docker == 'true' }}
+      uses: ./.github/actions/core-cicd/ensure-java-base
+      with:
+        sdkman-java-version: ${{ env.SDKMAN_JAVA_VERSION }}
+        docker-io-username: ${{ inputs.docker-io-username }}
+        docker-io-token: ${{ inputs.docker-io-token }}
 
     - id: build-docker-image-from-archive
       name: Build Docker Image from Archive

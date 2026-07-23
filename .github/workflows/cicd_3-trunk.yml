@@ -70,6 +70,10 @@ jobs:
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
+    secrets:
+      # Lets ensure-java-base publish a missing java-base image after a .sdkmanrc bump merges.
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     permissions:
       contents: read
       packages: write

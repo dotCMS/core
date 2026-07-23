@@ -17,6 +17,10 @@ jobs:
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
+    secrets:
+      # Lets ensure-java-base publish a missing java-base image after a .sdkmanrc bump merges.
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     permissions:
       contents: read
       packages: write

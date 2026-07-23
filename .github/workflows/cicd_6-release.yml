@@ -136,6 +136,10 @@ jobs:
       generate-docker: true
       java-version: ${{ github.event.inputs.java-version }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+    secrets:
+      # Lets ensure-java-base publish a missing java-base image (multi-arch) for this release.
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     permissions:
       contents: read
       packages: write
