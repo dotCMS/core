@@ -70,6 +70,49 @@ export function coerceFieldValue(
         return '';
     }
 
+    // SELECT / RADIO: p-select and p-radioButton match the control value
+    // against string option values (`optionValue="value"`). The Page API
+    // can return a real boolean (BOOL-backed field) or a number, neither of
+    // which `===` a string option — so the control shows its placeholder
+    // while `showClear` still sees a truthy value (the stray "X"). Map the
+    // raw value back to its matching option's string value.
+    if (field.clazz === DotCMSClazzes.SELECT || field.clazz === DotCMSClazzes.RADIO) {
+        return matchOptionValue(field, value);
+    }
+
+    return value;
+}
+
+/**
+ * Normalize a single-select value (SELECT / RADIO) so it matches one of
+ * the field's string option values. Options are always strings (parsed
+ * from `label|value`), but the Page API may return a real boolean for a
+ * BOOL-backed field or a number. Boolean values are matched through the
+ * same `toBoolean` semantics the backend uses (so `true` selects the
+ * `Yes|1` option); numbers fall back to string comparison. Values that
+ * are already strings (or arrays) are returned untouched.
+ */
+function matchOptionValue(
+    field: ContentletField,
+    value: string | string[] | boolean | DotCMSContentlet
+): string | string[] | boolean | DotCMSContentlet {
+    if (typeof value === 'string' || Array.isArray(value)) {
+        return value;
+    }
+
+    const options = field.options ?? [];
+
+    if (typeof value === 'boolean') {
+        const match = options.find((option) => commonsLangToBoolean(option.value) === value);
+        return match ? match.value : String(value);
+    }
+
+    if (typeof value === 'number') {
+        const asString = String(value);
+        const match = options.find((option) => option.value === asString);
+        return match ? match.value : asString;
+    }
+
     return value;
 }
 

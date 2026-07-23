@@ -221,6 +221,79 @@ describe('quick-edit-form-builder', () => {
                 );
                 expect(value).toBe('');
             });
+
+            it('maps a boolean value to the matching Yes|1/No|0 option string', () => {
+                const boolField = field({
+                    variable: 'flag',
+                    clazz: DotCMSClazzes.RADIO,
+                    dataType: DotCMSDataTypes.BOOLEAN,
+                    options: [
+                        { label: 'Yes', value: '1' },
+                        { label: 'No', value: '0' }
+                    ]
+                });
+                expect(coerceFieldValue(boolField, contentlet({ flag: true }))).toBe('1');
+                expect(coerceFieldValue(boolField, contentlet({ flag: false }))).toBe('0');
+            });
+        });
+
+        describe('SELECT', () => {
+            const selectBool = (over = {}) =>
+                field({
+                    variable: 'live',
+                    clazz: DotCMSClazzes.SELECT,
+                    dataType: DotCMSDataTypes.BOOLEAN,
+                    options: [
+                        { label: 'Yes', value: '1' },
+                        { label: 'No', value: '0' }
+                    ],
+                    ...over
+                });
+
+            it('maps a real boolean from the Page API to the matching option string', () => {
+                expect(coerceFieldValue(selectBool(), contentlet({ live: true }))).toBe('1');
+                expect(coerceFieldValue(selectBool(), contentlet({ live: false }))).toBe('0');
+            });
+
+            it('matches boolean options declared as Yes|true / No|false', () => {
+                const f = selectBool({
+                    options: [
+                        { label: 'Yes', value: 'true' },
+                        { label: 'No', value: 'false' }
+                    ]
+                });
+                expect(coerceFieldValue(f, contentlet({ live: true }))).toBe('true');
+                expect(coerceFieldValue(f, contentlet({ live: false }))).toBe('false');
+            });
+
+            it('stringifies a numeric value so it matches string options', () => {
+                const f = field({
+                    variable: 'level',
+                    clazz: DotCMSClazzes.SELECT,
+                    dataType: DotCMSDataTypes.INTEGER,
+                    options: [
+                        { label: 'One', value: '1' },
+                        { label: 'Two', value: '2' }
+                    ]
+                });
+                expect(coerceFieldValue(f, contentlet({ level: 2 }))).toBe('2');
+            });
+
+            it('returns a matching string value untouched', () => {
+                const f = field({
+                    variable: 'color',
+                    clazz: DotCMSClazzes.SELECT,
+                    options: [
+                        { label: 'Red', value: 'red' },
+                        { label: 'Blue', value: 'blue' }
+                    ]
+                });
+                expect(coerceFieldValue(f, contentlet({ color: 'blue' }))).toBe('blue');
+            });
+
+            it('returns empty string when the contentlet has no value', () => {
+                expect(coerceFieldValue(selectBool(), contentlet())).toBe('');
+            });
         });
     });
 
