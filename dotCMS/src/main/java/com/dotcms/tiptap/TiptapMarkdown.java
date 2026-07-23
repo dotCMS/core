@@ -348,6 +348,10 @@ public final class TiptapMarkdown {
         }
         if (sig != null) {
             sigs.merge(sig, 1, Integer::sum);
+            // A counted rich node travels as one unit (its fence carries the whole subtree),
+            // so its children are part of it — counting them separately (e.g. a gridBlock's
+            // gridColumns) would inflate the warning.
+            return;
         }
         final JsonNode content = node.path("content");
         if (content.isArray()) {
