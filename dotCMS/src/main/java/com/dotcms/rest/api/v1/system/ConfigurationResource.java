@@ -93,6 +93,7 @@ public class ConfigurationResource implements Serializable {
             FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR,
             FeatureFlagName.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED,
             FeatureFlagName.FEATURE_FLAG_LOCALE_SELECTOR_V2,
+            FeatureFlagName.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL,
             // libvips engine toggle: the new image editor reads it to gate AVIF output.
             FeatureFlagName.IMAGE_API_USE_LIBVIPS);
 
@@ -111,6 +112,7 @@ public class ConfigurationResource implements Serializable {
                             REPORT_ISSUE_INCLUDE_USER_PII,
                             FeatureFlagName.FEATURE_FLAG_REPORT_ISSUE_ENABLED,
                             FeatureFlagName.FEATURE_FLAG_LOCALE_SELECTOR_V2,
+                            FeatureFlagName.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL,
                             // libvips engine toggle: the new image editor reads it to gate AVIF output.
                             FeatureFlagName.IMAGE_API_USE_LIBVIPS }));
 

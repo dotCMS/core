@@ -76,6 +76,13 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
 
     /**
+     * Opens the new content editor (Edit Content v2) in a right slide-in side panel instead of
+     * navigating full-screen (Content Drive) or a centered dialog (UVE). Off by default.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL}.
+     */
+    String FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = "FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL";
+
+    /**
      * libvips image-engine toggle (off by default; the legacy Java2D engine is used
      * otherwise). The new image editor reads this through the configuration endpoint
      * to gate the libvips-only AVIF output format. Not a UI feature flag — kept here so

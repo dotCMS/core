@@ -414,7 +414,15 @@ export class DotEditContentLayoutComponent {
      * @param onProceed Runs when it is safe to close (clean form, or the user discarded changes).
      */
     confirmClose(onProceed: () => void): void {
-        if (!this.hasUnsavedChanges() || this.$store.workflowActionSuccess()) {
+        // While the content is still loading, async field CVAs (e.g. the Block Editor) populate
+        // their controls and transiently mark the form dirty before the user has touched anything,
+        // so a close during that window would prompt falsely. The editor isn't fully loaded, so
+        // there is nothing the user could have changed — close without prompting.
+        if (
+            !this.hasUnsavedChanges() ||
+            this.$store.workflowActionSuccess() ||
+            !this.$store.isFullyLoaded()
+        ) {
             onProceed();
 
             return;

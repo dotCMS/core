@@ -3,6 +3,7 @@ import { EMPTY } from 'rxjs';
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -11,6 +12,7 @@ import {
     DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotPropertiesService,
     DotRouterService
 } from '@dotcms/data-access';
 import {
@@ -36,6 +38,19 @@ export class DotContentDriveNavigationService {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #contentSearch = inject(DotContentSearchService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
+
+    /**
+     * Feature flag gating the side panel. When off, the new editor opens via full-screen route
+     * navigation (the previous behavior); when on, it opens in the side panel. Defaults to `false`
+     * until the flag resolves, so the safe/previous behavior is used meanwhile.
+     */
+    readonly sidePanelEnabled = toSignal(
+        this.#dotPropertiesService.getFeatureFlag(
+            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
+        ),
+        { initialValue: false }
+    );
 
     readonly #editPanelRequest = signal<EditContentDialogData | null>(null);
 
@@ -123,13 +138,23 @@ export class DotContentDriveNavigationService {
                     return;
                 }
 
-                // New editor: open it in a side panel over Content Drive instead of navigating.
-                // Forward `folderPath` so the content is created in the folder being browsed.
-                this.#editPanelRequest.set({
-                    mode: 'new',
-                    contentTypeId: contentTypeVariable,
-                    folderPath: folder.folderPath,
-                    title: contentType.name
+                if (this.sidePanelEnabled()) {
+                    // New editor in a side panel over Content Drive. Forward `folderPath` so the
+                    // content is created in the folder being browsed.
+                    this.#editPanelRequest.set({
+                        mode: 'new',
+                        contentTypeId: contentTypeVariable,
+                        folderPath: folder.folderPath,
+                        title: contentType.name
+                    });
+
+                    return;
+                }
+
+                // Side panel disabled: navigate to the full-screen new-content editor (previous
+                // behavior). It pre-selects the Host/Folder field from the `folderPath` query param.
+                this.#router.navigate([`content/new/${contentTypeVariable}`], {
+                    queryParams: folder.folderPath ? { folderPath: folder.folderPath } : {}
                 });
             });
     }
@@ -173,13 +198,20 @@ export class DotContentDriveNavigationService {
                     return;
                 }
 
-                // New editor: open it in a side panel over Content Drive instead of navigating.
-                this.#editPanelRequest.set({
-                    mode: 'edit',
-                    contentletInode: contentlet.inode,
-                    identifier: contentlet.identifier,
-                    title: contentlet.title
-                });
+                if (this.sidePanelEnabled()) {
+                    // New editor in a side panel over Content Drive (keeps the list/filters).
+                    this.#editPanelRequest.set({
+                        mode: 'edit',
+                        contentletInode: contentlet.inode,
+                        identifier: contentlet.identifier,
+                        title: contentlet.title
+                    });
+
+                    return;
+                }
+
+                // Side panel disabled: navigate to the full-screen editor (previous behavior).
+                this.#router.navigate([`content/${contentlet.inode}`]);
             });
     }
 
@@ -190,6 +222,9 @@ export class DotContentDriveNavigationService {
      * content can't be resolved (deleted, no permission, bad id).
      */
     openEditByIdentifier(identifier: string): void {
+        // No flag gate here on purpose: the `?editContent` param is only ever written while the
+        // side panel is active (flag on), so its presence already implies a panel context — and
+        // the flag may not have resolved yet on this cold load.
         this.#contentSearch
             .get<ContentSearchEntity>({
                 query: `+identifier:${identifier} +working:true`,

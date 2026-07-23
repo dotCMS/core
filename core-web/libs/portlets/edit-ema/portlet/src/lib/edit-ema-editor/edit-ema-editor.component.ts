@@ -20,7 +20,7 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -43,6 +43,7 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotPropertiesService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -57,7 +58,11 @@ import {
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
+import {
+    DotEditContentDialogComponent,
+    DotEditContentSidePanelComponent,
+    EditContentDialogData
+} from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -170,7 +175,8 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent
+        DotUveDeviceControlsComponent,
+        DotEditContentSidePanelComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -257,6 +263,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotContentletService = inject(DotContentletService);
     private readonly dialogService = inject(DialogService);
+    private readonly dotPropertiesService = inject(DotPropertiesService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
@@ -269,6 +276,23 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+
+    /**
+     * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
+     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     */
+    protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
+     * dialog (previous behavior). Defaults to `false` until resolved, so the dialog is used meanwhile.
+     */
+    protected readonly $sidePanelEnabled = toSignal(
+        this.dotPropertiesService.getFeatureFlag(
+            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
+        ),
+        { initialValue: false }
+    );
 
     // Component builds its own editor props locally
     protected readonly $showDialogs = computed<boolean>(() => {
@@ -1370,9 +1394,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
+     * Opens the new Edit Content editor with the given header and dialog data — in the side panel
+     * when the feature flag is on, otherwise in the centered dialog (previous behavior).
      */
     #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
+        if (this.$sidePanelEnabled()) {
+            // Side panel: shows `title` in its header (the dialog used `header`) and fires
+            // `dialogData.onContentSaved`/`onCancel` on close — so palette-drop / edit flows work
+            // unchanged.
+            this.$editContentPanel.set({ ...dialogData, title: header });
+
+            return;
+        }
+
+        // Side panel disabled: open the centered dialog (previous behavior).
         this.dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,

@@ -294,6 +294,15 @@
         (onSaved)="reloadPage()" />
 }
 
+<!-- Edit Content side panel (replaces the centered dialog). Post-save work runs via the request's
+     onContentSaved/onCancel callbacks; closing clears the request. -->
+@if ($editContentPanel(); as data) {
+    <dot-edit-content-side-panel
+        data-testId="edit-content-side-panel"
+        [data]="data"
+        (closed)="$editContentPanel.set(null)" />
+}
+
 <div
     #customDragImage
     class="border-round-lg absolute z-1 border bg-white p-3"

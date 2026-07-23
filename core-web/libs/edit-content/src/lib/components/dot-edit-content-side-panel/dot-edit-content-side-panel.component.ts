@@ -58,54 +58,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
             deps: [forwardRef(() => DotEditContentSidePanelComponent)]
         }
     ],
-    template: `
-        <p-drawer
-            [visible]="!!data()"
-            [modal]="true"
-            [dismissible]="false"
-            [closeOnEscape]="false"
-            [closable]="false"
-            [maskStyle]="{ background: 'transparent !important' }"
-            [pt]="{
-                root: {
-                    style: {
-                        width: $expanded() ? '100%' : '70%',
-                        transition: 'width 250ms ease',
-                        boxShadow: '-12px 0 24px rgb(0 0 0 / 20%)'
-                    }
-                },
-                content: { style: { padding: '0' } }
-            }"
-            position="right"
-            (keydown.escape)="requestClose()">
-            <ng-template #header>
-                <div class="flex w-full items-center justify-between gap-4">
-                    <span class="truncate text-lg font-semibold" data-testId="side-panel-title">
-                        {{ data()?.title }}
-                    </span>
-                    <div class="flex items-center gap-1">
-                        <p-button
-                            [text]="true"
-                            severity="secondary"
-                            [icon]="$expanded() ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
-                            [attr.aria-label]="$expanded() ? 'Collapse panel' : 'Expand panel'"
-                            (onClick)="$expanded.set(!$expanded())"
-                            data-testId="side-panel-expand" />
-                        <p-button
-                            [text]="true"
-                            severity="secondary"
-                            icon="pi pi-times"
-                            aria-label="Close panel"
-                            (onClick)="requestClose()"
-                            data-testId="side-panel-close" />
-                    </div>
-                </div>
-            </ng-template>
-            @for (item of $items(); track item.contentletInode ?? item.contentTypeId) {
-                <dot-edit-content-form-layout />
-            }
-        </p-drawer>
-    `,
+    templateUrl: './dot-edit-content-side-panel.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidePanelComponent implements OnDestroy {
@@ -126,6 +79,9 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
 
     /** Whether the panel is expanded to the full viewport width (vs the default ~70%). */
     protected readonly $expanded = signal(false);
+
+    /** Last successfully-saved contentlet, forwarded to `data.onContentSaved` when the panel closes. */
+    #lastSaved: DotCMSContentlet | null = null;
 
     /**
      * `@for` source: a single-item list. Rendering the editor through `@for` (instead of directly)
@@ -149,22 +105,43 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
             this.#injector
                 .get(OverlayEditContentHost)
                 .saved$.pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((contentlet) => this.saved.emit(contentlet));
+                .subscribe((contentlet) => {
+                    this.#lastSaved = contentlet;
+                    this.saved.emit(contentlet);
+                });
         });
     }
 
     /**
      * Close intent (X button or ESC). Routes through the editor's unsaved-changes guard so the
-     * user is prompted when the form is dirty; only closes (emits `closed`) once it is safe.
+     * user is prompted when the form is dirty; only closes once it is safe. On close it fires the
+     * `data` callbacks (`onContentSaved` with the last save, then `onCancel`) — mirroring the
+     * dialog's contract so dialog-based openers can switch to the panel unchanged — and emits
+     * `closed` for openers that drive it via a signal.
      */
     protected requestClose(): void {
         const layout = this.$layout();
+        const proceed = () => {
+            this.#fireCloseCallbacks();
+            this.closed.emit();
+        };
 
         if (layout) {
-            layout.confirmClose(() => this.closed.emit());
+            layout.confirmClose(proceed);
         } else {
-            this.closed.emit();
+            proceed();
         }
+    }
+
+    /** Fires the `data` lifecycle callbacks on close, matching {@link DotEditContentDialogComponent}. */
+    #fireCloseCallbacks(): void {
+        const data = this.data();
+
+        if (this.#lastSaved) {
+            data?.onContentSaved?.(this.#lastSaved);
+        }
+
+        data?.onCancel?.();
     }
 
     ngOnDestroy(): void {

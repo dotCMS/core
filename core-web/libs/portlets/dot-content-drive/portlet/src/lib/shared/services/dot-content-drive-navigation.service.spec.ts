@@ -15,6 +15,7 @@ import {
     DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotPropertiesService,
     DotRouterService
 } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
@@ -52,6 +53,11 @@ describe('DotContentDriveNavigationService', () => {
             }),
             mockProvider(DotContentSearchService, {
                 get: jest.fn()
+            }),
+            // Side panel feature flag ON by default so the side-panel tests below apply; the
+            // "side panel disabled" block re-creates the service with it off.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
             })
         ]
     });
@@ -494,5 +500,65 @@ describe('DotContentDriveNavigationService', () => {
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(service.editPanelRequest()).toBeNull();
         });
+    });
+});
+
+describe('DotContentDriveNavigationService (side panel disabled)', () => {
+    let spectator: SpectatorService<DotContentDriveNavigationService>;
+    let service: DotContentDriveNavigationService;
+    let router: jest.Mocked<Router>;
+    let contentTypeService: jest.Mocked<DotContentTypeService>;
+
+    const newEditorType = () =>
+        createFakeContentType({
+            id: 'blog',
+            name: 'Blog',
+            metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+        });
+
+    // Own factory with the side panel flag OFF, so the new editor falls back to route navigation.
+    const createService = createServiceFactory({
+        service: DotContentDriveNavigationService,
+        providers: [
+            mockProvider(Router, { navigate: jest.fn() }),
+            mockProvider(DotContentTypeService, { getContentType: jest.fn() }),
+            mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
+            mockProvider(Location, { path: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotContentSearchService, { get: jest.fn() }),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(false))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        router = spectator.inject(Router);
+        contentTypeService = spectator.inject(DotContentTypeService);
+    });
+
+    it('should navigate to the full-screen editor instead of opening the panel (edit)', () => {
+        const mockContentlet = createFakeContentlet({ contentType: 'blog', inode: 'inode-x' });
+        contentTypeService.getContentType.mockReturnValue(of(newEditorType()));
+
+        service.editContent(mockContentlet);
+
+        expect(router.navigate).toHaveBeenCalledWith(['content/inode-x']);
+        expect(service.editPanelRequest()).toBeNull();
+    });
+
+    it('should navigate to the full-screen new-content editor instead of the panel (create)', () => {
+        contentTypeService.getContentType.mockReturnValue(of(newEditorType()));
+
+        service.createContent('blog', { folderPath: 'demo.dotcms.com/about-us/' });
+
+        expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
+            queryParams: { folderPath: 'demo.dotcms.com/about-us/' }
+        });
+        expect(service.editPanelRequest()).toBeNull();
     });
 });
