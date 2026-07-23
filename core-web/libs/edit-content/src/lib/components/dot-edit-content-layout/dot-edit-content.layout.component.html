@@ -63,9 +63,12 @@
              (severity="info") like the sibling banners so it stays theme-aware and
              inherits the top bar's shared banner sizing. -->
         @if (relatingTrail.length >= 2) {
+            @let betaMessageVisible = isEnabledNewContentEditor && showBetaMessage;
             <p-message
                 severity="secondary"
                 class="edit-content-layout__relating-content"
+                [class.border-t]="betaMessageVisible"
+                [class.border-gray-300]="betaMessageVisible"
                 data-testId="edit-content-layout__relating-content">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-3 text-gray-700">
