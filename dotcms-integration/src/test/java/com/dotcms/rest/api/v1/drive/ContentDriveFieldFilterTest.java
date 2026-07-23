@@ -569,6 +569,26 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     }
 
     /**
+     * The SAME record ({@code angularWithTags}, Text value {@code "angular-cms"}) is retrievable
+     * both with the hyphenated term (matched literally via the escaped query against {@code _dotraw})
+     * and with the plain non-hyphen token (matched via the analyzed field). This proves the
+     * special-character handling doesn't cost the ordinary token match — both queries return it.
+     */
+    @Test
+    public void testSameRecordRetrievedWithAndWithoutHyphen()
+            throws DotDataException, DotSecurityException {
+        final String inode = angularWithTags.getInode();
+
+        final Set<String> withHyphen = driveInodes(baseRequest()
+                .userSearchable(Map.of(TEXT_VAR, "angular-cms")).build());
+        final Set<String> withoutHyphen = driveInodes(baseRequest()
+                .userSearchable(Map.of(TEXT_VAR, "angular")).build());
+
+        assertTrue("hyphenated 'angular-cms' retrieves the record", withHyphen.contains(inode));
+        assertTrue("plain 'angular' retrieves the same record", withoutHyphen.contains(inode));
+    }
+
+    /**
      * Custom field (LONG_TEXT) routes to the index as a contains term against its stored value.
      */
     @Test
