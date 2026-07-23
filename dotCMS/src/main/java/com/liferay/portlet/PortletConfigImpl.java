@@ -73,7 +73,11 @@ public class PortletConfigImpl implements PortletConfig {
 		}
 
 		_portletCtx = portletCtx;
-		_params = params;
+		if (params == null) {
+			Logger.warn(this, "Portlet '" + _portletId + "' was loaded with null init parameters: "
+					+ "defaulting to an empty parameter map.");
+		}
+		_params = params != null ? params : CollectionFactory.getHashMap();
 		_resourceBundle = resourceBundle;
 		_portletInfo = portletInfo;
 		_bundlePool = CollectionFactory.getHashMap();
