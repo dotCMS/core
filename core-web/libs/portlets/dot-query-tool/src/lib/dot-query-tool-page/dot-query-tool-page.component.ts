@@ -11,10 +11,11 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
@@ -34,9 +35,14 @@ import {
     DotContentletEditUrlService,
     DotCurrentUserService,
     DotGlobalMessageService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DotEditContentSidePanelComponent,
+    EditContentDialogData
+} from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -83,9 +89,12 @@ const QUERY_EDITOR_OPTIONS = {
         MenuModule,
         PopoverModule,
         DotEmptyContainerComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotEditContentSidePanelComponent
     ],
-    providers: [DotQueryToolStore, DotCurrentUserService, DotClipboardUtil],
+    // MessageService: the Edit Content side panel's editor injects PrimeNG's MessageService for
+    // inline toasts; provide it here (as Content Drive's shell does) so the panel works in-page.
+    providers: [DotQueryToolStore, DotCurrentUserService, DotClipboardUtil, MessageService],
     templateUrl: './dot-query-tool-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
@@ -100,8 +109,24 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
     readonly #location = inject(Location);
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
 
     #lastSyncedUrl: string | null = null;
+
+    /**
+     * Feature flag gating the side panel. When off, editing a result opens the editor in a new
+     * browser tab (the previous behavior); when on, results that resolve to the new content
+     * editor open in the in-page side panel instead. Defaults to `false` until it resolves.
+     */
+    readonly $sidePanelEnabled = toSignal(
+        this.#dotPropertiesService.getFeatureFlag(
+            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
+        ),
+        { initialValue: false }
+    );
+
+    /** Content shown in the Edit Content side panel, or `null` when it is closed. */
+    readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
 
     // Mirrors store state into the address bar via Location.replaceState, but only
     // once the search settles (LOADED or ERROR). Tying the sync to `status` instead
@@ -230,9 +255,39 @@ export class DotQueryToolPageComponent implements OnInit {
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
         event.preventDefault();
-        // Open the placeholder synchronously so the popup blocker accepts it; assign the
-        // resolved URL once DotContentletEditUrlService returns. The resolver may answer
-        // synchronously (HTMLPAGE / cached content type) — that's fine, subscribe still
+
+        // Side panel enabled: resolve first (no intermediate tab). New-editor content opens in
+        // the in-page panel; legacy-editor and HTMLPAGE content still open in a new tab. For a
+        // cached content type the resolver answers synchronously, so the fallback `window.open`
+        // stays within the click gesture and the popup blocker accepts it.
+        if (this.$sidePanelEnabled()) {
+            this.#editUrlResolver
+                .resolveEditUrl(contentlet)
+                .pipe(take(1))
+                .subscribe({
+                    next: (url) => {
+                        if (this.#isNewEditorUrl(url)) {
+                            this.$editPanelRequest.set({
+                                mode: 'edit',
+                                contentletInode: contentlet.inode,
+                                identifier: contentlet.identifier,
+                                title: contentlet.title
+                            });
+
+                            return;
+                        }
+
+                        window.open(url, '_blank');
+                    },
+                    error: () => this.#globalMessage.error()
+                });
+
+            return;
+        }
+
+        // Side panel disabled: open the placeholder synchronously so the popup blocker accepts it,
+        // then assign the resolved URL once DotContentletEditUrlService returns. The resolver may
+        // answer synchronously (HTMLPAGE / cached content type) — that's fine, subscribe still
         // delivers on the same tick.
         const placeholder = window.open('about:blank', '_blank');
         if (!placeholder) return;
@@ -246,6 +301,25 @@ export class DotQueryToolPageComponent implements OnInit {
                     this.#globalMessage.error();
                 }
             });
+    }
+
+    /** Re-runs the search after a save so the results table reflects the edited content. */
+    onEditPanelSaved(): void {
+        this.store.runSearch();
+    }
+
+    /** Clears the side panel request, closing the panel. */
+    onEditPanelClosed(): void {
+        this.$editPanelRequest.set(null);
+    }
+
+    /**
+     * True when `url` targets the new content editor (`/dotAdmin/#/content/<inode>`). The legacy
+     * editor (`/c/content/`) and the page editor (`/edit-page/`) resolve to different prefixes, so
+     * only the new editor is eligible for the in-page side panel.
+     */
+    #isNewEditorUrl(url: string): boolean {
+        return url.startsWith('/dotAdmin/#/content/');
     }
 
     useExample(query: string): void {

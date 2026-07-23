@@ -64,9 +64,11 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('side-panel-title'))?.textContent?.trim()).toBe(
-            'My Content'
-        );
+        // `appendTo="body"` teleports the drawer content out of the fixture into `document.body`,
+        // so byTestId (a DOM/CSS query) must search from the document root.
+        expect(
+            spectator.query(byTestId('side-panel-title'), { root: true })?.textContent?.trim()
+        ).toBe('My Content');
     });
 
     it('should render the editor only when data is set', () => {
@@ -79,9 +81,13 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(spectator.query(DotEditContentLayoutComponent)).not.toBeNull();
     });
 
-    /** PrimeNG `p-button` renders its clickable `<button>` inside the host. */
+    /**
+     * PrimeNG `p-button` renders its clickable `<button>` inside the host. The `{ root: true }`
+     * search is needed because `appendTo="body"` teleports the drawer (and its header buttons)
+     * out of the fixture element and into `document.body`.
+     */
     const clickButton = (testId: string): void => {
-        const button = spectator.query(byTestId(testId))?.querySelector('button');
+        const button = spectator.query(byTestId(testId), { root: true })?.querySelector('button');
         spectator.click(button as HTMLElement);
     };
 
@@ -109,6 +115,24 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.output('closed').subscribe(closedSpy);
 
         clickButton('side-panel-close');
+
+        expect(confirmClose).toHaveBeenCalledWith(expect.any(Function));
+        expect(closedSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should close through the editor guard on Escape (document keydown)', () => {
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = jest
+            .spyOn(layout, 'confirmClose')
+            .mockImplementation((onProceed: () => void) => onProceed());
+
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
         expect(confirmClose).toHaveBeenCalledWith(expect.any(Function));
         expect(closedSpy).toHaveBeenCalledTimes(1);

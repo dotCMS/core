@@ -4,6 +4,7 @@
     [dismissible]="false"
     [closeOnEscape]="false"
     [closable]="false"
+    appendTo="body"
     [maskStyle]="{ background: 'transparent !important' }"
     [pt]="{
         root: {
@@ -15,8 +16,7 @@
         },
         content: { style: { padding: '0' } }
     }"
-    position="right"
-    (keydown.escape)="requestClose()">
+    position="right">
     <ng-template #header>
         <div class="flex w-full items-center justify-between gap-4">
             <span class="truncate text-lg font-semibold" data-testId="side-panel-title">
@@ -26,17 +26,25 @@
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    [icon]="$expanded() ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
                     [attr.aria-label]="$expanded() ? 'Collapse panel' : 'Expand panel'"
                     (onClick)="$expanded.set(!$expanded())"
-                    data-testId="side-panel-expand" />
+                    data-testId="side-panel-expand">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">
+                            {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
+                        </i>
+                    </ng-template>
+                </p-button>
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    icon="pi pi-times"
                     aria-label="Close panel"
                     (onClick)="requestClose()"
-                    data-testId="side-panel-close" />
+                    data-testId="side-panel-close">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">close</i>
+                    </ng-template>
+                </p-button>
             </div>
         </div>
     </ng-template>

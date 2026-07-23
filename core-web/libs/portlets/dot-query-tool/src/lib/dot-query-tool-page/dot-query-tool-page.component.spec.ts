@@ -9,7 +9,8 @@ import {
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotClipboardUtil } from '@dotcms/ui';
@@ -91,7 +92,10 @@ describe('DotQueryToolPageComponent', () => {
         ],
         componentProviders: [
             { provide: DotQueryToolStore, useFactory: () => buildStoreMock(pendingStoreOverrides) },
-            DotClipboardUtil
+            DotClipboardUtil,
+            // Flag off by default → results open in a new tab (placeholder path). In
+            // componentProviders so the field-initializer toSignal resolves it at construction.
+            { provide: DotPropertiesService, useValue: { getFeatureFlag: () => of(false) } }
         ]
     });
 
@@ -344,5 +348,88 @@ describe('DotQueryToolPageComponent', () => {
             expect(snippet).toContain(`credentials: 'include'`);
             expect(snippet).toContain(`"query": "+live:true"`);
         });
+    });
+});
+
+// Sibling top-level describe (own TestBed): the side panel feature flag is ON. New-editor results
+// open in the in-page panel instead of a new tab; legacy/page results still open in a new tab.
+describe('DotQueryToolPageComponent (side panel enabled)', () => {
+    let spectator: Spectator<DotQueryToolPageComponent>;
+    let windowOpenSpy: jest.SpyInstance;
+
+    const createComponent = createComponentFactory({
+        component: DotQueryToolPageComponent,
+        overrideComponents: [
+            [
+                DotQueryToolPageComponent,
+                { remove: { providers: [DotQueryToolStore, DotCurrentUserService] }, add: {} }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotQueryToolService),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() })
+        ],
+        componentProviders: [
+            { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
+            DotClipboardUtil,
+            // Flag on → new-editor results open in the side panel. In componentProviders (node
+            // injector) so the component's field-initializer `toSignal(getFeatureFlag(...))`
+            // resolves the mock at construction.
+            { provide: DotPropertiesService, useValue: { getFeatureFlag: () => of(true) } }
+        ]
+    });
+
+    beforeEach(() => {
+        windowOpenSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParamMap: convertToParamMap({}) } }
+                },
+                { provide: Location, useValue: { replaceState: jest.fn() } }
+            ]
+        });
+    });
+
+    afterEach(() => windowOpenSpy.mockRestore());
+
+    it('opens the new-editor result in the side panel (no new tab)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
+        expect(windowOpenSpy).not.toHaveBeenCalled();
+        expect(spectator.component.$editPanelRequest()).toEqual({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'Home'
+        });
+    });
+
+    it('opens legacy-editor results in a new tab (not the panel)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
+        expect(windowOpenSpy).toHaveBeenCalledWith('/dotAdmin/#/c/content/inode-1', '_blank');
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+
+    it('clears the panel request on close and reloads results on save', () => {
+        const store = spectator.inject(DotQueryToolStore, true);
+        spectator.component.$editPanelRequest.set({ mode: 'edit', contentletInode: 'inode-1' });
+
+        spectator.component.onEditPanelSaved();
+        expect(store.runSearch).toHaveBeenCalledTimes(1);
+
+        spectator.component.onEditPanelClosed();
+        expect(spectator.component.$editPanelRequest()).toBeNull();
     });
 });

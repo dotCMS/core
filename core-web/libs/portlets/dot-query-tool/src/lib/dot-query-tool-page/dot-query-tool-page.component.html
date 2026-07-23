@@ -377,3 +377,13 @@
         </div>
     </div>
 </p-popover>
+
+<!-- Edit Content side panel (opens in-page for new-editor results when the feature flag is on;
+     legacy/page results still open in a new tab). Reloads the results on save. -->
+@if ($editPanelRequest(); as data) {
+    <dot-edit-content-side-panel
+        data-testId="query-tool-edit-panel"
+        [data]="data"
+        (saved)="onEditPanelSaved()"
+        (closed)="onEditPanelClosed()" />
+}

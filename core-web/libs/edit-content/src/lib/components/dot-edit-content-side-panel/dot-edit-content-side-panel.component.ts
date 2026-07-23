@@ -59,7 +59,11 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
         }
     ],
     templateUrl: './dot-edit-content-side-panel.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    // ESC closes the panel through the unsaved-changes guard. Bound at document level because
+    // `appendTo="body"` moves the drawer out of this component's DOM subtree, so a template
+    // `(keydown.escape)` on the drawer would never receive the event.
+    host: { '(document:keydown.escape)': 'requestClose()' }
 })
 export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
