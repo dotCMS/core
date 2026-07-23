@@ -232,10 +232,17 @@ public class WorkflowResource {
             "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
             "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
             "back as structured content with no editor round-trip required. A value that is already a " +
-            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are " +
-            "intended for plain content: if the field already holds rich blocks that they cannot represent " +
-            "(embedded contentlets, video or layout blocks), the value is ignored and the existing " +
-            "document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. " +
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Rich blocks " +
+            "(embedded contentlets, images/videos with dotCMS asset bindings, YouTube embeds, layout " +
+            "grids, custom blocks) are expressed in Markdown as fenced code blocks with a `dotcms-*` " +
+            "info string and a small JSON payload, e.g. " +
+            "```dotcms-content\\n{\"identifier\": \"<contentlet-id>\", \"languageId\": 1}\\n``` " +
+            "(labels: `dotcms-content`, `dotcms-image`, `dotcms-video`, `dotcms-youtube`, `dotcms-grid`, " +
+            "`dotcms-node`). A Markdown/HTML write **fully replaces** the stored document; when stored " +
+            "rich blocks are not carried over in the submitted value, the save still succeeds and an " +
+            "advisory warning listing the replaced blocks is returned in the response `messages` field — " +
+            "carry the blocks over as fences to preserve them. An invalid fence payload degrades to an " +
+            "ordinary code block, never an error. " +
             "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
@@ -3083,13 +3090,34 @@ public class WorkflowResource {
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
-        final List<MessageEntity> messages = ignoredSystemFieldsMessages(ignoredSystemFields);
+        // Advisory warnings only — the save itself succeeded with 200. Story Block conversion
+        // warnings (e.g. rich blocks replaced by a Markdown write, see #36658) are popped off
+        // the contentlets BEFORE the entity map is built so the transient key never leaks.
+        final List<MessageEntity> messages = mergeMessages(
+                ignoredSystemFieldsMessages(ignoredSystemFields),
+                MapToContentletPopulator.popStoryBlockConversionMessages(
+                        contentlet, basicContentlet, hydratedContentlet));
         final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
                 null != messages
                         ? new ResponseEntityView<>(entity, messages)
                         : new ResponseEntityView<>(entity)
         ).build(); // 200
+    }
+
+    /** Null-tolerant concat: returns {@code null} when both lists are null/empty. */
+    private static List<MessageEntity> mergeMessages(final List<MessageEntity> first,
+                                                     final List<MessageEntity> second) {
+        if (null == first || first.isEmpty()) {
+            return (null == second || second.isEmpty()) ? null : second;
+        }
+        if (null == second || second.isEmpty()) {
+            return first;
+        }
+        final List<MessageEntity> merged = new ArrayList<>(first.size() + second.size());
+        merged.addAll(first);
+        merged.addAll(second);
+        return merged;
     }
 
     /**
