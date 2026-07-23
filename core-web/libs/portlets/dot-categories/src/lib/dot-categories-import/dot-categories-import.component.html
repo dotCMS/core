@@ -2,10 +2,12 @@
     @if ($errorMessage()) {
         <p-message
             severity="error"
-            icon="pi pi-times-circle"
             class="-mx-6 mb-4"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="category-import-error">
+            <ng-template #icon>
+                <span class="material-symbols-rounded">cancel</span>
+            </ng-template>
             {{ $errorMessage() }}
         </p-message>
     }
@@ -15,7 +17,7 @@
         <p-fileupload
             #fileUpload
             mode="advanced"
-            chooseIcon="pi pi-upload"
+            chooseIcon=""
             [showUploadButton]="false"
             [showCancelButton]="false"
             [multiple]="false"
@@ -38,7 +40,9 @@
                     (click)="fileUpload.choose()">
                     <div
                         class="flex size-24 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
-                        <i class="pi pi-upload text-4xl!" aria-hidden="true"></i>
+                        <span class="material-symbols-rounded text-4xl!" aria-hidden="true">
+                            upload
+                        </span>
                     </div>
 
                     <p class="text-2xl font-semibold text-color">
@@ -55,12 +59,14 @@
 
                     <div class="text-color-secondary flex items-center gap-2 text-base">
                         <span>{{ 'categories.import.flat-only' | dm }}</span>
-                        <i
-                            class="pi pi-info-circle"
+                        <span
+                            class="material-symbols-rounded"
                             [pTooltip]="'categories.import.flat-only.tooltip' | dm"
                             tooltipPosition="right"
                             [attr.aria-label]="'categories.import.flat-only.tooltip' | dm"
-                            data-testid="category-import-flat-only-icon"></i>
+                            data-testid="category-import-flat-only-icon">
+                            info
+                        </span>
                     </div>
 
                     @if ($selectedFile(); as file) {

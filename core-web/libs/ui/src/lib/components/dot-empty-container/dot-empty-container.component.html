@@ -1,11 +1,19 @@
-<div class="flex w-full max-w-[480px] flex-col gap-6">
+<div class="flex w-full max-w-120 flex-col gap-6">
     <div
         class="message__principal-wrapper flex flex-col items-center gap-2 wrap-break-word"
         data-testid="message-principal">
         @if (configuration.icon) {
-            <i
-                [class]="'pi p-3 text-6xl! text-gray-700 ' + configuration.icon"
-                data-testid="message-icon"></i>
+            @if (configuration.iconStyle === 'material-symbols-rounded') {
+                <span
+                    class="material-symbols-rounded p-3 text-8xl! text-gray-700"
+                    data-testid="message-icon">
+                    {{ configuration.icon }}
+                </span>
+            } @else {
+                <i
+                    [class]="'pi p-3 text-6xl! text-gray-700 ' + configuration.icon"
+                    data-testid="message-icon"></i>
+            }
         }
         <h1
             class="message__title m-0 text-center text-lg leading-[1.4] font-medium"

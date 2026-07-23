@@ -25,7 +25,8 @@ export class DotVelocityPlaygroundShellComponent {
 
     readonly unlicensedConfig: PrincipalConfiguration = {
         title: 'velocityPlayground.unlicensed.title',
-        icon: 'pi-lock',
+        icon: 'lock',
+        iconStyle: 'material-symbols-rounded',
         subtitle: 'velocityPlayground.unlicensed.description'
     };
 }
