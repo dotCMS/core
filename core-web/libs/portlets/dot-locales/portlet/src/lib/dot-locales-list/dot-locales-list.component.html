@@ -1,8 +1,10 @@
 @if (vm$ | async; as vm) {
-    <p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0!">
+    <p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
         <div class="flex w-full items-center gap-2 py-3">
             <p-iconField iconPosition="left">
-                <p-inputIcon styleClass="pi pi-search" />
+                <p-inputIcon>
+                    <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                </p-inputIcon>
                 <input
                     #searchInput
                     (input)="dt.filterGlobal($event.target.value, 'contains')"
@@ -13,12 +15,12 @@
                     data-testid="locale-search-input"
                     pInputText />
             </p-iconField>
-            <div class="flex gap-2 ml-auto">
+            <div class="ml-auto flex gap-2">
                 <p-button (onClick)="openEditDialog(null, vm)" [label]="'add' | dm" />
             </div>
         </div>
     </p-toolbar>
-    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
         <p-table
             [value]="vm.locales"
             [globalFilterFields]="['isoCode', 'language', 'country']"
@@ -58,7 +60,7 @@
                         {{ locale.language }} ({{ locale.isoCode }})
                         @if (locale.defaultLanguage) {
                             <p-chip
-                                class="bg-green-100! text-green-700! border-green-100! text-xs ml-1"
+                                class="ml-1 border-green-100! bg-green-100! text-xs text-green-700!"
                                 [label]="'Default' | dm" />
                         }
                     </td>
@@ -67,14 +69,17 @@
                     <td>{{ locale.variables.count }}/{{ locale.variables.total }}</td>
                     <td class="text-center!" (click)="$event.stopPropagation()">
                         <p-button
-                            class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                            icon="pi pi-ellipsis-v"
+                            class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                             [rounded]="true"
                             [text]="true"
                             severity="secondary"
                             (onClick)="openRowMenu($event, locale, vm)"
                             [attr.aria-label]="'locales.menu' | dm"
-                            data-testid="locale-actions-btn" />
+                            data-testid="locale-actions-btn">
+                            <span class="material-symbols-rounded text-lg! leading-0">
+                                more_vert
+                            </span>
+                        </p-button>
                     </td>
                 </tr>
             </ng-template>

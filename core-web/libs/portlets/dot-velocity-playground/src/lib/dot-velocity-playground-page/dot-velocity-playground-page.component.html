@@ -24,12 +24,13 @@
                             text
                             rounded
                             size="small"
-                            icon="pi pi-question-circle"
                             [pTooltip]="'velocityPlayground.action.help' | dm"
                             tooltipPosition="top"
                             [attr.aria-label]="'velocityPlayground.action.help' | dm"
                             (onClick)="$helpPopover().toggle($event)"
-                            data-testid="velocity-playground-help-btn" />
+                            data-testid="velocity-playground-help-btn">
+                            <span class="material-symbols-rounded text-lg! leading-0">help</span>
+                        </p-button>
                     </div>
                 </ng-template>
                 <ng-template pTemplate="icons">
@@ -71,7 +72,9 @@
                 }"
                 data-testid="velocity-playground-history-panel">
                 <ng-template pTemplate="headericons">
-                    <i [class]="$historyOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                    <span class="material-symbols-rounded">
+                        {{ $historyOpen() ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+                    </span>
                 </ng-template>
                 <div class="form p-3" data-testid="velocity-playground-history-content">
                     <div class="field">
@@ -96,11 +99,12 @@
                         <p-button
                             text
                             size="small"
-                            icon="pi pi-trash"
-                            [label]="'velocityPlayground.action.clearHistory' | dm"
                             [disabled]="!store.hasHistory()"
                             (onClick)="store.clearHistory()"
-                            data-testid="velocity-playground-clear-history-btn" />
+                            data-testid="velocity-playground-clear-history-btn">
+                            <span class="material-symbols-rounded">delete</span>
+                            {{ 'velocityPlayground.action.clearHistory' | dm }}
+                        </p-button>
                     </div>
                 </div>
             </p-panel>
@@ -110,11 +114,12 @@
                 class="flex shrink-0 items-center justify-end border-t border-surface-200 bg-surface-0 p-3"
                 data-testid="velocity-playground-run-footer">
                 <p-button
-                    [label]="'velocityPlayground.action.run' | dm"
-                    icon="pi pi-play"
                     [loading]="store.isLoading()"
                     (onClick)="onRun()"
-                    data-testid="velocity-playground-run-btn" />
+                    data-testid="velocity-playground-run-btn">
+                    <span class="material-symbols-rounded">play_arrow</span>
+                    {{ 'velocityPlayground.action.run' | dm }}
+                </p-button>
             </div>
         </div>
     </ng-template>
@@ -125,11 +130,13 @@
             @if (store.hasError()) {
                 <p-message
                     severity="error"
-                    icon="pi pi-exclamation-triangle"
                     [pt]="{
                         root: { class: '!rounded-none border-x-0! border-t-0! shrink-0' }
                     }"
                     data-testid="velocity-playground-error-banner">
+                    <ng-template #icon>
+                        <span class="material-symbols-rounded">warning</span>
+                    </ng-template>
                     {{ store.errorMessage() | dm }}
                 </p-message>
             }
@@ -163,7 +170,11 @@
                             </span>
                             <span class="text-color-secondary mx-1">&middot;</span>
                         }
-                        <i class="pi pi-circle-fill text-[0.5rem] text-green-600"></i>
+                        <span
+                            class="material-symbols-rounded text-xl! text-green-600"
+                            style="font-variation-settings: 'FILL' 1">
+                            circle
+                        </span>
                         {{ 'velocityPlayground.output.ready' | dm }}
                         @if (store.elapsedMs() !== null) {
                             <span class="text-color-secondary mx-1">&middot;</span>
@@ -178,19 +189,20 @@
                             <p-button
                                 text
                                 size="small"
-                                [label]="'velocityPlayground.action.share' | dm"
-                                icon="pi pi-chevron-down"
-                                iconPos="right"
                                 (onClick)="toggleExportMenu($event)"
-                                data-testid="velocity-playground-share-btn" />
+                                data-testid="velocity-playground-share-btn">
+                                {{ 'velocityPlayground.action.share' | dm }}
+                                <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                            </p-button>
                             <p-menu #exportMenu [model]="exportItems" [popup]="true" />
                             <p-button
                                 [outlined]="true"
                                 size="small"
-                                [label]="'velocityPlayground.action.export' | dm"
-                                icon="pi pi-download"
                                 (onClick)="downloadOutput()"
-                                data-testid="velocity-playground-export-btn" />
+                                data-testid="velocity-playground-export-btn">
+                                <span class="material-symbols-rounded">download</span>
+                                {{ 'velocityPlayground.action.export' | dm }}
+                            </p-button>
                         </div>
                     }
                 </div>
@@ -228,10 +240,11 @@
                             <p-button
                                 text
                                 size="small"
-                                icon="pi pi-copy"
-                                [label]="'velocityPlayground.help.copy' | dm"
                                 (onClick)="copyToClipboard(example.code)"
-                                data-testid="velocity-playground-help-copy-btn" />
+                                data-testid="velocity-playground-help-copy-btn">
+                                <span class="material-symbols-rounded">content_copy</span>
+                                {{ 'velocityPlayground.help.copy' | dm }}
+                            </p-button>
                             <p-button
                                 text
                                 size="small"

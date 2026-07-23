@@ -150,13 +150,16 @@
                             <p-button
                                 text
                                 size="small"
-                                icon="pi pi-copy"
                                 styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
                                 [pTooltip]="'publishing-queue.copy-bundle-id' | dm"
                                 tooltipPosition="top"
                                 [attr.aria-label]="'publishing-queue.copy-bundle-id' | dm"
                                 (onClick)="$event.stopPropagation(); copyToClipboard(row.bundleId)"
-                                data-testid="pq-bundles-bundle-id-copy" />
+                                data-testid="pq-bundles-bundle-id-copy">
+                                <span class="material-symbols-rounded text-base!">
+                                    content_copy
+                                </span>
+                            </p-button>
                         </div>
                     </td>
                     <td data-testid="pq-bundles-filter">
@@ -222,14 +225,17 @@
                         <div
                             class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                             <p-button
-                                icon="pi pi-ellipsis-v"
                                 [text]="true"
                                 [rounded]="true"
                                 size="small"
                                 severity="secondary"
                                 (onClick)="kebab.toggle($event)"
                                 [attr.aria-label]="'publishing-queue.row.actions' | dm"
-                                data-testid="pq-bundles-kebab-btn" />
+                                data-testid="pq-bundles-kebab-btn">
+                                <span class="material-symbols-rounded w-6 text-center">
+                                    more_vert
+                                </span>
+                            </p-button>
                         </div>
                     </td>
                 </tr>

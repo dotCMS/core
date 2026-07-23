@@ -152,7 +152,8 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly noHitsConfig: PrincipalConfiguration = {
         title: this.#messageService.get('queryTool.results.noHits'),
         subtitle: this.#messageService.get('queryTool.results.noHits.subtitle'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     readonly exportItems: MenuItem[] = [

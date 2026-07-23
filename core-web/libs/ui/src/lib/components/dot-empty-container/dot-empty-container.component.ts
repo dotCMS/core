@@ -4,10 +4,13 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
+export type EmptyContainerIconStyle = 'pi' | 'material-symbols-rounded';
+
 export interface PrincipalConfiguration {
     title: string;
     subtitle?: string;
     icon: string;
+    iconStyle?: EmptyContainerIconStyle;
 }
 
 /**

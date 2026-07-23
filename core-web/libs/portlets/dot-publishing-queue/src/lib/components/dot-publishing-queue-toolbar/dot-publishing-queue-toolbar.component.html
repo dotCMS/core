@@ -1,7 +1,9 @@
 <p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
-            <p-inputIcon styleClass="pi pi-search" />
+            <p-inputIcon>
+                <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+            </p-inputIcon>
             <input
                 pInputText
                 type="text"
@@ -25,11 +27,12 @@
                     [pt]="{ root: { 'data-testid': 'pq-bulk-delete' } }" />
             }
             <p-button
-                [label]="'publishing-queue.refresh' | dm"
-                icon="pi pi-refresh"
                 [text]="true"
                 (onClick)="store.refresh()"
-                [pt]="{ root: { 'data-testid': 'pq-refresh-btn' } }" />
+                [pt]="{ root: { 'data-testid': 'pq-refresh-btn' } }">
+                <span class="material-symbols-rounded">refresh</span>
+                {{ 'publishing-queue.refresh' | dm }}
+            </p-button>
             @if ($hasBulkActions()) {
                 <p-button
                     [label]="'publishing-queue.retry-send' | dm"
@@ -45,12 +48,12 @@
                     hideTransitionOptions="0ms"
                     data-testid="pq-add-bundle-menu" />
                 <p-button
-                    [label]="'publishing-queue.add-bundle' | dm"
-                    icon="pi pi-chevron-down"
-                    iconPos="right"
                     (onClick)="addBundleMenu.toggle($event)"
                     [attr.aria-label]="'publishing-queue.add-bundle' | dm"
-                    data-testid="pq-add-bundle-btn" />
+                    data-testid="pq-add-bundle-btn">
+                    {{ 'publishing-queue.add-bundle' | dm }}
+                    <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                </p-button>
             }
         </div>
     </div>

@@ -276,13 +276,13 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     });
 
     describe('type icon', () => {
-        it('maps known asset types to icons', () => {
-            expect(spectator.component.typeIcon('contentlet')).toBe('pi pi-file');
-            expect(spectator.component.typeIcon('template')).toBe('pi pi-window-maximize');
+        it('maps known asset types to Material Symbol names', () => {
+            expect(spectator.component.typeIcon('contentlet')).toBe('description');
+            expect(spectator.component.typeIcon('template')).toBe('open_in_new');
         });
 
         it('falls back to a generic icon for unknown types', () => {
-            expect(spectator.component.typeIcon('weird-type')).toBe('pi pi-file');
+            expect(spectator.component.typeIcon('weird-type')).toBe('description');
         });
     });
 
@@ -758,7 +758,8 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         it('bundlesEmptyConfig uses the "no drafts" copy when there is no active search', () => {
             spectator.detectChanges();
             const config = spectator.component.$bundlesEmptyConfig();
-            expect(config.icon).toBe('pi-inbox');
+            expect(config.icon).toBe('inbox');
+            expect(config.iconStyle).toBe('material-symbols-rounded');
             expect(config.title).toBe('publishing-queue.select-bundle.empty.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.empty.subtitle');
         });
@@ -770,7 +771,8 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             // debounce is exercised in the search-input integration test.
             spectator.component.$bundleSearch.set('anything');
             const config = spectator.component.$bundlesEmptyConfig();
-            expect(config.icon).toBe('pi-search');
+            expect(config.icon).toBe('search');
+            expect(config.iconStyle).toBe('material-symbols-rounded');
             expect(config.title).toBe('publishing-queue.select-bundle.empty.search.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.empty.search.subtitle');
         });
@@ -784,7 +786,8 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
             const config = spectator.component.$assetsEmptyConfig();
-            expect(config.icon).toBe('pi-hand-point-left');
+            expect(config.icon).toBe('west');
+            expect(config.iconStyle).toBe('material-symbols-rounded');
             expect(config.title).toBe('publishing-queue.select-bundle.no-active.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.no-active.subtitle');
         });
@@ -795,7 +798,8 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             // computed empty config the template renders.
             spectator.component.onSelectBundle({ id: 'bundle-1', name: 'Spring campaign' });
             const config = spectator.component.$assetsEmptyConfig();
-            expect(config.icon).toBe('pi-box');
+            expect(config.icon).toBe('inventory_2');
+            expect(config.iconStyle).toBe('material-symbols-rounded');
             expect(config.title).toBe('publishing-queue.select-bundle.asset-empty.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.asset-empty.subtitle');
         });

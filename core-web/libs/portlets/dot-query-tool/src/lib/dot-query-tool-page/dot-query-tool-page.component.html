@@ -16,12 +16,13 @@
                             text
                             rounded
                             size="small"
-                            icon="pi pi-question-circle"
                             [pTooltip]="'queryTool.action.help' | dm"
                             tooltipPosition="top"
                             [attr.aria-label]="'queryTool.action.help' | dm"
                             (onClick)="$helpPopover().toggle($event)"
-                            data-testid="query-tool-help-btn" />
+                            data-testid="query-tool-help-btn">
+                            <span class="material-symbols-rounded text-lg! leading-0">help</span>
+                        </p-button>
                     </div>
                 </ng-template>
             </p-panel>
@@ -47,7 +48,9 @@
                 }"
                 data-testid="query-tool-params-panel">
                 <ng-template pTemplate="headericons">
-                    <i [class]="$paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                    <span class="material-symbols-rounded">
+                        {{ $paramsOpen() ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+                    </span>
                 </ng-template>
                 <div class="form p-3">
                     <div class="field">
@@ -101,11 +104,12 @@
                 class="flex shrink-0 items-center justify-end border-t border-surface-200 bg-surface-0 p-3"
                 data-testid="query-tool-run-footer">
                 <p-button
-                    [label]="'queryTool.action.run' | dm"
-                    icon="pi pi-play"
                     [loading]="store.isLoading()"
                     (onClick)="onRun()"
-                    data-testid="query-tool-run-btn" />
+                    data-testid="query-tool-run-btn">
+                    <span class="material-symbols-rounded">play_arrow</span>
+                    {{ 'queryTool.action.run' | dm }}
+                </p-button>
             </div>
         </div>
     </ng-template>
@@ -134,7 +138,11 @@
                     class="text-color-secondary flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm"
                     data-testid="query-tool-stats-bar">
                     <div class="flex flex-wrap items-center gap-1.5">
-                        <i class="pi pi-circle-fill text-[0.5rem] text-green-600"></i>
+                        <span
+                            class="material-symbols-rounded text-xl! text-green-600"
+                            style="font-variation-settings: 'FILL' 1">
+                            circle
+                        </span>
                         <span>{{ 'queryTool.results.ready' | dm }}</span>
                         <span class="text-color-secondary mx-1">&middot;</span>
                         <span class="inline-flex items-center gap-1">
@@ -163,19 +171,20 @@
                             <p-button
                                 text
                                 size="small"
-                                [label]="'queryTool.action.share' | dm"
-                                icon="pi pi-chevron-down"
-                                iconPos="right"
                                 (onClick)="toggleExportMenu($event)"
-                                data-testid="query-tool-share-btn" />
+                                data-testid="query-tool-share-btn">
+                                {{ 'queryTool.action.share' | dm }}
+                                <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                            </p-button>
                             <p-menu #exportMenu [model]="exportItems" [popup]="true" />
                             <p-button
                                 [outlined]="true"
                                 size="small"
-                                [label]="'queryTool.action.export' | dm"
-                                icon="pi pi-download"
                                 (onClick)="downloadRawJson()"
-                                data-testid="query-tool-export-btn" />
+                                data-testid="query-tool-export-btn">
+                                <span class="material-symbols-rounded">download</span>
+                                {{ 'queryTool.action.export' | dm }}
+                            </p-button>
                         </div>
                     }
                 </div>
@@ -183,9 +192,11 @@
                 @if (store.limitWasCapped()) {
                     <p-message
                         severity="warn"
-                        icon="pi pi-exclamation-triangle"
                         [pt]="{ root: { class: '!rounded-none border-x-0! border-t-0!' } }"
                         data-testid="query-tool-size-cap-warning">
+                        <ng-template #icon>
+                            <span class="material-symbols-rounded">warning</span>
+                        </ng-template>
                         {{ 'queryTool.results.sizeCapped' | dm: [MAX_RESULTS.toString()] }}
                     </p-message>
                 }
@@ -245,7 +256,7 @@
                                     </ng-template>
                                     <ng-template pTemplate="body" let-contentlet>
                                         <tr data-testid="query-tool-result-row">
-                                            <td class="max-w-[280px] truncate">
+                                            <td class="max-w-70 truncate">
                                                 <a
                                                     href="#"
                                                     class="text-primary hover:underline"
@@ -256,7 +267,7 @@
                                                 </a>
                                             </td>
                                             <td>{{ contentlet['contentType'] }}</td>
-                                            <td class="max-w-[180px]">
+                                            <td class="max-w-45">
                                                 <div class="group flex items-center gap-1">
                                                     <span
                                                         class="truncate font-mono text-xs"
@@ -266,7 +277,6 @@
                                                     <p-button
                                                         text
                                                         size="small"
-                                                        icon="pi pi-copy"
                                                         styleClass="opacity-0 group-hover:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
                                                         [pTooltip]="
                                                             'queryTool.table.copyInode' | dm
@@ -278,10 +288,15 @@
                                                         (onClick)="
                                                             copyToClipboard(contentlet['inode'])
                                                         "
-                                                        data-testid="query-tool-copy-inode" />
+                                                        data-testid="query-tool-copy-inode">
+                                                        <span
+                                                            class="material-symbols-rounded text-base!">
+                                                            content_copy
+                                                        </span>
+                                                    </p-button>
                                                 </div>
                                             </td>
-                                            <td class="max-w-[180px]">
+                                            <td class="max-w-45">
                                                 <div class="group flex items-center gap-1">
                                                     <span
                                                         class="truncate font-mono text-xs"
@@ -291,7 +306,6 @@
                                                     <p-button
                                                         text
                                                         size="small"
-                                                        icon="pi pi-copy"
                                                         styleClass="opacity-0 group-hover:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
                                                         [pTooltip]="
                                                             'queryTool.table.copyIdentifier' | dm
@@ -305,7 +319,12 @@
                                                                 contentlet['identifier']
                                                             )
                                                         "
-                                                        data-testid="query-tool-copy-identifier" />
+                                                        data-testid="query-tool-copy-identifier">
+                                                        <span
+                                                            class="material-symbols-rounded text-base!">
+                                                            content_copy
+                                                        </span>
+                                                    </p-button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -332,7 +351,7 @@
     #helpPopoverEl
     data-testid="query-tool-help-popover"
     [pt]="{ content: { style: { overflow: 'visible' } } }">
-    <div class="flex w-[600px] flex-col">
+    <div class="flex w-150 flex-col">
         <p class="m-0 pb-3 text-sm font-semibold text-color">
             {{ 'queryTool.help.title' | dm }}
         </p>
@@ -350,10 +369,11 @@
                             <p-button
                                 text
                                 size="small"
-                                icon="pi pi-copy"
-                                [label]="'queryTool.help.copy' | dm"
                                 (onClick)="copyToClipboard(example.query)"
-                                data-testid="query-tool-help-copy-btn" />
+                                data-testid="query-tool-help-copy-btn">
+                                <span class="material-symbols-rounded">content_copy</span>
+                                {{ 'queryTool.help.copy' | dm }}
+                            </p-button>
                             <p-button
                                 text
                                 size="small"

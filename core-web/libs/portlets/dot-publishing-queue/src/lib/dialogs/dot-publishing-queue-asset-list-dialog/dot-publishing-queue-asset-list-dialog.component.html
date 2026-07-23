@@ -4,7 +4,9 @@
              against the dialog header when the input gets keyboard focus. -->
         <div class="mt-1 flex justify-end" data-testid="pq-asset-list-search-bar">
             <p-iconField iconPosition="left">
-                <p-inputIcon styleClass="pi pi-search" />
+                <p-inputIcon>
+                    <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                </p-inputIcon>
                 <input
                     pInputText
                     type="text"
@@ -64,7 +66,6 @@
                     @if (allowRemove) {
                         <td class="text-right" (click)="$event.stopPropagation()">
                             <p-button
-                                icon="pi pi-trash"
                                 severity="danger"
                                 [text]="true"
                                 [rounded]="true"
@@ -74,7 +75,9 @@
                                 tooltipPosition="left"
                                 [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
                                 (onClick)="onRemoveAsset(asset)"
-                                data-testid="pq-asset-remove-btn" />
+                                data-testid="pq-asset-remove-btn">
+                                <span class="material-symbols-rounded w-6 text-center">delete</span>
+                            </p-button>
                         </td>
                     }
                 </tr>

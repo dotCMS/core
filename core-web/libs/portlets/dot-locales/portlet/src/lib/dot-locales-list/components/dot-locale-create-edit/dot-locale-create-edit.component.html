@@ -32,8 +32,10 @@
                     class="w-full"
                     type="text" />
                 @if (localeIDInput.value) {
-                    <p-inputIcon class="flex items-center bottom-3">
-                        <dot-copy-button [copy]="localeIDInput.value" />
+                    <p-inputIcon class="bottom-3 flex items-center">
+                        <dot-copy-button
+                            [copy]="localeIDInput.value"
+                            iconStyle="material-symbols-rounded" />
                     </p-inputIcon>
                 }
             </p-iconField>
@@ -51,8 +53,10 @@
                     class="w-full"
                     type="text" />
                 @if (languageIDInput.value) {
-                    <p-inputIcon class="flex items-center bottom-3">
-                        <dot-copy-button [copy]="languageIDInput.value" />
+                    <p-inputIcon class="bottom-3 flex items-center">
+                        <dot-copy-button
+                            [copy]="languageIDInput.value"
+                            iconStyle="material-symbols-rounded" />
                     </p-inputIcon>
                 }
             </p-iconField>
@@ -125,8 +129,10 @@
                         pInputText
                         type="text" />
                     @if (isoCodeInput.value) {
-                        <p-inputgroup-addon class="bg-transparent border-l-0">
-                            <dot-copy-button [copy]="isoCodeInput.value" />
+                        <p-inputgroup-addon class="border-l-0 bg-transparent">
+                            <dot-copy-button
+                                [copy]="isoCodeInput.value"
+                                iconStyle="material-symbols-rounded" />
                         </p-inputgroup-addon>
                     }
                 </p-inputgroup>
@@ -190,7 +196,7 @@
         </span>
     }
 
-    <div class="flex gap-3 mt-auto justify-end">
+    <div class="mt-auto flex justify-end gap-3">
         <button
             (click)="ref.close()"
             [label]="'Cancel' | dm"

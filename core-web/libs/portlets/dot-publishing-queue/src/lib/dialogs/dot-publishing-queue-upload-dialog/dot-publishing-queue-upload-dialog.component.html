@@ -2,10 +2,12 @@
     @if ($errorMessage()) {
         <p-message
             severity="error"
-            icon="pi pi-times-circle"
             class="-mx-6 mb-4"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="pq-upload-error">
+            <ng-template #icon>
+                <span class="material-symbols-rounded">cancel</span>
+            </ng-template>
             {{ $errorMessage() }}
         </p-message>
     }
@@ -16,7 +18,7 @@
         <p-fileupload
             #fileUpload
             mode="advanced"
-            chooseIcon="pi pi-upload"
+            chooseIcon=""
             [showUploadButton]="false"
             [showCancelButton]="false"
             [multiple]="false"
@@ -39,7 +41,7 @@
                     (click)="fileUpload.choose()">
                     <div
                         class="flex size-24 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
-                        <i class="pi pi-upload text-4xl!"></i>
+                        <span class="material-symbols-rounded text-4xl!">upload</span>
                     </div>
 
                     <p class="text-2xl font-semibold text-color">

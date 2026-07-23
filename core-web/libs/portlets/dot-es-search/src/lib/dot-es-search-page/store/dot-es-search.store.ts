@@ -193,7 +193,8 @@ export const DotEsSearchStore = signalStore(
             patchState(store, {
                 emptyStateConfig: {
                     title: dotMessageService.get('esSearch.results.empty'),
-                    icon: 'pi-search',
+                    icon: 'search',
+                    iconStyle: 'material-symbols-rounded',
                     subtitle: dotMessageService.get('esSearch.results.empty.hint')
                 }
             });

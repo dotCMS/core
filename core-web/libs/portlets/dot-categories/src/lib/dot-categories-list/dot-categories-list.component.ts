@@ -87,7 +87,7 @@ export class DotCategoriesListComponent {
 
     #searchSubject = new Subject<string>();
 
-    readonly homeItem = { icon: 'pi pi-home' };
+    readonly homeItem = {};
     readonly $rowMenu = viewChild<ContextMenu>('rowMenu');
     readonly $toolbarMenu = viewChild.required<Menu>('toolbarMenu');
     rowMenuItems: MenuItem[] = [];
