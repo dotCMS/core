@@ -37,8 +37,6 @@ async function createBinaryFieldContentType(
 }
 
 test.describe('Binary field image editor — new editor', () => {
-    test.describe.configure({ mode: 'serial' });
-
     let contentType: ContentType | null = null;
     let contentTypeVariable: string;
 
@@ -72,8 +70,6 @@ test.describe('Binary field image editor — new editor', () => {
 });
 
 test.describe('Binary field image editor — legacy editor', () => {
-    test.describe.configure({ mode: 'serial' });
-
     let contentType: ContentType | null = null;
     let contentTypeVariable: string;
 
