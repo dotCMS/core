@@ -24,12 +24,15 @@ export interface AgentRunStep {
 /**
  * The parsed stream of events an agent emits, generic over the terminal
  * result payload `TResult`. Discriminated by `type`:
+ *   - `run`     — the run's id, emitted on the first frame; needed to target a
+ *                 subsequent stop request at this specific run
  *   - `step`    — a live progress entry (many, non-terminal)
  *   - `done`    — the run completed; carries the full result
  *   - `aborted` — the user stopped the run early; carries the PARTIAL result
  *   - `error`   — the run failed; carries a message
  */
 export type AgentStreamEvent<TResult> =
+    | { type: 'run'; runId: string }
     | { type: 'step'; step: AgentRunStep }
     | { type: 'done'; result: TResult }
     | { type: 'aborted'; result: TResult }

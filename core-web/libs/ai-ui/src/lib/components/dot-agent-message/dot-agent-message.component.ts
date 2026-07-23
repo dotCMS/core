@@ -59,6 +59,25 @@ export class DotAgentMessageComponent {
      */
     readonly last = input<boolean>(true);
 
-    /** Tailwind chip classes for the current message's tone. */
-    readonly toneClass = computed<string>(() => TONE_CLASS[this.message().tone]);
+    /**
+     * Whether this bubble is the agent's current, in-progress step. When true it
+     * overrides the tone visuals: the icon becomes a spinner and the chip + text
+     * tint primary, so the live step reads as "happening now" instead of settled.
+     * This is what replaces a separate "now doing" banner — the live cue rides on
+     * the real list item.
+     */
+    readonly active = input<boolean>(false);
+
+    /**
+     * Tailwind chip classes: primary tint while this is the active/live step,
+     * otherwise the message's tone color.
+     */
+    readonly toneClass = computed<string>(() =>
+        this.active() ? 'bg-primary-50 text-primary' : TONE_CLASS[this.message().tone]
+    );
+
+    /** Icon class: a spinner while active, otherwise the message's own icon. */
+    readonly iconClass = computed<string>(() =>
+        this.active() ? 'pi pi-spin pi-spinner' : this.message().icon
+    );
 }

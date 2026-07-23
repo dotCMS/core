@@ -150,6 +150,18 @@ export class DotAgentRunService {
      */
     #toEvent<TResult>(event: string, payload: unknown): AgentStreamEvent<TResult> | null {
         const data = (payload ?? {}) as Record<string, unknown>;
+
+        // The agent's first frame announces the run id (`{ "runId": "..." }`),
+        // often with no `event:` name and no `message`. Surface it as a `run`
+        // event so the caller can target a later stop at this specific run. Checked
+        // ahead of the switch so it works regardless of the (possibly absent)
+        // event name — but only for non-terminal, non-step frames, so a step (whose
+        // meta may carry a runId) or a bare-report done/aborted isn't misread.
+        const KNOWN = event === 'step' || event === 'done' || event === 'aborted' || event === 'error';
+        if (!KNOWN && typeof data['runId'] === 'string' && !('message' in data)) {
+            return { type: 'run', runId: data['runId'] as string };
+        }
+
         switch (event) {
             case 'step': {
                 const message = typeof data['message'] === 'string' ? data['message'] : '';

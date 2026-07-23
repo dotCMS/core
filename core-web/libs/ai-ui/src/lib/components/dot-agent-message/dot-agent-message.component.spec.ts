@@ -56,4 +56,15 @@ describe('DotAgentMessageComponent', () => {
         spectator.setInput('last', false);
         expect(spectator.query('.w-0\\.5')).not.toBeNull();
     });
+
+    it('renders the live step as a spinner tinted primary, overriding the tone', () => {
+        spectator.setInput('active', true);
+        // Icon swaps to a spinner; the tone icon is not shown.
+        expect(spectator.query('i.pi-spinner')).toBeTruthy();
+        expect(spectator.query('i.pi-check')).toBeNull();
+        // Chip + text tint primary, not the success tone.
+        const chip = spectator.query('.rounded-lg');
+        expect(chip).toHaveClass('text-primary');
+        expect(chip).not.toHaveClass('text-green-600');
+    });
 });

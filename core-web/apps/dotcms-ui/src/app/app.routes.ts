@@ -181,12 +181,10 @@ const PORTLETS_ANGULAR: Route[] = [
             )
     },
     {
-        path: 'accessibility-studio',
+        path: 'agents',
         data: { reuseRoute: false },
         loadChildren: () =>
-            import('@dotcms/portlets/dot-accessibility-studio/portlet').then(
-                (m) => m.dotAccessibilityStudioRoutes
-            )
+            import('@dotcms/portlets/dot-agents/portlet').then((m) => m.dotAgentsRoutes)
     },
     {
         path: 'query-tool',

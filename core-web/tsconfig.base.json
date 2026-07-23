@@ -113,8 +113,8 @@
             "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
             "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
             "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"],
-            "@dotcms/portlets/dot-accessibility-studio/portlet": [
-                "libs/portlets/dot-accessibility-studio/src/index.ts"
+            "@dotcms/portlets/dot-agents/portlet": [
+                "libs/portlets/dot-agents/src/index.ts"
             ]
         }
     },

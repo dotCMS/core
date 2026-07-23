@@ -74,6 +74,41 @@ describe('DotAgentRunService', () => {
             ]);
         });
 
+        it('emits a run event for the first run-id frame (no event name, no message)', async () => {
+            fetchMock.mockResolvedValue(
+                mockSseResponse([
+                    'data: {"runId":"r_abc123"}\n\n',
+                    'event: step\ndata: {"message":"working"}\n\n',
+                    'event: done\ndata: {"total":1}\n\n'
+                ])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            expect(events).toEqual<AgentStreamEvent<DemoResult>[]>([
+                { type: 'run', runId: 'r_abc123' },
+                { type: 'step', step: { message: 'working' } },
+                { type: 'done', result: { total: 1 } }
+            ]);
+        });
+
+        it('keeps a step a step even if its payload carries a runId', async () => {
+            fetchMock.mockResolvedValue(
+                mockSseResponse(['event: step\ndata: {"runId":"r_x","message":"working"}\n\n'])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            // runId rides along as meta; the frame stays a step, not a run event.
+            expect(events).toEqual([
+                { type: 'step', step: { message: 'working', meta: { runId: 'r_x' } } }
+            ]);
+        });
+
         it('handles frames that straddle chunk boundaries', async () => {
             fetchMock.mockResolvedValue(
                 mockSseResponse([

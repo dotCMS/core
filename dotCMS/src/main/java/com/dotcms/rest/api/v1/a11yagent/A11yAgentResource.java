@@ -155,22 +155,35 @@ public class A11yAgentResource {
     // -------------------------------------------------------------------------
 
     /**
-     * Forwards a stop request to the agent service using the caller's minted JWT.
+     * Forwards a stop request to the agent service, passing through the {@code runId}
+     * the client received from /fix or /fix/stream. Stop is addressed by runId (not by
+     * the caller's identity) because the proxy mints a fresh token per request, so the
+     * JWT {@code sub} differs between /fix and /stop — see {@link A11yAgentStopForm}.
      */
     @POST
     @Path("/stop")
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response stop(
             @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
+            @Context final HttpServletResponse response,
+            final A11yAgentStopForm body) {
+
+        if (body == null || !UtilMethods.isSet(body.getRunId())) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(new ErrorEntity(
+                            "MISSING_RUN_ID", "runId is required")))
+                    .build();
+        }
 
         final TokenContext ctx = buildTokenContext(request, response);
         if (ctx.errorResponse != null) {
             return ctx.errorResponse;
         }
 
-        return forwardJson(ctx.agentUrl + "/stop", null,
+        final String payload = "{\"runId\":" + jsonString(body.getRunId()) + "}";
+        return forwardJson(ctx.agentUrl + "/stop", payload,
                 ctx.serviceAuthToken, ctx.shortLivedToken, "POST");
     }
 

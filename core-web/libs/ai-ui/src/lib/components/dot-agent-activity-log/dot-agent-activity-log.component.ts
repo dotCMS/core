@@ -1,22 +1,26 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     ElementRef,
     effect,
     inject,
     input
 } from '@angular/core';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { AgentMessage } from '../../models/agent-message';
 import { DotAgentMessageComponent } from '../dot-agent-message/dot-agent-message.component';
-import { DotAgentNowDoingComponent } from '../dot-agent-now-doing/dot-agent-now-doing.component';
 
 /**
  * The shared "watch the agent work" surface — a thin composer.
  *
- * It renders the pulsing "now doing" banner ({@link DotAgentNowDoingComponent})
- * and one bubble per message ({@link DotAgentMessageComponent}), and auto-scrolls
- * to the latest entry as the stream grows.
+ * It renders one bubble per message ({@link DotAgentMessageComponent}) and, while
+ * the agent is running, marks the LAST bubble as the live/in-progress step
+ * (spinner + primary tint). There is no separate "now doing" banner: the live cue
+ * rides on the real list item, so the current step never appears twice. The log
+ * auto-scrolls to the latest entry as the stream grows.
  *
  * Layout is the consumer's: the component imposes NO sizing on its own box (no
  * height, no flex, no overflow, no margins) — it just grows with its content.
@@ -30,7 +34,7 @@ import { DotAgentNowDoingComponent } from '../dot-agent-now-doing/dot-agent-now-
  */
 @Component({
     selector: 'dot-agent-activity-log',
-    imports: [DotAgentMessageComponent, DotAgentNowDoingComponent],
+    imports: [DotAgentMessageComponent],
     templateUrl: './dot-agent-activity-log.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block' }
@@ -40,28 +44,59 @@ export class DotAgentActivityLogComponent {
     readonly messages = input<AgentMessage[]>([]);
 
     /**
-     * The message the agent is currently working on — drives the pulsing "now
-     * doing" banner. Null hides the banner. Shown only while `working` is true.
+     * The step the agent is currently working on. When the run has produced steps
+     * this is normally the last of {@link messages}; it's used only as the live
+     * fallback bubble when the agent is working but hasn't reported a step yet.
+     * Null → no explicit active step.
      */
     readonly activeMessage = input<AgentMessage | null>(null);
 
-    /** Whether the agent is actively running (shows the "now doing" banner + pulse). */
+    /** Whether the agent is actively running (marks the last bubble as live). */
     readonly working = input<boolean>(false);
 
     /**
-     * i18n key for the fallback banner text when the agent is working but hasn't
+     * i18n key for the fallback bubble text when the agent is working but hasn't
      * reported a step yet. Consumers override it with their own key.
      */
     readonly workingFallbackKey = input<string>('agent.activity.working');
 
+    private readonly dm = inject(DotMessageService);
     private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+    /**
+     * The bubbles actually rendered. Normally just {@link messages}, but when the
+     * agent is working with nothing streamed yet we synthesize a single live
+     * fallback bubble so the user sees the agent has started.
+     */
+    readonly displayMessages = computed<AgentMessage[]>(() => {
+        const messages = this.messages();
+        if (this.working() && messages.length === 0) {
+            return [
+                this.activeMessage() ?? {
+                    id: 'agent-working',
+                    icon: 'pi pi-spin pi-spinner',
+                    text: this.dm.get(this.workingFallbackKey()),
+                    tone: 'info'
+                }
+            ];
+        }
+        return messages;
+    });
+
+    /**
+     * Index of the bubble to render as the live/in-progress step — the last one
+     * while the agent is working, otherwise none (-1).
+     */
+    readonly activeIndex = computed<number>(() =>
+        this.working() ? this.displayMessages().length - 1 : -1
+    );
 
     constructor() {
         // Keep the latest entry in view as the agent streams its activity, by
         // pinning whichever element actually scrolls — the host if the consumer
         // made it a scroll box, otherwise its nearest scrollable ancestor.
         effect(() => {
-            const count = this.messages().length;
+            const count = this.displayMessages().length;
             if (!count) {
                 return;
             }

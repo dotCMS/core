@@ -35,25 +35,29 @@ describe('DotAgentActivityLogComponent', () => {
         expect(steps[1]).toHaveText('Fixed alt text');
     });
 
-    it('hides the now-doing banner when not working', () => {
+    it('marks no bubble as live when not working', () => {
         spectator.setInput({ messages: MESSAGES, working: false });
-        expect(spectator.query(byTestId('agent-now-doing'))).toBeNull();
+        expect(spectator.query('.pi-spinner')).toBeNull();
     });
 
-    it('shows the active message in the now-doing banner while working', () => {
-        spectator.setInput({ messages: MESSAGES, working: true, activeMessage: MESSAGES[0] });
-        const banner = spectator.query(byTestId('agent-now-doing'));
-        expect(banner).not.toBeNull();
-        expect(banner).toHaveText('Scanning page');
+    it('marks only the last bubble as the live step while working', () => {
+        spectator.setInput({ messages: MESSAGES, working: true });
+        const bubbles = spectator.queryAll(byTestId('agent-message'));
+        // Exactly one live spinner, and it is on the last bubble.
+        expect(spectator.queryAll('.pi-spinner').length).toBe(1);
+        expect(bubbles[bubbles.length - 1].querySelector('.pi-spinner')).not.toBeNull();
     });
 
-    it('falls back to the working key when there is no active message', () => {
+    it('synthesizes a live fallback bubble when working with no steps yet', () => {
         spectator.setInput({
             messages: [],
             working: true,
             activeMessage: null,
             workingFallbackKey: 'my.working.key'
         });
-        expect(spectator.query(byTestId('agent-now-doing'))).toHaveText('my.working.key');
+        const bubbles = spectator.queryAll(byTestId('agent-message'));
+        expect(bubbles.length).toBe(1);
+        expect(bubbles[0]).toHaveText('my.working.key');
+        expect(bubbles[0].querySelector('.pi-spinner')).not.toBeNull();
     });
 });
