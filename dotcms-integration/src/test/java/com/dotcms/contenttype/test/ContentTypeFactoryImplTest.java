@@ -1049,11 +1049,82 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	/**
+	 * Method to test: {@link ContentTypeFactoryImpl#searchMultipleTypes(String, java.util.Collection, String, int, int, String, java.util.List)}
+	 *
+	 * Given Scenario: Six Content Types across two base types whose names are MIXED-CASE
+	 * ("Apple", "banana", "Cherry", "date", "Elderberry", "fig"), ordered by name and paged with a
+	 * page size of 2. Under a case-sensitive DB collation the raw (non-lowered) SQL order differs
+	 * from the case-insensitive comparator used to render each page, so the paginated sequence would
+	 * be mis-ordered (the collation-mismatch bug).
+	 *
+	 * Expected Result: Paging through the full set returns a case-insensitively sorted sequence
+	 * (Apple, banana, Cherry, date, Elderberry, fig) with disjoint pages (no reappearance), in BOTH
+	 * cache mode (the default) and non-cache mode.
+	 */
+	@Test
+	public void test_searchMultipleTypes_globalSortIsCaseInsensitiveAcrossPages() throws Exception {
+		final boolean originalLoadFromCache =
+				Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+		final long ts = System.currentTimeMillis();
+		final String token = "csort" + ts;
+		final List<ContentType> created = new ArrayList<>();
+
+		try {
+			// Mixed-case names interleaved across base types: exercises both the per-type grouping
+			// and the case-sensitivity mismatch.
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "Apple", token + "v1"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "banana", token + "v2"));
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "Cherry", token + "v3"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "date", token + "v4"));
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "Elderberry", token + "v5"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "fig", token + "v6"));
+
+			// Expected order is case-insensitive.
+			final List<String> expected = List.of(token + "Apple", token + "banana", token + "Cherry",
+					token + "date", token + "Elderberry", token + "fig");
+
+			for (final boolean loadFromCache : new boolean[]{true, false}) {
+				Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", loadFromCache);
+				// Fresh instance so its LOAD_FROM_CACHE Lazy re-reads the toggled Config value.
+				final ContentTypeFactoryImpl factory = new ContentTypeFactoryImpl();
+
+				final List<String> pagedNames = new ArrayList<>();
+				final Set<String> seenInodes = new HashSet<>();
+				final int pageSize = 2;
+
+				for (int offset = 0; offset < expected.size(); offset += pageSize) {
+					final List<ContentType> page = factory.searchMultipleTypes(token,
+							List.of(BaseContentType.CONTENT, BaseContentType.WIDGET), "name",
+							pageSize, offset, null, null);
+					for (final ContentType ct : page) {
+						assertTrue("A Content Type reappeared on a later page (cache=" + loadFromCache
+								+ "): " + ct.name(), seenInodes.add(ct.inode()));
+						pagedNames.add(ct.name());
+					}
+				}
+
+				assertEquals("Multi-type results must be case-insensitively sorted and stably "
+						+ "paginated (cache=" + loadFromCache + ")", expected, pagedNames);
+			}
+		} finally {
+			Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", originalLoadFromCache);
+			for (final ContentType contentType : created) {
+				ContentTypeDataGen.remove(contentType);
+			}
+		}
+	}
+
 	private ContentType newTypeForSort(final BaseContentType baseType, final String name) {
+		return newTypeForSort(baseType, name, name);
+	}
+
+	private ContentType newTypeForSort(final BaseContentType baseType, final String name,
+			final String varName) {
 		return new ContentTypeDataGen()
 				.baseContentType(baseType)
 				.name(name)
-				.velocityVarName(name)
+				.velocityVarName(varName)
 				.nextPersisted();
 	}
 

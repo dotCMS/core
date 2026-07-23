@@ -1569,14 +1569,20 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 }
             }
 
-            // Order the UNION globally BEFORE pagination, in both cache and non-cache modes. The
-            // trailing `inode` key makes this a total order (stable tie-break) so pages are
-            // disjoint and reproducible across separate page requests (no reappearance).
-            unionQuery.append(" order by ").append(sanitizedOrderBy).append(", ").append(INODE_COLUMN);
+            // Order the whole UNION globally BEFORE pagination, in both cache and non-cache modes.
+            // The UNION is wrapped in a subquery so the ORDER BY may use expressions such as
+            // lower(name): a bare "UNION ... ORDER BY <expr>" is rejected by the DB, which allows
+            // only output column names/ordinals there. Lower-casing the string sort column makes
+            // the DB order agree with the case-insensitive Java comparator that merges the page
+            // (STEP 4), even under a case-sensitive collation. The trailing inode key makes this a
+            // total order (stable tie-break) so pages are disjoint and reproducible across separate
+            // page requests (no reappearance).
+            final String pagedQuery = "select * from (" + unionQuery + ") dotcms_multi_type_union"
+                    + " order by " + buildUnionOrderBy(sanitizedOrderBy);
 
-            // Execute the UNION query
-            dc.setSQL(unionQuery.toString());
-            // Paginate at the DB in both modes: the UNION is globally ordered, so setMaxRows/
+            // Execute the ordered query
+            dc.setSQL(pagedQuery);
+            // Paginate at the DB in both modes: the result is globally ordered, so setMaxRows/
             // setStartRow yield the correct global page (~perPage rows materialized, not the whole
             // set). In cache mode we then hydrate only those rows' ContentTypes from cache by inode.
             dc.setMaxRows(remainingLimit);
@@ -1659,6 +1665,43 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // Default to ascending if no direction specified
             return sanitizedOrderBy + " asc";
         }
+    }
+
+    /**
+     * Builds the multi-type UNION's SQL {@code ORDER BY} body so it matches the Java comparator
+     * used to merge the page (STEP 4 in {@link #searchMultipleTypes}). That comparator sorts the
+     * string columns (name, velocity var name, description) case-insensitively via
+     * {@code toLowerCase()}; under a case-sensitive DB collation the SQL must {@code lower()} those
+     * same columns, otherwise the rows the DB paginates and the order the comparator renders
+     * diverge for mixed-case names. Non-string columns (e.g. {@code mod_date}) are left as-is. A
+     * trailing {@code inode} key keeps a stable total order across pages.
+     *
+     * @param sanitizedOrderBy The already-sanitized order-by (e.g. "name", "name desc", "mod_date").
+     * @return The SQL order-by body (without the leading {@code order by} keyword).
+     */
+    private String buildUnionOrderBy(final String sanitizedOrderBy) {
+        final String trimmed = sanitizedOrderBy.trim();
+        final int spaceIdx = trimmed.indexOf(' ');
+        final String column = (spaceIdx < 0 ? trimmed : trimmed.substring(0, spaceIdx)).trim();
+        final String direction = spaceIdx < 0 ? "" : trimmed.substring(spaceIdx + 1).trim();
+
+        // Only transform a plain single column (no SQL function or multi-column expression).
+        final boolean plainColumn = column.indexOf('(') < 0 && column.indexOf(',') < 0;
+        final String normalized = plainColumn
+                ? com.dotcms.contenttype.util.ContentTypeFieldNames.normalize(column)
+                : column;
+        final boolean caseInsensitive = plainColumn
+                && (com.dotcms.contenttype.util.ContentTypeFieldNames.NAME.equals(normalized)
+                        || com.dotcms.contenttype.util.ContentTypeFieldNames.VELOCITY_VAR_NAME.equals(normalized)
+                        || com.dotcms.contenttype.util.ContentTypeFieldNames.DESCRIPTION.equals(normalized));
+
+        final StringBuilder orderBy = new StringBuilder();
+        orderBy.append(caseInsensitive ? "lower(" + column + ")" : column);
+        if (!direction.isEmpty()) {
+            orderBy.append(" ").append(direction);
+        }
+        orderBy.append(", ").append(INODE_COLUMN);
+        return orderBy.toString();
     }
 
     /**
