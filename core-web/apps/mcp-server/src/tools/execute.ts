@@ -56,8 +56,10 @@ Binary responses (small/programmatic reads only — for real files use \`downloa
 - JSON and textual responses (\`text/*\`, xml, js, \`+json\`/\`+xml\`) are returned as parsed objects / strings as before — only binary bodies use the envelope.
 
 Block Editor (Story Block) fields:
-- A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. dotCMS stores it as-is and converts it to the Block Editor structure when the contentlet is opened in the editor.
+- A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. The server converts it to the Block Editor structure **on save**, so the field immediately reads back as structured content.
 - Example: \`{ "contentType": "Blog", "title": "My Post", "body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>" }\` — where \`body\` is the Story Block field.
+- Rich blocks are expressed in Markdown as fenced code blocks with a \`dotcms-*\` info string and a small JSON payload. Labels: \`dotcms-content\` (embedded contentlet: \`{"identifier": "<id>", "languageId": 1}\`), \`dotcms-image\` (asset-bound/decorated image), \`dotcms-video\`, \`dotcms-youtube\` (\`{"src": "<url>"}\`), \`dotcms-grid\` (layout grid, verbatim node JSON), \`dotcms-node\` (any other node type, verbatim node JSON).
+- A Markdown/HTML write **fully replaces** the stored document. If the stored document has rich blocks your value does not carry, the save still succeeds (200) and the response \`messages\` field lists the replaced blocks — read \`messages\` after every fire and carry rich blocks over as \`dotcms-*\` fences to preserve them. Invalid fence payloads degrade to plain code blocks, never errors.
 - Identify Story Block fields from the content type (\`fields[].clazz\` is \`...ImmutableStoryBlockField\`).
 
 Workflow fires and Elasticsearch (indexPolicy):

@@ -134,11 +134,24 @@ public class MarkdownTool implements ViewTool {
 	 * @throws Throwable
 	 */
 	public String blockToMarkdown(String parse) throws Throwable {
+		return blockToMarkdown(parse, null);
+	}
+
+	/**
+	 * parse a block of json to markdown in the given flavor: {@code "READABLE"} (default,
+	 * human-first output) or {@code "ROUNDTRIP"} (lossless — rich blocks emitted as
+	 * {@code dotcms-*} fences). Case-insensitive; unknown values fall back to READABLE.
+	 * @param parse the Tiptap/ProseMirror JSON document
+	 * @param flavor emission flavor name
+	 * @return the markdown output
+	 * @throws Throwable
+	 */
+	public String blockToMarkdown(String parse, String flavor) throws Throwable {
 		if (parse == null || parse.isEmpty()) {
 			return "";
 		}
 		if (JsonUtil.isValidJSON(parse)) {
-			return TiptapMarkdown.toMarkdown(parse);
+			return TiptapMarkdown.toMarkdown(parse, TiptapMarkdown.flavorOf(flavor));
 		}
 		return parse;
 	}

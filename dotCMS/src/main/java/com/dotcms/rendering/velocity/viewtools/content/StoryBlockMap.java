@@ -138,6 +138,21 @@ public class StoryBlockMap implements Renderable, Serializable {
         return TiptapMarkdown.toMarkdown(this.jsonContFieldValue);
     }
 
+    /**
+     * Returns this Story Block's content as markdown in the given flavor: {@code "READABLE"}
+     * (default, human-first output — identical to {@link #toMarkdown()}) or {@code "ROUNDTRIP"}
+     * (lossless — rich blocks emitted as {@code dotcms-*} fences that
+     * {@code TiptapMarkdown.toTiptap} converts back without losing blocks). Case-insensitive;
+     * unknown values fall back to READABLE.
+     */
+    public String toMarkdown(final String flavor) {
+        if (this.jsonContFieldValue == null) {
+            return UtilMethods.isSet(this.htmlContFieldValue) ? this.htmlContFieldValue : StringPool.BLANK;
+        }
+        return TiptapMarkdown.toMarkdown(this.jsonContFieldValue.toString(),
+                TiptapMarkdown.flavorOf(flavor));
+    }
+
     @Override
     public String toHtml(final String baseTemplatePath) {
         final StringBuilder builder = new StringBuilder();
