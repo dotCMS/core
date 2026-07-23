@@ -52,6 +52,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -139,7 +140,8 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param luceneQuery The Lucene query to embed in the JSON request body.
      * @return The query with {@code \} and {@code "} escaped for JSON.
      */
-    private static String jsonEscape(final String luceneQuery) {
+    @VisibleForTesting
+    static String jsonEscape(final String luceneQuery) {
         return luceneQuery.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
