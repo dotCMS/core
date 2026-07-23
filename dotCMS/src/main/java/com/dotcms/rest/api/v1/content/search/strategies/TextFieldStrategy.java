@@ -2,9 +2,9 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CharMatcher;
-import org.apache.lucene.queryparser.classic.QueryParser;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -43,7 +43,7 @@ public class TextFieldStrategy implements FieldStrategy {
             luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                     .map(String::trim)
                     .filter(token -> !token.isEmpty())
-                    .map(token -> isWildcard ? QueryParser.escape(token) : token)
+                    .map(token -> isWildcard ? LuceneQueryUtils.escape(token) : token)
                     .map(token -> String.format("+%s_dotraw:%s%s%s",
                             fieldName, finalWildcard, token, finalWildcard))
                     .collect(Collectors.joining(SPACE));
@@ -51,7 +51,7 @@ public class TextFieldStrategy implements FieldStrategy {
             luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                     .map(String::trim)
                     .filter(token -> !token.isEmpty())
-                    .map(token -> isWildcard ? QueryParser.escape(token) : token)
+                    .map(token -> isWildcard ? LuceneQueryUtils.escape(token) : token)
                     .map(token -> String.format("+(%s:%s%s%s %s_dotraw:%s%s%s)",
                             fieldName, finalWildcard, token, finalWildcard,
                             fieldName, finalWildcard, token, finalWildcard))

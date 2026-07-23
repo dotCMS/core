@@ -64,17 +64,19 @@ public class FieldStrategyEscapingTest {
                 new TextFieldStrategy().generateQuery(ctx("SSS.text", "\"a-b\"")));
     }
 
-    // ---- BinaryFieldStrategy ----
+    // ---- BinaryFieldStrategy (analyzed file-name + _dotraw keyword, like Text) ----
 
     @Test
     public void binaryCleanTermUnchanged() {
-        assertEquals("+SSS.file:*value*",
+        assertEquals("+(SSS.file:*value* SSS.file_dotraw:*value*)",
                 new BinaryFieldStrategy().generateQuery(ctx("SSS.file", "value")));
     }
 
     @Test
-    public void binaryHyphenTermIsEscaped() {
-        assertEquals("+SSS.file:*quarterly\\-report*",
+    public void binaryHyphenTermIsEscapedAndHitsDotraw() {
+        // The analyzed field tokenizes the file name on the hyphen, so a hyphenated term can only
+        // match the escaped term against the `_dotraw` keyword that stores the whole file name.
+        assertEquals("+(SSS.file:*quarterly\\-report* SSS.file_dotraw:*quarterly\\-report*)",
                 new BinaryFieldStrategy().generateQuery(ctx("SSS.file", "quarterly-report")));
     }
 

@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.StringUtils;
-import org.apache.lucene.queryparser.classic.QueryParser;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -53,7 +53,7 @@ public class KeyValueFieldStrategy implements FieldStrategy {
         return Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                 .map(String::trim)
                 .filter(token -> !token.isEmpty())
-                .map(token -> colonTransformed ? token : QueryParser.escape(token))
+                .map(token -> colonTransformed ? token : LuceneQueryUtils.escape(token))
                 .map(token -> String.format("+%s%s:%s%s%s",
                         fieldName, ".key_value", "*", token, "*"))
                 .collect(Collectors.joining(SPACE));

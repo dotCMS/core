@@ -606,8 +606,8 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
 
     /**
      * Binary field indexes the file NAME (not its contents), so a contains term matches the
-     * filename. Uses a single token (the analyzer tokenizes on {@code -}/{@code .}, and a hyphenated
-     * multi-part wildcard doesn't parse).
+     * filename. A single token matches the analyzed field; a hyphenated multi-part term (which the
+     * analyzer would split) matches the {@code _dotraw} keyword that stores the whole file name.
      */
     @Test
     public void testBinaryFieldFiltersByFileName() throws DotDataException, DotSecurityException {
@@ -615,6 +615,12 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         final Set<String> match = driveInodes(baseRequest()
                 .userSearchable(Map.of(BINARY_VAR, "quarterly")).build());
         assertTrue("filename token 'quarterly' must match", match.contains(angularWithTags.getInode()));
+
+        // The hyphenated multi-token term "quarterly-report" only matches via the _dotraw keyword.
+        final Set<String> hyphenMatch = driveInodes(baseRequest()
+                .userSearchable(Map.of(BINARY_VAR, "quarterly-report")).build());
+        assertTrue("hyphenated filename 'quarterly-report' must match via _dotraw",
+                hyphenMatch.contains(angularWithTags.getInode()));
 
         final Set<String> noMatch = driveInodes(baseRequest()
                 .userSearchable(Map.of(BINARY_VAR, "invoice")).build());
