@@ -100,7 +100,7 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       needsData: ${{ toJson(needs) }}
 
-  # Report — generate and send the final workflow report.
+  # Report — generate and send the final workflow report (posts to #log-core-cicd on failure).
   report:
     name: Report
     if: always()
@@ -108,3 +108,23 @@ jobs:
     uses: ./.github/workflows/cicd_post-workflow-reporting.yml
     secrets:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  # Team Scout alert — in ADDITION to the #log-core-cicd report above, ping #team-scout when
+  # the sweep fails so the owning team sees phase regressions directly. Failure-only.
+  # NOTE: the Slack bot must be a member of #team-scout (invite it once) or the step errors
+  # with not_in_channel.
+  notify-scout:
+    name: Notify Team Scout on failure
+    needs: [ initialize, build, test ]
+    if: failure()
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Post failure to #team-scout
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: 'CQNF9PCFQ' # #team-scout
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            ":x: *OpenSearch Phase Sweep failed* — phase(s) `${{ inputs.opensearch_phase || 'all' }}`
+            *Run:* <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
