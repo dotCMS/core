@@ -509,7 +509,11 @@ public interface ContentTypeAPI {
    *                            passed by param. e.g:
    *                            offset = 0 -> start from the first record
    *                            offset = 10 -> start from the #11 record
-   * @param requestedContentTypes The Content Types that are explicitly requested to be included.
+   * @param requestedContentTypes The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                            Types that must always be included in the result, regardless of the
+   *                            {@code condition} (name search) and any Site filter. This is not a
+   *                            Site filter -- it guarantees inclusion. Pass {@code null} or an empty
+   *                            list for no forced inclusions.
    * @return List of Content Types Objects
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -527,7 +531,11 @@ public interface ContentTypeAPI {
    * @param limit                Amount of results
    * @param offset               Start position of the resulting list
    * @param hostId               hostId where the content type lives, pass null to bring from all sites.
-   * @param requestedContentTypes The Content Types that are explicitly requested to be included.
+   * @param requestedContentTypes The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                            Types that must always be included in the result, regardless of the
+   *                            {@code condition} (name search) and any Site filter. This is not a
+   *                            Site filter -- it guarantees inclusion. Pass {@code null} or an empty
+   *                            list for no forced inclusions.
    * @param includeSystemTypes   When {@code false}, excludes system Content Types via a dedicated
    *                             {@code and system = false} predicate. When {@code true}, behavior
    *                             is unchanged.
@@ -581,8 +589,10 @@ public interface ContentTypeAPI {
    *                  by param. e.g:
    *                  offset = 0 -> start from the first record
    *                  offset = 10 -> start from the #11 record
-   * @param includeContentTypeIds
-   *                  The Content Types that are explicitly required to be included.
+   * @param includeContentTypeIds The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                  Types that must always be included in the result, regardless of the
+   *                  {@code condition} (name search) and the Site filter. This is not a Site filter
+   *                  -- it guarantees inclusion. Pass {@code null} or an empty list for none.
    *
    * @return The list of {@link ContentType} objects matching the specified search criteria.
    *
@@ -603,7 +613,11 @@ public interface ContentTypeAPI {
    * @param orderBy              The order-by clause, which is internally sanitized by this Factory.
    * @param limit                The maximum number of returned items in the result set.
    * @param offset               Start position of the result list.
-   * @param includeContentTypeIds The Content Types that are explicitly required to be included.
+   * @param includeContentTypeIds The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                             Types that must always be included in the result, regardless of the
+   *                             {@code condition} (name search) and the Site filter. This is not a
+   *                             Site filter -- it guarantees inclusion. Pass {@code null} or empty
+   *                             for none.
    * @param includeSystemTypes   When {@code false}, excludes system Content Types via a dedicated
    *                             {@code and system = false} predicate. When {@code true}, behavior
    *                             is unchanged.
