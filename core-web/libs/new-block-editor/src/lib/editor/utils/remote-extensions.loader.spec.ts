@@ -1,6 +1,8 @@
+import { Extension } from '@tiptap/core';
+
 import type { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { parseCustomBlocksField } from './remote-extensions.loader';
+import { loadRemoteExtensions, parseCustomBlocksField } from './remote-extensions.loader';
 
 /**
  * Coverage for the `customBlocks` field-variable parsing that gates remote-extension
@@ -48,7 +50,14 @@ describe('parseCustomBlocksField', () => {
             extensions: [
                 {
                     url: 'https://example.com/ext.js',
-                    actions: [{ command: 'insertThing', menuLabel: 'Thing', icon: 'extension' }]
+                    actions: [
+                        {
+                            command: 'insertThing',
+                            menuLabel: 'Thing',
+                            icon: 'extension',
+                            name: 'customThing'
+                        }
+                    ]
                 }
             ]
         };
@@ -60,5 +69,69 @@ describe('parseCustomBlocksField', () => {
         const payload = { extensions: [{ url: 'https://example.com/ext.js' }] };
 
         expect(parseCustomBlocksField(fieldWith(JSON.stringify(payload)))).toEqual(payload);
+    });
+});
+
+describe('loadRemoteExtensions', () => {
+    it('warns when a declared remote block name does not match a loaded extension', async () => {
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const importer = jest.fn().mockResolvedValue({
+            customGalleryExtension: Extension.create({ name: 'loadedGallery' })
+        });
+
+        await loadRemoteExtensions(
+            {
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            },
+            importer
+        );
+
+        expect(importer).toHaveBeenCalledWith('https://example.com/custom-gallery.js');
+        expect(warn).toHaveBeenCalledWith(
+            '[remote-extension] declared action.name "customGallery" did not match any loaded node'
+        );
+
+        warn.mockRestore();
+    });
+
+    it('does not warn when a declared remote block name matches a loaded extension', async () => {
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+        await loadRemoteExtensions(
+            {
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            },
+            jest.fn().mockResolvedValue({
+                customGalleryExtension: Extension.create({ name: 'customGallery' })
+            })
+        );
+
+        expect(warn).not.toHaveBeenCalled();
+
+        warn.mockRestore();
     });
 });

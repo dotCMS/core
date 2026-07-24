@@ -28,6 +28,18 @@ describe('parser.utils', () => {
             expect(map.heading).toBe(true);
             expect(map.blockquote).toBe(true);
         });
+
+        it('should add declared remote block names to the allow-map', () => {
+            const map = getBlockMap(['heading'], ['customGallery']);
+
+            expect(map.customGallery).toBe(true);
+        });
+
+        it('should always allow the unsupported-block placeholder', () => {
+            const map = getBlockMap(['heading']);
+
+            expect(map.dotUnsupportedBlock).toBe(true);
+        });
     });
 
     describe('purifyNodeTree', () => {
@@ -161,6 +173,44 @@ describe('parser.utils', () => {
 
             expect(result).toHaveLength(1);
             expect(result[0].type).toBe('paragraph');
+        });
+
+        it('should keep declared remote nodes on restricted fields', () => {
+            const allowedBlocks = ['heading', 'paragraph'];
+            const content: JSONContent = {
+                type: 'doc',
+                content: [
+                    { type: 'customGallery', attrs: { layout: 'single' } },
+                    { type: 'paragraph', content: [{ type: 'text', text: 'keep' }] }
+                ]
+            };
+
+            const result = removeInvalidNodes(content, allowedBlocks, ['customGallery']);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].type).toBe('customGallery');
+        });
+
+        it('should keep unsupported placeholders on restricted fields', () => {
+            const allowedBlocks = ['heading', 'paragraph'];
+            const content: JSONContent = {
+                type: 'doc',
+                content: [
+                    {
+                        type: 'dotUnsupportedBlock',
+                        attrs: {
+                            originalType: 'removedRemote',
+                            originalNode: { type: 'removedRemote', attrs: { foo: 'bar' } },
+                            originalNodeRaw: null
+                        }
+                    }
+                ]
+            };
+
+            const result = removeInvalidNodes(content, allowedBlocks);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].type).toBe('dotUnsupportedBlock');
         });
     });
 });

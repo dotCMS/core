@@ -1,6 +1,11 @@
 import type { AnyExtension } from '@tiptap/core';
 
-import type { Action, DotCMSContentTypeField, RemoteCustomExtensions } from '@dotcms/dotcms-models';
+import {
+    type Action,
+    type DotCMSContentTypeField,
+    type RemoteCustomExtensions,
+    warnOnUnmatchedRemoteBlockNames
+} from '@dotcms/dotcms-models';
 
 const EMPTY: RemoteCustomExtensions = { extensions: [] };
 
@@ -14,7 +19,10 @@ export interface RemoteExtensionsResolved {
  * Returns `{ extensions: [] }` for missing, malformed, or schema-mismatched input
  * (the legacy contract — fields without customBlocks must work). The legacy block
  * editor validates `{url, actions[].{command, menuLabel, icon}}` only; we mirror
- * that exactly so existing customer configs keep loading.
+ * that exactly so existing customer configs keep loading. `actions[].name` is only
+ * forwarded to the shared warning helper here; allowed-block filtering still happens
+ * in the legacy block-editor runtime. Customers should set it to the TipTap node name
+ * exported by the remote bundle (for example `customGallery`).
  */
 export function parseCustomBlocksField(
     field: DotCMSContentTypeField | undefined
@@ -49,15 +57,17 @@ export function parseCustomBlocksField(
  * The `webpackIgnore` magic comment tells webpack not to try to bundle the URL.
  * Vite/esbuild leave dynamic-import string expressions alone by default, but the
  * comment is harmless in either bundler so we keep it for cross-bundler safety.
+ *
+ * The optional `importer` parameter exists for tests so specs can inject a mock
+ * loader instead of relying on runtime dynamic imports.
  */
 export async function loadRemoteExtensions(
-    parsed: RemoteCustomExtensions
+    parsed: RemoteCustomExtensions,
+    importer: (url: string) => Promise<object> = (url) => import(/* webpackIgnore: true */ url)
 ): Promise<RemoteExtensionsResolved> {
     const actions: Action[] = parsed.extensions.flatMap((ext) => ext.actions ?? []);
 
-    const settled = await Promise.allSettled(
-        parsed.extensions.map((ext) => import(/* webpackIgnore: true */ ext.url))
-    );
+    const settled = await Promise.allSettled(parsed.extensions.map((ext) => importer(ext.url)));
 
     const merged: Record<string, unknown> = settled.reduce<Record<string, unknown>>(
         (acc, result, index) => {
@@ -73,8 +83,15 @@ export async function loadRemoteExtensions(
         {}
     );
 
+    const extensions = Object.values(merged) as AnyExtension[];
+    const registeredExtensionNames = extensions
+        .map((extension) => extension?.name)
+        .filter((name): name is string => typeof name === 'string' && name.length > 0);
+
+    warnOnUnmatchedRemoteBlockNames(parsed, registeredExtensionNames);
+
     return {
-        extensions: Object.values(merged) as AnyExtension[],
+        extensions,
         actions
     };
 }

@@ -4,6 +4,7 @@ export type Action = {
     command: string;
     menuLabel: string;
     icon: string;
+    /** Must match the TipTap node name exported by the remote bundle (e.g. `customGallery`). */
     name: string;
 };
 

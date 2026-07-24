@@ -53,6 +53,7 @@ import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
+import { preserveUnknownBlockNodes, restoreUnknownBlockNodes } from './utils/unknown-block.utils';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
@@ -124,6 +125,20 @@ function parseAllowedContentTypes(field: DotCMSContentTypeField | undefined): st
     return field?.fieldVariables?.find((v) => v.key === 'contentTypes')?.value ?? '';
 }
 
+function getKnownNodeNames(editor: Editor): Set<string> {
+    return new Set(Object.keys(editor.schema.nodes));
+}
+
+function preserveUnknownNodesInDocument(
+    parsed: JSONContent,
+    knownNodeNames: Set<string>
+): JSONContent {
+    return {
+        ...parsed,
+        content: preserveUnknownBlockNodes(parsed.content, knownNodeNames)
+    };
+}
+
 /** True when {@link parsed} represents the same document already in {@link editor}. */
 function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
     const currentJson = editorDocumentJsonText(editor);
@@ -138,7 +153,10 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
         }
         return parsed === editor.getHTML();
     }
-    return JSON.stringify(parsed) === currentJson;
+    return (
+        JSON.stringify(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor))) ===
+        currentJson
+    );
 }
 
 /**
@@ -430,7 +448,11 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
                 syncCharacterStatsFromEditor(editor, this.stats);
-                const json = this.withDocStats(editor.getJSON());
+                const currentJson = editor.getJSON();
+                const json = this.withDocStats({
+                    ...currentJson,
+                    content: restoreUnknownBlockNodes(currentJson.content ?? [])
+                });
                 this.onChange(JSON.stringify(json));
                 this.valueChange.emit(json);
             },
@@ -479,7 +501,12 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
         if (this.pendingValue !== null) {
             const parsed = normalizeEditorContent(this.pendingValue);
             if (!editorContentMatchesParsed(editor, parsed)) {
-                editor.commands.setContent(parsed, { emitUpdate: false });
+                editor.commands.setContent(
+                    typeof parsed === 'string'
+                        ? parsed
+                        : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)),
+                    { emitUpdate: false }
+                );
             }
             this.pendingValue = null;
         }
@@ -600,7 +627,12 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             if (!ed) return;
             const parsed = normalizeEditorContent(v);
             if (editorContentMatchesParsed(ed, parsed)) return;
-            ed.commands.setContent(parsed, { emitUpdate: false });
+            ed.commands.setContent(
+                typeof parsed === 'string'
+                    ? parsed
+                    : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
+                { emitUpdate: false }
+            );
         });
 
         // Preserve selection highlight while any popover or slash menu is open
@@ -716,7 +748,12 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
         }
         const parsed = normalizeEditorContent(content);
         if (editorContentMatchesParsed(ed, parsed)) return;
-        ed.commands.setContent(parsed, { emitUpdate: false });
+        ed.commands.setContent(
+            typeof parsed === 'string'
+                ? parsed
+                : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
+            { emitUpdate: false }
+        );
     }
 
     /** @inheritdoc */
