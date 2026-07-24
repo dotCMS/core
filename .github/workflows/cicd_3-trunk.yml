@@ -125,11 +125,93 @@ jobs:
       NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
+  # Publish SDK packages to the `next` npm dist-tag — internal dev/QA use only, never
+  # date-lockstep-shaped, never recommended to customers (see issue #36701). Kept as its
+  # own job (not folded into cicd_comp_deployment-phase.yml) so this trunk-only concern
+  # can't affect nightly/manual/release, which don't opt into it.
+  #
+  # Version = the currently-published `latest` npm version, plus a `-next.<run_number>`
+  # suffix — computed live on every run, no local VERSION file. Gated on the existing
+  # sdk_libs change-detection filter (only publish when SDK files actually changed) and
+  # skipped for manual workflow_dispatch runs.
+  publish-sdk-next:
+    name: Publish SDK (next)
+    needs: [ initialize, test ]
+    # Explicit success check on `test` (not the always()/!failure() idiom used by
+    # sibling jobs) — this job publishes to a real, public npm registry, so it should
+    # require `test` to have actually run and passed, not merely "didn't fail/wasn't
+    # cancelled" (which also admits a skipped test job).
+    if: >-
+      needs.test.result == 'success' &&
+      fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' &&
+      github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      # Required before referencing any local (./) action below — the runner's
+      # workspace is otherwise empty, so GitHub can't locate deploy-javascript-sdk's or
+      # notify-slack's action.yml (same gap already hit and fixed once in
+      # cicd_release-sdk.yml's publish job).
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Compute next version'
+        id: next-version
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+
+          LATEST_VERSION=$(npm view @dotcms/client version)
+          NEXT_VERSION="${LATEST_VERSION}-next.${{ github.run_number }}"
+
+          echo "::notice:: Currently published latest version: $LATEST_VERSION"
+          echo "::notice:: Publishing next version: $NEXT_VERSION"
+
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: 'Publish SDK packages to NPM (next)'
+        id: deploy-javascript-sdk
+        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
+        with:
+          ref: ${{ github.sha }}
+          version: ${{ steps.next-version.outputs.version }}
+          npm-tag: next
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Slack Notification (SDK next announcement)'
+        if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_orange_circle: *Attention dotters:* SDK libs published to `next`!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.next-version.outputs.version }}` ] is now available on the `NPM` registry under the `next` tag :package:. This is an internal dev/QA build, not an official release — do not recommend it to customers.
+            > `npm install @dotcms/client@next`
+            > <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View commit> · <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: 'Slack Notification (SDK next failure)'
+        if: failure()
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *SDK `next` publish FAILED!*
+            >
+            > The automated SDK `next` publish failed while trying to publish version `${{ steps.next-version.outputs.version }}`.
+            > <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View commit> · <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, deployment]
+    needs: [ initialize, build, build-cli, test, deployment, publish-sdk-next ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
