@@ -22,8 +22,12 @@ function isJsonContent(value: unknown): value is JSONContent {
 }
 
 /**
- * Builds the placeholder attrs stored on `dotUnsupportedBlock` so both editors
- * can preserve the original node JSON and its TipTap node name in a stable order.
+ * Builds the placeholder attrs stored on `dotUnsupportedBlock`.
+ *
+ * @param node The original unsupported TipTap node JSON.
+ * @param nodeType The original TipTap node name, or `null` when the source node
+ * type was missing or invalid.
+ * @returns Stable attrs used by both editors to preserve the original node payload.
  */
 export function createUnknownBlockNodeAttrs(
     node: JSONContent,
@@ -82,6 +86,11 @@ export function renderUnknownBlockOriginalNode(
         : {};
 }
 
+/**
+ * Replaces any node whose type is unknown to the current schema with the shared
+ * unsupported-block placeholder while recursively preserving unknown descendants
+ * inside otherwise-known parent nodes.
+ */
 function replaceUnknownNode(node: JSONContent, knownNodeNames: Set<string>): JSONContent {
     const nodeType = typeof node.type === 'string' ? node.type : null;
 
@@ -113,6 +122,11 @@ export function preserveUnknownBlockNodes<T extends JSONLikeOrUndefined>(
     return content.map((node) => replaceUnknownNode(node, knownNodeNames)) as T;
 }
 
+/**
+ * Restores a placeholder node back to its original JSON only when the preserved
+ * payload is still a valid TipTap node; otherwise the placeholder is kept so the
+ * recoverable raw payload can continue round-tripping.
+ */
 function restoreUnknownBlockNode(node: JSONContent): JSONContent {
     if (node.type === UNKNOWN_BLOCK_NODE_NAME && isJsonContent(node.attrs?.['originalNode'])) {
         return node.attrs['originalNode'];

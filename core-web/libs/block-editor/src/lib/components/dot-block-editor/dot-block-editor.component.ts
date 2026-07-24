@@ -397,6 +397,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      */
     private subscribeToEditorEvents() {
         this.editor.on('create', () => {
+            // A CVA write can arrive before TipTap finishes booting; replay that buffered
+            // value first so the initial document is wrapped/filtered against the real schema.
             this.setEditorContent(this.#pendingValue ?? this.value);
             this.#pendingValue = null;
             this.updateCharCount();
