@@ -65,8 +65,8 @@ public class LiferayDiskFileUpload extends ServletFileUpload {
 		return super.parseRequest(new LiferayServletRequest(req));
 	}
 
-	protected FileItem createItem(Map headers, boolean formField)
-		throws FileUploadException {
+	@Override
+	protected FileItem createItem(Map<String, String> headers, boolean formField) {
 
 		LiferayFileItem item =
 			(LiferayFileItem)super.createItem(headers, formField);

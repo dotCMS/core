@@ -30,6 +30,7 @@
         <micrometer.version>1.13.10</micrometer.version>
         <opensearch.version>3.3.0</opensearch.version>
         <langchain4j.version>1.15.1</langchain4j.version>
+        <grpc.version>1.82.2</grpc.version>
         <commonmark.version>0.22.0</commonmark.version>
         <jsoup.version>1.21.1</jsoup.version>
     </properties>
@@ -75,6 +76,33 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- grpc: imported before langchain4j-bom so all io.grpc artifacts resolve to a
+                 single patched version; the grpc-netty-shaded pulled transitively by
+                 langchain4j-vertex-ai-gemini (1.71.0) bundles a netty affected by
+                 CVE-2025-55163 / CVE-2025-58057. -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Netty: align the whole io.netty family (including native/classifier artifacts
+                 like transport-native-epoll/kqueue and resolver-dns-native-macos, which
+                 otherwise arrive transitively as old as 4.1.63) to a single version. Mixed
+                 netty versions cause runtime linkage errors, and older siblings carry their
+                 own CVEs (CVE-2025-55163/58057 fixed in 4.1.125; CVE-2026-42584/42587,
+                 CVE-2026-42579, CVE-2026-45674/47691 fixed in 4.1.135). Imported before
+                 langchain4j-bom so it wins for overlapping managed artifacts. -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>4.1.136.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-bom</artifactId>
@@ -98,39 +126,6 @@
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-core</artifactId>
                 <version>3.4.41</version>
-            </dependency>
-
-            <!-- Netty: pin to 4.1.118.Final to resolve conflict between pgjdbc-ng (4.1.63)
-                 and langchain4j-azure-open-ai (4.1.118). Required for DefaultHeaders$ValueValidator. -->
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>4.1.118.Final</version>
             </dependency>
 
 
@@ -699,7 +694,7 @@
             <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
-                <version>1.5</version>
+                <version>1.6.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
