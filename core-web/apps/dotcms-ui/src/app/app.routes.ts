@@ -129,9 +129,14 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         canActivate: [editContentGuard],
         path: 'content',
-        data: {
-            reuseRoute: false
-        },
+        // No `reuseRoute: false` here: the editor REUSES its component subtree across
+        // `content/:id → content/:id` navigations (breadcrumb, locale switch, version
+        // restore, related content) so the previous content stays on screen until the
+        // new one loads instead of blanking. `shouldReuseRoute` is evaluated per level,
+        // and route `data` is inherited by children, so this flag on the parent would
+        // otherwise force the whole subtree (shell + :id + store) to be recreated —
+        // overriding the child route's own setting. Leaving the /content portlet (a
+        // different route config) is still not reused, so `canDeactivate` fires on exit.
         loadChildren: () => import('@dotcms/edit-content').then((m) => m.dotEditContentRoutes)
     },
     {
@@ -169,6 +174,16 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
+    },
+    {
+        path: 'publishing-queue-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-publishing-queue/portlet').then(
+                (m) => m.dotPublishingQueueRoutes
+            )
     },
     {
         path: 'query-tool',

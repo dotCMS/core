@@ -56,20 +56,29 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import graphql.VisibleForTesting;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
@@ -77,8 +86,18 @@ import org.quartz.CronExpression;
 
 public class PublishDateUpdater {
 
+    private static final String RESPECT_WORKFLOW_RESOLUTION_PROPERTY =
+            "PUBLISH_JOB_QUEUE_RESPECT_WORKFLOW_RESOLUTION";
+    private static final String WORKFLOW_RESOLUTION_SCHEMES_PROPERTY =
+            "PUBLISH_JOB_QUEUE_RESPECT_WORKFLOW_RESOLUTION_SCHEMES";
+
     private final static String PUBLISH_LUCENE_QUERY = "+contentType:(%4$s) +live:false +deleted:false +%1$s:[1969-12-31t18:00:00-0000 TO %3$s] +%2$s:[%3$s TO 3000-12-31t18:00:00-0000]";
     private final static String UNPUBLISH_LUCENE_QUERY = "+live:true +deleted:false +%s:[1969-12-31t18:00:00-0000 TO %s]";
+
+    // Impossible wfstep term used when no resolved step exists, so the publish query stays valid
+    // and conservative instead of silently becoming an allow-all query
+    private static final String MATCH_NO_STEP_TOKEN = "no_resolved_workflow_step";
+    private static final Pattern LUCENE_SAFE_ID = Pattern.compile("[a-zA-Z0-9_-]+");
 
     private final static String GET_CONTENT_TYPE_WITH_PUBLISH_FIELD = "SELECT velocity_var_name from structure where publish_date_var is not null AND publish_date_var != ''";
 
@@ -253,7 +272,12 @@ public class PublishDateUpdater {
             final int transactionBatchSize = Config.getIntProperty("PUBLISH_JOB_QUEUE_TRANSACTION_BATCH_SIZE", 100);
 
         if (!contentTypeVariableWithPublishField.isEmpty()) {
-            final String luceneQueryToPublish = getPublishLuceneQuery(fireTime, contentTypeVariableWithPublishField);
+            // Read the workflow resolution configuration once per job run so the query filter and
+            // every per-contentlet decision in this run share the same stable snapshot
+            final WorkflowResolutionConfig workflowResolutionConfig = WorkflowResolutionConfig.fromConfig();
+            final String luceneQueryToPublish = getPublishLuceneQuery(fireTime,
+                    contentTypeVariableWithPublishField, workflowResolutionConfig,
+                    APILocator.getWorkflowAPI());
 
             // Use provided previousFireTime if available (from JobExecutionContext),
             // otherwise calculate it from cron expression
@@ -290,7 +314,7 @@ public class PublishDateUpdater {
 
             //This method fires both operations publish + unpublish using batches
             totalPublishedCount = processPublishContentInBatch(luceneQueryToPublish, forcePublishAllContent, previousJobRunTime,
-                    searchBatchSize, transactionBatchSize);
+                    searchBatchSize, transactionBatchSize, workflowResolutionConfig);
         }
 
         final String luceneQueryToUnPublish = getExpireLuceneQuery(fireTime);
@@ -325,6 +349,163 @@ public class PublishDateUpdater {
                 ESMappingConstants.EXPIRE_DATE,
                 time,
                 StringUtils.join(contentTypeVariableWithPublishField, " OR "));
+    }
+
+    /**
+     * Builds the scheduled publish query adding, when the workflow resolution check is enabled, an
+     * index-level pre-filter on the current workflow step. The pre-filter only reduces the
+     * candidate set so held content is not re-read on every run;
+     * {@link #workflowAllowsScheduledPublish} remains the final authoritative gate.
+     *
+     * @param date the fire time bounding the publish date range
+     * @param contentTypeVariableWithPublishField content types with a publish date field
+     * @param workflowResolutionConfig per-run snapshot of the workflow resolution configuration
+     * @param workflowAPI workflow API used to resolve the step IDs referenced by the filter
+     * @return the publish query, optionally extended with the workflow step pre-filter
+     */
+    @VisibleForTesting
+    static String getPublishLuceneQuery(final Date date,
+            final List<String> contentTypeVariableWithPublishField,
+            final WorkflowResolutionConfig workflowResolutionConfig,
+            final WorkflowAPI workflowAPI) {
+
+        final String baseQuery = getPublishLuceneQuery(date, contentTypeVariableWithPublishField);
+        if (!workflowResolutionConfig.respectWorkflowResolution()) {
+            return baseQuery;
+        }
+        return baseQuery + workflowResolutionQueryFilter(workflowResolutionConfig, workflowAPI);
+    }
+
+    /**
+     * Builds the workflow step clause appended to the publish query. Any failure while reading the
+     * workflow definitions falls back to the unfiltered historical query: the filter is only an
+     * optimization and {@link #workflowAllowsScheduledPublish} still enforces the policy.
+     *
+     * @param workflowResolutionConfig per-run snapshot of the workflow resolution configuration
+     * @param workflowAPI workflow API used to resolve schemes and steps
+     * @return the Lucene clause to append, or an empty string when no filtering is possible
+     */
+    private static String workflowResolutionQueryFilter(
+            final WorkflowResolutionConfig workflowResolutionConfig, final WorkflowAPI workflowAPI) {
+        try {
+            return workflowResolutionConfig.configuredSchemes().isEmpty()
+                    ? globalResolvedStepFilter(workflowAPI)
+                    : scopedUnresolvedStepFilter(workflowResolutionConfig.configuredSchemes(),
+                            workflowAPI);
+        } catch (final Exception e) {
+            Logger.warn(PublishDateUpdater.class,
+                    "Could not build the workflow resolution publish query filter, falling back to"
+                            + " the unfiltered query: " + e.getMessage(), e);
+            return StringUtils.EMPTY;
+        }
+    }
+
+    /**
+     * Builds the global-mode pre-filter: only content sitting on a resolved workflow step may be
+     * published, so the query is narrowed to the resolved step IDs. Content without a current step
+     * is intentionally excluded because the global check holds it as well. When no resolved step
+     * exists, a clause matching no content is returned instead of an allow-all query.
+     *
+     * @param workflowAPI workflow API used to list schemes and steps
+     * @return the Lucene clause restricting candidates to resolved steps
+     * @throws DotDataException when the workflow definitions cannot be read
+     */
+    private static String globalResolvedStepFilter(final WorkflowAPI workflowAPI)
+            throws DotDataException {
+        final List<String> resolvedStepIds = new ArrayList<>();
+        for (final WorkflowScheme scheme : workflowAPI.findSchemes(false)) {
+            resolvedStepIds.addAll(stepIds(workflowAPI.findSteps(scheme), true));
+        }
+        if (resolvedStepIds.isEmpty()) {
+            return stepFilterClause("+", List.of(MATCH_NO_STEP_TOKEN));
+        }
+        return stepFilterClause("+", resolvedStepIds);
+    }
+
+    /**
+     * Builds the scoped-mode pre-filter: only content currently sitting on an unresolved step of a
+     * configured scheme is excluded. Content without a step, content on unconfigured workflows and
+     * content on resolved configured steps stays a candidate so the Java gate can decide.
+     *
+     * @param configuredSchemes configured workflow scheme IDs or variable names
+     * @param workflowAPI workflow API used to resolve schemes and steps
+     * @return the Lucene clause excluding unresolved configured steps, or empty when none exist
+     * @throws DotDataException when the workflow definitions cannot be read
+     * @throws DotSecurityException when a configured scheme cannot be read
+     */
+    private static String scopedUnresolvedStepFilter(final Set<String> configuredSchemes,
+            final WorkflowAPI workflowAPI) throws DotDataException, DotSecurityException {
+        final List<String> unresolvedStepIds = new ArrayList<>();
+        for (final String schemeIdOrVariable : configuredSchemes) {
+            final Optional<WorkflowScheme> scheme =
+                    findConfiguredScheme(workflowAPI, schemeIdOrVariable);
+            if (scheme.isPresent()) {
+                unresolvedStepIds.addAll(stepIds(workflowAPI.findSteps(scheme.get()), false));
+            }
+        }
+        if (unresolvedStepIds.isEmpty()) {
+            return StringUtils.EMPTY;
+        }
+        return stepFilterClause("-", unresolvedStepIds);
+    }
+
+    /**
+     * Resolves a configured workflow scheme by ID or variable name. A scheme that no longer exists
+     * is skipped so a stale configuration entry does not disable the whole filter.
+     *
+     * @param workflowAPI workflow API used to resolve the scheme
+     * @param schemeIdOrVariable configured scheme ID or variable name
+     * @return the resolved scheme, or empty when it does not exist
+     * @throws DotDataException when the workflow definitions cannot be read
+     * @throws DotSecurityException when the scheme cannot be read
+     */
+    private static Optional<WorkflowScheme> findConfiguredScheme(final WorkflowAPI workflowAPI,
+            final String schemeIdOrVariable) throws DotDataException, DotSecurityException {
+        try {
+            return Optional.ofNullable(workflowAPI.findScheme(schemeIdOrVariable));
+        } catch (final DoesNotExistException e) {
+            Logger.debug(PublishDateUpdater.class, String.format(
+                    "Configured workflow scheme %s was not found, skipping it in the publish query filter",
+                    schemeIdOrVariable));
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Extracts the IDs of the steps whose {@code resolved} flag matches the requested value.
+     *
+     * @param steps workflow steps of a scheme
+     * @param resolved the {@code resolved} value to select
+     * @return the IDs of the matching steps
+     */
+    private static List<String> stepIds(final List<WorkflowStep> steps, final boolean resolved) {
+        return steps.stream()
+                .filter(step -> step.isResolved() == resolved)
+                .map(WorkflowStep::getId)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Formats a {@code wfstep} clause following the pattern already used by
+     * {@code WorkflowAPIImpl}: space-separated {@code wfstep:} terms inside a single required or
+     * prohibited group. If any step ID is not safe for the Lucene syntax, no clause is produced so
+     * the query never excludes content it should not; the Java gate still enforces the policy.
+     *
+     * @param operator {@code "+"} to require the group or {@code "-"} to prohibit it
+     * @param stepIds workflow step IDs to include in the clause
+     * @return the formatted clause, or an empty string when an unsafe ID is found
+     */
+    private static String stepFilterClause(final String operator, final List<String> stepIds) {
+        final boolean unsafeId = stepIds.stream()
+                .anyMatch(id -> id == null || !LUCENE_SAFE_ID.matcher(id).matches());
+        if (unsafeId) {
+            Logger.warn(PublishDateUpdater.class,
+                    "Found a workflow step ID that is not safe for the Lucene syntax, falling back"
+                            + " to the unfiltered publish query");
+            return StringUtils.EMPTY;
+        }
+        return String.format(" %s(%s:%s )", operator, ESMappingConstants.WORKFLOW_STEP,
+                String.join(" " + ESMappingConstants.WORKFLOW_STEP + ":", stepIds));
     }
 
     public static String getExpireLuceneQuery(final Date date) {
@@ -403,9 +584,7 @@ public class PublishDateUpdater {
      * Allows for flexible delegation of specific content operations while maintaining
      * common pagination and transaction management logic.
      */
-    private interface ContentProcessor {
-
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    interface ContentProcessor {
 
         /**
          * Process a single contentlet.
@@ -415,7 +594,7 @@ public class PublishDateUpdater {
          * @return true if the contentlet was processed, false if it was skipped
          * @throws Exception if processing fails
          */
-        void process(Contentlet contentlet, User systemUser) throws Exception;
+        boolean process(Contentlet contentlet, User systemUser) throws Exception;
 
         /**
          * Get the name of this operation for logging purposes.
@@ -436,7 +615,8 @@ public class PublishDateUpdater {
      * @param processor The content processor that provides operation logic and name
      * @return The number of contentlets actually processed (not skipped)
      */
-    private static int processContentInBatch(final String luceneQuery,
+    @VisibleForTesting
+    static int processContentInBatch(final String luceneQuery,
                                                    final int searchBatchSize,
                                                    final int transactionBatchSize,
                                                    final ContentProcessor processor) throws DotDataException {
@@ -462,7 +642,8 @@ public class PublishDateUpdater {
                             allInodes.size(), searchBatchSize, transactionBatchSize, operationName));
 
             int totalProcessed = 0;
-            int transactionProcessed = 0;
+            int totalVisited = 0;
+            int transactionVisited = 0;
             boolean transactionStarted;
             int currentIndex = 0;
 
@@ -482,6 +663,8 @@ public class PublishDateUpdater {
 
                 // Process each identifier in the current batch
                 for (final String inode : inodes) {
+                    totalVisited++;
+                    transactionVisited++;
                     try {
                         // Fetch fresh contentlet by inode
                         final Contentlet contentlet = contentletAPI.find(inode, systemUser, false);
@@ -489,32 +672,32 @@ public class PublishDateUpdater {
                         if (contentlet == null) {
                             Logger.warn(PublishDateUpdater.class,
                                     String.format("Contentlet with inode %s not found, skipping %s operation", inode, operationName));
-                            continue;
-                        }
-
-                        // Delegate to the processor function
-                        processor.process(contentlet, systemUser);
-                        totalProcessed++;
-                        transactionProcessed++;
-
-                        // Commit every transactionBatchSize processed records
-                        if (transactionProcessed >= transactionBatchSize) {
-                            Logger.debug(PublishDateUpdater.class,
-                                    String.format("Committing transaction after processing %d contentlets (total: %d) for %s",
-                                            transactionProcessed, totalProcessed, operationName));
-                            HibernateUtil.closeAndCommitTransaction();
-                            transactionStarted = false;
-                            transactionProcessed = 0;
-
-                            // Start new transaction if there are more records to process
-                            if (currentIndex + searchBatchSize < allInodes.size()) {
-                                HibernateUtil.startTransaction();
-                                transactionStarted = true;
+                        } else {
+                            // Delegate to the processor function
+                            final boolean processed = processor.process(contentlet, systemUser);
+                            if (processed) {
+                                totalProcessed++;
                             }
                         }
                     } catch (Exception e) {
                         Logger.error(PublishDateUpdater.class,
                                 String.format("Content failed to %s: %s - %s", operationName, inode, e.getMessage()), e);
+                    }
+
+                    // Commit every transactionBatchSize visited records, including failed or missing contentlets
+                    if (transactionVisited >= transactionBatchSize) {
+                        Logger.debug(PublishDateUpdater.class,
+                                String.format("Committing transaction after visiting %d contentlets (processed: %d) for %s",
+                                        transactionVisited, totalProcessed, operationName));
+                        HibernateUtil.closeAndCommitTransaction();
+                        transactionStarted = false;
+                        transactionVisited = 0;
+
+                        // Start new transaction if there are more records to visit
+                        if (totalVisited < allInodes.size()) {
+                            HibernateUtil.startTransaction();
+                            transactionStarted = true;
+                        }
                     }
                 }
 
@@ -522,9 +705,10 @@ public class PublishDateUpdater {
             }
 
             // Commit any remaining records
-            if (transactionStarted && transactionProcessed > 0) {
+            if (transactionStarted && transactionVisited > 0) {
                 Logger.debug(PublishDateUpdater.class,
-                        String.format("Committing final transaction with %d remaining contentlets for %s", transactionProcessed, operationName));
+                        String.format("Committing final transaction after visiting %d remaining contentlets for %s",
+                                transactionVisited, operationName));
                 HibernateUtil.closeAndCommitTransaction();
             }
 
@@ -547,25 +731,56 @@ public class PublishDateUpdater {
     /**
      * Content processor implementation for publish operations.
      */
-    private static class Publisher implements ContentProcessor {
+    static class Publisher implements ContentProcessor {
         private final boolean forcePublishing;
         private final Date previousJobRunTime;
+        private final ContentletAPI contentletAPI;
+        private final WorkflowAPI workflowAPI;
+        private final WorkflowResolutionConfig workflowResolutionConfig;
 
-        public Publisher(final boolean forcePublishing, final Date previousJobRunTime) {
+        public Publisher(final boolean forcePublishing, final Date previousJobRunTime,
+                final WorkflowResolutionConfig workflowResolutionConfig) {
             this.forcePublishing = forcePublishing;
             this.previousJobRunTime = previousJobRunTime;
+            this.contentletAPI = APILocator.getContentletAPI();
+            this.workflowAPI = APILocator.getWorkflowAPI();
+            this.workflowResolutionConfig = workflowResolutionConfig;
+        }
+
+        /**
+         * Creates a publisher with explicit dependencies for unit testing. The force-publishing
+         * setting ensures tests target the workflow gate instead of the date-window guard.
+         *
+         * @param contentletAPI content API used to publish content
+         * @param workflowAPI workflow API used to inspect the current step
+         * @param workflowResolutionConfig explicit workflow resolution configuration snapshot
+         */
+        @VisibleForTesting
+        Publisher(final ContentletAPI contentletAPI, final WorkflowAPI workflowAPI,
+                final WorkflowResolutionConfig workflowResolutionConfig) {
+            this.forcePublishing = true;
+            this.previousJobRunTime = null;
+            this.contentletAPI = contentletAPI;
+            this.workflowAPI = workflowAPI;
+            this.workflowResolutionConfig = workflowResolutionConfig;
         }
 
         @Override
-        public void process(final Contentlet contentlet, final User systemUser) throws Exception {
+        public boolean process(final Contentlet contentlet, final User systemUser) throws Exception {
+            if (!workflowAllowsScheduledPublish(contentlet, workflowAPI, workflowResolutionConfig)) {
+                return false;
+            }
+
             //This Point is where we decide if the content should get published or skipped
             //But We can always force the publish operation though
             if (forcePublishing || shouldPublishContent(contentlet, previousJobRunTime)) {
                 contentletAPI.publish(contentlet, systemUser, false);
+                return true;
             } else {
                 Logger.debug(PublishDateUpdater.class,
                         "Skipping publish for contentlet " + contentlet.getIdentifier() +
                         " - content was already auto-published and manually unpublished");
+                return false;
             }
         }
 
@@ -578,16 +793,138 @@ public class PublishDateUpdater {
     /**
      * Content processor implementation for unpublish operations.
      */
-    private static class Unpublisher implements ContentProcessor {
+    static class Unpublisher implements ContentProcessor {
+
+        private final ContentletAPI contentletAPI;
+
+        public Unpublisher() {
+            this.contentletAPI = APILocator.getContentletAPI();
+        }
+
+        /**
+         * Creates an unpublisher with an explicit content API for unit testing.
+         *
+         * @param contentletAPI content API used to unpublish content
+         */
+        @VisibleForTesting
+        Unpublisher(final ContentletAPI contentletAPI) {
+            this.contentletAPI = contentletAPI;
+        }
+
         @Override
-        public void process(final Contentlet contentlet, final User systemUser) throws Exception {
+        public boolean process(final Contentlet contentlet, final User systemUser) throws Exception {
             contentletAPI.unpublish(contentlet, systemUser, false);
+            return true;
         }
 
         @Override
         public String getOperationName() {
             return "unpublish";
         }
+    }
+
+    /**
+     * Determines whether the scheduled local publisher may publish the content. When the feature
+     * flag is disabled, workflow state is not queried and historical behavior is preserved. When
+     * enabled, publication requires an explicitly resolved current workflow step. An optional list
+     * of workflow scheme IDs or variable names limits the check to selected workflows; an empty
+     * list applies it globally. Workflow lookup failures are propagated so the batch processor holds
+     * the affected content and continues with the remaining queue.
+     *
+     * @param contentlet content selected by the scheduled publishing job
+     * @param workflowAPI workflow API used to inspect the current step
+     * @param workflowResolutionConfig per-run snapshot of the workflow resolution configuration
+     * @return {@code true} when scheduled publication is allowed
+     * @throws DotDataException when the current workflow state cannot be read
+     * @throws DotSecurityException when the current workflow scheme cannot be read
+     */
+    @VisibleForTesting
+    static boolean workflowAllowsScheduledPublish(final Contentlet contentlet,
+            final WorkflowAPI workflowAPI, final WorkflowResolutionConfig workflowResolutionConfig)
+            throws DotDataException, DotSecurityException {
+        if (!workflowResolutionConfig.respectWorkflowResolution()) {
+            return true;
+        }
+
+        final Optional<WorkflowStep> currentStep = workflowAPI.findCurrentStep(contentlet);
+        final Set<String> configuredSchemes = workflowResolutionConfig.configuredSchemes();
+        if (!configuredSchemes.isEmpty()
+                && !matchesConfiguredWorkflow(contentlet, currentStep, configuredSchemes,
+                        workflowAPI)) {
+            return true;
+        }
+
+        final boolean resolved = currentStep.map(WorkflowStep::isResolved).orElse(false);
+        if (!resolved) {
+            // Held content is a normal state, not an anomaly, so it is logged at debug level
+            Logger.debug(PublishDateUpdater.class, String.format(
+                    "Skipping scheduled publish for contentlet %s: current workflow step %s is not resolved",
+                    contentlet.getIdentifier(),
+                    currentStep.map(WorkflowStep::getId).orElse("not found")));
+        }
+        return resolved;
+    }
+
+    /**
+     * Immutable per-run snapshot of the workflow resolution configuration. The properties are read
+     * once per job execution so the query filter and every per-contentlet decision within the same
+     * run use the same stable values, while property changes stay visible to the next run without
+     * a restart.
+     *
+     * @param respectWorkflowResolution whether scheduled publication requires a resolved step
+     * @param configuredSchemes workflow scheme IDs or variable names limiting the check; empty
+     *        applies the check to every workflow
+     */
+    record WorkflowResolutionConfig(boolean respectWorkflowResolution,
+                                    Set<String> configuredSchemes) {
+
+        WorkflowResolutionConfig {
+            configuredSchemes = Set.copyOf(configuredSchemes);
+        }
+
+        /**
+         * Reads and normalizes the workflow resolution properties, returning a stable snapshot for
+         * the current job run. When the flag is disabled the scheme list is not read at all.
+         *
+         * @return the configuration snapshot for this job execution
+         */
+        static WorkflowResolutionConfig fromConfig() {
+            if (!Config.getBooleanProperty(RESPECT_WORKFLOW_RESOLUTION_PROPERTY, false)) {
+                return new WorkflowResolutionConfig(false, Set.of());
+            }
+            final Set<String> configuredSchemes = Arrays.stream(
+                            Config.getStringProperty(WORKFLOW_RESOLUTION_SCHEMES_PROPERTY, "")
+                                    .split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .collect(Collectors.toSet());
+            return new WorkflowResolutionConfig(true, configuredSchemes);
+        }
+    }
+
+    private static boolean matchesConfiguredWorkflow(final Contentlet contentlet,
+            final Optional<WorkflowStep> currentStep, final Set<String> configuredSchemes,
+            final WorkflowAPI workflowAPI) throws DotDataException, DotSecurityException {
+        if (currentStep.isPresent()) {
+            final String schemeId = currentStep.get().getSchemeId();
+            if (!UtilMethods.isSet(schemeId)) {
+                throw new DotDataException("Current workflow step does not reference a workflow scheme");
+            }
+
+            if (configuredSchemes.contains(schemeId)) {
+                return true;
+            }
+            return matchesConfiguredScheme(workflowAPI.findScheme(schemeId), configuredSchemes);
+        }
+
+        return workflowAPI.findSchemesForContentType(contentlet.getContentType()).stream()
+                .anyMatch(scheme -> matchesConfiguredScheme(scheme, configuredSchemes));
+    }
+
+    private static boolean matchesConfiguredScheme(final WorkflowScheme scheme,
+            final Set<String> configuredSchemes) {
+        return scheme != null && (configuredSchemes.contains(scheme.getId())
+                || configuredSchemes.contains(scheme.getVariableName()));
     }
 
     /**
@@ -598,15 +935,18 @@ public class PublishDateUpdater {
      * @param previousJobRunTime Previous job run time for content validation
      * @param searchBatchSize The batch size for search operations
      * @param transactionBatchSize The batch size for transaction commits
+     * @param workflowResolutionConfig Per-run snapshot of the workflow resolution configuration
      * @return The number of contentlets actually published
      */
     private static int processPublishContentInBatch(final String luceneQuery,
                                                            final boolean forcePublishAllContent,
                                                            final Date previousJobRunTime,
                                                            final int searchBatchSize,
-                                                           final int transactionBatchSize) throws DotDataException {
+                                                           final int transactionBatchSize,
+                                                           final WorkflowResolutionConfig workflowResolutionConfig) throws DotDataException {
         //Build and pass a delegate to deal with the Publish Operation
-        final ContentProcessor publishProcessor = new Publisher(forcePublishAllContent, previousJobRunTime);
+        final ContentProcessor publishProcessor = new Publisher(forcePublishAllContent, previousJobRunTime,
+                workflowResolutionConfig);
         return processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, publishProcessor);
     }
 

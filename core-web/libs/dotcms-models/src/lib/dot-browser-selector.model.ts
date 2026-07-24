@@ -35,6 +35,19 @@ export type TreeNodeItem = TreeNode<TreeNodeData>;
 export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeNodeData>;
 
 /**
+ * Per-level pagination metadata returned by {@link CustomTreeNode} when a
+ * preselected path is resolved across one or more pages of siblings.
+ *
+ * @type TreeLevelPagination
+ * @property {number} page - Last page that was loaded for this level (1-based)
+ * @property {boolean} hasMore - Whether additional pages remain beyond `page`
+ */
+export type TreeLevelPagination = {
+    page: number;
+    hasMore: boolean;
+};
+
+/**
  * Custom tree node structure with optional parent context and child folders.
  * Used when navigating or expanding nodes in the browser selector.
  *
@@ -44,6 +57,9 @@ export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeNodeData>;
  * @property {DotFolder} [tree.parent] - Parent folder of the current tree level
  * @property {string} tree.path - Path of the current tree level
  * @property {TreeNodeItem[]} tree.folders - Child folder nodes at this level
+ * @property {Record<string, TreeLevelPagination>} [pagination] - Per-level page/hasMore
+ *   state keyed by node key (`'root'` for the site root). Present when the tree was
+ *   built by paginating until a preselected path was found.
  */
 export type CustomTreeNode = {
     node: null | TreeNodeItem;
@@ -52,6 +68,7 @@ export type CustomTreeNode = {
         path: string;
         folders: TreeNodeItem[];
     } | null;
+    pagination?: Record<string, TreeLevelPagination>;
 };
 
 /**

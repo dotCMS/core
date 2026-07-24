@@ -61,6 +61,16 @@
     display: block;
 }
 
+/* Fill-height mode (see `fillHeight` input): the host becomes a full-height flex column so
+   the wrapper/panel chain can stretch to fill a bounded parent (e.g. the UVE sidebar drawer).
+   `min-height: 0` lets the host shrink when it is itself a flex child of the parent. */
+:host(.dot-block-editor--fill-height) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
 /* ─── ProseMirror base ──────────────────────────────────── */
 :host ::ng-deep .ProseMirror {
     outline: none;
@@ -225,11 +235,40 @@
     display: inline-block;
     max-width: 100%;
     height: auto;
+    /* Align to the top of the line box so the inline-block image carries no baseline
+       descender gap. Without this, wrapping the image in an inline <a> (when a link is
+       added) introduces extra space below it and the layout visibly jumps (#36361). */
+    vertical-align: top;
+    /* Tailwind Typography's `.prose :where(img)` adds `margin: 2em 0`, normally cancelled by
+       its `figure > *` reset. Once the image is wrapped in <a> (linked), it's no longer a direct
+       figure child so that reset stops applying and the 2em margin returns. Zero it explicitly —
+       this selector out-specifies prose's zero-specificity `:where()` rules (#36361). */
+    margin: 0;
+}
+
+/* A linked image is rendered as <figure><a href><img></a></figure>. Keep the anchor a
+   zero-line-height inline-block so it hugs the image and linking doesn't shift layout.
+   `vertical-align: top` is essential: once the anchor wraps the image, the *anchor* (not the
+   img) is the inline-level box in the figure's formatting context, so it must align to the top
+   or the browser reserves font-descender space below it and the layout jumps (#36361). */
+:host ::ng-deep .ProseMirror figure a {
+    display: inline-block;
+    line-height: 0;
+    vertical-align: top;
+}
+
+/* Audio has no visual frame — only the native control bar. The wrapper adds a small
+   clickable margin around it so the atom node can be selected (and then deleted) with the
+   mouse, matching the image/video/contentlet blocks. */
+:host ::ng-deep .ProseMirror .audio-block {
+    padding: 4px;
+    border-radius: 4px;
 }
 
 /* ─── Selected node ring ────────────────────────────────── */
 :host ::ng-deep .ProseMirror figure.is-selected img,
 :host ::ng-deep .ProseMirror video.is-selected,
+:host ::ng-deep .ProseMirror .audio-block.is-selected,
 :host ::ng-deep .ProseMirror [data-type='dot-content'].is-selected {
     outline: 2px solid #6366f1;
     outline-offset: 2px;

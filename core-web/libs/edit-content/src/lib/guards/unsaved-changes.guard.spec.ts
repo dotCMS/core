@@ -1,4 +1,4 @@
-import { mockProvider } from '@ngneat/spectator/jest';
+import { mockProvider } from '@openng/spectator/jest';
 
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, type CanDeactivateFn } from '@angular/router';

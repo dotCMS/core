@@ -6,7 +6,7 @@
 # Key features:
 # - Triggered on push to main or manual dispatch
 # - Configurable options for reusing previous builds and running all tests
-# - Comprehensive checks including build, tests, Semgrep analysis, and CLI artifact building
+# - Comprehensive checks including build, tests, and CLI artifact building
 # - Deployment to the trunk environment
 # - Final reporting of the workflow status
 
@@ -30,14 +30,6 @@ on:
         default: false
       run-all-tests:
         description: 'Run all tests'
-        type: boolean
-        default: false
-      publish-npm-sdk-libs:
-        description: 'Publish NPM SDKs'
-        type: boolean
-        default: false
-      disable-semgrep:
-        description: 'Disable Semgrep job'
         type: boolean
         default: false
       java-version:
@@ -101,16 +93,6 @@ jobs:
       contents: read
       packages: write
 
-  semgrep:
-    name: Trunk Semgrep
-    needs: [ initialize, test ]
-    if: always() && !failure() && !cancelled() && vars.DISABLE_SEMGREP != 'true'
-    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
-    with:
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-    secrets:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
   # CLI Build job - builds CLI artifacts
   # Skipped when java-version is overridden due to GraalVM/Quarkus compatibility requirements
   build-cli:
@@ -125,13 +107,12 @@ jobs:
 
   # Deployment job - deploys to the trunk environment
   deployment:
-    needs: [ initialize,build-cli,semgrep,test ]
+    needs: [ initialize,build-cli,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       deploy-cli: true
-      publish-npm-sdk-libs: ${{ fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
       # tag-identifier intentionally omitted: trunk uses only the environment name as its tag
       java-version: ${{ github.event.inputs.java-version || '' }}
@@ -148,7 +129,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, semgrep, deployment]
+    needs: [ initialize, build, build-cli, test, deployment]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

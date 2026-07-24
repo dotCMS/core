@@ -10,6 +10,8 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.tiptap.TiptapHtml;
+import com.dotcms.tiptap.TiptapMarkdown;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
@@ -39,6 +41,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -55,6 +58,7 @@ import java.io.StringReader;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.LongSupplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
@@ -76,6 +80,17 @@ public class MapToContentletPopulator  {
     private static final String LANGUAGE_ID                = "languageId";
     private static final String IDENTIFIER                 = "identifier";
     private static final String INDEX_POLICY = "indexPolicy";
+
+    /**
+     * Matches a value that opens with a real HTML tag or comment, so a Story Block value can be
+     * routed to the HTML converter. A leading {@code '<'} alone is not enough — a CommonMark autolink
+     * ({@code <https://x>}) or text like {@code "<3"} also start with it and must go to Markdown; a
+     * real tag name is ASCII letters/digits terminated by whitespace, {@code '/'} or {@code '>'}.
+     * A leading {@code '<!'} (comment, {@code <!DOCTYPE>}, CDATA) is markup too, so a full HTML
+     * document routes to the HTML converter rather than being mistaken for Markdown.
+     */
+    private static final Pattern HTML_START =
+            Pattern.compile("^<(!|/?[a-zA-Z][a-zA-Z0-9]*[\\s/>])");
 
     @CloseDBIfOpened
     public Contentlet populate(final Contentlet contentlet, final Map<String, Object> stringObjectMap) {
@@ -255,6 +270,10 @@ public class MapToContentletPopulator  {
                         && null != value && value instanceof Map) {
 
                     this.processPlainValueForBinaryField(map, field, value, contentlet);
+                } else if (FieldType.STORY_BLOCK_FIELD.toString().equals(field.getFieldType())
+                        && value instanceof String) {
+
+                    this.processStoryBlockField(contentlet, field, (String) value);
                 } else {
                     APILocator.getContentletAPI()
                             .setContentletProperty(contentlet, field, value);
@@ -263,6 +282,81 @@ public class MapToContentletPopulator  {
         }
 
     } // fillFields.
+
+    /**
+     * Story Block fields store a Tiptap/ProseMirror JSON document. Non-interactive clients
+     * (AI agents, headless imports) may instead send Markdown or HTML. We convert either to
+     * ProseMirror JSON here, on the shared save path, so the field reads back as structured
+     * content with no human editor round-trip. Values that are already JSON (the dominant editor
+     * traffic) are stored unchanged, and a conversion failure never blocks the save.
+     */
+    private void processStoryBlockField(final Contentlet contentlet, final Field field,
+                                        final String value) {
+
+        final String storyBlockJson = this.toStoryBlockJson(contentlet, field, value);
+        APILocator.getContentletAPI().setContentletProperty(contentlet, field, storyBlockJson);
+    }
+
+    private String toStoryBlockJson(final Contentlet contentlet, final Field field,
+                                    final String value) {
+
+        // Editor-authored JSON is stored as-is (it begins with '{'); a value that opens with an HTML
+        // tag is converted from HTML, and anything else is treated as Markdown. This mirrors the Block
+        // Editor's own client-side routing and avoids re-parsing an existing document.
+        final String trimmed = value.stripLeading();
+        if (trimmed.isEmpty() || trimmed.charAt(0) == '{') {
+            return value;
+        }
+        final boolean html = looksLikeHtml(trimmed);
+
+        // Markdown/HTML cannot represent rich blocks (embedded contentlets, video, layout grids). Per
+        // the documented contract (see the fire endpoints' Block Editor note), they are for plain
+        // content only and must not be used to modify a field that already holds such blocks. If that
+        // is attempted, keep the existing document untouched and log a warning — neither destroying the
+        // rich content nor failing the save. (A rich merge is planned as a follow-up.)
+        final String existing = contentlet.getStringProperty(field.getVelocityVarName());
+        if (TiptapMarkdown.isTiptapDoc(existing) && !TiptapMarkdown.isMarkdownRepresentable(existing)) {
+            Logger.warn(this, String.format(
+                    "Story Block field [%s] holds rich content that %s cannot represent; ignoring the "
+                            + "value and keeping the existing document. Send a full Tiptap/ProseMirror "
+                            + "JSON document to modify this field.",
+                    field.getVelocityVarName(), html ? "HTML" : "Markdown"));
+            return existing;
+        }
+
+        try {
+            final ObjectNode converted = html ? TiptapHtml.toTiptap(value) : TiptapMarkdown.toTiptap(value);
+            // Non-blank input whose content is entirely stripped (sanitization / unparseable) converts to
+            // an empty document. Storing it would silently clear a field the client meant to populate and
+            // wipe any prior value, so keep the existing value and warn instead. A genuine field-clear
+            // arrives as a blank value (handled above), so this never blocks an intended clear.
+            if (converted.path("content").size() == 0 && UtilMethods.isSet(existing)) {
+                Logger.warn(this, String.format(
+                        "Story Block field [%s]: %s input converted to an empty document; keeping the "
+                                + "existing value rather than clearing the field.",
+                        field.getVelocityVarName(), html ? "HTML" : "Markdown"));
+                return existing;
+            }
+            return converted.toString();
+        } catch (final Exception e) {
+            // Graceful degradation (consistent with the converters' contract): a conversion failure
+            // must never block the save — store the original value and move on.
+            Logger.warn(this, String.format(
+                    "Story Block field [%s]: %s conversion failed, storing value unchanged. %s",
+                    field.getVelocityVarName(), html ? "HTML" : "Markdown", e.getMessage()));
+            return value;
+        }
+    }
+
+    /**
+     * Distinguishes a genuine HTML fragment (an opening/closing tag or a comment) from a Markdown
+     * value that merely starts with {@code '<'} — e.g. a CommonMark autolink {@code <https://x>} or
+     * text like {@code "<3 things"} — which must be routed to the Markdown converter instead. The
+     * argument is expected to be already left-trimmed.
+     */
+    private static boolean looksLikeHtml(final String trimmed) {
+        return HTML_START.matcher(trimmed).find();
+    }
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,
                                                         final Field field,

@@ -1,0 +1,260 @@
+<!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="pq-bundles-table-wrapper">
+    <p-table
+        [value]="store.bundlesRows()"
+        [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        [paginator]="true"
+        [showFirstLastIcon]="false"
+        [showPageLinks]="false"
+        [showCurrentPageReport]="true"
+        [currentPageReportTemplate]="('Page' | dm) + ' {currentPage}'"
+        [rows]="store.rowsPerPage()"
+        [totalRecords]="store.bundlesTotal()"
+        [first]="$first()"
+        [rowsPerPageOptions]="rowsPerPageOptions"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [pt]="$ptConfig()"
+        [selection]="$selectedRows()"
+        (selectionChange)="onSelectionChange($event)"
+        dataKey="bundleId"
+        data-testid="pq-bundles-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width: 3rem" pFrozenColumn>
+                    <p-tableHeaderCheckbox />
+                </th>
+                <th style="width: 14rem" data-testid="pq-bundles-col-bundle-name">
+                    {{ 'publishing-queue.column.bundle-name' | dm }}
+                </th>
+                <th style="width: 16rem" data-testid="pq-bundles-col-bundle-id">
+                    {{ 'publishing-queue.column.bundle-id' | dm }}
+                </th>
+                <th style="width: 14rem" data-testid="pq-bundles-col-filter">
+                    {{ 'publishing-queue.column.filter' | dm }}
+                </th>
+                <th
+                    style="width: 6rem"
+                    class="text-right whitespace-nowrap"
+                    data-testid="pq-bundles-col-items">
+                    {{ 'publishing-queue.column.items' | dm }}
+                </th>
+                <!-- Sort intentionally NOT wired: the v1 endpoint
+                     `GET /api/v1/publishing` does not accept a sort param yet
+                     (BE always returns rows ordered by `status_updated DESC`
+                     — see PublishAuditAPIImpl.SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC).
+                     Re-add `pSortableColumn` + `<p-sortIcon>` here when the BE
+                     gains a `sort` query param. -->
+                <th
+                    style="width: 11rem"
+                    class="whitespace-nowrap"
+                    data-testid="pq-bundles-col-created">
+                    {{ 'publishing-queue.column.date-entered' | dm }}
+                </th>
+                <th
+                    style="width: 11rem"
+                    class="whitespace-nowrap"
+                    data-testid="pq-bundles-col-modified">
+                    {{ 'publishing-queue.column.last-update' | dm }}
+                </th>
+                <th
+                    style="width: 9rem"
+                    class="whitespace-nowrap"
+                    data-testid="pq-bundles-col-status">
+                    {{ 'publishing-queue.column.status' | dm }}
+                </th>
+                <th
+                    style="width: 3rem"
+                    pFrozenColumn
+                    alignFrozen="right"
+                    data-testid="pq-bundles-col-actions"></th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+            @if (store.bundlesStatus() === 'loading') {
+                <tr
+                    data-testid="pq-bundles-skeleton"
+                    class="h-17 cursor-default hover:bg-transparent!">
+                    <td [style.width]="'3rem'" class="pl-4" pFrozenColumn>
+                        <span class="flex h-full items-center justify-center">
+                            <p-skeleton height="1.5rem" width="2rem" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="60%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="80%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="60%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center justify-end">
+                            <p-skeleton height="1.5rem" width="2rem" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="70%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="70%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="40%" />
+                        </span>
+                    </td>
+                    <td pFrozenColumn alignFrozen="right">
+                        <span class="flex h-full items-center justify-center">
+                            <p-skeleton height="1.5rem" width="1rem" />
+                        </span>
+                    </td>
+                </tr>
+            } @else {
+                <tr
+                    class="group cursor-pointer"
+                    (click)="onRowClick(row)"
+                    (contextmenu)="onRowContextMenu($event, row)"
+                    data-testid="pq-bundles-row">
+                    <td pFrozenColumn (click)="$event.stopPropagation()">
+                        <p-tableCheckbox [value]="row" />
+                    </td>
+                    <td data-testid="pq-bundles-bundle-name">
+                        <div class="truncate">
+                            {{ row.bundleName || '—' }}
+                        </div>
+                    </td>
+                    <td data-testid="pq-bundles-bundle-id">
+                        <!-- inline-flex so the row collapses to the natural
+                             width of (truncated id + copy icon) — keeps the
+                             copy button right next to the text instead of
+                             floating at the far edge of the column. -->
+                        <div class="inline-flex items-center gap-1">
+                            <span [title]="row.bundleId">
+                                {{ truncateBundleId(row.bundleId) }}
+                            </span>
+                            <p-button
+                                text
+                                size="small"
+                                icon="pi pi-copy"
+                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
+                                [pTooltip]="'publishing-queue.copy-bundle-id' | dm"
+                                tooltipPosition="top"
+                                [attr.aria-label]="'publishing-queue.copy-bundle-id' | dm"
+                                (onClick)="$event.stopPropagation(); copyToClipboard(row.bundleId)"
+                                data-testid="pq-bundles-bundle-id-copy" />
+                        </div>
+                    </td>
+                    <td data-testid="pq-bundles-filter">
+                        <div class="truncate">
+                            {{ row.filterName || row.filterKey || '—' }}
+                        </div>
+                    </td>
+                    <td class="text-right whitespace-nowrap" data-testid="pq-bundles-items">
+                        @if ((row.assetCount ?? 0) > 0) {
+                            <button
+                                type="button"
+                                class="cursor-pointer border-none bg-transparent p-0"
+                                [pTooltip]="'publishing-queue.history.kebab.view-contents' | dm"
+                                tooltipPosition="top"
+                                [attr.aria-label]="
+                                    'publishing-queue.history.kebab.view-contents' | dm
+                                "
+                                (click)="
+                                    $event.stopPropagation(); store.openAssetList(row.bundleId)
+                                "
+                                data-testid="pq-bundles-items-btn">
+                                <p-tag
+                                    severity="secondary"
+                                    [rounded]="false"
+                                    [value]="(row.assetCount ?? 0).toString()" />
+                            </button>
+                        } @else {
+                            <p-tag
+                                severity="secondary"
+                                [rounded]="false"
+                                [value]="(row.assetCount ?? 0).toString()" />
+                        }
+                    </td>
+                    <td
+                        class="text-color-secondary whitespace-nowrap"
+                        data-testid="pq-bundles-created">
+                        {{ (row.createDate | date: 'MMM d, y - h:mm:ss a') || '—' }}
+                    </td>
+                    <td
+                        class="text-color-secondary whitespace-nowrap"
+                        data-testid="pq-bundles-modified">
+                        {{
+                            (row.statusUpdated || row.createDate
+                                | dotRelativeDate: 'MMM d, y - h:mm:ss a') || '—'
+                        }}
+                    </td>
+                    <td class="whitespace-nowrap" data-testid="pq-bundles-status">
+                        <dot-publishing-status-chip [status]="row.status" />
+                    </td>
+                    <td
+                        class="text-right"
+                        pFrozenColumn
+                        alignFrozen="right"
+                        (click)="$event.stopPropagation()">
+                        <p-menu
+                            #kebab
+                            [model]="kebabFor(row)"
+                            [popup]="true"
+                            appendTo="body"
+                            showTransitionOptions="0ms"
+                            hideTransitionOptions="0ms"
+                            data-testid="pq-bundles-kebab-menu" />
+                        <div
+                            class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                            <p-button
+                                icon="pi pi-ellipsis-v"
+                                [text]="true"
+                                [rounded]="true"
+                                size="small"
+                                severity="secondary"
+                                (onClick)="kebab.toggle($event)"
+                                [attr.aria-label]="'publishing-queue.row.actions' | dm"
+                                data-testid="pq-bundles-kebab-btn" />
+                        </div>
+                    </td>
+                </tr>
+            }
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr class="h-full hover:bg-transparent!">
+                <td colspan="9" class="h-full border-none p-6 text-center">
+                    <div
+                        class="flex h-full items-center justify-center"
+                        data-testid="pq-bundles-empty">
+                        <dot-empty-container
+                            [configuration]="bundlesEmpty"
+                            [hideContactUsLink]="true" />
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-contextMenu
+    #rowContextMenu
+    [model]="contextMenuItems()"
+    appendTo="body"
+    data-testid="pq-bundles-context-menu" />
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

@@ -1,11 +1,11 @@
+import { Dispatcher } from '@ngrx/signals/events';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { Dispatcher } from '@ngrx/signals/events';
+} from '@openng/spectator/jest';
 
 import { signal } from '@angular/core';
 
@@ -27,25 +27,28 @@ describe('DotImageEditorFooterComponent', () => {
     let dispatcher: SpyObject<Dispatcher>;
 
     const isBusy = signal(false);
+    const saveStatus = signal<'idle' | 'saving' | 'error'>('idle');
 
     const createComponent = createComponentFactory({
         component: DotImageEditorFooterComponent,
         imports: [DotMessagePipe],
         providers: [mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })],
-        componentProviders: [Dispatcher, mockProvider(ImageEditorStore, { isBusy })]
+        componentProviders: [Dispatcher, mockProvider(ImageEditorStore, { isBusy, saveStatus })]
     });
 
     beforeEach(() => {
         isBusy.set(false);
+        saveStatus.set('idle');
 
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
         jest.spyOn(dispatcher, 'dispatch');
     });
 
-    it('should render the cancel and download actions', () => {
+    it('should render the cancel, download and save actions', () => {
         expect(spectator.query(byTestId('image-editor-cancel-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-download-btn'))).toBeTruthy();
+        expect(spectator.query(byTestId('image-editor-save-btn'))).toBeTruthy();
     });
 
     it('should emit cancel when Cancel is clicked', () => {
@@ -70,5 +73,32 @@ describe('DotImageEditorFooterComponent', () => {
         spectator.detectChanges();
 
         expect(nativeButton(spectator, 'image-editor-download-btn').disabled).toBe(true);
+    });
+
+    it('should dispatch saveRequested when Save is clicked', () => {
+        spectator.click(nativeButton(spectator, 'image-editor-save-btn'));
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            imageEditorLifecycleEvents.saveRequested(),
+            { scope: 'self' }
+        );
+    });
+
+    it('should show a loading spinner and disable Save while a save is in flight', () => {
+        saveStatus.set('saving');
+        spectator.detectChanges();
+
+        const button = nativeButton(spectator, 'image-editor-save-btn');
+        expect(button.disabled).toBe(true);
+        expect(button.classList).toContain('p-button-loading');
+    });
+
+    it('should show a loading spinner and disable Save while a filter is applying (busy)', () => {
+        isBusy.set(true);
+        spectator.detectChanges();
+
+        const button = nativeButton(spectator, 'image-editor-save-btn');
+        expect(button.disabled).toBe(true);
+        expect(button.classList).toContain('p-button-loading');
     });
 });

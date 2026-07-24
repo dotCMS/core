@@ -139,11 +139,23 @@ public class IndexAjaxAction extends AjaxAction {
 
 	}
 
-	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-		if(UtilMethods.isSet(indexName))
-		    APILocator.getESIndexAPI().delete(indexName);
+		if(UtilMethods.isSet(indexName)) {
+			// Site-search indices go through the site-search subsystem (like activate/deactivate),
+			// not the content delete path — they are OS-aware with their own naming (issue #35640).
+			if(IndexType.SITE_SEARCH.is(indexName)){
+				APILocator.getSiteSearchAPI().deleteIndex(indexName);
+			} else {
+				// Content indices route through ContentletIndexAPI.delete (same as the REST
+				// endpoint) so this legacy AJAX path inherits the active-index guard, the
+				// bidirectional ES/OS cascade, and the indicies-table pointer cleanup. It
+				// previously called ESIndexAPI.delete and bypassed all three, leaving TC-018 open
+				// here and orphaning the .os twin (issue #35640).
+				APILocator.getContentletIndexAPI().delete(indexName);
+			}
+		}
 	}
 
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {

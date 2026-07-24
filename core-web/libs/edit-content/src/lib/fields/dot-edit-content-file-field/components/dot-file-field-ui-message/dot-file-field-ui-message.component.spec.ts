@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 
 import { CommonModule } from '@angular/common';
 
@@ -61,11 +61,11 @@ describe('DotFileFieldUiMessageComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should add pointer-events-none class to root element', () => {
+        it('should add disabled class to root element', () => {
             const rootElement = spectator.query(
                 byTestId('ui-message-icon-container')
             )?.parentElement;
-            expect(rootElement).toHaveClass('pointer-events-none');
+            expect(rootElement).toHaveClass('dot-file-field-ui-message__root--disabled');
         });
 
         it('should apply disabled styles to icon container', () => {
@@ -77,7 +77,7 @@ describe('DotFileFieldUiMessageComponent', () => {
 
         it('should add disabled text color to message text', () => {
             const textElement = spectator.query(byTestId('ui-message-span'))?.parentElement;
-            expect(textElement).toHaveClass('text-gray-400');
+            expect(textElement).toHaveClass('dot-file-field-ui-message__message--disabled');
         });
 
         it('should still display message content when disabled', () => {

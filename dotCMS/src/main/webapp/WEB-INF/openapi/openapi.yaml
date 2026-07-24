@@ -1237,10 +1237,16 @@ paths:
       - Elasticsearch Content Search
   /es/raw:
     post:
-      description: "Executes a raw Elasticsearch query and returns the unprocessed\
-        \ Elasticsearch response in a portlet context. The request body accepts an\
-        \ Elasticsearch JSON query. Unlike the /search endpoint, results are returned\
-        \ directly from Elasticsearch without additional contentlet processing."
+      description: "Executes a raw JSON search query and returns the unprocessed search\
+        \ response in a portlet context. The request body accepts an Elasticsearch/OpenSearch\
+        \ JSON query. Unlike the /search endpoint, results are returned directly from\
+        \ the search engine without additional contentlet processing. The query is\
+        \ routed through the phase-aware search API, so it targets whichever engine\
+        \ the active OpenSearch migration phase selects (Elasticsearch in phases 0-1,\
+        \ OpenSearch in phases 2-3). The response preserves the legacy Elasticsearch-wire\
+        \ shape (took, hits.total, hits.hits[]._id/._index/._score/._source, aggregations,\
+        \ suggest) for backward compatibility, regardless of the engine that served\
+        \ the query."
       operationId: rawSearchContentByESPost
       responses:
         "200":
@@ -1248,9 +1254,9 @@ paths:
             application/json:
               schema:
                 type: object
-                description: "Raw Elasticsearch response including hits, aggregations,\
-                  \ and metadata"
-          description: Raw Elasticsearch response returned successfully
+                description: "Search response in the legacy Elasticsearch-wire shape\
+                  \ (took, hits, aggregations, suggest)"
+          description: Search response returned successfully
         "400":
           content:
             application/json: {}
@@ -1259,14 +1265,20 @@ paths:
           content:
             application/json: {}
           description: Authentication required
-      summary: Execute raw Elasticsearch query (POST)
+      summary: Execute raw search query (POST)
       tags:
       - Elasticsearch Content Search
   /es/search:
     post:
-      description: Executes an Elasticsearch query against dotCMS content in a portlet
-        context. The request body accepts an Elasticsearch JSON query. Results include
-        matching contentlets and the raw Elasticsearch response metadata.
+      description: "Executes a JSON search query against dotCMS content in a portlet\
+        \ context. The request body accepts an Elasticsearch/OpenSearch JSON query.\
+        \ The query is routed through the phase-aware search API, so it targets whichever\
+        \ engine the active OpenSearch migration phase selects (Elasticsearch in phases\
+        \ 0-1, OpenSearch in phases 2-3). Results include the matching contentlets\
+        \ plus the search response metadata under 'esresponse', which retains the\
+        \ legacy Elasticsearch-wire shape (took, hits.total, hits.hits[]._id/._index/._score/._source,\
+        \ aggregations) for backward compatibility, regardless of the engine that\
+        \ served the query."
       operationId: searchContentByESPost
       parameters:
       - description: "Depth of related content to include: 0=identifiers only, 1=related\
@@ -1305,9 +1317,9 @@ paths:
             application/json:
               schema:
                 type: object
-                description: Elasticsearch search results containing contentlets matching
-                  the query and raw ES response metadata
-          description: Elasticsearch search results returned successfully
+                description: Search results containing the matching contentlets and
+                  the Elasticsearch-wire response metadata under 'esresponse'
+          description: Search results returned successfully
         "400":
           content:
             application/json: {}
@@ -1316,7 +1328,7 @@ paths:
           content:
             application/json: {}
           description: Authentication required
-      summary: Search content using Elasticsearch query (POST)
+      summary: Search content using a search query (POST)
       tags:
       - Elasticsearch Content Search
   /integrity/_fixconflictsfromremote:
@@ -10392,7 +10404,7 @@ paths:
       operationId: searchFolders
       parameters:
       - description: Optional case-insensitive partial match on folder name (minimum
-          3 characters when provided)
+          2 characters when provided)
         in: query
         name: name
         schema:
@@ -10455,7 +10467,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
           description: Paginated list of matching folders
         "400":
-          description: '''siteId'' is required; ''name'' must be at least 3 characters
+          description: '''siteId'' is required; ''name'' must be at least 2 characters
             if provided'
         "401":
           description: User is not authenticated
@@ -12357,6 +12369,15 @@ paths:
       tags:
       - OSGi Plugins
     post:
+      description: "Uploads one or more plugin JARs to the OSGi upload folder and\
+        \ schedules their processing. A 200 confirms the upload was accepted, NOT\
+        \ that the plugin is live: if new packages must be exported the OSGi framework\
+        \ is restarted cluster-wide asynchronously, after this response returns. Restart\
+        \ completion is signalled by the OSGI_FRAMEWORK_RESTART system event and successful\
+        \ deployment by the OSGI_BUNDLES_LOADED event; an asynchronous failure is\
+        \ reported via the OSGI_BUNDLES_UPLOAD_FAILED event and an error notification\
+        \ (check the server logs for the full stack trace). Clients should react to\
+        \ these events rather than assume the plugin is active once the 200 is received."
       operationId: uploadBundles
       requestBody:
         content:
@@ -12368,7 +12389,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
+                $ref: "#/components/schemas/ResponseEntitySetStringView"
+          description: Bundle upload accepted and scheduled. Any required OSGi restart
+            happens asynchronously; watch the OSGI_FRAMEWORK_RESTART / OSGI_BUNDLES_LOADED
+            / OSGI_BUNDLES_UPLOAD_FAILED system events for the outcome.
         "403":
           description: Can not access the upload folder or invalid OSGI Upload request
       summary: Upload bundles to the OSGI framework
@@ -18757,7 +18781,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireDefaultSystemAction
       parameters:
       - description: Inode of the target content.
@@ -18895,7 +18919,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireDefaultActionMultipart
       parameters:
       - description: Inode of the target content.
@@ -18987,7 +19011,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionByName
       parameters:
       - description: Inode of the target content.
@@ -19086,7 +19110,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionByNameMultipart
       parameters:
       - description: Inode of the target content.
@@ -19519,7 +19543,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionById
       parameters:
       - description: |-
@@ -19625,7 +19649,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionByIdMultipart
       parameters:
       - description: |-
@@ -25543,6 +25567,12 @@ components:
           type: string
           description: Container identifier
           example: //demo.dotcms.com/application/containers/default/
+        personaTag:
+          type: string
+          description: Raw Persona key tag (e.g. the value of viewAs.persona.keyTag)
+            to personalize this style update for. Do not include the 'dot:persona:'
+            prefix -- the backend adds it automatically. Omit for the default persona.
+          example: returning_visitor
         uuid:
           type: string
           description: Container unique identifier (UUID)
@@ -27772,6 +27802,8 @@ components:
         longitude:
           type: number
           format: double
+        postal:
+          type: string
         subdivision:
           type: string
         subdivisionCode:
@@ -33086,6 +33118,32 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SessionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySetStringView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
         errors:
           type: array
           items:

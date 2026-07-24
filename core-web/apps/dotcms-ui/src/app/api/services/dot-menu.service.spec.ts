@@ -1,4 +1,4 @@
-import { HttpMethod, SpectatorHttp, createHttpFactory } from '@ngneat/spectator/jest';
+import { HttpMethod, SpectatorHttp, createHttpFactory } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotMenu } from '@dotcms/dotcms-models';

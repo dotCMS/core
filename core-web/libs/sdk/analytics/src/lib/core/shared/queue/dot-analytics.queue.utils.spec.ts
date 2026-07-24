@@ -733,7 +733,6 @@ describe('createAnalyticsQueue', () => {
             expect(storageKey).toBeDefined();
             expect(storageKey).toContain('dot_analytics_queue_');
 
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const stored = JSON.parse(mockSessionStorage[storageKey!]);
             expect(stored).toMatchObject({
                 tabId: 'test-tab-id-12345',

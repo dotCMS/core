@@ -58,7 +58,7 @@ const EXCLUDED_PATTERNS = [
 ];
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
-const DEFAULT_SPEC_URL = `https://demo.dotcms.com${DEFAULT_SPEC_PATH}`;
+const DEFAULT_SPEC_URL = `https://dotcms-corp-headless-prod.dotcms.dev${DEFAULT_SPEC_PATH}`;
 
 /**
  * Matches a path against a pattern. Pattern syntax:

@@ -9,7 +9,6 @@
 
 package com.dotcms.enterprise.publishing.sitesearch;
 
-import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
@@ -57,7 +56,6 @@ import java.util.stream.Collectors;
 
 public class ESSiteSearchPublisher extends Publisher {
 
-    private final IndexAPI esIndexAPI;
     private final SiteSearchAPI siteSearchAPI;
     private final HostAPI hostAPI;
     private final FileAssetAPI fileAssetAPI;
@@ -65,20 +63,18 @@ public class ESSiteSearchPublisher extends Publisher {
     private final UserAPI userAPI;
 
     public ESSiteSearchPublisher() {
-        this(APILocator.getESIndexAPI(), APILocator.getSiteSearchAPI(),
+        this(APILocator.getSiteSearchAPI(),
              APILocator.getHostAPI(), APILocator.getFileAssetAPI(),
              APILocator.getFileMetadataAPI(), APILocator.getUserAPI());
     }
 
     @VisibleForTesting
     public ESSiteSearchPublisher(
-            final IndexAPI esIndexAPI,
             final SiteSearchAPI siteSearchAPI,
             final HostAPI hostAPI,
             final FileAssetAPI fileAssetAPI,
             final FileMetadataAPI fileMetadataAPI,
             final UserAPI userAPI) {
-        this.esIndexAPI = esIndexAPI;
         this.siteSearchAPI = siteSearchAPI;
         this.hostAPI = hostAPI;
         this.fileAssetAPI = fileAssetAPI;
@@ -189,7 +185,19 @@ public class ESSiteSearchPublisher extends Publisher {
                 );
 
                 final String alias = config.getIndexAlias();
-                esIndexAPI.delete(oldIndexName);
+                // Remove the old index through the phase-aware Site Search subsystem — NOT the
+                // content-index router (the former esIndexAPI). The content router fans a raw delete
+                // out to both engines with no site-search awareness and no per-engine
+                // index_not_found tolerance, so when the old index lived on only one engine (e.g. a
+                // Phase-0 ES-only index during Phase 2/3) the delete threw index_not_found on the
+                // other engine → the whole Site Search build crashed AND the surviving copy had
+                // already been destroyed. siteSearchAPI.deleteIndex is per-engine idempotent and
+                // respects the active-index guard (issue #36360, I-7).
+                try {
+                    siteSearchAPI.deleteIndex(oldIndexName);
+                } catch (final IOException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
 
                 if (null != alias) {
                     siteSearchAPI.setAlias(newIndex, alias);

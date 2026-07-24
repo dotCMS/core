@@ -1,14 +1,17 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
+import { Editor } from '@tiptap/core';
+
 /**
  * Runs change detection in the next macrotask to avoid NG0100 (ExpressionChangedAfterItHasBeenCheckedError).
- * The component assigns observables in ngAfterViewInit and the mock emits asynchronously, so a synchronous
- * detectChanges() can see bindings change during the same cycle. Deferring to the next tick stabilizes the test.
+ * The component updates the HTML signals from an editor `transaction` listener that fires asynchronously,
+ * so a synchronous detectChanges() can see bindings change during the same cycle. Deferring to the next
+ * tick stabilizes the test.
  */
 async function detectChangesNextTick(detectChanges: () => void): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -20,6 +23,7 @@ import { DotDiffPipe, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
+import { OldBlockEditorMockComponent } from './block-editor-mock/old-block-editor-mock.component';
 import { DotContentCompareBlockEditorComponent } from './dot-content-compare-block-editor.component';
 
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
@@ -284,140 +288,161 @@ class DragEventMock extends Event {
 (global as any).DragEvent = DragEventMock;
 
 describe('DotContentCompareBlockEditorComponent', () => {
-    let spectator: Spectator<DotContentCompareBlockEditorComponent>;
-
     const messageServiceMock = new MockDotMessageService({
         diff: 'Diff',
         plain: 'Plain'
     });
 
-    const createComponent = createComponentFactory({
-        component: DotContentCompareBlockEditorComponent,
-        imports: [
-            DotDiffPipe,
-            HttpClientTestingModule,
-            CommonModule,
-            BlockEditorMockComponent,
-            DotSafeHtmlPipe,
-            DotMessagePipe
-        ],
-        schemas: [CUSTOM_ELEMENTS_SCHEMA],
-        providers: [
-            { provide: DotMessageService, useValue: messageServiceMock },
-            mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true))
-            })
-        ],
-        overrideComponents: [
-            [
-                DotContentCompareBlockEditorComponent,
-                {
-                    set: {
-                        imports: [
-                            CommonModule,
-                            BlockEditorMockComponent,
-                            DotSafeHtmlPipe,
-                            DotDiffPipe
-                        ]
+    const buildFactory = (newBlockEditorEnabled: boolean) =>
+        createComponentFactory({
+            component: DotContentCompareBlockEditorComponent,
+            imports: [
+                DotDiffPipe,
+                HttpClientTestingModule,
+                CommonModule,
+                BlockEditorMockComponent,
+                OldBlockEditorMockComponent,
+                DotSafeHtmlPipe,
+                DotMessagePipe
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                mockProvider(DotPropertiesService, {
+                    getFeatureFlag: jest.fn().mockReturnValue(of(newBlockEditorEnabled))
+                })
+            ],
+            overrideComponents: [
+                [
+                    DotContentCompareBlockEditorComponent,
+                    {
+                        set: {
+                            imports: [
+                                CommonModule,
+                                BlockEditorMockComponent,
+                                OldBlockEditorMockComponent,
+                                DotSafeHtmlPipe,
+                                DotDiffPipe
+                            ]
+                        }
                     }
-                }
+                ]
             ]
-        ]
-    });
-
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                data: dotContentCompareTableDataMock,
-                field: 'html',
-                showDiff: false,
-                showAsCompare: false
-            }
         });
-        spectator.detectChanges();
-    });
 
-    describe('Checking if we are passing HTML to the working field', () => {
-        it('Should contain same HTML for working than the Block Editor', async () => {
-            await spectator.fixture.whenStable();
+    // The compare view converts stored StoryBlock JSON to HTML via hidden editor instances that
+    // apply content with `emitUpdate: false` (no `valueChange`). Both editors are exercised so the
+    // diff renders under the new editor (flag ON) and the legacy editor (flag OFF) — see #36550.
+    describe.each([
+        {
+            label: 'new block editor (flag ON)',
+            newBlockEditorEnabled: true
+        },
+        {
+            label: 'legacy block editor (flag OFF)',
+            newBlockEditorEnabled: false
+        }
+    ])('$label', ({ newBlockEditorEnabled }) => {
+        let spectator: Spectator<DotContentCompareBlockEditorComponent>;
+
+        const createComponent = buildFactory(newBlockEditorEnabled);
+
+        // Both mocks expose the underlying TipTap Editor — a signal on the new editor, a plain
+        // property on the legacy one. Resolve it uniformly, as the component does.
+        const resolveEditor = (component: unknown): Editor | undefined => {
+            const ed = (component as { editor: Editor | (() => Editor) } | undefined)?.editor;
+
+            return typeof ed === 'function' ? ed() : ed;
+        };
+
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    data: dotContentCompareTableDataMock,
+                    field: 'html',
+                    showDiff: false,
+                    showAsCompare: false
+                }
+            });
             spectator.detectChanges();
-
-            await new Promise((resolve) => setTimeout(resolve, 200));
-            await detectChangesNextTick(() => spectator.detectChanges());
-
-            const blockEditor = spectator.component
-                .blockEditor as unknown as BlockEditorMockComponent;
-            expect(blockEditor).toBeDefined();
-            expect(blockEditor.editor()).toBeDefined();
-
-            const workingEl = spectator.query(byTestId('div-working'));
-            expect(workingEl).toBeTruthy();
-            const workingField = workingEl?.innerHTML;
-            const editorHTML = blockEditor.editor()?.getHTML();
-
-            expect(workingField).toEqual(editorHTML);
-        });
-    });
-
-    describe('Checking if we are passing HTML to the compare field', () => {
-        beforeEach(async () => {
-            spectator.setInput('showDiff', true);
-            spectator.setInput('showAsCompare', true);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
         });
 
-        it('Should contain same HTML for compare than the Block Editor', async () => {
-            await new Promise((resolve) => setTimeout(resolve, 200));
-            await detectChangesNextTick(() => spectator.detectChanges());
+        describe('Checking if we are passing HTML to the working field', () => {
+            it('Should contain same HTML for working than the Block Editor', async () => {
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
 
-            const blockEditor = spectator.component
-                .blockEditor as unknown as BlockEditorMockComponent;
-            const blockEditorCompare = spectator.component
-                .blockEditorCompare as unknown as BlockEditorMockComponent;
+                await new Promise((resolve) => setTimeout(resolve, 200));
+                await detectChangesNextTick(() => spectator.detectChanges());
 
-            expect(blockEditor).toBeDefined();
-            expect(blockEditor.editor()).toBeDefined();
-            expect(blockEditorCompare).toBeDefined();
-            expect(blockEditorCompare.editor()).toBeDefined();
+                const editor = resolveEditor(spectator.component.blockEditor());
+                expect(editor).toBeDefined();
 
-            const pipe = new DotDiffPipe();
-            const diff = pipe.transform(
-                blockEditor.editor()?.getHTML() ?? '',
-                blockEditorCompare.editor()?.getHTML() ?? ''
-            );
+                const workingEl = spectator.query(byTestId('div-working'));
+                expect(workingEl).toBeTruthy();
+                const workingField = workingEl?.innerHTML;
+                const editorHTML = editor?.getHTML();
 
-            const compareEl = spectator.query(byTestId('div-compare'));
-            expect(compareEl).toBeTruthy();
-            const compareField = compareEl?.innerHTML;
-            expect(compareField).toEqual(diff);
-        });
-    });
-
-    describe('Checking if we are comparing the plain HTML to the compare field', () => {
-        beforeEach(async () => {
-            spectator.setInput('showDiff', false);
-            spectator.setInput('showAsCompare', true);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
+                // Regression guard for #36550: the field must never render empty when content exists.
+                expect(workingField).toBeTruthy();
+                expect(workingField).toEqual(editorHTML);
+            });
         });
 
-        it('Should contain same plain HTML for compare than the Block Editor', async () => {
-            await new Promise((resolve) => setTimeout(resolve, 200));
-            await detectChangesNextTick(() => spectator.detectChanges());
+        describe('Checking if we are passing HTML to the compare field', () => {
+            beforeEach(async () => {
+                spectator.setInput('showDiff', true);
+                spectator.setInput('showAsCompare', true);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+            });
 
-            const blockEditorCompare = spectator.component
-                .blockEditorCompare as unknown as BlockEditorMockComponent;
+            it('Should contain same HTML for compare than the Block Editor', async () => {
+                await new Promise((resolve) => setTimeout(resolve, 200));
+                await detectChangesNextTick(() => spectator.detectChanges());
 
-            expect(blockEditorCompare).toBeDefined();
-            expect(blockEditorCompare.editor()).toBeDefined();
+                const editor = resolveEditor(spectator.component.blockEditor());
+                const editorCompare = resolveEditor(spectator.component.blockEditorCompare());
 
-            const compareEl = spectator.query(byTestId('div-compare'));
-            expect(compareEl).toBeTruthy();
-            const compareField = compareEl?.innerHTML;
-            const editorHTML = blockEditorCompare.editor()?.getHTML();
+                expect(editor).toBeDefined();
+                expect(editorCompare).toBeDefined();
 
-            expect(compareField).toEqual(editorHTML);
+                const pipe = new DotDiffPipe();
+                const diff = pipe.transform(
+                    editor?.getHTML() ?? '',
+                    editorCompare?.getHTML() ?? ''
+                );
+
+                const compareEl = spectator.query(byTestId('div-compare'));
+                expect(compareEl).toBeTruthy();
+                const compareField = compareEl?.innerHTML;
+                expect(compareField).toEqual(diff);
+            });
+        });
+
+        describe('Checking if we are comparing the plain HTML to the compare field', () => {
+            beforeEach(async () => {
+                spectator.setInput('showDiff', false);
+                spectator.setInput('showAsCompare', true);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+            });
+
+            it('Should contain same plain HTML for compare than the Block Editor', async () => {
+                await new Promise((resolve) => setTimeout(resolve, 200));
+                await detectChangesNextTick(() => spectator.detectChanges());
+
+                const editorCompare = resolveEditor(spectator.component.blockEditorCompare());
+                expect(editorCompare).toBeDefined();
+
+                const compareEl = spectator.query(byTestId('div-compare'));
+                expect(compareEl).toBeTruthy();
+                const compareField = compareEl?.innerHTML;
+                const editorHTML = editorCompare?.getHTML();
+
+                expect(compareField).toBeTruthy();
+                expect(compareField).toEqual(editorHTML);
+            });
         });
     });
 });
