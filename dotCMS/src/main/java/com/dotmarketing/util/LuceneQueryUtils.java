@@ -1,12 +1,6 @@
 package com.dotmarketing.util;
 
 import com.liferay.util.StringPool;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.search.*;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.classic.ParseException;
 
 
 /**
@@ -45,6 +39,41 @@ public class LuceneQueryUtils {
      */
     public static String sanitizeBulkActionsQuery(final String luceneQuery) {
         return removeQueryPrefix(luceneQuery) + " -contentType:host";
+    }
+
+    /**
+     * The set of characters that are part of the Lucene {@code query_string} syntax and must be
+     * backslash-escaped to be treated as literals: {@code \ + - ! ( ) : ^ [ ] " { } ~ * ? | & /}.
+     * This is a stable contract of the {@code query_string} syntax that both Elasticsearch and
+     * OpenSearch honor identically.
+     */
+    private static final String LUCENE_SPECIAL_CHARS = "\\+-!():^[]\"{}~*?|&/";
+
+    /**
+     * Backslash-escapes the Lucene {@code query_string} special characters in the given term so it
+     * is treated as a literal rather than as query syntax (e.g. a hyphen, colon or slash in a user
+     * value can't break query parsing). The {@code *} wildcards a caller wraps around the term must
+     * be added <em>after</em> escaping so they are not themselves escaped.
+     *
+     * <p>This is a vendor-neutral reimplementation of {@code QueryParser.escape(String)} — a pure
+     * string transform over a fixed, stable character set — so the REST-layer field strategies do
+     * not depend on the Lucene {@code queryparser} artifact (which is only on the classpath
+     * transitively via the Elasticsearch client and disappears with the ES→OS migration).</p>
+     *
+     * @param term The raw term to escape (must not be {@code null}).
+     *
+     * @return The term with all Lucene special characters backslash-escaped.
+     */
+    public static String escape(final String term) {
+        final StringBuilder sb = new StringBuilder(term.length() + 8);
+        for (int i = 0; i < term.length(); i++) {
+            final char c = term.charAt(i);
+            if (LUCENE_SPECIAL_CHARS.indexOf(c) >= 0) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
 

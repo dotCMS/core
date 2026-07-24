@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -1215,6 +1216,27 @@ public class FolderFactoryImpl extends FolderFactory {
     sql.append(String.format("ORDER BY %s %s", safeOrderBy, safeDirection));
     final var dc = new DotConnect().setSQL(sql.toString());
     sqlParams.forEach(dc::addParam);
+    return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+  }
+
+  @Override
+  protected List<Folder> findDirectChildFolders(final String hostInode,
+      final Collection<String> parentPaths) throws DotDataException {
+
+    if (parentPaths == null || parentPaths.isEmpty()) {
+      return List.of();
+    }
+
+    final String placeholders = parentPaths.stream().map(p -> "?").collect(Collectors.joining(", "));
+    final String sql = "SELECT folder.* FROM folder, identifier "
+        + "WHERE folder.identifier = identifier.id "
+        + "AND identifier.host_inode = ? "
+        + "AND identifier.asset_type = 'folder' "
+        + "AND identifier.parent_path IN (" + placeholders + ")";
+
+    final DotConnect dc = new DotConnect().setSQL(sql).addParam(hostInode);
+    parentPaths.forEach(dc::addParam);
+
     return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
   }
 

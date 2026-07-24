@@ -62,13 +62,10 @@ export function computeOutputDimensions(
     let width = ctx.naturalWidth;
     let height = ctx.naturalHeight;
 
-    const isResizing =
-        transform.outputWidth != null || transform.outputHeight != null || transform.scale !== 100;
-
-    // Resizing supersedes crop, mirroring the filter-chain rule.
-    if (!isResizing && crop.active && crop.w > 0 && crop.h > 0) {
-        width = Math.round(crop.w);
-        height = Math.round(crop.h);
+    // A crop runs last in the chain (after any resize), so when one is active it
+    // dictates the final size — its w/h are already in the scaled image's space.
+    if (crop.active && crop.w > 0 && crop.h > 0) {
+        return { width: Math.round(crop.w), height: Math.round(crop.h) };
     }
 
     if (transform.outputWidth != null || transform.outputHeight != null) {

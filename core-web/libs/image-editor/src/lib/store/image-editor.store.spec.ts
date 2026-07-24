@@ -1,5 +1,5 @@
-import { mockProvider, SpyObject } from '@ngneat/spectator/jest';
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
+import { mockProvider, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { Injector, runInInjectionContext } from '@angular/core';
@@ -162,7 +162,7 @@ describe('ImageEditorStore', () => {
             expect(store.history()).toHaveLength(0);
         });
 
-        it('should apply a crop, reset resize and add a crop entry', () => {
+        it('should apply a crop, preserve resize and add a crop entry', () => {
             transform.scaleChanged(50);
             tool.cropApplied({ x: 10, y: 10, w: 200, h: 150, active: false, aspect: null });
 
@@ -174,7 +174,12 @@ describe('ImageEditorStore', () => {
                 active: true,
                 aspect: null
             });
-            expect(store.transform().scale).toBe(100);
+            // Legacy parity: a crop drawn on the scaled preview keeps the resize
+            // (the server runs Resize then Crop), so the scale must NOT reset.
+            // (The Resize->Crop chain ordering is covered in the builder spec, which
+            // has real natural dimensions; this store has none, so scale alone can't
+            // emit a Resize filter here.)
+            expect(store.transform().scale).toBe(50);
             expect(store.activeTool()).toBe('move');
             expect(store.history().at(-1)?.category).toBe('crop');
         });

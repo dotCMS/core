@@ -1,34 +1,34 @@
 @let fileInfo = $fileInfo();
 @let metadata = fileInfo.metadata;
 
-<div class="preview-container" [class.preview-container--fade]="metadata?.editableAsText">
+<div
+    class="dot-file-field-preview__root"
+    [class.preview-container--fade]="metadata?.editableAsText">
     @if (metadata?.editableAsText) {
-        <div class="preview-code_container" data-testId="code-preview">
-            <code>{{ fileInfo.content }}</code>
+        <div
+            class="preview-code_container dot-file-field-preview__code"
+            (click)="editFile.emit()"
+            data-testId="code-preview">
+            <code class="dot-file-field-preview__code-content">
+                {{ fileInfo.content }}
+            </code>
         </div>
     } @else {
-        <div class="preview-image__container">
-            @if (fileInfo.source === 'temp') {
-                <dot-temp-file-thumbnail
-                    [tempFile]="fileInfo.file"
-                    [iconSize]="'48px'"
-                    data-testId="temp-file-thumbnail" />
-            } @else {
-                <dot-contentlet-thumbnail
-                    [fieldVariable]="fileInfo.contentType"
-                    [iconSize]="'48px'"
-                    [contentlet]="fileInfo.file"
-                    [playableVideo]="true"
-                    data-testId="contentlet-thumbnail" />
-            }
+        <div class="dot-file-field-preview__thumbnail">
+            <dot-content-thumbnail
+                [thumbnail]="fileInfo.thumbnail"
+                iconSize="48px"
+                data-testId="contentlet-thumbnail" />
         </div>
-        <div class="preview-metadata__container">
+        <div class="dot-file-field-preview__metadata">
             @if (metadata) {
-                <span data-testId="metadata-title" class="preview-metadata_header">
+                <span
+                    data-testId="metadata-title"
+                    class="dot-file-field-preview__metadata-title text-color">
                     {{ metadata.title }}
                 </span>
                 @if (metadata.width && metadata.height) {
-                    <div class="preview-metadata__info">
+                    <div class="dot-file-field-preview__metadata-row">
                         <i class="pi pi-arrows-alt"></i>
                         <span data-testId="metadata-dimensions">
                             {{ metadata.width }} x {{ metadata.height }}
@@ -36,7 +36,7 @@
                     </div>
                 }
                 @if (metadata.fileSize) {
-                    <div class="preview-metadata__info">
+                    <div class="dot-file-field-preview__metadata-row">
                         <i class="pi pi-file"></i>
                         <span data-testId="metadata-file-size">
                             {{ metadata.fileSize | dotFileSizeFormat }}
@@ -48,91 +48,142 @@
     }
 
     <!-- Actions -->
-    <div class="preview-resource-links__actions">
-        <p-button
-            (click)="toggleShowDialog()"
-            [disabled]="$disabled()"
-            styleClass="p-button-rounded p-button-sm p-button-outlined"
-            data-testId="info-btn"
-            icon="pi pi-info" />
+    <div class="dot-file-field-preview__actions">
+        @if ($showInfoButton()) {
+            <p-button
+                (click)="toggleShowDialog()"
+                [disabled]="$disabled()"
+                [pTooltip]="'dot.common.info' | dm"
+                [attr.aria-label]="'dot.common.info' | dm"
+                tooltipPosition="left"
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="info-btn"
+                icon="pi pi-info" />
+        }
+
+        @if ($canEditImage()) {
+            <p-button
+                (click)="editImage.emit()"
+                [disabled]="$disabled()"
+                [pTooltip]="'dot.common.edit' | dm"
+                [attr.aria-label]="'dot.common.edit' | dm"
+                tooltipPosition="left"
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="edit-button"
+                icon="pi pi-pencil" />
+        }
 
         @if (fileInfo.downloadLink) {
             <p-button
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 [disabled]="$disabled()"
+                [pTooltip]="'dot.common.download' | dm"
+                [attr.aria-label]="'dot.common.download' | dm"
+                tooltipPosition="left"
                 data-testId="download-btn"
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
     </div>
-    <div class="preview-metadata__actions">
-        <p-button
-            (click)="removeFile.emit()"
-            [disabled]="$disabled()"
-            [label]="'dot.common.remove' | dm"
-            styleClass="p-button-link p-button-sm"
-            data-testId="remove-button"
-            icon="pi pi-trash" />
-    </div>
     <!-- Actions in small screens -->
-    <div class="preview-metadata__action--responsive">
-        <p-button
-            (click)="toggleShowDialog()"
-            [disabled]="$disabled()"
-            styleClass="p-button-rounded p-button-sm p-button-tertiary"
-            data-testId="info-btn-responsive"
-            icon="pi pi-info" />
+    <div class="dot-file-field-preview__actions--responsive">
+        @if ($showInfoButton()) {
+            <p-button
+                (click)="toggleShowDialog()"
+                [disabled]="$disabled()"
+                [pTooltip]="'dot.common.info' | dm"
+                [attr.aria-label]="'dot.common.info' | dm"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
+                data-testId="info-btn-responsive"
+                icon="pi pi-info" />
+        }
+        @if ($canEditImage()) {
+            <p-button
+                (click)="editImage.emit()"
+                [disabled]="$disabled()"
+                [pTooltip]="'dot.common.edit' | dm"
+                [attr.aria-label]="'dot.common.edit' | dm"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
+                data-testId="edit-button-responsive"
+                icon="pi pi-pencil" />
+        }
         @if (fileInfo.downloadLink) {
             <p-button
                 styleClass="p-button-rounded p-button-sm p-button-tertiary"
                 [disabled]="$disabled()"
+                [pTooltip]="'dot.common.download' | dm"
+                [attr.aria-label]="'dot.common.download' | dm"
                 data-testId="download-btn-responsive"
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
+    </div>
+    <!-- Remove action: always anchored bottom-right. Two style variants like the
+         other actions — outlined on wide containers, tertiary (filled) on narrow ones. -->
+    <div class="dot-file-field-preview__remove">
         <p-button
-            (click)="removeFile.emit()"
+            (click)="confirmRemove($event)"
             [disabled]="$disabled()"
+            [pTooltip]="'dot.common.remove' | dm"
+            [attr.aria-label]="'dot.common.remove' | dm"
+            tooltipPosition="left"
+            severity="danger"
+            styleClass="p-button-rounded p-button-sm p-button-outlined"
+            class="dot-file-field-preview__remove-wide"
+            data-testId="remove-button"
+            icon="pi pi-trash" />
+        <p-button
+            (click)="confirmRemove($event)"
+            [disabled]="$disabled()"
+            [pTooltip]="'dot.common.remove' | dm"
+            [attr.aria-label]="'dot.common.remove' | dm"
+            severity="danger"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
+            class="dot-file-field-preview__remove-narrow"
             data-testId="remove-button-responsive"
             icon="pi pi-trash" />
     </div>
 </div>
 
+<p-confirmpopup />
+
 <p-dialog
-    [(visible)]="$showDialog"
+    [visible]="$showDialog()"
+    (visibleChange)="$showDialog.set($event)"
     [closeOnEscape]="true"
     [dismissableMask]="true"
     [modal]="true"
-    [header]="metadata.title"
+    [header]="metadata?.title"
     [appendTo]="'body'"
     [style]="{ maxWidth: '582px', width: '100%' }">
-    <div class="file-info__item">
-        <span class="file-info__title">{{ 'Size' | dm }}:</span>
-        <div class="file-info__link">
-            @if (metadata.width && metadata.height) {
-                <div class="file-info__size" data-testId="file-resolution">
-                    <i class="pi pi-arrows-alt"></i>
-                    <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
+    <div class="dot-file-field-preview__dialog-list">
+        <div class="file-info__item">
+            <span class="file-info__label">{{ 'Size' | dm }}:</span>
+            <div class="file-info__value-row">
+                @if (metadata?.width && metadata?.height) {
+                    <div class="file-info__value-group" data-testId="file-resolution">
+                        <i class="pi pi-arrows-alt"></i>
+                        <span>{{ metadata?.width }}px, {{ metadata?.height }}px</span>
+                    </div>
+                }
+                <div class="file-info__value-group">
+                    <i class="pi pi-file"></i>
+                    <span>{{ metadata?.fileSize | dotFileSizeFormat }}</span>
                 </div>
-            }
-            <div class="file-info__size">
-                <i class="pi pi-file"></i>
-                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
             </div>
         </div>
+        @for (sourceLink of $resourceLinks(); track $index) {
+            <div class="file-info__item">
+                <span class="file-info__label">{{ sourceLink.key | dm }}:</span>
+                <div class="file-info__value-row">
+                    <a class="file-info__link text-color" [href]="sourceLink.value" target="_blank">
+                        {{ sourceLink.value || ('dot.file.field.no.link.found' | dm) }}
+                    </a>
+                    <dot-copy-button [copy]="sourceLink.value" />
+                </div>
+            </div>
+        }
     </div>
-    @for (sourceLink of $resourceLinks(); track $index) {
-        <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
-            <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
-            <div class="file-info__link">
-                <a [href]="sourceLink.value" target="_blank">
-                    {{ sourceLink.value || ('dot.file.field.no.link.found' | dm) }}
-                </a>
-                <dot-copy-button [copy]="sourceLink.value" />
-            </div>
-        </div>
-    }
 
     <ng-template pTemplate="footer">
         <p-button

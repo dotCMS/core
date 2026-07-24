@@ -1,0 +1,54 @@
+<div class="flex w-72 flex-col" data-testid="lazy-multiselect">
+    <div class="px-3 pt-3 pb-2">
+        <p-iconfield class="w-full">
+            <p-inputicon class="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                class="w-full"
+                (input)="onSearch($any($event.target).value)"
+                [placeholder]="'search' | dm"
+                [attr.aria-label]="'search' | dm"
+                data-testid="lazy-multiselect-search" />
+        </p-iconfield>
+    </div>
+
+    <p-listbox
+        [(ngModel)]="$model"
+        [ngModelOptions]="{ standalone: true }"
+        [options]="$state.options()"
+        [multiple]="true"
+        [checkbox]="true"
+        [showToggleAll]="false"
+        [virtualScroll]="true"
+        [virtualScrollItemSize]="ITEM_HEIGHT"
+        [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        [scrollHeight]="SCROLL_HEIGHT"
+        [pt]="listboxPt"
+        optionLabel="label"
+        optionValue="value"
+        dataKey="value"
+        (onChange)="onChange($event.value)"
+        data-testid="lazy-multiselect-listbox">
+        <ng-template let-item pTemplate="item">
+            <dot-filter-list-item [label]="item.label" data-testid="lazy-multiselect-option" />
+        </ng-template>
+        <ng-template pTemplate="empty">
+            <div
+                class="flex items-center justify-center gap-2 py-4 text-slate-500"
+                [style.height]="SCROLL_HEIGHT"
+                data-testid="lazy-multiselect-empty">
+                @if ($state.loading()) {
+                    <i class="pi pi-spin pi-spinner text-2xl"></i>
+                } @else if ($state.error()) {
+                    <span class="text-sm" data-testid="lazy-multiselect-error">
+                        {{ 'content-drive.field-filter.more.error' | dm }}
+                    </span>
+                } @else {
+                    <span class="text-sm">{{ 'content-drive.field-filter.more.empty' | dm }}</span>
+                }
+            </div>
+        </ng-template>
+    </p-listbox>
+</div>

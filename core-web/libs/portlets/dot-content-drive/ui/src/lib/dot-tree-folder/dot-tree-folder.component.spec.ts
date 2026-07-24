@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -101,7 +101,8 @@ describe('DotTreeFolderComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'content.drive.loading.folders.title': 'Loading folders...'
+                    'content.drive.loading.folders.title': 'Loading folders...',
+                    'content-drive.tree.load-more': 'Load more'
                 })
             }
         ],
@@ -310,6 +311,37 @@ describe('DotTreeFolderComponent', () => {
             expect(onNodeSelectSpy).toHaveBeenCalledWith(mockSelectEvent);
             expect(onNodeExpandSpy).toHaveBeenCalledWith(mockExpandEvent);
             expect(onNodeCollapseSpy).toHaveBeenCalledWith(mockCollapseEvent);
+        });
+
+        it('should render a "Load more" button for a load-more node and emit loadMore on click without selecting', () => {
+            const loadMoreSpy = jest.spyOn(component.loadMore, 'emit');
+            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+
+            const loadMoreNode: TreeNode = {
+                key: 'load-more:/application/',
+                label: 'content-drive.tree.load-more',
+                data: {
+                    type: 'load-more',
+                    path: '/application/',
+                    hostname: 'demo.dotcms.com',
+                    id: 'load-more:/application/',
+                    nextPage: 2,
+                    remaining: 40
+                },
+                leaf: true,
+                selectable: false
+            };
+
+            spectator.fixture.componentRef.setInput('folders', [loadMoreNode]);
+            spectator.detectChanges();
+
+            const button = spectator.query('[data-testid="tree-load-more"]');
+            expect(button).toBeTruthy();
+
+            spectator.click(button as HTMLElement);
+
+            expect(loadMoreSpy).toHaveBeenCalledWith(loadMoreNode);
+            expect(onNodeSelectSpy).not.toHaveBeenCalled();
         });
     });
 

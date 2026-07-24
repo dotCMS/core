@@ -5,7 +5,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -538,7 +538,7 @@ describe('DotEmaDialogComponent', () => {
             component['onIframeLoad']();
 
             // Verify setColors was called with the html element from the iframe
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             expect(setColorsSpy).toHaveBeenCalledWith(iframe.contentDocument!.documentElement);
 
             // Clean up

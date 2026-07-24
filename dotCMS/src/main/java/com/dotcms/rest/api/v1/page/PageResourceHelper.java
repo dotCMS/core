@@ -204,9 +204,7 @@ public class PageResourceHelper implements Serializable {
         for (final ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final List<String> contentIds = containerEntry.getContentIds();
-            final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag()) ?
-                    Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
-                    MultiTree.DOT_PERSONALIZATION_DEFAULT;
+            final String personalization = resolvePersonalizationFromTag(containerEntry.getPersonaTag());
 
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
@@ -329,6 +327,10 @@ public class PageResourceHelper implements Serializable {
 
         if (page instanceof HTMLPageAsset) {
 
+            if (!permissionAPI.doesUserHavePermission(HTMLPageAsset.class.cast(page), PermissionAPI.PERMISSION_WRITE, user, pageMode.respectAnonPerms)) {
+                throw new DotSecurityException(String.format("User '%s' does not have WRITE permission on Page '%s'",
+                        user.getUserId(), page.getIdentifier()));
+            }
             final Contentlet newPage = this.contentletAPI.copyContentlet(
                     HTMLPageAsset.class.cast(page), user, pageMode.respectAnonPerms);
 
@@ -633,6 +635,10 @@ public class PageResourceHelper implements Serializable {
             throw new DoesNotExistException(
                     "The Contentlet being copied does not exist. Content id: " + copyContentletForm.getContentId());
         }
+        if (!permissionAPI.doesUserHavePermission(currentContentlet, PermissionAPI.PERMISSION_WRITE, user, pageMode.respectAnonPerms)) {
+            throw new DotSecurityException(String.format("User '%s' does not have WRITE permission on Contentlet '%s'",
+                    user.getUserId(), currentContentlet.getIdentifier()));
+        }
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
         Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
@@ -780,9 +786,7 @@ public class PageResourceHelper implements Serializable {
 
             final String containerId = containerEntry.getContainerId();
             final String containerUuid = containerEntry.getContainerUUID();
-            final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag())
-                    ? Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag()
-                    : MultiTree.DOT_PERSONALIZATION_DEFAULT;
+            final String personalization = resolvePersonalizationFromTag(containerEntry.getPersonaTag());
             final Map<String, Map<String, Object>> contentletStylesMap = containerEntry.getStylePropertiesMap();
 
             // For each contentlet in this container, update its styles
@@ -1194,6 +1198,18 @@ public class PageResourceHelper implements Serializable {
                     + e.getMessage());
         }
         return MultiTree.DOT_PERSONALIZATION_DEFAULT;
+    }
+
+    /**
+     * Builds the personalization key from a raw Persona key tag (e.g. {@code ContainerEntry.getPersonaTag()},
+     * which the client sends as {@code viewAs.persona.keyTag}, unprefixed). Treats a missing tag, or the
+     * bare {@code "dot:persona"} prefix with no tag segment, as the default personalization: the latter guards
+     * against a client accidentally echoing back the prefix scheme itself instead of a real Persona tag.
+     */
+    private String resolvePersonalizationFromTag(final String personaTag) {
+        return UtilMethods.isSet(personaTag) && !Persona.DOT_PERSONA_PREFIX_SCHEME.equals(personaTag)
+                ? Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag
+                : MultiTree.DOT_PERSONALIZATION_DEFAULT;
     }
 
     /**

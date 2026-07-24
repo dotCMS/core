@@ -13,7 +13,6 @@ import { UVE_MODE } from '@dotcms/types';
 import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
-    CALENDAR_FIELD_TYPES_WITH_TIME,
     DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
     TAB_FIELD_CLAZZ,
@@ -169,7 +168,7 @@ export const getFinalCastedValue = (
     value: object | string | number | undefined,
     field: DotCMSContentTypeField
 ) => {
-    if (CALENDAR_FIELD_TYPES_WITH_TIME.includes(field.fieldType as FIELD_TYPES)) {
+    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
         return value;
     }
 
@@ -354,6 +353,18 @@ export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
         field.fieldType as NON_FORM_CONTROL_FIELD_TYPES
     );
 };
+
+/**
+ * Determines whether a tab's layout is single-column, i.e. every row has exactly one column.
+ * Used to pick the form's max-width: single-column tabs cap at 720px, multi-column tabs cap
+ * at 1000px. An empty layout (e.g. an empty tab) is treated as multi-column since `every`
+ * would otherwise be vacuously true and there's nothing to render anyway.
+ *
+ * @param {Tab['layout']} layout - The layout rows of a tab.
+ * @returns {boolean} True when every row has exactly one column.
+ */
+export const isSingleColumnLayout = (layout: Tab['layout']): boolean =>
+    layout.length > 0 && layout.every((row) => row.columns.length === 1);
 
 /**
  * Transforms the form data by filtering out specific field types and organizing the content into tabs.
@@ -619,6 +630,53 @@ export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
 };
 
 /**
+ * Parses a calendar value from the backend or form into a numeric UTC timestamp.
+ * Accepts numbers, numeric strings, ISO/formatted date strings, and Date objects.
+ *
+ * @param value - Raw calendar field value
+ * @returns Numeric timestamp, null for empty/invalid, or undefined when value is undefined
+ */
+export const parseCalendarTimestamp = (value: unknown): number | null | undefined => {
+    if (value === null || value === undefined) {
+        return value as null | undefined;
+    }
+
+    if (value === '') {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return isNaN(value) || !isFinite(value) ? null : value;
+    }
+
+    if (value instanceof Date) {
+        const timestamp = value.getTime();
+
+        return isNaN(timestamp) ? null : timestamp;
+    }
+
+    if (typeof value === 'string') {
+        const trimmedValue = value.trim();
+
+        if (trimmedValue === '') {
+            return null;
+        }
+
+        const numericValue = Number(trimmedValue);
+
+        if (!isNaN(numericValue) && isFinite(numericValue)) {
+            return numericValue;
+        }
+
+        const parsed = Date.parse(trimmedValue);
+
+        return isNaN(parsed) ? null : parsed;
+    }
+
+    return null;
+};
+
+/**
  * Processes calendar field values to ensure they are always numeric timestamps.
  * Handles conversion from Date objects, strings, and validates numeric values.
  *
@@ -630,60 +688,20 @@ export const processCalendarFieldValue = (
     fieldValue: unknown,
     fieldName: string
 ): number | null | undefined => {
-    // Handle null/undefined values
-    if (fieldValue === null || fieldValue === undefined) {
-        return fieldValue as null | undefined;
-    }
+    const parsed = parseCalendarTimestamp(fieldValue);
 
-    // Handle empty strings
-    if (fieldValue === '') {
-        return null;
-    }
-
-    // Convert Date objects to timestamps (normal case from calendar component)
-    if (fieldValue instanceof Date) {
-        return fieldValue.getTime();
-    }
-
-    // Keep numeric values as-is (already correct timestamps)
-    if (typeof fieldValue === 'number') {
-        return fieldValue;
-    }
-
-    // Convert string timestamps to numbers (edge case - from form state)
-    if (typeof fieldValue === 'string') {
-        const trimmedValue = fieldValue.trim();
-
-        // Handle empty string after trim
-        if (trimmedValue === '') {
-            return null;
-        }
-
-        const numericValue = Number(trimmedValue);
-
-        if (isNaN(numericValue)) {
+    if (parsed === null && fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
+        if (typeof fieldValue === 'string') {
             console.warn(`Calendar field ${fieldName} has invalid timestamp string:`, fieldValue);
-            return null;
+        } else if (typeof fieldValue !== 'number' && !(fieldValue instanceof Date)) {
+            console.error(`Calendar field ${fieldName} received unexpected value:`, {
+                value: fieldValue,
+                type: typeof fieldValue
+            });
         }
-
-        console.warn(
-            `Calendar field ${fieldName} received string timestamp, converted to number:`,
-            {
-                original: fieldValue,
-                converted: numericValue
-            }
-        );
-
-        return numericValue;
     }
 
-    // Handle unexpected cases (arrays, objects, etc.)
-    console.error(`Calendar field ${fieldName} received unexpected value:`, {
-        value: fieldValue,
-        type: typeof fieldValue
-    });
-
-    return null;
+    return parsed;
 };
 
 /**

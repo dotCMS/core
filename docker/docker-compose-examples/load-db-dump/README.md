@@ -33,7 +33,7 @@ dotCMS loads the SQL dump via the `DB_LOAD_DUMP_SQL` environment variable, which
 2. A custom starter can be set by uncommenting and updating this line (note: normally not needed when loading from a dump):
 
    ```yaml
-   #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260409/starter-20260409.zip'
+   #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260630/starter-20260630.zip'
    ```
 
 3. HTTPS is optional. To enable it, uncomment the SSL cert env vars and the `certs` volume mount (a cert can be created with the [mkcert](https://github.com/FiloSottile/mkcert) tool):

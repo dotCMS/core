@@ -6,6 +6,8 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
+
 import {
     AssetMeta,
     ImageEditorAssetContext,
@@ -14,9 +16,9 @@ import {
 
 /**
  * Data-access service for the image editor: resolves asset metadata, queries the
- * verified preview blob and file sizes, and triggers client-side downloads. All
- * read-only/metadata calls are non-fatal and never throw. (Saving the edited image
- * is handled in a separate issue.)
+ * verified preview blob and file sizes, triggers client-side downloads, and saves
+ * the edited image into a temp file. All read-only/metadata calls are non-fatal and
+ * never throw.
  */
 @Injectable({ providedIn: 'root' })
 export class DotImageEditorService {
@@ -125,6 +127,16 @@ export class DotImageEditorService {
         this.#document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
+    }
+
+    /**
+     * Saves the edited image by GET-ting the filter/save URL, which makes the
+     * servlet stage the filtered render into a temp file and return its descriptor.
+     * @param url - The Save URL built by `buildSaveUrl`
+     * @returns The staged temp file descriptor
+     */
+    saveEditedImage(url: string): Observable<DotCMSTempFile> {
+        return this.#http.get<DotCMSTempFile>(url);
     }
 
     #resolveNaturalDimensions(url: string): Observable<NaturalDimensions> {

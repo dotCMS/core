@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'dot-rules',
     preset: '../../jest.preset.js',

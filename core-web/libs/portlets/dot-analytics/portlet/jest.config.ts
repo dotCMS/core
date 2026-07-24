@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'portlets-dot-analytics',
     preset: '../../../../jest.preset.js',

@@ -6,92 +6,115 @@ import { expect, test } from '../../../../fixtures/host-folder.fixture';
 
 /**
  * Journey 1: Default Host/Folder Selection (No Folder Context)
- *
- * Admin creates new content without folder context; the Host/Folder field
- * defaults to a site. The user selects a different site from the tree,
- * saves, and verifies the selection persists after reopen.
  */
 test.describe('Default Host/Folder Selection', () => {
-    test.describe.configure({ mode: 'serial' });
-
-    let contentTypeVariable: string;
-
-    test.beforeEach(async ({ apiHelpers, testSuffix }) => {
+    test('default field shows a site selection for new content @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
         const contentType = await apiHelpers.createContentType(
             apiHelpers.hostFolderPayload(testSuffix)
         );
-        contentTypeVariable = contentType.variable;
+        try {
+            const defaultSite = await apiHelpers.getDefaultSite();
+            const formPage = new NewEditContentFormPage(adminPage);
+            await formPage.goToNew(contentType.variable);
+
+            const field = new HostFolderField(adminPage);
+            await field.expectVisible();
+            await field.expectLabelContains(defaultSite.hostname);
+        } finally {
+            await apiHelpers.deleteContentType(contentType.id);
+        }
     });
 
-    test('default field shows a site selection for new content @critical', async ({
-        adminPage
-    }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        await formPage.goToNew(contentTypeVariable);
-
-        const field = new HostFolderField(adminPage);
-        await field.expectVisible();
-        await field.expectLabelMatchesPattern(/^\/\/.+/);
-    });
-
-    test('select a site, save, and verify persistence @critical', async ({
+    test('selects site root through the popover and updates the trigger label @critical', async ({
         adminPage,
+        apiHelpers,
         testSuffix
     }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        await formPage.goToNew(contentTypeVariable);
-
-        const field = new HostFolderField(adminPage);
-        await formPage.fillTextField(`Title Default ${testSuffix}`);
-
-        await field.openDropdown();
-        await field.expectAtLeastOneTreeNode();
-
-        const selectedSiteName = await field.selectFirstNode();
-
-        await field.expectPanelClosed();
-        await field.expectLabelText(`//${selectedSiteName}`);
-
-        const responsePromise = adminPage.waitForResponse(
-            (r) => r.url().includes('/api/v1/workflow/actions/') && r.status() === 200
+        const contentType = await apiHelpers.createContentType(
+            apiHelpers.hostFolderPayload(testSuffix)
         );
-        await adminPage.getByRole('button', { name: 'Save' }).click();
-        await responsePromise;
+        try {
+            const defaultSite = await apiHelpers.getDefaultSite();
+            const formPage = new NewEditContentFormPage(adminPage);
+            await formPage.goToNew(contentType.variable);
 
-        await adminPage.waitForURL(/\/content\/([a-f0-9-]+)/);
-        const url = adminPage.url();
-        const [, savedContentIdentifier] = url.match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
-        expect(savedContentIdentifier).toBeTruthy();
+            const field = new HostFolderField(adminPage);
+            await field.selectSiteRoot(defaultSite.hostname);
 
-        await adminPage.goto(`/dotAdmin/#/content/${savedContentIdentifier}`);
-        await adminPage.waitForLoadState('domcontentloaded');
-        await adminPage.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
-
-        await field.expectLabelText(`//${selectedSiteName}`);
+            await field.expectLabelContains(defaultSite.hostname);
+        } finally {
+            await apiHelpers.deleteContentType(contentType.id);
+        }
     });
 
-    test('tree select shows filterable list of sites @smoke', async ({ adminPage }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        await formPage.goToNew(contentTypeVariable);
+    test('selects a folder through the popover and updates the trigger label @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const contentType = await apiHelpers.createContentType(
+            apiHelpers.hostFolderPayload(testSuffix)
+        );
+        try {
+            const defaultSite = await apiHelpers.getDefaultSite();
+            const folderName = `popover-folder-${testSuffix}`;
+            await apiHelpers.createFolders(defaultSite.hostname, [`/${folderName}`]);
 
-        const field = new HostFolderField(adminPage);
-        await field.openDropdown();
+            const formPage = new NewEditContentFormPage(adminPage);
+            await formPage.goToNew(contentType.variable);
 
-        const siteName = await field.getFirstNodeLabel();
-        const partial = siteName.substring(0, Math.min(4, siteName.length));
+            const field = new HostFolderField(adminPage);
+            await field.openOverlay();
+            await field.selectSite(defaultSite.hostname);
+            const partial = folderName.substring(0, Math.min(6, folderName.length));
+            await field.searchFolders(partial);
+            await field.selectFolderFlow(folderName);
 
-        await field.filterTree(partial);
-
-        const filteredNodes = field.panel.locator('.p-tree-node');
-        await expect(filteredNodes.first()).toBeVisible({ timeout: 5000 });
+            await field.expectLabelContains(folderName);
+        } finally {
+            await apiHelpers.deleteContentType(contentType.id);
+        }
     });
 
-    test('System Host is hidden when field is required', async ({ adminPage }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        await formPage.goToNew(contentTypeVariable);
+    test('site selection survives a save and reload @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const contentType = await apiHelpers.createContentType(
+            apiHelpers.hostFolderPayload(testSuffix)
+        );
+        try {
+            const formPage = new NewEditContentFormPage(adminPage);
+            await formPage.goToNew(contentType.variable);
 
-        const field = new HostFolderField(adminPage);
-        await field.openDropdown();
-        await field.expectTreeNodeNotVisible('System Host');
+            const field = new HostFolderField(adminPage);
+            await formPage.fillTextField(`Title Default ${testSuffix}`);
+
+            const selectedSiteName = await field.selectSiteRoot();
+            await field.expectLabelContains(selectedSiteName);
+
+            const responsePromise = adminPage.waitForResponse(
+                (r) => r.url().includes('/api/v1/workflow/actions/') && r.status() === 200
+            );
+            await adminPage.getByRole('button', { name: 'Save' }).click();
+            await responsePromise;
+
+            await adminPage.waitForURL(/\/content\/([a-f0-9-]+)/);
+            const url = adminPage.url();
+            const [, savedContentIdentifier] = url.match(
+                /\/content\/([a-f0-9-]+)/
+            ) as RegExpMatchArray;
+            expect(savedContentIdentifier).toBeTruthy();
+
+            await formPage.goToContent(savedContentIdentifier);
+            await field.expectLabelContains(selectedSiteName);
+        } finally {
+            await apiHelpers.deleteContentType(contentType.id);
+        }
     });
 });

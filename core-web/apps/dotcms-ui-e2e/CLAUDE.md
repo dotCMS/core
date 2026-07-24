@@ -1,3 +1,3 @@
 # E2E — dotCMS Playwright
 
-**Read [AGENTS.md](AGENTS.md)** — single source of truth for structure, commands, locators, and gotchas.
+**Humans:** start at [README.md](README.md). **Agents:** read [AGENTS.md](AGENTS.md) for code conventions, locators, and gotchas.

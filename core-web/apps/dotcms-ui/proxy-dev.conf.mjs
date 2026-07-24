@@ -1,5 +1,4 @@
 /* eslint-env es6 */
-/* eslint-disable */
 
 /**
  * dotCMS backend the dev server proxies `/api` (and friends) to.

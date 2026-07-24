@@ -12,19 +12,19 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import org.owasp.encoder.Encode;
 
 /**
- * Velocity view tool ({@code $encode}) that exposes the full
+ * Velocity view tool ({@code $owasp}) that exposes the full
  * <a href="https://owasp.org/www-project-java-encoder/">OWASP Java Encoder</a> API
  * directly to Velocity templates, covering every output context: HTML, HTML attributes,
  * JavaScript, CSS, URI components, and XML.
  *
- * <p>Registered in {@code toolbox.xml} under the key {@code encode}.
+ * <p>Registered in {@code toolbox.xml} under the key {@code owasp}.
  *
  * <p>Example Velocity usage:
  * <pre>
- *   &lt;p&gt;$encode.forHtml($request.getParameter("name"))&lt;/p&gt;
- *   &lt;a href="/search?q=$encode.forUriComponent($request.getParameter("q"))"&gt;Go&lt;/a&gt;
- *   &lt;script&gt;var msg = "$encode.forJavaScript($message)";&lt;/script&gt;
- *   &lt;div style="color: $encode.forCssString($color)"&gt;...&lt;/div&gt;
+ *   &lt;p&gt;$owasp.forHtml($request.getParameter("name"))&lt;/p&gt;
+ *   &lt;a href="/search?q=$owasp.forUriComponent($request.getParameter("q"))"&gt;Go&lt;/a&gt;
+ *   &lt;script&gt;var msg = "$owasp.forJavaScript($message)";&lt;/script&gt;
+ *   &lt;div style="color: $owasp.forCssString($color)"&gt;...&lt;/div&gt;
  * </pre>
  *
  * @see com.liferay.util.Xss

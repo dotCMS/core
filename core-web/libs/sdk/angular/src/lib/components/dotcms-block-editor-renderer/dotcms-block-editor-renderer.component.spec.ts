@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { BlockEditorNode, UVE_MODE } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';

@@ -8,28 +8,27 @@ import {
     OnChanges,
     OnDestroy,
     OnInit,
-    Renderer2,
     SimpleChanges,
     inject,
     input,
-    output,
-    viewChild
+    output
 } from '@angular/core';
+
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
-    DotCMSContentTypeLayoutRow,
-    DotDialogActions
+    DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 
-import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
+import { DotEditFieldDialogComponent, DotEditFieldDialogResult } from '../dot-edit-field-dialog';
 import { FieldType } from '../models';
 import { DropFieldData, FieldDragDropService } from '../service';
 import { FieldPropertyService } from '../service/field-properties.service';
@@ -43,38 +42,21 @@ import { FieldPropertyService } from '../service/field-properties.service';
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     templateUrl: './content-type-fields-drop-zone.component.html',
-    standalone: false
+    standalone: false,
+    providers: [DialogService]
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
-    private dotMessageService = inject(DotMessageService);
     private fieldDragDropService = inject(FieldDragDropService);
     private fieldPropertyService = inject(FieldPropertyService);
     private dotEventsService = inject(DotEventsService);
     private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
     private dragulaService = inject(DragulaService);
+    private dialogService = inject(DialogService);
     private elRef = inject(ElementRef);
-    private rendered = inject(Renderer2);
 
-    /** Tab index for the Overview (field properties) tab. */
-    readonly OVERVIEW_TAB_INDEX = 0;
-
-    /** Tab index for the Settings tab (block-editor, binary, custom-field specific options). */
-    readonly SETTINGS_TAB_INDEX = 1;
-
-    displayDialog = false;
     currentField: DotCMSContentTypeField;
     currentFieldType: FieldType;
-    dialogActions: DotDialogActions;
-    defaultDialogActions: DotDialogActions;
     fieldRows: DotCMSContentTypeLayoutRow[];
-    hideButtons = false;
-    activeTab = 0;
-
-    private overviewFormChanged = false;
-
-    /** Reference to the field-properties form rendered inside the dialog. */
-    readonly $propertiesForm =
-        viewChild.required<ContentTypeFieldsPropertiesFormComponent>('fieldPropertiesForm');
 
     /** Layout rows used to render the drop-zone. Changes trigger a structural clone. */
     readonly $layout = input<DotCMSContentTypeLayoutRow[]>(undefined, { alias: 'layout' });
@@ -101,28 +83,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     /** When `true`, shows the global loading indicator over the drop-zone. */
     readonly $loading = input<boolean>(false, { alias: 'loading' });
-
-    /**
-     * Whether the currently selected field type has a dedicated Settings tab
-     * (Block Editor, Binary, or Custom Field).
-     */
-    get isFieldWithSettings() {
-        return (
-            [
-                DotCMSClazzes.BLOCK_EDITOR,
-                DotCMSClazzes.BINARY,
-                DotCMSClazzes.CUSTOM_FIELD
-            ] as string[]
-        ).includes(this.currentFieldType?.clazz);
-    }
-
-    /**
-     * Returns the tab index for the "Variables" tab.
-     * Shifts to index 2 when a Settings tab is present for the current field type.
-     */
-    get variablesTabIndex(): number {
-        return !!this.currentField?.id && this.isFieldWithSettings ? 2 : 1;
-    }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
@@ -166,25 +126,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnInit(): void {
-        this.defaultDialogActions = {
-            accept: {
-                action: () => {
-                    this.$propertiesForm().saveFieldProperties();
-                },
-                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
-                disabled: true
-            },
-            cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
-                action: () => {
-                    this.removeFieldsWithoutId();
-                    this.displayDialog = false;
-                }
-            }
-        };
-
-        this.dialogActions = this.defaultDialogActions;
-
         this.fieldDragDropService.fieldDropFromSource$
             .pipe(takeUntil(this.destroy$))
             .subscribe((data: DropFieldData) => {
@@ -196,7 +137,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                     }, 0);
                 } else {
                     this.setDroppedField(data.item);
-                    this.toggleDialog();
+                    this.openFieldDialog();
                 }
             });
 
@@ -231,10 +172,45 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 const fieldTab: DotCMSContentTypeLayoutRow = FieldUtil.createFieldTabDivider();
                 this.fieldRows.push(fieldTab);
                 this.setDroppedField(fieldTab.divider);
-                this.toggleDialog();
+                this.openFieldDialog();
             });
 
         this.setUpDragulaScroll();
+    }
+
+    /**
+     * Open the field-edit dialog and react to its result.
+     * On save the field is committed, on convert-to-block the field is emitted,
+     * and on cancel/dismiss any field added without an id is removed.
+     */
+    private openFieldDialog(): void {
+        const ref = this.dialogService.open(DotEditFieldDialogComponent, {
+            header: this.currentFieldType?.label,
+            modal: true,
+            width: '45rem',
+            closable: true,
+            closeOnEscape: true,
+            data: {
+                currentField: this.currentField,
+                currentFieldType: this.currentFieldType,
+                contentType: this.$contentType()
+            }
+        });
+
+        ref.onClose.subscribe((result?: DotEditFieldDialogResult) => {
+            switch (result?.kind) {
+                case 'saved':
+                    this.saveFieldsHandler(result.field);
+                    break;
+                case 'convert-to-block':
+                    this.editField.emit(result.field);
+                    break;
+                case 'settings-saved':
+                    break;
+                default:
+                    this.removeFieldsWithoutId();
+            }
+        });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -274,20 +250,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
-     * Convert WYSIWYG field to Block Field
-     *
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    convertWysiwygToBlock() {
-        this.editField.emit({
-            ...this.currentField,
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-            fieldType: 'Story-Block'
-        });
-        this.toggleDialog();
-    }
-
-    /**
      * Emit the saveField event
      * @param DotContentTypeField fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent
@@ -307,8 +269,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         } else {
             this.emitSaveFields(this.fieldRows);
         }
-
-        this.toggleDialog();
     }
 
     /**
@@ -323,7 +283,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 (field: DotCMSContentTypeField) => fieldToEdit.id === field.id
             );
             this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
-            this.toggleDialog();
+            this.openFieldDialog();
         }
     }
 
@@ -348,11 +308,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 this.fieldRows.splice(rowIndex, 1);
             }
         });
-        this.hideButtons = false;
-        this.activeTab = 0;
-        this.displayDialog = false;
         this.currentField = null;
-        this.setDialogOkButtonState(false);
     }
 
     /**
@@ -400,98 +356,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     cancelLastDragAndDrop(): void {
         this.fieldRows = structuredClone(this.$layout());
-    }
-
-    /**
-     * Set the state for the ok action for the dialog
-     *
-     * @param {boolean} $event
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    setDialogOkButtonState(formChanged: boolean): void {
-        if (this.activeTab === this.OVERVIEW_TAB_INDEX) {
-            this.overviewFormChanged = formChanged;
-        }
-
-        this.dialogActions = {
-            ...this.dialogActions,
-            accept: {
-                ...this.dialogActions.accept,
-                disabled: !formChanged
-            }
-        };
-    }
-
-    /**
-     * Hide or show the 'save' and 'hide' buttons according to the field tab selected
-     *
-     * @param index
-     */
-    handleTabChange(index: number): void {
-        if (index === this.OVERVIEW_TAB_INDEX) {
-            this.dialogActions = {
-                ...this.defaultDialogActions,
-                accept: {
-                    ...this.defaultDialogActions.accept,
-                    disabled: !this.overviewFormChanged
-                }
-            };
-        }
-
-        this.hideButtons =
-            index !== this.OVERVIEW_TAB_INDEX &&
-            !(index === this.SETTINGS_TAB_INDEX && this.isFieldWithSettings);
-    }
-
-    /**
-     * Scroll into convert to block section
-     *
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    scrollTo() {
-        const el = this.rendered.selectRootElement('dot-convert-wysiwyg-to-block', true);
-
-        el.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-            inline: 'nearest'
-        });
-    }
-
-    /**
-     * Change dialogActions (used by block-editor and binary settings tabs)
-     *
-     * @param {DotDialogActions} controls
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    changesDialogActions(controls: DotDialogActions) {
-        this.dialogActions = {
-            ...controls,
-            cancel: this.defaultDialogActions.cancel
-        };
-    }
-
-    /**
-     * Called when the dialog's visibility changes.
-     * Cleans up unsaved fields when the dialog is closed without saving.
-     *
-     * @param isVisible - `false` when the dialog has been dismissed.
-     */
-    handleDialogVisibleChange(isVisible: boolean): void {
-        if (!isVisible) {
-            this.removeFieldsWithoutId();
-        }
-    }
-
-    /**
-     * Toggles the field-properties dialog open/closed.
-     * Resets dialog actions and the active tab to their default state on each toggle.
-     */
-    protected toggleDialog(): void {
-        this.dialogActions = this.defaultDialogActions;
-        this.activeTab = this.OVERVIEW_TAB_INDEX;
-        this.overviewFormChanged = false;
-        this.displayDialog = !this.displayDialog;
     }
 
     private setDroppedField(droppedField: DotCMSContentTypeField): void {

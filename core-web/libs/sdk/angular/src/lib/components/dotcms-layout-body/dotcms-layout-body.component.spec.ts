@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createRoutingFactory } from '@openng/spectator/jest';
 
 import { UVE_MODE } from '@dotcms/types';
 import * as uve from '@dotcms/uve';

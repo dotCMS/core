@@ -12,6 +12,12 @@ export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
 
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 
+/** `data.type` value identifying the synthetic "Load more" node appended to a paginated level. */
+export const LOAD_MORE_NODE_TYPE = 'load-more' as const;
+
+/** i18n key for the "Load more" node label. */
+export const LOAD_MORE_LABEL_KEY = 'content-drive.tree.load-more';
+
 /**
  * @export
  * @type DOT_DRAG_ITEM
@@ -31,7 +37,8 @@ export const ALL_FOLDER: DotFolderTreeNodeItem = {
         type: 'folder',
         path: '',
         hostname: '',
-        id: ''
+        id: '',
+        inode: ''
     },
     leaf: false,
     expanded: true

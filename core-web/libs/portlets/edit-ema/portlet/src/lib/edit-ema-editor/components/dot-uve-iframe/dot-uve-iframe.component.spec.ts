@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { signal, WritableSignal } from '@angular/core';
@@ -225,53 +225,31 @@ describe('DotUveIframeComponent', () => {
             expect(setSeoSpy).toHaveBeenCalledTimes(1);
         });
 
-        it('should write content to iframe document', () => {
-            const openSpy = jest.spyOn(mockDoc, 'open');
-            const writeSpy = jest.spyOn(mockDoc, 'write');
-            const closeSpy = jest.spyOn(mockDoc, 'close');
-
+        it('should set srcdoc to page content on iframe load', () => {
             component.onIframeLoad();
-
-            expect(openSpy).toHaveBeenCalledTimes(1);
-            expect(writeSpy).toHaveBeenCalledTimes(1);
-            expect(closeSpy).toHaveBeenCalledTimes(1);
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
         });
 
-        it('should not insert content if iframe element is not available', () => {
+        it('should not set srcdoc if iframe element is not available', () => {
             component.iframe = undefined as any;
-            const openSpy = jest.spyOn(mockDoc, 'open');
             component.onIframeLoad();
-            expect(openSpy).not.toHaveBeenCalled();
-        });
-
-        it('should not insert content if contentDocument is not available', () => {
-            Object.defineProperty(mockIframe, 'contentDocument', {
-                value: null,
-                writable: true
-            });
-            const openSpy = jest.spyOn(mockDoc, 'open');
-            component.onIframeLoad();
-            expect(openSpy).not.toHaveBeenCalled();
+            expect(mockIframe.srcdoc).toBe('');
         });
 
         describe('legacy script injection (FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION)', () => {
             it('should inject the UVE script when the flag is enabled', () => {
                 legacyScriptInjectionEnabledSignal.set(true);
-                const writeSpy = jest.spyOn(mockDoc, 'write');
                 component.onIframeLoad();
-                expect(writeSpy).toHaveBeenCalledWith(
-                    expect.stringContaining(`<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`)
+                expect(mockIframe.srcdoc).toContain(
+                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
                 );
             });
 
             it('should NOT inject the UVE script when the flag is disabled', () => {
                 legacyScriptInjectionEnabledSignal.set(false);
-                const writeSpy = jest.spyOn(mockDoc, 'write');
                 component.onIframeLoad();
-                expect(writeSpy).toHaveBeenCalledWith(
-                    expect.not.stringContaining(
-                        `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                    )
+                expect(mockIframe.srcdoc).not.toContain(
+                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
                 );
             });
         });
@@ -565,6 +543,68 @@ describe('DotUveIframeComponent', () => {
             });
             (component as any).setSeoData();
             expect(mockDotSeoMetaTagsService.getMetaTagsResults).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('insertPageContent – de-duplicate writes', () => {
+        let mockIframe: HTMLIFrameElement;
+        let mockWindow: Window;
+
+        beforeEach(() => {
+            pageTypeSignal.set(PageType.TRADITIONAL);
+
+            mockIframe = document.createElement('iframe');
+            mockWindow = {
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn()
+            } as unknown as Window;
+
+            Object.defineProperty(mockIframe, 'contentWindow', {
+                value: mockWindow,
+                writable: true
+            });
+
+            component.iframe = { nativeElement: mockIframe } as any;
+        });
+
+        it('should set srcdoc to content on the first call', () => {
+            component.onIframeLoad();
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+        });
+
+        it('should skip srcdoc assignment on re-entrant calls with the same src and content', () => {
+            component.onIframeLoad(); // first write — srcdoc = mockPageRender
+            mockIframe.srcdoc = 'SENTINEL'; // manually change to detect re-assignment
+            component.onIframeLoad(); // same key — should not overwrite
+
+            expect(mockIframe.srcdoc).toBe('SENTINEL');
+        });
+
+        it('should re-write srcdoc when content changes (real-time canvas update)', () => {
+            const updatedRender = '<html><body>Updated Content</body></html>';
+            component.onIframeLoad();
+            pageRenderSignal.set(updatedRender);
+            component.onIframeLoad();
+
+            expect(mockIframe.srcdoc).toBe(updatedRender);
+        });
+
+        it('should re-write srcdoc when src changes (page navigation)', () => {
+            component.onIframeLoad();
+            spectator.setInput('src', 'https://example.com/new-page');
+            component.onIframeLoad();
+
+            // Content is the same but the key changed (different src) — re-write
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+        });
+
+        it('should still call handleInlineScripts on de-duplicated calls', () => {
+            const handleSpy = jest.spyOn(component as any, 'handleInlineScripts');
+            component.onIframeLoad();
+            component.onIframeLoad();
+
+            // handleInlineScripts must run on every call, not just srcdoc writes
+            expect(handleSpy).toHaveBeenCalledTimes(2);
         });
     });
 

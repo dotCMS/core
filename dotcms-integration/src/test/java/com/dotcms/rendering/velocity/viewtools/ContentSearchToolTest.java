@@ -13,6 +13,8 @@ import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.SearchHit;
+import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -245,6 +247,148 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             #end
             """;
 
+    /**
+     * A plain document query ({@code size > 0}, no aggregations) so the response carries actual
+     * search hits. Filters on {@code live:true} so it resolves against the live index in the
+     * LIVE-mode tool, matching the contentlets published in {@link #prepare()}.
+     */
+    private static final String HITS_QUERY =
+            "{\"size\":5,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
+
+    /**
+     * Locks the non-aggregation accessor surface of {@code $estool.search(...)} —
+     * {@link ContentSearchResults} — that customer VTL relies on: top-level timing/count getters
+     * ({@code totalResults}, {@code queryTook}, {@code scrollId}) and the hit walk
+     * ({@code $results.hits.hits} → {@code $hit.id} / {@code $hit.index} / {@code $hit.sourceAsMap}).
+     *
+     * <p>{@link ContentSearchResults} keeps JavaBean getters ({@code getHits}, {@code getTotalResults},
+     * {@code getQueryTook}, {@code getScrollId}), so property syntax ({@code $results.hits}) resolves.
+     * The neutral hit records also name their components {@code getId}/{@code getIndex}/
+     * {@code getSourceAsMap}, so {@code $hit.id} resolves too. {@code TotalHits.value()} is a bare
+     * record accessor, hence the explicit {@code ()}. This is the back-compat safety net for
+     * {@code $dotcontent.search(...)} templates that read hits/timing, not just aggregations.</p>
+     */
+    private static final String SEARCH_HITS_VTL = """
+            #set($esQuery = '{"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($results = $estool.search($esQuery))
+            totalResults: $!{results.totalResults}
+            queryTook: $!{results.queryTook}
+            scrollId: [$!{results.scrollId}]
+            totalHits: $!{results.hits.totalHits.value()}
+            #foreach($hit in $results.hits.hits)
+              hit id: $!{hit.id}
+              hit index: $!{hit.index}
+              hit source: $!{hit.sourceAsMap}
+            #end
+            """;
+
+    /**
+     * A field-sorted {@code $estool.search(...)} whose per-hit {@code sort} values the template reads
+     * via {@code $hit.sortValues} (property → {@code getSortValues()}) and
+     * {@code $hit.getSortValues().get(0)}. Guards the Velocity-facing side of
+     * <a href="https://github.com/dotCMS/core/issues/36581">#36581</a>: the neutral {@link SearchHit}
+     * now carries the sort values and exposes them under a bean-style {@code get}-accessor, so VTL
+     * templates that read the per-hit sort value (e.g. the {@code moddate} sort key, or a
+     * {@code _geo_distance} distance) resolve it instead of silently getting {@code null}.
+     */
+    private static final String SEARCH_SORT_VTL = """
+            #set($esQuery = '{"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}},"sort":[{"moddate":"desc"}]}')
+            #set($results = $estool.search($esQuery))
+            #foreach($hit in $results.hits.hits)
+              hit id: $!{hit.id}
+              sortValues: $!{hit.sortValues}
+              firstSort: $!{hit.getSortValues().get(0)}
+            #end
+            """;
+
+    /**
+     * Locks the same non-aggregation accessor surface for {@code $estool.raw(...)} —
+     * {@link ContentSearchResponse}. Because {@code raw()} returns a <i>record</i>, its top-level
+     * accessors need explicit method syntax ({@code $results.tookMillis()}, {@code $results.hits()},
+     * {@code $results.scrollId()}); property syntax ({@code $results.took}, {@code $results.hits})
+     * silently yields {@code null} on a record. Downstream the neutral {@link SearchHits} /
+     * {@link SearchHit} components are {@code get}-named ({@code getHits}, {@code getTotalHits},
+     * {@code getId}...), so those resolve either way; {@code TotalHits.value()} needs the explicit
+     * {@code ()}. This guards {@code $dotcontent.raw(...)} templates that read hits/timing.
+     */
+    private static final String RAW_HITS_VTL = """
+            #set($esQuery = '{"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($results = $estool.raw($esQuery))
+            tookMillis: $!{results.tookMillis()}
+            scrollId: [$!{results.scrollId()}]
+            #set($hits = $results.hits())
+            totalHits: $!{hits.getTotalHits().value()}
+            #foreach($hit in $hits.getHits())
+              raw hit id: $!{hit.id}
+              raw hit index: $!{hit.index}
+              raw hit source: $!{hit.sourceAsMap}
+            #end
+            """;
+
+    /**
+     * Legacy ES-style <b>property syntax</b> (no parentheses) on {@code $estool.raw(...)}. Before the
+     * back-compat accessors were added to {@link ContentSearchResponse} / {@link TotalHits}, these
+     * would silently yield {@code null} on the record. They must resolve now:
+     * {@code $r.tookInMillis} → {@code getTookInMillis()}, {@code $r.scrollId} → {@code getScrollId()},
+     * {@code $r.hits.totalHits.value} → {@code getValue()}, and {@code $r.aggregations.<name>.buckets}
+     * → {@code getAggregations()} (the tree, matching {@code search()}).
+     */
+    private static final String RAW_LEGACY_PROPERTY_VTL = """
+            #set($esQuery = '{"size":5,"aggs":{"content_types":{"terms":{"field":"contenttype","size":5}}},"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($results = $estool.raw($esQuery))
+            tookInMillis: $!{results.tookInMillis}
+            scrollId: [$!{results.scrollId}]
+            totalHits: $!{results.hits.totalHits.value}
+            #foreach($group in $results.aggregations.content_types.buckets)
+              legacy key: $!{group.getKeyAsString()}
+              legacy docCount: $!{group.getDocCount()}
+            #end
+            """;
+
+    /**
+     * The customer's <b>other</b> idiom (issue #36435): instead of navigating the Velocity object
+     * directly (the path {@link #verbatimCustomerVtl_rendersAfterFix()} covers), the template first
+     * round-trips the raw response through {@code $json.generate($rawResults.response)} and then walks
+     * the resulting {@code JSONObject}: {@code $results.aggregations.<name>.buckets}.
+     *
+     * <p>{@code $rawResults.response} is the {@link ContentSearchResponse} exposed by
+     * {@link ContentSearchResults#getResponse()}. {@code $json.generate(Object)} is literally
+     * {@code new com.dotmarketing.util.json.JSONObject(response)} — a reflection/bean serializer that
+     * only sees {@code getX()} accessors and honours {@code @JsonIgnore}. Before the fix,
+     * {@code getAggregations()} carried {@code @JsonIgnore}, so the aggregations vanished from the
+     * generated JSON and this loop iterated zero times (silent empty sitemap). The fix moves that
+     * suppression to a class-level {@code @JsonIgnoreProperties} that only Jackson honours, so the
+     * reflection serializer keeps {@code aggregations} — this loop must now emit buckets.</p>
+     *
+     * <p>Note: the legacy {@code .get("asMap")} hop the customer used only ever existed because the
+     * pre-migration object was an ES {@code Aggregations} (which had {@code getAsMap()}); the neutral
+     * tree is flatter, so the correct navigation is {@code aggregations.<name>.buckets} directly.</p>
+     */
+    private static final String JSON_GENERATE_VTL = """
+            #set($esQuery = '{
+                "aggs": {
+                    "content_types": {
+                        "terms": { "field": "contentType", "size": 5 }
+                    }
+                },
+                "size": 0,
+                "query": {
+                    "bool": {
+                        "filter": [ { "term": { "live": true } } ]
+                    }
+                }
+            }')
+
+            ## The #36435 idiom: JSON-ify the raw response FIRST, then navigate the JSONObject.
+            #set($rawResults = $estool.search($esQuery))
+            #set($results = $json.generate($rawResults.response))
+            aggregations: $!{results.aggregations}
+            #foreach($group in $results.aggregations.content_types.buckets)
+              json key: $!{group.key}
+              json docCount: $!{group.docCount}
+            #end
+            """;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -297,11 +441,17 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         return tool;
     }
 
-    /** Builds a Velocity context with the live {@code $estool} and a mock {@code $response} bound. */
+    /**
+     * Builds a Velocity context with the live {@code $estool}, a mock {@code $response} and the
+     * {@code $json} tool bound. {@link JSONTool} needs no real init ({@code init(Object)} is a no-op
+     * and {@code generate(Object)} is stateless), so a plain instance mirrors what the Velocity
+     * toolbox binds as {@code $json}.
+     */
     private Context velocityContext() {
         final Context ctx = new VelocityContext();
         ctx.put("estool", liveContentTool());
         ctx.put("response", mock(HttpServletResponse.class));
+        ctx.put("json", new JSONTool());
         return ctx;
     }
 
@@ -324,6 +474,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
                 Pattern.compile("docCount:\\s*\\d+").matcher(output).find());
         assertTrue("FIX (#36026): nested top_hits must be reachable, emitting 'hit id:' lines",
                 output.contains("hit id:"));
+    }
+
+    /**
+     * End-to-end regression for <a href="https://github.com/dotCMS/core/issues/36435">#36435</a>:
+     * drives the customer's {@code $json.generate($rawResults.response)}-then-navigate idiom through
+     * the real dotCMS Velocity engine and asserts the aggregation buckets survive the JSON round-trip
+     * (the {@code json key:} / {@code json docCount:} loop must execute). This is the path #36026/#36027
+     * did NOT cover — those navigate the Velocity object directly; this one serializes first.
+     */
+    @Test
+    public void jsonGenerateThenNavigateVtl_emitsBuckets() throws Exception {
+        final String output = VelocityUtil.eval(JSON_GENERATE_VTL, velocityContext());
+        Logger.info(this, "\n===== $json.generate VTL output =====\n" + output + "\n================================");
+
+        assertTrue("FIX (#36435): $json.generate($rawResults.response) must keep the aggregations, so "
+                        + "the bucket loop executes and emits 'json key:' lines",
+                output.contains("json key:"));
+        assertTrue("FIX (#36435): bucket doc counts must render with real numbers after the JSON round-trip",
+                Pattern.compile("json docCount:\\s*\\d+").matcher(output).find());
     }
 
     /**
@@ -454,5 +623,103 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         assertEquals("raw() and search() must produce the same bucket count for the same camelCase query",
                 searchAgg.getBuckets().size(),
                 rawCamel.aggregations().get("content_types").size());
+    }
+
+    /**
+     * Gap closer: exercises the <b>hit &amp; timing</b> accessor surface of {@code $estool.search(...)}
+     * through the Velocity engine — the part not covered by the aggregation-focused tests. Asserts a
+     * VTL template that reads {@code $results.totalResults}, {@code $results.queryTook},
+     * {@code $results.scrollId} and walks {@code $results.hits.hits} (each hit's {@code id},
+     * {@code index}, {@code sourceAsMap}) renders real data. Locks the {@link ContentSearchResults}
+     * getter contract that keeps {@code $dotcontent.search(...)} templates working after the ES→OS
+     * migration.
+     */
+    @Test
+    public void searchVtl_rendersHitFieldsAndTiming() throws Exception {
+        final String output = VelocityUtil.eval(SEARCH_HITS_VTL, velocityContext());
+        Logger.info(this, "\n===== search hits VTL output =====\n" + output + "\n================================");
+
+        assertTrue("search() totalResults getter must render a number",
+                Pattern.compile("totalResults:\\s*\\d+").matcher(output).find());
+        assertTrue("search() queryTook getter must render a number",
+                Pattern.compile("queryTook:\\s*\\d+").matcher(output).find());
+        assertTrue("search() scrollId accessor must resolve without error",
+                output.contains("scrollId:"));
+        assertTrue("search() hits.totalHits.value() must render a number",
+                Pattern.compile("totalHits:\\s*\\d+").matcher(output).find());
+        assertTrue("search() hit walk must reach hit ids ($hit.id -> getId())",
+                Pattern.compile("hit id:\\s*\\S+").matcher(output).find());
+        assertTrue("search() hit sourceAsMap ($hit.sourceAsMap -> getSourceAsMap()) must render the "
+                        + "_source (identifier/inode) map",
+                output.contains("inode"));
+    }
+
+    /**
+     * Velocity-facing regression for <a href="https://github.com/dotCMS/core/issues/36581">#36581</a>:
+     * a field-sorted {@code $estool.search(...)} must expose the per-hit sort value in VTL. Asserts
+     * {@code $hit.sortValues} renders a non-empty array and {@code $hit.getSortValues().get(0)} renders
+     * the sort key (the {@code moddate} epoch here) — proving the neutral {@link SearchHit} both carries
+     * the value and exposes it under a bean {@code get}-accessor that Velocity resolves.
+     */
+    @Test
+    public void searchVtl_rendersPerHitSortValues() throws Exception {
+        final String output = VelocityUtil.eval(SEARCH_SORT_VTL, velocityContext());
+        Logger.info(this, "\n===== search sort VTL output =====\n" + output + "\n================================");
+
+        assertTrue("a field-sorted search() must expose a non-empty per-hit sort array via "
+                        + "$hit.sortValues (getSortValues())",
+                Pattern.compile("sortValues:\\s*\\[[^\\]]+\\]").matcher(output).find());
+        assertTrue("$hit.getSortValues().get(0) must render the moddate sort key as a number",
+                Pattern.compile("firstSort:\\s*\\d+").matcher(output).find());
+    }
+
+    /**
+     * Gap closer for the {@code raw()} sibling: exercises the hit &amp; timing accessor surface of
+     * {@code $estool.raw(...)} — a {@link ContentSearchResponse} record — through Velocity. Because
+     * the top-level accessors are record-style, the template uses explicit method syntax
+     * ({@code $results.tookMillis()}, {@code $results.hits()}, {@code $results.scrollId()}); the
+     * downstream {@link SearchHits}/{@link SearchHit} components are {@code get}-named so they resolve
+     * as properties. Asserts timing, total-hits count and per-hit {@code id}/{@code index}/
+     * {@code sourceAsMap} all render, locking the accessor contract for {@code $dotcontent.raw(...)}
+     * templates that read hits/timing rather than aggregations.
+     */
+    @Test
+    public void rawVtl_rendersHitFieldsAndTiming() throws Exception {
+        final String output = VelocityUtil.eval(RAW_HITS_VTL, velocityContext());
+        Logger.info(this, "\n===== raw hits VTL output =====\n" + output + "\n================================");
+
+        assertTrue("raw() tookMillis() record accessor must render a number",
+                Pattern.compile("tookMillis:\\s*\\d+").matcher(output).find());
+        assertTrue("raw() scrollId() record accessor must resolve without error",
+                output.contains("scrollId:"));
+        assertTrue("raw() hits().getTotalHits().value() must render a number",
+                Pattern.compile("totalHits:\\s*\\d+").matcher(output).find());
+        assertTrue("raw() hit walk must reach hit ids ($hit.id -> getId())",
+                Pattern.compile("raw hit id:\\s*\\S+").matcher(output).find());
+        assertTrue("raw() hit sourceAsMap ($hit.sourceAsMap -> getSourceAsMap()) must render the "
+                        + "_source (identifier/inode) map",
+                output.contains("inode"));
+    }
+
+    /**
+     * Back-compat proof for the Velocity accessors added to {@link ContentSearchResponse} /
+     * {@link TotalHits}: legacy {@code $dotcontent.raw(...)} templates using ES-style property syntax
+     * (no parentheses) must resolve on the record again — not silently yield {@code null}.
+     */
+    @Test
+    public void rawVtl_legacyPropertyAccessorsResolve() throws Exception {
+        final String output = VelocityUtil.eval(RAW_LEGACY_PROPERTY_VTL, velocityContext());
+        Logger.info(this, "\n===== raw legacy-property VTL output =====\n" + output + "\n==============================");
+
+        assertTrue("$results.tookInMillis (property) must resolve via getTookInMillis()",
+                Pattern.compile("tookInMillis:\\s*\\d+").matcher(output).find());
+        assertTrue("$results.scrollId (property) must resolve via getScrollId() without error",
+                output.contains("scrollId:"));
+        assertTrue("$results.hits.totalHits.value (property) must resolve via TotalHits.getValue()",
+                Pattern.compile("totalHits:\\s*\\d+").matcher(output).find());
+        assertTrue("$results.aggregations.<name>.buckets (property) must walk via getAggregations() (tree)",
+                output.contains("legacy key:"));
+        assertTrue("legacy bucket doc counts must render with real numbers",
+                Pattern.compile("legacy docCount:\\s*\\d+").matcher(output).find());
     }
 }

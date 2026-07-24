@@ -3,7 +3,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     effect,
     inject,
     model,
@@ -27,7 +26,11 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotContentletStatusBadgeComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
@@ -61,11 +64,11 @@ const STATIC_COLUMNS = 6;
         FormsModule,
         TooltipModule,
         SearchComponent,
-        ToggleSwitchModule
+        ToggleSwitchModule,
+        DotContentThumbnailComponent
     ],
     templateUrl: './dot-select-existing-content.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSelectExistingContentComponent implements OnInit {
     /**

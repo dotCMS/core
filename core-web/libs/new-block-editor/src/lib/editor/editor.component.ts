@@ -13,6 +13,7 @@ import {
     input,
     numberAttribute,
     OnDestroy,
+    OnInit,
     output,
     signal
 } from '@angular/core';
@@ -174,6 +175,12 @@ function normalizeEditorContent(
     selector: 'dot-block-editor',
     changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ['./editor.component.css'],
+    host: {
+        // Turns the host into a full-height flex column when `fillHeight` is set, so the
+        // editor stretches to fill a bounded parent (e.g. the UVE sidebar drawer) instead
+        // of collapsing to its default fixed height. See `:host(.dot-block-editor--fill-height)`.
+        '[class.dot-block-editor--fill-height]': 'fillHeight()'
+    },
     providers: [
         EditorStore,
         SlashMenuService,
@@ -208,6 +215,7 @@ function normalizeEditorContent(
             <div [class]="panelClass()">
                 @if (editor(); as ed) {
                     <dot-toolbar
+                        class="shrink-0"
                         [editor]="ed"
                         [isFullscreen]="isFullscreen()"
                         (fullscreenToggle)="toggleFullscreen()"
@@ -215,11 +223,7 @@ function normalizeEditorContent(
                     <div
                         class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
-                        [style]="
-                            isFullscreen()
-                                ? 'flex: 1; min-height: 0;'
-                                : 'height: 500px; resize: vertical; min-height: 200px;'
-                        ">
+                        [style]="scrollContainerStyle()">
                         <div
                             tiptap
                             [editor]="ed"
@@ -235,7 +239,7 @@ function normalizeEditorContent(
                     </div>
 
                     <div
-                        class="flex items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
+                        class="flex shrink-0 items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
                         aria-live="polite"
                         [attr.aria-label]="'dot.block.editor.editor.stats.aria-label' | dm">
                         <span>
@@ -273,7 +277,7 @@ function normalizeEditorContent(
         </div>
     `
 })
-export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
+export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     /** Slash menu state; used by the template for ARIA on the ProseMirror surface. */
     protected readonly menuService = inject(SlashMenuService);
 
@@ -283,7 +287,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Opens/closes caret-anchored popovers and supplies payloads (e.g. link edit context). */
     private readonly popovers = inject(EditorPopoverService);
 
-    /** Uploads user-dropped image and video files to dotCMS. */
+    /** Uploads user-dropped image, video, and audio files to dotCMS. */
     private readonly dotUpload = inject(DotUploadService);
 
     /** Document root for fullscreen scroll lock and global key listeners. */
@@ -339,6 +343,18 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
      * originating outside the editor (e.g. required, custom validators).
      */
     readonly hasError = input(false, { transform: booleanAttribute });
+
+    /**
+     * When true, the editor stretches to fill 100% of its parent's height instead of
+     * using the default fixed, resizable height. The toolbar and stats bar keep their
+     * natural height; the scroll surface consumes the remaining space.
+     *
+     * Set by hosts that render the editor inside a bounded container — e.g. the UVE
+     * block-editor sidebar drawer — where the editor should fill the available height
+     * (minus the drawer's own footer buttons). Requires the parent to give the host a
+     * definite height (the host becomes a flex column via `dot-block-editor--fill-height`).
+     */
+    readonly fillHeight = input(false, { transform: booleanAttribute });
 
     /**
      * Emits the editor document as a ProseMirror JSON object on every change.
@@ -430,7 +446,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                         slice,
                         moved,
                         (file) => this.dotUpload.uploadImage(file),
-                        (file) => this.dotUpload.uploadVideo(file)
+                        (file) => this.dotUpload.uploadVideo(file),
+                        (file) => this.dotUpload.uploadAudio(file)
                     ),
                 handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
@@ -504,17 +521,38 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     }
 
     /** Backdrop/layout classes for the outer wrapper (fullscreen dimmer vs inline). */
-    protected readonly wrapperClass = computed(() =>
-        this.isFullscreen()
-            ? 'fixed inset-0 z-[9998] flex items-center justify-center bg-black/50'
-            : ''
-    );
+    protected readonly wrapperClass = computed(() => {
+        if (this.isFullscreen()) {
+            return 'fixed inset-0 z-[9998] flex items-center justify-center bg-black/50';
+        }
+
+        // Fill mode: become a flex column that consumes the host's full height so the panel
+        // below can stretch. `min-h-0` lets it shrink inside a flex parent.
+        return this.fillHeight() ? 'flex flex-col h-full min-h-0' : '';
+    });
 
     /** Inner panel sizing and chrome classes (fullscreen vs default card layout). */
-    protected readonly panelClass = computed(() =>
-        this.isFullscreen()
-            ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
-            : 'relative rounded-lg border border-gray-200'
+    protected readonly panelClass = computed(() => {
+        if (this.isFullscreen()) {
+            return 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden';
+        }
+
+        // Fill mode: flex column that grows to fill the wrapper, so the toolbar + stats bar
+        // take their natural height and the scroll surface consumes the rest.
+        return this.fillHeight()
+            ? 'relative flex flex-col flex-1 min-h-0 overflow-hidden rounded-lg border border-gray-200'
+            : 'relative rounded-lg border border-gray-200';
+    });
+
+    /**
+     * Inline styles for the scroll surface. In fullscreen or fill mode it flexes to consume
+     * the remaining height (toolbar + stats bar excluded); otherwise it uses the default
+     * fixed, user-resizable height.
+     */
+    protected readonly scrollContainerStyle = computed(() =>
+        this.isFullscreen() || this.fillHeight()
+            ? 'flex: 1; min-height: 0;'
+            : 'height: 500px; resize: vertical; min-height: 200px;'
     );
 
     /**
@@ -591,12 +629,24 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 this.document.body.style.overflow = '';
             });
         });
+    }
 
-        // Editor init: fast path (no customBlocks) is synchronous so existing tests
-        // and consumers see no behaviour change. Slow path (customBlocks set) defers
-        // construction until the remote ES-module URLs resolve — TipTap's schema is
-        // frozen at construction time, so adding extensions later is impossible
-        // without destroying the editor and losing ProseMirror state.
+    /**
+     * Builds the TipTap editor once the `field` input is bound.
+     *
+     * This MUST run in {@link ngOnInit}, not the constructor: `field` is a signal
+     * `input()` and Angular binds inputs *after* construction, so reading `this.field()`
+     * in the constructor always sees `undefined` — which silently skips every customer's
+     * `customBlocks` remote extensions (the editor would boot without them and then fail
+     * to parse stored content that references their node types). See #36646.
+     *
+     * Fast path (no customBlocks) builds synchronously. Slow path (customBlocks set) defers
+     * construction until the remote ES-module URLs resolve — TipTap's schema is frozen at
+     * construction time, so extensions must all be present before `new Editor`. `writeValue`
+     * / `setDisabledState` arriving before the editor mounts are buffered via
+     * {@link pendingValue} / {@link pendingDisabled} and drained in {@link commitEditor}.
+     */
+    ngOnInit(): void {
         const parsedCustomBlocks = parseCustomBlocksField(this.field());
         if (parsedCustomBlocks.extensions.length === 0) {
             this.commitEditor(this.buildEditor([]));

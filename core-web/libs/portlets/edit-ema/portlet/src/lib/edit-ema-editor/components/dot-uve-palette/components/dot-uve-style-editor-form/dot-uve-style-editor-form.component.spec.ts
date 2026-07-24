@@ -1,5 +1,5 @@
-import { InferInputSignals } from '@ngneat/spectator';
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { InferInputSignals } from '@openng/spectator';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of, throwError, timer } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -27,6 +27,7 @@ import {
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload, SelectedContentlet } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { PageData } from '../../../../../store/features/editor/models';
 import { PageType } from '../../../../../store/models';
 
 // Workaround: the `schema` input alias causes a compilation error when used directly.
@@ -43,6 +44,7 @@ type MockUveStore = {
     editorSelected: ReturnType<typeof signal<SelectedContentlet | null>>;
     pageAsset: ReturnType<typeof computed<DotCMSPageAsset | null>>;
     pageType: ReturnType<typeof signal<PageType>>;
+    $pageData: ReturnType<typeof signal<PageData>>;
     saveStyleEditor: jest.Mock;
     rollbackPageAssetResponse: jest.Mock;
     addCurrentPageToHistory: jest.Mock;
@@ -189,6 +191,13 @@ describe('DotUveStyleEditorFormComponent', () => {
                 return pageAsset ? { ...pageAsset, clientResponse: pageAsset } : null;
             }),
             pageType: signal(PageType.HEADLESS),
+            $pageData: signal<PageData>({
+                containers: [],
+                personalization: 'dot:default',
+                id: 'test-page',
+                languageId: 1,
+                personaTag: undefined
+            }),
             saveStyleEditor: jest.fn().mockReturnValue(of({})),
             rollbackPageAssetResponse: jest.fn().mockReturnValue(true),
             addCurrentPageToHistory: jest.fn(),

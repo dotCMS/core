@@ -544,7 +544,377 @@ public class LangChain4jModelFactoryTest {
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
     }
 
+    // ── Anthropic ─────────────────────────────────────────────────────────────
+
+    /**
+     * Given a valid Anthropic config,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(anthropicConfig("claude-sonnet-4-6"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a valid Anthropic config with optional parameters,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model("claude-sonnet-4-6")
+                .apiKey("test-key")
+                .temperature(0.7)
+                .maxTokens(4096)
+                .maxRetries(2)
+                .timeout(60)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a valid Anthropic config,
+     * When buildStreamingChatModel is called,
+     * Then a StreamingChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildStreamingChatModel_anthropic_returnsModel() {
+        assertNotNull(LangChain4jModelFactory.buildStreamingChatModel(anthropicConfig("claude-sonnet-4-6")));
+    }
+
+    /**
+     * Given an Anthropic config with a custom endpoint override,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_customEndpoint_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model("claude-sonnet-4-6")
+                .apiKey("test-key")
+                .endpoint("https://my-gateway.example.com/anthropic/v1")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an Anthropic config without an apiKey,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model("claude-sonnet-4-6")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an Anthropic config without a model,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an Anthropic config,
+     * When buildEmbeddingModel is called,
+     * Then an UnsupportedOperationException is thrown since Anthropic has no embeddings API.
+     */
+    @Test
+    public void test_buildEmbeddingModel_anthropic_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildEmbeddingModel(anthropicConfig("claude-sonnet-4-6")));
+    }
+
+    /**
+     * Given an Anthropic config,
+     * When buildImageModel is called,
+     * Then an UnsupportedOperationException is thrown since Anthropic has no image API.
+     */
+    @Test
+    public void test_buildImageModel_anthropic_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildImageModel(anthropicConfig("claude-sonnet-4-6")));
+    }
+
+    // ── OpenRouter ────────────────────────────────────────────────────────────
+
+    /**
+     * Given a valid OpenRouter config,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(openRouterConfig("openai/gpt-4o"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a valid OpenRouter config with optional parameters,
+     * When buildStreamingChatModel is called,
+     * Then a StreamingChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildStreamingChatModel_openRouter_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model("anthropic/claude-sonnet-4")
+                .apiKey("test-key")
+                .temperature(0.7)
+                .maxTokens(2048)
+                .timeout(60)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildStreamingChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config with a custom endpoint override,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_customEndpoint_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model("openai/gpt-4o")
+                .apiKey("test-key")
+                .endpoint("https://my-proxy.example.com/api/v1")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config without an apiKey,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model("openai/gpt-4o")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config without a model,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config,
+     * When buildEmbeddingModel is called,
+     * Then an UnsupportedOperationException is thrown since OpenRouter has no embeddings endpoint.
+     */
+    @Test
+    public void test_buildEmbeddingModel_openRouter_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildEmbeddingModel(openRouterConfig("openai/text-embedding-3-small")));
+    }
+
+    /**
+     * Given an OpenRouter config,
+     * When buildImageModel is called,
+     * Then an UnsupportedOperationException is thrown since image generation is not supported.
+     */
+    @Test
+    public void test_buildImageModel_openRouter_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildImageModel(openRouterConfig("openai/dall-e-3")));
+    }
+
+    // ── Google AI (Gemini API / AI Studio) ────────────────────────────────────
+
+    /**
+     * Given a valid Google AI config,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(googleAiConfig("gemini-2.0-flash"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a valid Google AI config with optional parameters,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.0-flash")
+                .apiKey("test-key")
+                .temperature(0.7)
+                .maxTokens(2048)
+                .maxRetries(2)
+                .timeout(60)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a valid Google AI config,
+     * When buildStreamingChatModel is called,
+     * Then a StreamingChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildStreamingChatModel_googleAi_returnsModel() {
+        assertNotNull(LangChain4jModelFactory.buildStreamingChatModel(googleAiConfig("gemini-2.0-flash")));
+    }
+
+    /**
+     * Given a Google AI config without an apiKey,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.0-flash")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a Google AI config without a model,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a valid Google AI config,
+     * When buildEmbeddingModel is called,
+     * Then an EmbeddingModel is returned successfully.
+     */
+    @Test
+    public void test_buildEmbeddingModel_googleAi_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(googleAiConfig("gemini-embedding-001"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a Google AI config with a dimensions parameter,
+     * When buildEmbeddingModel is called,
+     * Then an EmbeddingModel is returned successfully with the configured output dimensionality.
+     */
+    @Test
+    public void test_buildEmbeddingModel_googleAi_withDimensions_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-embedding-001")
+                .apiKey("test-key")
+                .dimensions(768)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
+    }
+
+    /**
+     * Given a valid Google AI config,
+     * When buildImageModel is called,
+     * Then an ImageModel is returned successfully.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_returnsModel() {
+        final ImageModel model = LangChain4jModelFactory.buildImageModel(googleAiConfig("gemini-2.5-flash-image"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a Google AI config with optional image parameters,
+     * When buildImageModel is called,
+     * Then an ImageModel is returned successfully.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.5-flash-image")
+                .apiKey("test-key")
+                .size("1K")
+                .timeout(60)
+                .maxRetries(2)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildImageModel(config));
+    }
+
+    /**
+     * Given a Google AI config without an apiKey,
+     * When buildImageModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.5-flash-image")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static ProviderConfig anthropicConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model(model)
+                .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig openRouterConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model(model)
+                .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig googleAiConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model(model)
+                .apiKey("test-key")
+                .build();
+    }
+
 
     private static ProviderConfig openAiConfig(final String model) {
         return ImmutableProviderConfig.builder()

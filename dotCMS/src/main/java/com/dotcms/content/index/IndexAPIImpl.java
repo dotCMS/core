@@ -12,8 +12,10 @@ import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -351,7 +353,34 @@ public class IndexAPIImpl implements IndexAPI {
      */
     @Override
     public Map<String, Integer> flushCaches(final List<String> indexNames) {
-        return router.writeReturning(impl -> impl.flushCaches(indexNames));
+        // Tag-dispatch (mirrors optimize): flush each provider only with the names it owns
+        // (OS → .os-tagged, ES → untagged). The list handed in comes from getIndices(), which in
+        // dual-write phases aggregates BOTH providers; passing that mixed list to a single
+        // provider made each hit index_not_found_exception on the other engine's names, so the
+        // OS cache flush depended on the .os names being present and was cross-contaminated with
+        // ES names (issue #35640). Skip a provider whose subset is empty so Phase 0 never
+        // contacts OS and Phase 3 never contacts ES. Shard counts are aggregated across the
+        // providers actually contacted.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return ImmutableMap.of("failedShards", 0, "successfulShards", 0);
+        }
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        int failedShards = 0;
+        int successfulShards = 0;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            final Map<String, Integer> esResult = router.esImpl().flushCaches(esNames);
+            failedShards += esResult.getOrDefault("failedShards", 0);
+            successfulShards += esResult.getOrDefault("successfulShards", 0);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            final Map<String, Integer> osResult = router.osImpl().flushCaches(osNames);
+            failedShards += osResult.getOrDefault("failedShards", 0);
+            successfulShards += osResult.getOrDefault("successfulShards", 0);
+        }
+        return ImmutableMap.of("failedShards", failedShards, "successfulShards", successfulShards);
     }
 
     // -------------------------------------------------------------------------
@@ -402,11 +431,29 @@ public class IndexAPIImpl implements IndexAPI {
         }
     }
 
+    /**
+     * The physical name each write provider should receive for a single-name fan-out so it targets
+     * its OWN real index: the OpenSearch provider gets the {@code .os}-tagged name, every other
+     * provider gets the bare name. This is what makes lifecycle ops (clear/open/close/replicas)
+     * a faithful mirror across both engines instead of silently hitting only ES.
+     *
+     * <p>Applies uniformly, including site-search indices: their OpenSearch copy is now
+     * {@code .os}-tagged like every other migrated index (issue #36672), so no carve-out is needed.</p>
+     */
+    private String providerName(final IndexAPI provider, final String indexName) {
+        final String logical = IndexTag.OS.untag(indexName);
+        return provider == router.osImpl() ? IndexTag.OS.tag(logical) : logical;
+    }
+
     @Override
     public void clearIndex(final String indexName)
             throws DotStateException, IOException, DotDataException {
+        // clearIndex is delete + recreate-empty, so it is as destructive as delete: guard the
+        // active/building index here too (issue #35640, TC-018, swicken review). Covers every
+        // clear entry point — REST modIndex, legacy PUT /clear, and IndexAjaxAction.clearIndex.
+        APILocator.getContentletIndexAPI().assertIndexNotActive(indexName, "cleared");
         try {
-            router.writeChecked(impl -> impl.clearIndex(indexName));
+            router.writeChecked(impl -> impl.clearIndex(providerName(impl, indexName)));
         } catch (DotStateException | IOException | DotDataException e) {
             throw e;
         } catch (Exception e) {
@@ -430,7 +477,7 @@ public class IndexAPIImpl implements IndexAPI {
     public void updateReplicas(final String indexName, final int replicas)
             throws DotDataException {
         try {
-            router.writeChecked(impl -> impl.updateReplicas(indexName, replicas));
+            router.writeChecked(impl -> impl.updateReplicas(providerName(impl, indexName), replicas));
         } catch (DotDataException e) {
             throw e;
         } catch (Exception e) {
@@ -445,11 +492,11 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public void closeIndex(final String indexName) {
-        router.write(impl -> impl.closeIndex(indexName));
+        router.write(impl -> impl.closeIndex(providerName(impl, indexName)));
     }
 
     @Override
     public void openIndex(final String indexName) {
-        router.write(impl -> impl.openIndex(indexName));
+        router.write(impl -> impl.openIndex(providerName(impl, indexName)));
     }
 }

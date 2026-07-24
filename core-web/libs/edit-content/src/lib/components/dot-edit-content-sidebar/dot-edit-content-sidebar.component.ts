@@ -139,9 +139,16 @@ export class DotEditContentSidebarComponent {
      * sidebar is open and the contentlet identifier is available.
      * Gating on `isSidebarOpen` avoids firing these API calls on every edit-content
      * page load when the user never actually opens the sidebar.
+     *
+     * Depends on the whole `contentlet` (not just the identifier) so it also refreshes
+     * after a save/publish, which mints a NEW inode under the SAME identifier: the
+     * reload resets these statuses to LOADING, and without a re-fetch here they would
+     * stay LOADING forever and hang the unified loading overlay.
      */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #informationEffect = effect(() => {
-        const identifier = this.$identifier();
+        const contentlet = this.$store.contentlet();
+        const identifier = contentlet?.identifier;
         const isSidebarOpen = this.$store.isSidebarOpen();
 
         untracked(() => {

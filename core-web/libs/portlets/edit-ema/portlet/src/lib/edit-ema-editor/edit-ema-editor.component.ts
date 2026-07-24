@@ -419,9 +419,14 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
+        const status = this.uveStore.uveStatus();
 
-        if (currentLanguage && !currentLanguage?.translated) {
-            this.createNewTranslation(currentLanguage, page);
+        // Guard: only act on a freshly-loaded page. Without the LOADED check the effect
+        // could fire while a previous pageLoad is still in-flight (stale translated:false data).
+        // untracked: confirmationService.confirm reads PrimeNG-internal signals; tracking them
+        // would cause the effect to re-fire every time the dialog opens/closes.
+        if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+            untracked(() => this.createNewTranslation(currentLanguage, page));
         }
     });
 
@@ -432,6 +437,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
+        const hasClientQuery = untracked(() => !!this.uveStore.requestMetadata());
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -439,6 +445,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
 
         if (pageType === PageType.TRADITIONAL || !isClientReady) {
+            return;
+        }
+
+        // Headless pages are driven entirely by the client's own GraphQL
+        // query. Never push a REST-sourced pageAsset into the iframe — it
+        // never carries the relationships that query defines, and the
+        // client already has its own correct render. Skip until a
+        // GraphQL-backed update (requestMetadata set from CLIENT_READY)
+        // is available; this effect re-fires once that happens.
+        if (pageType === PageType.HEADLESS && !hasClientQuery) {
             return;
         }
 
@@ -614,31 +630,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.dragDropService.setupDragEvents(
-            this.uveStore,
-            this.iframe,
-            this.customDragImage,
-            this.contentWindow,
-            this.host,
-            {
-                onDrop: (event) => this.handleDrop(event),
-                onDragEnter: () => {
-                    // Handled in dragDropService
-                },
-                onDragOver: () => {
-                    // Handled in dragDropService
-                },
-                onDragLeave: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragEnd: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragStart: () => {
-                    // Handled in dragDropService
-                }
+        this.dragDropService.setupDragEvents(this.uveStore, this.iframe, this.customDragImage, {
+            onDrop: (event) => this.handleDrop(event),
+            onDragEnter: () => {
+                // Handled in dragDropService
+            },
+            onDragOver: () => {
+                // Handled in dragDropService
+            },
+            onDragLeave: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragEnd: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragStart: () => {
+                // Handled in dragDropService
             }
-        );
+        });
     }
 
     private handleUveMessage(message: PostMessage): void {
@@ -1720,8 +1729,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
-        this.uveStore.pageLoad({ language_id: currentLanguageId });
+        // Must not navigate back to the current (untranslated) language — doing so would
+        // reload the same state and re-trigger the dialog.
+        // Note: the /api/v1/page/{id}/languages endpoint does not include defaultLanguage in
+        // its response (Language.toMap() omits it), so we simply take the first translated
+        // language. If none exists, bail without reloading to avoid any loop.
+        const targetLanguage = this.uveStore.pageLanguages().find((l) => l.translated);
+        if (targetLanguage) {
+            this.uveStore.pageLoad({ language_id: targetLanguage.id.toString() });
+        }
     }
 
     #clientPayload() {
