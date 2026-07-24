@@ -93,7 +93,9 @@ public class TiptapMarkdownDocDetectionTest extends UnitTestBase {
 
     @Test
     public void representable_false_for_rich_blocks() {
-        for (final String richType : new String[]{"dotVideo", "youtube", "gridBlock", "aiContent"}) {
+        // youtube is deliberately NOT in this list: its READABLE emission is a plain link that
+        // keeps the reference, so it is markdown-representable (whitelist bugfix, #36658).
+        for (final String richType : new String[]{"dotVideo", "gridBlock", "aiContent"}) {
             final String doc = "{\"type\":\"doc\",\"content\":[{\"type\":\"" + richType + "\"}]}";
             assertFalse("'" + richType + "' must be flagged as not representable",
                     TiptapMarkdown.isMarkdownRepresentable(doc));

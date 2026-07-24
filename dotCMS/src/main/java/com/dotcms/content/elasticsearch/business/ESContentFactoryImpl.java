@@ -250,7 +250,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
     private static final Set<String> REMOVABLE_KEY_SET = CollectionsUtils.set(WORKFLOW_ACTION_KEY,
             WORKFLOW_ASSIGN_KEY, WORKFLOW_COMMENTS_KEY, WORKFLOW_BULK_KEY,
-            WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date");
+            WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date",
+            Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
 
     /**
 	 * Default factory constructor that initializes the connection with the
