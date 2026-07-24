@@ -18,6 +18,7 @@ import { Router } from '@angular/router';
 import { MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
+import { Popover, PopoverModule } from 'primeng/popover';
 import { ToastModule } from 'primeng/toast';
 
 import { catchError } from 'rxjs/operators';
@@ -31,6 +32,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotCMSBaseTypesContentTypes,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
@@ -64,6 +66,7 @@ import {
     DotContentDriveDialog,
     DotContentDriveSortOrder,
     DotContentDriveStatus,
+    DotContentDriveUploadBaseType,
     DotContentDriveUploadSelection,
     DotContentDriveUploadSelectorPayload
 } from '../shared/models';
@@ -81,6 +84,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotContentDriveSidebarComponent,
         ToastModule,
         DialogModule,
+        PopoverModule,
         DotContentDriveDialogFolderComponent,
         DotContentDriveDialogContentTypeSelectorComponent,
         DotContentDriveDialogUploadSelectorComponent,
@@ -145,15 +149,19 @@ export class DotContentDriveShellComponent {
             : undefined;
     });
 
-    /** Payload (target folder + optional dropped files) for the upload-type selector dialog. */
-    readonly $uploadSelectorPayload = computed<DotContentDriveUploadSelectorPayload | undefined>(
-        () => {
-            const dialog = this.$activeDialog();
+    /**
+     * Upload-type selector popover. Anchored imperatively to the trigger (Upload button for the
+     * button flow, the content area for drag-and-drop / sidebar) rather than driven by the shared
+     * dialog state.
+     */
+    readonly $uploadSelectorPopover = viewChild<Popover>('uploadSelectorPopover');
 
-            return dialog?.type === DIALOG_TYPE.UPLOAD_SELECTOR
-                ? (dialog.payload as DotContentDriveUploadSelectorPayload)
-                : undefined;
-        }
+    /** Fallback anchor for the drag-and-drop / sidebar flow, which has no trigger element. */
+    readonly $uploadAnchor = viewChild('uploadAnchor', { read: ElementRef });
+
+    /** Payload (target folder + optional dropped files) driving the upload-selector popover body. */
+    readonly $uploadSelectorPayload = signal<DotContentDriveUploadSelectorPayload | undefined>(
+        undefined
     );
 
     /**
@@ -170,8 +178,6 @@ export class DotContentDriveShellComponent {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
-            case DIALOG_TYPE.UPLOAD_SELECTOR:
-                return 'w-125 max-w-[92vw] pt-0 p-4';
             default:
                 return 'w-175 pt-0 p-4';
         }
@@ -361,40 +367,87 @@ export class DotContentDriveShellComponent {
     }
 
     /**
-     * Upload-button flow: prompt for the asset type first; the OS file picker opens later, once the
-     * user confirms a type in {@link onUploadTypeSelected}.
+     * Upload-button flow. When the current folder pins a base type (`defaultBaseType`), skip the
+     * menu and open the OS file picker straight away; otherwise open the type menu anchored to the
+     * button and defer the picker until the user picks a type in {@link onUploadTypeSelected}.
      */
-    protected onUpload() {
-        this.openUploadSelector({ targetFolder: this.#store.selectedNode()?.data });
+    protected onUpload(event: MouseEvent) {
+        const targetFolder = this.#store.selectedNode()?.data;
+        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+
+        if (baseType) {
+            this.$activeSelection.set({ targetFolder, baseType });
+            this.$fileInput()?.nativeElement.click();
+
+            return;
+        }
+
+        this.openUploadSelector({ targetFolder }, event);
     }
 
     /**
-     * Drag-and-drop / sidebar flow: the files are already known, so prompt for the asset type and
-     * carry the files into the dialog payload to upload right after the user confirms.
+     * Drag-and-drop / sidebar flow: the files are already known. When the target folder pins a base
+     * type, upload the files directly; otherwise open the type menu (anchored to the content area)
+     * and carry the files into the payload to upload right after the user picks.
      */
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+
+        if (baseType) {
+            this.resolveFilesUpload({ files, targetFolder, baseType });
+
+            return;
+        }
+
         this.openUploadSelector({ targetFolder, files });
     }
 
     /**
-     * Opens the upload-type selector dialog (Asset vs File).
+     * Resolves a folder's stored `defaultBaseType` to the upload base type, or `undefined` when the
+     * folder has no preference ("ask each time"). Normalizes case and ignores unknown values.
      */
-    protected openUploadSelector(payload: DotContentDriveUploadSelectorPayload) {
-        this.#store.setDialog({
-            type: DIALOG_TYPE.UPLOAD_SELECTOR,
-            header: this.#dotMessageService.get('content-drive.dialog.upload-selector.header'),
-            payload
-        });
+    #resolvePreferredBaseType(
+        defaultBaseType?: string | null
+    ): DotContentDriveUploadBaseType | undefined {
+        switch (defaultBaseType?.toUpperCase()) {
+            case DotCMSBaseTypesContentTypes.DOTASSET:
+                return DotCMSBaseTypesContentTypes.DOTASSET;
+            case DotCMSBaseTypesContentTypes.FILEASSET:
+                return DotCMSBaseTypesContentTypes.FILEASSET;
+            default:
+                return undefined;
+        }
     }
 
     /**
-     * Handles the asset-type choice emitted by the upload selector dialog.
+     * Opens the upload-type selector popover (Asset vs File). Anchors to the trigger event's
+     * element when present (Upload button), otherwise to the content area (drag-and-drop / sidebar).
+     */
+    protected openUploadSelector(
+        payload: DotContentDriveUploadSelectorPayload,
+        event?: MouseEvent
+    ) {
+        this.$uploadSelectorPayload.set(payload);
+
+        const popover = this.$uploadSelectorPopover();
+        const anchor = this.$uploadAnchor()?.nativeElement;
+
+        if (event) {
+            popover?.show(event, event.currentTarget ?? anchor);
+        } else {
+            popover?.show(null, anchor);
+        }
+    }
+
+    /**
+     * Handles the asset-type choice emitted by the upload selector menu.
      * - Drag-and-drop: the files are already in the selection, so upload immediately.
      * - Upload button: stash the selection and open the OS file picker; {@link onFileChange}
      *   completes the upload once files are chosen.
      */
     protected onUploadTypeSelected(selection: DotContentDriveUploadSelection) {
-        this.#store.closeDialog();
+        this.$uploadSelectorPopover()?.hide();
+        this.$uploadSelectorPayload.set(undefined);
 
         if (selection.files?.length) {
             this.resolveFilesUpload(selection);
@@ -522,15 +575,22 @@ export class DotContentDriveShellComponent {
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
-                // `contentType` here is the created contentlet's resolved type (from the response).
-                next: ({ title, contentType: uploadedContentType }) => {
+                next: ({ title }) => {
+                    // Tell the user which kind they uploaded (Asset vs File), based on the base
+                    // type they chose in the menu — not the raw resolved content-type variable.
+                    const typeLabel = this.#dotMessageService.get(
+                        baseType === DotCMSBaseTypesContentTypes.FILEASSET
+                            ? 'content-drive.dialog.upload-selector.file'
+                            : 'content-drive.dialog.upload-selector.asset'
+                    );
+
                     this.#messageService.add({
                         severity: 'success',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
                         detail: this.#dotMessageService.get(
                             'content-drive.add-dotasset-success-detail',
                             title,
-                            uploadedContentType
+                            typeLabel
                         ),
                         life: SUCCESS_MESSAGE_LIFE
                     });

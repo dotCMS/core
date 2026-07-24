@@ -17,7 +17,7 @@
     </p-message>
 </div>
 
-<dot-content-drive-toolbar (upload)="onUpload()" data-testid="toolbar" />
+<dot-content-drive-toolbar (upload)="onUpload($event)" data-testid="toolbar" />
 
 <div
     class="col-start-1 row-span-2 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
@@ -30,6 +30,7 @@
 </div>
 
 <dot-content-drive-dropzone
+    #uploadAnchor
     data-testid="dropzone"
     (uploadFiles)="onRequestUpload($event)"
     class="col-start-2 row-start-3 overflow-auto">
@@ -101,17 +102,22 @@
                     [listType]="listType" />
             }
         }
-        @case (DIALOG_TYPE.UPLOAD_SELECTOR) {
-            @if ($uploadSelectorPayload(); as payload) {
-                <dot-content-drive-dialog-upload-selector
-                    data-testId="dialog-upload-selector"
-                    [targetFolder]="payload.targetFolder"
-                    [files]="payload.files"
-                    (selectUploadType)="onUploadTypeSelected($event)" />
-            }
-        }
     }
 </p-dialog>
+
+<p-popover
+    #uploadSelectorPopover
+    data-testId="upload-selector-popover"
+    [pt]="{ content: { class: 'p-0!' } }">
+    @if ($uploadSelectorPayload(); as payload) {
+        <dot-content-drive-dialog-upload-selector
+            class="block w-96 max-w-[92vw]"
+            data-testId="dialog-upload-selector"
+            [targetFolder]="payload.targetFolder"
+            [files]="payload.files"
+            (selectUploadType)="onUploadTypeSelected($event)" />
+    }
+</p-popover>
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
 <input type="file" (change)="onFileChange($event)" #fileInput hidden />

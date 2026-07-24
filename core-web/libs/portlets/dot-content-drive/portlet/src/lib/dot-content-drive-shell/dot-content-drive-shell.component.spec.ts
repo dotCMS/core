@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -44,6 +50,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
+import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
@@ -690,24 +697,41 @@ describe('DotContentDriveShellComponent', () => {
             item: (index: number) => files[index] ?? null
         }) as unknown as FileList;
 
-    // Opens the upload selector with the given context and emits the user's choice back to the
-    // shell, mirroring the dialog's (selectUploadType) output.
+    // Opens the upload menu (via the button flow when no files are given, or the drag-and-drop
+    // flow when they are) and emits the user's choice back to the shell, mirroring the selector's
+    // (selectUploadType) output.
     const selectUploadType = (selection: {
         targetFolder?: DotFolderTreeNodeData;
-        contentType: string;
+        baseType: string;
         files?: FileList;
     }) => {
-        dialogSignal.set({
-            type: DIALOG_TYPE.UPLOAD_SELECTOR,
-            header: 'Upload',
-            payload: { targetFolder: selection.targetFolder, files: selection.files }
-        });
+        if (selection.files) {
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
+                files: selection.files,
+                targetFolder: selection.targetFolder
+            });
+        } else {
+            store.selectedNode.mockReturnValue({
+                data: selection.targetFolder
+            } as DotFolderTreeNodeItem);
+            const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: jest.fn()
+            });
+        }
+
         spectator.detectChanges();
 
-        const dialog = spectator.debugElement.query(
+        const selector = spectator.debugElement.query(
             By.css('[data-testId="dialog-upload-selector"]')
         );
-        spectator.triggerEventHandler(dialog, 'selectUploadType', selection);
+        spectator.triggerEventHandler(selector, 'selectUploadType', {
+            targetFolder: selection.targetFolder,
+            baseType: selection.baseType,
+            files: selection.files
+        });
     };
 
     describe('upload type selector — opening', () => {
@@ -715,23 +739,26 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should open the upload selector with the selected folder when the upload button is clicked', () => {
-            store.selectedNode.mockReturnValue({
-                data: TARGET_FOLDER_DATA
-            } as DotFolderTreeNodeItem);
-
+        const openViaButton = (targetFolder?: DotFolderTreeNodeData) => {
+            store.selectedNode.mockReturnValue({ data: targetFolder } as DotFolderTreeNodeItem);
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
-            spectator.triggerEventHandler(toolbar, 'upload', undefined);
-
-            expect(store.setDialog).toHaveBeenCalledWith({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: expect.any(String),
-                payload: { targetFolder: TARGET_FOLDER_DATA }
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: jest.fn()
             });
+            spectator.detectChanges();
+        };
+
+        it('should open the upload menu with the selected folder when the upload button is clicked', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
-        it('should open the upload selector carrying the files when the dropzone emits uploadFiles', () => {
+        it('should open the upload menu carrying the files when the dropzone emits uploadFiles', () => {
             const files = createFileList([createFile()]);
 
             const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
@@ -739,16 +766,16 @@ describe('DotContentDriveShellComponent', () => {
                 files,
                 targetFolder: TARGET_FOLDER_DATA
             });
+            spectator.detectChanges();
 
-            expect(store.setDialog).toHaveBeenCalledWith({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: expect.any(String),
-                payload: { targetFolder: TARGET_FOLDER_DATA, files }
-            });
+            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$files()).toBe(files);
+            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
-        it('should open the upload selector carrying the files when the sidebar emits uploadFiles', () => {
+        it('should open the upload menu carrying the files when the sidebar emits uploadFiles', () => {
             const files = createFileList([createFile()]);
 
             const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
@@ -756,24 +783,24 @@ describe('DotContentDriveShellComponent', () => {
                 files,
                 targetFolder: TARGET_FOLDER_DATA
             });
+            spectator.detectChanges();
 
-            expect(store.setDialog).toHaveBeenCalledWith({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: expect.any(String),
-                payload: { targetFolder: TARGET_FOLDER_DATA, files }
-            });
+            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$files()).toBe(files);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
-        it('should render the upload selector dialog body when the dialog type is UPLOAD_SELECTOR', () => {
-            dialogSignal.set({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: 'Upload',
-                payload: { targetFolder: TARGET_FOLDER_DATA }
-            });
-            spectator.detectChanges();
+        it('should render both option menu items when opened', () => {
+            openViaButton(TARGET_FOLDER_DATA);
 
-            expect(spectator.query('[data-testId="dialog-upload-selector"]')).toBeTruthy();
+            // The popover overlay is appended to the document body, so query from the root.
+            expect(
+                spectator.query(byTestId('upload-selector-option-DOTASSET'), { root: true })
+            ).toBeTruthy();
+            expect(
+                spectator.query(byTestId('upload-selector-option-FILEASSET'), { root: true })
+            ).toBeTruthy();
         });
     });
 
@@ -1935,7 +1962,7 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     describe('onUpload', () => {
-        it('should open the upload selector dialog instead of the file picker directly', () => {
+        it('should open the upload menu instead of the file picker directly', () => {
             spectator.detectChanges();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
@@ -1943,11 +1970,13 @@ describe('DotContentDriveShellComponent', () => {
 
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
 
-            spectator.triggerEventHandler(toolbar, 'upload', undefined);
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: jest.fn()
+            });
+            spectator.detectChanges();
 
-            expect(store.setDialog).toHaveBeenCalledWith(
-                expect.objectContaining({ type: DIALOG_TYPE.UPLOAD_SELECTOR })
-            );
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
             expect(clickSpy).not.toHaveBeenCalled();
         });
     });

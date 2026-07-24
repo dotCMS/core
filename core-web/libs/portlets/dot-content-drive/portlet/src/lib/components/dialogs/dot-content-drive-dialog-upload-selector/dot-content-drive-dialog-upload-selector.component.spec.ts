@@ -1,13 +1,5 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import {
-    byTestId,
-    createComponentFactory,
-    mockProvider,
-    Spectator,
-    SpyObject
-} from '@openng/spectator/jest';
-
-import { By } from '@angular/platform-browser';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFolderTreeNodeData } from '@dotcms/portlets/content-drive/ui';
@@ -16,7 +8,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotContentDriveDialogUploadSelectorComponent } from './dot-content-drive-dialog-upload-selector.component';
 
 import { DotContentDriveUploadSelection } from '../../../shared/models';
-import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 const TARGET_FOLDER = {
     id: 'folder-123',
@@ -27,52 +18,38 @@ const TARGET_FOLDER = {
 
 describe('DotContentDriveDialogUploadSelectorComponent', () => {
     let spectator: Spectator<DotContentDriveDialogUploadSelectorComponent>;
-    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveDialogUploadSelectorComponent,
         providers: [
-            mockProvider(DotContentDriveStore, {
-                closeDialog: jest.fn()
-            }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'dot.common.cancel': 'Cancel',
                     'content-drive.dialog.upload-selector.asset': 'Asset',
                     'content-drive.dialog.upload-selector.asset.description': 'For images',
                     'content-drive.dialog.upload-selector.file': 'File',
                     'content-drive.dialog.upload-selector.file.description': 'For code',
                     'content-drive.dialog.upload-selector.recommended': 'Recommended',
-                    'content-drive.dialog.upload-selector.continue': 'Continue'
+                    'content-drive.dialog.upload-selector.settings-hint':
+                        'Set your default upload type in the Folder Settings.'
                 })
             }
         ],
         detectChanges: false
     });
 
+    const clickOption = (baseType: string) =>
+        spectator.click(byTestId(`upload-selector-option-${baseType}`));
+
     beforeEach(() => {
         spectator = createComponent();
         spectator.setInput('targetFolder', TARGET_FOLDER);
         spectator.detectChanges();
-
-        store = spectator.inject(DotContentDriveStore, true);
     });
 
     afterEach(() => {
         jest.clearAllMocks();
     });
-
-    const chooseFile = () => {
-        const radios = spectator.debugElement.queryAll(By.css('p-radiobutton'));
-        spectator.triggerEventHandler(radios[1], 'ngModelChange', 'FILEASSET');
-        spectator.detectChanges();
-    };
-
-    const clickContinue = () =>
-        spectator.click(
-            spectator.query(byTestId('upload-selector-continue')).querySelector('button')
-        );
 
     describe('rendering', () => {
         it('should render both upload options', () => {
@@ -90,17 +67,13 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
             ).toBeTruthy();
         });
 
-        it('should enable Continue by default with Asset preselected', () => {
-            const continueButton = spectator
-                .query(byTestId('upload-selector-continue'))
-                ?.querySelector('button');
-
-            expect(continueButton?.disabled).toBe(false);
+        it('should render the folder-settings hint', () => {
+            expect(spectator.query(byTestId('upload-selector-settings-hint'))).toBeTruthy();
         });
     });
 
     describe('selection', () => {
-        it('should emit the DOTASSET selection with the folder and files when Continue is clicked', () => {
+        it('should emit the DOTASSET selection with the folder and files when Asset is clicked', () => {
             const files = { length: 0 } as FileList;
             spectator.setInput('files', files);
             spectator.detectChanges();
@@ -108,7 +81,7 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
             let emitted: DotContentDriveUploadSelection | undefined;
             spectator.component.selectUploadType.subscribe((selection) => (emitted = selection));
 
-            clickContinue();
+            clickOption('DOTASSET');
 
             expect(emitted).toEqual({
                 targetFolder: TARGET_FOLDER,
@@ -117,27 +90,14 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
             });
         });
 
-        it('should emit the FILEASSET selection when File is chosen', () => {
+        it('should emit the FILEASSET selection when File is clicked', () => {
             let emitted: DotContentDriveUploadSelection | undefined;
             spectator.component.selectUploadType.subscribe((selection) => (emitted = selection));
 
-            chooseFile();
-            clickContinue();
+            clickOption('FILEASSET');
 
             expect(emitted?.baseType).toBe('FILEASSET');
             expect(emitted?.targetFolder).toEqual(TARGET_FOLDER);
-        });
-
-        it('should not emit and should close the dialog when Cancel is clicked', () => {
-            const emitSpy = jest.fn();
-            spectator.component.selectUploadType.subscribe(emitSpy);
-
-            spectator.click(
-                spectator.query(byTestId('upload-selector-cancel'))?.querySelector('button')
-            );
-
-            expect(store.closeDialog).toHaveBeenCalled();
-            expect(emitSpy).not.toHaveBeenCalled();
         });
     });
 });

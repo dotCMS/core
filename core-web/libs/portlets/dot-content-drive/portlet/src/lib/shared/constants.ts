@@ -185,8 +185,7 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 // Dialog type
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
-    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
-    UPLOAD_SELECTOR: 'UPLOAD_SELECTOR'
+    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR'
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
@@ -212,6 +211,34 @@ export const UPLOAD_SELECTOR_OPTIONS = [
         recommended: false
     }
 ] as const;
+
+/**
+ * Options for the folder settings "Upload Behavior" radio group. `value` is persisted to the
+ * folder's `defaultBaseType`: `null` means "ask each time" (the upload menu is shown on every
+ * upload), `DOTASSET`/`FILEASSET` force every upload to that base type. The backend routes the
+ * concrete content type by file type.
+ */
+export const FOLDER_UPLOAD_BEHAVIOR_OPTIONS: {
+    value: DotCMSBaseTypesContentTypes | null;
+    labelKey: string;
+    descriptionKey: string;
+}[] = [
+    {
+        value: null,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.DOTASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-assets',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-assets.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.FILEASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-files',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-files.description'
+    }
+];
 
 export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
     '*.jpg',

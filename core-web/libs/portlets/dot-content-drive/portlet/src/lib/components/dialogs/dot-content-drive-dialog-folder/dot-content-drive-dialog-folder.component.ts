@@ -15,6 +15,7 @@ import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -25,7 +26,8 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     SUGGESTED_ALLOWED_FILE_EXTENSIONS,
-    DEFAULT_FILE_ASSET_TYPES
+    DEFAULT_FILE_ASSET_TYPES,
+    FOLDER_UPLOAD_BEHAVIOR_OPTIONS
 } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 interface FolderForm {
@@ -33,6 +35,7 @@ interface FolderForm {
     sortOrder: FormControl<number | null>;
     allowedFileExtensions: FormControl<string[]>;
     defaultFileAssetType: FormControl<string>;
+    defaultBaseType: FormControl<string | null>;
     showOnMenu: FormControl<boolean>;
     name: FormControl<string>;
 }
@@ -50,6 +53,7 @@ interface FolderForm {
         InputNumberModule,
         AutoCompleteModule,
         AutoFocusModule,
+        RadioButtonModule,
         DotFieldRequiredDirective
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
@@ -71,6 +75,9 @@ export class DotContentDriveDialogFolderComponent {
         this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })
     );
 
+    /** Options for the "Upload Behavior" radio group (bound to the `defaultBaseType` control). */
+    protected readonly uploadBehaviorOptions = FOLDER_UPLOAD_BEHAVIOR_OPTIONS;
+
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
         sortOrder: this.#fb.control<number | null>(1),
@@ -78,6 +85,7 @@ export class DotContentDriveDialogFolderComponent {
         defaultFileAssetType: this.#fb.control(DEFAULT_FILE_ASSET_TYPES[0].id, {
             nonNullable: true
         }),
+        defaultBaseType: this.#fb.control<string | null>(null),
         showOnMenu: this.#fb.control(false, { nonNullable: true }),
         name: this.#fb.control('', { validators: [Validators.required], nonNullable: true })
     });
@@ -117,6 +125,7 @@ export class DotContentDriveDialogFolderComponent {
                     ? folder.filesMasks.split(',')
                     : [],
                 defaultFileAssetType: assetType.variable,
+                defaultBaseType: folder.defaultBaseType ?? null,
                 showOnMenu: folder.showOnMenu,
                 name: cleanName
             });
@@ -157,17 +166,25 @@ export class DotContentDriveDialogFolderComponent {
      * @param {Event} event - The keyboard event from the input element
      */
     onEnterKey(event: Event) {
+        // Stop the AutoComplete/form from also handling Enter (double-add) and keep the typed
+        // text from persisting into the next entry, which was resetting the current selection.
+        event.preventDefault();
+
         const input = event.target as HTMLInputElement;
         const value = input.value.trim();
 
         if (value) {
-            const currentExtensions = this.folderForm.get('allowedFileExtensions')?.value;
-            const isDuplicate = currentExtensions?.includes(value);
+            const currentExtensions = this.folderForm.get('allowedFileExtensions')?.value ?? [];
+            const isDuplicate = currentExtensions.includes(value);
 
             if (!isDuplicate) {
-                const newValue = [...currentExtensions, value];
-                this.folderForm.get('allowedFileExtensions')?.setValue(newValue);
+                this.folderForm
+                    .get('allowedFileExtensions')
+                    ?.setValue([...currentExtensions, value]);
             }
+
+            // Clear the input so the next extension starts fresh and existing chips are preserved.
+            input.value = '';
         }
     }
 
@@ -295,6 +312,13 @@ export class DotContentDriveDialogFolderComponent {
 
         if (formValue.defaultFileAssetType && formValue.defaultFileAssetType.trim() !== '') {
             data.defaultAssetType = formValue.defaultFileAssetType;
+        }
+
+        // Sent only when a preference is chosen; "Ask each time" (null) is omitted.
+        // NOTE: the backend (#35577) ignores a null/absent value, so reverting an existing
+        // preference back to "Ask each time" needs a backend clear affordance — tracked separately.
+        if (formValue.defaultBaseType) {
+            data.defaultBaseType = formValue.defaultBaseType;
         }
 
         const assetPath = this.#getAssetPath(this.$originalName() ?? formValue.name);
