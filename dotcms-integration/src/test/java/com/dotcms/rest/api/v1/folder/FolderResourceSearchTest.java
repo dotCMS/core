@@ -349,4 +349,50 @@ public class FolderResourceSearchTest {
             // expected
         }
     }
+
+    // ── defaultBaseType exposure ─────────────────────────────────────────────
+
+    /**
+     * Given Scenario: A folder has its Content Drive upload preference set to {@code DOTASSET};
+     * search for it. <br>
+     * Expected Result: The {@link FolderSearchView} exposes {@code defaultBaseType = DOTASSET}, so
+     * the Content Drive sidebar can read the preference from the search response.
+     */
+    @Test
+    public void test_searchFolders_exposesDefaultBaseType()
+            throws DotDataException, DotSecurityException {
+        final long ts = System.currentTimeMillis();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).name("dbt-search-" + ts).nextPersisted();
+        folder.setDefaultBaseType("DOTASSET");
+        APILocator.getFolderAPI().save(folder, adminUser, false);
+
+        final var result = search("dbt-search-" + ts, null, true, site.getIdentifier());
+
+        Assert.assertNotNull(result);
+        @SuppressWarnings("unchecked")
+        final List<FolderSearchView> views = (List<FolderSearchView>) result.getEntity();
+        Assert.assertEquals(1, views.size());
+        Assert.assertEquals("DOTASSET", views.get(0).defaultBaseType());
+    }
+
+    /**
+     * Given Scenario: A folder with no upload preference; search for it. <br>
+     * Expected Result: The {@link FolderSearchView} exposes {@code defaultBaseType = null}.
+     */
+    @Test
+    public void test_searchFolders_defaultBaseTypeNullWhenNoPreference()
+            throws DotDataException, DotSecurityException {
+        final long ts = System.currentTimeMillis();
+        final Host site = new SiteDataGen().nextPersisted();
+        new FolderDataGen().site(site).name("dbt-none-" + ts).nextPersisted();
+
+        final var result = search("dbt-none-" + ts, null, true, site.getIdentifier());
+
+        Assert.assertNotNull(result);
+        @SuppressWarnings("unchecked")
+        final List<FolderSearchView> views = (List<FolderSearchView>) result.getEntity();
+        Assert.assertEquals(1, views.size());
+        Assert.assertNull(views.get(0).defaultBaseType());
+    }
 }

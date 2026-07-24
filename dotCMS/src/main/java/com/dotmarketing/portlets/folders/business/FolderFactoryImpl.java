@@ -84,7 +84,8 @@ import org.apache.oro.text.regex.Perl5Matcher;
 public class FolderFactoryImpl extends FolderFactory {
 
   private static final String[] UPSERT_EXTRA_COLUMNS = {"name", "title", "show_on_menu",
-      "sort_order", "files_masks", "identifier", "default_file_type", "mod_date", "owner", "idate"};
+      "sort_order", "files_masks", "identifier", "default_file_type", "mod_date", "owner", "idate",
+      "default_base_type"};
   private final FolderCache folderCache = CacheLocator.getFolderCache();
 
   @Override
@@ -680,6 +681,7 @@ public class FolderFactoryImpl extends FolderFactory {
     newFolder.setSortOrder(initialFolder.getSortOrder());
     newFolder.setFilesMasks(initialFolder.getFilesMasks());
     newFolder.setDefaultFileType(initialFolder.getDefaultFileType());
+    newFolder.setDefaultBaseType(initialFolder.getDefaultBaseType());
     newFolder.setOwner(initialFolder.getOwner());
     newFolder.setIDate(initialFolder.getIDate());
     newFolder.setHostId(newParentHostId);
@@ -1418,6 +1420,8 @@ public class FolderFactoryImpl extends FolderFactory {
     } else {
       parameters.add(new Timestamp(folder.getIDate().getTime()));
     }
+
+    parameters.add(folder.getDefaultBaseType());
 
     Logger.info(this, "Upserting Folder: " + folder.getPath());
 

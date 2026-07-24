@@ -105,6 +105,7 @@ import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
+import com.dotcms.rest.api.v1.folder.FolderResourceSearchTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
@@ -201,6 +202,7 @@ import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstraintTest;
 import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
+import com.dotmarketing.startup.runonce.Task260720AddDefaultBaseTypeToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
 import com.dotmarketing.startup.runonce.Task220401CreateClusterLockTableTest;
@@ -352,6 +354,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionBitFactoryImplTest.class,
         Task220203RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
+        Task260720AddDefaultBaseTypeToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class,
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220402UpdateDateTimezonesTest.class,
@@ -524,6 +527,7 @@ import org.junit.runners.Suite.SuiteClasses;
         HashBuilderTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
+        FolderResourceSearchTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,

@@ -1273,4 +1273,126 @@ public class WebAssetHelperIntegrationTest {
         webAssetHelper.saveNewFolder(folderPath, folderDetail, limitedUser);
     }
 
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)} and
+     * {@link WebAssetHelper#getAssetInfo(String, User)}
+     * Given Scenario: Create a folder with defaultBaseType = DOTASSET
+     * Expected Result: The value is stored canonically and exposed on both the create response and
+     * the retrieval path
+     */
+    @Test
+    public void Test_Save_New_Folder_With_DefaultBaseType() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String folderName = "dbt-create-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+
+        final FolderDetail folderDetail = FolderDetail.builder()
+                .title("Base Type Folder")
+                .defaultBaseType("DOTASSET")
+                .build();
+
+        final FolderView created = webAssetHelper.saveNewFolder(folderPath, folderDetail, APILocator.systemUser());
+        Assert.assertEquals("DOTASSET", created.defaultBaseType());
+
+        // Retrieval path exposes it too
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(folderPath, APILocator.systemUser());
+        Assert.assertTrue(assetInfo instanceof FolderView);
+        Assert.assertEquals("DOTASSET", ((FolderView) assetInfo).defaultBaseType());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)}
+     * Given Scenario: Create folders with a lowercase name and an alternate BaseContentType name
+     * Expected Result: The value is normalized to the canonical uppercase enum name
+     */
+    @Test
+    public void Test_Save_New_Folder_DefaultBaseType_Normalizes() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+
+        // lowercase canonical name
+        final String lowerName = "dbt-lower-" + RandomStringUtils.randomAlphabetic(5);
+        final String lowerPath = String.format("//%s/%s/", host.getHostname(), lowerName);
+        final FolderView lower = webAssetHelper.saveNewFolder(lowerPath,
+                FolderDetail.builder().title("lower").defaultBaseType("dotasset").build(),
+                APILocator.systemUser());
+        Assert.assertEquals("DOTASSET", lower.defaultBaseType());
+
+        // alternate name for FILEASSET
+        final String altName = "dbt-alt-" + RandomStringUtils.randomAlphabetic(5);
+        final String altPath = String.format("//%s/%s/", host.getHostname(), altName);
+        final FolderView alt = webAssetHelper.saveNewFolder(altPath,
+                FolderDetail.builder().title("alt").defaultBaseType("File").build(),
+                APILocator.systemUser());
+        Assert.assertEquals("FILEASSET", alt.defaultBaseType());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)}
+     * Given Scenario: Create a folder without defaultBaseType
+     * Expected Result: The folder has no preference (null)
+     */
+    @Test
+    public void Test_Save_New_Folder_Without_DefaultBaseType_Is_Null() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String folderName = "dbt-none-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+
+        final FolderView created = webAssetHelper.saveNewFolder(folderPath,
+                FolderDetail.builder().title("no preference").build(), APILocator.systemUser());
+        Assert.assertNull(created.defaultBaseType());
+
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(folderPath, APILocator.systemUser());
+        Assert.assertNull(((FolderView) assetInfo).defaultBaseType());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)}
+     * Given Scenario: Create a folder with a base type that is neither DOTASSET nor FILEASSET
+     * Expected Result: Should throw IllegalArgumentException (translated to 400 by the resource layer)
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void Test_Save_New_Folder_Invalid_DefaultBaseType() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String folderName = "dbt-bad-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+
+        webAssetHelper.saveNewFolder(folderPath,
+                FolderDetail.builder().title("bad").defaultBaseType("WIDGET").build(),
+                APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#updateFolder(String, AbstractUpdateFolderDetail, User)}
+     * Given Scenario: Create a folder with DOTASSET, update it to FILEASSET, then run a partial
+     * update (title only) that omits defaultBaseType
+     * Expected Result: A present value changes the preference; an absent value leaves it unchanged
+     * (consistent with every other folder detail field — no clobber on partial updates)
+     */
+    @Test
+    public void Test_Update_Folder_DefaultBaseType_Change_And_Preserve() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String folderName = "dbt-update-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+
+        webAssetHelper.saveNewFolder(folderPath,
+                FolderDetail.builder().title("Original").defaultBaseType("DOTASSET").build(),
+                APILocator.systemUser());
+
+        // A present value changes the preference
+        final FolderView changed = webAssetHelper.updateFolder(folderPath,
+                UpdateFolderDetail.builder().defaultBaseType("FILEASSET").build(),
+                APILocator.systemUser());
+        Assert.assertEquals("FILEASSET", changed.defaultBaseType());
+
+        // A partial update that omits defaultBaseType leaves it unchanged (not cleared)
+        final FolderView preserved = webAssetHelper.updateFolder(folderPath,
+                UpdateFolderDetail.builder().title("Renamed title").build(),
+                APILocator.systemUser());
+        Assert.assertEquals("FILEASSET", preserved.defaultBaseType());
+
+        // Confirm on the retrieval path
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(folderPath, APILocator.systemUser());
+        Assert.assertEquals("FILEASSET", ((FolderView) assetInfo).defaultBaseType());
+    }
+
 }
