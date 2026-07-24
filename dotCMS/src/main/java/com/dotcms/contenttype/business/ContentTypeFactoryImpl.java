@@ -794,7 +794,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // Dedicated system predicate: excludes system Content Types when requested, independent of
     // the search/condition string so it combines (ANDs) with the name filter.
     if (!includeSystemTypes) {
-        sqlBuilder.append(" AND structure.system = ? ");
+        sqlBuilder.append(" AND coalesce(structure.system, false) = ? ");
     }
 
     // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
@@ -1573,7 +1573,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 // Dedicated system predicate: excludes system Content Types when requested,
                 // independent of the search/condition string so it combines with the name filter.
                 if (!includeSystemTypes) {
-                    unionQuery.append(" AND structure.system = ? ");
+                    unionQuery.append(" AND coalesce(structure.system, false) = ? ");
                     parameters.add(false);
                 }
 

@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -635,6 +636,52 @@ public class ContentTypesPaginatorTest {
     private void removeQuietly(final ContentType contentType) {
         if (null != contentType) {
             ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: A regular (non-system) Content Type whose {@code structure.system} column is
+     * forced to {@code NULL} at the DB level (the column is a nullable boolean, so legacy/externally
+     * created rows may be NULL), queried with {@code system=false}.
+     *
+     * Expected Result: The Content Type is still returned. The system predicate uses
+     * {@code coalesce(system, false)} (so a NULL {@code system} is treated as non-system and not
+     * silently dropped by a plain {@code system = false} equality), and the DB-to-object transform
+     * maps a NULL {@code system} to {@code false} instead of throwing.
+     */
+    @Test
+    public void test_getItems_systemFalse_includesTypeWithNullSystemColumn() throws Exception {
+        final long ts = System.currentTimeMillis();
+        final String token = "nullsys" + ts;
+        ContentType contentType = null;
+
+        try {
+            contentType = createTypeWithSystemFlag(BaseContentType.CONTENT, token + "Reg",
+                    token + "reg", false);
+
+            // Simulate a row whose system column is NULL (nullable boolean, no NOT NULL constraint).
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("update structure set system = null where inode = ?");
+            dc.addParam(contentType.inode());
+            dc.loadResult();
+
+            final Map<String, Object> params = new HashMap<>();
+            params.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
+                    Set.of(BaseContentType.CONTENT.name()));
+            params.put(ContentTypesPaginator.SYSTEM_PARAMETER_NAME, false);
+
+            final ContentTypesPaginator paginator = new ContentTypesPaginator();
+            final PaginatedArrayList<Map<String, Object>> result =
+                    paginator.getItems(user, token, -1, 0, "name", OrderDirection.ASC, params);
+
+            assertEquals("A Content Type with a NULL system column must not be dropped by system=false",
+                    1, result.size());
+            assertEquals(1, result.getTotalResults());
+            assertEquals(token + "Reg", result.get(0).get("name"));
+        } finally {
+            removeQuietly(contentType);
         }
     }
 
