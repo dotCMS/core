@@ -111,8 +111,11 @@ import {
  */
 export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
+    /** Schema node names captured as soon as the TipTap editor instance exists. */
     readonly #knownEditorNodeNames = new Set<string>();
+    /** Buffers incoming form content until the editor create lifecycle can safely consume it. */
     #pendingValue: Content | null = null;
+    /** Field-level allowed blocks, with paragraph forced in as the legacy default. */
     #allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
 
     @Input() field: DotCMSContentTypeField;

@@ -48,6 +48,8 @@ function getCustomBlockOptions(field: DotCMSContentTypeField): BlockOption[] {
         return (parsed.extensions || []).flatMap((extension) =>
             (extension.actions || []).flatMap((action) => {
                 const name = action?.name?.trim();
+                // `menuLabel` was optional in existing payloads; fall back to the required
+                // TipTap node name so preserved remote blocks remain selectable in settings.
                 const label = action?.menuLabel?.trim() || name;
 
                 if (!name) {

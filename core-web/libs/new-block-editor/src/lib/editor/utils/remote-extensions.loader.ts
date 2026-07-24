@@ -57,6 +57,9 @@ export function parseCustomBlocksField(
  * The `webpackIgnore` magic comment tells webpack not to try to bundle the URL.
  * Vite/esbuild leave dynamic-import string expressions alone by default, but the
  * comment is harmless in either bundler so we keep it for cross-bundler safety.
+ *
+ * The optional `importer` parameter exists for tests so specs can inject a mock
+ * loader instead of relying on runtime dynamic imports.
  */
 export async function loadRemoteExtensions(
     parsed: RemoteCustomExtensions,

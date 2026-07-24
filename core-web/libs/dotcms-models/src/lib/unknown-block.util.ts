@@ -21,6 +21,10 @@ function isJsonContent(value: unknown): value is JSONContent {
     );
 }
 
+/**
+ * Builds the placeholder attrs stored on `dotUnsupportedBlock` so both editors
+ * can preserve the original node JSON and its TipTap node name in a stable order.
+ */
 export function createUnknownBlockNodeAttrs(
     node: JSONContent,
     nodeType: string | null
@@ -32,6 +36,11 @@ export function createUnknownBlockNodeAttrs(
     };
 }
 
+/**
+ * Parses the serialized `data-original-node` HTML attribute back into JSON when
+ * possible, and preserves the raw string separately when parsing fails so the
+ * original content can still round-trip through the placeholder unchanged.
+ */
 export function parseUnknownBlockOriginalNode(
     value: string | null
 ): Pick<UnknownBlockNodeAttrs, 'originalNode' | 'originalNodeRaw'> {
@@ -57,6 +66,10 @@ export function parseUnknownBlockOriginalNode(
     }
 }
 
+/**
+ * Re-renders the preserved original node payload back onto the placeholder DOM
+ * node so unsupported blocks keep their recoverable serialized representation.
+ */
 export function renderUnknownBlockOriginalNode(
     attributes: Partial<UnknownBlockNodeAttrs>
 ): Record<string, string> {
