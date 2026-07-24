@@ -232,18 +232,32 @@ public class WorkflowResource {
             "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
             "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
             "back as structured content with no editor round-trip required. A value that is already a " +
-            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Rich blocks " +
-            "(embedded contentlets, images/videos with dotCMS asset bindings, YouTube embeds, layout " +
-            "grids, custom blocks) are expressed in Markdown as fenced code blocks with a `dotcms-*` " +
-            "info string and a small JSON payload, e.g. " +
-            "```dotcms-content\\n{\"identifier\": \"<contentlet-id>\", \"languageId\": 1}\\n``` " +
-            "(labels: `dotcms-content`, `dotcms-image`, `dotcms-video`, `dotcms-youtube`, `dotcms-grid`, " +
-            "`dotcms-node`). A Markdown/HTML write **fully replaces** the stored document; when stored " +
-            "rich blocks are not carried over in the submitted value, the save still succeeds and an " +
-            "advisory warning listing the replaced blocks is returned in the response `messages` field — " +
-            "carry the blocks over as fences to preserve them. An invalid fence payload degrades to an " +
-            "ordinary code block, never an error. " +
-            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`.";
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. " +
+            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`." +
+            "\n\n**Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as " +
+            "fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON " +
+            "object. Example — embed a contentlet:" +
+            "\n\n```dotcms-content\\n{\"identifier\": \"<contentlet-id>\", \"languageId\": 1}\\n```" +
+            "\n\nSupported labels and payload fields (**bold** = required):" +
+            "\n- `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). " +
+            "The server rebuilds the full embed data from the identifier on every read." +
+            "\n- `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional " +
+            "`alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external " +
+            "images need no fence — standard `![alt](url \"title\")` works." +
+            "\n- `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, " +
+            "`height`, `languageId`." +
+            "\n- `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`." +
+            "\n- `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON " +
+            "(`{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[n,n]},\"content\":[…two gridColumn nodes…]}`)." +
+            "\n- `dotcms-node` → any other node type verbatim (`{\"type\": \"<nodeType>\", …}`) — the " +
+            "fallback for custom blocks." +
+            "\n\nBlock styling (e.g. text alignment) is set by an HTML comment on its own line " +
+            "immediately before the block it decorates: `<!-- dotcms:attrs {\"textAlign\":\"center\"} -->`." +
+            "\n\nA Markdown/HTML write **fully replaces** the stored document; when stored rich blocks " +
+            "are not carried over in the submitted value, the save still succeeds and an advisory warning " +
+            "listing the replaced blocks is returned in the response `messages` field — carry the blocks " +
+            "over as fences to preserve them. An invalid fence payload degrades to an ordinary code " +
+            "block, never an error.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +
