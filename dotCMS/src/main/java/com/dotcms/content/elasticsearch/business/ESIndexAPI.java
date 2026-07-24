@@ -620,6 +620,13 @@ public class ESIndexAPI implements IndexAPI {
 
 			//set the limited values
 			request.indices(portionElement);
+			// Tolerate names in the batch that are absent on this engine. During the ES→OS
+			// migration the caller (e.g. the Site Search portlet, which passes the MERGED
+			// ES∪OS index list from getIndicesStats) can hand this ES-only read OpenSearch-side
+			// names (e.g. .os content indices) that do not exist on ES. Without lenient options a
+			// single missing index throws index_not_found and drops EVERY alias in the batch — the
+			// Site Search alias column went blank after a phase switch (issue #36360, I-3).
+			request.indicesOptions(IndicesOptions.lenientExpandOpen());
 
 			final GetAliasesResponse response = Sneaky.sneak(()->
 					RestHighLevelClientProvider.getInstance().getClient()

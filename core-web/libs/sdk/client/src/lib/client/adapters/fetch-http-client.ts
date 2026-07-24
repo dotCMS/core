@@ -1,4 +1,9 @@
+import { SDK_VERSION } from 'virtual:sdk-version';
+
 import { BaseHttpClient, DotRequestOptions } from '@dotcms/types';
+
+import { checkSdkCompatibility } from '../../utils/sdk-compatibility';
+// Build-time constant — see sdkVersionPlugin in rollup.config.cjs.
 
 /**
  * HTTP client implementation using the Fetch API.
@@ -67,6 +72,12 @@ export class FetchHttpClient extends BaseHttpClient {
         try {
             // Use native fetch API - no additional configuration needed
             const response = await fetch(url, options);
+
+            // Fire-and-forget: reads X-DotCMS-Version / X-DotCMS-Min-SDK off the
+            // response and logs a console warning on mismatch. Fails open (no headers,
+            // e.g. an older server) and never throws, so this can't affect the actual
+            // request/response handling below.
+            checkSdkCompatibility(response.headers, SDK_VERSION);
 
             if (!response.ok) {
                 // Parse response body for error context

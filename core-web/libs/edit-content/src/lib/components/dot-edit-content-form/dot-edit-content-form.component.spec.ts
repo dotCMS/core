@@ -332,15 +332,15 @@ describe('DotFormComponent', () => {
             spectator.detectChanges();
 
             const container = spectator.query(byTestId('tab-layout-container'));
-            expect(container?.classList.contains('max-w-286')).toBe(true);
+            expect(container?.classList.contains('max-w-343')).toBe(true);
             expect(container?.classList.contains('max-w-206')).toBe(false);
             expect(container?.classList.contains('mx-auto')).toBe(true);
 
             const row = spectator.query(byTestId('row'));
             const column = spectator.query(byTestId('column'));
-            expect(row?.classList.contains('gap-5')).toBe(true);
+            expect(row?.classList.contains('gap-9')).toBe(true);
             expect(row?.classList.contains('mb-5')).toBe(true);
-            expect(column?.classList.contains('gap-5')).toBe(true);
+            expect(column?.classList.contains('gap-8')).toBe(true);
         });
 
         it('should apply the narrower max-width for a single-column layout (every row has exactly one column)', () => {

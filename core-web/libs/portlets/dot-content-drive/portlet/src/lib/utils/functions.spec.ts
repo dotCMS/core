@@ -899,6 +899,46 @@ describe('User-searchable field helpers', () => {
                 to: '2024-12-31'
             });
         });
+
+        describe('Key-Value translation', () => {
+            it('should join a key:value shorthand into a key_value term (exact pair)', () => {
+                expect(parseUserSearchableValue('color:red', 'Key-Value')).toBe('color_red');
+            });
+
+            it('should trim around the colon', () => {
+                expect(parseUserSearchableValue(' color : red ', 'Key-Value')).toBe('color_red');
+            });
+
+            it('should pass a bare term through (loose match on a key or value)', () => {
+                expect(parseUserSearchableValue('red', 'Key-Value')).toBe('red');
+            });
+
+            it('should fall back to the filled side when only one is given', () => {
+                expect(parseUserSearchableValue('color:', 'Key-Value')).toBe('color');
+                expect(parseUserSearchableValue(':red', 'Key-Value')).toBe('red');
+            });
+
+            it('should split on the first colon only, keeping colons in the value', () => {
+                // A keyed colon-bearing value (URL / time) is preserved after the first colon.
+                expect(parseUserSearchableValue('link:https://x', 'Key-Value')).toBe(
+                    'link_https://x'
+                );
+                expect(parseUserSearchableValue('start:12:30', 'Key-Value')).toBe('start_12:30');
+            });
+
+            it('should lowercase the term to match the lowercased .key_value index', () => {
+                // The index stores (key + "_" + value).toLowerCase(); the FE-typed case must not
+                // cause a miss.
+                expect(parseUserSearchableValue('Color:Red', 'Key-Value')).toBe('color_red');
+                expect(parseUserSearchableValue('COLOR_RED', 'Key-Value')).toBe('color_red');
+                expect(parseUserSearchableValue('Blue', 'Key-Value')).toBe('blue');
+            });
+
+            it('should return undefined for an empty value', () => {
+                expect(parseUserSearchableValue('', 'Key-Value')).toBeUndefined();
+                expect(parseUserSearchableValue('   ', 'Key-Value')).toBeUndefined();
+            });
+        });
     });
 
     describe('serializeUserSearchableValue', () => {

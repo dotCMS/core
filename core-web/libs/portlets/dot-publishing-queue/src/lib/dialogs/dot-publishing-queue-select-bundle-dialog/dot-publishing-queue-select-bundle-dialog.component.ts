@@ -56,12 +56,7 @@ import {
     PushBundleForm,
     PushBundleOperation
 } from '@dotcms/dotcms-models';
-import {
-    DotCopyButtonComponent,
-    DotEmptyContainerComponent,
-    DotMessagePipe,
-    PrincipalConfiguration
-} from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import {
@@ -75,6 +70,11 @@ type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 interface BundleRow {
     id: string;
     name: string;
+}
+
+interface EmptyStateConfig {
+    icon: string;
+    messageKey: string;
 }
 
 /** Map asset `type` string (lowercase, comes from `PusheableAsset.getType()`)
@@ -124,7 +124,6 @@ const ASSETS_PER_PAGE = 10;
         TooltipModule,
         DotCopyButtonComponent,
         DotDownloadBundleFormComponent,
-        DotEmptyContainerComponent,
         DotMessagePipe,
         DotPushPublishFormComponent
     ],
@@ -179,8 +178,13 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     readonly assetsPerPage = ASSETS_PER_PAGE;
 
-    readonly bundlesSkeleton = Array.from({ length: 6 });
-    readonly assetsSkeleton = Array.from({ length: 6 });
+    /** Stable per-row keys — PrimeNG's `dataKey` skips `undefined` slots. */
+    readonly bundlesSkeleton = Array.from({ length: 6 }, (_, i) => ({
+        id: `__skel_${i}`
+    }));
+    readonly assetsSkeleton = Array.from({ length: 6 }, (_, i) => ({
+        asset: `__skel_${i}`
+    }));
 
     /** `table-layout: fixed` + `width: 100%` so column widths are driven by the
      * `<col>`/header widths instead of by cell content. Without this, a long
@@ -267,53 +271,33 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     readonly $assetsTotal = computed(() => this.$assets().length);
 
-    /** Empty-state configuration for the bundles pane. Splits the "no results"
-     * copy between "nothing exists yet" and "search returned nothing" so the
-     * user gets the right cue for what to do next. */
-    readonly $bundlesEmptyConfig = computed<PrincipalConfiguration>(() => {
+    /** Empty-state config for the bundles pane. Splits "nothing saved yet" from
+     * "search returned nothing" so the icon + copy guide the user's next move. */
+    readonly $bundlesEmptyConfig = computed<EmptyStateConfig>(() => {
         const hasSearch = this.$bundleSearch().trim().length > 0;
         return hasSearch
             ? {
-                  icon: 'pi-search',
-                  title: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.empty.search.title'
-                  ),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.empty.search.subtitle'
-                  )
+                  icon: 'pi-search-minus',
+                  messageKey: 'publishing-queue.select-bundle.empty.search'
               }
             : {
                   icon: 'pi-inbox',
-                  title: this.#dotMessageService.get('publishing-queue.select-bundle.empty.title'),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.empty.subtitle'
-                  )
+                  messageKey: 'publishing-queue.select-bundle.empty'
               };
     });
 
-    /** Empty-state configuration for the assets pane. Distinguishes "no bundle
-     * picked yet" (guide the user toward the left list) from "picked bundle is
-     * empty" (tell them where to add content). */
-    readonly $assetsEmptyConfig = computed<PrincipalConfiguration>(() => {
+    /** Empty-state config for the assets pane. Distinguishes "no bundle picked
+     * yet" (steer the user to the left list) from "picked bundle is empty". */
+    readonly $assetsEmptyConfig = computed<EmptyStateConfig>(() => {
         const hasActive = this.$activeBundleId() !== null;
         return hasActive
             ? {
                   icon: 'pi-box',
-                  title: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.asset-empty.title'
-                  ),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.asset-empty.subtitle'
-                  )
+                  messageKey: 'publishing-queue.select-bundle.asset-empty'
               }
             : {
-                  icon: 'pi-hand-point-left',
-                  title: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.no-active.title'
-                  ),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.no-active.subtitle'
-                  )
+                  icon: 'pi-search-minus',
+                  messageKey: 'publishing-queue.select-bundle.no-active'
               };
     });
 
@@ -694,6 +678,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     #loadAssets(bundleId: string): void {
+        this.$assets.set([]);
         this.$assetsStatus.set('loading');
         this.$assetEditUrls.set(new Map());
         this.#publishingService

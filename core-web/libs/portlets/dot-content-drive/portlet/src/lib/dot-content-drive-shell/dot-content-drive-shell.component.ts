@@ -213,9 +213,10 @@ export class DotContentDriveShellComponent {
         const items = untracked(() => this.#store.items());
 
         // The API uses cursor-based pagination and does not return a total count.
-        // When hasMoreContent is true, we return one page beyond current so PrimeNG enables the next-page button.
-        // When hasMoreContent is false, we can calculate the exact total.
-        return page.hasMoreContent
+        // When there are more folders OR content, we return one page beyond current so PrimeNG
+        // enables the next-page button (a folder with only sub-folders has hasMoreContent=false but
+        // hasMoreFolders=true). When neither has more, we can calculate the exact total.
+        return page?.hasMoreContent || page?.hasMoreFolders
             ? limit * (currentPage + 1)
             : limit * (currentPage - 1) + items.length;
     });
