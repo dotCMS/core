@@ -1474,6 +1474,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <!-- Added to tomcat classpath: bridges JULI (java.util.logging) into Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jul</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <!-- Async support for Log4J 2.x -->
             <groupId>com.lmax</groupId>
             <artifactId>disruptor</artifactId>
@@ -1742,6 +1748,13 @@
                                 <artifactItem>
                                     <groupId>org.apache.logging.log4j</groupId>
                                     <artifactId>log4j-appserver</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-jul</artifactId>
                                     <type>jar</type>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
