@@ -48,7 +48,14 @@ describe('parseCustomBlocksField', () => {
             extensions: [
                 {
                     url: 'https://example.com/ext.js',
-                    actions: [{ command: 'insertThing', menuLabel: 'Thing', icon: 'extension' }]
+                    actions: [
+                        {
+                            command: 'insertThing',
+                            menuLabel: 'Thing',
+                            icon: 'extension',
+                            name: 'customThing'
+                        }
+                    ]
                 }
             ]
         };

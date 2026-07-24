@@ -74,6 +74,7 @@ import {
     GridBlock,
     ImageNode,
     LoaderNode,
+    UnsupportedBlockNode,
     VideoNode
 } from '../../nodes';
 import {
@@ -81,7 +82,9 @@ import {
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
+    restoreUnknownBlockNodes,
     RestoreDefaultDOMAttrs,
+    preserveUnknownBlockNodes,
     SetDocAttrStep
 } from '../../shared';
 
@@ -279,6 +282,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             return;
         }
 
+        const restoredValue = {
+            ...value,
+            content: value.content ? restoreUnknownBlockNodes(value.content) : value.content
+        };
+
         // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
         // API response always contains this metadata. Without this patch the attrs
         // would only arrive after the 250 ms debounce fired by the (keyup) handler.
@@ -288,15 +296,15 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         const updatedValue: JSONContent =
             charCount > 0
                 ? {
-                      ...value,
+                      ...restoredValue,
                       attrs: {
-                          ...(value.attrs || {}),
+                          ...(restoredValue.attrs || {}),
                           charCount,
                           wordCount: this.characterCount?.words?.() ?? 0,
                           readingTime: this.readingTime
                       }
                   }
-                : value;
+                : restoredValue;
 
         this.valueChange.emit(updatedValue);
         this.onChange?.(JSON.stringify(updatedValue));
@@ -503,15 +511,23 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         const data: RemoteCustomExtensions = this.getParsedCustomBlocks();
         const extensionUrls = data?.extensions?.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
-        const blockNames = [];
+        const moduleObj = customModules.reduce(this.parsedCustomModules, {});
+        const extensions = Object.values(moduleObj) as AnyExtension[];
+        const registeredNodeNames = new Set(
+            extensions
+                .map((extension) => extension?.name)
+                .filter((name): name is string => typeof name === 'string' && name.length > 0)
+        );
 
-        data.extensions.forEach((extension) => {
-            blockNames.push(...(extension.actions?.map((item) => item.name) || []));
+        this.getDeclaredRemoteBlockNames().forEach((name) => {
+            if (!registeredNodeNames.has(name)) {
+                console.warn(
+                    `[remote-extension] declared action.name "${name}" did not match any loaded node`
+                );
+            }
         });
 
-        const moduleObj = customModules.reduce(this.parsedCustomModules, {});
-
-        return Object.values(moduleObj);
+        return extensions;
     }
 
     private getEditorNodes(): AnyExtension[] {
@@ -530,7 +546,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
         const customNodes = this.getAllowedCustomNodes();
 
-        return [starterkit, ...customNodes];
+        return [starterkit, UnsupportedBlockNode, ...customNodes];
     }
 
     /**
@@ -713,10 +729,27 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     }
 
     private setEditorJSONContent(content: Content) {
-        this.content =
+        const filteredContent =
             this.allowedBlocks?.length > 1
-                ? removeInvalidNodes(content, this.allowedBlocks)
+                ? removeInvalidNodes(content, this.allowedBlocks, this.getDeclaredRemoteBlockNames())
                 : content;
+
+        if (!this.editor || typeof filteredContent === 'string') {
+            this.content = filteredContent;
+
+            return;
+        }
+
+        const knownNodeNames = new Set(Object.keys(this.editor.schema.nodes));
+
+        this.content = Array.isArray(filteredContent)
+            ? preserveUnknownBlockNodes(filteredContent, knownNodeNames)
+            : {
+                  ...filteredContent,
+                  content: filteredContent.content
+                      ? preserveUnknownBlockNodes(filteredContent.content, knownNodeNames)
+                      : filteredContent.content
+              };
     }
 
     private setEditorContent(content: Content) {
@@ -757,6 +790,24 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 }),
                 {}
             ) || {}
+        );
+    }
+
+    private getDeclaredRemoteBlockNames(): string[] {
+        return this.getParsedCustomBlocks().extensions.flatMap((extension) =>
+            (extension.actions || [])
+                .map((action) => action?.name)
+                .filter((name): name is string => {
+                    const isValidName = typeof name === 'string' && name.trim().length > 0;
+
+                    if (!isValidName) {
+                        console.warn(
+                            '[remote-extension] skipping customBlocks action without a valid name'
+                        );
+                    }
+
+                    return isValidName;
+                })
         );
     }
 }

@@ -23,6 +23,7 @@ import { createCodeBlock } from './nodes/code-block/code-block.extension';
 import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
+import { UnsupportedBlock } from './nodes/unsupported-block.extension';
 import {
     createUploadPlaceholderExtension,
     type UploadPlaceholderMediaType
@@ -84,6 +85,7 @@ export function createEditorExtensions(
             link: false,
             horizontalRule: has('horizontalRule') ? {} : false
         }),
+        UnsupportedBlock,
         ...(has('codeBlock') ? [createCodeBlock(injector, lowlight)] : []),
         createBlockGutterDragHandle(t('dot.block.editor.gutter.add-block')),
         CharacterCount,

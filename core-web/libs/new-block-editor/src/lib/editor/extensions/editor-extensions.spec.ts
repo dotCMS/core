@@ -7,6 +7,7 @@ import type { DotMessageService } from '@dotcms/data-access';
 import { createEditorExtensions } from './editor-extensions';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
+import { UNKNOWN_BLOCK_NODE_NAME } from '../utils/unknown-block.utils';
 
 /**
  * These specs cover the extension-assembly seam that the `customBlocks` remote-extension
@@ -56,5 +57,9 @@ describe('createEditorExtensions', () => {
         const names = build([remoteCustom]);
 
         expect(names).toContain('customNode');
+    });
+
+    it('always registers the unsupported-block catch-all node', () => {
+        expect(build()).toContain(UNKNOWN_BLOCK_NODE_NAME);
     });
 });

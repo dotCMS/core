@@ -14,7 +14,9 @@ export interface RemoteExtensionsResolved {
  * Returns `{ extensions: [] }` for missing, malformed, or schema-mismatched input
  * (the legacy contract — fields without customBlocks must work). The legacy block
  * editor validates `{url, actions[].{command, menuLabel, icon}}` only; we mirror
- * that exactly so existing customer configs keep loading.
+ * that exactly so existing customer configs keep loading. For allowed-blocks
+ * compatibility, customers must also set `actions[].name` to the TipTap node name
+ * exported by the remote bundle (for example `customGallery`).
  */
 export function parseCustomBlocksField(
     field: DotCMSContentTypeField | undefined
@@ -73,8 +75,30 @@ export async function loadRemoteExtensions(
         {}
     );
 
+    const extensions = Object.values(merged) as AnyExtension[];
+    const registeredNodeNames = new Set(
+        extensions
+            .map((extension) => extension?.name)
+            .filter((name): name is string => typeof name === 'string' && name.length > 0)
+    );
+
+    actions.forEach((action) => {
+        const name = (action as Partial<Action>).name?.trim();
+
+        if (!name) {
+            console.warn('[remote-extension] customBlocks action.name is required for remote blocks');
+            return;
+        }
+
+        if (!registeredNodeNames.has(name)) {
+            console.warn(
+                `[remote-extension] declared action.name "${name}" did not match any loaded node`
+            );
+        }
+    });
+
     return {
-        extensions: Object.values(merged) as AnyExtension[],
+        extensions,
         actions
     };
 }

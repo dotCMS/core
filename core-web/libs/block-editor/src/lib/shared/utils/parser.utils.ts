@@ -76,8 +76,12 @@ const isHeading = (node, blocksMap) => {
     return blocksMap[type + attrs.level];
 };
 
-export const removeInvalidNodes = (data: Content, allowedBlocks: string[]) => {
-    const blocksMap = getBlockMap(allowedBlocks);
+export const removeInvalidNodes = (
+    data: Content,
+    allowedBlocks: string[],
+    remoteBlockNames: string[] = []
+) => {
+    const blocksMap = getBlockMap(allowedBlocks, remoteBlockNames);
     const content = Array.isArray(data) ? [...data] : [...(data as JSONContent).content];
 
     return purifyNodeTree(content, blocksMap);
@@ -119,8 +123,10 @@ export const purifyNodeTree = (content: JSONContent[], blocksMap: BlockMap): JSO
  * @param {string[]} allowedBlock
  * @return {*}
  */
-export const getBlockMap = (allowedBlock: string[]): BlockMap => {
-    return allowedBlock.reduce((blocks, current) => {
+export const getBlockMap = (allowedBlock: string[], remoteBlockNames: string[] = []): BlockMap => {
+    const blockNames = [...allowedBlock, ...remoteBlockNames];
+
+    return blockNames.reduce((blocks, current) => {
         if (relatedContent[current]) {
             return {
                 ...blocks,

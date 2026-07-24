@@ -50,6 +50,30 @@ const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
 } as unknown;
 
+const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [
+        {
+            key: 'customBlocks',
+            value: JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'addCustomGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            })
+        }
+    ]
+} as unknown;
+
 describe('DotBlockEditorSettingsComponent', () => {
     describe('with existing variables', () => {
         let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
@@ -231,6 +255,22 @@ describe('DotBlockEditorSettingsComponent', () => {
             expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
             expect(dotFieldVariableService.save).not.toHaveBeenCalled();
         });
+
+        it('should persist custom remote block names exactly like built-in blocks', () => {
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            component.form.get('allowedBlocks').setValue(['customGallery']);
+            component.saveSettings();
+
+            expect(dotFieldVariableService.save).toHaveBeenCalledWith(
+                CUSTOM_BLOCK_FIELD,
+                expect.objectContaining({
+                    key: 'allowedBlocks',
+                    value: 'customGallery'
+                })
+            );
+        });
     });
 
     describe('Options', () => {
@@ -273,6 +313,19 @@ describe('DotBlockEditorSettingsComponent', () => {
             );
 
             expect(paragraphOption).not.toBeDefined();
+        });
+
+        it('should append remote custom block options after the built-in list', () => {
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            const options = fixture.componentInstance.settingsMap.allowedBlocks.options;
+
+            expect(options).toEqual([
+                ...getEditorBlockOptions(),
+                { code: 'customGallery', label: 'Custom Gallery' }
+            ]);
         });
     });
 });

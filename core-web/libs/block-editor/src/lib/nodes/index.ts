@@ -6,3 +6,4 @@ export * from './audio/audio.node';
 export * from './ai-content/ai-content.node';
 export * from './loader/loader.node';
 export * from './grid-block';
+export * from './unsupported-block/unsupported-block.node';
