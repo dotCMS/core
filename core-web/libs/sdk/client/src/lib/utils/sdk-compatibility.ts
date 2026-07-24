@@ -88,7 +88,8 @@ export const checkSdkCompatibility = (headers: Headers, ownVersion: string): voi
             hasWarnedOutdatedSdk = true;
             console.error(
                 `[dotCMS SDK] SDK ${ownVersion} is not supported by dotCMS ${serverVersion} ` +
-                    `(minimum required: ${minSdkVersion}). Install @dotcms/client@${minSdkVersion} or newer.`
+                    `(minimum required: ${minSdkVersion}). Upgrade required: ` +
+                    'https://www.dotcms.com/docs/latest/sdk-version-compatibility'
             );
         }
 

@@ -3,6 +3,7 @@ package com.dotcms.filters.interceptor.meta;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.rest.config.MinSdkVersion;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.util.ReleaseInfo;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,9 +33,12 @@ import javax.servlet.http.HttpServletResponse;
  * {@link ResponseMetaDataWebInterceptor} (the {@code x-dot-server} header) uses this same
  * mechanism instead of a JAX-RS filter.
  *
- * <p>Unrelated to CORS request handling — {@code Access-Control-Expose-Headers} already
- * defaults to {@code *} (see {@code dotmarketing-config.properties}), so these two headers
- * are already exposed cross-origin without any further change.
+ * <p>Unrelated to CORS request handling on the default configuration — {@code
+ * Access-Control-Expose-Headers} defaults to {@code *} (see {@code
+ * dotmarketing-config.properties}), so these two headers are exposed cross-origin out of
+ * the box. Note this default can be narrowed per-resource (e.g. an {@code
+ * api.cors.graphql.Access-Control-Expose-Headers} override) — an environment that does so
+ * would silently stop exposing these headers to browser-side SDK calls on that resource.
  */
 public class SdkVersionWebInterceptor implements WebInterceptor {
 
@@ -47,7 +51,9 @@ public class SdkVersionWebInterceptor implements WebInterceptor {
             response.setHeader(DOTCMS_VERSION_HEADER, ReleaseInfo.getVersion());
             response.setHeader(DOTCMS_MIN_SDK_HEADER, MinSdkVersion.VALUE);
         } catch (Exception e) {
-            // Never let a header-advertisement failure break the actual request.
+            // Never let a header-advertisement failure break the actual request, but log it
+            // so a systemic failure of the SDK compatibility handshake is discoverable.
+            Logger.debug(this, "Unable to set SDK compatibility headers: " + e.getMessage(), e);
         }
 
         return Result.NEXT;

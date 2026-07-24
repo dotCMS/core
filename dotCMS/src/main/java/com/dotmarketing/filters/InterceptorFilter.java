@@ -52,9 +52,13 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new PreRenderSEOWebInterceptor());
         delegate.add(new EMAWebInterceptor());
+        // Must run before GraphqlCacheWebInterceptor: on a GraphQL cache hit that
+        // interceptor writes the response and returns Result.SKIP_NO_CHAIN, breaking the
+        // delegate chain before any later interceptor runs. Registering this one first
+        // means its headers are already on the response by the time that happens.
+        delegate.add(new SdkVersionWebInterceptor());
         delegate.add(new GraphqlCacheWebInterceptor());
         delegate.add(new ResponseMetaDataWebInterceptor());
-        delegate.add(new SdkVersionWebInterceptor());
         delegate.add(new EventLogWebInterceptor());
         delegate.add(new CurrentVariantWebInterceptor());
         delegate.add(analyticsTrackWebInterceptor);
