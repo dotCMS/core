@@ -105,6 +105,7 @@ import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
+import com.dotcms.rest.api.v1.folder.FolderResourceSearchTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
@@ -526,6 +527,7 @@ import org.junit.runners.Suite.SuiteClasses;
         HashBuilderTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
+        FolderResourceSearchTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
