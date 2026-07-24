@@ -1128,4 +1128,155 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 				.nextPersisted();
 	}
 
+	private ContentType newTypeWithSortOrder(final BaseContentType baseType, final String name,
+			final String varName, final int sortOrder) throws Exception {
+		final ContentType created = newTypeForSort(baseType, name, varName);
+		final ContentType withSortOrder = ContentTypeBuilder.builder(created).sortOrder(sortOrder).build();
+		return APILocator.getContentTypeAPI(APILocator.systemUser()).save(withSortOrder);
+	}
+
+	private List<String> pageAllNames(final ContentTypeFactoryImpl factory, final String filter,
+			final String orderBy, final int totalExpected, final int pageSize) throws Exception {
+		final List<String> pagedNames = new ArrayList<>();
+		final Set<String> seenInodes = new HashSet<>();
+		for (int offset = 0; offset < totalExpected; offset += pageSize) {
+			final List<ContentType> page = factory.searchMultipleTypes(filter,
+					List.of(BaseContentType.CONTENT, BaseContentType.WIDGET), orderBy,
+					pageSize, offset, null, null);
+			for (final ContentType ct : page) {
+				assertTrue("A Content Type reappeared on a later page: " + ct.name(),
+						seenInodes.add(ct.inode()));
+				pagedNames.add(ct.name());
+			}
+		}
+		return pagedNames;
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeFactoryImpl#searchMultipleTypes(String, java.util.Collection, String, int, int, String, java.util.List)}
+	 *
+	 * Given Scenario: Content Types whose {@code sort_order} deliberately disagrees with their name
+	 * order, paged with {@code orderby=sort_order}. {@code sort_order} is a supported endpoint sort
+	 * column that the Java page-merge comparator does not model.
+	 *
+	 * Expected Result: The paginated sequence follows {@code sort_order} (the DB ordering is
+	 * authoritative), not the name order -- i.e. the Java STEP-4 re-sort does not silently fall back
+	 * to name. Verified in both cache and non-cache modes.
+	 */
+	@Test
+	public void test_searchMultipleTypes_orderBySortOrder_isNotReorderedByName() throws Exception {
+		final boolean originalLoadFromCache =
+				Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+		final long ts = System.currentTimeMillis();
+		final String token = "sortord" + ts;
+		final List<ContentType> created = new ArrayList<>();
+
+		try {
+			// Name order is Alpha < Bravo < Charlie < Delta; sort_order is the reverse.
+			created.add(newTypeWithSortOrder(BaseContentType.CONTENT, token + "Alpha", token + "so1", 40));
+			created.add(newTypeWithSortOrder(BaseContentType.WIDGET, token + "Bravo", token + "so2", 30));
+			created.add(newTypeWithSortOrder(BaseContentType.CONTENT, token + "Charlie", token + "so3", 20));
+			created.add(newTypeWithSortOrder(BaseContentType.WIDGET, token + "Delta", token + "so4", 10));
+
+			// Ascending sort_order -> Delta(10), Charlie(20), Bravo(30), Alpha(40).
+			final List<String> expected = List.of(token + "Delta", token + "Charlie",
+					token + "Bravo", token + "Alpha");
+
+			for (final boolean loadFromCache : new boolean[]{true, false}) {
+				Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", loadFromCache);
+				final ContentTypeFactoryImpl factory = new ContentTypeFactoryImpl();
+				final List<String> pagedNames = pageAllNames(factory, token, "sort_order", expected.size(), 2);
+				assertEquals("orderby=sort_order must follow sort_order, not name (cache="
+						+ loadFromCache + ")", expected, pagedNames);
+			}
+		} finally {
+			Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", originalLoadFromCache);
+			for (final ContentType contentType : created) {
+				ContentTypeDataGen.remove(contentType);
+			}
+		}
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeFactoryImpl#searchMultipleTypes(String, java.util.Collection, String, int, int, String, java.util.List)}
+	 *
+	 * Given Scenario: The descending shorthand {@code orderby=-name}, which
+	 * {@link com.dotmarketing.common.util.SQLUtil#sanitizeSortBy} emits verbatim as {@code -name}.
+	 *
+	 * Expected Result: No error is thrown and results are ordered descending by name (the leading
+	 * {@code -} is mapped to {@code desc}). Verified in both cache and non-cache modes.
+	 */
+	@Test
+	public void test_searchMultipleTypes_orderByDescendingShorthand() throws Exception {
+		final boolean originalLoadFromCache =
+				Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+		final long ts = System.currentTimeMillis();
+		final String token = "descsort" + ts;
+		final List<ContentType> created = new ArrayList<>();
+
+		try {
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "a"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "b"));
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "c"));
+
+			// Descending name order.
+			final List<String> expected = List.of(token + "c", token + "b", token + "a");
+
+			for (final boolean loadFromCache : new boolean[]{true, false}) {
+				Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", loadFromCache);
+				final ContentTypeFactoryImpl factory = new ContentTypeFactoryImpl();
+				final List<String> pagedNames = pageAllNames(factory, token, "-name", expected.size(), 2);
+				assertEquals("orderby=-name must sort descending without error (cache="
+						+ loadFromCache + ")", expected, pagedNames);
+			}
+		} finally {
+			Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", originalLoadFromCache);
+			for (final ContentType contentType : created) {
+				ContentTypeDataGen.remove(contentType);
+			}
+		}
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeFactoryImpl#searchMultipleTypes(String, java.util.Collection, String, int, int, String, java.util.List)}
+	 *
+	 * Given Scenario: A whitelisted {@code orderby} value that is NOT a column projected by the
+	 * UNION subselect (e.g. {@code title}). Pre-fix this produced invalid SQL and a
+	 * {@link DotDataException} in cache mode (the default).
+	 *
+	 * Expected Result: No error is thrown; the query falls back to the default name ordering and
+	 * still returns the matching Content Types. Verified in both cache and non-cache modes.
+	 */
+	@Test
+	public void test_searchMultipleTypes_orderByUnprojectedColumn_fallsBackWithoutError() throws Exception {
+		final boolean originalLoadFromCache =
+				Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+		final long ts = System.currentTimeMillis();
+		final String token = "titleord" + ts;
+		final List<ContentType> created = new ArrayList<>();
+
+		try {
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "a"));
+			created.add(newTypeForSort(BaseContentType.WIDGET, token + "b"));
+			created.add(newTypeForSort(BaseContentType.CONTENT, token + "c"));
+
+			// 'title' is whitelisted by sanitizeSortBy but not a structure column -> must fall back.
+			final List<String> expected = List.of(token + "a", token + "b", token + "c");
+
+			for (final boolean loadFromCache : new boolean[]{true, false}) {
+				Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", loadFromCache);
+				final ContentTypeFactoryImpl factory = new ContentTypeFactoryImpl();
+				final List<String> pagedNames = pageAllNames(factory, token, "title", expected.size(), 2);
+				// Fallback is the default name ordering; the key assertion is that it does not throw.
+				assertEquals("Unprojected orderby must fall back to name without error (cache="
+						+ loadFromCache + ")", expected, pagedNames);
+			}
+		} finally {
+			Config.setProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", originalLoadFromCache);
+			for (final ContentType contentType : created) {
+				ContentTypeDataGen.remove(contentType);
+			}
+		}
+	}
+
 }
