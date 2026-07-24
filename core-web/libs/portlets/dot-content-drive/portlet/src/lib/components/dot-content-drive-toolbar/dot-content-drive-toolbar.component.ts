@@ -16,7 +16,7 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -175,7 +175,23 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $upload = output<void>({ alias: 'upload' });
+    // Emits the click event so the shell can anchor the upload-type popover to the button.
+    $upload = output<MouseEvent>({ alias: 'upload' });
+
+    /**
+     * Upload button label, folder-aware: when the current folder pins uploads to a base type
+     * (`defaultBaseType`), the button reads "Upload Asset" / "Upload File"; otherwise "Upload".
+     */
+    protected readonly $uploadLabelKey = computed(() => {
+        switch (this.#store.selectedNode()?.data?.defaultBaseType?.toUpperCase()) {
+            case DotCMSBaseTypesContentTypes.DOTASSET:
+                return 'content-drive.upload-asset';
+            case DotCMSBaseTypesContentTypes.FILEASSET:
+                return 'content-drive.upload-file';
+            default:
+                return 'content-drive.upload';
+        }
+    });
 
     readonly $items = signal<MenuItem[]>([
         {

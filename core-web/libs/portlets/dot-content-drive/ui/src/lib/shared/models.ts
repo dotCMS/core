@@ -42,6 +42,11 @@ export type DotFolderTreeNodeData = {
     id: string;
     /** Folder inode — carried so the legacy content editor can pre-select this folder when creating content. */
     inode?: string;
+    /**
+     * Folder upload preference (`DOTASSET`/`FILEASSET`, or `null`/absent for "ask each time").
+     * Drives the folder-aware Upload button in the toolbar.
+     */
+    defaultBaseType?: string | null;
     fromTable?: boolean;
     /** For a `load-more` node: the next 1-based page to request when it is clicked. */
     nextPage?: number;

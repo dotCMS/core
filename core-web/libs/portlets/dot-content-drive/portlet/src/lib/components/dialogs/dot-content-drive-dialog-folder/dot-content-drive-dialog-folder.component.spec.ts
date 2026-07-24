@@ -312,19 +312,38 @@ describe('DotContentDriveDialogFolderComponent', () => {
         });
 
         it('should add extension on enter key if not duplicate', () => {
+            const target = { value: '*.pdf' };
             spectator.triggerEventHandler(
                 '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keyup.enter',
-                {
-                    target: {
-                        value: '*.pdf'
-                    }
-                }
+                'keydown.enter',
+                { target, preventDefault: jest.fn() }
             );
 
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toContain('*.pdf');
+            // Input is cleared so the next entry starts fresh and existing chips are preserved.
+            expect(target.value).toBe('');
+        });
+
+        it('should preserve existing selection when adding another extension', () => {
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg']
+            });
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler(
+                '[data-testid="allowed-file-extensions-autocomplete"]',
+                'keydown.enter',
+                { target: { value: '*.png' }, preventDefault: jest.fn() }
+            );
+
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([
+                '*.jpg',
+                '*.png'
+            ]);
         });
 
         it('should not add duplicate extension on enter key', () => {
@@ -335,12 +354,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
             spectator.triggerEventHandler(
                 '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keyup.enter',
-                {
-                    target: {
-                        value: '*.pdf'
-                    }
-                }
+                'keydown.enter',
+                { target: { value: '*.pdf' }, preventDefault: jest.fn() }
             );
 
             spectator.detectChanges();

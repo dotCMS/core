@@ -40,7 +40,8 @@ export const createTreeNode = (
             inode: folder.inode,
             hostname: folder.hostName,
             path: folder.path,
-            type: 'folder'
+            type: 'folder',
+            defaultBaseType: folder.defaultBaseType
         },
         // Hide the expand toggle for folders the search endpoint reports as having no visible
         // children. When `hasChildren` is undefined (legacy source) the folder stays expandable.
