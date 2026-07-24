@@ -1,0 +1,10 @@
+{
+  "vendorPrefix": "dot-",
+  "approvedDomains": ["issue", "pr", "release", "cicd", "content", "ui", "sdk"],
+  "validStatuses": ["experimental", "active", "superseded", "deprecated"],
+  "requiredFields": ["name", "description", "owner", "status"],
+  "grandfathered": [
+    "skill-doctor"
+  ],
+  "_note": "Single source of truth for skill governance. 'grandfathered' skills are exempt from naming + owner/status checks (their lint issues are warnings). skill-doctor is a vendored/generic skill, intentionally not dot- prefixed. See CONTRIBUTING.md."
+}

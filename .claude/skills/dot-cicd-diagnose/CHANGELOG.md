@@ -399,7 +399,7 @@ Added comprehensive workflow annotations detection to identify syntax errors, va
 
 **Usage:**
 ```bash
-python3 .claude/skills/cicd-diagnostics/fetch-annotations.py "$RUN_ID" "$WORKSPACE"
+python3 .claude/skills/dot-cicd-diagnose/fetch-annotations.py "$RUN_ID" "$WORKSPACE"
 ```
 
 **Output:**
@@ -519,13 +519,13 @@ The implementation can be validated with run 20043196360 (referenced in issue #3
 ### Files Modified
 
 **New files:**
-- `.claude/skills/cicd-diagnostics/fetch-annotations.py` - Annotation fetching script
+- `.claude/skills/dot-cicd-diagnose/fetch-annotations.py` - Annotation fetching script
 
 **Modified files:**
-- `.claude/skills/cicd-diagnostics/utils/github_api.py` - Added annotation fetching functions
-- `.claude/skills/cicd-diagnostics/utils/evidence.py` - Added annotation presentation functions
-- `.claude/skills/cicd-diagnostics/SKILL.md` - Updated workflow documentation
-- `.claude/skills/cicd-diagnostics/REFERENCE.md` - Added annotation detection patterns
+- `.claude/skills/dot-cicd-diagnose/utils/github_api.py` - Added annotation fetching functions
+- `.claude/skills/dot-cicd-diagnose/utils/evidence.py` - Added annotation presentation functions
+- `.claude/skills/dot-cicd-diagnose/SKILL.md` - Updated workflow documentation
+- `.claude/skills/dot-cicd-diagnose/REFERENCE.md` - Added annotation detection patterns
 
 ### Success Criteria Met
 
@@ -608,7 +608,7 @@ The SKILL.md documentation showed a complex Python code block for calling `fetch
 ```python
 # Complex Python code calling subprocess
 subprocess.run([
-    "python3", ".claude/skills/cicd-diagnostics/fetch-logs.py",
+    "python3", ".claude/skills/dot-cicd-diagnose/fetch-logs.py",
     "19131365567",  # RUN_ID
     str(WORKSPACE),  # WORKSPACE path
     str(failed_job_id)  # JOB_ID (optional)
@@ -618,7 +618,7 @@ subprocess.run([
 ### After
 ```bash
 # Simple, clear Bash command
-python3 .claude/skills/cicd-diagnostics/fetch-logs.py \
+python3 .claude/skills/dot-cicd-diagnose/fetch-logs.py \
     "$RUN_ID" \
     "$WORKSPACE" \
     54939324205  # JOB_ID from fetch-jobs.py output

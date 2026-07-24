@@ -359,3 +359,19 @@ check-git-mac:
         git --version; \
         echo "Git is already installed."; \
     fi
+
+###########################################################
+# Skill Governance (see .claude/skills/CONTRIBUTING.md)
+###########################################################
+
+# Scaffold a new dot-<domain>-<action> skill (interactive; prompts + duplicate check)
+new-skill *args:
+    @node .claude/tools/new-skill.mjs {{args}}
+
+# Regenerate .claude/skills/CATALOG.md from skill frontmatter
+skills-catalog:
+    @node .claude/tools/gen-skills-catalog.mjs
+
+# Validate first-party skills (naming, frontmatter, catalog freshness) — same check CI runs
+skills-lint:
+    @node .claude/tools/skill-lint.mjs

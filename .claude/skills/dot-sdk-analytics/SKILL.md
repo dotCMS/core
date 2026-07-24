@@ -1,5 +1,7 @@
 ---
-name: SDK Analytics Installer
+name: dot-sdk-analytics
+owner: "@dotcms/falcon"
+status: active
 description: Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions installing analytics in Next.js or React projects
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 version: 1.0.0
