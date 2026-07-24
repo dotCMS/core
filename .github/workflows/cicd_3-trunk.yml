@@ -172,6 +172,13 @@ jobs:
 
       - name: 'Publish SDK packages to NPM (next)'
         id: deploy-javascript-sdk
+        # Notify-but-don't-fail: cicd_comp_finalize-phase.yml scans every job in the run
+        # via the GitHub API (not just finalize's own `needs`), so without this a
+        # transient npm/registry failure here would mark the whole trunk workflow red
+        # over an internal dev/QA publish. The failure Slack step below still fires
+        # (it checks the step's own outcome, not the job-level failure()/success()
+        # context functions, which continue-on-error would otherwise mask).
+        continue-on-error: true
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
           ref: ${{ github.sha }}
@@ -195,7 +202,11 @@ jobs:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: 'Slack Notification (SDK next failure)'
-        if: failure()
+        # Checks the publish step's own outcome directly rather than the job-level
+        # failure()/success() context functions — those reflect conclusion (which
+        # continue-on-error masks to "success"), not outcome, so failure() would never
+        # fire here once the step above has continue-on-error: true.
+        if: steps.deploy-javascript-sdk.outcome == 'failure'
         continue-on-error: true
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
@@ -203,7 +214,7 @@ jobs:
           payload: |
             > :red_circle: *SDK `next` publish FAILED!*
             >
-            > The automated SDK `next` publish failed while trying to publish version `${{ steps.next-version.outputs.version }}`.
+            > The automated SDK `next` publish failed while trying to publish version `${{ steps.next-version.outputs.version || 'unknown — the version-compute step itself failed' }}`.
             > <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View commit> · <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
