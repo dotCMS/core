@@ -27,6 +27,22 @@ export default [
         changeOrigin: true,
         logLevel: 'debug'
     },
+    // 2. Embedded dotCMS page proxy (a11y portlet iframe).
+    // Lets the portlet iframe load live/edit-mode pages same-origin in dev.
+    // Use src="/dot-page/index?mode=EDIT_MODE" — the prefix is stripped so it
+    // hits the dotCMS page renderer (e.g. /index) on the BE. The sentinel prefix
+    // avoids colliding with the dev server's own Angular routes.
+    {
+        context: ['/dot-page'],
+        target,
+        secure: false,
+        changeOrigin: true,
+        logLevel: 'debug',
+        followRedirects: false,
+        pathRewrite: {
+            '^/dot-page': ''
+        }
+    },
     // 2. Main API Proxy
     {
         context: [

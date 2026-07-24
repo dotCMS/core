@@ -1,21 +1,14 @@
 import { tool } from 'ai';
 import { z } from 'zod/v4';
 
+import { createExecutor, formatSandboxResult } from '@dotcms/ai/sandbox';
 import { createApiAdapter } from '@dotcms/ai/adapter';
-import { createExecutor } from '@dotcms/ai/sandbox';
 import { getSpec } from '@dotcms/ai/spec';
-
-function sandboxResult(
-    result: Awaited<ReturnType<ReturnType<typeof createExecutor>['execute']>>
-): string {
-    if (!result.success) return `Error: ${result.error?.name}: ${result.error?.message}`;
-    return typeof result.value === 'string' ? result.value : JSON.stringify(result.value, null, 2);
-}
 
 export function makeTools(dotcmsUrl: string, authToken: string) {
     // nosemgrep: detect-vercelai -- internal LLM eval harness (ai-evals), not shipped runtime code; Vercel AI SDK usage is intentional
     const searchTool = tool({
-        description: `Explore the dotCMS REST API spec. Write JavaScript with the \`spec\` global (spec.paths keyed by path string). Return the data you need.`,
+        description: `Explore the dotCMS REST API spec. Write JavaScript with the \`spec\` global (\`spec.paths\` + \`spec.components.schemas\`, \`$ref\`-based). Schemas in requestBody/responses are usually \`$ref\`s — call \`resolveRef(schemaOrName, depth)\` to expand them. Return the data you need.`,
         inputSchema: z.object({
             code: z
                 .string()
@@ -31,7 +24,7 @@ export function makeTools(dotcmsUrl: string, authToken: string) {
                 variables: { spec },
                 sandbox: { timeout: 10000 }
             });
-            return sandboxResult(result);
+            return formatSandboxResult(result);
         }
     });
 
@@ -54,7 +47,7 @@ export function makeTools(dotcmsUrl: string, authToken: string) {
                 sandbox: { timeout: 15000 },
                 adapters: ['api']
             });
-            return sandboxResult(result);
+            return formatSandboxResult(result);
         }
     });
 

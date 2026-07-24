@@ -509,7 +509,7 @@ public class ContentTypeResource implements Serializable {
 														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
 														   "⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — " +
 														   "clients round-tripping an object must rename this key.\n" +
-														   "- `fields` *(array of field objects)* — see field schema below\n" +
+														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
 														   "**Field object schema** (each item in `fields[]`):\n" +
@@ -518,6 +518,10 @@ public class ContentTypeResource implements Serializable {
 														   "`ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*\n" +
 														   "- `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), " +
 														   "`required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*\n" +
+														   "- ⚠️ **`dataType` is the storage type, not the UI type.** Asset-reference fields — " +
+														   "`ImmutableImageField`, `ImmutableFileField`, `ImmutableBinaryField` — use `dataType: TEXT` " +
+														   "(they store a reference in a text column), **never** `SYSTEM`. Reserve `SYSTEM` for true " +
+														   "layout/tab/relationship system fields (rows, columns, dividers, permission/relationship tabs).\n" +
 														   "- `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. " +
 														   "For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\\r\\nFalse|false'` — there is no dedicated Boolean field class.\n\n" +
 														   "**Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. " +
@@ -525,7 +529,7 @@ public class ContentTypeResource implements Serializable {
 														   "following content fields belong to the most-recent column until the next marker.",
 											 required = true,
 											 content = @Content(
-													 schema = @Schema(implementation = ContentTypeForm.class),
+													 schema = @Schema(implementation = ContentTypeRequestView.class),
 													 examples = {
 															 @ExampleObject(
 																	 value = "[\n" +
@@ -741,7 +745,7 @@ public class ContentTypeResource implements Serializable {
 												"schemes to be associated with the content type.",
 										required = true,
 										content = @Content(
-												schema = @Schema(implementation = ContentTypeForm.class),
+												schema = @Schema(implementation = ContentTypeRequestView.class),
 												examples = {
 														@ExampleObject(
 																value = "{\n" +

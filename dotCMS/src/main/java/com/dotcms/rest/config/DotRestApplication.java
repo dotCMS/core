@@ -41,6 +41,7 @@ import org.glassfish.jersey.server.ServerProperties;
 						description = "dotCMS Server",
 						url = "/"),
 		tags = {
+				@Tag(name = "Accessibility Agent", description = "Streaming a11y-fix agent proxy"),
 				@Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance"),
 				@Tag(name = "Administration", description = "System administration and management tools"),
 				@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints"),

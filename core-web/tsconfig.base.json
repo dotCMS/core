@@ -18,6 +18,7 @@
         "paths": {
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
             "@directives/*": ["apps/dotcms-ui/src/app/view/directives/*"],
+            "@dotcms/ai-ui": ["libs/ai-ui/src/index.ts"],
             "@dotcms/analytics": ["libs/sdk/analytics/src/index.ts"],
             "@dotcms/angular": ["libs/sdk/angular/src/public_api.ts"],
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
@@ -106,13 +107,15 @@
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
             "sdk-create-app": ["libs/sdk/create-app/src/index.ts"],
-            "@dotcms/agentic-tools": ["libs/agentic-tools/src/index.ts"],
             "@dotcms/image-editor": ["libs/image-editor/src/index.ts"],
             "@dotcms/ai/runtime": ["libs/sdk/ai/src/runtime.ts"],
             "@dotcms/ai/sandbox": ["libs/sdk/ai/src/sandbox/index.ts"],
             "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
             "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
-            "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"]
+            "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"],
+            "@dotcms/portlets/dot-accessibility-studio/portlet": [
+                "libs/portlets/dot-accessibility-studio/src/index.ts"
+            ]
         }
     },
     "exclude": ["node_modules", "tmp"]

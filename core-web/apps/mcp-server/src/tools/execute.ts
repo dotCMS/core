@@ -1,7 +1,7 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createRuntime } from '@dotcms/ai/runtime';
+import { createRuntime, formatSandboxResult } from '@dotcms/ai/runtime';
 
 export const schema = {
     code: z
@@ -27,6 +27,11 @@ Use api.request(options) where options is:
 
 Auth is handled automatically — tokens are never exposed to your code.
 
+This is a **JavaScript sandbox, NOT Velocity/VTL**:
+- Velocity variables like \`$dotcontent\`, \`$dotcontent.pull(...)\`, \`$date\`, \`#foreach\` do NOT exist here — referencing \`$dotcontent\` throws \`ReferenceError\`. To query content, call \`api.request({ method: 'POST', path: '/api/content/_search', body: { query, ... } })\`. Run VTL only via \`POST /api/vtl/dynamic\`.
+- **\`await\` every \`api.request\`** and return only JSON-serializable values (objects, arrays, strings, numbers). Returning an un-awaited Promise (or a function/class instance) throws \`DataCloneError\` — the result is structured-cloned out of the worker.
+- Watch string literals: a raw apostrophe inside a single-quoted JS string (e.g. \`'grandchild's'\`) is a \`SyntaxError\`. Use double quotes or escape it.
+
 Pre-loaded instance context (available as globals — no API calls needed to read these):
   - contentTypes: Array<{ id, name, variable, baseType, host?, folder? }>
   - sites: Array<{ identifier, hostname, isDefault, archived }>
@@ -47,13 +52,18 @@ context. The \`formData\`/base64 path below exists only for small, programmatic 
 for transferring real files, themes, or directories.
 
 Tips:
-- Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
+- Output is hard-capped (~25k chars). Use \`pick(arr, fields)\` / \`first(arr, n)\` to return only the fields you need — responses can be very large and are truncated past the cap.
 - For a small programmatic upload (NOT real files — use \`upload_assets\` for those) use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
 Binary responses (small/programmatic reads only — for real files use \`download_assets\`):
 - Endpoints that return non-text bodies (e.g. GET \`/api/v2/assets/{identifier}\` and \`/dA/{id}\`, content-type \`application/octet-stream\` or \`image/*\`) come back as an envelope: \`{ __dotcmsBinary: true, contentType, base64, byteLength }\`.
 - The \`base64\` field IS the raw file bytes — base64-decode it to recover the exact file. Do NOT treat it as text; the bytes are intact (not UTF-8-mangled).
 - JSON and textual responses (\`text/*\`, xml, js, \`+json\`/\`+xml\`) are returned as parsed objects / strings as before — only binary bodies use the envelope.
+
+Content field variables (the \`contentlet\` fire body):
+- The fire body's \`contentlet\` is keyed by each field's exact **field variable** (from the content type's \`fields[].variable\`) — casing is significant and a wrong-case key is silently ignored (its value is dropped, and a required field then 400s as "required").
+- Page (htmlpageasset) system fields are lowercase/camel exactly: \`contentHost\` (the SITE — NOT \`host\`), \`hostFolder\` (the folder id), \`cachettl\` (all lowercase — NOT \`cacheTTL\`/\`cacheTtl\`), \`template\`, \`url\`, \`title\`, \`friendlyName\`, \`pageTitle\`. \`contentHost\` must be a site **identifier UUID**, not a hostname. Prefer the \`page_create\` tool, which sets all of these correctly.
+- For any content type, read the real field variables first: \`GET /api/v1/contenttype/id/{idOrVar}\` → \`entity.fields[].variable\`. Don't guess.
 
 Block Editor (Story Block) fields:
 - A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. dotCMS stores it as-is and converts it to the Block Editor structure when the contentlet is opened in the editor.
@@ -96,7 +106,7 @@ export default async function handler(
     { code }: InferSchema<typeof schema>,
     extra?: ToolExtraArguments
 ) {
-    const timeout = Number(process.env.SANDBOX_TIMEOUT) || 15000;
+    const timeout = Number(process.env.SANDBOX_TIMEOUT) || 45000;
 
     // The front door absorbs the executor + adapter + context-cache wiring and injects
     // dotCMS instance context automatically. Auth tokens never enter the sandbox.
@@ -113,18 +123,7 @@ export default async function handler(
 
     const result = await dotcms.run(code); // code === the model's output
 
-    if (!result.success) {
-        const errorMsg = result.error
-            ? `${result.error.name}: ${result.error.message}`
-            : 'Unknown error';
-        const logs = result.logs.length > 0 ? `\nLogs:\n${result.logs.join('\n')}` : '';
-        return `Error: ${errorMsg}${logs}`;
-    }
-
-    const output =
-        typeof result.value === 'string' ? result.value : JSON.stringify(result.value, null, 2);
-
-    const logs = result.logs.length > 0 ? `\n\n--- Logs ---\n${result.logs.join('\n')}` : '';
-
-    return `${output}${logs}`;
+    return formatSandboxResult(result, {
+        truncationHint: 'Return only the fields you need — use pick(arr, fields) and first(arr, n).'
+    });
 }

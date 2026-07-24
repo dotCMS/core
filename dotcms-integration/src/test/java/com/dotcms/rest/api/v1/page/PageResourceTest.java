@@ -881,7 +881,7 @@ public class PageResourceTest {
 
         final Contentlet checkin = APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
         final Response response = pageResource
-                .loadJson(request, this.response, pageUri, null, null,
+                .loadJson(request, this.response, pageUri, null, null, null,
                         String.valueOf(languageId), null, null);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -962,7 +962,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
+                .loadJson(request, this.response, pagePath, null, "PREVIEW_MODE", null,
                         "1", null, null);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -972,7 +972,7 @@ public class PageResourceTest {
     }
 
     /**
-     * Method to test: {@link PageResource#loadJson(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * Method to test: {@link PageResource#loadJson(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: A page has a container with a single contentlet, and that contentlet is then
      *                 archived. Archiving keeps the working version (it only sets deleted=true on the
      *                 version info), so a showLive=false lookup still resolves it in EDIT/PREVIEW mode.
@@ -1046,7 +1046,7 @@ public class PageResourceTest {
     private int renderAndCountContents(final PageMode mode)
             throws DotDataException, DotSecurityException {
         final Response response = pageResource
-                .loadJson(request, this.response, pagePath, mode.name(), null, "1", null, null);
+                .loadJson(request, this.response, pagePath, null, mode.name(), null, "1", null, null);
         RestUtilTest.verifySuccessResponse(response);
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         return pageView.getNumberContents();
@@ -1088,7 +1088,7 @@ public class PageResourceTest {
         Thread.sleep(500);
 
         final Response response = pageResource
-                .render(request, this.response, String.format("%s/text", baseUrl), "PREVIEW_MODE", null,
+                .render(request, this.response, String.format("%s/text", baseUrl), null, "PREVIEW_MODE", null,
                         "1", null, null);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -1096,7 +1096,7 @@ public class PageResourceTest {
 
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
      * ExpectedResult: Should return a 404 HTTP error
      *
@@ -1136,12 +1136,12 @@ public class PageResourceTest {
         Thread.sleep(500);
 
         pageResource
-                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.ADMIN_MODE.toString(), null,
+                .render(request, this.response, String.format("%s/text", baseUrl), null, PageMode.ADMIN_MODE.toString(), null,
                         "1", null, null);
     }
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
      * ExpectedResult: Should return a 404 HTTP error
      *
@@ -1181,7 +1181,7 @@ public class PageResourceTest {
         Thread.sleep(500);
 
         pageResource
-                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.LIVE.toString(), null,
+                .render(request, this.response, String.format("%s/text", baseUrl), null, PageMode.LIVE.toString(), null,
                         "1", null, null);
     }
 
@@ -1237,7 +1237,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .loadJson(request, this.response, pageUri, null, null,
+                .loadJson(request, this.response, pageUri, null, null, null,
                         String.valueOf(languageId), null, null);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -1277,7 +1277,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), modeParam, persona.getIdentifier(),
+                .render(request, this.response, page.getURI(), null, modeParam, persona.getIdentifier(),
                         String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1340,7 +1340,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
 
         final Response response = pageResourceWithHelper
-                .render(request, this.response, pageAsset.getURI(), modeParam, null,
+                .render(request, this.response, pageAsset.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final EmptyPageView pageView = (EmptyPageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1360,7 +1360,7 @@ public class PageResourceTest {
         filtersUtil.publishVanityUrl(vanityURLContentlet2);
 
         final Response response2 = pageResourceWithHelper
-                .render(request, this.response, pageAsset.getURI(), modeParam, null,
+                .render(request, this.response, pageAsset.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final EmptyPageView pageView2 = (EmptyPageView) ((ResponseEntityView) response2.getEntity()).getEntity();
@@ -1406,7 +1406,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
+                .render(request, this.response, page.getURI(), null, null, persona.getIdentifier(),
                         String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1416,7 +1416,7 @@ public class PageResourceTest {
     }
 
     /***
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with two containers and a content in each of then
      * ExpectedResult: Should render the containers with the contents, the check it look into the render code the
      * content div <pre>assertTrue(code.indexOf("data-dot-object=\"contentlet\"") != -1)</pre>
@@ -1447,7 +1447,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), "EDIT_MODE", null,
+                .render(request, this.response, page.getURI(), null, "EDIT_MODE", null,
                         String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1471,7 +1471,7 @@ public class PageResourceTest {
 
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with not LIVE version, then publish the page, and then update the page to crate a
      * new working version
      * ExpectedResult: Should return a LIVE attribute to true just in after the page is publish
@@ -1492,7 +1492,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
 
         Response response = pageResource
-                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                .render(request, this.response, page.getURI(), null, PageMode.PREVIEW_MODE.toString(), null,
                         String.valueOf(languageId), null, null);
 
         PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1503,7 +1503,7 @@ public class PageResourceTest {
         APILocator.getContentletAPI().publish(page, user, false);
 
         response = pageResource
-                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                .render(request, this.response, page.getURI(), null, PageMode.PREVIEW_MODE.toString(), null,
                         String.valueOf(languageId), null, null);
 
         pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1514,7 +1514,7 @@ public class PageResourceTest {
         APILocator.getContentletAPI().checkin(checkout, user, false);
 
         response = pageResource
-                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                .render(request, this.response, page.getURI(), null, PageMode.PREVIEW_MODE.toString(), null,
                         String.valueOf(languageId), null, null);
 
         pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1574,7 +1574,7 @@ public class PageResourceTest {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), modeParam, null,
+                .render(request, this.response, page.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1681,7 +1681,7 @@ public class PageResourceTest {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), modeParam, null,
+                .render(request, this.response, page.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1715,7 +1715,7 @@ public class PageResourceTest {
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> In Edit Mode, test the rest API</li>
      *     <li><b>Expected Result:</b> Receive the on-number-of-pages data attribute for the contentlet object inside rendered element.</li>
      * </ul>
@@ -1736,7 +1736,7 @@ public class PageResourceTest {
         final HTMLPageAsset pageOne = pageRenderTestOne.getPage();
         final Container container = pageRenderTestOne.getFirstContainer();
         final Contentlet testContent = pageRenderTestOne.addContent(container);
-        Response pageResponse = this.pageResource.render(this.request, this.response, pageOne.getURI(), modeParam, null,
+        Response pageResponse = this.pageResource.render(this.request, this.response, pageOne.getURI(), null, modeParam, null,
                 String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered =
@@ -1749,7 +1749,7 @@ public class PageResourceTest {
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> The deviceInode is not set as part of the request</li>
      *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
      * </ul>
@@ -1758,14 +1758,14 @@ public class PageResourceTest {
     public void testCleanUpSessionWhenDeviceInodeIsNull() throws Exception {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
-        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null, null);
+        pageResource.render(request, response, pagePath, null, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null, null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
     }
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> The deviceInode in the request is blank</li>
      *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
      * </ul>
@@ -1774,7 +1774,7 @@ public class PageResourceTest {
     public void testCleanUpSessionWhenDeviceInodeIsBlank() throws Exception {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
-        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "", null);
+        pageResource.render(request, response, pagePath, null, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "", null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
     }
@@ -1986,7 +1986,7 @@ public class PageResourceTest {
 
         final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
         final Response myResponse = pageResource
-                .loadJson(this.request, this.response, myPagePath, mode.name(), null,
+                .loadJson(this.request, this.response, myPagePath, null, mode.name(), null,
                         String.valueOf(languageId), null, futureIso8601);
 
         RestUtilTest.verifySuccessResponse(myResponse);
@@ -2073,7 +2073,7 @@ public class PageResourceTest {
     private void validatePageContents(final String pageUri, final String futureTimeMachineIso8601, final String expectedTitle, final boolean live)
             throws DotDataException, DotSecurityException {
         final Response endpointResponse = pageResource
-                .loadJson(this.request, this.response, pageUri, PageMode.LIVE.name(), null,
+                .loadJson(this.request, this.response, pageUri, null, PageMode.LIVE.name(), null,
                         "1", null, futureTimeMachineIso8601);
 
         RestUtilTest.verifySuccessResponse(endpointResponse);
@@ -2387,7 +2387,7 @@ public class PageResourceTest {
             addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
 
             final Response endpointResponse = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, matchingFutureIso8601);
 
             RestUtilTest.verifySuccessResponse(endpointResponse);
@@ -2651,7 +2651,7 @@ public class PageResourceTest {
 
             // Test: PageMode.LIVE with future date before scheduled publication
             final Response pareResponse = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, queryDateIso8601);
 
             final PageView pageView = PageScenarioUtils.extractPageViewFromResponse(pareResponse);
@@ -2707,7 +2707,7 @@ public class PageResourceTest {
             addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
 
             final Response noPublishDateResponse = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, null);
 
             //When no publish date is passed, we should get all contentlets that are valid!
@@ -2715,7 +2715,7 @@ public class PageResourceTest {
                     validateNoContentlets(noPublishDateResponse));
 
             final Response withFutureDatePassed = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, matchingFutureIso8601);
 
             //When publish date is passed, we should still get only valid content since the base case only created expired content in the past, so we should only get valid content
@@ -2754,7 +2754,7 @@ public class PageResourceTest {
 
             // Test with current date - should only show valid content
             final Response currentDateResponse = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, matchingFutureIso8601);
 
             final PageView pageView = extractPageViewFromResponse(currentDateResponse);
@@ -2922,7 +2922,7 @@ public class PageResourceTest {
                     .thenReturn(APILocator.systemUser());
 
             final Response response = pageResource
-                    .render(this.request, this.response, pageRenderTest.getPage().getURI(),
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(), null,
                             PageMode.EDIT_MODE.name(), null, "1", null, null);
 
             final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
@@ -2976,7 +2976,7 @@ public class PageResourceTest {
                     .thenReturn(APILocator.systemUser());
 
             final Response response = pageResource
-                    .render(this.request, this.response, pageRenderTest.getPage().getURI(),
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(), null,
                             PageMode.LIVE.name(), null, "1", null, null);
 
             final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();

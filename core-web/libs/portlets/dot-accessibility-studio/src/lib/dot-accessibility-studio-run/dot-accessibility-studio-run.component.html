@@ -1,0 +1,488 @@
+<!-- ============ AGENT COLUMN ============ -->
+<aside class="flex min-h-0 flex-col border-r border-surface-200 bg-white">
+    <!-- Page context bar -->
+    <div
+        class="flex h-13 flex-none items-center gap-2.5 border-b border-surface-100 pr-4 pl-3">
+        <p-button
+            icon="pi pi-arrow-left"
+            [text]="true"
+            severity="secondary"
+            [rounded]="true"
+            (onClick)="backToPicker()"
+            [attr.aria-label]="'accessibility.studio.back' | dm"
+            [pTooltip]="'accessibility.studio.back' | dm"
+            data-testid="studio-back-btn" />
+        <i class="pi pi-file text-primary" aria-hidden="true"></i>
+        <div class="min-w-0">
+            <div class="truncate text-sm font-bold text-gray-900">
+                {{ store.selected()?.title }}
+            </div>
+            <div class="truncate text-xs text-gray-400">{{ store.selected()?.path }}</div>
+        </div>
+    </div>
+
+    <!-- Score widget — shown once a scan has produced results (scanned/fixing/done).
+         Hidden while ready + scanning (those show their own blocks below). -->
+    @if (store.scanned()) {
+        <div class="flex flex-none items-center gap-5 border-b border-surface-100 px-6 py-5">
+            <!-- Donut: severity-segmented ring with the live open count in the center. -->
+            <div class="relative size-31 flex-none" data-testid="studio-score-ring">
+                <p-chart
+                    type="doughnut"
+                    [data]="donutData()"
+                    [options]="donutOptions"
+                    width="124"
+                    height="124" />
+                <div
+                    class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                    <span
+                        class="text-4xl font-extrabold text-gray-900"
+                        data-testid="studio-score-count">
+                        {{ store.openCount() }}
+                    </span>
+                    <span
+                        class="mt-0.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase">
+                        {{ 'accessibility.studio.score.open' | dm }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="min-w-0 flex-1">
+                <!-- Headline: "Issues found" (scanned) / "Fixing issues…" / "Issues remaining". -->
+                <div class="mb-2 text-sm font-semibold text-gray-500">
+                    {{ scoreHeadlineKey() | dm }}
+                </div>
+
+                <!-- before → open delta (only once a run has started). -->
+                @if (store.isFixing() || store.isDone() || store.isPublished()) {
+                    <div class="mb-2.5 flex items-center gap-2.5">
+                        <div class="flex flex-col">
+                            <span class="text-2xl leading-none font-extrabold text-gray-400">
+                                {{ store.beforeCount() }}
+                            </span>
+                            <span class="mt-0.5 text-xs text-gray-400">
+                                {{ 'accessibility.studio.score.before' | dm }}
+                            </span>
+                        </div>
+                        <i class="pi pi-arrow-right text-surface-300" aria-hidden="true"></i>
+                        <div class="flex flex-col">
+                            <span class="text-2xl leading-none font-extrabold text-gray-900">
+                                {{ store.openCount() }}
+                            </span>
+                            <span class="mt-0.5 text-xs text-gray-400">
+                                {{
+                                    store.isFixing()
+                                        ? ('accessibility.studio.score.open' | dm)
+                                        : ('accessibility.studio.score.now' | dm)
+                                }}
+                            </span>
+                        </div>
+                    </div>
+                }
+
+                <!-- Severity legend: N Critical / Serious / Moderate / Minor. -->
+                <div class="flex flex-col gap-1" data-testid="studio-severity-legend">
+                    @for (row of severityRows(); track row.severity) {
+                        <div class="flex items-center gap-2 text-sm">
+                            <span
+                                class="size-2.5 flex-none rounded-full"
+                                [style.background-color]="row.color"
+                                aria-hidden="true"></span>
+                            <span class="font-bold text-gray-900">{{ row.count }}</span>
+                            <span class="text-gray-500">{{ row.label }}</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Needs-review: axe flagged these but couldn't confirm them (e.g.
+                     contrast over an image). The agent doesn't auto-fix them, so they
+                     stay out of the count above — but we surface them so the user
+                     knows they exist and need a human eye. -->
+                @if (store.warningCount() > 0) {
+                    <div
+                        class="mt-2 flex items-center gap-1.5 text-xs text-gray-400"
+                        data-testid="studio-needsreview-note">
+                        <i class="pi pi-eye text-xs!" aria-hidden="true"></i>
+                        <span>
+                            {{
+                                'accessibility.studio.score.needsreview'
+                                    | dm: [store.warningCount().toString()]
+                            }}
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Section header — label + working badge, both phase-aware. Hidden when ready. -->
+    @if (!store.isReady()) {
+        <div class="flex flex-none items-center gap-2 px-6 pt-4 pb-2">
+            <span class="text-xs font-bold tracking-wider text-gray-400 uppercase">
+                {{ logHeaderKey() | dm }}
+            </span>
+            @if (logBadgeKey(); as badge) {
+                <span
+                    class="inline-flex h-5 items-center gap-1.5 rounded-full bg-primary-50 px-2 text-[10px] font-bold text-primary"
+                    data-testid="studio-working-badge">
+                    <span class="size-1.5 animate-pulse rounded-full bg-primary"></span>
+                    {{ badge | dm }}
+                </span>
+            }
+        </div>
+    }
+
+    <!-- Recipe log: sizes to content (flex 0 1 auto), scrolls only when it
+         overflows — so the action footer sits right under the content rather
+         than being pushed to the very bottom of the column. -->
+    <div
+        class="min-h-0 flex-[0_1_auto] overflow-y-auto px-6 pt-1 pb-4"
+        data-testid="studio-recipe-log">
+        @if (store.isReady()) {
+            <!-- Ready: what to expect -->
+            <div class="mt-2 rounded-2xl border border-surface-100 bg-surface-50 p-5">
+                <div class="mb-1.5 text-sm font-bold text-gray-900">
+                    {{ 'accessibility.studio.ready.title' | dm }}
+                </div>
+                <p class="m-0 mb-4 text-[13px] leading-relaxed text-gray-500">
+                    {{ 'accessibility.studio.ready.description' | dm }}
+                </p>
+                <div class="flex flex-col gap-2.5">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
+                            <i class="pi pi-search text-sm!" aria-hidden="true"></i>
+                        </span>
+                        <span class="text-[13px] text-gray-600">
+                            {{ 'accessibility.studio.ready.step1' | dm }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
+                            <i class="pi pi-sitemap text-sm!" aria-hidden="true"></i>
+                        </span>
+                        <span class="text-[13px] text-gray-600">
+                            {{ 'accessibility.studio.ready.step2' | dm }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
+                            <i class="pi pi-pencil text-sm!" aria-hidden="true"></i>
+                        </span>
+                        <span class="text-[13px] text-gray-600">
+                            {{ 'accessibility.studio.ready.step3' | dm }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Scanning mini-log: the two fixed rows shown while the axe scan runs. -->
+        @if (store.isScanning()) {
+            <div class="flex flex-col" data-testid="studio-scanning-log">
+                @for (row of scanningRows(); track row.text; let last = $last) {
+                    <div class="relative flex gap-3 py-1.5">
+                        <div class="flex flex-none flex-col items-center">
+                            <div
+                                class="flex size-7.5 items-center justify-center rounded-lg bg-primary-50 text-primary">
+                                <i [class]="row.icon" class="text-base!" aria-hidden="true"></i>
+                            </div>
+                            @if (!last) {
+                                <div class="mt-0.5 min-h-1.5 w-0.5 flex-1 bg-surface-100"></div>
+                            }
+                        </div>
+                        <div class="min-w-0 pt-1">
+                            <div class="text-[13px] leading-snug font-semibold text-gray-900">
+                                {{ row.text | dm }}
+                            </div>
+                            <div class="mt-0.5 text-xs text-gray-400">
+                                {{ row.translateSub ? (row.sub | dm) : row.sub }}
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- BY ISSUE TYPE list: one row per axe rule (scanned state). -->
+        @if (store.isScanned()) {
+            <div class="flex flex-col gap-2" data-testid="studio-issue-type-list">
+                @for (group of store.issueTypeRows(); track group.code) {
+                    <div
+                        class="flex items-center gap-3 rounded-xl border border-surface-200 px-4 py-3"
+                        data-testid="studio-issue-type-row">
+                        <span
+                            class="size-2.5 flex-none rounded-full"
+                            [style.background-color]="severityColorFor(group.impact)"
+                            aria-hidden="true"></span>
+                        <div class="min-w-0 flex-1">
+                            <div class="truncate text-[13px] font-bold text-gray-900">
+                                {{ group.message }}
+                            </div>
+                            <div class="truncate font-mono text-xs text-gray-400">
+                                {{ group.code }}
+                            </div>
+                        </div>
+                        <span
+                            class="flex size-7 flex-none items-center justify-center rounded-lg bg-surface-100 text-xs font-bold text-gray-600">
+                            {{ group.count }}
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (store.fixError(); as error) {
+            <div
+                class="mt-2 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3.5 text-sm text-red-700"
+                data-testid="studio-fix-error"
+                role="alert">
+                <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
+                <div class="min-w-0">
+                    <div class="font-semibold">
+                        {{ 'accessibility.studio.error.title' | dm }}
+                    </div>
+                    <div class="mt-0.5 wrap-break-word text-xs text-red-600">{{ error }}</div>
+                </div>
+            </div>
+        }
+
+        <!-- Live agent activity + final report timeline (shared, agent-agnostic). -->
+        <dot-agent-activity-log
+            [messages]="activityMessages()"
+            [activeMessage]="activeMessage()"
+            [working]="store.isFixing()"
+            workingFallbackKey="accessibility.studio.fixing"
+            data-testid="studio-activity-log" />
+
+        <!-- Needs your review: axe `incomplete` items. axe flagged these but
+             couldn't be sure, so the agent doesn't touch them — a human decides.
+             Shown after a scan (scanned) and in the final report (done/published). -->
+        @if (
+            (store.isScanned() || store.isDone() || store.isPublished()) &&
+            store.reviewGroups().length > 0
+        ) {
+            <div class="mt-4" data-testid="studio-review-section">
+                <div class="mb-1 flex items-center gap-1.5">
+                    <i class="pi pi-eye text-sm! text-gray-400" aria-hidden="true"></i>
+                    <span class="text-xs font-bold tracking-wider text-gray-400 uppercase">
+                        {{ 'accessibility.studio.review.title' | dm }}
+                    </span>
+                </div>
+                <p class="m-0 mb-2.5 text-[13px] leading-relaxed text-gray-500">
+                    {{ 'accessibility.studio.review.intro' | dm }}
+                </p>
+                <div class="flex flex-col gap-2">
+                    @for (group of store.reviewGroups(); track group.code) {
+                        <div
+                            class="rounded-xl border border-surface-200 px-4 py-3"
+                            data-testid="studio-review-row">
+                            <div class="flex items-center gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate text-[13px] font-bold text-gray-900">
+                                        {{ group.message }}
+                                    </div>
+                                    <div class="truncate font-mono text-xs text-gray-400">
+                                        {{ group.code }}
+                                    </div>
+                                </div>
+                                <span
+                                    class="flex size-7 flex-none items-center justify-center rounded-lg bg-surface-100 text-xs font-bold text-gray-600">
+                                    {{ group.count }}
+                                </span>
+                            </div>
+                            <div class="mt-1.5 text-xs leading-snug text-gray-500">
+                                {{ reviewReasonKey(group.code) | dm }}
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Action footer -->
+    <div class="flex-none border-t border-surface-200 bg-surface-50 px-6 pt-4 pb-4.5">
+        <!-- Footer copy — hidden in the ready + scanning states. -->
+        @if (!store.isReady() && !store.isScanning()) {
+            <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
+                @if (footerIcon(); as fi) {
+                    <span
+                        class="flex size-9 flex-none items-center justify-center rounded-lg"
+                        [class]="fi.cls">
+                        <i [class]="fi.icon" class="text-base!" aria-hidden="true"></i>
+                    </span>
+                }
+                <div class="min-w-0">
+                    <div class="text-sm leading-snug font-bold text-gray-900">
+                        {{ footerKeys().titleKey | dm: footerArgs() }}
+                    </div>
+                    <div class="mt-px text-xs leading-snug text-gray-400">
+                        {{ footerKeys().subKey | dm: [store.selected()?.path ?? ''] }}
+                    </div>
+                </div>
+            </div>
+        }
+
+        @switch (store.phase()) {
+            @case ('ready') {
+                <div class="mb-3 flex items-center justify-between">
+                    <label
+                        for="studio-skip-css"
+                        class="text-[13px] font-medium text-gray-600">
+                        {{ 'accessibility.studio.skipcss.label' | dm }}
+                    </label>
+                    <p-toggleswitch
+                        inputId="studio-skip-css"
+                        [ngModel]="store.skipCss()"
+                        (ngModelChange)="onSkipCssChange($event)"
+                        data-testid="studio-skipcss-toggle" />
+                </div>
+                <p-button
+                    [label]="'accessibility.studio.action.scan' | dm"
+                    icon="pi pi-search"
+                    styleClass="w-full"
+                    [rounded]="true"
+                    (onClick)="runScan()"
+                    data-testid="studio-scan-btn" />
+            }
+            @case ('scanning') {
+                <p-button
+                    [label]="'accessibility.studio.action.stopscan' | dm"
+                    icon="pi pi-stop"
+                    severity="secondary"
+                    [outlined]="true"
+                    styleClass="w-full"
+                    [rounded]="true"
+                    (onClick)="stopScan()"
+                    data-testid="studio-stopscan-btn" />
+            }
+            @case ('scanned') {
+                <div class="flex gap-2.5">
+                    <p-button
+                        icon="pi pi-refresh"
+                        severity="secondary"
+                        [outlined]="true"
+                        [rounded]="true"
+                        (onClick)="runScan()"
+                        [attr.aria-label]="'accessibility.studio.action.rescan' | dm"
+                        [pTooltip]="'accessibility.studio.action.rescan' | dm"
+                        data-testid="studio-rescan-btn" />
+                    <p-button
+                        [label]="'accessibility.studio.action.fix' | dm"
+                        icon="pi pi-sparkles"
+                        styleClass="flex-1"
+                        [rounded]="true"
+                        (onClick)="startFix()"
+                        data-testid="studio-fix-btn" />
+                </div>
+            }
+            @case ('fixing') {
+                <p-button
+                    [label]="'accessibility.studio.action.stopagent' | dm"
+                    icon="pi pi-stop"
+                    severity="danger"
+                    [outlined]="true"
+                    styleClass="w-full"
+                    [rounded]="true"
+                    (onClick)="stopAgent()"
+                    data-testid="studio-stopagent-btn" />
+            }
+            @case ('done') {
+                <div class="flex gap-2.5">
+                    <p-button
+                        [label]="'accessibility.studio.action.discard' | dm"
+                        severity="secondary"
+                        [outlined]="true"
+                        [rounded]="true"
+                        (onClick)="discard()"
+                        data-testid="studio-discard-btn" />
+                    <p-button
+                        [label]="
+                            'accessibility.studio.action.publish'
+                                | dm: [store.fixedCount().toString()]
+                        "
+                        icon="pi pi-upload"
+                        severity="success"
+                        styleClass="flex-1"
+                        [rounded]="true"
+                        (onClick)="publish()"
+                        data-testid="studio-publish-btn" />
+                </div>
+            }
+            @case ('published') {
+                <div class="flex gap-2.5">
+                    <p-button
+                        [label]="'accessibility.studio.action.allpages' | dm"
+                        icon="pi pi-list"
+                        severity="secondary"
+                        [outlined]="true"
+                        styleClass="flex-1"
+                        [rounded]="true"
+                        (onClick)="backToPicker()"
+                        data-testid="studio-allpages-btn" />
+                </div>
+            }
+        }
+    </div>
+</aside>
+
+<!-- ============ PREVIEW PANE ============ -->
+<main class="flex min-h-0 flex-col bg-surface-100">
+    <div class="flex h-13 flex-none items-center gap-3 px-5">
+        <!-- Preview vs Live: compare the agent's working fixes against the
+             currently-published page. -->
+        <p-select
+            [options]="previewModeOptions"
+            optionValue="value"
+            [ngModel]="previewMode()"
+            (ngModelChange)="previewMode.set($event)"
+            [attr.aria-label]="'accessibility.studio.preview.mode.label' | dm"
+            data-testid="studio-preview-mode-select">
+            <ng-template #selectedItem let-opt>
+                <span class="flex items-center gap-2 text-xs font-semibold">
+                    <i
+                        [class]="previewMode() === 'LIVE' ? 'pi pi-globe' : 'pi pi-pencil'"
+                        aria-hidden="true"></i>
+                    {{ (previewMode() === 'LIVE'
+                        ? 'accessibility.studio.preview.mode.live'
+                        : 'accessibility.studio.preview.mode.preview') | dm }}
+                </span>
+            </ng-template>
+            <ng-template #item let-opt>
+                <span class="text-xs">{{ opt.label | dm }}</span>
+            </ng-template>
+        </p-select>
+    </div>
+
+    <div
+        class="mx-5 mb-5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
+        <div
+            class="flex h-10 flex-none items-center gap-2 border-b border-surface-100 bg-surface-50 px-3.5">
+            <span class="size-2.75 rounded-full bg-red-400"></span>
+            <span class="size-2.75 rounded-full bg-yellow-400"></span>
+            <span class="size-2.75 rounded-full bg-green-400"></span>
+            <div
+                class="mx-auto flex h-6.5 max-w-[460px] flex-1 items-center gap-1.5 rounded-full border border-surface-200 bg-white px-3">
+                <i class="pi pi-lock text-[11px]! text-gray-400" aria-hidden="true"></i>
+                <span class="truncate text-xs text-gray-500">
+                    {{ store.selected()?.hostName }}{{ store.selected()?.path }}
+                </span>
+            </div>
+        </div>
+
+        <div class="min-h-0 flex-1 bg-white">
+            @if (previewUrl()) {
+                <iframe
+                    #previewFrame
+                    [src]="previewUrl() | safeUrl"
+                    (load)="onPreviewLoad()"
+                    class="size-full border-0"
+                    [title]="'accessibility.studio.preview.label' | dm"
+                    data-testid="studio-preview-iframe"></iframe>
+            }
+        </div>
+    </div>
+</main>

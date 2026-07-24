@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.api.Validated;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 import java.util.Map;
@@ -15,24 +16,76 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(builder = FireActionForm.Builder.class)
+@Schema(description = "Form used to fire a workflow action. The content being acted on is supplied in the "
+        + "'contentlet' map; the remaining fields are workflow/publishing options applied by the action.")
 public class FireActionForm extends Validated {
 
+    @Schema(description = "Optional comment recorded on the workflow task history.")
     private final String comments;
+
+    @Schema(description = "User or role ID to assign the task to (used by actions that reassign).")
     private final String assign;
+
+    @Schema(description = "Publish date for the 'Publish' step, in the content type's configured date format.")
     private final String publishDate;
+
+    @Schema(description = "Publish time for the 'Publish' step, in the content type's configured time format.")
     private final String publishTime;
+
+    @Schema(description = "Expiration date, in the content type's configured date format.")
     private final String expireDate;
+
+    @Schema(description = "Expiration time, in the content type's configured time format.")
     private final String expireTime;
+
+    @Schema(description = "Set to 'true' to mark the content as never expiring.")
     private final String neverExpire;
+
+    @Schema(description = "Push-publishing target environment(s) for a 'Push Publish' action.")
     private final String whereToSend;
+
+    @Schema(description = "Push-publishing filter key for a 'Push Publish' action.")
     private final String filterKey;
+
+    @Schema(description = "Free-text label describing the intent of the action (audit/UI hint).")
     private final String iWantTo;
+
+    @Schema(description = "Lucene query selecting the content to act on, as an alternative to 'contentlet'.")
     private final String query;
+
+    @Schema(description = "Target folder path for a 'Move' action.")
     private final String pathToMove;
+
+    @Schema(description = "Timezone ID (e.g. 'America/New_York') used to interpret the publish/expire date-times.")
     private final String timezoneId;
+
+    @Schema(description = "Per-content individual permissions to apply, keyed by permission type "
+            + "(READ, WRITE, PUBLISH, etc.) to a list of user/role IDs.")
     private final Map<PermissionAPI.Type, List<String>> individualPermissions;
 
     @JsonProperty("contentlet")
+    @Schema(type = "object", description = "The contentlet to create or edit, as a flat map of field-variable "
+            + "names to values. Polymorphic: the allowed fields depend on the content type.\n\n"
+            + "**System fields (all content):**\n"
+            + "- `contentType` *(string)* — the content type's variable name (e.g. 'webPageContent'). Required when creating.\n"
+            + "- `languageId` *(number)* — language ID; defaults to the system default language when omitted.\n"
+            + "- `contentHost` *(string)* — host (site) **identifier** the content belongs to, **or** `hostFolder` "
+            + "*(string)* — a folder **identifier**. Supply one of these.\n"
+            + "- `inode` / `identifier` *(string)* — include the existing identifier (and optionally inode) to edit "
+            + "existing content; omit both to create new.\n\n"
+            + "⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.\n\n"
+            + "**Pages (`contentType: 'htmlpageasset'`)** additionally use:\n"
+            + "- `title` *(string)* — the page title.\n"
+            + "- `url` *(string)* — the page name (the last URL segment) within `hostFolder`.\n"
+            + "- `template` *(string)* — identifier of the template to render the page.\n"
+            + "- `cachettl` *(number)* — page cache time-to-live in seconds.\n"
+            + "- `sortOrder` *(number)* — sort order within the folder.\n\n"
+            + "Note: there is no dedicated page-create endpoint — pages are created by firing an action with an "
+            + "`htmlpageasset` contentlet.",
+            example = "{\"contentType\":\"htmlpageasset\",\"languageId\":1,"
+                    + "\"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\","
+                    + "\"title\":\"My Page\",\"url\":\"my-page\","
+                    + "\"template\":\"8e63a9c0-...\",\"cachettl\":15,\"sortOrder\":0}")
     private final Map<String, Object> contentletFormData;
 
     public String getComments() {

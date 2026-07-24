@@ -200,11 +200,11 @@ export async function uploadAssets(options: {
 
     for (const file of localFiles) {
         try {
-            if (file.bytes === 0) {
-                skipped.push({ path: file.rel, reason: 'empty file' });
-                continue;
-            }
-
+            // Every file in src lands in dotCMS as-is, 0-byte content included. We do not
+            // skip on empty content: an empty file that exists locally must exist remotely,
+            // otherwise the container can't assemble CONTENT bodies (the empty-skip was the
+            // root cause of a missing postloop.vtl). `skipped[]` is reserved for real skips
+            // (e.g. a glob matching nothing), never for empty content.
             const uploaded = await uploadOneAsset(
                 options.dotcms,
                 file,
@@ -304,18 +304,35 @@ async function uploadOneAsset(
     publish: boolean
 ): Promise<AssetManifestFile> {
     const bytes = await readFile(file.abs);
-    const response = (await dotcms.request({
-        method: 'PUT',
-        path: publish ? '/api/v2/assets/publish' : '/api/v2/assets/save',
-        formData: {
-            path: destPath,
-            file: {
-                name: basename(file.rel),
-                type: mimeFor(file.rel),
-                data: bytes.toString('base64')
+
+    const put = (data: Buffer) =>
+        dotcms.request({
+            method: 'PUT',
+            path: publish ? '/api/v2/assets/publish' : '/api/v2/assets/save',
+            formData: {
+                path: destPath,
+                file: {
+                    name: basename(file.rel),
+                    type: mimeFor(file.rel),
+                    data: data.toString('base64')
+                }
             }
+        }) as Promise<{ entity?: { identifier?: string } }>;
+
+    let response: { entity?: { identifier?: string } };
+    try {
+        // Upload the real content, 0-byte included.
+        response = await put(bytes);
+    } catch (error) {
+        // Fallback: if (and only if) dotCMS rejects a 0-byte body, retry with a single
+        // newline so the file still lands instead of being dropped. The demo postloop.vtl
+        // indicates 0-byte is accepted, so this path is expected to be unused.
+        if (bytes.byteLength === 0) {
+            response = await put(Buffer.from('\n'));
+        } else {
+            throw error;
         }
-    })) as { entity?: { identifier?: string } };
+    }
 
     return {
         path: file.rel,

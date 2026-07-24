@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,11 +30,26 @@ import java.util.stream.Stream;
  * @since Nov 22nd, 2017
  */
 @JsonDeserialize(builder = PageForm.Builder.class)
+@Schema(description = "Layout payload used to create or update the anonymous Template backing a page. "
+        + "Wrap this object under a top-level 'PageForm' property in the request body. "
+        + "'layout' is required; omitting 'title' creates an anonymous (page-scoped) template.")
 class PageForm {
 
+    @Schema(description = "Theme folder identifier (not a path) supplying the template's CSS/JS and VTL fragments. "
+            + "Resolve from a path via GET /api/v1/folder/sitename/{site}/uri/{uri}.")
     private final String themeId;
+
+    @Schema(description = "Title for the resulting template. Omit to create an anonymous, page-scoped template "
+            + "(a generated name is assigned automatically).")
     private final String title;
+
+    @Schema(description = "Identifier of the site (host) the template belongs to. Sent as the JSON property "
+            + "'hostId'. Defaults to the site resolved from the current HTTP request context when omitted.")
     private final String siteId;
+
+    @Schema(description = "Required. The row/column/container structure of the layout: a 'body' of rows, each row "
+            + "holding columns, each column holding containers referenced by identifier + uuid, plus optional "
+            + "'header', 'footer', and 'sidebar'.", requiredMode = Schema.RequiredMode.REQUIRED)
     private final TemplateLayout layout;
 
 

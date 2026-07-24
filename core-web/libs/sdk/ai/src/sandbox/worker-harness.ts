@@ -88,6 +88,41 @@ const HARNESS_BODY = `
         return arr.slice(0, n);
       };
 
+      // Resolve OpenAPI $refs against spec.components.schemas, expanding nested refs up to
+      // 'depth' levels. Beyond depth, { $ref } objects are left verbatim so the model can
+      // resolve the next hop in a follow-up query (progressive disclosure). Bounded depth also
+      // makes self-referential schemas terminate. Only available in the search sandbox, where
+      // the 'spec' global is injected.
+      globalThis.resolveRef = (schemaOrName, depth = 2) => {
+        const spec = globalThis.spec;
+        const schemas = spec && spec.components && spec.components.schemas;
+        if (!schemas) {
+          throw new Error('resolveRef() needs the spec global (spec.components.schemas). It is only available in the search sandbox.');
+        }
+        const nameOf = (ref) => String(ref).split('/').pop();
+        const expand = (node, d) => {
+          if (Array.isArray(node)) return node.map((item) => expand(item, d));
+          if (!node || typeof node !== 'object') return node;
+          if (typeof node.$ref === 'string') {
+            if (d <= 0) return node;
+            const target = schemas[nameOf(node.$ref)];
+            if (!target) return node;
+            return expand(target, d - 1);
+          }
+          const out = {};
+          for (const key of Object.keys(node)) out[key] = expand(node[key], d);
+          return out;
+        };
+        if (typeof schemaOrName === 'string') {
+          const target = schemas[nameOf(schemaOrName)];
+          if (!target) {
+            throw new Error('Unknown schema "' + schemaOrName + '". List names with Object.keys(spec.components.schemas).');
+          }
+          return expand(target, depth);
+        }
+        return expand(schemaOrName, depth);
+      };
+
       __onMessage(async (msg) => {
         const { type, data } = msg;
 
