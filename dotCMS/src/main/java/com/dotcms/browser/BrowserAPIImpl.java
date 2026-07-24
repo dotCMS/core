@@ -52,6 +52,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -126,6 +127,23 @@ public class BrowserAPIImpl implements BrowserAPI {
                     "        }\n" +
                     "    }\n" +
             "}";
+
+    /**
+     * JSON-escapes a Lucene query string so it can be safely interpolated as the string value in
+     * {@link #ES_QUERY_TEMPLATE}. The shared field strategies emit backslash-escaped Lucene special
+     * characters (e.g. {@code angular\-cms}) and double-quoted phrases; a raw backslash or double
+     * quote is an invalid JSON escape, so without this the Elasticsearch request body is malformed
+     * and the whole search fails (json_parse_exception) — silently returning no results. Backslash
+     * must be escaped before the double quote so the backslash introduced for {@code \"} is not
+     * doubled.
+     *
+     * @param luceneQuery The Lucene query to embed in the JSON request body.
+     * @return The query with {@code \} and {@code "} escaped for JSON.
+     */
+    @VisibleForTesting
+    static String jsonEscape(final String luceneQuery) {
+        return luceneQuery.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 
 
     /**
@@ -839,7 +857,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> inodesList = new ArrayList<>(inodes);
             final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
             final String luceneQuery = inodeFilter + baseQuery;
-            final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery));
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 
