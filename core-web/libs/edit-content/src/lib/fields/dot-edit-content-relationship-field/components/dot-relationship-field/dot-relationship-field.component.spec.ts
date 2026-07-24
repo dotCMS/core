@@ -15,6 +15,7 @@ import {
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
+import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
 import { RelationshipFieldStore } from '../../store/relationship-field.store';
@@ -79,6 +80,7 @@ describe('DotRelationshipFieldComponent', () => {
         selectionMode: jest.fn().mockReturnValue('multiple'),
         contentType: jest.fn().mockReturnValue({ id: 'ct-1' }),
         formattedRelationship: jest.fn().mockReturnValue('id-1'),
+        lastChangeSource: jest.fn().mockReturnValue('load'),
         initialize: jest.fn(),
         setData: jest.fn(),
         deleteItem: jest.fn(),
@@ -100,11 +102,25 @@ describe('DotRelationshipFieldComponent', () => {
             mockProvider(DotEditContentStore, {
                 contentType: jest.fn().mockReturnValue(null),
                 currentLocale: jest.fn().mockReturnValue(null),
-                isCopyingLocale: jest.fn().mockReturnValue(false)
+                isCopyingLocale: jest.fn().mockReturnValue(false),
+                contentlet: jest.fn().mockReturnValue(null),
+                translationSourceInode: jest.fn().mockReturnValue(null)
             }),
             mockProvider(DialogService, {
                 open: jest.fn()
-            })
+            }),
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    inPlaceNavigation: false,
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn(),
+                    goToRelatedContent: jest.fn(),
+                    goToCrumb: jest.fn()
+                }
+            }
         ]
     });
 
@@ -249,34 +265,130 @@ describe('DotRelationshipFieldComponent', () => {
     });
 
     describe('Touched state on value sync', () => {
-        // The component constructor performs the initial programmatic value sync
-        // (which must NOT mark the control touched). These tests assert that any
-        // value sync AFTER that initial one — i.e. a genuine user-driven change such
-        // as relating/removing content — does mark the control touched.
+        // Dirty/touched is driven by the store's `lastChangeSource`: a user-driven
+        // change (relate/remove/reorder) marks the control touched; a programmatic
+        // 'load' sync (initial load / locale re-init) must NOT, so a required empty
+        // field shows no validation error on render and the unsaved-changes guard
+        // does not fire on a content the user never touched.
         let onChangeSpy: jest.Mock;
         let onTouchedSpy: jest.Mock;
 
-        beforeEach(() => {
-            // Empty data so formattedRelationship resolves to '' (the required-empty case).
+        const setupWithSource = (source: 'load' | 'user') => {
             setup({
                 data: jest.fn().mockReturnValue([]),
                 paginatedData: jest.fn().mockReturnValue([]),
                 totalPages: jest.fn().mockReturnValue(0),
-                formattedRelationship: jest.fn().mockReturnValue('')
+                formattedRelationship: jest.fn().mockReturnValue(''),
+                lastChangeSource: jest.fn().mockReturnValue(source)
             });
 
             onChangeSpy = jest.fn();
             onTouchedSpy = jest.fn();
             spectator.component.registerOnChange(onChangeSpy);
             spectator.component.registerOnTouched(onTouchedSpy);
-        });
+        };
 
-        it('should mark the control touched on a user-driven change after init', () => {
+        it('should mark the control touched on a user-driven change', () => {
+            setupWithSource('user');
+
             spectator.component.updateValueField('id-1');
             spectator.flushEffects();
 
             expect(onChangeSpy).toHaveBeenLastCalledWith('id-1');
             expect(onTouchedSpy).toHaveBeenCalled();
+        });
+
+        it('should NOT mark the control touched on a programmatic load sync', () => {
+            setupWithSource('load');
+
+            spectator.component.updateValueField('id-1');
+            spectator.flushEffects();
+
+            expect(onChangeSpy).toHaveBeenLastCalledWith('id-1');
+            expect(onTouchedSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('openRelated (navigate to related content)', () => {
+        const CURRENT = { inode: 'current-inode', title: 'Current content' };
+        let host: { goToRelatedContent: jest.Mock; goToCrumb: jest.Mock };
+        let editStore: { contentlet: jest.Mock; translationSourceInode: jest.Mock };
+
+        beforeEach(() => {
+            setup();
+            host = spectator.inject(EDIT_CONTENT_HOST) as never;
+            editStore = spectator.inject(DotEditContentStore) as never;
+            editStore.contentlet.mockReturnValue(CURRENT);
+            editStore.translationSourceInode.mockReturnValue(null);
+            // The mock's jest.fn is created once in the factory config and shared
+            // across tests, so reset call counts here.
+            host.goToRelatedContent.mockClear();
+            host.goToCrumb.mockClear();
+        });
+
+        it('delegates to the host, seeding the current content as origin', () => {
+            spectator.component.openRelated(
+                buildItem({ inode: 'related-inode', title: 'Related content' })
+            );
+
+            expect(host.goToRelatedContent).toHaveBeenCalledWith(
+                { inode: 'current-inode', title: 'Current content' },
+                { inode: 'related-inode', title: 'Related content' }
+            );
+        });
+
+        it('uses the translation source inode as origin when the current content has no inode', () => {
+            // Locale switch to an untranslated locale: the new translation has no
+            // inode, so the version we came from seeds the trail origin.
+            editStore.contentlet.mockReturnValue({ inode: undefined, title: 'New translation' });
+            editStore.translationSourceInode.mockReturnValue('source-inode');
+
+            spectator.component.openRelated(
+                buildItem({ inode: 'related-inode', title: 'Related content' })
+            );
+
+            // The origin is the SOURCE version (source-inode), not the current
+            // translation, so its crumb is not relabeled with the translation's title —
+            // the origin title is left empty and the source's cached title stands.
+            expect(host.goToRelatedContent).toHaveBeenCalledWith(
+                { inode: 'source-inode', title: '' },
+                { inode: 'related-inode', title: 'Related content' }
+            );
+            expect(host.goToCrumb).not.toHaveBeenCalled();
+        });
+
+        it('starts a fresh trail when there is no inode and no translation source', () => {
+            editStore.contentlet.mockReturnValue({ inode: undefined, title: 'New translation' });
+            editStore.translationSourceInode.mockReturnValue(null);
+
+            spectator.component.openRelated(buildItem({ inode: 'related-inode' }));
+
+            expect(host.goToCrumb).toHaveBeenCalledWith('related-inode', ['related-inode']);
+            expect(host.goToRelatedContent).not.toHaveBeenCalled();
+        });
+
+        it('is a no-op when the field is disabled (not navigable)', () => {
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            spectator.component.openRelated(buildItem({ inode: 'related-inode' }));
+
+            expect(host.goToRelatedContent).not.toHaveBeenCalled();
+            expect(host.goToCrumb).not.toHaveBeenCalled();
+        });
+
+        it('is a no-op when navigating to the content already open (self-navigation)', () => {
+            spectator.component.openRelated(buildItem({ inode: CURRENT.inode }));
+
+            expect(host.goToRelatedContent).not.toHaveBeenCalled();
+            expect(host.goToCrumb).not.toHaveBeenCalled();
+        });
+
+        it('is a no-op when the item has no inode', () => {
+            spectator.component.openRelated(buildItem({ inode: undefined }));
+
+            expect(host.goToRelatedContent).not.toHaveBeenCalled();
+            expect(host.goToCrumb).not.toHaveBeenCalled();
         });
     });
 });

@@ -720,6 +720,15 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         // Deletes only from THIS engine (indexApi is the direct ESIndexAPI, not the router) —
         // the SiteSearchAPIImpl router is the single fan-out point. Site-search names are plain
         // (no .os tag). Active-index protection is enforced by the router before dispatch.
+        // Idempotent per engine: during migration a site-search index can exist on only one engine
+        // (e.g. a Phase-0 ES-only index has no OpenSearch twin), so skip when it is absent here
+        // rather than letting deleteMultiple throw index_not_found and crash the fan-out — which
+        // would otherwise abort the Site Search build mid-switch (issue #36360, I-7).
+        if (!indexApi.indexExists(indexName)) {
+            Logger.info(this.getClass(),
+                    "Site-search index '" + indexName + "' is absent on this engine; nothing to delete.");
+            return;
+        }
         indexApi.deleteMultiple(new String[]{indexName});
     }
 

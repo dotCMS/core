@@ -1,17 +1,25 @@
 name: evergreen-tracks-promote
+# Manual-only: standard/trailing move when an operator dispatches this workflow,
+# not on a schedule. A human running this action at a maintenance-window tag
+# update IS the cadence gate — customers get a predictable "your next update is
+# when we run this" answer without a cron moving tags off-window. No cron until
+# the customer-experience team green-lights automatic (e.g. daily) promotion.
+# `latest` still moves per-release via cicd_6-release.yml (--tracks latest).
+#
+# Flow: the `plan` job always runs a dry-run and prints the tag moves; the
+# `gate` job then waits on the `evergreen-tracks-apply` environment's
+# required-reviewer gate; `apply` runs after approval. Nothing moves until a
+# human reviews the plan and approves the deployment. (One-time repo setup:
+# Settings > Environments > evergreen-tracks-apply > Required reviewers.
+# Without reviewers configured the gate passes unattended — the gate is the
+# protection rule, not the YAML.)
 on:
-  schedule:
-    - cron: '17 6 * * *'   # daily at 06:17 UTC
   workflow_dispatch:
     inputs:
       repo:
         description: 'Docker repo to operate on'
         required: true
         default: 'dotcms/dotcms'
-      apply:
-        description: 'Actually move tags (false = dry-run)'
-        required: true
-        default: 'false'
       standard_days:
         description: 'Min age (days) for the standard track'
         required: false
@@ -24,21 +32,22 @@ on:
 permissions:
   contents: read
 
-# Serialize every registry mutation. The daily cron, a manual promote/admin
-# dispatch, and the on-demand latest-promote in the release pipeline all read
-# live registry state and then apply tag moves, so two concurrent runs could act
-# on stale state and overwrite a hold/taint or move a track based on outdated
-# data. A single static group (not keyed by workflow/ref) makes them serialize
-# across all three workflows. For a tag-promotion engine queueing is safer than
-# cancelling, so cancel-in-progress is false: concurrent runs wait their turn
-# rather than aborting mid-promote and leaving tags half-moved.
-concurrency:
-  group: evergreen-tracks-registry
-  cancel-in-progress: false
+# The evergreen-tracks-registry concurrency lock lives at JOB level on `apply`
+# only (see below), NOT here. Workflow-level concurrency would hold the lock
+# for the whole run — including the minutes-to-days the approval gate sits
+# waiting — which would queue the release pipeline's latest-promote behind a
+# human. `latest` must move the instant a GA ships.
 
 jobs:
-  promote:
+  # Dry-run: read live registry state and print the tag moves. No creds needed to
+  # mutate anything here (point_tag only logs when --apply is absent), but we log
+  # into Hub so listing tags works the same as the apply job (private repos).
+  plan:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      # The dry-run plan text, stashed so `apply` can confirm nothing changed
+      # since approval before it mutates anything.
+      plan: ${{ steps.plan.outputs.plan }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -48,29 +57,107 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Promote tracks
-        working-directory: cicd/evergreen-tracks
+      - name: Plan track moves (dry-run)
+        id: plan
+        working-directory: .github/actions/core-cicd/evergreen-tracks
         env:
-          # Scheduled runs default to dotcms/dotcms; dispatch can override.
-          REPO: ${{ github.event.inputs.repo || 'dotcms/dotcms' }}
-          STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
-          TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
-          EVENT_NAME: ${{ github.event_name }}
-          DISPATCH_APPLY: ${{ github.event.inputs.apply }}
+          REPO: ${{ github.event.inputs.repo }}
+          STANDARD_DAYS: ${{ github.event.inputs.standard_days }}
+          TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
         run: |
-          # Scheduled (cron) runs always apply — this is the engine that ages
-          # standard/trailing forward. To pause promotion, disable this workflow
-          # in the Actions tab or `hold` the affected track; there is no separate
-          # apply gate. Manual dispatch defaults to dry-run unless apply=true.
-          APPLY=""
-          if [ "$EVENT_NAME" = "schedule" ]; then
-            APPLY="--apply"
-          elif [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DISPATCH_APPLY" = "true" ]; then
-            APPLY="--apply"
+          echo "repo=$REPO (dry-run) — review this plan, then approve the apply job"
+          # --tracks standard,trailing: this workflow never moves `latest` — the
+          # release pipeline owns it and moves it unattended (possibly mid-approval).
+          # Scoping here keeps the drift check below immune to `latest` churn.
+          # 2>/dev/null: keep only the engine's stdout plan, drop uv's stderr chatter.
+          PLAN=$(uv run evergreen-tracks promote \
+            --repo "$REPO" \
+            --tracks standard,trailing \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+          echo "$PLAN"
+          {
+            echo 'plan<<EVERGREEN_PLAN_EOF'
+            echo "$PLAN"
+            echo 'EVERGREEN_PLAN_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+  # Approval gate: carries the evergreen-tracks-apply environment's
+  # required-reviewer rule and nothing else. Pauses after `plan` until a human
+  # reviews the plan output and approves. Deliberately a separate job from
+  # `apply`: GitHub acquires a job's concurrency slot BEFORE evaluating its
+  # environment protection rules (github.com/orgs/community/discussions/17401),
+  # so putting the registry lock on this waiting job would block the release
+  # pipeline's latest-promote for as long as the approval sits pending.
+  gate:
+    needs: plan
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: evergreen-tracks-apply
+    steps:
+      - run: echo "Plan approved — proceeding to apply"
+
+  # Apply: runs only after the gate is approved. Holds the registry-mutation
+  # lock (shared with cicd_6-release.yml's promote-latest and the admin
+  # workflow) only for the duration of the actual mutation — never during the
+  # human wait. Serializing matters because every mutator reads live registry
+  # state then applies tag moves; two concurrent runs could act on stale state.
+  # cancel-in-progress is false: queueing is safer than aborting mid-promote
+  # and leaving tags half-moved.
+  #
+  # `apply` re-derives the plan from live registry state at run time and FAILS
+  # if it differs from the approved plan (e.g. a hold/taint marker changed, or a
+  # release aged past a track threshold during a long approval), so it can never
+  # move tags nobody reviewed. The plan is scoped to standard,trailing, so an
+  # unattended `latest` move by the release pipeline mid-approval does NOT trip
+  # it. Drift is rare — when it happens, re-dispatch to review the new plan.
+  apply:
+    needs: [ plan, gate ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Apply track moves
+        working-directory: .github/actions/core-cicd/evergreen-tracks
+        env:
+          REPO: ${{ github.event.inputs.repo }}
+          STANDARD_DAYS: ${{ github.event.inputs.standard_days }}
+          TRAILING_DAYS: ${{ github.event.inputs.trailing_days }}
+          APPROVED_PLAN: ${{ needs.plan.outputs.plan }}
+        run: |
+          # Re-derive the plan from CURRENT registry state and confirm it still
+          # matches what was approved. If a GA landed or a hold/taint changed
+          # between plan and approval, fail rather than move tags nobody reviewed.
+          CURRENT_PLAN=$(uv run evergreen-tracks promote \
+            --repo "$REPO" \
+            --tracks standard,trailing \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+          # A never-empty plan ("no track moves needed" at minimum) guards against
+          # a silent pass if plan capture ever breaks (e.g. logging leaves stdout).
+          if [ -z "$APPROVED_PLAN" ] || [ -z "$CURRENT_PLAN" ]; then
+            echo "::error::Empty plan (approved or current) — cannot verify the approved plan. Re-dispatch."
+            exit 1
           fi
-          echo "event=$EVENT_NAME repo=$REPO apply=${APPLY:-<dry-run>}"
+          # sort: the plan is order-insensitive (held-track lines come from a set).
+          if [ "$(printf '%s\n' "$APPROVED_PLAN" | sort)" != "$(printf '%s\n' "$CURRENT_PLAN" | sort)" ]; then
+            echo "::error::Registry state changed since the plan was approved — refusing to apply. Re-dispatch to review the new plan."
+            echo "--- approved plan ---"; printf '%s\n' "$APPROVED_PLAN"
+            echo "--- current plan ---";  printf '%s\n' "$CURRENT_PLAN"
+            exit 1
+          fi
+          echo "repo=$REPO — plan unchanged since approval; applying"
           uv run evergreen-tracks promote \
             --repo "$REPO" \
+            --tracks standard,trailing \
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS" \
-            $APPLY
+            --apply

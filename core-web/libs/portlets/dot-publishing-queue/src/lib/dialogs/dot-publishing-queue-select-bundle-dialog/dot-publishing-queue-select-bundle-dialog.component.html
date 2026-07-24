@@ -120,7 +120,9 @@
                                 </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-bundle>
-                                @if ($bundlesStatus() === 'loading') {
+                                @if (
+                                    $bundlesStatus() === 'loading' || $bundlesStatus() === 'init'
+                                ) {
                                     <tr class="cursor-default hover:bg-transparent!">
                                         <td><p-skeleton width="1rem" height="1rem" /></td>
                                         <td>
@@ -191,10 +193,19 @@
                             <ng-template pTemplate="emptymessage">
                                 <tr class="hover:bg-transparent!">
                                     <td colspan="2" class="p-6">
-                                        <dot-empty-container
-                                            [configuration]="$bundlesEmptyConfig()"
-                                            [hideContactUsLink]="true"
-                                            data-testid="pq-select-bundle-empty" />
+                                        <div
+                                            class="flex flex-col items-center justify-center gap-2 text-surface-500"
+                                            data-testid="pq-select-bundle-empty">
+                                            <i
+                                                [class]="
+                                                    'pi text-2xl text-surface-400 ' +
+                                                    $bundlesEmptyConfig().icon
+                                                "
+                                                aria-hidden="true"></i>
+                                            <span class="text-sm">
+                                                {{ $bundlesEmptyConfig().messageKey | dm }}
+                                            </span>
+                                        </div>
                                     </td>
                                 </tr>
                             </ng-template>
@@ -321,10 +332,19 @@
                             <ng-template pTemplate="emptymessage">
                                 <tr class="hover:bg-transparent!">
                                     <td colspan="3" class="p-6">
-                                        <dot-empty-container
-                                            [configuration]="$assetsEmptyConfig()"
-                                            [hideContactUsLink]="true"
-                                            data-testid="pq-select-bundle-asset-empty" />
+                                        <div
+                                            class="flex flex-col items-center justify-center gap-2 text-surface-500"
+                                            data-testid="pq-select-bundle-asset-empty">
+                                            <i
+                                                [class]="
+                                                    'pi text-2xl text-surface-400 ' +
+                                                    $assetsEmptyConfig().icon
+                                                "
+                                                aria-hidden="true"></i>
+                                            <span class="text-sm">
+                                                {{ $assetsEmptyConfig().messageKey | dm }}
+                                            </span>
+                                        </div>
                                     </td>
                                 </tr>
                             </ng-template>
