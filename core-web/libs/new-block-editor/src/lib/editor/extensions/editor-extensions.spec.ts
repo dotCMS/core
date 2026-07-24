@@ -6,8 +6,9 @@ import type { DotMessageService } from '@dotcms/data-access';
 
 import { createEditorExtensions } from './editor-extensions';
 
-import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 import { UNKNOWN_BLOCK_NODE_NAME } from '../utils/unknown-block.utils';
+
+import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
 /**
  * These specs cover the extension-assembly seam that the `customBlocks` remote-extension

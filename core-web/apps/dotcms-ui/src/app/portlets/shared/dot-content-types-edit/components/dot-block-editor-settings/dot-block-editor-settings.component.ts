@@ -48,9 +48,9 @@ function getCustomBlockOptions(field: DotCMSContentTypeField): BlockOption[] {
         return (parsed.extensions || []).flatMap((extension) =>
             (extension.actions || []).flatMap((action) => {
                 const name = action?.name?.trim();
-                const label = action?.menuLabel?.trim();
+                const label = action?.menuLabel?.trim() || name;
 
-                if (!name || !label) {
+                if (!name) {
                     console.warn(REMOTE_BLOCK_NAME_REQUIRED_WARNING);
 
                     return [];

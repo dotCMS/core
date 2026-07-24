@@ -52,8 +52,8 @@ import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
-import { preserveUnknownBlockNodes, restoreUnknownBlockNodes } from './utils/unknown-block.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
+import { preserveUnknownBlockNodes, restoreUnknownBlockNodes } from './utils/unknown-block.utils';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
@@ -153,7 +153,10 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
         }
         return parsed === editor.getHTML();
     }
-    return JSON.stringify(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor))) === currentJson;
+    return (
+        JSON.stringify(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor))) ===
+        currentJson
+    );
 }
 
 /**

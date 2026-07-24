@@ -111,6 +111,9 @@ import {
  */
 export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
+    readonly #knownEditorNodeNames = new Set<string>();
+    #pendingValue: Content | null = null;
+    #allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
 
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
@@ -134,8 +137,6 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     private onChange: (value: string) => void;
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private knownEditorNodeNames = new Set<string>();
-    private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
@@ -219,6 +220,12 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
     writeValue(content: JSONContent): void {
         this.value = content;
+        if (!this.editor) {
+            this.#pendingValue = content;
+
+            return;
+        }
+
         this.setEditorContent(content);
     }
 
@@ -253,6 +260,10 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                     ],
                     editable: true
                 });
+                this.#knownEditorNodeNames.clear();
+                Object.keys(this.editor.schema.nodes).forEach((nodeName) =>
+                    this.#knownEditorNodeNames.add(nodeName)
+                );
 
                 this.dotMarketingConfigService.setProperty(
                     EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -372,7 +383,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     setAllowedBlocks(blocks: string) {
         const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
 
-        this.allowedBlocks = [...this.allowedBlocks, ...allowedBlocks];
+        this.#allowedBlocks = [...this.#allowedBlocks, ...allowedBlocks];
     }
 
     /**
@@ -383,8 +394,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      */
     private subscribeToEditorEvents() {
         this.editor.on('create', () => {
-            this.knownEditorNodeNames = new Set(Object.keys(this.editor.schema.nodes));
-            this.setEditorContent(this.value);
+            this.setEditorContent(this.#pendingValue ?? this.value);
+            this.#pendingValue = null;
             this.updateCharCount();
             // Validate char limit on initial load (e.g., existing content over limit)
             this.updateCharLimitValidity();
@@ -517,11 +528,9 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const moduleObj = customModules.reduce(this.parsedCustomModules, {});
         const extensions = Object.values(moduleObj) as AnyExtension[];
-        const registeredExtensionNames = (
-            extensions
-                .map((extension) => extension?.name)
-                .filter((name): name is string => typeof name === 'string' && name.length > 0)
-        );
+        const registeredExtensionNames = extensions
+            .map((extension) => extension?.name)
+            .filter((name): name is string => typeof name === 'string' && name.length > 0);
 
         warnOnUnmatchedRemoteBlockNames(data, registeredExtensionNames);
 
@@ -538,7 +547,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
-            this.allowedBlocks?.length > 1
+            this.#allowedBlocks?.length > 1
                 ? StarterKit.configure({ ...baseConfig, ...this.starterConfig() })
                 : StarterKit.configure(baseConfig);
 
@@ -566,11 +575,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         //Heading types supported by default in the editor.
         const heading = ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'];
         const levels = heading
-            .filter((heading) => this.allowedBlocks?.includes(heading))
+            .filter((heading) => this.#allowedBlocks?.includes(heading))
             .map((heading) => +heading.slice(-1) as Level);
 
         const starterKit = staterKitOptions
-            .filter((option) => !this.allowedBlocks?.includes(option))
+            .filter((option) => !this.#allowedBlocks?.includes(option))
             .reduce((options, option) => ({ ...options, [option]: false }), {});
 
         return {
@@ -591,11 +600,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
         // If only paragraph is included
         // We do not need to filter
-        if (this.allowedBlocks.length <= 1) {
+        if (this.#allowedBlocks.length <= 1) {
             return [...this._customNodes.values()];
         }
 
-        for (const block of this.allowedBlocks) {
+        for (const block of this.#allowedBlocks) {
             const node = this._customNodes.get(block);
             if (node) {
                 whiteList.push(node);
@@ -616,7 +625,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             DotConfigExtension({
                 lang: this.contentlet?.languageId || this.languageId,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this.allowedBlocks,
+                allowedBlocks: this.#allowedBlocks,
                 contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
@@ -673,7 +682,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             }),
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef),
-            createGridColumn(this.allowedBlocks.length > 1 ? this.allowedBlocks : [])
+            createGridColumn(this.#allowedBlocks.length > 1 ? this.#allowedBlocks : [])
         ];
 
         if (isAIPluginInstalled) {
@@ -727,26 +736,27 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     }
 
     private setEditorJSONContent(content: Content) {
-        const filteredContent =
-            this.allowedBlocks?.length > 1
-                ? removeInvalidNodes(content, this.allowedBlocks, this.getDeclaredRemoteBlockNames())
-                : content;
-
-        if (!this.editor || typeof filteredContent === 'string') {
-            this.content = filteredContent;
+        if (!this.editor || typeof content === 'string') {
+            this.content = content;
 
             return;
         }
 
-        this.content = Array.isArray(filteredContent)
-            ? preserveUnknownBlockNodes(filteredContent, this.knownEditorNodeNames)
+        const preservedContent = Array.isArray(content)
+            ? preserveUnknownBlockNodes(content, this.#knownEditorNodeNames)
             : {
-                  ...filteredContent,
-                  content: preserveUnknownBlockNodes(
-                      filteredContent.content,
-                      this.knownEditorNodeNames
-                  )
+                  ...content,
+                  content: preserveUnknownBlockNodes(content.content, this.#knownEditorNodeNames)
               };
+
+        this.content =
+            this.#allowedBlocks?.length > 1
+                ? removeInvalidNodes(
+                      preservedContent,
+                      this.#allowedBlocks,
+                      this.#getDeclaredRemoteBlockNames()
+                  )
+                : preservedContent;
     }
 
     private setEditorContent(content: Content) {
@@ -790,7 +800,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         );
     }
 
-    private getDeclaredRemoteBlockNames(): string[] {
+    #getDeclaredRemoteBlockNames(): string[] {
         return getDeclaredRemoteBlockNames(this.getParsedCustomBlocks());
     }
 }

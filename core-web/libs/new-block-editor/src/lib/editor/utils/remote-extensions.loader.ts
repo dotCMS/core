@@ -1,7 +1,11 @@
 import type { AnyExtension } from '@tiptap/core';
 
-import type { Action, DotCMSContentTypeField, RemoteCustomExtensions } from '@dotcms/dotcms-models';
-import { warnOnUnmatchedRemoteBlockNames } from '@dotcms/dotcms-models';
+import {
+    type Action,
+    type DotCMSContentTypeField,
+    type RemoteCustomExtensions,
+    warnOnUnmatchedRemoteBlockNames
+} from '@dotcms/dotcms-models';
 
 const EMPTY: RemoteCustomExtensions = { extensions: [] };
 
@@ -15,8 +19,9 @@ export interface RemoteExtensionsResolved {
  * Returns `{ extensions: [] }` for missing, malformed, or schema-mismatched input
  * (the legacy contract — fields without customBlocks must work). The legacy block
  * editor validates `{url, actions[].{command, menuLabel, icon}}` only; we mirror
- * that exactly so existing customer configs keep loading. For allowed-blocks
- * compatibility, customers must also set `actions[].name` to the TipTap node name
+ * that exactly so existing customer configs keep loading. `actions[].name` is only
+ * forwarded to the shared warning helper here; allowed-block filtering still happens
+ * in the legacy block-editor runtime. Customers should set it to the TipTap node name
  * exported by the remote bundle (for example `customGallery`).
  */
 export function parseCustomBlocksField(
@@ -54,13 +59,12 @@ export function parseCustomBlocksField(
  * comment is harmless in either bundler so we keep it for cross-bundler safety.
  */
 export async function loadRemoteExtensions(
-    parsed: RemoteCustomExtensions
+    parsed: RemoteCustomExtensions,
+    importer: (url: string) => Promise<object> = (url) => import(/* webpackIgnore: true */ url)
 ): Promise<RemoteExtensionsResolved> {
     const actions: Action[] = parsed.extensions.flatMap((ext) => ext.actions ?? []);
 
-    const settled = await Promise.allSettled(
-        parsed.extensions.map((ext) => import(/* webpackIgnore: true */ ext.url))
-    );
+    const settled = await Promise.allSettled(parsed.extensions.map((ext) => importer(ext.url)));
 
     const merged: Record<string, unknown> = settled.reduce<Record<string, unknown>>(
         (acc, result, index) => {

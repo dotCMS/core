@@ -1,6 +1,10 @@
 import { Node } from '@tiptap/core';
 
-import { UNKNOWN_BLOCK_NODE_NAME } from '../../shared/utils/unknown-block.utils';
+import {
+    parseUnknownBlockOriginalNode,
+    renderUnknownBlockOriginalNode,
+    UNKNOWN_BLOCK_NODE_NAME
+} from '../../shared/utils/unknown-block.utils';
 
 export const UnsupportedBlockNode = Node.create({
     name: UNKNOWN_BLOCK_NODE_NAME,
@@ -19,24 +23,17 @@ export const UnsupportedBlockNode = Node.create({
             },
             originalNode: {
                 default: null,
-                parseHTML: (element) => {
-                    const value = element.getAttribute('data-original-node');
-
-                    if (!value) {
-                        return null;
-                    }
-
-                    try {
-                        return JSON.parse(value);
-                    } catch (error) {
-                        console.warn('[unsupported-block] failed to parse originalNode', error);
-                        return null;
-                    }
-                },
-                renderHTML: (attributes) =>
-                    attributes.originalNode
-                        ? { 'data-original-node': JSON.stringify(attributes.originalNode) }
-                        : {}
+                parseHTML: (element) =>
+                    parseUnknownBlockOriginalNode(element.getAttribute('data-original-node'))
+                        .originalNode,
+                renderHTML: (attributes) => renderUnknownBlockOriginalNode(attributes)
+            },
+            originalNodeRaw: {
+                default: null,
+                parseHTML: (element) =>
+                    parseUnknownBlockOriginalNode(element.getAttribute('data-original-node'))
+                        .originalNodeRaw,
+                renderHTML: () => ({})
             }
         };
     },
