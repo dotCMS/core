@@ -474,13 +474,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return countForSites(condition, base, UtilMethods.isSet(siteId) ? List.of(siteId) : null);
   }
 
-  @CloseDBIfOpened
   @Override
   public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException {
+    return countForSites(condition, base, siteIds, true);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds,
+          final boolean includeSystemTypes) throws DotDataException {
     try {
       final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(siteIds, this.user, this.respectFrontendRoles);
       return this.perms.filterCollection(this.contentTypeFactory.search(resolvedSiteIds,
-              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
+              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0, includeSystemTypes),
               PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user).size();
     } catch (final DotSecurityException e) {
       Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
@@ -820,11 +826,18 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       return search(sites, condition, base, orderBy, limit, offset, null);
   }
 
-  @CloseDBIfOpened
   @Override
   public List<ContentType> search(final List<String> sites, final String condition,
           final BaseContentType base, final String orderBy, final int limit, final int offset,
           final List<String> requestedContentTypes) throws DotDataException {
+      return search(sites, condition, base, orderBy, limit, offset, requestedContentTypes, true);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final List<String> sites, final String condition,
+          final BaseContentType base, final String orderBy, final int limit, final int offset,
+          final List<String> requestedContentTypes, final boolean includeSystemTypes) throws DotDataException {
 
       final List<ContentType> returnTypes = new ArrayList<>();
       final Set<String> includedIds = new HashSet<>();
@@ -879,7 +892,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
           // Perform paginated search — ensure items excluded via includedIds, offset corrected
           final List<ContentType> searchResults = performSearch(resolvedSiteIds, condition, base,
-                  orderBy, remainingLimit, adjustedOffset, includedIds);
+                  orderBy, remainingLimit, adjustedOffset, includedIds, includeSystemTypes);
 
           returnTypes.addAll(searchResults);
 
@@ -907,16 +920,30 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    * {@inheritDoc}
    */
   @Override
-  @WrapInTransaction
   public List<ContentType> searchMultipleTypes(final String condition,
                                                 final java.util.Collection<BaseContentType> types,
                                                 final String orderBy, final int limit, final int offset,
                                                 final String siteId, final List<String> requestedContentTypes)
           throws DotDataException {
+      return searchMultipleTypes(condition, types, orderBy, limit, offset, siteId,
+              requestedContentTypes, true);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @WrapInTransaction
+  public List<ContentType> searchMultipleTypes(final String condition,
+                                                final java.util.Collection<BaseContentType> types,
+                                                final String orderBy, final int limit, final int offset,
+                                                final String siteId, final List<String> requestedContentTypes,
+                                                final boolean includeSystemTypes)
+          throws DotDataException {
 
       // Delegate directly to the factory method which performs efficient UNION query
       final List<ContentType> allResults = this.contentTypeFactory.searchMultipleTypes(
-              condition, types, orderBy, limit, offset, siteId, requestedContentTypes);
+              condition, types, orderBy, limit, offset, siteId, requestedContentTypes, includeSystemTypes);
 
       // Filter by permissions
       try {
@@ -932,7 +959,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   private List<ContentType> performSearch(final List<String> resolvedSiteIds,
           final String condition, final BaseContentType base, final String orderBy,
-          final int limit, final int offset, final Set<String> includedIds)
+          final int limit, final int offset, final Set<String> includedIds,
+          final boolean includeSystemTypes)
           throws DotDataException {
 
       final List<ContentType> returnTypes = new ArrayList<>();
@@ -943,7 +971,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           int currentLimit = (remainingLimit < 0) ? -1 : remainingLimit;
 
           final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
-                  condition, base.getType(), orderBy, currentLimit, rollingOffset);
+                  condition, base.getType(), orderBy, currentLimit, rollingOffset, includeSystemTypes);
 
           if (rawContentTypes.isEmpty()) {
               break;
@@ -998,8 +1026,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           final String orderBy, final int limit, final int offset, final String siteId,
           final List<String> requestedContentTypes)
           throws DotDataException {
+      return search(condition, base, orderBy, limit, offset, siteId, requestedContentTypes, true);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final String condition, final BaseContentType base,
+          final String orderBy, final int limit, final int offset, final String siteId,
+          final List<String> requestedContentTypes, final boolean includeSystemTypes)
+          throws DotDataException {
       return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base,
-              orderBy, limit, offset, requestedContentTypes);
+              orderBy, limit, offset, requestedContentTypes, includeSystemTypes);
   }
 
   @CloseDBIfOpened
