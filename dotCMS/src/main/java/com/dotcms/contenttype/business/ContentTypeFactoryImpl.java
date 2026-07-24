@@ -226,7 +226,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
       try {
-          return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+          return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null, true);
       } catch (DotSecurityException e) {
           throw new DotDataException("Security validation failed: " + e.getMessage(), e);
       }
@@ -258,8 +258,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             throws DotDataException {
         try {
             return UtilMethods.isSet(siteId)
-                    ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
-                    : dbSearch(search, baseType,orderBy, limit, offset, null);
+                    ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId), true)
+                    : dbSearch(search, baseType,orderBy, limit, offset, null, true);
         } catch (DotSecurityException e) {
             throw new DotDataException("Security validation failed: " + e.getMessage(), e);
         }
@@ -299,8 +299,15 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   @Override
   public List<ContentType> search(final List<String> sites, final String search, final int type,
                                   final String orderBy, final int limit, final int offset) throws DotDataException {
+      return search(sites, search, type, orderBy, limit, offset, true);
+  }
+
+  @Override
+  public List<ContentType> search(final List<String> sites, final String search, final int type,
+                                  final String orderBy, final int limit, final int offset,
+                                  final boolean includeSystemTypes) throws DotDataException {
       try {
-          return dbSearch(search, type, orderBy, limit, offset, sites);
+          return dbSearch(search, type, orderBy, limit, offset, sites, includeSystemTypes);
       } catch (DotSecurityException e) {
           throw new DotDataException("Security validation failed: " + e.getMessage(), e);
       }
@@ -730,6 +737,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
  * @param offset   The requested page number of the result set, for pagination purposes.
  * @param siteIds  The list of one or more Sites to search for Content Types. You can pass down
  *                 their Identifiers or Site Keys.
+ * @param includeSystemTypes When {@code false}, excludes system Content Types via a dedicated
+ *                 {@code and structure.system = false} predicate. When {@code true}, behavior is
+ *                 unchanged.
  *
  * @return The list of {@link ContentType} objects matching the specified search criteria.
  *
@@ -737,7 +747,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
  */
  @CloseDBIfOpened
  private List<ContentType> dbSearch(final String search, final int baseType, String orderBy,
-                                    int limit, final int offset, final List<String> siteIds) throws DotDataException, DotSecurityException {
+                                    int limit, final int offset, final List<String> siteIds,
+                                    final boolean includeSystemTypes) throws DotDataException, DotSecurityException {
     if (limit == 0) {
         throw new DotDataException("The 'limit' param must be greater than 0");
     }
@@ -779,7 +790,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         sqlBuilder.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
                   .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
     }
-    
+
+    // Dedicated system predicate: excludes system Content Types when requested, independent of
+    // the search/condition string so it combines (ANDs) with the name filter.
+    if (!includeSystemTypes) {
+        sqlBuilder.append(" AND coalesce(structure.system, false) = ? ");
+    }
+
     // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
     if (!validatedSites.isEmpty()) {
         // Build multiple OR conditions with proper parameterization and escaping
@@ -807,7 +824,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
     // Add common search parameters using helper method
     addCommonSearchParameters(dc, searchCondition);
-    
+
+    // Bind the system predicate parameter (order matches its position in the SQL above).
+    if (!includeSystemTypes) {
+        dc.addParam(false);
+    }
+
     // Add site parameters for LIKE clauses (substring matching with escaping)
     if (!validatedSites.isEmpty()) {
         // Add escaped LIKE patterns with wildcards: %escaped_site%
@@ -1402,10 +1424,23 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
      * {@inheritDoc}
      */
     @Override
-    @CloseDBIfOpened
     public List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
                                                   final String orderBy, final int limit, final int offset,
                                                   final String siteId, final List<String> requestedContentTypes)
+            throws DotDataException {
+        return searchMultipleTypes(search, types, orderBy, limit, offset, siteId,
+                requestedContentTypes, true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
+                                                  final String orderBy, final int limit, final int offset,
+                                                  final String siteId, final List<String> requestedContentTypes,
+                                                  final boolean includeSystemTypes)
             throws DotDataException {
 
         if (types == null || types.isEmpty()) {
@@ -1533,6 +1568,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 if (searchCondition.isCommunityEdition) {
                     unionQuery.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
                               .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+                }
+
+                // Dedicated system predicate: excludes system Content Types when requested,
+                // independent of the search/condition string so it combines with the name filter.
+                if (!includeSystemTypes) {
+                    unionQuery.append(" AND coalesce(structure.system, false) = ? ");
+                    parameters.add(false);
                 }
 
                 // SECURITY: Add sites filter using parameterized LIKE clauses

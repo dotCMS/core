@@ -132,7 +132,10 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public boolean system() {
-				return DbConnectionFactory.isDBTrue(map.get(ContentTypeFactory.SYSTEM_COLUMN).toString());
+				// The system column is a nullable boolean; treat NULL as non-system (false) instead
+				// of NPEing on null.toString(). Matches the coalesce(system, false) SQL predicate.
+				final Object systemValue = map.get(ContentTypeFactory.SYSTEM_COLUMN);
+				return systemValue != null && DbConnectionFactory.isDBTrue(systemValue.toString());
 			}
 
 			@Override
