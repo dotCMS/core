@@ -443,24 +443,41 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$totalItems()).toBe(40);
         });
 
-        it('should return exact total when hasMoreContent is false', () => {
+        it('should return exact total when neither content nor folders have more', () => {
             store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
-            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: false }
+            ]);
             store.items.mockReturnValue(MOCK_ITEMS);
             spectator.detectChanges();
 
-            // hasMoreContent = false, page=1, limit=20, items=MOCK_ITEMS.length → 20*(1-1) + MOCK_ITEMS.length
+            // no more of either, page=1, limit=20, items=MOCK_ITEMS.length → 20*(1-1) + MOCK_ITEMS.length
             expect(spectator.component.$totalItems()).toBe(MOCK_ITEMS.length);
         });
 
-        it('should account for previous pages when hasMoreContent is false on page 2', () => {
+        it('should account for previous pages when nothing has more on page 2', () => {
             store.pagination.mockReturnValue({ page: 2, limit: 20, offset: 20 });
-            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: false }
+            ]);
             store.items.mockReturnValue(MOCK_ITEMS);
             spectator.detectChanges();
 
-            // hasMoreContent = false, page=2, limit=20, items=MOCK_ITEMS.length → 20*(2-1) + MOCK_ITEMS.length
+            // no more of either, page=2, limit=20, items=MOCK_ITEMS.length → 20*(2-1) + MOCK_ITEMS.length
             expect(spectator.component.$totalItems()).toBe(20 + MOCK_ITEMS.length);
+        });
+
+        it('should offer a next page when only folders have more (hasMoreFolders true, hasMoreContent false)', () => {
+            // A folder holding only sub-folders: no more content, but more folders to page through.
+            store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: true }
+            ]);
+            store.items.mockReturnValue(MOCK_ITEMS);
+            spectator.detectChanges();
+
+            // hasMoreFolders = true → one page beyond current: 20 * (1 + 1) = 40
+            expect(spectator.component.$totalItems()).toBe(40);
         });
     });
 

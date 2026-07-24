@@ -49,4 +49,40 @@ public class LuceneQueryUtilsTest extends UnitTestBase {
         Assert.assertFalse(isLuceneQuery("550e8400-e29b-41d4-a716-446655440000"));
     }
 
+    @Test
+    public void testEscapeLeavesCleanTermUnchanged() {
+        Assert.assertEquals("angular", LuceneQueryUtils.escape("angular"));
+        Assert.assertEquals("", LuceneQueryUtils.escape(""));
+    }
+
+    @Test
+    public void testEscapeBackslashesLuceneSpecialCharacters() {
+        Assert.assertEquals("quarterly\\-report", LuceneQueryUtils.escape("quarterly-report"));
+        Assert.assertEquals("12\\:30", LuceneQueryUtils.escape("12:30"));
+        Assert.assertEquals("a\\/\\(b\\)\\:c", LuceneQueryUtils.escape("a/(b):c"));
+        // Every character in the query_string special set is escaped.
+        Assert.assertEquals("\\\\\\+\\-\\!\\(\\)\\:\\^\\[\\]\\\"\\{\\}\\~\\*\\?\\|\\&\\/",
+                LuceneQueryUtils.escape("\\+-!():^[]\"{}~*?|&/"));
+    }
+
+    /**
+     * The neutral reimplementation must produce byte-for-byte the same output as the original
+     * {@code QueryParser.escape} it replaced, so the ES→OS migration that drops the Lucene artifact
+     * cannot change query behavior. {@code QueryParser} is still on the test classpath (via the ES
+     * client), so we can assert parity directly.
+     */
+    @Test
+    public void testEscapeMatchesLuceneQueryParserExactly() {
+        final String[] samples = {
+                "angular", "quarterly-report", "12:30", "a/(b):c", "x\")OR",
+                "doc-dev-blue-cold.pdf", "color_blue-green", "", "no+special&chars|here",
+                "path/to/asset", "a-b-c-d", "weird ~ ? * [ ] { } ^ chars"
+        };
+        for (final String s : samples) {
+            Assert.assertEquals("escape parity mismatch for: " + s,
+                    org.apache.lucene.queryparser.classic.QueryParser.escape(s),
+                    LuceneQueryUtils.escape(s));
+        }
+    }
+
 }

@@ -26,6 +26,7 @@ import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 import {
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTI_VALUE_TYPES,
     FOLDER_TREE_PAGE_SIZE,
     FOLDER_TREE_SEARCH_PAGE_SIZE,
@@ -468,7 +469,59 @@ export function parseUserSearchableValue(
         return values.length ? values : undefined;
     }
 
+    if (fieldType === FIELD_FILTER_KEY_VALUE_TYPE) {
+        return toKeyValueTerm(raw);
+    }
+
     return raw;
+}
+
+/**
+ * Translates a Key/Value filter input into the term the backend contains-matches against the
+ * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`).
+ *
+ * The term is lowercased to match the indexed `.key_value` sub-field, which dotCMS stores as
+ * `(key + "_" + value).toLowerCase()` — so `Color:Red` matches the same content as `color:red`.
+ *
+ * Shorthand rules (the **first** colon is the key/value separator — everything after it is the
+ * value, so a value may itself contain colons):
+ * - `key:value`         → `key_value`           (exact-pair match; e.g. `Deploy:HTTPS://x` → `deploy_https://x`)
+ * - `key:` / `:value`   → `key` / `value`       (only the filled side)
+ * - bare term (no `:`)  → the term              (loose match on a key OR a value)
+ *
+ * ⚠️ Greedy shorthand: because *any* colon is treated as the separator, a **bare** value that
+ * happens to contain a colon (a URL like `https://x`, a time like `12:30`, a ratio like `16:9`) is
+ * read as `key:value` (`https_//x`, `12_30`, `16_9`) and will likely match nothing. To search a
+ * colon-bearing value, prefix it with its key (`myKey:12:30`) so the intended value is preserved.
+ * A raw colon is never sent to the backend — that path is metadata-only and wouldn't match a
+ * regular Key/Value field anyway.
+ *
+ * @param {string} raw - The literal value the user typed (also what's kept in the URL/chip).
+ * @return {*}  {(string | undefined)} Returns `undefined` when the input is empty.
+ */
+function toKeyValueTerm(raw: string): string | undefined {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+
+    // Split on the FIRST colon only, so a value may contain further colons (e.g. `key:12:30`).
+    const separator = trimmed.indexOf(':');
+    // The index stores `.key_value` as `(key + "_" + value).toLowerCase()`, so the term is
+    // lowercased to match regardless of the case the user typed (e.g. `Color:Red` → `color_red`).
+    if (separator === -1) {
+        return trimmed.toLowerCase();
+    }
+
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+
+    if (key && value) {
+        return `${key}_${value}`.toLowerCase();
+    }
+
+    // Only one side of the `key:value` was filled — match on whichever is present.
+    return (key || value).toLowerCase() || undefined;
 }
 
 /** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
