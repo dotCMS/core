@@ -46,8 +46,10 @@ import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     EDITOR_MARKETING_KEYS,
+    getDeclaredRemoteBlockNames,
     IMPORT_RESULTS,
-    RemoteCustomExtensions
+    RemoteCustomExtensions,
+    warnOnUnmatchedRemoteBlockNames
 } from '@dotcms/dotcms-models';
 
 import {
@@ -132,6 +134,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     private onChange: (value: string) => void;
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private knownEditorNodeNames = new Set<string>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
@@ -284,7 +287,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
         const restoredValue = {
             ...value,
-            content: value.content ? restoreUnknownBlockNodes(value.content) : value.content
+            content: restoreUnknownBlockNodes(value.content)
         };
 
         // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
@@ -380,6 +383,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      */
     private subscribeToEditorEvents() {
         this.editor.on('create', () => {
+            this.knownEditorNodeNames = new Set(Object.keys(this.editor.schema.nodes));
             this.setEditorContent(this.value);
             this.updateCharCount();
             // Validate char limit on initial load (e.g., existing content over limit)
@@ -513,19 +517,13 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const moduleObj = customModules.reduce(this.parsedCustomModules, {});
         const extensions = Object.values(moduleObj) as AnyExtension[];
-        const registeredNodeNames = new Set(
+        const registeredExtensionNames = (
             extensions
                 .map((extension) => extension?.name)
                 .filter((name): name is string => typeof name === 'string' && name.length > 0)
         );
 
-        this.getDeclaredRemoteBlockNames().forEach((name) => {
-            if (!registeredNodeNames.has(name)) {
-                console.warn(
-                    `[remote-extension] declared action.name "${name}" did not match any loaded node`
-                );
-            }
-        });
+        warnOnUnmatchedRemoteBlockNames(data, registeredExtensionNames);
 
         return extensions;
     }
@@ -740,15 +738,14 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             return;
         }
 
-        const knownNodeNames = new Set(Object.keys(this.editor.schema.nodes));
-
         this.content = Array.isArray(filteredContent)
-            ? preserveUnknownBlockNodes(filteredContent, knownNodeNames)
+            ? preserveUnknownBlockNodes(filteredContent, this.knownEditorNodeNames)
             : {
                   ...filteredContent,
-                  content: filteredContent.content
-                      ? preserveUnknownBlockNodes(filteredContent.content, knownNodeNames)
-                      : filteredContent.content
+                  content: preserveUnknownBlockNodes(
+                      filteredContent.content,
+                      this.knownEditorNodeNames
+                  )
               };
     }
 
@@ -794,20 +791,6 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     }
 
     private getDeclaredRemoteBlockNames(): string[] {
-        return this.getParsedCustomBlocks().extensions.flatMap((extension) =>
-            (extension.actions || [])
-                .map((action) => action?.name)
-                .filter((name): name is string => {
-                    const isValidName = typeof name === 'string' && name.trim().length > 0;
-
-                    if (!isValidName) {
-                        console.warn(
-                            '[remote-extension] skipping customBlocks action without a valid name'
-                        );
-                    }
-
-                    return isValidName;
-                })
-        );
+        return getDeclaredRemoteBlockNames(this.getParsedCustomBlocks());
     }
 }

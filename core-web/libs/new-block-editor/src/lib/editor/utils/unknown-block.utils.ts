@@ -6,40 +6,66 @@ type JSONLike = JSONContent | JSONContent[];
 type JSONLikeOrUndefined = JSONLike | undefined;
 
 function isJsonContent(value: unknown): value is JSONContent {
-    return !!value && typeof value === 'object' && typeof (value as JSONContent).type === 'string';
+    return (
+        !!value &&
+        !Array.isArray(value) &&
+        typeof value === 'object' &&
+        typeof (value as JSONContent).type === 'string' &&
+        (value as JSONContent).type.length > 0
+    );
 }
 
 function replaceUnknownNode(node: JSONContent, knownNodeNames: Set<string>): JSONContent {
-    if (!knownNodeNames.has(node.type)) {
+    const nodeType = typeof node.type === 'string' ? node.type : null;
+
+    if (!nodeType || !knownNodeNames.has(nodeType)) {
         return {
             type: UNKNOWN_BLOCK_NODE_NAME,
             attrs: {
                 originalNode: node,
-                originalType: node.type
+                originalType: nodeType
             }
         };
     }
 
     return {
         ...node,
-        content: node.content ? preserveUnknownBlockNodes(node.content, knownNodeNames) : node.content
+        content: preserveUnknownBlockNodes(node.content, knownNodeNames)
     };
 }
 
-export function preserveUnknownBlockNodes<T extends JSONLike>(
+export function preserveUnknownBlockNodes<T extends JSONLikeOrUndefined>(
     content: T,
     knownNodeNames: Set<string>
 ): T {
-    if (!Array.isArray(content)) {
+    if (!content) {
         return content;
+    }
+
+    if (!Array.isArray(content)) {
+        return replaceUnknownNode(content, knownNodeNames) as T;
     }
 
     return content.map((node) => replaceUnknownNode(node, knownNodeNames)) as T;
 }
 
 export function restoreUnknownBlockNodes<T extends JSONLikeOrUndefined>(content: T): T {
-    if (!Array.isArray(content)) {
+    if (!content) {
         return content;
+    }
+
+    if (!Array.isArray(content)) {
+        if (
+            content.type === UNKNOWN_BLOCK_NODE_NAME &&
+            isJsonContent(content.attrs?.['originalNode'])
+        ) {
+            return content.attrs['originalNode'] as T;
+        }
+
+        return {
+            ...content,
+            content: restoreUnknownBlockNodes(content.content)
+        } as T;
     }
 
     return content.map((node) => {
@@ -52,7 +78,7 @@ export function restoreUnknownBlockNodes<T extends JSONLikeOrUndefined>(content:
 
         return {
             ...node,
-            content: node.content ? restoreUnknownBlockNodes(node.content) : node.content
+            content: restoreUnknownBlockNodes(node.content)
         };
     }) as T;
 }

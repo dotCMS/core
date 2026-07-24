@@ -28,7 +28,8 @@ export const UnsupportedBlock = Node.create({
 
                     try {
                         return JSON.parse(value);
-                    } catch {
+                    } catch (error) {
+                        console.warn('[unsupported-block] failed to parse originalNode', error);
                         return null;
                     }
                 },

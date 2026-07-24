@@ -1,6 +1,7 @@
 import type { AnyExtension } from '@tiptap/core';
 
 import type { Action, DotCMSContentTypeField, RemoteCustomExtensions } from '@dotcms/dotcms-models';
+import { warnOnUnmatchedRemoteBlockNames } from '@dotcms/dotcms-models';
 
 const EMPTY: RemoteCustomExtensions = { extensions: [] };
 
@@ -76,26 +77,11 @@ export async function loadRemoteExtensions(
     );
 
     const extensions = Object.values(merged) as AnyExtension[];
-    const registeredNodeNames = new Set(
-        extensions
-            .map((extension) => extension?.name)
-            .filter((name): name is string => typeof name === 'string' && name.length > 0)
-    );
+    const registeredExtensionNames = extensions
+        .map((extension) => extension?.name)
+        .filter((name): name is string => typeof name === 'string' && name.length > 0);
 
-    actions.forEach((action) => {
-        const name = (action as Partial<Action>).name?.trim();
-
-        if (!name) {
-            console.warn('[remote-extension] customBlocks action.name is required for remote blocks');
-            return;
-        }
-
-        if (!registeredNodeNames.has(name)) {
-            console.warn(
-                `[remote-extension] declared action.name "${name}" did not match any loaded node`
-            );
-        }
-    });
+    warnOnUnmatchedRemoteBlockNames(parsed, registeredExtensionNames);
 
     return {
         extensions,

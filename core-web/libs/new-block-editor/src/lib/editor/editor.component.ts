@@ -135,7 +135,7 @@ function preserveUnknownNodesInDocument(
 ): JSONContent {
     return {
         ...parsed,
-        content: parsed.content ? preserveUnknownBlockNodes(parsed.content, knownNodeNames) : parsed.content
+        content: preserveUnknownBlockNodes(parsed.content, knownNodeNames)
     };
 }
 
