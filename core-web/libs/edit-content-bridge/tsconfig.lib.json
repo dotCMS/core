@@ -14,11 +14,5 @@
         "strictPropertyInitialization": false
     },
     "include": ["src/**/*.ts"],
-    "exclude": [
-        "**/*.spec.ts",
-        "**/*.test.ts",
-        "**/jest.config.ts",
-        "**/*.stories.ts",
-        "**/*.stories.js"
-    ]
+    "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/jest.config.ts"]
 }

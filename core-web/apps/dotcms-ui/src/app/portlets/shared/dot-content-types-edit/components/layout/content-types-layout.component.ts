@@ -77,7 +77,7 @@ export class ContentTypesLayoutComponent implements OnInit {
         this.#route.snapshot.data['tabPermissions']?.showPermissionsTab ?? false
     );
     readonly $activeTab = signal(this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields');
-    addToMenuContentType = false;
+    readonly $addToMenuContentType = signal(false);
 
     actions: MenuItem[];
 
@@ -211,6 +211,6 @@ export class ContentTypesLayoutComponent implements OnInit {
      * @memberof ContentTypesLayoutComponent
      */
     addContentInMenu() {
-        this.addToMenuContentType = true;
+        this.$addToMenuContentType.set(true);
     }
 }

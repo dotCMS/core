@@ -12,5 +12,7 @@
         "esModuleInterop": true
     },
     "files": ["src/main.ts", "src/polyfills.ts"],
-    "exclude": ["**/*.stories.ts", "**/*.stories.js"]
+    "angularCompilerOptions": {
+        "strictTemplates": false
+    }
 }

@@ -14,6 +14,8 @@
         "lib": ["es2017", "es2020", "dom", "dom.iterable"],
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
+        "strict": false,
+        "ignoreDeprecations": "6.0",
         "baseUrl": ".",
         "paths": {
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],

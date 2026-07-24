@@ -1,7 +1,5 @@
 import { Props } from 'tippy.js';
 
-import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
-
 // Assets
 import {
     codeIcon,
@@ -16,14 +14,12 @@ import {
 } from '../components/suggestions/suggestion-icons';
 import { DotMenuItem } from '../components/suggestions/suggestions.component';
 
-const domSanitizer = new ɵDomSanitizerImpl(document);
-
 const headings: DotMenuItem[] = [...Array(6).keys()].map((level) => {
     const size = level + 1;
 
     return {
         label: `Heading ${size}`,
-        icon: sanitizeUrl(headerIcons[level] || ''),
+        icon: headerIcons[level] || '',
         id: `heading${size}`,
         attributes: { level: size }
     };
@@ -71,19 +67,19 @@ const grid: DotMenuItem[] = [
 
 const paragraph: DotMenuItem = {
     label: 'Paragraph',
-    icon: sanitizeUrl(pIcon),
+    icon: pIcon,
     id: 'paragraph'
 };
 
 const list: DotMenuItem[] = [
     {
         label: 'List Ordered',
-        icon: sanitizeUrl(olIcon),
+        icon: olIcon,
         id: 'orderedList'
     },
     {
         label: 'List Unordered',
-        icon: sanitizeUrl(ulIcon),
+        icon: ulIcon,
         id: 'bulletList'
     }
 ];
@@ -91,27 +87,27 @@ const list: DotMenuItem[] = [
 const block: DotMenuItem[] = [
     {
         label: 'AI Content',
-        icon: sanitizeUrl(listStarsIcon),
+        icon: listStarsIcon,
         id: 'aiContentPrompt'
     },
     {
         label: 'AI Image',
-        icon: sanitizeUrl(mountsStarsIcon),
+        icon: mountsStarsIcon,
         id: 'aiImagePrompt'
     },
     {
         label: 'Blockquote',
-        icon: sanitizeUrl(quoteIcon),
+        icon: quoteIcon,
         id: 'blockquote'
     },
     {
         label: 'Code Block',
-        icon: sanitizeUrl(codeIcon),
+        icon: codeIcon,
         id: 'codeBlock'
     },
     {
         label: 'Horizontal Line',
-        icon: sanitizeUrl(lineIcon),
+        icon: lineIcon,
         id: 'horizontalRule'
     }
 ];
@@ -125,10 +121,6 @@ export const getEditorBlockOptions = () => {
             .sort((a, b) => a.label.localeCompare(b.label))
     );
 };
-
-export function sanitizeUrl(url: string): SafeUrl {
-    return domSanitizer.bypassSecurityTrustUrl(url);
-}
 
 export const suggestionOptions: DotMenuItem[] = [
     ...image,

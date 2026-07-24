@@ -3,10 +3,12 @@
 This document is the single source of truth for Angular development in the dotCMS frontend (Angular v20+, signals, standalone components, modern control flow). It merges project standards with the [Angular style guide](https://angular.dev/style-guide) and essentials.
 
 ## Tech Stack Configuration
-- **Angular**: 20.3.9 standalone components
-- **UI**: PrimeNG 17.18.11, Tailwind CSS 4.x
-- **State**: NgRx Signals, Component Store  
-- **Build**: Nx 20.5.1
+- **Angular**: 22.0.7 standalone components
+- **Node.js**: 22.22.3+ (pinned via `.nvmrc` / `nodejs-parent/pom.xml`)
+- **UI**: PrimeNG 21.1.3, PrimeIcons (`pi pi-*`), Tailwind CSS 4.x
+- **State**: NgRx Signals 21.x, Component Store  
+- **Build**: Nx 23.1.x
+- **TypeScript**: 6.x
 - **Testing**: Jest + Spectator (REQUIRED)
 
 ## Angular Best Practices

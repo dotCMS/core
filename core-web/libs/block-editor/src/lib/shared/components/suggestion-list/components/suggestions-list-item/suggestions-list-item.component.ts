@@ -8,6 +8,7 @@ import {
     OnInit,
     inject
 } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
     selector: 'dot-suggestions-list-item',
@@ -33,6 +34,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     icon = false;
 
     private readonly element = inject(ElementRef);
+    private readonly sanitizer = inject(DomSanitizer);
 
     @HostListener('mousedown', ['$event'])
     onMouseDown(e: MouseEvent) {
@@ -44,6 +46,14 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     ngOnInit() {
         this.icon = typeof this.url === 'string' && !(this.url.split('/').length > 1);
+    }
+
+    get safeUrl(): SafeUrl | string {
+        if (this.url.startsWith('data:')) {
+            return this.sanitizer.bypassSecurityTrustUrl(this.url);
+        }
+
+        return this.url;
     }
 
     getLabel(): string {
