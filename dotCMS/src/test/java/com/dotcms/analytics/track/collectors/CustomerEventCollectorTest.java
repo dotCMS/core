@@ -24,8 +24,8 @@ public class CustomerEventCollectorTest {
             + "(jdbc/dotCMSPool) with no InitialContext available, which throws "
             + "NoInitialContextException and then hangs the Surefire fork until the "
             + "ShutdownCoordinator times out and crashes the JVM, failing the whole test run. "
-            + "Unrelated to PR #36722 (SDK next-tag publishing) — pre-existing test/environment "
-            + "issue, being tracked and fixed separately.")
+            + "Unrelated to this PR — pre-existing test/environment issue, being tracked and "
+            + "fixed separately.")
     @Test
     public void test_collect_easy_path() throws IOException {
 
