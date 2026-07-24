@@ -12,6 +12,7 @@ import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.security.apps.SecretsStoreConcurrentWriteRaceTest;
 import com.dotcms.telemetry.collectors.MetricTimeoutTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
@@ -73,6 +74,7 @@ import org.junit.runners.Suite;
         ContentDriveHelperContentletAPIComparisonTest.class,
         ContentDriveWorkflowFilterTest.class,
         AppsAPIImplTest.class,
+        SecretsStoreConcurrentWriteRaceTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
