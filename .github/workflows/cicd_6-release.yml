@@ -59,6 +59,11 @@ on:
         type: boolean
         default: true
         required: false
+      bump_min_sdk_version:
+        description: 'Does this release include a change that breaks SDK compatibility? If true, opens a post-release PR bumping MinSdkVersion.VALUE and notifies Slack for human review. Ignored for LTS releases.'
+        type: boolean
+        default: false
+        required: false
       java-version:
         description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open). Compiler release auto-defaults to Java major version.'
         type: string
@@ -99,6 +104,79 @@ jobs:
             echo "::error::skip_latest must be blank (update the latest tag) or exactly 'DO NOT UPDATE LATEST' (skip it). Got: '${SKIP_LATEST}'. Re-run with a valid value."
             exit 1
           fi
+
+      # Closes the "forgot to check" gap for MinSdkVersion (see #36698): if a PR merged since
+      # the last standard release carries an SDK-breaking-change label but this run left
+      # bump_min_sdk_version false, fail loudly here rather than silently under-reporting the
+      # compatibility floor after the release ships. Read-only (no mutation), so it's safe to
+      # run before release-prepare even exists — deliberately plain `gh`/bash, not the
+      # release-qa-status TS tool, since we only need a label check, not QA-verdict aggregation.
+      - name: Validate bump_min_sdk_version against merged PR labels
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          BUMP_MIN_SDK_VERSION: ${{ github.event.inputs.bump_min_sdk_version }}
+        run: |
+          set -euo pipefail
+
+          # Only standard (non-LTS) releases carry the -## suffix; LTS patch releases don't
+          # participate in the @latest SDK contract, so skip entirely.
+          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$ ]]; then
+            echo "Non-standard release version '${RELEASE_VERSION}' (LTS or custom) — skipping SDK breaking-change validation."
+            exit 0
+          fi
+
+          THIS_TAG="v${RELEASE_VERSION}"
+
+          # Resolve the previous standard release tag the same way release-qa-status does
+          # (same STANDARD_RELEASE_PATTERN, kept in sync on purpose).
+          PREV_TAG=$(gh api "repos/${REPO}/releases?per_page=100" --paginate \
+            --jq '[.[] | select(.tag_name | test("^v[0-9]{2}\\.[0-9]{2}\\.[0-9]{2}-[0-9]{1,2}$"))] | .[].tag_name' \
+            | grep -v -F -- "${THIS_TAG}" | sort -V | tail -1 || true)
+
+          if [ -z "${PREV_TAG}" ]; then
+            echo "::warning::No previous standard release tag found — skipping SDK breaking-change validation (nothing to compare against)."
+            exit 0
+          fi
+
+          echo "Comparing ${PREV_TAG}...main for merged PRs since the last release."
+
+          # release-prepare hasn't created this release's tag yet at this point in the
+          # pipeline — main is the correct proxy for "what's about to ship" (release_commit
+          # defaults to main's tip the same way).
+          PR_NUMBERS=$(gh api "repos/${REPO}/compare/${PREV_TAG}...main" --paginate \
+            --jq '.commits[].commit.message' \
+            | grep -oE '\(#[0-9]+\)$' | grep -oE '[0-9]+' | sort -un || true)
+
+          BREAKING_PRS=()
+          for pr in ${PR_NUMBERS}; do
+            LABELS=$(gh pr view "${pr}" --repo "${REPO}" --json labels --jq '.labels[].name' 2>/dev/null || true)
+            if echo "${LABELS}" | grep -qxF 'SDK Breaking Change'; then
+              BREAKING_PRS+=("#${pr}")
+            fi
+          done
+
+          if [ "${#BREAKING_PRS[@]}" -gt 0 ] && [ "${BUMP_MIN_SDK_VERSION}" != "true" ]; then
+            echo "::error::This release (${THIS_TAG}) includes PR(s) labeled 'SDK Breaking Change' (${BREAKING_PRS[*]}) since ${PREV_TAG}, but 'bump_min_sdk_version' was left false. Re-run with bump_min_sdk_version=true, or remove the label from those PRs first if none of them actually break SDK compatibility."
+            exit 1
+          fi
+
+          if [ "${#BREAKING_PRS[@]}" -eq 0 ] && [ "${BUMP_MIN_SDK_VERSION}" = "true" ]; then
+            echo "::warning::bump_min_sdk_version=true but no merged PR since ${PREV_TAG} carries an SDK-breaking label. Proceeding, since a human explicitly opted in — but double-check this is intentional."
+          fi
+
+          # Non-fatal nudge: a stale, unmerged bump PR from a previous release won't be caught
+          # by this run's own dedupe (different branch name, keyed on this release's version).
+          # `gh pr list --head` only matches an exact branch name, not a prefix, so this has
+          # to go through the REST API directly and filter on head.ref with startswith().
+          STALE_PR=$(gh api "repos/${REPO}/pulls?state=open&base=main" --paginate \
+            --jq '.[] | select(.head.ref | startswith("sdk/bump-min-sdk-version-")) | .html_url' | head -1 || true)
+          if [ -n "${STALE_PR}" ]; then
+            echo "::warning::An unmerged MinSdkVersion bump PR from a previous release is still open: ${STALE_PR}. Consider merging it before this release ships another one."
+          fi
+
+          echo "SDK breaking-change validation passed (${#BREAKING_PRS[@]} breaking PR(s) found, bump_min_sdk_version=${BUMP_MIN_SDK_VERSION})."
 
   # Initialize - standard initialization phase (always first)
   initialize:
@@ -222,6 +300,130 @@ jobs:
             uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
           done
 
+  # Bump MinSdkVersion.java on main — only after a full green release, and only when the
+  # operator explicitly flagged this release as SDK-compatibility-breaking (see #36698).
+  # Never a direct push to main: opens a PR and asks a human to merge it (main has no
+  # auto-merge and requires a PR for any change, confirmed via the retired
+  # cicd_manual-release-sdks.yml's identical "Open post-release PR" precedent).
+  #
+  # A sibling job here (not a step in the generic, reusable cicd_comp_release-phase.yml)
+  # so this dotCMS-core-specific concern doesn't leak into a phase other callers reuse.
+  bump-min-sdk-version:
+    name: Bump MinSdkVersion.java
+    needs: [ release-prepare, build, deployment ]
+    # Strict success() gate (not the always()-based idiom used by build/deployment/release):
+    # a release that fails after release-prepare must NEVER cause main to advertise a
+    # stricter MIN_SDK_VERSION for a dotCMS version that was never actually shipped.
+    if: >-
+      success()
+      && github.event.inputs.bump_min_sdk_version == 'true'
+      && github.ref_name == 'main'
+      && needs.release-prepare.outputs.is_lts != 'true'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+
+      - name: Bump MinSdkVersion.VALUE and open PR
+        id: bump
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER || 'github-actions[bot]' }}
+          RELEASE_VERSION: ${{ needs.release-prepare.outputs.release_version }}
+        run: |
+          set -euo pipefail
+          git config user.name "${CI_MACHINE_USER}"
+          git config user.email "${CI_MACHINE_USER}@users.noreply.github.com"
+
+          FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
+          PR_BRANCH="sdk/bump-min-sdk-version-${RELEASE_VERSION}"
+
+          # Idempotency (a): main is already at this version — nothing to do. Covers both a
+          # true no-op release and a retried workflow whose bump PR already merged.
+          CURRENT=$(grep -oP '(?<=VALUE = ")[^"]+' "${FILE}")
+          if [ "${CURRENT}" = "${RELEASE_VERSION}" ]; then
+            echo "MinSdkVersion.VALUE is already ${RELEASE_VERSION} on main — nothing to bump."
+            echo "skipped=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          git fetch origin main
+          git checkout -B "${PR_BRANCH}" origin/main
+
+          sed -i "s/VALUE = \"[^\"]*\"/VALUE = \"${RELEASE_VERSION}\"/" "${FILE}"
+
+          # Verify the substitution actually landed. If the file's VALUE = "..." literal
+          # ever gets reformatted (different spacing, wrapped differently, etc.), sed
+          # silently matches nothing instead of erroring — without this check we'd fall
+          # through to "nothing to commit" and still push/open an empty, misleading PR.
+          NEW_VALUE=$(grep -oP '(?<=VALUE = ")[^"]+' "${FILE}")
+          if [ "${NEW_VALUE}" != "${RELEASE_VERSION}" ]; then
+            echo "::error::Failed to bump MinSdkVersion.VALUE — expected '${RELEASE_VERSION}' after the edit but found '${NEW_VALUE}'. The VALUE = \"...\" literal in ${FILE} may have been reformatted; update the sed pattern above to match its current shape."
+            exit 1
+          fi
+
+          git add "${FILE}"
+
+          if git diff --cached --quiet; then
+            echo "No diff after edit — nothing to commit."
+          else
+            git commit -m "chore(sdk): bump MinSdkVersion.VALUE to ${RELEASE_VERSION}"
+          fi
+
+          git push --force origin "${PR_BRANCH}"
+
+          # Idempotency (b): reuse an already-open PR for this exact version/branch instead
+          # of opening a duplicate on a retried run.
+          EXISTING_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${PR_BRANCH}" --base main --json url --jq '.[0].url' 2>/dev/null || true)
+          if [ -n "${EXISTING_PR}" ]; then
+            echo "PR already exists: ${EXISTING_PR}"
+            PR_URL="${EXISTING_PR}"
+          else
+            PR_URL=$(gh pr create \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "chore(sdk): bump MinSdkVersion.VALUE to ${RELEASE_VERSION}" \
+              --body "Automated post-release bump. Release \`${RELEASE_VERSION}\` was flagged (via \`bump_min_sdk_version\`) as containing an SDK-breaking change. This raises the compatibility floor advertised via the \`X-DotCMS-Min-SDK\` header to \`${RELEASE_VERSION}\`. Please review and merge — this does not auto-merge." \
+              --base main \
+              --head "${PR_BRANCH}")
+          fi
+          echo "pr_url=${PR_URL}" >> "${GITHUB_OUTPUT}"
+          echo "skipped=false" >> "${GITHUB_OUTPUT}"
+
+      - name: Slack Notification (bump PR ready for review)
+        if: success() && steps.bump.outputs.skipped == 'false'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_orange_circle: *Attention dotters:* dotCMS `${{ needs.release-prepare.outputs.release_version }}` was released with an SDK-breaking change.
+            >
+            > A PR bumping `MinSdkVersion.VALUE` to `${{ needs.release-prepare.outputs.release_version }}` is open on `main`.
+            > *Please review and merge the post-release PR ASAP:* <${{ steps.bump.outputs.pr_url }}|View PR>
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Slack Notification (bump PR failure)
+        if: failure()
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *MinSdkVersion bump FAILED!*
+            >
+            > Release `${{ needs.release-prepare.outputs.release_version }}` succeeded, but opening the post-release PR to bump `MinSdkVersion.VALUE` failed.
+            > *Triggered by:* `${{ github.actor }}`
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
   # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
   # Waits for deployment to complete to safely update labels only if both succeed
   release:
@@ -264,7 +466,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, deployment, release ]
+    needs: [ initialize, build, deployment, release, bump-min-sdk-version ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ github.run_id }}
