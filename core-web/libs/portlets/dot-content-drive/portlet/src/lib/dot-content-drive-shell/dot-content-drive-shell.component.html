@@ -30,7 +30,6 @@
 </div>
 
 <dot-content-drive-dropzone
-    #uploadAnchor
     data-testid="dropzone"
     (uploadFiles)="onRequestUpload($event)"
     class="col-start-2 row-start-3 overflow-auto">
@@ -118,6 +117,27 @@
             (selectUploadType)="onUploadTypeSelected($event)" />
     }
 </p-popover>
+
+<p-dialog
+    [visible]="$uploadModalVisible()"
+    [header]="'content-drive.dialog.upload-selector.header' | dm"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
+    appendTo="body"
+    data-testId="upload-selector-modal"
+    [pt]="{ content: { class: 'w-96 max-w-[92vw] p-0!' } }"
+    (visibleChange)="onUploadModalVisibleChange($event)">
+    @if ($uploadSelectorPayload(); as payload) {
+        <dot-content-drive-dialog-upload-selector
+            data-testId="dialog-upload-selector-modal"
+            [targetFolder]="payload.targetFolder"
+            [files]="payload.files"
+            (selectUploadType)="onUploadTypeSelected($event)" />
+    }
+</p-dialog>
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
 <input type="file" (change)="onFileChange($event)" #fileInput hidden />

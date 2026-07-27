@@ -156,13 +156,16 @@ export class DotContentDriveShellComponent {
      */
     readonly $uploadSelectorPopover = viewChild<Popover>('uploadSelectorPopover');
 
-    /** Fallback anchor for the drag-and-drop / sidebar flow, which has no trigger element. */
-    readonly $uploadAnchor = viewChild('uploadAnchor', { read: ElementRef });
-
-    /** Payload (target folder + optional dropped files) driving the upload-selector popover body. */
+    /** Payload (target folder + optional dropped files) driving the upload-selector body. */
     readonly $uploadSelectorPayload = signal<DotContentDriveUploadSelectorPayload | undefined>(
         undefined
     );
+
+    /**
+     * Drives the drag-and-drop upload modal. The Upload-button flow uses the popover (anchored to
+     * the button); drag-and-drop has no trigger element, so it prompts with a centered modal.
+     */
+    readonly $uploadModalVisible = signal(false);
 
     /**
      * Holds the selection emitted by the upload dialog while the OS file picker is open (Upload-button
@@ -399,7 +402,9 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        this.openUploadSelector({ targetFolder, files });
+        // No preference: prompt with a modal — drag-and-drop has no trigger element to anchor to.
+        this.$uploadSelectorPayload.set({ targetFolder, files });
+        this.$uploadModalVisible.set(true);
     }
 
     /**
@@ -420,33 +425,33 @@ export class DotContentDriveShellComponent {
     }
 
     /**
-     * Opens the upload-type selector popover (Asset vs File). Anchors to the trigger event's
-     * element when present (Upload button), otherwise to the content area (drag-and-drop / sidebar).
+     * Opens the upload-type selector popover (Asset vs File), anchored to the Upload button.
      */
-    protected openUploadSelector(
-        payload: DotContentDriveUploadSelectorPayload,
-        event?: MouseEvent
-    ) {
+    protected openUploadSelector(payload: DotContentDriveUploadSelectorPayload, event: MouseEvent) {
         this.$uploadSelectorPayload.set(payload);
+        this.$uploadSelectorPopover()?.show(event, event.currentTarget as HTMLElement);
+    }
 
-        const popover = this.$uploadSelectorPopover();
-        const anchor = this.$uploadAnchor()?.nativeElement;
+    /**
+     * Clears the drag-and-drop upload modal when it is dismissed (X / ESC / mask click).
+     */
+    protected onUploadModalVisibleChange(visible: boolean) {
+        this.$uploadModalVisible.set(visible);
 
-        if (event) {
-            popover?.show(event, event.currentTarget ?? anchor);
-        } else {
-            popover?.show(null, anchor);
+        if (!visible) {
+            this.$uploadSelectorPayload.set(undefined);
         }
     }
 
     /**
-     * Handles the asset-type choice emitted by the upload selector menu.
+     * Handles the asset-type choice emitted by the upload selector (popover or modal).
      * - Drag-and-drop: the files are already in the selection, so upload immediately.
      * - Upload button: stash the selection and open the OS file picker; {@link onFileChange}
      *   completes the upload once files are chosen.
      */
     protected onUploadTypeSelected(selection: DotContentDriveUploadSelection) {
         this.$uploadSelectorPopover()?.hide();
+        this.$uploadModalVisible.set(false);
         this.$uploadSelectorPayload.set(undefined);
 
         if (selection.files?.length) {
@@ -456,7 +461,7 @@ export class DotContentDriveShellComponent {
         }
 
         this.$activeSelection.set(selection);
-        this.$fileInput().nativeElement.click();
+        this.$fileInput()?.nativeElement.click();
     }
 
     /**
