@@ -41,6 +41,11 @@ const image: DotMenuItem[] = [
         label: 'Video',
         icon: 'movie',
         id: 'video'
+    },
+    {
+        label: 'Audio',
+        icon: 'audiotrack',
+        id: 'audio'
     }
 ];
 
@@ -152,6 +157,7 @@ const FORBIDDEN_CHANGE_TO_BLOCKS = {
     table: true,
     image: true,
     video: true,
+    audio: true,
     gridBlock: true
 };
 

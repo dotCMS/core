@@ -26,6 +26,27 @@
                         data-testid="field-filter-text" />
                 </div>
             }
+            @case ('key-value') {
+                <!--
+                    Key/Value: a single input. A bare term is a loose contains (matches a key OR a
+                    value); the `key:value` shorthand is translated to the joined `key_value` term
+                    for an exact-pair match when the search payload is built.
+                -->
+                <div class="flex w-72 flex-col gap-1 p-3" data-testid="field-filter-panel">
+                    <input
+                        pInputText
+                        type="text"
+                        class="w-full"
+                        [ngModel]="$textValue()"
+                        (ngModelChange)="onTextInput($event)"
+                        [placeholder]="'content-drive.field-filter.key-value.placeholder' | dm"
+                        [attr.aria-label]="$title()"
+                        data-testid="field-filter-key-value" />
+                    <small class="text-slate-500" data-testid="field-filter-key-value-hint">
+                        {{ 'content-drive.field-filter.key-value.hint' | dm }}
+                    </small>
+                </div>
+            }
             @case ('single-select') {
                 <p-listbox
                     class="block w-72"

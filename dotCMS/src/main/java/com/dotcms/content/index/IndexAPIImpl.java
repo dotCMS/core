@@ -4,7 +4,6 @@ import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -438,14 +437,12 @@ public class IndexAPIImpl implements IndexAPI {
      * provider gets the bare name. This is what makes lifecycle ops (clear/open/close/replicas)
      * a faithful mirror across both engines instead of silently hitting only ES.
      *
-     * <p>Site-search indices are the exception — their OS copy is NOT {@code .os}-tagged (separate
-     * cluster, own {@code siteSearch} slot), so they stay bare on both engines.</p>
+     * <p>Applies uniformly, including site-search indices: their OpenSearch copy is now
+     * {@code .os}-tagged like every other migrated index (issue #36672), so no carve-out is needed.</p>
      */
     private String providerName(final IndexAPI provider, final String indexName) {
         final String logical = IndexTag.OS.untag(indexName);
-        return provider == router.osImpl() && !IndexType.SITE_SEARCH.is(logical)
-                ? IndexTag.OS.tag(logical)
-                : logical;
+        return provider == router.osImpl() ? IndexTag.OS.tag(logical) : logical;
     }
 
     @Override
