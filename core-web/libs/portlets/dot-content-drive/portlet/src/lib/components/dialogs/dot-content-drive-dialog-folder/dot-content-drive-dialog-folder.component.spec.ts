@@ -396,7 +396,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
         it('should render the three upload-behavior options', () => {
             expect(spectator.query('[data-testid="upload-behavior-option-null"]')).toBeTruthy();
             expect(spectator.query('[data-testid="upload-behavior-option-DOTASSET"]')).toBeTruthy();
-            expect(spectator.query('[data-testid="upload-behavior-option-FILEASSET"]')).toBeTruthy();
+            expect(
+                spectator.query('[data-testid="upload-behavior-option-FILEASSET"]')
+            ).toBeTruthy();
         });
 
         it('should default to "Ask each time" (null) on create', () => {
