@@ -3889,6 +3889,235 @@
           "description": "1. Create a language\n    \n2. Create a child content type\n    \n3. Create a parent content type with relationship field to the previously created content type\n    \n4. Create a child content with the new lang created\n    \n5. Create a parent content related to the previously created content child with the new lang created\n    \n6. Execute a search, this should return the related content with the expected language"
         }
       ]
+    },
+    {
+      "name": "KeyValue field - insertion order preserved",
+      "item": [
+        {
+          "name": "Create Content Type with KeyValue field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Content type created successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var ct = pm.response.json().entity[0];",
+                  "    pm.collectionVariables.set('kvOrderCTId', ct.id);",
+                  "    pm.collectionVariables.set('kvOrderCTVarName', ct.variable);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"baseType\": \"CONTENT\",\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"description\": \"Temporary CT for KeyValue insertion-order test\",\n    \"name\": \"KVOrderTest{{$timestamp}}\",\n    \"variable\": \"kvOrderTest{{$timestamp}}\",\n    \"fixed\": false,\n    \"fields\": [\n      {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n        \"dataType\": \"SYSTEM\",\n        \"fieldType\": \"Row\",\n        \"fieldTypeLabel\": \"Row\",\n        \"name\": \"fields\",\n        \"sortOrder\": 0\n      },\n      {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n        \"dataType\": \"SYSTEM\",\n        \"fieldType\": \"Column\",\n        \"fieldTypeLabel\": \"Column\",\n        \"name\": \"fields\",\n        \"sortOrder\": 1\n      },\n      {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n        \"dataType\": \"TEXT\",\n        \"fieldType\": \"Text\",\n        \"fieldTypeLabel\": \"Text\",\n        \"name\": \"Title\",\n        \"variable\": \"title\",\n        \"sortOrder\": 2,\n        \"listed\": true,\n        \"searchable\": true\n      },\n      {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableKeyValueField\",\n        \"dataType\": \"LONG_TEXT\",\n        \"fieldType\": \"Key-Value\",\n        \"fieldTypeLabel\": \"Key/Value\",\n        \"name\": \"Kv Field\",\n        \"variable\": \"kvField\",\n        \"sortOrder\": 3,\n        \"indexed\": true,\n        \"searchable\": true\n      }\n    ]\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Publish contentlet with D,B,C,A KeyValue entries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Contentlet published successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.errors.length).to.eql(0);",
+                  "    var key = Object.keys(jsonData.entity.results[0])[0];",
+                  "    var result = jsonData.entity.results[0][key];",
+                  "    pm.expect(result.errorMessage).to.equal(undefined, 'Unexpected error: ' + result.errorMessage);",
+                  "    pm.collectionVariables.set('kvOrderContentId', result.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{kvOrderCTVarName}}\",\n      \"title\": \"KV Order Test\",\n      \"kvField\": {\n        \"D\": \"d\",\n        \"B\": \"b\",\n        \"C\": \"c\",\n        \"A\": \"a\"\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Retrieve contentlet - assert KeyValue insertion order preserved",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('KeyValue field keys are returned in insertion order (D,B,C,A) \u2014 not alphabetical', function () {",
+                  "    var entity = pm.response.json().entity;",
+                  "    pm.expect(entity.kvField).to.not.equal(undefined, 'kvField must be present in the response');",
+                  "    // Object.keys() preserves insertion order in V8 (Postman sandbox)",
+                  "    // If ORDER_MAP_ENTRIES_BY_KEYS is not bypassed, keys come back as A,B,C,D",
+                  "    var keys = Object.keys(entity.kvField);",
+                  "    pm.expect(keys).to.eql(['D', 'B', 'C', 'A'],",
+                  "        'Expected insertion order D,B,C,A but got: ' + keys.join(','));",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/{{kvOrderContentId}}?depth=2",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "{{kvOrderContentId}}"
+              ],
+              "query": [
+                {
+                  "key": "depth",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cleanup - Delete contentlet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Contentlet deleted', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/{{kvOrderContentId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "{{kvOrderContentId}}"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Cleanup - Delete content type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Content type deleted', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/{{kvOrderCTId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "{{kvOrderCTId}}"
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
     }
   ],
   "auth": {
@@ -3999,6 +4228,21 @@
     {
       "key": "parentContentId",
       "value": ""
+    },
+    {
+      "key": "kvOrderCTId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "kvOrderCTVarName",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "kvOrderContentId",
+      "value": "",
+      "type": "default"
     }
   ]
 }
