@@ -1,4 +1,4 @@
-<div class="flex flex-col divide-y divide-gray-200">
+<div class="flex flex-col">
     @for (option of options; track option.baseType) {
         <button
             type="button"
@@ -29,7 +29,7 @@
     }
 
     <p
-        class="m-0 px-5 py-3 text-sm text-gray-600"
+        class="m-0 mt-1 border-t border-gray-200 px-5 py-3 text-sm text-gray-600"
         data-testid="upload-selector-settings-hint">
         {{ 'content-drive.dialog.upload-selector.settings-hint' | dm }}
     </p>
