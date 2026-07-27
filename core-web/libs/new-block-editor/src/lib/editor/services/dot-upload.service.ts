@@ -5,6 +5,10 @@ import { Injectable, inject } from '@angular/core';
 import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import {
+    type DotAudioData,
+    audioMetaAttrsFromContentlet
+} from '../extensions/nodes/audio.extension';
 import { type DotImageData } from '../extensions/nodes/image.extension';
 import {
     type DotVideoData,
@@ -28,6 +32,12 @@ export interface UploadedImage {
 export interface UploadedVideo extends DotVideoMetaAttrs {
     src: string;
     data: DotVideoData;
+}
+
+export interface UploadedAudio {
+    src: string;
+    data: DotAudioData;
+    mimeType: string | null;
 }
 
 /**
@@ -66,6 +76,16 @@ export class DotUploadService {
             // mimeType / width / height / orientation from the published contentlet's metadata,
             // matching what the dotCMS picker path stores (parity with legacy getVideoAttrs).
             ...videoMetaAttrsFromContentlet(contentlet)
+        };
+    }
+
+    async uploadAudio(file: File): Promise<UploadedAudio> {
+        const contentlet = await this.publishAsset(file);
+        return {
+            src: sameOriginAssetUrl(contentlet.asset),
+            data: toAssetData(contentlet) satisfies DotAudioData,
+            // mimeType from the published contentlet's metadata, matching the dotCMS picker path.
+            mimeType: audioMetaAttrsFromContentlet(contentlet).mimeType
         };
     }
 

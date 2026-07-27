@@ -24,6 +24,10 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.junit.Test;
+import org.opensearch.client.opensearch._types.aggregations.Aggregate;
+import org.opensearch.client.opensearch._types.aggregations.Buckets;
+import org.opensearch.client.opensearch._types.aggregations.DateHistogramBucket;
+import org.opensearch.client.opensearch._types.aggregations.HistogramBucket;
 
 /**
  * Fast unit coverage for the vendor-neutral aggregation model introduced for
@@ -311,6 +315,53 @@ public class AggregationDomainTest {
         when(esAggs.asList()).thenReturn(List.of(histogram));
 
         final AggregationBucket b = Aggregation.from(esAggs).get("by_len").getBuckets().get(0);
+        assertEquals("a numeric key must be preserved as a long", 50L, b.getKeyAsNumber().longValue());
+        assertEquals("50", b.getKeyAsString());
+    }
+
+    /**
+     * The OpenSearch factory must map a {@code date_histogram} aggregation the same way the ES
+     * factory does — previously {@code fromSingleOS} had no histogram branch and dropped it entirely,
+     * so a {@code by_month} agg silently disappeared under OpenSearch reads (issue #36360, I-6). The
+     * OpenSearch date-histogram key is already epoch-millis, and must land on {@code getKeyAsNumber()}
+     * unchanged, matching the ES path.
+     */
+    @Test
+    public void osFactory_dateHistogram_mapsBucketsWithEpochMillisKey() {
+        final long epochMillis =
+                ZonedDateTime.of(2024, 1, 15, 0, 0, 0, 0, ZoneOffset.UTC).toInstant().toEpochMilli();
+
+        final Aggregate dateHistogram = Aggregate.of(a -> a.dateHistogram(dh -> dh.buckets(
+                Buckets.of(bs -> bs.array(List.of(
+                        DateHistogramBucket.of(bk -> bk.key(epochMillis).docCount(4L))))))));
+
+        final Aggregation byMonth = Aggregation.fromOS(Map.of("by_month", dateHistogram)).get("by_month");
+        assertNotNull("date_histogram aggregation must be mapped, not dropped", byMonth);
+        assertEquals("type must match the ES path for parity", "date_histogram", byMonth.getType());
+        assertEquals("one bucket expected", 1, byMonth.getBuckets().size());
+
+        final AggregationBucket b = byMonth.getBuckets().get(0);
+        assertEquals("doc count must round-trip", 4L, b.getDocCount());
+        assertEquals("the epoch-millis key must survive as a number",
+                epochMillis, b.getKeyAsNumber().longValue());
+    }
+
+    /**
+     * The OpenSearch factory must also map a numeric {@code histogram}; its {@code double} key is
+     * normalized to its {@code long} form to match {@code AggregationBucket.fromHistogram} on the ES
+     * side (issue #36360, I-6).
+     */
+    @Test
+    public void osFactory_numericHistogram_normalizesDoubleKeyToLong() {
+        final Aggregate histogram = Aggregate.of(a -> a.histogram(h -> h.buckets(
+                Buckets.of(bs -> bs.array(List.of(
+                        HistogramBucket.of(bk -> bk.key(50.0).docCount(2L))))))));
+
+        final Aggregation byLen = Aggregation.fromOS(Map.of("by_len", histogram)).get("by_len");
+        assertNotNull("numeric histogram aggregation must be mapped", byLen);
+        assertEquals("histogram", byLen.getType());
+
+        final AggregationBucket b = byLen.getBuckets().get(0);
         assertEquals("a numeric key must be preserved as a long", 50L, b.getKeyAsNumber().longValue());
         assertEquals("50", b.getKeyAsString());
     }

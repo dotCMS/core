@@ -6,7 +6,7 @@
 **Fix PR:** [#35632 — Startup hardening, automatic migration shutdown, phase-aware index init, thread-safe formatter](https://github.com/dotCMS/core/pull/35632)
 **Scope:** ElasticSearch → OpenSearch dual-write and read migration
 
-**Status:** Phases 0 and 1 are fully testable. Phase 2 dual-write is testable — every ES write is mirrored to OS and can be verified via OpenSearch Dashboards — but the dotCMS query layer has **not yet been migrated**, so application-level read validation is only partial in Phase 2. Phase 3 is **not functionally testable** at this time (documented cases only). PR #35632 introduced an **automatic migration shutdown**: when OpenSearch is unreachable or reports the wrong version in Phase ≥ 1, dotCMS resets to Phase 0 by itself and keeps serving from ES — it does **not** crash or hang. The visible effects of that shutdown are two `ERROR` lines + one `WARN` line (there is **no** `FATAL` on the startup path — see **Helpers / H5**). This plan is written for a tester who exercises the system from the outside; the test cases live in **Groups 1–16** below.
+**Status:** All four phases (0–3) are now testable end-to-end, **including Phase 3**. The dotCMS query/read layer has been migrated, so application-level reads can be validated against OpenSearch in phases 2 and 3 — not only via the dashboards. The migration is close to complete but still under active QA: **expect to find bugs, and file them** against the QA epic [#35476](https://github.com/dotCMS/core/issues/35476). PR #35632 introduced an **automatic migration shutdown**: when OpenSearch is unreachable or reports the wrong version in Phase ≥ 1, dotCMS resets to Phase 0 by itself and keeps serving from ES — it does **not** crash or hang. The visible effects of that shutdown are two `ERROR` lines + one `WARN` line (there is **no** `FATAL` on the startup path — see **Helpers / H5**). This plan is written for a tester who exercises the system from the outside; the test cases live in **Groups 1–16** below.
 
 ---
 
@@ -35,8 +35,13 @@ services and ports is in **Environment**; the limited-user (non-admin OS) varian
 | `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials for OpenSearch. With the open dev stack these are `admin` / `admin`; the limited-user stack (Group 16) uses the restricted `dotcms-es-user`. |
 | `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS (`false` for the open dev stack; the limited-user stack uses HTTPS plus `OS_TLS_TRUST_SELF_SIGNED=true`). |
 
-> A phase change is read at startup **and** on each routing decision, so it takes effect without a restart —
-> but every cluster node must carry the same value. See **Environment** for the multi-node layout (Group 3).
+> A phase change is re-read on each routing decision, so the **routing** (which engine gets writes /
+> serves reads) takes effect without a restart; every cluster node must carry the same value. **But the
+> one-time setup for a phase runs only at startup** — the OS connectivity / version / endpoint-separation
+> validation, the automatic migration shutdown, and the creation of the OS index and its `indicies` rows.
+> So **turning the migration on (Phase 0 → 1) requires a restart** (otherwise the OS index is never
+> created and validation never runs), and advancing to a later phase should restart to re-validate the
+> phase actually in effect. See **Environment** for the multi-node layout (Group 3).
 
 ---
 
@@ -46,7 +51,7 @@ Validate that the ES → OpenSearch migration pipeline delivers:
 
 1. **Zero regression** on ES-backed functionality (Phase 0 / no flag set).
 2. **Correct dual-write** in Phase 1 — every ES write is mirrored to OS; failures on OS are fire-and-forget (never affect the business operation).
-3. **Correct dual-read** in Phase 2 — reads switch to OS; field mappings are structurally equivalent to ES; record counts match between the two indices (partial scope — see Status).
+3. **Correct dual-read** in Phase 2 — reads switch to OS; field mappings are structurally equivalent to ES; record counts match between the two indices, and a failed OS read falls back to ES.
 4. **Correct index lifecycle** across all phases — activate, deactivate, delete, and reindex operations behave consistently and keep the `indicies` DB table in sync.
 5. **Safe failure modes** — dotCMS starts gracefully when OpenSearch is unavailable. In Phase ≥ 1, an unreachable or mismatched OS automatically shuts the migration off (resets to Phase 0 in memory) and dotCMS keeps running on ES.
 6. **REST API parity** — `/v1/esindex` endpoints behave correctly in both single-backend and dual-write phases, and enforce authentication.
@@ -69,10 +74,10 @@ Full specification: [`docs/backend/OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATIO
 
 | Phase | Testable? | Limitation |
 |-------|-----------|------------|
-| 0 | Yes — fully | No dependencies beyond existing ES stack |
+| 0 | Yes — fully | No dependencies beyond the existing ES stack |
 | 1 | Yes — fully | Dual-write verified via Kibana + OS Dashboards |
-| 2 | Partially | Dual-write testable via OS Dashboards; application-level reads **not testable** — dotCMS query layer not yet migrated |
-| 3 | No | Query layer not migrated; OS-only reads are broken; no ES fallback — activating Phase 3 produces broken application reads |
+| 2 | Yes — fully | Reads served by OS; application-level reads validated end-to-end, with automatic fallback to ES on a failed OS read |
+| 3 | Yes — fully | OS-only writes, reads, and reindex; ES decommissioned, so OS failures surface to the caller (no fallback) |
 
 ---
 
@@ -211,7 +216,7 @@ from the code — match it when a case says "the shutdown fired". Note the level
 and one `WARN` line — there is NO `FATAL` line on this path.**
 
 ```
-ERROR  OpenSearch configuration error — halting OS migration, dotCMS will fall back to ES-only: <reason>
+ERROR  OpenSearch startup validation FAILED — halting OS migration; dotCMS falls back to ES-only (PHASE_0_MIGRATION_NOT_STARTED): <reason>
 ERROR  OpenSearch migration halted: invalid configuration detected at startup. Verify OS_ENDPOINTS, OS version, and FEATURE_FLAG_OPEN_SEARCH_PHASE, then restart dotCMS.
 WARN   Migration phase reset to PHASE_0_MIGRATION_NOT_STARTED (was PHASE_1_DUAL_WRITE_ES_READS). This change is runtime-only — persist it in dotmarketing-config.properties to survive a restart.
 ```
@@ -815,7 +820,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
     non-blocking).
 - **Type:** Manual
 
-## TC-039 — Phase 2: when an OpenSearch read fails, dotCMS falls back to ES (partial scope)
+## TC-039 — Phase 2: when an OpenSearch read fails, dotCMS falls back to ES
 
 - **Objective:** In Phase 2 the new engine serves reads. Prove that if an OpenSearch read throws,
   dotCMS automatically retries the read against the old engine so the user still gets a correct
@@ -824,8 +829,8 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   stop OpenSearch, or delete/close the OS working index) and then run a content search.
 - **Risk:** Medium
 - **Preconditions:** dotCMS in **Phase 2**, content already dual-written.
-  > Phase 2 is only partially testable in this plan (the higher-level query layer is not fully
-  > migrated) — focus on the read-fallback behavior and the log line.
+  > Focus this case on the read-fallback behavior and the log line: content is served correctly even
+  > when the OS read throws, and the failure is logged for operators.
 - **Steps:**
   1. Confirm content is searchable in Phase 2.
   2. Break OpenSearch reads (stop OS or remove the OS working index).
@@ -836,19 +841,20 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
     `OS read failed in Phase 2 — falling back to ES. OS index may be stale or unavailable. Cause: …`
 - **Type:** Manual
 
-## TC-040 — Phase 3 does NOT auto-rollback (documentation / negative case — out of functional scope)
+## TC-040 — Phase 3 does NOT auto-rollback (negative case)
 
 - **Objective:** Document that the automatic fallback to ES exists only in Phases 1–2. In Phase 3 (ES
   decommissioned) a failed OpenSearch startup validation must NOT silently roll back to ES; it fails
-  loudly instead. **Phase 3 is not functionally testable in this plan — this case only pins the
-  expected log/behavior so nobody assumes the Phase-1 fallback applies.**
-- **Risk:** Low (informational)
-- **Preconditions:** Would require Phase 3 — do not actually run; record expected behavior only.
-- **Expected Result (documented):**
+  loudly instead. **This case pins that behavior so nobody assumes the Phase-1/2 fallback applies in
+  Phase 3.**
+- **Risk:** Medium
+- **Preconditions:** dotCMS configured for **Phase 3** with an OpenSearch cluster that then fails
+  startup validation (e.g. stop the target engine, or point `OS_ENDPOINTS` at a wrong/unreachable URL).
+- **Expected Result:**
   - dotCMS does **not** reset to Phase 0. A `DotRuntimeException` is raised whose message starts with
     `OpenSearch startup validation failed in PHASE_3_OPENSEARCH_ONLY.` and the outer handler logs it
     as `FATAL Failed to create new indexes: …`.
-- **Type:** Manual (documentation only)
+- **Type:** Manual
 
 ---
 
@@ -1013,7 +1019,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   incomplete OS index would surface directly to users).
 - **Risk:** High
 - **Preconditions:** dotCMS in **Phase 2** with content present in both engines.
-  > Phase 2 is only partially testable in this plan; focus on which engines get rebuilt and on completeness.
+  > In Phase 2 OS also serves reads, so an incomplete OS index surfaces directly to users — focus on which engines get rebuilt and on completeness.
 - **Steps:** Same as TC-048, run in Phase 2.
 - **Expected Result (desired — decision B):**
   - Both engines rebuilt to the expected count; reindex completes without hanging.
@@ -1216,7 +1222,7 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 
 - **Objective:** the limited role's scroll/read permissions are sufficient for dotCMS searches against OS.
 - **Risk:** Medium
-- **Preconditions:** content dual-written (TC-055); to exercise OS reads use Phase 2 (partial scope) or query OS directly.
+- **Preconditions:** content dual-written (TC-055); to exercise OS reads use Phase 2 or query OS directly.
 - **Steps:**
   1. As the limited user, search the OS working index:
      `curl -sk "https://localhost:9201/<…os>/_search?q=*:*" -u dotcms-es-user:'Dev!dotcms-EsUser-2026'`.
@@ -1272,7 +1278,7 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 7. TC-036 (delete happy path) → TC-016, TC-017, TC-018, TC-019, TC-020 (index delete & rebuild)
 8. TC-021, TC-022 (delete API security)
 9. TC-023, TC-024, TC-025 (cross-engine query equivalence)
-10. TC-037 (same-endpoint guard), TC-038 (connection give-up), TC-039 (Phase 2 fallback), TC-040 (Phase 3 doc-only)
+10. TC-037 (same-endpoint guard), TC-038 (connection give-up), TC-039 (Phase 2 fallback), TC-040 (Phase 3 no auto-rollback)
 11. TC-041 (divergent-name fan-out — open issue), TC-042 (rollback drift)
 12. TC-043 (replicas setting), TC-044 (permission update), TC-045 (draft working/live), TC-046 (multi-language)
 13. TC-047 (Phase 0 reindex baseline) → TC-048 (Phase 1 both) → TC-049 (Phase 2 both) → TC-050 (Phase 3 OS-only); for each run TC-051 (completeness) and TC-052 (no-hang / diagnose)
@@ -1283,7 +1289,6 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 > a separate workstream under the same epic (#35476). Mapping to the epic: G1–G8 = #35635–#35642;
 > G12=#36218, G13=#36219, G14=#36220; G15 = reindex (TC-047–TC-052); G16 = limited-user (TC-053–TC-058).
 >
-> Lower-confidence / out-of-scope flags: TC-039 & TC-040 (Phase 2/3 — partial/doc-only),
-> TC-041 & TC-042 (known open issue — expect bug reports, not clean pass/fail),
+> Lower-confidence flags: TC-041 & TC-042 (known open issue — expect bug reports, not clean pass/fail),
 > TC-048 & TC-049 (assert DESIRED reindex-to-both per decision B — current build may rebuild ES only;
 > record as gap), TC-050 (Phase 3 — needs Phase 3 env; known bugs #36077/#36054).

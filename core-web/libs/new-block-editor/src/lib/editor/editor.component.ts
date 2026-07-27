@@ -287,7 +287,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
     /** Opens/closes caret-anchored popovers and supplies payloads (e.g. link edit context). */
     private readonly popovers = inject(EditorPopoverService);
 
-    /** Uploads user-dropped image and video files to dotCMS. */
+    /** Uploads user-dropped image, video, and audio files to dotCMS. */
     private readonly dotUpload = inject(DotUploadService);
 
     /** Document root for fullscreen scroll lock and global key listeners. */
@@ -446,7 +446,8 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                         slice,
                         moved,
                         (file) => this.dotUpload.uploadImage(file),
-                        (file) => this.dotUpload.uploadVideo(file)
+                        (file) => this.dotUpload.uploadVideo(file),
+                        (file) => this.dotUpload.uploadAudio(file)
                     ),
                 handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },

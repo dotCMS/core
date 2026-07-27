@@ -19,6 +19,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -142,6 +143,10 @@ public class VelocityLiveMode extends VelocityModeHandler {
         // Fire the page rules until we know we have permission.
         RulesEngine.fireRules(request, response, htmlPage, Rule.FireOn.EVERY_PAGE);
 
+        // Record this request in the session clickstream BEFORE any page-cache short-circuit so
+        // visit-history rule conditions ("Has Visited URL" / "Pages Viewed") still see the visit
+        // even when a cached copy of the page is served. Regression fix for issue #36604.
+        recordClickstream();
 
         addHeaders(htmlPage);
         processUrlMapTags(request);
@@ -268,6 +273,26 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     User getUser() {
         return PortalUtil.getUser(request);
+    }
+
+    /**
+     * Records the current request in the visitor's session clickstream so Rules Engine conditions
+     * that inspect visit history -- "Has Visited URL" ({@code VisitedUrlConditionlet}) and
+     * "Pages Viewed" ({@code PagesViewedConditionlet}) -- can evaluate against it.
+     * <p>
+     * Gated by the legacy {@code ENABLE_CLICKSTREAM_TRACKING} flag (default {@code false}),
+     * preserving pre-regression behaviour. Recording is a session-scoped, in-memory operation, so a
+     * failure here is logged and swallowed rather than allowed to break page delivery.
+     */
+    private void recordClickstream() {
+        if (!Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
+            return;
+        }
+        Logger.debug(this.getClass(), "Recording the ClickStream");
+        Try.run(() -> ClickstreamFactory.addRequest(request, response, host))
+                .onFailure(e -> Logger.warnAndDebug(VelocityLiveMode.class,
+                        "Unable to record clickstream for URI: " + request.getRequestURI()
+                                + " : " + e.getMessage(), e));
     }
 
     /**

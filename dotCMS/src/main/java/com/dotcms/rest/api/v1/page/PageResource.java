@@ -2069,8 +2069,9 @@ public class PageResource {
     /**
      * Reduces duplicate containers by combining their contentlet style mappings.
      * Converts ContentWithStylesForm (REST input) to ContainerEntry (internal format).
-     * If the same container (containerId + uuid) appears multiple times, their styles are merged.
-     * When the same contentlet appears in multiple entries, the last one wins (overwrites).
+     * If the same container (personaTag + containerId + uuid) appears multiple times, their
+     * styles are merged. When the same contentlet appears in multiple entries, the last one wins
+     * (overwrites).
      *
      * @param stylesForms List of style forms that may contain duplicates
      * @return List of deduplicated ContainerEntry objects ready for processing
@@ -2083,13 +2084,14 @@ public class PageResource {
             final Map<String, Map<String, Object>> contentletStylesMap = new HashMap<>();
         }
 
-        // Map key: containerId|uuid → accumulated contentlet styles
+        // Map key: personaTag|containerId|uuid → accumulated contentlet styles
         final Map<MultiKey, ContainerStylesData> containerMap = new HashMap<>();
 
         // Merge duplicate containers
         for (final ContentWithStylesForm styleForm : stylesForms) {
-            // Create unique key for this container (containerId + uuid)
-            final MultiKey containerKey = new MultiKey(styleForm.getContainerId(), styleForm.getUuid());
+            // Create unique key for this container (personaTag + containerId + uuid)
+            final MultiKey containerKey = new MultiKey(styleForm.getPersonaTag(),
+                    styleForm.getContainerId(), styleForm.getUuid());
 
             // Get or create accumulator for this container
             final ContainerStylesData accumulatedData = containerMap.computeIfAbsent(
@@ -2107,12 +2109,13 @@ public class PageResource {
         // Convert to ContainerEntry list
         return containerMap.entrySet().stream()
                 .map(entry -> {
-                    final String containerId = (String) entry.getKey().getKeys()[0];
-                    final String containerUuid = (String) entry.getKey().getKeys()[1];
+                    final String personaTag = (String) entry.getKey().getKeys()[0];
+                    final String containerId = (String) entry.getKey().getKeys()[1];
+                    final String containerUuid = (String) entry.getKey().getKeys()[2];
                     final ContainerStylesData data = entry.getValue();
 
                     return new ContainerEntry(
-                            null, // No persona tag for style updates (uses default personalization)
+                            personaTag,
                             containerId,
                             containerUuid,
                             new ArrayList<>(data.contentletIds),

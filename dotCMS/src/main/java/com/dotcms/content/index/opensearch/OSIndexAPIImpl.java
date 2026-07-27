@@ -791,11 +791,16 @@ public class OSIndexAPIImpl implements IndexAPI {
                     .map(this::getNameWithClusterIDPrefix)
                     .collect(Collectors.toList());
             // Batch the lookup so a large set (100+ site-search indices) never overflows the HTTP
-            // request line — otherwise OpenSearch returns too_long_http_line_exception, the whole
-            // lookup aborts, and a valid alias is reported as missing.
+            // request line — otherwise OpenSearch returns too_long_http_line_exception and the whole
+            // lookup aborts. Within each batch, ignoreUnavailable/allowNoIndices tolerate names
+            // absent on this engine: during the ES→OS migration callers pass a MERGED ES∪OS index
+            // list, so an OS-only read can receive ES-only names with no OpenSearch twin — without
+            // these a single missing index throws index_not_found and drops EVERY alias in the batch
+            // (issue #36360, I-3).
             for (final List<String> batch : Lists.partition(physicalNames, ALIAS_LOOKUP_BATCH_SIZE)) {
                 final GetAliasResponse response = clientProvider.getClient().indices()
-                        .getAlias(GetAliasRequest.of(b -> b.index(batch)));
+                        .getAlias(GetAliasRequest.of(b -> b.index(batch)
+                                .ignoreUnavailable(true).allowNoIndices(true)));
                 // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
                 response.result().forEach((indexName, indexAliases) -> {
                     final Map<String, ?> aliasMap = indexAliases.aliases();

@@ -3,12 +3,17 @@ package com.dotcms.rest.api.v1.drive;
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -31,6 +36,8 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -91,6 +98,11 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     private static final String DATE_VAR = "postingDate";
     private static final String MULTI_VAR = "sections";
     private static final String BOOL_VAR = "featured";
+    private static final String JSON_VAR = "meta";
+    private static final String CUSTOM_VAR = "custom";
+    private static final String KV_VAR = "props";
+    private static final String STORY_VAR = "story";
+    private static final String BINARY_VAR = "file";
     private static final String NON_SEARCHABLE_VAR = "notSearchable";
 
     // angular text + tags [angular, cms] + 2024
@@ -139,17 +151,41 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         new FieldDataGen().type(CheckboxField.class).name(BOOL_VAR).velocityVarName(BOOL_VAR)
                 .values("true|true\r\nfalse|false").defaultValue("")
                 .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        // Text-backed fallback types (LONG_TEXT) — filtered as a single contains term via the index.
+        new FieldDataGen().type(JSONField.class).name(JSON_VAR).velocityVarName(JSON_VAR)
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(CustomField.class).name(CUSTOM_VAR).velocityVarName(CUSTOM_VAR)
+                .values("").contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(StoryBlockField.class).name(STORY_VAR).velocityVarName(STORY_VAR)
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(KeyValueField.class).name(KV_VAR).velocityVarName(KV_VAR)
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(BinaryField.class).name(BINARY_VAR).velocityVarName(BINARY_VAR)
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
         // Not user-searchable — filtering on it must be rejected.
         new FieldDataGen().type(TextField.class).name(NON_SEARCHABLE_VAR).velocityVarName(NON_SEARCHABLE_VAR)
                 .contentTypeId(typeWithFields.id()).searchable(false).indexed(true).nextPersisted();
 
+        // A real file for the Binary field (indexed as the file name). Created in a temp dir.
+        final File binaryFile = new File(
+                Files.createTempDirectory("drive-ff-bin-" + uniqueId).toFile(),
+                "quarterly-report.pdf");
+        Files.writeString(binaryFile.toPath(), "dummy pdf content");
+
         angularWithTags = new ContentletDataGen(typeWithFields.id())
                 .setProperty("title", "Angular with tags " + uniqueId)
-                .setProperty(TEXT_VAR, "angular")
+                // Hyphenated text value — exercises special-char escaping end-to-end on a Text field.
+                .setProperty(TEXT_VAR, "angular-cms")
                 .setProperty(TAG_VAR, "angular,cms")
                 .setProperty(DATE_VAR, date(2024))
                 .setProperty(MULTI_VAR, "news")
                 .setProperty(BOOL_VAR, "true")
+                .setProperty(JSON_VAR, "{\"env\":\"prod\"}")
+                .setProperty(CUSTOM_VAR, "alpha")
+                // Mixed-case key/value — the index lowercases it to `color_red`.
+                .setProperty(KV_VAR, "{\"Color\":\"Red\"}")
+                .setProperty(STORY_VAR, story("launch announcement"))
+                .setProperty(BINARY_VAR, binaryFile)
                 .folder(testFolder)
                 .nextPersisted();
 
@@ -160,6 +196,10 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(DATE_VAR, date(2020))
                 .setProperty(MULTI_VAR, "press")
                 .setProperty(BOOL_VAR, "false")
+                .setProperty(JSON_VAR, "{\"env\":\"dev\"}")
+                .setProperty(CUSTOM_VAR, "beta")
+                .setProperty(KV_VAR, "{\"color\":\"blue\"}")
+                .setProperty(STORY_VAR, story("internal notes"))
                 .folder(testFolder)
                 .nextPersisted();
 
@@ -224,6 +264,12 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         // year-01-01T00:00:00Z — explicit UTC so the range assertions don't depend on the CI
         // agent's default timezone.
         return Date.from(LocalDate.of(year, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant());
+    }
+
+    /** Minimal Story Block (ProseMirror) doc whose paragraph carries the given text. */
+    private static String story(final String text) {
+        return "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":"
+                + "[{\"type\":\"text\",\"text\":\"" + text + "\"}]}]}";
     }
 
     private Set<String> driveInodes(final DriveRequestForm request)
@@ -486,6 +532,131 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         assertTrue(inodes.contains(angularWithTags.getInode()));
         assertTrue(inodes.contains(reactWithVue.getInode()));
         assertFalse(inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * JSON field (LONG_TEXT) routes to the index as a contains term against its stored content:
+     * only the item whose JSON contains "prod" matches.
+     */
+    @Test
+    public void testJsonFieldFiltersViaIndex() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(JSON_VAR, "prod"))
+                .build());
+        assertTrue("JSON containing 'prod' must match", inodes.contains(angularWithTags.getInode()));
+        assertFalse("JSON containing 'dev' must not match", inodes.contains(reactWithVue.getInode()));
+        assertFalse("item without a JSON value must not match",
+                inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * A Text-field filter term containing a Lucene special character (a hyphen) must be escaped so
+     * it doesn't break query parsing — the search runs and matches the value via the escaped term
+     * (against {@code _dotraw}) instead of erroring. angularWithTags's Text value is
+     * {@code "angular-cms"}; angularNoTags's is the plain {@code "angular"}.
+     */
+    @Test
+    public void testHyphenatedTermIsEscapedAndMatches()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(TEXT_VAR, "angular-cms"))
+                .build());
+        assertTrue("hyphenated 'angular-cms' must match the text that equals it",
+                inodes.contains(angularWithTags.getInode()));
+        assertFalse("plain 'angular' text must not match 'angular-cms'",
+                inodes.contains(angularNoTags.getInode()));
+        assertFalse("unrelated 'react' text must not match", inodes.contains(reactWithVue.getInode()));
+    }
+
+    /**
+     * The SAME record ({@code angularWithTags}, Text value {@code "angular-cms"}) is retrievable
+     * both with the hyphenated term (matched literally via the escaped query against {@code _dotraw})
+     * and with the plain non-hyphen token (matched via the analyzed field). This proves the
+     * special-character handling doesn't cost the ordinary token match — both queries return it.
+     */
+    @Test
+    public void testSameRecordRetrievedWithAndWithoutHyphen()
+            throws DotDataException, DotSecurityException {
+        final String inode = angularWithTags.getInode();
+
+        final Set<String> withHyphen = driveInodes(baseRequest()
+                .userSearchable(Map.of(TEXT_VAR, "angular-cms")).build());
+        final Set<String> withoutHyphen = driveInodes(baseRequest()
+                .userSearchable(Map.of(TEXT_VAR, "angular")).build());
+
+        assertTrue("hyphenated 'angular-cms' retrieves the record", withHyphen.contains(inode));
+        assertTrue("plain 'angular' retrieves the same record", withoutHyphen.contains(inode));
+    }
+
+    /**
+     * Custom field (LONG_TEXT) routes to the index as a contains term against its stored value.
+     */
+    @Test
+    public void testCustomFieldFiltersViaIndex() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(CUSTOM_VAR, "alpha"))
+                .build());
+        assertTrue("custom value 'alpha' must match", inodes.contains(angularWithTags.getInode()));
+        assertFalse("custom value 'beta' must not match", inodes.contains(reactWithVue.getInode()));
+        assertFalse("item without a custom value must not match",
+                inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * Key/Value field: the FE sends the joined {@code key_value} term for an exact-pair match, or a
+     * bare term for a loose match against the indexed {@code .key_value} sub-field (stored as
+     * {@code (key + "_" + value).toLowerCase()}). Angular's pair is stored mixed-case
+     * ({@code "Color":"Red"}) but the index lowercases it, so the lowercase {@code color_red} term
+     * the FE sends still matches — covering the mixed-case path. React=blue.
+     */
+    @Test
+    public void testKeyValueFieldFiltersExactPairAndLoose() throws DotDataException, DotSecurityException {
+        // Exact pair: `color_red` matches the mixed-case-stored red item (index lowercased it).
+        final Set<String> exact = driveInodes(baseRequest()
+                .userSearchable(Map.of(KV_VAR, "color_red")).build());
+        assertTrue("color_red must match the red item", exact.contains(angularWithTags.getInode()));
+        assertFalse("color_red must not match the blue item", exact.contains(reactWithVue.getInode()));
+
+        // Loose: a bare term matches a key OR value in any pair — "color" is the key in both.
+        final Set<String> loose = driveInodes(baseRequest()
+                .userSearchable(Map.of(KV_VAR, "color")).build());
+        assertTrue("bare 'color' matches the red item", loose.contains(angularWithTags.getInode()));
+        assertTrue("bare 'color' matches the blue item", loose.contains(reactWithVue.getInode()));
+    }
+
+    /**
+     * Binary field indexes the file NAME (not its contents), so a contains term matches the
+     * filename. A single token matches the analyzed field; a hyphenated multi-part term (which the
+     * analyzer would split) matches the {@code _dotraw} keyword that stores the whole file name.
+     */
+    @Test
+    public void testBinaryFieldFiltersByFileName() throws DotDataException, DotSecurityException {
+        // angularWithTags carries "quarterly-report.pdf"; "quarterly" is one indexed token.
+        final Set<String> match = driveInodes(baseRequest()
+                .userSearchable(Map.of(BINARY_VAR, "quarterly")).build());
+        assertTrue("filename token 'quarterly' must match", match.contains(angularWithTags.getInode()));
+
+        // The hyphenated multi-token term "quarterly-report" only matches via the _dotraw keyword.
+        final Set<String> hyphenMatch = driveInodes(baseRequest()
+                .userSearchable(Map.of(BINARY_VAR, "quarterly-report")).build());
+        assertTrue("hyphenated filename 'quarterly-report' must match via _dotraw",
+                hyphenMatch.contains(angularWithTags.getInode()));
+
+        final Set<String> noMatch = driveInodes(baseRequest()
+                .userSearchable(Map.of(BINARY_VAR, "invoice")).build());
+        assertFalse("filename does not contain 'invoice'", noMatch.contains(angularWithTags.getInode()));
+    }
+
+    /**
+     * Story Block field (LONG_TEXT) routes to the index as a contains term against its stored text:
+     * "launch" matches the item whose story says "launch announcement".
+     */
+    @Test
+    public void testStoryBlockFieldFiltersViaIndex() throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .userSearchable(Map.of(STORY_VAR, "launch")).build());
+        assertTrue("story 'launch announcement' must match", inodes.contains(angularWithTags.getInode()));
+        assertFalse("story 'internal notes' must not match", inodes.contains(reactWithVue.getInode()));
     }
 
     /**
