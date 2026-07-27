@@ -39,10 +39,7 @@ import {
     DotPropertiesService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import {
-    DotEditContentSidePanelComponent,
-    EditContentDialogData
-} from '@dotcms/edit-content';
+import { DotEditContentSidePanelComponent, EditContentDialogData } from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
