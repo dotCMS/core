@@ -445,7 +445,10 @@ export class DotRelationshipFieldComponent
         const dialogData: EditContentDialogData = {
             mode: 'new',
             contentTypeId: contentType.id,
-            title: `Create ${contentType.name}`,
+            title: this.#dotMessageService.get(
+                'contenttypes.content.create.contenttype',
+                contentType.name
+            ),
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,

@@ -50,7 +50,13 @@ const COLLAPSE_MAX_WIDTH = 1800;
 @Injectable({ providedIn: 'root' })
 export class DotSidePanelNavController {
     readonly #globalStore = inject(GlobalStore);
-    #openCount = 0;
+
+    /**
+     * Open panels in open order; the last entry is the frontmost (top-of-stack) panel. An ordered
+     * stack rather than a bare counter so {@link isTop} can tell which panel a document-level ESC
+     * should close (only the frontmost, not the whole stack).
+     */
+    #stack: object[] = [];
 
     /** Whether the viewport is narrow enough ({@link COLLAPSE_MAX_WIDTH}) to collapse the navs. */
     shouldCollapse(): boolean {
@@ -58,12 +64,13 @@ export class DotSidePanelNavController {
     }
 
     /**
-     * Call when a side panel opens. On the first open — and only on a small enough viewport
-     * ({@link shouldCollapse}) — collapses the nav, remembering its previous state. On wider
-     * screens it does nothing (so `release` also becomes a no-op, since no state is saved).
+     * Call when a side panel opens, passing the panel as `token`. On the first open — and only on a
+     * small enough viewport ({@link shouldCollapse}) — collapses the nav, remembering its previous
+     * state. On wider screens it does nothing (so `release` also becomes a no-op, since no state is
+     * saved).
      */
-    acquire(): void {
-        if (this.#openCount === 0 && this.shouldCollapse()) {
+    acquire(token: object): void {
+        if (this.#stack.length === 0 && this.shouldCollapse()) {
             // Write-if-absent: a refresh while a panel is open must not overwrite the ORIGINAL
             // pre-panel state with the (already-collapsed) current one.
             if (readPrevNavCollapsed() === null) {
@@ -75,14 +82,17 @@ export class DotSidePanelNavController {
             }
         }
 
-        this.#openCount++;
+        this.#stack.push(token);
     }
 
-    /** Call when a side panel closes. Restores the nav once the last panel has closed. */
-    release(): void {
-        this.#openCount = Math.max(0, this.#openCount - 1);
+    /** Call when a side panel closes, passing the same `token`. Restores the nav once the last panel has closed. */
+    release(token: object): void {
+        const index = this.#stack.lastIndexOf(token);
+        if (index > -1) {
+            this.#stack.splice(index, 1);
+        }
 
-        if (this.#openCount === 0) {
+        if (this.#stack.length === 0) {
             // Restore only if the nav was expanded before the panel collapsed it.
             if (readPrevNavCollapsed() === false) {
                 this.#globalStore.expandNavigation();
@@ -90,5 +100,13 @@ export class DotSidePanelNavController {
 
             clearPrevNavCollapsed();
         }
+    }
+
+    /**
+     * Whether `token` is the frontmost (top-of-stack) open panel — the only one a document-level ESC
+     * should close. Returns `false` for panels beneath it, so a single ESC closes one panel at a time.
+     */
+    isTop(token: object): boolean {
+        return this.#stack.length > 0 && this.#stack[this.#stack.length - 1] === token;
     }
 }

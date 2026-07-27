@@ -41,13 +41,17 @@ describe('DotSidePanelNavController', () => {
         globalStore = spectator.inject(GlobalStore) as unknown as typeof globalStore;
     });
 
+    // Distinct tokens standing in for panel component instances.
+    const outer = {};
+    const inner = {};
+
     it('collapses an expanded nav on open and restores it on close', () => {
-        service.acquire();
+        service.acquire(outer);
 
         expect(globalStore.collapseNavigation).toHaveBeenCalledTimes(1);
         expect(localStorage.getItem(LS_KEY)).toBe('false');
 
-        service.release();
+        service.release(outer);
 
         expect(globalStore.expandNavigation).toHaveBeenCalledTimes(1);
         expect(localStorage.getItem(LS_KEY)).toBeNull();
@@ -56,35 +60,52 @@ describe('DotSidePanelNavController', () => {
     it('keeps an already-collapsed nav collapsed (no collapse, no restore)', () => {
         globalStore.isNavigationCollapsed.mockReturnValue(true);
 
-        service.acquire();
+        service.acquire(outer);
         expect(globalStore.collapseNavigation).not.toHaveBeenCalled();
         expect(localStorage.getItem(LS_KEY)).toBe('true');
 
-        service.release();
+        service.release(outer);
         expect(globalStore.expandNavigation).not.toHaveBeenCalled();
     });
 
     it('ref-counts stacked panels: collapses once, restores only when the last closes', () => {
-        service.acquire(); // outer
-        service.acquire(); // inner (stacked)
+        service.acquire(outer);
+        service.acquire(inner); // stacked
 
         expect(globalStore.collapseNavigation).toHaveBeenCalledTimes(1);
 
-        service.release(); // inner closes — nav must stay collapsed
+        service.release(inner); // inner closes — nav must stay collapsed
         expect(globalStore.expandNavigation).not.toHaveBeenCalled();
 
-        service.release(); // outer closes — now restore
+        service.release(outer); // outer closes — now restore
         expect(globalStore.expandNavigation).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports only the frontmost (top-of-stack) panel as top', () => {
+        expect(service.isTop(outer)).toBe(false); // nothing open yet
+
+        service.acquire(outer);
+        expect(service.isTop(outer)).toBe(true);
+
+        service.acquire(inner); // stacked on top
+        expect(service.isTop(inner)).toBe(true);
+        expect(service.isTop(outer)).toBe(false); // now beneath
+
+        service.release(inner); // top closes — outer is frontmost again
+        expect(service.isTop(outer)).toBe(true);
+
+        service.release(outer);
+        expect(service.isTop(outer)).toBe(false);
     });
 
     it('does nothing on a wide viewport (collapse only applies to small screens)', () => {
         setWideViewport();
 
-        service.acquire();
+        service.acquire(outer);
         expect(globalStore.collapseNavigation).not.toHaveBeenCalled();
         expect(localStorage.getItem(LS_KEY)).toBeNull();
 
-        service.release();
+        service.release(outer);
         expect(globalStore.expandNavigation).not.toHaveBeenCalled();
     });
 
@@ -94,13 +115,13 @@ describe('DotSidePanelNavController', () => {
         localStorage.setItem(LS_KEY, 'false');
         globalStore.isNavigationCollapsed.mockReturnValue(true);
 
-        service.acquire();
+        service.acquire(outer);
 
         // Did not re-capture (still 'false' = was expanded) and did not collapse again.
         expect(localStorage.getItem(LS_KEY)).toBe('false');
         expect(globalStore.collapseNavigation).not.toHaveBeenCalled();
 
-        service.release();
+        service.release(outer);
 
         // Restores to the original expanded state.
         expect(globalStore.expandNavigation).toHaveBeenCalledTimes(1);

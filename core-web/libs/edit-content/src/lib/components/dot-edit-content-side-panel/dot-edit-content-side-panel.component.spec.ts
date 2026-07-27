@@ -58,7 +58,11 @@ describe('DotEditContentSidePanelComponent', () => {
                 // Stub so the component doesn't pull the real controller (and GlobalStore) in tests.
                 {
                     provide: DotSidePanelNavController,
-                    useValue: { acquire: jest.fn(), release: jest.fn() }
+                    useValue: {
+                        acquire: jest.fn(),
+                        release: jest.fn(),
+                        isTop: jest.fn().mockReturnValue(true)
+                    }
                 }
             ],
             detectChanges: false
@@ -123,7 +127,11 @@ describe('DotEditContentSidePanelComponent', () => {
                 // Stub so the component doesn't pull the real controller (and GlobalStore) in tests.
                 {
                     provide: DotSidePanelNavController,
-                    useValue: { acquire: jest.fn(), release: jest.fn() }
+                    useValue: {
+                        acquire: jest.fn(),
+                        release: jest.fn(),
+                        isTop: jest.fn().mockReturnValue(true)
+                    }
                 }
             ],
             detectChanges: false
@@ -166,6 +174,23 @@ describe('DotEditContentSidePanelComponent', () => {
 
         expect(confirmClose).toHaveBeenCalledWith(expect.any(Function));
         expect(closedSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should ignore Escape when not the frontmost stacked panel (isTop === false)', () => {
+        (spectator.inject(DotSidePanelNavController).isTop as jest.Mock).mockReturnValue(false);
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = jest.spyOn(layout, 'confirmClose');
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+        // A panel beneath the top one must not react to the shared document-level ESC.
+        expect(confirmClose).not.toHaveBeenCalled();
+        expect(closedSpy).not.toHaveBeenCalled();
     });
 
     it('should NOT emit `closed` when the editor guard cancels (unsaved changes kept)', () => {

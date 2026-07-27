@@ -21,6 +21,7 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
@@ -65,7 +66,7 @@ function writeExpandedPreference(expanded: boolean): void {
 @Component({
     selector: 'dot-edit-content-side-panel',
     standalone: true,
-    imports: [DrawerModule, ButtonModule, DotEditContentLayoutComponent],
+    imports: [DrawerModule, ButtonModule, DotEditContentLayoutComponent, DotMessagePipe],
     providers: [
         OverlayEditContentHost,
         { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost },
@@ -88,7 +89,7 @@ function writeExpandedPreference(expanded: boolean): void {
     // ESC closes the panel through the unsaved-changes guard. Bound at document level because
     // `appendTo="body"` moves the drawer out of this component's DOM subtree, so a template
     // `(keydown.escape)` on the drawer would never receive the event.
-    host: { '(document:keydown.escape)': 'requestClose()' }
+    host: { '(document:keydown.escape)': 'onEscape()' }
 })
 export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
@@ -132,9 +133,10 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         // Give the editor a clean form-bridge slot; restore the previous one on close.
         pushFormBridge();
 
-        // Collapse the main navigation while the panel is open (restored on close). In
-        // afterNextRender so the store mutation lands after the current render, not during it.
-        afterNextRender(() => this.#navController.acquire());
+        // Collapse the main navigation while the panel is open (restored on close), and register
+        // this panel on the stack so ESC only closes the frontmost one. In afterNextRender so the
+        // store mutation lands after the current render, not during it.
+        afterNextRender(() => this.#navController.acquire(this));
 
         // Forward each save to the opener so it can refresh its view. The overlay host is resolved
         // AFTER construction (afterNextRender) on purpose: resolving it in the constructor would
@@ -157,6 +159,17 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * dialog's contract so dialog-based openers can switch to the panel unchanged — and emits
      * `closed` for openers that drive it via a signal.
      */
+    /**
+     * ESC handler. Only the frontmost stacked panel responds — both stacked panels share a
+     * document-level listener, so without this guard a single ESC would close the whole stack
+     * instead of one panel at a time.
+     */
+    protected onEscape(): void {
+        if (this.#navController.isTop(this)) {
+            this.requestClose();
+        }
+    }
+
     protected requestClose(): void {
         const layout = this.$layout();
         const proceed = () => {
@@ -195,6 +208,6 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     ngOnDestroy(): void {
         popFormBridge();
         // Restore the main navigation once the last panel closes.
-        this.#navController.release();
+        this.#navController.release(this);
     }
 }

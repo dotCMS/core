@@ -26,7 +26,11 @@
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    [attr.aria-label]="$expanded() ? 'Collapse panel' : 'Expand panel'"
+                    [attr.aria-label]="
+                        $expanded()
+                            ? ('edit.content.side-panel.collapse' | dm)
+                            : ('edit.content.side-panel.expand' | dm)
+                    "
                     (onClick)="toggleExpanded()"
                     data-testId="side-panel-expand">
                     <ng-template #icon>
@@ -38,7 +42,7 @@
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    aria-label="Close panel"
+                    [attr.aria-label]="'edit.content.side-panel.close' | dm"
                     (onClick)="requestClose()"
                     data-testId="side-panel-close">
                     <ng-template #icon>
