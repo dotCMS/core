@@ -134,6 +134,11 @@
                         @if (!isFolder) {
                             @let value = item[column.field];
                             @switch (column.type) {
+                                <!-- Date/time content fields render as ABSOLUTE values on purpose.
+                                     Intentionally NOT the `dotRelativeDate` pipe used for `modDate`
+                                     below: that shows relative text ("3 days ago") which suits an
+                                     audit timestamp but would misrepresent an arbitrary content
+                                     date field (e.g. an event date shown as "in 2 days"). -->
                                 @case (COLUMN_TYPE.DATE) {
                                     {{ value ? (value | date: 'MM/dd/yyyy') : '' }}
                                 }

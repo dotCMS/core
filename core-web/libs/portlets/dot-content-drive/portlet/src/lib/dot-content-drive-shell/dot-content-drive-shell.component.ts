@@ -33,6 +33,7 @@ import {
     ContextMenuData,
     DotCMSContentTypeField,
     DotCMSDataTypes,
+    DotCMSFieldTypes,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
@@ -57,8 +58,6 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
     DIALOG_TYPE,
-    FIELD_FILTER_DATE_TIME_TYPE,
-    FIELD_FILTER_TIME_ONLY_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
@@ -225,21 +224,15 @@ export class DotContentDriveShellComponent {
     );
 
     /**
-     * Picks the display type + a readable column width for a field, so numeric/boolean columns stay
-     * compact and long-text columns get room. Date, Date-and-Time and Time all share `dataType`
-     * DATE, so the date sub-type is resolved from `fieldType` first (to keep the time part). Widths
-     * sum into the table's horizontal scroll, so values stay readable instead of being squeezed.
-     */
-    /**
      * Maps a content-type field to the table's generic display type. Date, Date-and-Time and Time
      * all share `dataType` DATE, so the date sub-type is resolved from `fieldType` first (to keep
      * the time part). The table decides each column's width from this type + its own row values.
      */
     #columnTypeForField(field: DotCMSContentTypeField): DotFolderListViewColumn['type'] {
-        if (field.fieldType === FIELD_FILTER_DATE_TIME_TYPE) {
+        if (field.fieldType === DotCMSFieldTypes.DATE_AND_TIME) {
             return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME;
         }
-        if (field.fieldType === FIELD_FILTER_TIME_ONLY_TYPE) {
+        if (field.fieldType === DotCMSFieldTypes.TIME) {
             return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME;
         }
 
