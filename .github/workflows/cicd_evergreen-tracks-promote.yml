@@ -59,7 +59,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Plan track moves (dry-run)
         id: plan
-        working-directory: cicd/evergreen-tracks
+        working-directory: .github/actions/core-cicd/evergreen-tracks
         env:
           REPO: ${{ github.event.inputs.repo }}
           STANDARD_DAYS: ${{ github.event.inputs.standard_days }}
@@ -126,7 +126,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Apply track moves
-        working-directory: cicd/evergreen-tracks
+        working-directory: .github/actions/core-cicd/evergreen-tracks
         env:
           REPO: ${{ github.event.inputs.repo }}
           STANDARD_DAYS: ${{ github.event.inputs.standard_days }}

@@ -7,6 +7,9 @@
  * @property {string} hostName - The hostname where the folder resides
  * @property {string} path - The path to the folder in the system
  * @property {boolean} addChildrenAllowed - Whether new child folders can be added to this folder
+ * @property {boolean} [hasChildren] - Whether the folder has at least one child folder visible to
+ * the current user. Populated by the folder-search endpoint; `undefined` when the source does not
+ * report it (e.g. legacy callers), in which case the folder is treated as potentially expandable.
  */
 export interface DotFolder {
     id: string;
@@ -14,6 +17,7 @@ export interface DotFolder {
     hostName: string;
     path: string;
     addChildrenAllowed: boolean;
+    hasChildren?: boolean;
 }
 
 /**

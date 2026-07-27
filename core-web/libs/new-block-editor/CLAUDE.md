@@ -54,6 +54,7 @@ When creating a new node, you may choose any name — but choose carefully, beca
 |------|------|------|
 | Image | `dotImage` | `extensions/nodes/image.extension.ts` |
 | Video | `dotVideo` | `extensions/nodes/video.extension.ts` |
+| Audio | `dotAudio` | `extensions/nodes/audio.extension.ts` |
 | Contentlet | `dotContent` | `extensions/nodes/contentlet/contentlet.extension.ts` |
 | Grid block | `gridBlock` | `extensions/nodes/grid.extension.ts` |
 | Grid column | `gridColumn` | `extensions/nodes/grid.extension.ts` |
@@ -158,6 +159,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `table` | TableKit | Table (popover) | Insert table + table sub-toolbar | `table` |
 | `dotImage` | `image.extension.ts` | Image (modal picker) | Insert image, wrap-left/right (node-scoped), align, image properties popover (node-scoped) | `image` |
 | `dotVideo` | `video.extension.ts` | Video (modal picker) | Insert video | `video` |
+| `dotAudio` | `audio.extension.ts` | Audio (modal picker) | Insert audio | `audio` |
 | `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | `youtube` |
 | `dotContent` | `contentlet/contentlet.extension.ts` | Content type → submenu | Edit contentlet (node-scoped) | `dotContent` |
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |

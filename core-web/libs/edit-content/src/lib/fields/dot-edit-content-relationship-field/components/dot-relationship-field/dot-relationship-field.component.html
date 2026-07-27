@@ -4,6 +4,7 @@
 @let isDisabled = $isDisabled();
 @let isEmpty = store.data().length === 0;
 @let showThumbnail = store.showThumbnail();
+@let canNavigate = $canNavigate();
 
 <p-table
     [value]="data"
@@ -138,7 +139,17 @@
                                             data-testId="contentlet-thumbnail" />
                                     </div>
                                 }
-                                <p class="truncate">{{ item.title }}</p>
+                                @if (canNavigate) {
+                                    <button
+                                        type="button"
+                                        class="cursor-pointer truncate border-0 bg-transparent p-0 text-left text-inherit focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-hidden"
+                                        (click)="openRelated(item)"
+                                        data-testid="relationship-navigate-link">
+                                        {{ item.title }}
+                                    </button>
+                                } @else {
+                                    <p class="truncate">{{ item.title }}</p>
+                                }
                             </div>
                         </td>
                     }

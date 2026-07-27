@@ -1,4 +1,4 @@
-@if ($store.isLoaded() || $store.isSaving()) {
+@if ($store.isLoaded() || $store.isSaving() || $store.isReloading()) {
     @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
     @let lockWarningMessage = $store.lockWarningMessage();
@@ -7,6 +7,7 @@
     @let showInvalidMessage = $store.formStatus() === 'invalid';
     @let isEnabledNewContentEditor = $store.isEnabledNewContentEditor();
 
+    @let relatingTrail = $relatedNavItems();
     @let topBarHasMessages =
         (isEnabledNewContentEditor && showBetaMessage) ||
         lockWarningMessage ||
@@ -50,6 +51,31 @@
                             data-testId="edit-content-layout__beta-message-close-button"
                             severity="info"
                             size="small" />
+                    </div>
+                </ng-template>
+            </p-message>
+        }
+
+        <!-- "Relating content" navigation banner: shown once the user has drilled
+             into related content (trail has an origin + at least one step). Each
+             crumb navigates back (router in full-screen, in-place in a dialog), so
+             the unsaved-changes check still prompts on dirty forms. Uses p-message
+             (severity="info") like the sibling banners so it stays theme-aware and
+             inherits the top bar's shared banner sizing. -->
+        @if (relatingTrail.length >= 2) {
+            @let betaMessageVisible = isEnabledNewContentEditor && showBetaMessage;
+            <p-message
+                severity="secondary"
+                class="edit-content-layout__relating-content"
+                [class.border-t]="betaMessageVisible"
+                [class.border-gray-300]="betaMessageVisible"
+                data-testId="edit-content-layout__relating-content">
+                <ng-template #container>
+                    <div class="flex w-full items-center gap-3 text-gray-700">
+                        <span class="shrink-0 font-semibold">
+                            {{ 'edit.content.relating.content' | dm }}:
+                        </span>
+                        <dot-collapse-breadcrumb [model]="relatingTrail" />
                     </div>
                 </ng-template>
             </p-message>
@@ -131,6 +157,20 @@
     } @else if (view === 'compare') {
         <dot-edit-content-compare
             class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
+    }
+
+    <!-- Stale-while-revalidate: during an in-place reload the previous content
+         stays rendered underneath while the new content loads. The overlay is held
+         until BOTH the new content and the sidebar's data have finished loading
+         (see $showReloadOverlay), so the new content is never revealed before the
+         sidebar. It sits in the same grid cell as the body to signal the refresh
+         and block edits to the stale form until everything swaps in. -->
+    @if ($showReloadOverlay()) {
+        <div
+            class="edit-content-layout__reloading-overlay flex items-center justify-center"
+            data-testId="edit-content-layout__reloading-overlay">
+            <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+        </div>
     }
 
     <dot-edit-content-sidebar

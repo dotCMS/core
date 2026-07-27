@@ -17,6 +17,20 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     offset: 0
 };
 
+/**
+ * Page size used when loading the initial folder hierarchy (deep-link restore) via
+ * `GET /api/v1/folder/search`. Each ancestor level of the target path is fetched in full so the
+ * selected folder is always present and the tree can expand to it. Matches the backend's
+ * `SUB_FOLDER_UNLIMITED_SAFETY_CAP` (10000) — the ceiling the server itself enforces.
+ */
+export const FOLDER_TREE_SEARCH_PAGE_SIZE = 10000;
+
+/**
+ * Page size used when a user expands a folder node. Children load one page at a time; if more
+ * remain, a "Load more" node is appended so the DOM stays bounded on large levels.
+ */
+export const FOLDER_TREE_PAGE_SIZE = 50;
+
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC
@@ -123,15 +137,38 @@ export const FIELD_FILTER_DATE_TYPES = ['Date', 'Date-and-Time', 'Time'] as cons
 export const FIELD_FILTER_TIME_ONLY_TYPE = 'Time';
 export const FIELD_FILTER_DATE_TIME_TYPE = 'Date-and-Time';
 
+/**
+ * Text-backed field types the legacy content search only ever offered via a plain textbox. They
+ * render the same `text` control here and filter as a single contains term against the field's
+ * indexed value (JSON/Story-Block/Custom = full text, Binary = file name).
+ */
+export const FIELD_FILTER_JSON_TYPE = 'JSON-Field';
+export const FIELD_FILTER_STORY_BLOCK_TYPE = 'Story-Block';
+export const FIELD_FILTER_CUSTOM_TYPE = 'Custom-Field';
+export const FIELD_FILTER_BINARY_TYPE = 'Binary';
+export const FIELD_FILTER_TEXT_FALLBACK_TYPES = [
+    FIELD_FILTER_JSON_TYPE,
+    FIELD_FILTER_STORY_BLOCK_TYPE,
+    FIELD_FILTER_CUSTOM_TYPE,
+    FIELD_FILTER_BINARY_TYPE
+] as const;
+/**
+ * Key/Value field. Rendered with a single input + a `key:value` shorthand; the value is stored as
+ * the user typed it and translated to the `key_value` joined term when building the search payload.
+ */
+export const FIELD_FILTER_KEY_VALUE_TYPE = 'Key-Value';
+
 /** Every field type eligible to become a filter (excludes Host-Folder + out-of-scope types). */
 export const USER_SEARCHABLE_FIELD_TYPES: readonly string[] = [
     ...FIELD_FILTER_TEXT_TYPES,
     ...FIELD_FILTER_SINGLE_SELECT_TYPES,
     ...FIELD_FILTER_MULTI_SELECT_TYPES,
     ...FIELD_FILTER_DATE_TYPES,
+    ...FIELD_FILTER_TEXT_FALLBACK_TYPES,
     FIELD_FILTER_TAG_TYPE,
     FIELD_FILTER_CATEGORY_TYPE,
-    FIELD_FILTER_RELATIONSHIP_TYPE
+    FIELD_FILTER_RELATIONSHIP_TYPE,
+    FIELD_FILTER_KEY_VALUE_TYPE
 ];
 
 /**

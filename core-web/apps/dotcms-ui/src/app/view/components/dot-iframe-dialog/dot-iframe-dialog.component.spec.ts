@@ -203,9 +203,14 @@ describe('DotIframeDialogComponent', () => {
                         });
                     });
 
-                    it('should call close method on dot-dialog on dot-iframe escape key', () => {
+                    it('should run the same close/teardown as the X button on Escape key', () => {
                         dotIframeDe?.triggerEventHandler('keyWasDown', { key: 'Escape' });
                         expect(component.keyWasDown.emit).toHaveBeenCalledTimes(1);
+                        // Escape must funnel through onDialogHide() exactly like the X button
+                        expect(component.url).toBe(null);
+                        expect(component.show).toBe(false);
+                        expect(component.header).toBe('');
+                        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
                     });
                 });
 
