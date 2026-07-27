@@ -4,6 +4,11 @@ import { EditorView } from '@tiptap/pm/view';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import {
+    type DotAudioData,
+    DOT_AUDIO_NODE_NAME,
+    audioMetaAttrsFromContentlet
+} from './extensions/nodes/audio.extension';
 import { type DotImageData, DOT_IMAGE_NODE_NAME } from './extensions/nodes/image.extension';
 import {
     insertUploadPlaceholders,
@@ -15,7 +20,11 @@ import {
     DOT_VIDEO_NODE_NAME,
     videoMetaAttrsFromContentlet
 } from './extensions/nodes/video.extension';
-import { type UploadedImage, type UploadedVideo } from './services/dot-upload.service';
+import {
+    type UploadedAudio,
+    type UploadedImage,
+    type UploadedVideo
+} from './services/dot-upload.service';
 
 export function handleMediaDrop(
     editor: Editor,
@@ -24,15 +33,17 @@ export function handleMediaDrop(
     _slice: Slice,
     moved: boolean,
     uploadImage?: (file: File) => Promise<UploadedImage>,
-    uploadVideo?: (file: File) => Promise<UploadedVideo>
+    uploadVideo?: (file: File) => Promise<UploadedVideo>,
+    uploadAudio?: (file: File) => Promise<UploadedAudio>
 ): boolean {
     if (moved) return false;
 
     const allFiles = Array.from(event.dataTransfer?.files ?? []);
     const imageFiles = allFiles.filter((f) => f.type.startsWith('image/'));
     const videoFiles = allFiles.filter((f) => f.type.startsWith('video/'));
+    const audioFiles = allFiles.filter((f) => f.type.startsWith('audio/'));
 
-    if (!imageFiles.length && !videoFiles.length) return false;
+    if (!imageFiles.length && !videoFiles.length && !audioFiles.length) return false;
 
     event.preventDefault();
     const dropResult = view.posAtCoords({ left: event.clientX, top: event.clientY });
@@ -47,9 +58,17 @@ export function handleMediaDrop(
         id: `vid-${Date.now()}-${i}`,
         mediaType: 'video' as const
     }));
+    const audioPlaceholders = audioFiles.map((_, i) => ({
+        id: `aud-${Date.now()}-${i}`,
+        mediaType: 'audio' as const
+    }));
 
     // Insert all placeholders in one transaction — gives immediate feedback
-    insertUploadPlaceholders(editor, pos, [...imagePlaceholders, ...videoPlaceholders]);
+    insertUploadPlaceholders(editor, pos, [
+        ...imagePlaceholders,
+        ...videoPlaceholders,
+        ...audioPlaceholders
+    ]);
 
     // ── Images ──────────────────────────────────────────────────────────────
     imageFiles.forEach((file, i) => {
@@ -94,6 +113,28 @@ export function handleMediaDrop(
                 })
                 .catch((err) => {
                     console.error('Video drop upload failed', err);
+                    removePlaceholder(editor, id);
+                });
+        } else {
+            removePlaceholder(editor, id);
+        }
+    });
+
+    // ── Audio ───────────────────────────────────────────────────────────────
+    audioFiles.forEach((file, i) => {
+        const { id } = audioPlaceholders[i];
+
+        if (uploadAudio) {
+            uploadAudio(file)
+                .then(({ src, data, mimeType }) => {
+                    const title = file.name.replace(/\.[^.]+$/, '');
+                    replacePlaceholder(editor, id, {
+                        type: DOT_AUDIO_NODE_NAME,
+                        attrs: { src, title, data, mimeType }
+                    });
+                })
+                .catch((err) => {
+                    console.error('Audio drop upload failed', err);
                     removePlaceholder(editor, id);
                 });
         } else {
@@ -160,6 +201,36 @@ export function insertDotVideoFromContentlet(editor: Editor, contentlet: DotCMSC
                 title: data.title || null,
                 data,
                 ...videoMetaAttrsFromContentlet(contentlet)
+            }
+        })
+        .run();
+}
+
+/**
+ * Maps a dotCMS contentlet onto a `dotAudio` node and inserts it at the editor's current
+ * selection. Used by the dotCMS browser-selector flow inside the audio picker — mirrors
+ * {@link insertDotVideoFromContentlet} so both media nodes share the same `data` shape
+ * (identifier, inode, languageId, title, asset). Audio carries only `mimeType` metadata.
+ */
+export function insertDotAudioFromContentlet(editor: Editor, contentlet: DotCMSContentlet): void {
+    const data: DotAudioData = {
+        identifier: contentlet.identifier,
+        inode: contentlet.inode,
+        languageId: (contentlet as { languageId?: number }).languageId ?? 1,
+        title: contentlet.title ?? '',
+        asset: `/dA/${contentlet.inode}`
+    };
+
+    editor
+        .chain()
+        .focus()
+        .insertContent({
+            type: DOT_AUDIO_NODE_NAME,
+            attrs: {
+                src: data.asset,
+                title: data.title || null,
+                data,
+                ...audioMetaAttrsFromContentlet(contentlet)
             }
         })
         .run();

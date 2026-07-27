@@ -2,16 +2,22 @@
 #
 # VERSIONING (ADR-0019 — date-lockstep versioning):
 # - The SDK version is always the dotCMS release version it ships with. There is no
-#   independent SDK versioning and no `@next` prerelease channel.
+#   independent SDK versioning.
 # - Single source of truth: the `version` input, supplied by the caller (the dotCMS
 #   release pipeline — see cicd_release-sdk.yml, which derives it from the GitHub
 #   Release tag, mirroring how cicd_release-cli.yml versions @dotcms/dotcli).
-# - Every invocation publishes every SDK package at that exact version to the `latest`
-#   npm dist-tag — including releases where the SDK has no code changes, to preserve
-#   the one-dotCMS-version <-> one-SDK-version invariant.
+# - Every real-release invocation publishes every SDK package at that exact version to
+#   the `latest` npm dist-tag — including releases where the SDK has no code changes, to
+#   preserve the one-dotCMS-version <-> one-SDK-version invariant.
+#
+# `next` TAG (internal dev/QA use only):
+# - cicd_3-trunk.yml also calls this action on merges to main that touch SDK files,
+#   passing npm-tag: 'next' and a version computed from the current `latest` plus a
+#   `-next.<run_number>` suffix. This is never a date-lockstep-shaped version and must
+#   never be recommended to customers — see issue #36701.
 #
 name: 'SDK Publish NPM Packages - Stable'
-description: 'Publish the dotCMS SDK libs on NPM registry at the given version.'
+description: 'Publish the dotCMS SDK libs on NPM registry at the given version and dist-tag.'
 inputs:
   ref:
     description: 'Branch/tag to build from'
@@ -20,6 +26,10 @@ inputs:
   version:
     description: 'Exact version to publish every @dotcms/* SDK package at (e.g. 26.7.14-1)'
     required: true
+  npm-tag:
+    description: 'npm dist-tag to publish under (e.g. latest, next)'
+    required: false
+    default: 'latest'
   npm-token:
     description: 'NPM token'
     required: true
@@ -150,10 +160,12 @@ runs:
       env:
         RELEASE_VERSION: ${{ inputs.version }}
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
+        NPM_TAG: ${{ inputs.npm-tag }}
       run: |
         set -euo pipefail
         echo "::group::Publishing SDK packages"
         echo "Version: $RELEASE_VERSION"
+        echo "Tag:     $NPM_TAG"
         echo ""
 
         echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
@@ -172,8 +184,8 @@ runs:
           if npm view "@dotcms/${sdk}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
             echo "  ⏭️  @dotcms/${sdk}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
           else
-            echo "  🚀 Publishing: @dotcms/${sdk}@${RELEASE_VERSION}"
-            if npm publish --access public --tag latest; then
+            echo "  🚀 Publishing: @dotcms/${sdk}@${RELEASE_VERSION} (tag: ${NPM_TAG})"
+            if npm publish --access public --tag "${NPM_TAG}"; then
               echo "  ✅ Published"
             else
               echo "  ❌ Failed to publish"

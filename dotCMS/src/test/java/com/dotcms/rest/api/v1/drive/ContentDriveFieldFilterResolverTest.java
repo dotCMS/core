@@ -6,11 +6,16 @@ import com.dotcms.browser.FieldSearchCriteria.RoutingBucket;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.HiddenField;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -53,6 +58,12 @@ public class ContentDriveFieldFilterResolverTest {
         fields.put("categoryF", searchableField(CategoryField.class));
         fields.put("relationshipF", searchableField(RelationshipField.class));
         fields.put("binaryF", searchableField(BinaryField.class));
+        fields.put("jsonF", searchableField(JSONField.class));
+        fields.put("storyBlockF", searchableField(StoryBlockField.class));
+        fields.put("customF", searchableField(CustomField.class));
+        fields.put("keyValueF", searchableField(KeyValueField.class));
+        // Searchable + indexed but an unsupported type → must still be rejected.
+        fields.put("hiddenF", searchableField(HiddenField.class));
         fields.put("notSearchableF", flaggedField(TextField.class, false, true));
 
         final ContentType contentType = mock(ContentType.class);
@@ -205,8 +216,33 @@ public class ContentDriveFieldFilterResolverTest {
     @Test
     public void outOfScopeTypeIsRejected() {
         final ContentType ct = contentTypeWithAllFields();
+        // Hidden stays out of scope even when flagged searchable + indexed.
         assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("binaryF", "x"), ct));
+                () -> resolver.parse(Map.of("hiddenF", "x"), ct));
+    }
+
+    @Test
+    public void textBackedTypesRouteToIndexAsScalar() {
+        final ContentType ct = contentTypeWithAllFields();
+        // JSON / Story Block / Custom / Binary are filtered as a single contains term against the
+        // index (they reuse the shared TEXT/BINARY handlers).
+        for (final String var : List.of("jsonF", "storyBlockF", "customF", "binaryF")) {
+            final FieldSearchCriteria c = single(ct, var, "needle");
+            assertEquals(var, FilterKind.SCALAR, c.getKind());
+            assertEquals(var, RoutingBucket.INDEX, c.getBucket());
+            assertEquals(var, List.of("needle"), c.getValues());
+        }
+    }
+
+    @Test
+    public void keyValueScalarRoutesToIndex() {
+        final ContentType ct = contentTypeWithAllFields();
+        // The FE sends a joined "key_value" term (exact pair) or a bare term (loose) — either is a
+        // single scalar contains against the index.
+        final FieldSearchCriteria c = single(ct, "keyValueF", "color_red");
+        assertEquals(FilterKind.SCALAR, c.getKind());
+        assertEquals(RoutingBucket.INDEX, c.getBucket());
+        assertEquals(List.of("color_red"), c.getValues());
     }
 
     @Test

@@ -1,12 +1,16 @@
 package com.dotcms.cache.lettuce;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.Portlet;
 
 /**
  * Test for {@link RedisCache}
@@ -20,6 +24,7 @@ public class LettuceCacheTest {
     
     @BeforeClass
     public static void startup() throws Exception {
+        IntegrationTestInitService.getInstance().init();
         cache = new RedisCache();
     }
 
@@ -136,6 +141,43 @@ public class LettuceCacheTest {
 
                 assert (uuid.equals(con.getIdentifier()));
                 assert (uuid.equals(con.getMap().get("testing")));
+            }
+        }
+    }
+
+    /**
+     * Regression test for issue #34435: a {@link Portlet} cached in Redis is round-tripped through
+     * {@code DotObjectCodec}'s Java serialization. The {@code initParams} field used to be
+     * {@code transient}, so it came back {@code null} after a container restart and later NPE'd in
+     * {@code PortletConfigImpl.getInitParameterNames()}. This asserts the init parameters survive the
+     * real Redis put/get path (not just an in-memory ObjectStream round-trip).
+     */
+    @Test
+    public void test_portlet_initParams_survive_redis_roundtrip() {
+
+        if (RedisClientFactory.getClient("cache").ping()) {
+            // Isolated test-only group so we never pollute the real "portletcache" namespace that
+            // PortletCache and admin tooling use; RedisCache has no default TTL, so a leaked key
+            // would persist indefinitely on the shared integration Redis.
+            final String group = "portletcache_test_" + System.currentTimeMillis();
+            final String key = "portlet" + System.currentTimeMillis();
+
+            try {
+                final Map<String, String> initParams = new HashMap<>();
+                initParams.put("view-action", "/ext/contentlet/view_contentlets");
+                initParams.put("name", "content");
+                final Portlet portlet = new Portlet("content", "com.liferay.portlet.StrutsPortlet", initParams);
+
+                cache.put(group, key, portlet);
+
+                final Portlet cached = (Portlet) cache.get(group, key);
+                Assert.assertNotNull("Portlet should be returned from Redis cache", cached);
+                Assert.assertNotNull("initParams must survive the Redis serialization round-trip",
+                        cached.getInitParams());
+                Assert.assertEquals(initParams, cached.getInitParams());
+            } finally {
+                // Clean up even if an assertion above fails, so no stray key is left behind.
+                cache.remove(group, key);
             }
         }
     }

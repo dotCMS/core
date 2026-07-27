@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.SearchHit;
@@ -69,6 +70,11 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
     private static final String IDX_ONE = "sitesearch_" + SUFFIX;
     private static final String IDX_TWO = "sitesearch_" + (Long.parseLong(SUFFIX) + 1);
 
+    // The physical OpenSearch index is .os-tagged (issue #36672); the OSSiteSearchAPI surface uses the
+    // logical (bare) names above, so raw osIndexAPI assertions must query the tagged physical name.
+    private static final String OS_IDX_ONE = IndexTag.OS.tag(IDX_ONE);
+    private static final String OS_IDX_TWO = IndexTag.OS.tag(IDX_TWO);
+
     private static final String DOC_ID = "os-ss-it-" + RUN_ID;
 
     @Inject
@@ -108,14 +114,17 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_createSiteSearchIndex_shouldExistAndBeListed() throws Exception {
-        assertFalse("Pre-condition: index must not exist yet", osIndexAPI.indexExists(IDX_ONE));
+        assertFalse("Pre-condition: index must not exist yet", osIndexAPI.indexExists(OS_IDX_ONE));
 
         final boolean created = osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, null, 1);
 
         assertTrue("createSiteSearchIndex must return true", created);
-        assertTrue("Index must exist in OpenSearch after creation", osIndexAPI.indexExists(IDX_ONE));
-        assertTrue("Index must be returned by listIndices",
+        assertTrue("The physical OpenSearch index must be .os-tagged after creation (issue #36672)",
+                osIndexAPI.indexExists(OS_IDX_ONE));
+        assertTrue("listIndices must return the LOGICAL (bare) name",
                 osSiteSearchAPI.listIndices().contains(IDX_ONE));
+        assertFalse("listIndices must NOT leak the .os-tagged name",
+                osSiteSearchAPI.listIndices().contains(OS_IDX_ONE));
 
         Logger.info(this, "✅ test_createSiteSearchIndex_shouldExistAndBeListed passed – index: " + IDX_ONE);
     }
@@ -127,12 +136,54 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
     @Test
     public void test_deleteSiteSearchIndex_shouldRemoveIt() throws Exception {
         osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, null, 1);
-        assertTrue("Pre-condition: index must exist", osIndexAPI.indexExists(IDX_ONE));
+        assertTrue("Pre-condition: index must exist", osIndexAPI.indexExists(OS_IDX_ONE));
 
-        osIndexAPI.delete(IDX_ONE);
+        osIndexAPI.delete(OS_IDX_ONE);
 
-        assertFalse("Index must be gone after deletion", osIndexAPI.indexExists(IDX_ONE));
+        assertFalse("Index must be gone after deletion", osIndexAPI.indexExists(OS_IDX_ONE));
         Logger.info(this, "✅ test_deleteSiteSearchIndex_shouldRemoveIt passed");
+    }
+
+    /**
+     * Given scenario: a site-search index name that does not exist on this OpenSearch engine — the
+     * situation the build-time index switch hits during migration when the old default lived on only
+     * one engine (a Phase-0 ES-only index has no OpenSearch twin).
+     * Expected: {@code deleteIndex} is a no-op, NOT a thrown {@code index_not_found}. Before the fix
+     * the raw delete threw, and because that delete ran inside the Site Search build's index switch,
+     * it aborted the whole build after the surviving copy had already been destroyed (issue #36360,
+     * I-7).
+     */
+    @Test
+    public void test_deleteIndex_absentOnThisEngine_isIdempotent() throws Exception {
+        assertFalse("Pre-condition: index must not exist", osIndexAPI.indexExists(OS_IDX_ONE));
+
+        // Must not throw even though the index is absent on this engine.
+        osSiteSearchAPI.deleteIndex(IDX_ONE);
+
+        assertFalse("Index must still be absent", osIndexAPI.indexExists(OS_IDX_ONE));
+        Logger.info(this, "✅ test_deleteIndex_absentOnThisEngine_isIdempotent passed");
+    }
+
+    /**
+     * Given scenario: an alias lookup whose batch mixes an existing aliased index with a name that
+     * does NOT exist on this engine — exactly what the Site Search portlet does during migration,
+     * when it passes the MERGED ES∪OS index list to a single-engine {@code getIndexAlias}.
+     * Expected: the alias of the existing index is still returned; one missing index in the batch
+     * must not throw {@code index_not_found} and wipe every alias (issue #36360, I-3).
+     */
+    @Test
+    public void test_getIndexAlias_toleratesMissingIndexInBatch() throws Exception {
+        final String alias = "ss_alias_" + RUN_ID;
+        osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, alias, 1);
+        assertFalse("Pre-condition: sibling index must not exist", osIndexAPI.indexExists(OS_IDX_TWO));
+
+        // OS_IDX_TWO is absent on this engine; before the fix its presence in the batch threw
+        // index_not_found and returned an empty map. Query the .os-tagged physical names (issue #36672).
+        final Map<String, String> aliases = osIndexAPI.getIndexAlias(List.of(OS_IDX_ONE, OS_IDX_TWO));
+
+        assertEquals("the resolvable alias must survive a missing sibling in the same batch",
+                alias, aliases.get(OS_IDX_ONE));
+        Logger.info(this, "✅ test_getIndexAlias_toleratesMissingIndexInBatch passed");
     }
 
     // =======================================================================
@@ -235,6 +286,56 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
         assertEquals("pdf bucket must count the pdf docs", pdfDocs, pdfCount);
 
         Logger.info(this, "✅ test_getAggregations_termsBucketsHaveCorrectKeysAndCounts passed");
+    }
+
+    /**
+     * Given scenario: documents carrying a {@code modified} date, aggregated by a
+     * {@code date_histogram} on that field.
+     * Expected: the aggregation maps through the OpenSearch {@code fromSingleOS} date-histogram
+     * branch to a neutral {@link Aggregation} typed {@code "date_histogram"} whose buckets expose
+     * epoch-millis keys. Before the fix that branch did not exist, so {@code fromSingleOS} returned
+     * {@code null} and the whole {@code by_month} aggregation was silently dropped under OpenSearch
+     * reads — the ES path always returned it (issue #36360, I-6).
+     */
+    @Test
+    public void test_getAggregations_dateHistogramMapsOnOpenSearchPath() throws Exception {
+        osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, null, 1);
+
+        final java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.set(2024, java.util.Calendar.JANUARY, 15, 0, 0, 0);
+        for (int i = 0; i < 3; i++) {
+            final SiteSearchResult doc = new SiteSearchResult();
+            doc.setId(DOC_ID + "-dh-" + i);
+            doc.setUrl("/agg-dh/" + RUN_ID + "/" + i);
+            doc.setTitle("Date histogram doc " + i);
+            doc.setMimeType("text/html");
+            doc.setContent("date histogram sample " + RUN_ID);
+            doc.setContentLength(doc.getContent().length());
+            doc.setModified(cal.getTime());
+            osSiteSearchAPI.putToIndex(IDX_ONE, doc, "content");
+        }
+
+        final String aggQuery = new JSONObject()
+                .put("size", 0)
+                .put("aggs", new JSONObject().put("by_month", new JSONObject()
+                        .put("date_histogram", new JSONObject()
+                                .put("field", "modified")
+                                .put("calendar_interval", "month")))).toString();
+
+        final Map<String, Aggregation> aggregations =
+                osSiteSearchAPI.getAggregations(IDX_ONE, aggQuery);
+
+        final Aggregation byMonth = aggregations.get("by_month");
+        assertNotNull("date_histogram 'by_month' must be mapped, not dropped", byMonth);
+        assertEquals("type must match the ES path for parity", "date_histogram", byMonth.getType());
+        assertFalse("date_histogram must carry at least one bucket", byMonth.getBuckets().isEmpty());
+
+        final AggregationBucket bucket = byMonth.getBuckets().get(0);
+        assertTrue("bucket must count the indexed docs", bucket.getDocCount() >= 1);
+        assertNotNull("a date-histogram key must expose epoch-millis as a number",
+                bucket.getKeyAsNumber());
+
+        Logger.info(this, "✅ test_getAggregations_dateHistogramMapsOnOpenSearchPath passed");
     }
 
     /**
@@ -380,7 +481,7 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
     // =======================================================================
 
     private synchronized void cleanupTestData() {
-        for (final String name : List.of(IDX_ONE, IDX_TWO)) {
+        for (final String name : List.of(OS_IDX_ONE, OS_IDX_TWO)) {
             try {
                 if (osIndexAPI.indexExists(name)) {
                     osIndexAPI.delete(name);
