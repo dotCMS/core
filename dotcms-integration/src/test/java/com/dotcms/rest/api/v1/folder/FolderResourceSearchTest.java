@@ -82,9 +82,11 @@ public class FolderResourceSearchTest {
         final long ts = System.currentTimeMillis();
         final Host site = new SiteDataGen().nextPersisted();
         new FolderDataGen().site(site).name("alpha-" + ts).nextPersisted();
-        new FolderDataGen().site(site).name("alpha-beta-" + ts).nextPersisted();
+        new FolderDataGen().site(site).name("alpha-" + ts + "-beta").nextPersisted();
         new FolderDataGen().site(site).name("other-" + ts).nextPersisted();
 
+        // Search term must be a real substring of the folders it should match: both
+        // "alpha-<ts>" and "alpha-<ts>-beta" contain "alpha-<ts>", "other-<ts>" does not.
         final var result = search("alpha-" + ts, null, true, site.getIdentifier());
 
         Assert.assertNotNull(result);
@@ -177,8 +179,10 @@ public class FolderResourceSearchTest {
             throws DotDataException, DotSecurityException {
         final long ts = System.currentTimeMillis();
         final Host site = new SiteDataGen().nextPersisted();
+        // The ts goes right after the "paged-" prefix so every folder contains the
+        // "paged-<ts>" search term (a "%paged-<ts>%" LIKE match).
         for (int i = 0; i < 3; i++) {
-            new FolderDataGen().site(site).name(String.format("paged-%02d-%d", (Integer) i, (Long) ts)).nextPersisted();
+            new FolderDataGen().site(site).name(String.format("paged-%d-%02d", ts, i)).nextPersisted();
         }
 
         final var result = resource.searchFolders(
@@ -284,6 +288,13 @@ public class FolderResourceSearchTest {
 
         final String limitedRoleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId();
         final String adminRoleId   = APILocator.getRoleAPI().loadRoleByKey(adminUser.getUserId()).getId();
+
+        // Grant READ on the site to the limited user — searchFolders validates site READ
+        // access before searching, so without this the endpoint returns 403 (not the folders).
+        APILocator.getPermissionAPI().save(
+                new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        site.getPermissionId(), limitedRoleId, PermissionAPI.PERMISSION_READ, true),
+                site, APILocator.systemUser(), false);
 
         // Grant READ on parent to limited user (individual permission breaks inheritance)
         APILocator.getPermissionAPI().save(
