@@ -16,7 +16,9 @@ export const DOT_FOLDER_LIST_VIEW_COLUMN_TYPE = {
     BOOLEAN: 'boolean',
     DATE: 'date',
     DATETIME: 'datetime',
-    TIME: 'time'
+    TIME: 'time',
+    /** Image/binary/file field: renders the field's own asset as a thumbnail. */
+    IMAGE: 'image'
 } as const;
 
 export type DotFolderListViewColumnType =

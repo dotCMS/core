@@ -1529,6 +1529,24 @@ describe('DotFolderListViewComponent', () => {
             expect(headerByLabel('Dup')).toBeFalsy();
         });
 
+        it('should render a thumbnail cell for an image column (per-field asset)', () => {
+            spectator.setInput('items', [
+                {
+                    identifier: '1',
+                    type: 'content',
+                    title: 'A',
+                    contentType: 'Blog',
+                    photo: '/dA/abc/photo/pic.png'
+                }
+            ] as unknown as (typeof mockItems)[number][]);
+            spectator.setInput('extraColumns', [
+                { field: 'photo', header: 'Photo', order: 0, type: 'image' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-extra-image-photo'))).toBeTruthy();
+        });
+
         it('should render distinct boolean icons for true/false and stay blank when absent', () => {
             spectator.setInput('items', [
                 { identifier: '1', type: 'content', title: 'A', myBool: true },

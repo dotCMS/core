@@ -2029,5 +2029,20 @@ describe('DotContentDriveShellComponent', () => {
                 expect.objectContaining({ field: 'noidx', sortable: false })
             ]);
         });
+
+        it('should map Image/Binary/File fields to the image (thumbnail) column type', () => {
+            showInListFieldsSignal.set([
+                { variable: 'photo', name: 'Photo', dataType: 'SYSTEM', fieldType: 'Image' },
+                { variable: 'doc', name: 'Doc', dataType: 'SYSTEM', fieldType: 'Binary' },
+                { variable: 'attach', name: 'Attach', dataType: 'SYSTEM', fieldType: 'File' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'photo', type: 'image' }),
+                expect.objectContaining({ field: 'doc', type: 'image' }),
+                expect.objectContaining({ field: 'attach', type: 'image' })
+            ]);
+        });
     });
 });

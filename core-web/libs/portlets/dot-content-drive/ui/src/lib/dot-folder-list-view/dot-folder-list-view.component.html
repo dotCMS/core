@@ -161,6 +161,27 @@
                                         </i>
                                     }
                                 }
+                                @case (COLUMN_TYPE.IMAGE) {
+                                    <!-- Identical treatment to the row's leading title thumbnail,
+                                         only pointed at the field's OWN asset (fieldVariable) so a
+                                         secondary/gallery image shows its own thumbnail instead of
+                                         the contentlet's title image. Non-image assets fall back to
+                                         a file-type icon. -->
+                                    @if (value) {
+                                        <div
+                                            class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                                            (click)="onDoubleClick(item); $event.stopPropagation()">
+                                            <dot-content-thumbnail
+                                                [contentlet]="item"
+                                                [options]="{ fieldVariable: column.field }"
+                                                iconSize="36px"
+                                                [attr.data-testid]="
+                                                    'item-extra-image-' + column.field
+                                                "
+                                                [attr.data-table-id]="item.identifier" />
+                                        </div>
+                                    }
+                                }
                                 @default {
                                     {{ value }}
                                 }

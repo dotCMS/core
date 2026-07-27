@@ -227,11 +227,19 @@ export class DotContentDriveShellComponent {
     );
 
     /**
-     * Maps a content-type field to the table's generic display type. Date, Date-and-Time and Time
-     * all share `dataType` DATE, so the date sub-type is resolved from `fieldType` first (to keep
-     * the time part). The table decides each column's width from this type + its own row values.
+     * Maps a content-type field to the table's generic display type. Image/Binary/File fields render
+     * as a thumbnail of the field's own asset. Date, Date-and-Time and Time all share `dataType`
+     * DATE, so the date sub-type is resolved from `fieldType` first (to keep the time part). The
+     * table decides each column's width from this type + its own row values.
      */
     #columnTypeForField(field: DotCMSContentTypeField): DotFolderListViewColumn['type'] {
+        if (
+            field.fieldType === DotCMSFieldTypes.IMAGE ||
+            field.fieldType === DotCMSFieldTypes.BINARY ||
+            field.fieldType === DotCMSFieldTypes.FILE
+        ) {
+            return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.IMAGE;
+        }
         if (field.fieldType === DotCMSFieldTypes.DATE_AND_TIME) {
             return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME;
         }
