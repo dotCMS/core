@@ -438,7 +438,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
         });
 
-        it('should omit defaultBaseType from the body when "Ask each time"', () => {
+        it('should send defaultBaseType as null when "Ask each time" so the backend can clear it', () => {
             component.folderForm.patchValue({ title: 'App', name: 'app' });
             spectator.detectChanges();
 
@@ -446,7 +446,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
             expect(folderService.createFolder).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    data: expect.not.objectContaining({ defaultBaseType: expect.anything() })
+                    data: expect.objectContaining({ defaultBaseType: null })
                 })
             );
         });
@@ -474,7 +474,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -497,7 +498,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });
@@ -519,7 +521,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 5,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -541,7 +544,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -642,7 +646,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: true,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -682,7 +687,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 5,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -721,7 +727,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });
@@ -759,7 +766,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: 'Video'
+                    defaultAssetType: 'Video',
+                    defaultBaseType: null
                 }
             });
         });
@@ -1036,7 +1044,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: true,
                     sortOrder: 1,
                     defaultAssetType: 'File',
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });

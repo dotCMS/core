@@ -318,12 +318,10 @@ export class DotContentDriveDialogFolderComponent {
             data.defaultAssetType = formValue.defaultFileAssetType;
         }
 
-        // Sent only when a preference is chosen; "Ask each time" (null) is omitted.
-        // NOTE: the backend (#35577) ignores a null/absent value, so reverting an existing
-        // preference back to "Ask each time" needs a backend clear affordance — tracked separately.
-        if (formValue.defaultBaseType) {
-            data.defaultBaseType = formValue.defaultBaseType;
-        }
+        // Always send defaultBaseType, including null for "Ask each time". Sending an explicit
+        // null (rather than omitting the field) lets the backend clear a previously pinned
+        // preference when the user reverts to "Ask each time".
+        data.defaultBaseType = formValue.defaultBaseType;
 
         const assetPath = this.#getAssetPath(this.$originalName() ?? formValue.name);
 
