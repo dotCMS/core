@@ -40,11 +40,17 @@ def cmd_publish(args: argparse.Namespace) -> int:
     with open(args.notes_file, encoding="utf-8") as fh:
         release_notes = fh.read()
     released_date = args.released_date or dt.date.today().isoformat()
+    # Validate before any use: a malformed operator-supplied date must be a clean
+    # usage error (rc 2), never a traceback (module contract).
+    try:
+        r = dt.date.fromisoformat(released_date)
+    except ValueError:
+        log.error("invalid --released-date %r: expected yyyy-MM-dd", released_date)
+        return 2
     # Default per site convention: EOL = released date + 1 year (current track).
     if args.eol_date:
         eol_date = args.eol_date
     else:
-        r = dt.date.fromisoformat(released_date)
         try:
             eol_date = r.replace(year=r.year + 1).isoformat()
         except ValueError:  # Feb 29

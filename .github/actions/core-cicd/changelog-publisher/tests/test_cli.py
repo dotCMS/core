@@ -190,6 +190,22 @@ def test_protective_skip_exits_zero_with_marker(tmp_path, monkeypatch, capsys):
 
 
 @responses_lib.activate
+@responses_lib.activate
+def test_malformed_released_date_exits_two_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
+    """A malformed --released-date is a usage error: rc 2, clean one-line error, no
+    traceback, zero network calls (review finding on #36759)."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_TOKEN", "t")
+
+    with caplog.at_level("ERROR"):
+        rc = main(_argv(tmp_path, "26.07.10-01", "--released-date", "garbage", "--apply"))
+
+    assert rc == 2
+    out, err = capsys.readouterr()
+    assert "Traceback" not in out and "Traceback" not in err
+    assert any("released-date" in r.message for r in caplog.records)
+    assert len(responses_lib.calls) == 0
+
+
 def test_missing_backend_url_exits_one_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
     """A missing/empty DOTCMS_DEVSITE_URL -> rc 1 with a clean one-line error (the URL is a
     repo variable, never hardcoded — an unset variable must fail loudly, not fall back)."""
