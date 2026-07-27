@@ -12,6 +12,7 @@ import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openaiofficial.OpenAiOfficialImageModel;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
 class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
 
@@ -27,11 +28,11 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
                 .apiKey(config.apiKey())
                 .endpoint(config.endpoint())
                 .deploymentName(deploymentName(config));
-        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null && !requiresCompletionTokens(config)) builder.maxTokens(config.maxTokens());
+        if (config.apiVersion() != null) { builder.serviceVersion(config.apiVersion()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        applyTokenLimit(config, builder::maxTokens, builder::maxCompletionTokens);
         return builder.build();
     }
 
@@ -42,11 +43,11 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
                 .apiKey(config.apiKey())
                 .endpoint(config.endpoint())
                 .deploymentName(deploymentName(config));
-        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null && !requiresCompletionTokens(config)) builder.maxTokens(config.maxTokens());
+        if (config.apiVersion() != null) { builder.serviceVersion(config.apiVersion()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        applyTokenLimit(config, builder::maxTokens, builder::maxCompletionTokens);
         return builder.build();
     }
 
@@ -57,10 +58,10 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
                 .apiKey(config.apiKey())
                 .endpoint(config.endpoint())
                 .deploymentName(deploymentName(config));
-        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
-        if (config.dimensions() != null) builder.dimensions(config.dimensions());
+        if (config.apiVersion() != null) { builder.serviceVersion(config.apiVersion()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
+        if (config.dimensions() != null) { builder.dimensions(config.dimensions()); }
         return builder.build();
     }
 
@@ -94,9 +95,9 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
                     .baseUrl(config.endpoint())
                     .apiKey(config.apiKey())
                     .modelName(deploymentName(config));
-            if (config.size() != null) builder.size(config.size());
-            if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
-            if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+            if (config.size() != null) { builder.size(config.size()); }
+            if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
+            if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
             return builder.build();
         }
         final OpenAiOfficialImageModel.Builder builder = OpenAiOfficialImageModel.builder()
@@ -108,9 +109,9 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         if (config.apiVersion() != null) {
             builder.azureOpenAIServiceVersion(AzureOpenAIServiceVersion.Companion.fromString(config.apiVersion()));
         }
-        if (config.size() != null) builder.size(config.size());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.size() != null) { builder.size(config.size()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
         return builder.build();
     }
 
@@ -133,6 +134,22 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
     private static boolean requiresCompletionTokens(final ProviderConfig config) {
         final String name = deploymentName(config) != null ? deploymentName(config) : "";
         return name.matches("o\\d+.*") || name.matches("gpt-([5-9]|\\d{2,}).*");
+    }
+
+    private static void applyTokenLimit(final ProviderConfig config,
+                                        final Consumer<Integer> maxTokensFn,
+                                        final Consumer<Integer> maxCompletionTokensFn) {
+        final Integer tokens = config.maxCompletionTokens() != null
+                ? config.maxCompletionTokens()
+                : config.maxTokens();
+        if (tokens == null) {
+            return;
+        }
+        if (requiresCompletionTokens(config)) {
+            maxCompletionTokensFn.accept(tokens);
+        } else {
+            maxTokensFn.accept(tokens);
+        }
     }
 
 }

@@ -1,5 +1,5 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
-import { byTestId } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator';
+import { byTestId } from '@openng/spectator/jest';
 
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';

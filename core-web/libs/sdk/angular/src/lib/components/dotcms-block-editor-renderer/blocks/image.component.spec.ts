@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@openng/spectator';
 
 import { DotImageBlock } from './image.component';
 

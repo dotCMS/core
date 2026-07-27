@@ -5,7 +5,7 @@ import {
     Spectator,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

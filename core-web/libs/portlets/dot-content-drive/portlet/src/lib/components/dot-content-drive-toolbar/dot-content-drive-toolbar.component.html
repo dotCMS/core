@@ -45,6 +45,15 @@
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
 
+            @for (field of $activeFieldFilters(); track field.variable) {
+                <dot-content-drive-field-filter
+                    animate.enter="field-filter-enter"
+                    animate.leave="field-filter-leave"
+                    [field]="field" />
+            }
+
+            <dot-content-drive-field-filter-menu data-testid="field-filter-menu" />
+
             @if ($hasFilters()) {
                 <p-button
                     [label]="'content-drive.filters.clear-all' | dm"

@@ -34,15 +34,10 @@
                 height: 100%;
                 background: colors.$color-palette-gray-200;
 
-                dot-contentlet-thumbnail {
-                    width: 100%;
-                    height: 100%;
-
-                    img {
-                        object-fit: contain;
-                        width: 100%;
-                        height: 100%;
-                    }
+                // Card look: whole asset visible inside the padded box, never cropped
+                dot-content-thumbnail img,
+                dot-content-thumbnail video {
+                    object-fit: contain;
                 }
             }
         }

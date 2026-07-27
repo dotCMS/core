@@ -1,6 +1,6 @@
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSDataTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { ContentletField } from './types';
 
@@ -70,6 +70,49 @@ export function coerceFieldValue(
         return '';
     }
 
+    // SELECT / RADIO: p-select and p-radioButton match the control value
+    // against string option values (`optionValue="value"`). The Page API
+    // can return a real boolean (BOOL-backed field) or a number, neither of
+    // which `===` a string option — so the control shows its placeholder
+    // while `showClear` still sees a truthy value (the stray "X"). Map the
+    // raw value back to its matching option's string value.
+    if (field.clazz === DotCMSClazzes.SELECT || field.clazz === DotCMSClazzes.RADIO) {
+        return matchOptionValue(field, value);
+    }
+
+    return value;
+}
+
+/**
+ * Normalize a single-select value (SELECT / RADIO) so it matches one of
+ * the field's string option values. Options are always strings (parsed
+ * from `label|value`), but the Page API may return a real boolean for a
+ * BOOL-backed field or a number. Boolean values are matched through the
+ * same `toBoolean` semantics the backend uses (so `true` selects the
+ * `Yes|1` option); numbers fall back to string comparison. Values that
+ * are already strings (or arrays) are returned untouched.
+ */
+function matchOptionValue(
+    field: ContentletField,
+    value: string | string[] | boolean | DotCMSContentlet
+): string | string[] | boolean | DotCMSContentlet {
+    if (typeof value === 'string' || Array.isArray(value)) {
+        return value;
+    }
+
+    const options = field.options ?? [];
+
+    if (typeof value === 'boolean') {
+        const match = options.find((option) => commonsLangToBoolean(option.value) === value);
+        return match ? match.value : String(value);
+    }
+
+    if (typeof value === 'number') {
+        const asString = String(value);
+        const match = options.find((option) => option.value === asString);
+        return match ? match.value : asString;
+    }
+
     return value;
 }
 
@@ -132,11 +175,99 @@ export function buildQuickEditFormGroup(
 }
 
 /**
- * Reconstruct the page-asset-compatible properties for IMAGE/FILE/BINARY
- * fields. The form stores identifier strings; the page asset stores
- * objects keyed by `identifier` (image/file) or `idPath` (binary).
- * Used by the optimistic-update path to push form values back into
- * the iframe's page tree.
+ * Values commons-lang3 `BooleanUtils.toBoolean(String)` treats as `true`
+ * (compared case-insensitively). Everything else — `"0"`, `"false"`,
+ * `"off"`, `"2"`, untrimmed `" 1"`, `""` — is `false`.
+ */
+const BOOLEAN_TRUE_TOKENS = new Set(['true', 'yes', 'y', 't', 'on', '1']);
+
+/**
+ * Faithful port of `org.apache.commons.lang3.BooleanUtils.toBoolean(String)`
+ * (commons-lang3 3.18.0). The backend `booleanStrategy` runs every saved
+ * value through this on check-in, so mirroring it makes the optimistic
+ * preview match exactly what the Page API returns after save.
+ *
+ * Note: commons-lang3 does NOT trim, so neither do we — `" 1"` is `false`.
+ */
+function commonsLangToBoolean(value: string): boolean {
+    return BOOLEAN_TRUE_TOKENS.has(value.toLowerCase());
+}
+
+/**
+ * Coerce a raw form-control value to the primitive type its `dataType`
+ * implies, so the optimistic page-asset value matches what the Page API
+ * returns for the same contentlet.
+ *
+ * Angular form controls hold strings (`pInputText`) or the option's
+ * `value` string (`p-select` / `p-radioButton` with `optionValue`), so a
+ * BOOL field configured `Yes|1 / No|0` arrives as `"1"`/`"0"` and an
+ * INTEGER field as `"5"`. Pushing those raw into the iframe stringifies
+ * types the server would return as real booleans/numbers — and the string
+ * `"0"` is truthy in JS, breaking type-sensitive conditional rendering.
+ *
+ * Each branch mirrors the matching backend write strategy in
+ * `FieldHandlerStrategyFactory` so the preview equals the post-save value:
+ * - BOOL → commons-lang3 `BooleanUtils.toBoolean` (see above).
+ * - INTEGER → `Long.parseLong` (strict: optional sign + digits, no
+ *   whitespace, no decimals). Non-integer strings are left as-is — a save
+ *   would itself throw and roll back.
+ * - FLOAT → `Float.parseFloat` (trims, accepts decimals/scientific).
+ *
+ * `null`/`undefined`/array (multi-value) values are always left untouched.
+ */
+export function coerceValueToDataType(dataType: string | undefined, value: unknown): unknown {
+    if (value === null || value === undefined || Array.isArray(value)) {
+        return value;
+    }
+
+    switch (dataType) {
+        case DotCMSDataTypes.BOOLEAN:
+            // Backend keeps real Booleans as-is and runs everything else
+            // (including numbers, stringified) through toBoolean.
+            return typeof value === 'boolean' ? value : commonsLangToBoolean(String(value));
+
+        case DotCMSDataTypes.INTEGER: {
+            if (typeof value === 'number') {
+                return value;
+            }
+            const str = String(value);
+            return /^[+-]?\d+$/.test(str) ? Number(str) : value;
+        }
+
+        case DotCMSDataTypes.FLOAT: {
+            if (typeof value === 'number') {
+                return value;
+            }
+            const str = String(value).trim();
+            if (str === '') {
+                return value;
+            }
+            const parsed = Number(str);
+            return Number.isFinite(parsed) ? parsed : value;
+        }
+
+        default:
+            return value;
+    }
+}
+
+/**
+ * Reconstruct the page-asset-compatible properties for the optimistic
+ * update path. Three normalizations happen here:
+ *
+ * 1. IMAGE/FILE/BINARY: the form stores identifier strings; the page asset
+ *    stores objects keyed by `identifier` (image/file) or `idPath` (binary).
+ * 2. CHECKBOX (with options) / MULTI_SELECT: the form stores an array of
+ *    selected values, but the Page API represents them as a comma-joined
+ *    string ("a,b,c"). Re-join so the iframe doesn't receive an array where
+ *    the headless app expects a string (arrays interpolate without commas,
+ *    e.g. "a,b,c" → "abc").
+ * 3. Scalar fields: coerce each value to the primitive its `dataType`
+ *    implies (BOOL → boolean, INTEGER/FLOAT → number) so the iframe
+ *    receives the same types the Page API returns instead of raw strings.
+ *
+ * Used by the optimistic-update path to push form values back into the
+ * iframe's page tree.
  */
 export function toPageAssetProperties(
     fields: ContentletField[],
@@ -145,18 +276,24 @@ export function toPageAssetProperties(
     const result: Record<string, unknown> = { ...formValues };
 
     for (const field of fields) {
-        if (
-            field.clazz !== DotCMSClazzes.IMAGE &&
-            field.clazz !== DotCMSClazzes.FILE &&
-            field.clazz !== DotCMSClazzes.BINARY
-        ) {
+        if (!(field.variable in formValues)) {
             continue;
         }
 
+        const value = formValues[field.variable];
+
         if (field.clazz === DotCMSClazzes.IMAGE || field.clazz === DotCMSClazzes.FILE) {
-            result[field.variable] = { identifier: formValues[field.variable] };
+            result[field.variable] = { identifier: value };
         } else if (field.clazz === DotCMSClazzes.BINARY) {
-            result[field.variable] = { idPath: formValues[field.variable] };
+            result[field.variable] = { idPath: value };
+        } else if (
+            (field.clazz === DotCMSClazzes.CHECKBOX ||
+                field.clazz === DotCMSClazzes.MULTI_SELECT) &&
+            Array.isArray(value)
+        ) {
+            result[field.variable] = value.join(',');
+        } else {
+            result[field.variable] = coerceValueToDataType(field.dataType, value);
         }
     }
 

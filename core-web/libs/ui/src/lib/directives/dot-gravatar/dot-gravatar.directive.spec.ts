@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 import md5 from 'md5';
 
 import { Avatar, AvatarModule } from 'primeng/avatar';

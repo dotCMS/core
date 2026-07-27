@@ -28,7 +28,9 @@ export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
 export * from './lib/components/dot-sidebar-accordion';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
-export * from './lib/components/dot-temp-file-thumbnail/dot-temp-file-thumbnail.component';
+export * from './lib/components/dot-content-thumbnail/dot-content-thumbnail.component';
+export * from './lib/components/dot-content-thumbnail/models/dot-content-thumbnail.model';
+export * from './lib/components/dot-content-thumbnail/utils/dot-content-thumbnail.utils';
 export * from './lib/components/dot-content-type/dot-content-type.component';
 export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';

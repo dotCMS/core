@@ -7,7 +7,7 @@ import {
     deleteContentType
 } from '../requests/contentType';
 import { createFolders } from '../requests/folders';
-import { getSites, type Site } from '../requests/sites';
+import { getCurrentSite, getSites, type Site } from '../requests/sites';
 import {
     createFakePayloadHostFolderField,
     createFakePayloadTextField
@@ -36,6 +36,12 @@ function hostFolderContentTypePayload(suffix: string): CreateContentTypePayload 
 
 // ─── Fixture ─────────────────────────────────────────────────────
 
+function buildFolderPaths(prefix: string, count: number, parentPath = ''): string[] {
+    const base = parentPath ? `${parentPath}/` : '/';
+
+    return Array.from({ length: count }, (_, index) => `${base}${prefix}-${index + 1}`);
+}
+
 export const test = base.extend<{
     adminPage: Page;
     testSuffix: string;
@@ -43,7 +49,9 @@ export const test = base.extend<{
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
         deleteContentType: (id: string) => Promise<void>;
         createFolders: (siteName: string, paths: string[]) => Promise<void>;
+        buildFolderPaths: (prefix: string, count: number, parentPath?: string) => string[];
         getDefaultSite: () => Promise<Site>;
+        getCurrentSite: () => Promise<Site>;
         hostFolderPayload: (suffix: string) => CreateContentTypePayload;
     };
 }>({
@@ -60,6 +68,8 @@ export const test = base.extend<{
             createContentType: (payload) => createFakeContentType(request, payload),
             deleteContentType: (id) => deleteContentType(request, id),
             createFolders: (siteName, paths) => createFolders(request, siteName, paths),
+            buildFolderPaths: (prefix, count, parentPath) =>
+                buildFolderPaths(prefix, count, parentPath),
             getDefaultSite: async () => {
                 const sites = await getSites(request);
                 const site = sites.find((s) => s.default);
@@ -68,6 +78,7 @@ export const test = base.extend<{
                 }
                 return site;
             },
+            getCurrentSite: () => getCurrentSite(request),
             hostFolderPayload: (suffix: string) => hostFolderContentTypePayload(suffix)
         });
     }

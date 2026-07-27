@@ -1,4 +1,4 @@
-import { mockProvider } from '@ngneat/spectator/jest';
+import { mockProvider } from '@openng/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';

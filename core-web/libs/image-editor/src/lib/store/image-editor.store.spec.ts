@@ -1,5 +1,5 @@
-import { mockProvider, SpyObject } from '@ngneat/spectator/jest';
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
+import { mockProvider, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { Injector, runInInjectionContext } from '@angular/core';

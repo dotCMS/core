@@ -209,7 +209,43 @@ export interface DotContentDriveSearchRequest {
      * @example [{ scheme: "d61a59e1-…", step: "dc3c9cd0-…" }, { scheme: "2a4e1d2e-…" }]
      */
     workflow?: { scheme: string; step?: string }[];
+
+    /**
+     * Field-based search criteria, keyed by the content-type field variable. Only offered when a
+     * single content type is selected and only for fields flagged User Searchable + System Indexed.
+     * The value shape depends on the field type:
+     * - text/select/radio → a single string (contains / equals)
+     * - multi-select/checkbox → a list of values
+     * - date/time/date-and-time → an inclusive `{ from, to }` ISO range
+     *
+     * @example
+     * {
+     *   title: "product review",
+     *   category: ["news", "press"],
+     *   publishDate: { from: "2024-01-01T00:00:00Z", to: "2024-12-31T23:59:59Z" }
+     * }
+     */
+    userSearchable?: Record<string, DotContentDriveUserSearchableValue>;
 }
+
+/**
+ * Inclusive date range used by date/time field-based search criteria.
+ */
+export interface DotContentDriveDateRange {
+    from: string;
+    to: string;
+}
+
+/**
+ * Value shape for a single {@link DotContentDriveSearchRequest.userSearchable} entry.
+ * String for text/select, string[] for multi-select and multi-option checkbox, a boolean for a
+ * binary checkbox, and a range for date/time fields.
+ */
+export type DotContentDriveUserSearchableValue =
+    | string
+    | string[]
+    | boolean
+    | DotContentDriveDateRange;
 
 /**
  * Response from the /api/v1/drive/search endpoint.

@@ -64,6 +64,7 @@ import {
     generatePreviewUrl,
     getFinalCastedValue,
     isFilteredType,
+    isSingleColumnLayout,
     processFieldValue
 } from '../../utils/functions.util';
 import { blockEditorRequiredValidator } from '../../utils/validators';
@@ -236,6 +237,14 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     $tabs = this.$store.tabs;
+
+    /**
+     * Determines whether a given tab's layout is single-column, so the template can pick the
+     * form's max-width per tab (720px vs 1000px).
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    protected readonly isSingleColumnLayout = isSingleColumnLayout;
 
     /**
      * Context for the append template passed to TabViewInsertDirective.

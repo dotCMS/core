@@ -10,6 +10,7 @@
     [timeOnly]="fieldTypeConfig.timeOnly"
     [showTime]="fieldTypeConfig.showTime"
     [hideOnDateTimeSelect]="false"
+    [appendTo]="'body'"
     (onSelect)="onCalendarChange($event)"
     (onClearClick)="onCalendarChange(null)"
     (onClear)="onCalendarChange(null)"

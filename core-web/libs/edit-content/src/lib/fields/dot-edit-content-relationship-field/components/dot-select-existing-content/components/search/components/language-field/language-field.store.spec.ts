@@ -1,4 +1,4 @@
-import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import { SpyObject, mockProvider } from '@openng/spectator/jest';
 import { Observable, of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';

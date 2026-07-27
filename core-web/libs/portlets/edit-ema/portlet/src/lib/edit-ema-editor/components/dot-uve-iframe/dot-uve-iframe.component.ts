@@ -75,6 +75,15 @@ export class DotUveIframeComponent {
     private readonly iframeClickListener$ = new Subject<void>();
 
     /**
+     * Tracks the last content written into the iframe, keyed by `src + content`.
+     * Prevents destructive re-writes when the reactive effect, the (load) handler,
+     * and the synthetic load fired by doc.close() all converge on insertPageContent
+     * for the same render — which re-executes customer top-level const/let and throws
+     * "Identifier '…' has already been declared".
+     */
+    private lastWrittenKey: string | null = null;
+
+    /**
      * Rendered HTML for traditional pages.
      * @type {Signal<string>}
      */
@@ -149,19 +158,24 @@ export class DotUveIframeComponent {
             return;
         }
 
-        const doc = iframeElement.contentDocument;
-
-        if (!doc) {
-            return;
-        }
-
         const content = this.$isEmaLegacyScriptInjectionEnabled()
             ? addEditorPageScript(pageRender)
             : pageRender;
 
-        doc.open();
-        doc.write(content);
-        doc.close();
+        const writeKey = `${this.src()}::${content}`;
+
+        if (writeKey !== this.lastWrittenKey) {
+            this.lastWrittenKey = writeKey;
+            // srcdoc navigates the iframe to a fresh browsing context on every
+            // unique render, clearing the window's global lexical scope.
+            // document.open()/write()/close() reuses the same window object, so
+            // top-level let/const from any prior render remain in scope and throw
+            // "Identifier '…' has already been declared" when the same scripts
+            // run again — even across legitimate re-renders (e.g. preview → edit
+            // mode returns different server-rendered HTML that still contains the
+            // same let/const declarations).
+            iframeElement.srcdoc = content;
+        }
 
         this.handleInlineScripts(enableInlineEdit);
     }

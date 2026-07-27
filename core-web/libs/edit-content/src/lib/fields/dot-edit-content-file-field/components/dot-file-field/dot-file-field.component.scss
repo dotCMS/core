@@ -50,6 +50,9 @@
 
 .dot-file-field__container--uploading {
     border-style: dashed;
+    // The only child in this state is the spinner — center it in the card
+    align-items: center;
+    justify-content: center;
 }
 
 .dot-file-field__container:hover:not(.border-color-error) {

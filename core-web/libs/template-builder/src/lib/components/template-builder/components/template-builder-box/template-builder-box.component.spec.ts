@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';

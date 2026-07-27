@@ -4,7 +4,7 @@ import {
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';

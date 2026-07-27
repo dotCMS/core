@@ -1,11 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
+import { patchState } from '@ngrx/signals';
 import {
     SpectatorRouting,
     byTestId,
     createRoutingFactory,
     mockProvider
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, Subject, throwError } from 'rxjs';
 
@@ -2171,6 +2171,103 @@ describe('EditEmaEditorComponent', () => {
                     );
 
                     expect(dialogTranslatePageSpy).toHaveBeenCalledWith(translatePagePayload);
+                });
+            });
+
+            describe('$translatePageEffect — dialog loop prevention', () => {
+                it('should NOT show the translation dialog when uveStatus is LOADING', () => {
+                    const confirmSpy = jest.spyOn(
+                        spectator.inject(ConfirmationService, true),
+                        'confirm'
+                    );
+
+                    // Load with an untranslated language (language_id=2 returns viewAs.language.id=2,
+                    // and mockLanguageArray has id:2 with translated:false)
+                    store.pageLoad({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    // Immediately force LOADING status before effects flush — simulates in-flight state
+                    patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                    spectator.flushEffects();
+                    spectator.detectChanges();
+
+                    expect(confirmSpy).not.toHaveBeenCalled();
+                });
+
+                it('should navigate to a translated language when the user rejects creating a new translation', () => {
+                    const confirmationService = spectator.inject(ConfirmationService, true);
+                    // Set up the spy BEFORE loading so we capture the confirm call made by the effect
+                    const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+
+                    // language_id=2 → viewAs.language.id=2, pageLanguages has id:2 translated:false
+                    store.pageLoad({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    spectator.flushEffects();
+                    spectator.detectChanges();
+
+                    // The effect should have shown the dialog because currentLanguage.translated=false
+                    expect(confirmSpy).toHaveBeenCalled();
+
+                    // Spy on pageLoad AFTER the initial load to track only the reject navigation
+                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+
+                    // Simulate user clicking "No"
+                    const rejectCallback = (confirmSpy.mock.calls[0][0] as Confirmation).reject;
+                    rejectCallback?.();
+
+                    // Must navigate to language id=1 (the only translated language in mockLanguageArray),
+                    // NOT to id=2 (which would cause an infinite loop)
+                    expect(pageLoadSpy).toHaveBeenCalledWith({ language_id: '1' });
+                });
+
+                it('should NOT call pageLoad when no translated language exists and user rejects', () => {
+                    const confirmationService = spectator.inject(ConfirmationService, true);
+                    const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+
+                    store.pageLoad({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    spectator.flushEffects();
+                    spectator.detectChanges();
+
+                    expect(confirmSpy).toHaveBeenCalled();
+
+                    // Patch pageLanguages to only contain untranslated languages — no safe fallback.
+                    // #goBackToCurrentLanguage() must bail (no-op) to avoid looping.
+                    // protectedState:false on the root store makes patchState available in tests.
+                    patchState(store, {
+                        pageLanguages: [
+                            {
+                                id: 2,
+                                languageCode: 'es',
+                                countryCode: 'ES',
+                                language: 'Spanish',
+                                country: 'España',
+                                translated: false
+                            }
+                        ]
+                    });
+
+                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+
+                    const rejectCallback = (confirmSpy.mock.calls[0][0] as Confirmation).reject;
+                    rejectCallback?.();
+
+                    // No translated language → bail without reloading to avoid any loop
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
                 });
             });
 

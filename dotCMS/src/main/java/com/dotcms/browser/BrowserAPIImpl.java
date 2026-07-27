@@ -5,8 +5,17 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -33,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.RenderMode;
@@ -42,6 +52,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -49,9 +60,16 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -64,6 +82,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
@@ -109,6 +128,23 @@ public class BrowserAPIImpl implements BrowserAPI {
                     "    }\n" +
             "}";
 
+    /**
+     * JSON-escapes a Lucene query string so it can be safely interpolated as the string value in
+     * {@link #ES_QUERY_TEMPLATE}. The shared field strategies emit backslash-escaped Lucene special
+     * characters (e.g. {@code angular\-cms}) and double-quoted phrases; a raw backslash or double
+     * quote is an invalid JSON escape, so without this the Elasticsearch request body is malformed
+     * and the whole search fails (json_parse_exception) — silently returning no results. Backslash
+     * must be escaped before the double quote so the backslash introduced for {@code \"} is not
+     * doubled.
+     *
+     * @param luceneQuery The Lucene query to embed in the JSON request body.
+     * @return The query with {@code \} and {@code "} escaped for JSON.
+     */
+    @VisibleForTesting
+    static String jsonEscape(final String luceneQuery) {
+        return luceneQuery.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
 
     /**
      * Returns a collection of contentlets based on specific filtering criteria specified via the
@@ -140,10 +176,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     @CloseDBIfOpened
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int maxRows) {
         final SelectQuery sqlQuery = this.selectQuery(browserQuery);
-        final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
+        final boolean useElasticSearchForFiltering = isUseElasticSearchForFiltering(browserQuery);
 
         try {
-            if (useElasticSearchForTextFiltering) {
+            if (useElasticSearchForFiltering) {
                 // Permission filtering and page slicing happen inside — return directly.
                 return doElasticSearchTextFiltering(browserQuery, maxRows, sqlQuery);
             }
@@ -439,6 +475,15 @@ public class BrowserAPIImpl implements BrowserAPI {
                     return doHybridSingleChunkedQueryES(browserQuery, maxRows, sqlQuery);
                 case PURE_ES:
                 default:
+                    // PURE_ES bypasses the DB select entirely and doesn't build per-field clauses,
+                    // so it can neither apply DB-routed (Tag) predicates nor index-routed field
+                    // clauses. Rather than silently return unfiltered content, fail loudly. Content
+                    // Drive runs the default HYBRID heuristic, so this only trips on misconfiguration.
+                    if (!browserQuery.getFieldCriteria().isEmpty()) {
+                        throw new DotRuntimeException("Content Drive field filters (userSearchable) "
+                                + "are not supported under the PURE_ES heuristic; use "
+                                + "HYBRID_SINGLE_CHUNKED_QUERY_ES.");
+                    }
                     return doPureESQuery(browserQuery, maxRows);
             }
         } catch (DotSecurityException e) {
@@ -812,7 +857,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> inodesList = new ArrayList<>(inodes);
             final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
             final String luceneQuery = inodeFilter + baseQuery;
-            final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery));
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 
@@ -1127,7 +1172,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The base Elasticsearch query string without inode filtering
      */
     String buildBaseESQuery(final BrowserQuery browserQuery) {
-        final StringBuilder baseQuery = new StringBuilder();
+        final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String titleFilters = String.format(
@@ -1136,7 +1181,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                     browserQuery.filter,
                     browserQuery.filter,
                     browserQuery.filter);
-            baseQuery.append(titleFilters);
+            textGroup.append(titleFilters);
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1146,10 +1191,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                         browserQuery.fileName,
                         browserQuery.fileName,
                         browserQuery.fileName);
-                if (baseQuery.length() > 0) {
-                    baseQuery.append(" AND ");
+                if (textGroup.length() > 0) {
+                    textGroup.append(" AND ");
                 }
-                baseQuery.append(metadataFilters);
+                textGroup.append(metadataFilters);
             } else {
                 Logger.warn(BrowserAPIImpl.class,
                         String.format(
@@ -1163,26 +1208,283 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
         }
 
+        final StringBuilder baseQuery = new StringBuilder();
+        if (textGroup.length() > 0) {
+            // Wrap the free-text/fileName portion in a mandatory group for ES query_string syntax
+            baseQuery.append(" +(").append(textGroup).append(')');
+        }
+
+        // Append index-routed per-field clauses (Content Drive). Each clause is already a mandatory
+        // (+) Lucene term produced by the shared field strategies, so it ANDs with the text group
+        // and, downstream, with the DB candidate inode set.
+        final String fieldClauses = buildFieldCriteriaESClauses(browserQuery);
+        if (UtilMethods.isSet(fieldClauses)) {
+            baseQuery.append(' ').append(fieldClauses);
+        }
+
         // Early return if no query was built
         if (baseQuery.length() == 0) {
             return BLANK;
         }
 
-        // Wrap in mandatory group for ES query_string syntax
-        return " +(" + baseQuery + ')';
+        return baseQuery.toString();
     }
 
     /**
-     * Determines whether Elasticsearch should be used for text-based filtering instead of SQL ILIKE queries.
-     * This optimization is triggered when Elasticsearch filtering is enabled AND there are text search criteria.
+     * Builds the Elasticsearch clauses for the index-routed per-field criteria carried by the
+     * {@link BrowserQuery} (Content Drive field filters). The field-value → Lucene-clause
+     * translation is delegated to the shared field strategies in
+     * {@code com.dotcms.rest.api.v1.content.search} so the syntax matches the modern content
+     * search. DB-routed criteria (Tag) are skipped here — they are resolved in the SQL path.
+     *
+     * @param browserQuery The {@link BrowserQuery} containing the parsed field criteria.
+     * @return The concatenated, space-separated Lucene clauses, or {@link #BLANK} when there are no
+     *         index-routed criteria.
+     */
+    private String buildFieldCriteriaESClauses(final BrowserQuery browserQuery) {
+        if (browserQuery.getFieldCriteria().isEmpty()) {
+            return BLANK;
+        }
+        final StringBuilder clauses = new StringBuilder();
+        for (final FieldSearchCriteria criteria : browserQuery.getFieldCriteria()) {
+            if (criteria.getBucket() != FieldSearchCriteria.RoutingBucket.INDEX) {
+                continue;
+            }
+            final Field field = criteria.getField();
+            final ContentType contentType = criteria.getContentType();
+            final String luceneFieldName = contentType.variable() + "." + field.variable();
+
+            // Multi-Select/Checkbox "in list" must be OR (match any) to be consistent with Tag and
+            // Category (both OR-in-list) and with the multi-pick UI. The shared TextFieldStrategy
+            // ANDs its tokens, so build the OR group directly for these two field types.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.MULTI
+                    && (field instanceof MultiSelectField || field instanceof CheckboxField)) {
+                final String orClause = buildMultiValueOrClause(luceneFieldName, criteria.getValues());
+                if (UtilMethods.isSet(orClause)) {
+                    clauses.append(' ').append(orClause);
+                }
+                continue;
+            }
+
+            // Time fields index the main field as a full datetime with the value's own date, so a
+            // range on it would compare the (meaningless) date component. Match time-of-day instead,
+            // against the _dotraw keyword sub-field (indexed as HH:mm:ss), so the range works
+            // regardless of the date the value was stored with.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.RANGE
+                    && field instanceof TimeField) {
+                clauses.append(' ').append(buildTimeOfDayRangeClause(luceneFieldName, criteria));
+                continue;
+            }
+
+            final String luceneValue = fieldCriteriaLuceneValue(criteria);
+            final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
+            final FieldContext fieldContext = new FieldContext.Builder()
+                    .withContentType(contentType)
+                    .withUser(browserQuery.user)
+                    .withFieldName(luceneFieldName)
+                    .withFieldValue(luceneValue)
+                    .build();
+            final String clause = handler.apply(fieldContext);
+            if (UtilMethods.isSet(clause)) {
+                clauses.append(' ').append(clause.trim());
+            } else if (UtilMethods.isSet(luceneValue)) {
+                // A non-empty value that yields no clause means the field type has no registered
+                // handler (getHandler falls back to a BLANK-producing function). Without this the
+                // criterion would silently drop and the field would return everything unfiltered.
+                Logger.warn(this, String.format(
+                        "No Lucene clause produced for INDEX-routed field '%s' (type %s) with a " +
+                                "non-empty value; the criterion is being ignored. A field strategy " +
+                                "handler is likely missing for this field type.",
+                        luceneFieldName, field.type().getSimpleName()));
+            }
+        }
+        return clauses.length() == 0 ? BLANK : clauses.toString().trim();
+    }
+
+    /**
+     * Formats a {@link FieldSearchCriteria} value into the single value string that the shared
+     * field strategies expect for that field type.
+     * <ul>
+     *   <li>SCALAR → the single value.</li>
+     *   <li>MULTI → values joined by comma (categories are inodes; other multi-value fields are
+     *       tokenized by the strategy).</li>
+     *   <li>BOOLEAN → {@code "true"}/{@code "false"}.</li>
+     *   <li>RANGE → {@code "from TO to"} with {@code *} for open-ended bounds, as expected by
+     *       {@code DateTimeFieldStrategy}.</li>
+     * </ul>
+     *
+     * @param criteria The {@link FieldSearchCriteria} to format.
+     * @return The value string to hand to the field strategy.
+     */
+    private String fieldCriteriaLuceneValue(final FieldSearchCriteria criteria) {
+        switch (criteria.getKind()) {
+            case BOOLEAN:
+                return String.valueOf(criteria.getBooleanValue());
+            case RANGE:
+                final String from = UtilMethods.isSet(criteria.getRangeFrom())
+                        ? normalizeDateBound(criteria.getRangeFrom()) : "*";
+                final String to = UtilMethods.isSet(criteria.getRangeTo())
+                        ? normalizeDateBound(criteria.getRangeTo()) : "*";
+                return from + " TO " + to;
+            case MULTI:
+                return String.join(",", criteria.getValues());
+            case SCALAR:
+            default:
+                return criteria.getValues().isEmpty() ? BLANK : criteria.getValues().get(0);
+        }
+    }
+
+    /**
+     * ES-accepted date pattern that matches how date fields are indexed
+     * ({@code ESMappingAPIImpl.elasticSearchDateTimeFormatPattern}). The literal {@code T} (no
+     * space) is required so the Lucene range {@code [from TO to]} parses — a space inside the bound
+     * would break query_string parsing.
+     */
+    private static final String ES_QUERY_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
+    /** Time-of-day pattern matching the {@code _dotraw} keyword sub-field of a Time field. */
+    private static final String ES_QUERY_TIME_PATTERN = "HH:mm:ss";
+
+    /**
+     * Builds a time-of-day range clause for a Time field against its {@code _dotraw} keyword
+     * sub-field (indexed as {@code HH:mm:ss}). The main field is a full datetime whose date
+     * component is the value's own save date, so ranging on it would (wrongly) require the query's
+     * date to match; the {@code _dotraw} sub-field holds only the time, and a lexicographic range on
+     * zero-padded {@code HH:mm:ss} equals chronological order within a day.
+     *
+     * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
+     * @param criteria  The RANGE criterion.
+     * @return A clause like {@code +ct.field_dotraw:[14:00:00 TO 15:00:00]}.
+     */
+    private String buildTimeOfDayRangeClause(final String fieldName,
+            final FieldSearchCriteria criteria) {
+        final String from = normalizeTimeBound(criteria.getRangeFrom());
+        final String to = normalizeTimeBound(criteria.getRangeTo());
+        return "+" + fieldName + "_dotraw:[" + from + " TO " + to + "]";
+    }
+
+    /**
+     * Normalizes a range bound to a time-of-day ({@code HH:mm:ss}) in the server timezone, matching
+     * how the Time field's {@code _dotraw} value is indexed. Open/blank bounds become {@code *};
+     * unparseable values are escaped so a crafted value can't alter the query structure.
+     *
+     * @param raw The raw bound value.
+     * @return The {@code HH:mm:ss} bound, {@code *}, or an escaped token.
+     */
+    private String normalizeTimeBound(final String raw) {
+        if (!UtilMethods.isSet(raw) || "*".equals(raw.trim())) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(raw.trim());
+        if (null == parsed) {
+            Logger.warn(this, String.format(
+                    "Unparseable time range bound '%s'; escaping it (the criterion will match "
+                            + "nothing).", raw.trim()));
+            return ESUtils.escape(raw.trim());
+        }
+        return new SimpleDateFormat(ES_QUERY_TIME_PATTERN).format(parsed);
+    }
+
+    /**
+     * Normalizes a date range bound into a format the index accepts. The FE sends ISO-8601 (e.g.
+     * {@code 2011-05-04T13:33:00.000Z}), which is NOT one of the dotCMS ES date formats — the {@code
+     * .SSS} milliseconds and {@code Z} make the range bound unparseable, so the query silently
+     * matches nothing. We parse the value and reformat it to {@link #ES_QUERY_DATE_PATTERN}
+     * ({@code yyyy-MM-dd'T'HH:mm:ss}, literal {@code T} — a space would break Lucene range parsing)
+     * in the server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}).
+     * Values that can't be parsed as a date are passed through unchanged (already ES-formatted or
+     * open bound).
+     *
+     * @param raw The raw bound value.
+     * @return The normalized bound, or the original value if it isn't a recognizable date.
+     */
+    private String normalizeDateBound(final String raw) {
+        final String value = raw.trim();
+        if (value.isEmpty() || "*".equals(value)) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(value);
+        if (null == parsed) {
+            // For a date-typed field the bound should be a date. If it isn't, don't let the raw
+            // value reach the Lucene query_string as-is — escape it so a crafted value can't alter
+            // the query structure (an escaped non-date simply matches nothing).
+            Logger.warn(this, String.format(
+                    "Unparseable date range bound '%s'; escaping it (the criterion will match "
+                            + "nothing).", value));
+            return ESUtils.escape(value);
+        }
+        final String normalized = new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed);
+        Logger.debug(this, String.format("Date range bound '%s' normalized to '%s'.", value,
+                normalized));
+        return normalized;
+    }
+
+    /**
+     * Best-effort parse of a date bound across the ISO-8601 shapes the client sends: instant (with
+     * offset/{@code Z}), offset date-time, local date-time, and date-only. Naive (zone-less) inputs
+     * are resolved in the JVM default zone, the same zone the reformat and indexing use, so the
+     * boundary stays consistent. Returns {@code null} when none match (the raw value is then passed
+     * through unchanged).
+     */
+    private Date parseFlexibleDate(final String value) {
+        Date date = Try.of(() -> Date.from(Instant.parse(value))).getOrNull();
+        if (null == date) {
+            date = Try.of(() -> Date.from(OffsetDateTime.parse(value).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDateTime.parse(value).atZone(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDate.parse(value).atStartOfDay(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        return date;
+    }
+
+    /**
+     * Builds an OR (match-any) Lucene clause for a multi-value field, mirroring the "contains"
+     * matching style of {@code TextFieldStrategy} (regular + {@code _dotraw}) but combining the
+     * values with OR inside a single mandatory group. Used for Multi-Select/Checkbox so their
+     * "in list" semantics match Tag/Category (both OR-in-list) rather than the AND the shared text
+     * strategy would produce.
+     *
+     * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
+     * @param values    The selected values.
+     * @return A clause like {@code +(f:*a* f_dotraw:*a* f:*b* f_dotraw:*b*)}, or {@link #BLANK}.
+     */
+    private String buildMultiValueOrClause(final String fieldName, final List<String> values) {
+        final StringBuilder inner = new StringBuilder();
+        for (final String value : values) {
+            final String token = value.trim();
+            if (token.isEmpty()) {
+                continue;
+            }
+            if (inner.length() > 0) {
+                inner.append(' ');
+            }
+            inner.append(fieldName).append(":*").append(token).append("* ")
+                    .append(fieldName).append("_dotraw:*").append(token).append('*');
+        }
+        return inner.length() == 0 ? BLANK : "+(" + inner + ")";
+    }
+
+    /**
+     * Determines whether Elasticsearch should be used for filtering instead of SQL ILIKE queries.
+     * This optimization is triggered when Elasticsearch filtering is enabled AND there is either a
+     * text/fileName criterion OR at least one index-routed per-field criterion (Content Drive field
+     * filters). Tag/Relationship criteria are DB-routed and do not flip this switch on their own.
      *
      * @param browserQuery The {@link BrowserQuery} containing filtering preferences and search criteria
-     * @return {@code true} if ES should be used for text filtering, {@code false} to use SQL filtering
+     * @return {@code true} if ES should be used for filtering, {@code false} to use SQL filtering
      */
-    boolean isUseElasticSearchForTextFiltering(final BrowserQuery browserQuery) {
+    boolean isUseElasticSearchForFiltering(final BrowserQuery browserQuery) {
         final boolean hasTextFilter = UtilMethods.isSet(browserQuery.filter) ||
                 UtilMethods.isSet(browserQuery.fileName);
-        return browserQuery.useElasticsearchFiltering && hasTextFilter;
+        final boolean hasIndexFieldCriteria = browserQuery.getFieldCriteria().stream()
+                .anyMatch(criteria ->
+                        criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
+        return browserQuery.useElasticsearchFiltering && (hasTextFilter || hasIndexFieldCriteria);
     }
 
     /**
@@ -1585,6 +1887,12 @@ public class BrowserAPIImpl implements BrowserAPI {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
             }
         }
+        // DB-routed per-field predicates (Content Drive). These are resolved in the DB regardless of
+        // ES filtering to preserve read-your-writes (ADR-0018). Only Tag is supported in v1;
+        // index-routed criteria are handled by the ES path and never leak into the SQL.
+        if (!browserQuery.getFieldCriteria().isEmpty()) {
+            appendFieldCriteriaDBPredicates(selectQuery, browserQuery, workingLiveInode, parameters);
+        }
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(selectQuery);
         }
@@ -1770,6 +2078,121 @@ public class BrowserAPIImpl implements BrowserAPI {
         parameters.add("%" + filterText + "%");
 
 
+    }
+
+    /**
+     * Appends the DB-routed per-field predicates (Content Drive field filters) to the select query.
+     * Per the ADR-0018 routing contract these criteria are resolved in the database to preserve
+     * read-your-writes: Tag (via {@code tag}/{@code tag_inode}) and Relationship (via {@code tree}).
+     * Index-routed criteria are intentionally ignored here — they are handled by the ES path.
+     * <p>
+     * Multiple criteria combine with AND (each adds an {@code and ... in (...)} sub-select), matching
+     * the additive filtering model.
+     *
+     * @param sqlQuery         The StringBuilder representing the SQL query being built.
+     * @param browserQuery     The {@link BrowserQuery} carrying the parsed field criteria.
+     * @param workingLiveInode The inode column selected by the outer query ({@code working_inode} or
+     *                         {@code live_inode}).
+     * @param parameters       The list of SQL parameters to append bind values to.
+     */
+    private void appendFieldCriteriaDBPredicates(final StringBuilder sqlQuery,
+            final BrowserQuery browserQuery, final String workingLiveInode,
+            final List<Object> parameters) {
+
+        for (final FieldSearchCriteria criteria : browserQuery.getFieldCriteria()) {
+            if (criteria.getBucket() != FieldSearchCriteria.RoutingBucket.DB) {
+                continue;
+            }
+            if (criteria.getField() instanceof TagField) {
+                appendTagQuery(sqlQuery, workingLiveInode, criteria.getValues(), parameters);
+            } else if (criteria.getField() instanceof RelationshipField) {
+                appendRelationshipQuery(sqlQuery, browserQuery.user, criteria.getField(),
+                        criteria.getValues(), parameters);
+            }
+        }
+    }
+
+    /**
+     * Appends a Relationship-field predicate resolved against the {@code tree} table (never the
+     * index), so newly related content is filterable immediately (read-your-writes). The values are
+     * the child/parent contentlet <strong>identifiers</strong> selected on the FE.
+     * <p>
+     * The direction is resolved from the field: if it is the parent-side field the browsed content
+     * is the parent and the values are its children ({@code select parent ... where child in (...)});
+     * if it is the child-side field the direction is reversed. Multiple identifiers combine with OR
+     * (related to any); the enclosing sub-select ANDs with the rest of the query. Permission checks
+     * on the related content are intentionally not applied here — the browsed (parent) content still
+     * runs through the permission filter downstream.
+     *
+     * @param sqlQuery    The StringBuilder representing the SQL query being built.
+     * @param user        The {@link User} performing the search (to resolve the relationship).
+     * @param field       The Relationship {@link Field}.
+     * @param identifiers The related contentlet identifiers to match.
+     * @param parameters  The list of SQL parameters to append bind values to.
+     */
+    private void appendRelationshipQuery(final StringBuilder sqlQuery, final User user,
+            final Field field, final List<String> identifiers, final List<Object> parameters) {
+
+        if (identifiers.isEmpty()) {
+            return;
+        }
+        final Relationship relationship = Try.of(
+                        () -> APILocator.getRelationshipAPI().getRelationshipFromField(field, user))
+                .getOrNull();
+        if (null == relationship) {
+            throw new DotRuntimeException(String.format(
+                    "Unable to resolve the relationship for field '%s'.", field.variable()));
+        }
+        // isChildField(rel, field) is true when the field lives on the parent structure and holds
+        // the *children* (dotCMS names a relationship field after its target). In that case the
+        // browsed content is the parent and the FE-sent values are child identifiers, so we select
+        // parents whose tree 'child' column matches. When the field holds parents, reverse it.
+        final boolean fieldHoldsChildren =
+                APILocator.getRelationshipAPI().isChildField(relationship, field);
+        final String selectColumn = fieldHoldsChildren ? "parent" : "child";
+        final String matchColumn = fieldHoldsChildren ? "child" : "parent";
+
+        sqlQuery.append(" and id.id in ( select ").append(selectColumn)
+                .append(" from tree where ").append(matchColumn).append(" in (");
+        for (int i = 0; i < identifiers.size(); i++) {
+            if (i > 0) {
+                sqlQuery.append(", ");
+            }
+            sqlQuery.append("?");
+            parameters.add(identifiers.get(i).trim());
+        }
+        sqlQuery.append(") and relation_type = ? ) ");
+        parameters.add(relationship.getRelationTypeValue());
+    }
+
+    /**
+     * Appends a Tag-field predicate: content whose selected inode is associated (via the
+     * {@code tag}/{@code tag_inode} tables) with any of the given tag names. Tag names within a
+     * single field combine with OR; the enclosing sub-select ANDs with the rest of the query.
+     * Matching is case-insensitive and exact (no wildcards).
+     *
+     * @param sqlQuery         The StringBuilder representing the SQL query being built.
+     * @param workingLiveInode The inode column selected by the outer query.
+     * @param tagNames         The tag names to match.
+     * @param parameters       The list of SQL parameters to append bind values to.
+     */
+    private void appendTagQuery(final StringBuilder sqlQuery, final String workingLiveInode,
+            final List<String> tagNames, final List<Object> parameters) {
+
+        if (tagNames.isEmpty()) {
+            return;
+        }
+        sqlQuery.append(" and cvi.").append(workingLiveInode)
+                .append(" in ( select ti.inode from tag t, tag_inode ti ")
+                .append(" where t.tag_id = ti.tag_id and (");
+        for (int i = 0; i < tagNames.size(); i++) {
+            if (i > 0) {
+                sqlQuery.append(" or ");
+            }
+            sqlQuery.append(" t.tagname ILIKE ? ");
+            parameters.add(tagNames.get(i).trim());
+        }
+        sqlQuery.append(") ) ");
     }
 
     /**

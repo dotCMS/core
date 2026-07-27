@@ -92,6 +92,14 @@
     opacity: 0.5;
 }
 
+// Red outline shown when the content has real (Error-severity) syntax errors that
+// block saving. Uses PrimeNG's invalid-field border token so it matches `p-invalid`
+// and adapts to dark mode; the hex fallback (Lara `red.400`) is what renders in the
+// legacy Dojo bundle, where the theme CSS variables aren't injected.
+.dot-form-file-editor__editor--error {
+    border-color: var(--p-form-field-invalid-border-color, #f87171);
+}
+
 .dot-form-file-editor__mime-type {
     display: flex;
     align-items: center;

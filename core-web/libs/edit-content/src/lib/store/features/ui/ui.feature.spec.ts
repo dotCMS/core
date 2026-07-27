@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 
 import { fakeAsync } from '@angular/core/testing';
 

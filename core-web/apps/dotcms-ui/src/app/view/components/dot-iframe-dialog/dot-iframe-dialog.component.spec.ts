@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -203,9 +203,14 @@ describe('DotIframeDialogComponent', () => {
                         });
                     });
 
-                    it('should call close method on dot-dialog on dot-iframe escape key', () => {
+                    it('should run the same close/teardown as the X button on Escape key', () => {
                         dotIframeDe?.triggerEventHandler('keyWasDown', { key: 'Escape' });
                         expect(component.keyWasDown.emit).toHaveBeenCalledTimes(1);
+                        // Escape must funnel through onDialogHide() exactly like the X button
+                        expect(component.url).toBe(null);
+                        expect(component.show).toBe(false);
+                        expect(component.header).toBe('');
+                        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
                     });
                 });
 

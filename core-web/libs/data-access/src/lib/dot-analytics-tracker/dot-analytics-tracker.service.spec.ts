@@ -1,5 +1,5 @@
 import { expect, it, describe } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 
 import { HttpClient, HttpHandler } from '@angular/common/http';
 

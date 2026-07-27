@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { of as observableOf, throwError as observableThrowError } from 'rxjs';
 
 import { ActivatedRouteSnapshot } from '@angular/router';

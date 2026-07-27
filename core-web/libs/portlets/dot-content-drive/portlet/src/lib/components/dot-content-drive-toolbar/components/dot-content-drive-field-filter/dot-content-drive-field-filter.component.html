@@ -1,0 +1,301 @@
+<dot-chip-filter
+    [title]="$chipTitle()"
+    [selections]="$chipSelections()"
+    (clicked)="$isRelationship() ? openRelationshipDialog() : popover.toggle($event)"
+    (removed)="onRemove()"
+    [attr.data-testid]="'field-filter-chip-' + $field().variable" />
+
+<p-popover
+    #popover
+    [pt]="popoverPt"
+    (onShow)="$popoverOpen.set(true)"
+    (onHide)="$popoverOpen.set(false)">
+    @if ($popoverOpen()) {
+        @switch ($control()) {
+            @case ('text') {
+                <div class="flex w-72 flex-col p-3" data-testid="field-filter-panel">
+                    <input
+                        pInputText
+                        type="text"
+                        class="w-full"
+                        [ngModel]="$textValue()"
+                        (ngModelChange)="onTextInput($event)"
+                        [attr.inputmode]="$textInputMode()"
+                        [placeholder]="$textPlaceholderKey() | dm"
+                        [attr.aria-label]="$title()"
+                        data-testid="field-filter-text" />
+                </div>
+            }
+            @case ('key-value') {
+                <!--
+                    Key/Value: a single input. A bare term is a loose contains (matches a key OR a
+                    value); the `key:value` shorthand is translated to the joined `key_value` term
+                    for an exact-pair match when the search payload is built.
+                -->
+                <div class="flex w-72 flex-col gap-1 p-3" data-testid="field-filter-panel">
+                    <input
+                        pInputText
+                        type="text"
+                        class="w-full"
+                        [ngModel]="$textValue()"
+                        (ngModelChange)="onTextInput($event)"
+                        [placeholder]="'content-drive.field-filter.key-value.placeholder' | dm"
+                        [attr.aria-label]="$title()"
+                        data-testid="field-filter-key-value" />
+                    <small class="text-slate-500" data-testid="field-filter-key-value-hint">
+                        {{ 'content-drive.field-filter.key-value.hint' | dm }}
+                    </small>
+                </div>
+            }
+            @case ('single-select') {
+                <p-listbox
+                    class="block w-72"
+                    [ngModel]="$selectValue()"
+                    (ngModelChange)="onSingleValueChange($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [options]="$options()"
+                    [filter]="true"
+                    [filterPlaceHolder]="'search' | dm"
+                    [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                    [pt]="listboxPt"
+                    optionLabel="label"
+                    optionValue="value"
+                    data-testid="field-filter-select">
+                    <ng-template let-item pTemplate="item">
+                        <dot-filter-list-item
+                            [label]="item.label"
+                            data-testid="field-filter-option" />
+                    </ng-template>
+                </p-listbox>
+            }
+            @case ('multi-select') {
+                <p-listbox
+                    class="block w-72"
+                    [(ngModel)]="$multiValue"
+                    [ngModelOptions]="{ standalone: true }"
+                    [options]="$options()"
+                    [multiple]="true"
+                    [checkbox]="true"
+                    [filter]="true"
+                    [filterPlaceHolder]="'search' | dm"
+                    [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                    [pt]="listboxPt"
+                    optionLabel="label"
+                    optionValue="value"
+                    (onChange)="onMultiChange()"
+                    data-testid="field-filter-multi-select">
+                    <ng-template let-item pTemplate="item">
+                        <dot-filter-list-item
+                            [label]="item.label"
+                            data-testid="field-filter-option" />
+                    </ng-template>
+                </p-listbox>
+            }
+            @case ('lazy-multiselect') {
+                <dot-content-drive-lazy-multiselect
+                    [loadPage]="$lazyLoader()"
+                    [selectedValues]="$multiValue()"
+                    (selectionChange)="onLazySelectionChange($event)"
+                    data-testid="field-filter-lazy-multiselect" />
+            }
+            @case ('checkbox') {
+                <p-listbox
+                    class="block w-72"
+                    [(ngModel)]="$multiValue"
+                    [ngModelOptions]="{ standalone: true }"
+                    [options]="$options()"
+                    [multiple]="true"
+                    [checkbox]="true"
+                    [filter]="true"
+                    [filterPlaceHolder]="'search' | dm"
+                    [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                    [pt]="listboxPt"
+                    optionLabel="label"
+                    optionValue="value"
+                    (onChange)="onMultiChange()"
+                    data-testid="field-filter-checkbox">
+                    <ng-template let-item pTemplate="item">
+                        <dot-filter-list-item
+                            [label]="item.label || $title()"
+                            data-testid="field-filter-option" />
+                    </ng-template>
+                </p-listbox>
+            }
+            @case ('binary-checkbox') {
+                <p-listbox
+                    class="block w-72"
+                    [ngModel]="$selectValue()"
+                    (ngModelChange)="onSingleValueChange($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [options]="$binaryOptions()"
+                    [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                    [pt]="listboxPt"
+                    optionLabel="label"
+                    optionValue="value"
+                    data-testid="field-filter-binary">
+                    <ng-template let-item pTemplate="item">
+                        <div class="flex w-full min-w-0 items-center gap-2">
+                            <p-radiobutton
+                                [ngModel]="$selectValue()"
+                                [value]="item.value"
+                                [ngModelOptions]="{ standalone: true }"
+                                class="pointer-events-none"
+                                [attr.data-testid]="'field-filter-binary-' + item.value" />
+                            <dot-filter-list-item [label]="item.label" />
+                        </div>
+                    </ng-template>
+                </p-listbox>
+            }
+            @case ('radio') {
+                <p-listbox
+                    class="block w-72"
+                    [ngModel]="$selectValue()"
+                    (ngModelChange)="onSingleValueChange($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [options]="$options()"
+                    [filter]="true"
+                    [filterPlaceHolder]="'search' | dm"
+                    [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                    [pt]="listboxPt"
+                    optionLabel="label"
+                    optionValue="value"
+                    data-testid="field-filter-radio">
+                    <ng-template let-item pTemplate="item">
+                        <div class="flex w-full min-w-0 items-center gap-2">
+                            <p-radiobutton
+                                [ngModel]="$selectValue()"
+                                [value]="item.value"
+                                [ngModelOptions]="{ standalone: true }"
+                                class="pointer-events-none"
+                                [attr.data-testid]="'field-filter-radio-' + item.value" />
+                            <dot-filter-list-item [label]="item.label" />
+                        </div>
+                    </ng-template>
+                </p-listbox>
+            }
+            @case ('date') {
+                @if ($timeOnly()) {
+                    <!--
+                        Time-only fields use two independent pickers: p-datePicker has no range mode
+                        for timeOnly, so a single control can't express a time span. Any time can be
+                        picked for either bound, and either can be left empty (open-ended range).
+                    -->
+                    <div
+                        class="flex flex-col items-center px-3 pt-2"
+                        data-testid="field-filter-time">
+                        <div class="flex items-start justify-center gap-6">
+                            <div class="flex flex-col items-center gap-1">
+                                <label class="text-xs font-semibold text-slate-500">
+                                    {{ 'from' | dm }}
+                                </label>
+                                <p-datePicker
+                                    [timeOnly]="true"
+                                    [inline]="true"
+                                    [ngModel]="$timeFrom()"
+                                    (ngModelChange)="onTimeBoundChange($event, 'from')"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    [pt]="timePickerPt"
+                                    [attr.aria-label]="$title() + ' ' + ('from' | dm)"
+                                    data-testid="field-filter-time-from" />
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <label class="text-xs font-semibold text-slate-500">
+                                    {{ 'To' | dm }}
+                                </label>
+                                <p-datePicker
+                                    [timeOnly]="true"
+                                    [inline]="true"
+                                    [disabled]="!$timeFrom()"
+                                    [ngModel]="$timeTo()"
+                                    (ngModelChange)="onTimeBoundChange($event, 'to')"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    [pt]="timePickerPt"
+                                    [attr.aria-label]="$title() + ' ' + ('To' | dm)"
+                                    data-testid="field-filter-time-to" />
+                            </div>
+                        </div>
+                        @if ($timeRangeInvalid()) {
+                            <small class="pb-1 text-red-500" data-testid="field-filter-time-error">
+                                {{ 'content-drive.field-filter.time.invalid-range' | dm }}
+                            </small>
+                        }
+                    </div>
+                } @else if ($showTime()) {
+                    <!--
+                        Date-and-Time: a date-range calendar (no showTime — that crashes PrimeNG's
+                        range mode on hour change) sets each bound's date, and two time-only pickers
+                        set each bound's time. Both combine into the from/to instants.
+                    -->
+                    <div
+                        class="flex flex-col items-center gap-3 p-3"
+                        data-testid="field-filter-datetime">
+                        <p-datePicker
+                            selectionMode="range"
+                            [ngModel]="$dateValue()"
+                            (ngModelChange)="onDateTimeDatesChange($event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            [showButtonBar]="true"
+                            [readonlyInput]="true"
+                            dateFormat="yy-mm-dd"
+                            [inline]="true"
+                            [pt]="datePickerPt"
+                            [attr.aria-label]="$title()"
+                            data-testid="field-filter-datetime-dates" />
+                        <div class="flex items-start justify-center gap-6">
+                            <div class="flex flex-col items-center gap-1">
+                                <label class="text-xs font-semibold text-slate-500">
+                                    {{ 'from' | dm }}
+                                </label>
+                                <p-datePicker
+                                    [timeOnly]="true"
+                                    [inline]="true"
+                                    [disabled]="!$timeFrom()"
+                                    [ngModel]="$timeFrom()"
+                                    (ngModelChange)="onDateTimeTimeChange($event, 'from')"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    [pt]="timePickerPt"
+                                    [attr.aria-label]="$title() + ' ' + ('from' | dm)"
+                                    data-testid="field-filter-datetime-from-time" />
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <label class="text-xs font-semibold text-slate-500">
+                                    {{ 'To' | dm }}
+                                </label>
+                                <p-datePicker
+                                    [timeOnly]="true"
+                                    [inline]="true"
+                                    [disabled]="!$timeTo()"
+                                    [ngModel]="$timeTo()"
+                                    (ngModelChange)="onDateTimeTimeChange($event, 'to')"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    [pt]="timePickerPt"
+                                    [attr.aria-label]="$title() + ' ' + ('To' | dm)"
+                                    data-testid="field-filter-datetime-to-time" />
+                            </div>
+                        </div>
+                        @if ($timeRangeInvalid()) {
+                            <small class="text-red-500" data-testid="field-filter-time-error">
+                                {{ 'content-drive.field-filter.time.invalid-range' | dm }}
+                            </small>
+                        }
+                    </div>
+                } @else {
+                    <div class="flex justify-center p-3">
+                        <p-datePicker
+                            selectionMode="range"
+                            [ngModel]="$dateValue()"
+                            (ngModelChange)="onDateChange($event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            [showButtonBar]="true"
+                            [readonlyInput]="true"
+                            dateFormat="yy-mm-dd"
+                            [inline]="true"
+                            [pt]="datePickerPt"
+                            [attr.aria-label]="$title()"
+                            data-testid="field-filter-date" />
+                    </div>
+                }
+            }
+        }
+    }
+</p-popover>

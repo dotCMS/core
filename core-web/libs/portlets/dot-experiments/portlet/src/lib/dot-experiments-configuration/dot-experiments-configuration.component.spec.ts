@@ -1,11 +1,11 @@
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@openng/spectator';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 

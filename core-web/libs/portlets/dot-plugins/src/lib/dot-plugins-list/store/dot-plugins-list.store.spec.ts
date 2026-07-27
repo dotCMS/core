@@ -1,4 +1,4 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { Subject, of, throwError } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';

@@ -1,7 +1,10 @@
 package com.dotcms.content.index.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Immutable domain representation of a single search result hit from any search engine.
@@ -35,6 +38,9 @@ import java.util.Map;
  * @param getScore       the search relevance score for this hit
  * @param getFields      the document fields retrieved by the search query (additional fields beyond
  *                       the source document that were explicitly requested), empty if none were requested
+ * @param getSortValues  the per-hit sort values the engine returns when the query sorts by a field
+ *                       (e.g. the computed distance for a {@code _geo_distance} sort), in the order the
+ *                       {@code sort} clause declared; empty for relevance-only (unsorted) queries
  * @author Fabrizio Araya
  * @see SearchHits
  * @see com.dotcms.content.index.ContentFactoryIndexOperations
@@ -44,15 +50,17 @@ public record SearchHit(
         @JsonProperty("index") String getIndex,
         @JsonProperty("sourceAsMap") Map<String, Object> getSourceAsMap,
         @JsonProperty("score") float getScore,
-        @JsonProperty("fields") Map<String, Object> getFields) {
+        @JsonProperty("fields") Map<String, Object> getFields,
+        @JsonProperty("sortValues") List<Object> getSortValues) {
 
     /**
-     * Canonical constructor. Collection components default to an empty map when {@code null} so the
-     * accessors never return {@code null} (mirrors the previous Immutables collection defaults).
+     * Canonical constructor. Collection components default to an empty map/list when {@code null} so
+     * the accessors never return {@code null} (mirrors the previous Immutables collection defaults).
      */
     public SearchHit {
         getSourceAsMap = getSourceAsMap == null ? Map.of() : getSourceAsMap;
         getFields = getFields == null ? Map.of() : getFields;
+        getSortValues = getSortValues == null ? List.of() : getSortValues;
     }
 
     /**
@@ -71,12 +79,14 @@ public record SearchHit(
      * @return a new SearchHit instance
      */
     public static SearchHit from(org.elasticsearch.search.SearchHit esSearchHit) {
+        final Object[] esSortValues = esSearchHit.getSortValues();
         return builder()
                 .id(esSearchHit.getId())
                 .sourceAsMap(esSearchHit.getSourceAsMap())
                 .fields(esSearchHit.getFields())
                 .score(esSearchHit.getScore())
                 .index(esSearchHit.getIndex())
+                .sortValues(esSortValues == null ? null : Arrays.asList(esSortValues))
                 .build();
     }
 
@@ -108,11 +118,22 @@ public record SearchHit(
             sourceMap = Map.of();
         }
 
+        // OpenSearch returns per-hit sort values as a List<FieldValue> tagged union; unwrap each to
+        // its raw scalar (Double/Long/Boolean/String, or null) so the neutral hit mirrors ES's Object[].
+        final List<org.opensearch.client.opensearch._types.FieldValue> osSortValues = osHit.sort();
+        final List<Object> sortValues = (osSortValues == null || osSortValues.isEmpty())
+                ? null
+                : osSortValues.stream()
+                        .map(fieldValue -> (fieldValue == null || fieldValue.isNull())
+                                ? null : fieldValue._get())
+                        .collect(Collectors.toList());
+
         return builder()
                 .id(osHit.id())
                 .index(osHit.index())
                 .sourceAsMap(sourceMap)
                 .score(osHit.score() != null ? osHit.score().floatValue() : 0.0f)
+                .sortValues(sortValues)
                 .build();
     }
 
@@ -128,6 +149,7 @@ public record SearchHit(
         private Map<String, Object> sourceAsMap = Map.of();
         private float score;
         private Map<String, Object> fields = Map.of();
+        private List<Object> sortValues = List.of();
 
         public Builder id(final String id) {
             this.id = id;
@@ -156,8 +178,13 @@ public record SearchHit(
             return this;
         }
 
+        public Builder sortValues(final List<Object> sortValues) {
+            this.sortValues = sortValues == null ? List.of() : sortValues;
+            return this;
+        }
+
         public SearchHit build() {
-            return new SearchHit(id, index, sourceAsMap, score, fields);
+            return new SearchHit(id, index, sourceAsMap, score, fields, sortValues);
         }
     }
 }

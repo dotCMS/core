@@ -356,11 +356,23 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 				.put("relation", total.relation() == Relation.EQUAL_TO ? "eq" : "gte"));
 		final JSONArray arr = new JSONArray();
 		for (final SearchHit hit : hits.getHits()) {
-			arr.put(new JSONObject()
+			final JSONObject hitJson = new JSONObject()
 					.put("_id", hit.getId())
 					.put("_index", hit.getIndex())
 					.put("_score", finiteOrNull(hit.getScore()))
-					.put("_source", new JSONObject(hit.getSourceAsMap())));
+					.put("_source", new JSONObject(hit.getSourceAsMap()));
+			// Preserve the engine's native per-hit "sort" array (e.g. the _geo_distance value that
+			// field-sorted queries depend on). Only emitted when the query actually sorted by a
+			// field — relevance-only queries carry no sort values and get no "sort" key, matching
+			// the native ES/OS wire format. Non-finite entries are coerced to null like _score.
+			if (!hit.getSortValues().isEmpty()) {
+				final JSONArray sortArr = new JSONArray();
+				for (final Object sortValue : hit.getSortValues()) {
+					sortArr.put(finiteOrNull(sortValue));
+				}
+				hitJson.put("sort", sortArr);
+			}
+			arr.put(hitJson);
 		}
 		hitsObj.put("hits", arr);
 		return hitsObj;
@@ -377,6 +389,26 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	 */
 	private static Object finiteOrNull(final float value) {
 		return Float.isFinite(value) ? Float.valueOf(value) : JSONObject.NULL;
+	}
+
+	/**
+	 * Object overload of {@link #finiteOrNull(float)} for per-hit {@code sort} values, which arrive as
+	 * boxed scalars ({@link Double} for a {@code _geo_distance} sort, {@link Long}, {@link String}, …).
+	 * Non-finite floating-point values are coerced to {@code null} for the same reason as {@code _score};
+	 * every other value (including {@code null}) passes through unchanged.
+	 */
+	private static Object finiteOrNull(final Object value) {
+		if (value == null) {
+			return JSONObject.NULL;
+		}
+		if (value instanceof Double) {
+			final double doubleValue = (Double) value;
+			return Double.isFinite(doubleValue) ? value : JSONObject.NULL;
+		}
+		if (value instanceof Float) {
+			return finiteOrNull(((Float) value).floatValue());
+		}
+		return value;
 	}
 
 	/** Maps the neutral aggregation tree (keyed by aggregation name) to the ES-native {@code aggregations} JSON. */
