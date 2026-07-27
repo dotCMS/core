@@ -64,7 +64,8 @@ const initialState: DotContentDriveState = {
     pages: [DEFAULT_PAGE],
     userSearchableFields: [],
     userSearchableActive: [],
-    userSearchableFieldsLoaded: false
+    userSearchableFieldsLoaded: false,
+    showInListFields: []
 };
 
 export const DotContentDriveStore = signalStore(
@@ -250,6 +251,13 @@ export const DotContentDriveStore = signalStore(
                 });
             },
             /**
+             * Sets the "Show In List" fields of the active content type (empty when 0 or >1 are
+             * selected). Consumed by the results table to render extra columns after the Type column.
+             */
+            setShowInListFields(fields: DotCMSContentTypeField[]) {
+                patchState(store, { showInListFields: fields });
+            },
+            /**
              * Shows a field-filter chip by adding it to the active list only — NOT to `filters`.
              * This keeps the search request unchanged (no reload/flicker); a `us.*` entry lands in
              * `filters` only once the chip has a value.
@@ -280,6 +288,7 @@ export const DotContentDriveStore = signalStore(
                     userSearchableFields: [],
                     userSearchableActive: [],
                     userSearchableFieldsLoaded: false,
+                    showInListFields: [],
                     pagination: { ...store.pagination(), offset: 0, page: 1 },
                     pages: [DEFAULT_PAGE]
                 });
