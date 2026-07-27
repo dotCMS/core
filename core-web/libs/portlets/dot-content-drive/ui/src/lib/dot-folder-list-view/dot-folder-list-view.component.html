@@ -162,15 +162,14 @@
                                     }
                                 }
                                 @case (COLUMN_TYPE.IMAGE) {
-                                    <!-- Identical treatment to the row's leading title thumbnail,
-                                         only pointed at the field's OWN asset (fieldVariable) so a
-                                         secondary/gallery image shows its own thumbnail instead of
-                                         the contentlet's title image. Non-image assets fall back to
-                                         a file-type icon. -->
+                                    <!-- Same size/styling as the row's leading title thumbnail (fixed
+                                         box + tint + padding, 36px icon), only pointed at the field's
+                                         OWN asset (fieldVariable) so a secondary/gallery image shows
+                                         its own thumbnail instead of the contentlet's title image.
+                                         Non-image assets fall back to a file-type icon. No click. -->
                                     @if (value) {
                                         <div
-                                            class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
-                                            (click)="onDoubleClick(item); $event.stopPropagation()">
+                                            class="h-14 max-h-14 bg-(--color-palette-primary-100) p-1">
                                             <dot-content-thumbnail
                                                 [contentlet]="item"
                                                 [options]="{ fieldVariable: column.field }"
