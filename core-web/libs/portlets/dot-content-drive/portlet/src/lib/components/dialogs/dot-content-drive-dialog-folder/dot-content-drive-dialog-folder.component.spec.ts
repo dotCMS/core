@@ -412,6 +412,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(component.folderForm.get('defaultBaseType')?.value).toBe('DOTASSET');
         });
 
+        it('should normalize a non-uppercase defaultBaseType to the uppercase radio value', () => {
+            // The radio options and the shell/toolbar consumers use the uppercase enum; a
+            // lowercase backend value must still select the matching option (not "Ask each time").
+            spectator.setInput('folder', editableFolder({ defaultBaseType: 'dotasset' }));
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('defaultBaseType')?.value).toBe('DOTASSET');
+        });
+
         it('should send defaultBaseType in the body when a preference is chosen', () => {
             component.folderForm.patchValue({
                 title: 'App',

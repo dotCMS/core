@@ -450,6 +450,14 @@ export class DotContentDriveShellComponent {
     }
 
     /**
+     * Clears the shared selector payload when the Upload-button popover is dismissed without a
+     * selection (click outside), keeping it symmetric with {@link onUploadModalVisibleChange}.
+     */
+    protected onUploadSelectorPopoverHide() {
+        this.$uploadSelectorPayload.set(undefined);
+    }
+
+    /**
      * Handles the asset-type choice emitted by the upload selector (popover or modal).
      * - Drag-and-drop: the files are already in the selection, so upload immediately.
      * - Upload button: stash the selection and open the OS file picker; {@link onFileChange}

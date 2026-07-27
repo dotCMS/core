@@ -804,6 +804,19 @@ describe('DotContentDriveShellComponent', () => {
                 spectator.query(byTestId('upload-selector-option-FILEASSET'), { root: true })
             ).toBeTruthy();
         });
+
+        it('should clear the selector payload when the popover is dismissed without a selection', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+
+            const popover = spectator.debugElement.query(
+                By.css('[data-testId="upload-selector-popover"]')
+            );
+            spectator.triggerEventHandler(popover, 'onHide', {});
+            spectator.detectChanges();
+
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+        });
     });
 
     describe('upload — drag-and-drop flow (files already chosen)', () => {

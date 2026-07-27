@@ -120,7 +120,8 @@
 <p-popover
     #uploadSelectorPopover
     data-testId="upload-selector-popover"
-    [pt]="{ content: { class: 'w-96 max-w-[92vw] p-0!' } }">
+    [pt]="{ content: { class: 'w-96 max-w-[92vw] p-0!' } }"
+    (onHide)="onUploadSelectorPopoverHide()">
     <ng-container [ngTemplateOutlet]="uploadSelectorTpl" />
 </p-popover>
 

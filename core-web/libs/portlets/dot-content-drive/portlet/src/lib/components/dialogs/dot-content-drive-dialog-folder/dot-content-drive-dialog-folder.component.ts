@@ -125,7 +125,11 @@ export class DotContentDriveDialogFolderComponent {
                     ? folder.filesMasks.split(',')
                     : [],
                 defaultFileAssetType: assetType.variable,
-                defaultBaseType: folder.defaultBaseType ?? null,
+                // Normalize to the uppercase enum the radio options use (DOTASSET/FILEASSET),
+                // matching the defensive `.toUpperCase()` in the shell (#resolvePreferredBaseType)
+                // and toolbar ($uploadLabelKey) — otherwise a non-uppercase backend value would
+                // leave the radio on "Ask each time" while the toolbar/upload flow treat it as pinned.
+                defaultBaseType: folder.defaultBaseType?.toUpperCase() ?? null,
                 showOnMenu: folder.showOnMenu,
                 name: cleanName
             });
