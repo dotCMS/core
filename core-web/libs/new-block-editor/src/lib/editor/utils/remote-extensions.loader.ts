@@ -20,9 +20,11 @@ export interface RemoteExtensionsResolved {
  * (the legacy contract — fields without customBlocks must work). The legacy block
  * editor validates `{url, actions[].{command, menuLabel, icon}}` only; we mirror
  * that exactly so existing customer configs keep loading. `actions[].name` is only
- * forwarded to the shared warning helper here; allowed-block filtering still happens
- * in the legacy block-editor runtime. Customers should set it to the TipTap node name
- * exported by the remote bundle (for example `customGallery`).
+ * forwarded to the shared warning helper here — it plays no role in filtering.
+ * Allowed-block filtering for the new editor happens independently, via extension
+ * registration in `createEditorExtensions()` (editor-extensions.ts). Customers should
+ * set `name` to the TipTap node name exported by the remote bundle (for example
+ * `customGallery`).
  */
 export function parseCustomBlocksField(
     field: DotCMSContentTypeField | undefined

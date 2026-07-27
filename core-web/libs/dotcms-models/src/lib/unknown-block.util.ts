@@ -1,4 +1,4 @@
-import { JSONContent } from '@tiptap/core';
+import { JSONContent, Node } from '@tiptap/core';
 
 export const UNKNOWN_BLOCK_NODE_NAME = 'dotUnsupportedBlock';
 
@@ -84,6 +84,62 @@ export function renderUnknownBlockOriginalNode(
     return typeof attributes.originalNodeRaw === 'string' && attributes.originalNodeRaw.length > 0
         ? { 'data-original-node': attributes.originalNodeRaw }
         : {};
+}
+
+export function createUnsupportedBlockNode() {
+    return Node.create({
+        name: UNKNOWN_BLOCK_NODE_NAME,
+        group: 'block',
+        atom: true,
+        selectable: true,
+        draggable: true,
+
+        addAttributes() {
+            return {
+                originalType: {
+                    default: null,
+                    parseHTML: (element) => element.getAttribute('data-original-type'),
+                    renderHTML: (attributes) =>
+                        attributes.originalType
+                            ? { 'data-original-type': attributes.originalType }
+                            : {}
+                },
+                originalNode: {
+                    default: null,
+                    parseHTML: (element) =>
+                        parseUnknownBlockOriginalNode(element.getAttribute('data-original-node'))
+                            .originalNode,
+                    renderHTML: (attributes) => renderUnknownBlockOriginalNode(attributes)
+                },
+                originalNodeRaw: {
+                    default: null,
+                    parseHTML: (element) =>
+                        parseUnknownBlockOriginalNode(element.getAttribute('data-original-node'))
+                            .originalNodeRaw,
+                    renderHTML: () => ({})
+                }
+            };
+        },
+
+        parseHTML() {
+            return [{ tag: `div[data-node-view-wrapper="${UNKNOWN_BLOCK_NODE_NAME}"]` }];
+        },
+
+        renderHTML({ HTMLAttributes, node }) {
+            const originalType = node.attrs['originalType'] || 'unknown';
+
+            return [
+                'div',
+                {
+                    ...HTMLAttributes,
+                    'data-node-view-wrapper': UNKNOWN_BLOCK_NODE_NAME,
+                    contenteditable: 'false',
+                    class: 'dot-unsupported-block'
+                },
+                `Unsupported block (${originalType})`
+            ];
+        }
+    });
 }
 
 /**

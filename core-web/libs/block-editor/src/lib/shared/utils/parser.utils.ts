@@ -32,6 +32,7 @@ const imageContent: BlockMap = {
 };
 
 const video: BlockMap = {
+    video: true,
     dotVideo: true,
     youtube: true
 };

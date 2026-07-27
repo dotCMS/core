@@ -1,5 +1,5 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
-import { array, assert, object, optional, string } from 'superstruct';
+import { array, assert, optional, string, type as structType } from 'superstruct';
 import tippy from 'tippy.js';
 
 import {
@@ -461,16 +461,17 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      *
      */
     private isValidSchema(data: RemoteCustomExtensions): void {
-        const RemoteExtensionsSchema = object({
+        const RemoteExtensionsSchema = structType({
             extensions: array(
-                object({
+                structType({
                     url: string(),
                     actions: optional(
                         array(
-                            object({
+                            structType({
                                 command: string(),
                                 menuLabel: string(),
-                                icon: string()
+                                icon: string(),
+                                name: optional(string())
                             })
                         )
                     )

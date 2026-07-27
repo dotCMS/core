@@ -63,6 +63,43 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
         spectator = createComponent();
     });
 
+    describe('customBlocks parsing', () => {
+        it('accepts action.name without discarding the remote extension payload', () => {
+            const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+            blockEditorComponent.customBlocks = JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            expect((blockEditorComponent as any).getParsedCustomBlocks()).toEqual({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            });
+        });
+    });
+
     it('should update form value when onBlockEditorChange is called', () => {
         const blockEditorComponent = spectator.query(DotBlockEditorComponent);
         const control = spectator.component.form.get('block');

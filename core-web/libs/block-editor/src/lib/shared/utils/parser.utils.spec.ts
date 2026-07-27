@@ -35,6 +35,14 @@ describe('parser.utils', () => {
             expect(map.customGallery).toBe(true);
         });
 
+        it('should keep the remote "video" node name when expanding video aliases', () => {
+            const map = getBlockMap(['heading'], ['video']);
+
+            expect(map.video).toBe(true);
+            expect(map.dotVideo).toBe(true);
+            expect(map.youtube).toBe(true);
+        });
+
         it('should always allow the unsupported-block placeholder', () => {
             const map = getBlockMap(['heading']);
 
