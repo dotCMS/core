@@ -119,7 +119,12 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         ])
     ],
     host: {
-        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden'
+        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden',
+        // Detect the first REAL user interaction (a pointer/keyboard event bubbling up from any
+        // field). Async CVAs populating on load never fire these, so this reliably tells a genuine
+        // edit apart from load-time noise — see onUserTouch / initializeFormListener.
+        '(pointerdown)': 'onUserTouch()',
+        '(keydown)': 'onUserTouch()'
     }
 })
 export class DotEditContentFormComponent implements OnInit {
@@ -205,6 +210,19 @@ export class DotEditContentFormComponent implements OnInit {
 
     protected readonly $shouldRenderFields = signal(true);
     protected readonly $shouldRenderPreservedFields = signal(true);
+
+    /**
+     * True once the user has genuinely interacted with a field (see the host `pointerdown`/`keydown`
+     * listeners). While false, any form value change is async-CVA populate noise, so
+     * {@link initializeFormListener} re-marks the form pristine — decoupling "the user edited
+     * something" from load timing. Reset on each (re)build of the form in {@link initializeForm}.
+     */
+    #userTouched = false;
+
+    /** Host handler: the first real pointer/keyboard interaction inside the form flips the flag. */
+    onUserTouch(): void {
+        this.#userTouched = true;
+    }
 
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
@@ -454,6 +472,13 @@ export class DotEditContentFormComponent implements OnInit {
         this.formValueSubscription = this.form.valueChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
+                // Until the user has actually interacted, a value change is async-CVA populate,
+                // not an edit — keep the form pristine so the unsaved-changes guard never fires
+                // for load-time noise (independent of how slow the fields load).
+                if (!this.#userTouched) {
+                    this.form.markAsPristine();
+                }
+
                 this.onFormChange(value);
             });
     }
@@ -624,6 +649,10 @@ export class DotEditContentFormComponent implements OnInit {
      * @private
      */
     private initializeForm() {
+        // A fresh (re)build starts a new populate window: until the user interacts, changes are
+        // programmatic CVA noise, not edits.
+        this.#userTouched = false;
+
         const controls = this.$formFields().reduce(
             (acc, field) => ({
                 ...acc,
