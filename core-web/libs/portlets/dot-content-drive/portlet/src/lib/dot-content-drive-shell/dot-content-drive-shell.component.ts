@@ -1,7 +1,7 @@
 import { signalMethod } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { Location } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -85,6 +85,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         ToastModule,
         DialogModule,
         PopoverModule,
+        NgTemplateOutlet,
         DotContentDriveDialogFolderComponent,
         DotContentDriveDialogContentTypeSelectorComponent,
         DotContentDriveDialogUploadSelectorComponent,
@@ -428,7 +429,10 @@ export class DotContentDriveShellComponent {
      * popover anchored to the button; without one (drag-and-drop) it falls back to a centered modal.
      * Both share the same payload and resolve through {@link onUploadTypeSelected}.
      */
-    protected openUploadSelector(payload: DotContentDriveUploadSelectorPayload, event?: MouseEvent) {
+    protected openUploadSelector(
+        payload: DotContentDriveUploadSelectorPayload,
+        event?: MouseEvent
+    ) {
         this.$uploadSelectorPayload.set(payload);
 
         if (event) {
