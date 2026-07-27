@@ -31,13 +31,17 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotCMSContentTypeField,
+    DotCMSDataTypes,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
+    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotContentDriveUploadFiles,
+    DotFolderListViewColumn,
     DotFolderTreeNodeData,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
@@ -53,6 +57,8 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
     DIALOG_TYPE,
+    FIELD_FILTER_DATE_TIME_TYPE,
+    FIELD_FILTER_TIME_ONLY_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
@@ -201,6 +207,54 @@ export class DotContentDriveShellComponent {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /**
+     * Extra table columns for the current selection: the selected single content type's "Show In
+     * List" fields mapped to the list-view column shape, with a display type and width derived from
+     * each field's data type. Empty when 0 or >1 content types are selected; the table appends
+     * these after the fixed Type column.
+     */
+    readonly $extraColumns = computed<DotFolderListViewColumn[]>(() =>
+        this.#store.showInListFields().map((field, index) => ({
+            field: field.variable,
+            header: field.name,
+            sortable: false,
+            order: index,
+            type: this.#columnTypeForField(field)
+        }))
+    );
+
+    /**
+     * Picks the display type + a readable column width for a field, so numeric/boolean columns stay
+     * compact and long-text columns get room. Date, Date-and-Time and Time all share `dataType`
+     * DATE, so the date sub-type is resolved from `fieldType` first (to keep the time part). Widths
+     * sum into the table's horizontal scroll, so values stay readable instead of being squeezed.
+     */
+    /**
+     * Maps a content-type field to the table's generic display type. Date, Date-and-Time and Time
+     * all share `dataType` DATE, so the date sub-type is resolved from `fieldType` first (to keep
+     * the time part). The table decides each column's width from this type + its own row values.
+     */
+    #columnTypeForField(field: DotCMSContentTypeField): DotFolderListViewColumn['type'] {
+        if (field.fieldType === FIELD_FILTER_DATE_TIME_TYPE) {
+            return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME;
+        }
+        if (field.fieldType === FIELD_FILTER_TIME_ONLY_TYPE) {
+            return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME;
+        }
+
+        switch (field.dataType) {
+            case DotCMSDataTypes.DATE:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATE;
+            case DotCMSDataTypes.BOOLEAN:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.BOOLEAN;
+            case DotCMSDataTypes.INTEGER:
+            case DotCMSDataTypes.FLOAT:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.NUMBER;
+            default:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TEXT;
+        }
+    }
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
 
