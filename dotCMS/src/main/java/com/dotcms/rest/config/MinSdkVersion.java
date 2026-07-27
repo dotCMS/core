@@ -5,20 +5,34 @@ package com.dotcms.rest.config;
  * to clients via the {@code X-DotCMS-Min-SDK} response header (see
  * {@link com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor}).
  *
- * <p>This value is <strong>manually maintained</strong>, not computed. Under date-lockstep
- * SDK versioning (ADR-0019: {@code platform-adrs/decisions/0019-sdk-cms-date-lockstep-versioning.md})
+ * <p>This value is maintained via a human-reviewed automated PR, not by hand. Under
+ * date-lockstep SDK versioning (ADR-0019: {@code platform-adrs/decisions/0019-sdk-cms-date-lockstep-versioning.md})
  * most dotCMS releases never change the SDK contract, so this constant does not need to
  * move on every release — only bump it when a change actually breaks compatibility with
- * older {@code @dotcms/*} SDK versions (e.g. a newly-required GraphQL field, a changed
- * {@code postMessage} editor protocol message, a REST response shape the SDK depends on).
+ * older {@code @dotcms/*} SDK versions. See {@code docs/core/SDK_BREAKING_CHANGE_CATEGORIES.md}
+ * for concrete categories (removed/renamed GraphQL fields, changed {@code postMessage}
+ * editor protocol messages, REST response shape changes, etc.).
  *
- * <p><strong>Bump procedure:</strong> when your PR breaks SDK compatibility, set
- * {@link #VALUE} to whatever {@code @dotcms/client} version is already published on npm
- * as {@code latest} at the time you write the PR. Do not try to guess the exact future
- * dotCMS release version this change will ship in — that date-based version number is
- * only assigned when the release is actually cut, so it isn't known yet at PR time. The
- * goal of this value is only to correctly gate SDKs older than what's needed, not to
- * match the eventual release number exactly.
+ * <p><strong>Bump procedure (automated):</strong> do not edit {@link #VALUE} directly in a
+ * PR. Instead:
+ * <ol>
+ *   <li>Get your PR labeled {@code SDK Breaking Change} — an automated check
+ *       ({@code ai_claude-sdk-breaking-change.yml}) evaluates every PR's diff against
+ *       {@code docs/core/SDK_BREAKING_CHANGE_CATEGORIES.md} and adds the label (with an
+ *       explanatory comment) when it detects a break. The check only ever adds this label,
+ *       never removes it — if you disagree with its verdict, remove the label yourself.</li>
+ *   <li>At release time, the operator running {@code cicd_6-release.yml} sets its
+ *       {@code bump_min_sdk_version} input to {@code true} for a release that includes
+ *       such a PR. The release's {@code verify-branch} job fails outright if a
+ *       breaking-change-labeled PR merged since the last release is in range and this
+ *       input was left {@code false} — forgetting is a loud pipeline failure, not a
+ *       silent gap.</li>
+ *   <li>Once the release fully succeeds (build AND deployment green — never eagerly),
+ *       a dedicated job opens a PR against {@code main} bumping {@link #VALUE} to that
+ *       release's version and pings Slack asking a human to review and merge it.
+ *       {@code main} is never pushed to directly, and nothing changes on {@code main} if
+ *       the release fails partway through — there is nothing to roll back.</li>
+ * </ol>
  */
 public final class MinSdkVersion {
 
