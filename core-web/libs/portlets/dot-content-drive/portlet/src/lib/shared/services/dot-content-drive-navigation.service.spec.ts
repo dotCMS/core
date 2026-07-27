@@ -128,7 +128,7 @@ describe('DotContentDriveNavigationService', () => {
             service.editContent(mockContentlet);
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(service.editPanelRequest()).toEqual({
+            expect(service.$editPanelRequest()).toEqual({
                 mode: 'edit',
                 contentletInode: 'test-inode-123',
                 identifier: 'test-identifier-123',
@@ -257,7 +257,7 @@ describe('DotContentDriveNavigationService', () => {
             service.createContent('blog');
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(service.editPanelRequest()).toEqual({
+            expect(service.$editPanelRequest()).toEqual({
                 mode: 'new',
                 contentTypeId: 'blog',
                 folderPath: undefined,
@@ -277,7 +277,7 @@ describe('DotContentDriveNavigationService', () => {
 
             service.createContent('blog', { folderPath: 'demo.dotcms.com/about-us/' });
 
-            expect(service.editPanelRequest()).toEqual({
+            expect(service.$editPanelRequest()).toEqual({
                 mode: 'new',
                 contentTypeId: 'blog',
                 folderPath: 'demo.dotcms.com/about-us/',
@@ -475,7 +475,7 @@ describe('DotContentDriveNavigationService', () => {
                 query: '+identifier:shared-identifier +working:true',
                 limit: 1
             });
-            expect(service.editPanelRequest()).toEqual({
+            expect(service.$editPanelRequest()).toEqual({
                 mode: 'edit',
                 contentletInode: 'working-inode-1',
                 identifier: 'shared-identifier',
@@ -488,7 +488,7 @@ describe('DotContentDriveNavigationService', () => {
 
             service.openEditByIdentifier('missing-identifier');
 
-            expect(service.editPanelRequest()).toBeNull();
+            expect(service.$editPanelRequest()).toBeNull();
         });
 
         it('should surface the error and not open the panel when the search fails', () => {
@@ -498,7 +498,7 @@ describe('DotContentDriveNavigationService', () => {
             service.openEditByIdentifier('shared-identifier');
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(service.editPanelRequest()).toBeNull();
+            expect(service.$editPanelRequest()).toBeNull();
         });
     });
 });
@@ -548,7 +548,7 @@ describe('DotContentDriveNavigationService (side panel disabled)', () => {
         service.editContent(mockContentlet);
 
         expect(router.navigate).toHaveBeenCalledWith(['content/inode-x']);
-        expect(service.editPanelRequest()).toBeNull();
+        expect(service.$editPanelRequest()).toBeNull();
     });
 
     it('should navigate to the full-screen new-content editor instead of the panel (create)', () => {
@@ -559,6 +559,6 @@ describe('DotContentDriveNavigationService (side panel disabled)', () => {
         expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
             queryParams: { folderPath: 'demo.dotcms.com/about-us/' }
         });
-        expect(service.editPanelRequest()).toBeNull();
+        expect(service.$editPanelRequest()).toBeNull();
     });
 });

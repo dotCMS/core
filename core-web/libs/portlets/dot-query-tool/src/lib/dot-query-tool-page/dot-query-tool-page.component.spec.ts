@@ -1,4 +1,5 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -13,6 +14,7 @@ import {
     DotPropertiesService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
 import { DotClipboardUtil } from '@dotcms/ui';
 
 import { DotQueryToolPageComponent } from './dot-query-tool-page.component';
@@ -362,7 +364,15 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
         overrideComponents: [
             [
                 DotQueryToolPageComponent,
-                { remove: { providers: [DotQueryToolStore, DotCurrentUserService] }, add: {} }
+                {
+                    // Stub the side panel so setting `$editPanelRequest` renders a light element we
+                    // can drive its `(saved)`/`(closed)` outputs on, instead of the real editor.
+                    remove: {
+                        providers: [DotQueryToolStore, DotCurrentUserService],
+                        imports: [DotEditContentSidePanelComponent]
+                    },
+                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
+                }
             ]
         ],
         providers: [
@@ -422,14 +432,17 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
         expect(spectator.component.$editPanelRequest()).toBeNull();
     });
 
-    it('clears the panel request on close and reloads results on save', () => {
+    it('reloads results on the panel (saved) output and clears the request on (closed)', () => {
         const store = spectator.inject(DotQueryToolStore, true);
         spectator.component.$editPanelRequest.set({ mode: 'edit', contentletInode: 'inode-1' });
+        spectator.detectChanges();
 
-        spectator.component.onEditPanelSaved();
+        // Drive the real template bindings (saved)/(closed), not the handlers directly.
+        const panelSelector = '[data-testid="query-tool-edit-panel"]';
+        spectator.triggerEventHandler(panelSelector, 'saved', undefined);
         expect(store.runSearch).toHaveBeenCalledTimes(1);
 
-        spectator.component.onEditPanelClosed();
+        spectator.triggerEventHandler(panelSelector, 'closed', undefined);
         expect(spectator.component.$editPanelRequest()).toBeNull();
     });
 });

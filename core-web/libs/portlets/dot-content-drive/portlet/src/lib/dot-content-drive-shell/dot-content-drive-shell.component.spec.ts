@@ -116,7 +116,7 @@ describe('DotContentDriveShellComponent', () => {
                 createContent: jest.fn(),
                 closeEditPanel: jest.fn(),
                 openEditByIdentifier: jest.fn(),
-                editPanelRequest: signal(null)
+                $editPanelRequest: signal(null)
             }),
             LoggerService,
             StringUtils,
@@ -187,6 +187,7 @@ describe('DotContentDriveShellComponent', () => {
                     cleanDragItems: jest.fn(),
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: jest.fn(),
+                    reloadContentDrive: jest.fn(),
                     setPath: jest.fn(),
                     setShowAddToBundle: jest.fn(),
                     userSearchableFields: jest.fn().mockReturnValue([]),
@@ -204,7 +205,11 @@ describe('DotContentDriveShellComponent', () => {
                     )
                 }),
                 mockProvider(Location, {
-                    go: jest.fn()
+                    go: jest.fn(),
+                    path: jest.fn().mockReturnValue(''),
+                    // Return a real subscription so the shell's popstate listener can be captured
+                    // and torn down without throwing on destroy.
+                    subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
                 }),
                 mockProvider(DotContentTypeService, {
                     getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
@@ -1961,6 +1966,133 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'scroll', new Event('scroll'));
 
             expect(store.resetContextMenu).toHaveBeenCalled();
+        });
+    });
+
+    describe('Edit Content side panel', () => {
+        let sidePanelNav: SpyObject<DotSidePanelNavController>;
+
+        // The nav service exposes `$editPanelRequest` as a readonly signal; the mock backs it with a
+        // writable one, so cast to drive it from tests.
+        const setPanelRequest = (value: unknown) =>
+            (navigationService.$editPanelRequest as unknown as WritableSignal<unknown>).set(value);
+
+        const EDIT_REQUEST = {
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'My content'
+        };
+
+        beforeEach(() => {
+            sidePanelNav = spectator.inject(DotSidePanelNavController);
+        });
+
+        it('delegates panel close to the navigation service', () => {
+            spectator.flushEffects();
+
+            spectator.component['onEditPanelClosed']();
+
+            expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
+        });
+
+        it('reloads the list when the panel reports a save', () => {
+            spectator.flushEffects();
+
+            spectator.component['onEditPanelSaved']();
+
+            expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
+        });
+
+        it('reflects an open edit panel as an editContent identifier in the URL', () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.flushEffects();
+
+            expect(router.createUrlTree).toHaveBeenCalledWith(
+                [],
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({ editContent: 'id-1' })
+                })
+            );
+        });
+
+        describe('deep link', () => {
+            it('opens the panel from a ?editContent= param on load', () => {
+                const localSpectator = createComponent({
+                    providers: [
+                        mockProvider(ActivatedRoute, {
+                            snapshot: { queryParams: { editContent: 'shared-id' } }
+                        })
+                    ]
+                });
+
+                expect(
+                    localSpectator.inject(DotContentDriveNavigationService).openEditByIdentifier
+                ).toHaveBeenCalledWith('shared-id');
+            });
+        });
+
+        describe('browser Back (popstate)', () => {
+            const getPopstateHandler = () =>
+                (location.subscribe as jest.Mock).mock.calls[0][0] as (event: {
+                    url: string;
+                }) => void;
+
+            it('closes the panel when Back removes the editContent param', () => {
+                setPanelRequest(EDIT_REQUEST);
+
+                getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
+
+                expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
+            });
+
+            it('keeps the panel open when Back preserves the same editContent param', () => {
+                setPanelRequest(EDIT_REQUEST);
+
+                getPopstateHandler()({ url: '/c/content-drive?editContent=id-1' });
+
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('folder tree collapse', () => {
+            it('collapses an expanded tree while the panel is open on narrow viewports, and restores it on close', () => {
+                store.isTreeExpanded.mockReturnValue(true);
+                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                spectator.flushEffects();
+
+                setPanelRequest(EDIT_REQUEST);
+                spectator.flushEffects();
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
+
+                setPanelRequest(null);
+                spectator.flushEffects();
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(true);
+            });
+
+            it('does not collapse the tree on wide viewports', () => {
+                store.isTreeExpanded.mockReturnValue(true);
+                sidePanelNav.shouldCollapse.mockReturnValue(false);
+                spectator.flushEffects();
+
+                setPanelRequest(EDIT_REQUEST);
+                spectator.flushEffects();
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+
+            it('leaves an already-collapsed tree untouched (no collapse, no restore)', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                spectator.flushEffects();
+
+                setPanelRequest(EDIT_REQUEST);
+                spectator.flushEffects();
+                setPanelRequest(null);
+                spectator.flushEffects();
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
         });
     });
 });

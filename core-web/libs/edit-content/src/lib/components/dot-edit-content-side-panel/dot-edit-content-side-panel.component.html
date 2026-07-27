@@ -8,18 +8,16 @@
     [maskStyle]="{ background: 'transparent !important' }"
     [pt]="{
         root: {
-            style: {
-                width: $expanded() ? '100%' : '70%',
-                transition: 'width 250ms ease',
-                boxShadow: '-12px 0 24px rgb(0 0 0 / 20%)'
-            }
+            class: '!shadow-[-12px_0_24px_rgb(0_0_0_/_20%)]',
+            style: {   width: $expanded() ? '100%' : '70%', transition: 'width 250ms ease' }
         },
-        content: { style: { padding: '0' } }
+        content: { class: 'p-0' }
     }"
+
     position="right">
     <ng-template #header>
         <div class="flex w-full items-center justify-between gap-4">
-            <span class="truncate text-lg font-semibold" data-testId="side-panel-title">
+            <span class="truncate text-lg font-semibold" data-testid="side-panel-title">
                 {{ data()?.title }}
             </span>
             <div class="flex items-center gap-1">
@@ -32,7 +30,7 @@
                             : ('edit.content.side-panel.expand' | dm)
                     "
                     (onClick)="toggleExpanded()"
-                    data-testId="side-panel-expand">
+                    data-testid="side-panel-expand">
                     <ng-template #icon>
                         <i class="material-symbols-outlined text-xl!">
                             {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
@@ -44,7 +42,7 @@
                     severity="secondary"
                     [attr.aria-label]="'edit.content.side-panel.close' | dm"
                     (onClick)="requestClose()"
-                    data-testId="side-panel-close">
+                    data-testid="side-panel-close">
                     <ng-template #icon>
                         <i class="material-symbols-outlined text-xl!">close</i>
                     </ng-template>

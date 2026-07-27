@@ -382,7 +382,7 @@
      legacy/page results still open in a new tab). Reloads the results on save. -->
 @if ($editPanelRequest(); as data) {
     <dot-edit-content-side-panel
-        data-testId="query-tool-edit-panel"
+        data-testid="query-tool-edit-panel"
         [data]="data"
         (saved)="onEditPanelSaved()"
         (closed)="onEditPanelClosed()" />

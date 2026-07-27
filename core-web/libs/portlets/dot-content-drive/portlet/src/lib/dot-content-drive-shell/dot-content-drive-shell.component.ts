@@ -6,6 +6,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
     ElementRef,
     inject,
@@ -106,6 +107,7 @@ export class DotContentDriveShellComponent {
 
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+    readonly #destroyRef = inject(DestroyRef);
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
@@ -114,7 +116,7 @@ export class DotContentDriveShellComponent {
     readonly #sidePanelNav = inject(DotSidePanelNavController);
 
     /** Edit Content side panel request, driven by the navigation service; read by the template. */
-    protected readonly $editPanelRequest = this.#navigationService.editPanelRequest;
+    protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
@@ -237,6 +239,21 @@ export class DotContentDriveShellComponent {
         if (editContent) {
             this.#navigationService.openEditByIdentifier(editContent);
         }
+
+        // Browser Back/Forward: the open panel's `?editContent=` param is written via `Location.go`
+        // (no router navigation), so nothing else reacts to popstate. Close the panel when Back
+        // removes or changes that param while it is open, so Back returns to the previous view
+        // instead of leaving a stuck panel over a URL that no longer references it.
+        const locationSubscription = this.#location.subscribe((event) => {
+            const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+            const editContentParam = params.get('editContent');
+            const request = this.#navigationService.$editPanelRequest();
+
+            if (request?.mode === 'edit' && request.identifier !== editContentParam) {
+                this.#navigationService.closeEditPanel();
+            }
+        });
+        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
     }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
@@ -295,7 +312,14 @@ export class DotContentDriveShellComponent {
             queryParams,
             queryParamsHandling: 'merge'
         });
-        this.#location.go(urlTree.toString());
+
+        // Only write when the URL actually changes. When the panel is closed by browser Back, the
+        // URL already reflects the new state, so re-writing it would push a redundant history entry
+        // (a phantom Back stop). This keeps the write idempotent.
+        const newUrl = urlTree.toString();
+        if (newUrl !== this.#location.path(true)) {
+            this.#location.go(newUrl);
+        }
     });
 
     /**

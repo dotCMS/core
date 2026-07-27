@@ -1,3 +1,23 @@
+// Stub the side panel so the flag-on "create new" branch can create it via `ViewContainerRef`
+// without pulling in the real editor (and its module cycle). Placed before the imports so jest
+// hoists it ahead of the dynamic `import()` the component performs. Kept as a real standalone
+// component so `createComponent`/`setInput('data')`/`instance.closed` all work.
+jest.mock(
+    '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component',
+    () => {
+        const { Component, input, output } = jest.requireActual('@angular/core');
+
+        @Component({ selector: 'dot-edit-content-side-panel', standalone: true, template: '' })
+        class MockDotEditContentSidePanelComponent {
+            data = input(null);
+            closed = output();
+            saved = output();
+        }
+
+        return { DotEditContentSidePanelComponent: MockDotEditContentSidePanelComponent };
+    }
+);
+
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
@@ -198,6 +218,18 @@ describe('DotRelationshipFieldComponent', () => {
             expect(dialogService.open).toHaveBeenCalled();
         });
 
+        it('wires the "New content" menu item to the create-new action', () => {
+            // The menu item is the user-facing trigger; verify it calls the action (rather than
+            // only exercising the method directly elsewhere).
+            const createSpy = jest
+                .spyOn(spectator.component, 'showCreateNewContentDialog')
+                .mockResolvedValue();
+
+            spectator.component.$menuItems()[1].command?.(undefined as never);
+
+            expect(createSpy).toHaveBeenCalledTimes(1);
+        });
+
         it('opens the create-new content in the centered dialog when the side panel flag is off', async () => {
             const dialogService = spectator.inject(DialogService);
             (dialogService.open as jest.Mock).mockClear();
@@ -209,6 +241,21 @@ describe('DotRelationshipFieldComponent', () => {
             expect(config.data).toEqual(
                 expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
             );
+        });
+
+        it('opens the create-new content in the side panel when the flag is on', async () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockClear();
+            (spectator.inject(DotPropertiesService).getFeatureFlag as jest.Mock).mockReturnValue(
+                of(true)
+            );
+
+            await spectator.component.showCreateNewContentDialog();
+            spectator.detectChanges();
+
+            // Flag on → the side panel is created imperatively, NOT the centered dialog.
+            expect(dialogService.open).not.toHaveBeenCalled();
+            expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
         });
     });
 

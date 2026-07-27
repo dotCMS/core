@@ -45,7 +45,7 @@ export class DotContentDriveNavigationService {
      * navigation (the previous behavior); when on, it opens in the side panel. Defaults to `false`
      * until the flag resolves, so the safe/previous behavior is used meanwhile.
      */
-    readonly sidePanelEnabled = toSignal(
+    readonly $sidePanelEnabled = toSignal(
         this.#dotPropertiesService.getFeatureFlag(
             FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
         ),
@@ -59,7 +59,7 @@ export class DotContentDriveNavigationService {
      * the new editor should open for a content type/inode (instead of navigating to the
      * full-screen route); the shell renders the panel while this is set.
      */
-    readonly editPanelRequest = this.#editPanelRequest.asReadonly();
+    readonly $editPanelRequest = this.#editPanelRequest.asReadonly();
     /**
      * Navigates to the appropriate editor based on the content type.
      * Routes to the page editor for HTML pages, or the contentlet editor for other types.
@@ -138,7 +138,7 @@ export class DotContentDriveNavigationService {
                     return;
                 }
 
-                if (this.sidePanelEnabled()) {
+                if (this.$sidePanelEnabled()) {
                     // New editor in a side panel over Content Drive. Forward `folderPath` so the
                     // content is created in the folder being browsed.
                     this.#editPanelRequest.set({
@@ -198,7 +198,7 @@ export class DotContentDriveNavigationService {
                     return;
                 }
 
-                if (this.sidePanelEnabled()) {
+                if (this.$sidePanelEnabled()) {
                     // New editor in a side panel over Content Drive (keeps the list/filters).
                     this.#editPanelRequest.set({
                         mode: 'edit',
