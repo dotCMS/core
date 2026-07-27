@@ -1060,6 +1060,76 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('upload — folder default preference (prompt skipped)', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        const upload = () =>
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="toolbar"]')),
+                'upload',
+                { currentTarget: document.createElement('button'), stopPropagation: jest.fn() }
+            );
+
+        it('should skip the prompt and open the file picker when the folder pins a base type', () => {
+            store.selectedNode.mockReturnValue({
+                data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
+            } as DotFolderTreeNodeItem);
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            const clickSpy = jest.spyOn(fileInput, 'click');
+
+            upload();
+            spectator.detectChanges();
+
+            expect(clickSpy).toHaveBeenCalled();
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+        });
+
+        it('should upload with the folder base type after the picker returns (button flow)', () => {
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            store.selectedNode.mockReturnValue({
+                data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
+            } as DotFolderTreeNodeItem);
+            const file = createFile();
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            upload();
+            Object.defineProperty(fileInput, 'files', {
+                value: [file],
+                writable: true,
+                configurable: true
+            });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'DOTASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
+        });
+
+        it('should upload dropped files directly when the folder pins a base type (drag-and-drop)', () => {
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
+
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="dropzone"]')),
+                'uploadFiles',
+                {
+                    files: createFileList([file]),
+                    targetFolder: { ...TARGET_FOLDER_DATA, defaultBaseType: 'FILEASSET' }
+                }
+            );
+            spectator.detectChanges();
+
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+        });
+    });
+
     describe('Drag Events', () => {
         beforeEach(() => {
             spectator.detectChanges();

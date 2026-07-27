@@ -364,6 +364,83 @@ describe('DotContentDriveDialogFolderComponent', () => {
         });
     });
 
+    describe('upload behavior (defaultBaseType)', () => {
+        const editableFolder = (
+            overrides: Partial<DotContentDriveFolder> = {}
+        ): DotContentDriveFolder =>
+            ({
+                name: 'app',
+                title: 'App',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder',
+                ...overrides
+            }) as DotContentDriveFolder;
+
+        it('should render the three upload-behavior options', () => {
+            expect(spectator.query('[data-testid="upload-behavior-option-null"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="upload-behavior-option-DOTASSET"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="upload-behavior-option-FILEASSET"]')).toBeTruthy();
+        });
+
+        it('should default to "Ask each time" (null) on create', () => {
+            expect(component.folderForm.get('defaultBaseType')?.value).toBeNull();
+        });
+
+        it('should pre-select the radio from the folder defaultBaseType on edit', () => {
+            spectator.setInput('folder', editableFolder({ defaultBaseType: 'DOTASSET' }));
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('defaultBaseType')?.value).toBe('DOTASSET');
+        });
+
+        it('should send defaultBaseType in the body when a preference is chosen', () => {
+            component.folderForm.patchValue({
+                title: 'App',
+                name: 'app',
+                defaultBaseType: 'FILEASSET'
+            });
+            spectator.detectChanges();
+
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+
+            expect(folderService.createFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: 'FILEASSET' })
+                })
+            );
+        });
+
+        it('should omit defaultBaseType from the body when "Ask each time"', () => {
+            component.folderForm.patchValue({ title: 'App', name: 'app' });
+            spectator.detectChanges();
+
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+
+            expect(folderService.createFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.not.objectContaining({ defaultBaseType: expect.anything() })
+                })
+            );
+        });
+    });
+
     describe('create folder button interactions', () => {
         beforeEach(() => {
             component.folderForm.patchValue({
