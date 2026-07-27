@@ -9,11 +9,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -40,8 +47,10 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -76,6 +85,16 @@ public class DeterministicIdentifierAPITest {
     }
 
     private final DeterministicIdentifierAPIImpl defaultGenerator = new DeterministicIdentifierAPIImpl();
+
+    /**
+     * Expected deterministic id seed for a field: {@code variable:typeName:dataType} when the field
+     * has a data type, {@code variable:typeName} otherwise.
+     */
+    private static String expectedFieldSeed(final Field field) {
+        return null != field.dataType()
+                ? String.format("%s:%s:%s", field.variable(), field.typeName(), field.dataType().value)
+                : String.format("%s:%s", field.variable(), field.typeName());
+    }
 
 
     /**
@@ -334,7 +353,7 @@ public class DeterministicIdentifierAPITest {
                 final String fieldIdentifier2 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
                 //Test it is idempotent
                 assertEquals(fieldIdentifier1, fieldIdentifier2);
-                final String expected = String.format("%s:%s", field.variable(), field.typeName());
+                final String expected = expectedFieldSeed(field);
                 assertEquals(expected, defaultGenerator.resolveName(field, field::variable));
             }
 
@@ -588,7 +607,7 @@ public class DeterministicIdentifierAPITest {
 
             //verify the seed contains the field type
             for(final Field field : contentType.fields()){
-                 final String expected = String.format("%s:%s", field.variable(), field.typeName());
+                 final String expected = expectedFieldSeed(field);
                 assertEquals(expected, defaultGenerator.resolveName(field, field::variable));
             }
 
@@ -665,6 +684,179 @@ public class DeterministicIdentifierAPITest {
         } finally {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
         }
+    }
+
+    /**
+     * Method to test: {@link DeterministicIdentifierAPIImpl#generateDeterministicIdBestEffort(Field, Supplier)}
+     * Given Scenario: A Text field is created with data type TEXT, then deleted, then re-created with the
+     * same variable name but data type INTEGER (the scenario behind issue #36636).
+     * ExpectedResult: The re-created field must get a DIFFERENT deterministic id (the data type is part of
+     * the seed) and its data type must be INTEGER.
+     */
+    @Test
+    public void Test_Delete_And_Recreate_Field_With_Different_DataType_Generates_New_Id() throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            final User systemUser = APILocator.systemUser();
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final String fieldVarName = "myField" + System.currentTimeMillis();
+
+            final Field textField = new FieldDataGen()
+                    .type(TextField.class)
+                    .name(fieldVarName)
+                    .velocityVarName(fieldVarName)
+                    .dataType(DataTypes.TEXT)
+                    .next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(textField)
+                    .nextPersisted();
+            try {
+                final Field originalField = fieldAPI
+                        .byContentTypeIdAndVar(contentType.id(), fieldVarName);
+                assertEquals(DataTypes.TEXT, originalField.dataType());
+
+                fieldAPI.delete(originalField);
+
+                final Field recreatedField = fieldAPI.save(FieldBuilder.builder(TextField.class)
+                        .name(fieldVarName)
+                        .variable(fieldVarName)
+                        .contentTypeId(contentType.id())
+                        .dataType(DataTypes.INTEGER)
+                        .build(), systemUser);
+
+                assertEquals(DataTypes.INTEGER, recreatedField.dataType());
+                assertNotEquals(
+                        "A field re-created with the same variable but a different data type must get a different deterministic id",
+                        originalField.id(), recreatedField.id());
+            } finally {
+                ContentTypeDataGen.remove(contentType);
+            }
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.ContentTypeAPI#save(ContentType, List)}
+     * Given Scenario: Replicates the push-publish receiver flow for issue #36636. A Content Type holds a
+     * Text field with data type TEXT; an incoming save carries the same field variable re-created under a
+     * DIFFERENT id (as the sender's bundle does once the data type is part of the deterministic id seed)
+     * with data type INTEGER.
+     * ExpectedResult: The old field is removed and the data-type change is applied, never silently dropped.
+     */
+    @Test
+    public void Test_ContentType_Save_Applies_DataType_Change_When_Field_Id_Differs() throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            final User systemUser = APILocator.systemUser();
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+            final String fieldVarName = "myField" + System.currentTimeMillis();
+
+            final Field textField = new FieldDataGen()
+                    .type(TextField.class)
+                    .name(fieldVarName)
+                    .velocityVarName(fieldVarName)
+                    .dataType(DataTypes.TEXT)
+                    .next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(textField)
+                    .nextPersisted();
+            try {
+                final Field originalField = fieldAPI
+                        .byContentTypeIdAndVar(contentType.id(), fieldVarName);
+                assertEquals(DataTypes.TEXT, originalField.dataType());
+
+                // the incoming (pushed) field: same variable, different id, different data type
+                final Field recreatedField = FieldBuilder.builder(TextField.class)
+                        .name(fieldVarName)
+                        .variable(fieldVarName)
+                        .contentTypeId(contentType.id())
+                        .id(UUIDGenerator.generateUuid())
+                        .dataType(DataTypes.INTEGER)
+                        .build();
+
+                final List<Field> newFields = contentType.fields().stream()
+                        .map(field -> fieldVarName.equalsIgnoreCase(field.variable())
+                                ? recreatedField : field)
+                        .collect(Collectors.toList());
+
+                contentTypeAPI.save(contentType, newFields);
+
+                final Field savedField = fieldAPI
+                        .byContentTypeIdAndVar(contentType.id(), fieldVarName);
+                assertEquals(DataTypes.INTEGER, savedField.dataType());
+                assertEquals(recreatedField.id(), savedField.id());
+                assertNotEquals(originalField.id(), savedField.id());
+            } finally {
+                ContentTypeDataGen.remove(contentType);
+            }
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link DeterministicIdentifierAPIImpl#resolveName(Field, Supplier)}
+     * Given Scenario: Two fields share the same variable and field type but differ on data type; a third
+     * field has no data type at all.
+     * ExpectedResult: The seed must include the data type when the field has one (so the resulting
+     * deterministic ids differ) and must fall back to the legacy {@code variable:typeName} format when the
+     * data type is absent.
+     */
+    @Test
+    public void Test_ResolveName_Seed_Includes_DataType_When_Present() {
+        final String fieldVarName = "seedField";
+
+        final Field textDataTypeField = FieldBuilder.builder(TextField.class)
+                .name(fieldVarName)
+                .variable(fieldVarName)
+                .contentTypeId("fakeContentTypeId")
+                .dataType(DataTypes.TEXT)
+                .build();
+
+        final Field integerDataTypeField = FieldBuilder.builder(TextField.class)
+                .name(fieldVarName)
+                .variable(fieldVarName)
+                .contentTypeId("fakeContentTypeId")
+                .dataType(DataTypes.INTEGER)
+                .build();
+
+        final String textSeed = defaultGenerator
+                .resolveName(textDataTypeField, textDataTypeField::variable);
+        final String integerSeed = defaultGenerator
+                .resolveName(integerDataTypeField, integerDataTypeField::variable);
+
+        assertEquals(String.format("%s:%s:%s", fieldVarName, textDataTypeField.typeName(),
+                DataTypes.TEXT.value), textSeed);
+        assertEquals(String.format("%s:%s:%s", fieldVarName, integerDataTypeField.typeName(),
+                DataTypes.INTEGER.value), integerSeed);
+        assertNotEquals(
+                "Fields with the same variable but different data types must produce different seeds",
+                textSeed, integerSeed);
+
+        // a field without a data type keeps the legacy variable:typeName seed
+        final Field noDataTypeField = mock(Field.class);
+        when(noDataTypeField.variable()).thenReturn(fieldVarName);
+        when(noDataTypeField.typeName()).thenReturn(textDataTypeField.typeName());
+        when(noDataTypeField.dataType()).thenReturn(null);
+
+        assertEquals(String.format("%s:%s", fieldVarName, textDataTypeField.typeName()),
+                defaultGenerator.resolveName(noDataTypeField, noDataTypeField::variable));
     }
 
 }

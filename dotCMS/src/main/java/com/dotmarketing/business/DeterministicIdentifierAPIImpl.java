@@ -5,6 +5,7 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -62,6 +63,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     static final String NON_DETERMINISTIC_IDENTIFIER = "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
     public static final String S_S = "%s:%s";
+    public static final String S_S_S = "%s:%s:%s";
 
     final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
     final Predicate<String> testIdentifier =  identifierFactory::isIdentifier;
@@ -321,8 +323,13 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         if(UtilMethods.isNotSet(name)){
             name = field.variable();
         }
-        //amplify the dispersion of the seed by adding the field type
-        return  String.format(S_S, name, field.typeName());
+        //amplify the dispersion of the seed by adding the field type and, when present, the data
+        //type, so a field re-created with the same variable but a different data type gets a
+        //different deterministic id
+        final DataTypes dataType = field.dataType();
+        return null != dataType
+                ? String.format(S_S_S, name, field.typeName(), dataType.value)
+                : String.format(S_S, name, field.typeName());
     }
 
     /**
