@@ -217,7 +217,10 @@ export class DotContentDriveShellComponent {
         this.#store.showInListFields().map((field, index) => ({
             field: field.variable,
             header: field.name,
-            sortable: false,
+            // Sortable follows the field's `indexed` flag: the backend sorts via `sortBy` on the
+            // index, so a non-indexed (but listed) field can't be sorted. The schema has no explicit
+            // `sortable`; `indexed` is the determinant.
+            sortable: field.indexed,
             order: index,
             type: this.#columnTypeForField(field)
         }))

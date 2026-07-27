@@ -2004,5 +2004,30 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(spectator.component.$extraColumns()).toEqual([]);
         });
+
+        it('should mark a column sortable only when the field is indexed', () => {
+            showInListFieldsSignal.set([
+                {
+                    variable: 'idx',
+                    name: 'Indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: true
+                },
+                {
+                    variable: 'noidx',
+                    name: 'Not indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: false
+                }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'idx', sortable: true }),
+                expect.objectContaining({ field: 'noidx', sortable: false })
+            ]);
+        });
     });
 });
