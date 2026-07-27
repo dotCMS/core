@@ -42,12 +42,10 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * <pre>
      * {@code
 	 * #set($searchresults = $sitesearch.search("dotcms",0,10))
-     * #set($hitsdetail = $searchresults.getDetails())
-     * #set($summaries = $searchresults.getSummaries())
-     * #foreach ($i in [0..$math.sub($searchresults.getEnd(),1)])
-     *    $hitsdetail.get($i).getValue("title")
-     *    $hitsdetail.get($i).getValue("url")
-     *    $summaries.get($i).toHtml(true)
+     * #foreach($result in $searchresults.getResults())
+     *    $result.getTitle()
+     *    $result.getUrl()
+     *    $result.getDescription()
      * #end
      * }
      * </pre>
@@ -68,12 +66,10 @@ public class SiteSearchWebAPI implements ViewTool {
      * <pre>
      * {@code
      * #set($searchresults = $sitesearch.search("indexAlias","dotcms",0,10))
-     * #set($hitsdetail = $searchresults.getDetails())
-     * #set($summaries = $searchresults.getSummaries())
-     * #foreach ($i in [0..$math.sub($searchresults.getEnd(),1)])
-     *    $hitsdetail.get($i).getValue("title")
-     *    $hitsdetail.get($i).getValue("url")
-     *    $summaries.get($i).toHtml(true)
+     * #foreach($result in $searchresults.getResults())
+     *    $result.getTitle()
+     *    $result.getUrl()
+     *    $result.getDescription()
      * #end
      * }
      * </pre>

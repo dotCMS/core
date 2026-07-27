@@ -51,16 +51,16 @@
             @let isSingleColumnTab = isSingleColumnLayout(tab.layout);
             <div class="p-4">
                 <div
-                    [class]="isSingleColumnTab ? 'mx-auto max-w-206' : 'mx-auto max-w-286'"
+                    [class]="isSingleColumnTab ? 'mx-auto max-w-206' : 'mx-auto max-w-343'"
                     data-testId="tab-layout-container">
                     @for (row of tab.layout; track row) {
                         <div
-                            class="mb-5 grid auto-cols-fr grid-flow-col gap-5 last:mb-0"
+                            class="mb-5 grid auto-cols-fr grid-flow-col gap-9 last:mb-0"
                             [class.hidden]="row.columns.some(c => c.fields.length > 0) && row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
                             data-testId="row">
                             @for (column of row.columns; track column) {
                                 <div
-                                    class="flex flex-col gap-5"
+                                    class="flex flex-col gap-8"
                                     [class.hidden]="column.fields.length > 0 && column.fields.every(f => hiddenFields[f.variable])"
                                     data-testId="column">
                                     @for (field of column.fields; track field) {

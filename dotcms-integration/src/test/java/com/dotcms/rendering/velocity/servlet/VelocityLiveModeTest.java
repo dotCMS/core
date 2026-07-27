@@ -234,6 +234,104 @@ public class VelocityLiveModeTest {
                 params2.getKey().contains("originalUri:/store/456/globex/catalog/"));
     }
 
+    /**
+     * Method: {@link VelocityLiveMode#serve(java.io.OutputStream)}
+     * When: A live page is rendered while {@code ENABLE_CLICKSTREAM_TRACKING} is enabled
+     * Should: Record the visit in the visitor's session clickstream so visit-history rule
+     *         conditions ("Has Visited URL" / "Pages Viewed") can evaluate against it.
+     *         Regression test for #36604 -- the page-cache thundering-herd refactor
+     *         (393d74ff11) dropped the {@code ClickstreamFactory.addRequest} call from the live
+     *         render path, leaving those conditions with an empty clickstream so they never
+     *         matched. The conditionlet unit tests could not catch this because they seed the
+     *         clickstream themselves rather than exercising the render path.
+     */
+    @Test
+    public void renderLivePageRecordsVisitInSessionClickstreamWhenTrackingEnabled() throws Exception {
+        final boolean previous = Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false);
+        Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", true);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final HTMLPageAsset page = createAndPublishRenderablePage(host);
+
+            final Clickstream clickstream = new Clickstream();
+            renderLivePage(host, page, clickstream);
+
+            final String pageUri = page.getURI();
+            assertTrue("Rendering a live page must record the visit in the session clickstream",
+                    clickstream.getClickstreamRequests().stream()
+                            .anyMatch(cr -> pageUri.equals(cr.getRequestURI())));
+        } finally {
+            Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", previous);
+        }
+    }
+
+    /**
+     * Method: {@link VelocityLiveMode#serve(java.io.OutputStream)}
+     * When: A live page is rendered while {@code ENABLE_CLICKSTREAM_TRACKING} is disabled (default)
+     * Should: Not record anything in the session clickstream, preserving the flag-gated behaviour.
+     */
+    @Test
+    public void renderLivePageDoesNotRecordVisitWhenTrackingDisabled() throws Exception {
+        final boolean previous = Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false);
+        Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", false);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final HTMLPageAsset page = createAndPublishRenderablePage(host);
+
+            final Clickstream clickstream = new Clickstream();
+            renderLivePage(host, page, clickstream);
+
+            assertTrue("Clickstream must remain empty when tracking is disabled",
+                    clickstream.getClickstreamRequests().isEmpty());
+        } finally {
+            Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", previous);
+        }
+    }
+
+    /**
+     * Builds and publishes a minimal renderable live page (site content type, published container,
+     * published template and page) so it can be served through the live velocity render path.
+     */
+    private HTMLPageAsset createAndPublishRenderablePage(final Host host)
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final Field field = new FieldDataGen().type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen().field(field).nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .withContentType(contentType, "<h1>$!{test}</h1>")
+                .nextPersisted();
+        ContainerDataGen.publish(container);
+
+        final Template template = new TemplateDataGen()
+                .site(host)
+                .withContainer(container, "1")
+                .nextPersisted();
+        TemplateDataGen.publish(template);
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+        HTMLPageDataGen.publish(page);
+        return page;
+    }
+
+    /**
+     * Renders the given page through the live velocity mode handler using a mocked session that
+     * exposes the supplied clickstream, mirroring the harness used by {@link #contentSecurityPolice}.
+     */
+    private void renderLivePage(final Host host, final HTMLPageAsset page, final Clickstream clickstream)
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session = mock(HttpSession.class);
+        final DotCMSMockRequestWithSession request = new DotCMSMockRequestWithSession(session, false);
+        request.setRequestURI(page.getURI());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        when(session.getAttribute("clickstream")).thenReturn(clickstream);
+
+        final VelocityModeHandler handler = VelocityModeHandler.modeHandler(
+                PageMode.LIVE, request, response, page.getURI(), host);
+        handler.eval();
+    }
+
     private static class TestCase {
         String htmlCodeExpected;
         String contentSecurityPolicyHeader;
