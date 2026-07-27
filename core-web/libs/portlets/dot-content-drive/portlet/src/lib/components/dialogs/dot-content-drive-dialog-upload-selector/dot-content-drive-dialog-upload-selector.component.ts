@@ -11,8 +11,8 @@ import {
 
 /**
  * Content Drive upload selector: lets the user pick whether the upload is created as an Asset
- * (`DOTASSET`) or a File (`FILEASSET`). Presented as a compact menu in the Upload-button popover
- * and as spaced cards in the drag-and-drop modal (see {@link $variant}).
+ * (`DOTASSET`) or a File (`FILEASSET`). Rendered in the Upload-button popover and the drag-and-drop
+ * modal with the same click-and-go menu.
  *
  * Each option is a single click — choosing one emits the full
  * {@link DotContentDriveUploadSelection} (target folder + chosen base type + the files, when
@@ -31,12 +31,6 @@ export class DotContentDriveDialogUploadSelectorComponent {
 
     /** Files to upload — present for the drag-and-drop flow, absent for the Upload-button flow. */
     $files = input<FileList | undefined>(undefined, { alias: 'files' });
-
-    /**
-     * Presentation: `menu` (default) is the compact edge-to-edge list used in the button popover;
-     * `cards` is the spaced, bordered layout used in the drag-and-drop modal.
-     */
-    $variant = input<'menu' | 'cards'>('menu', { alias: 'variant' });
 
     /** Emits the chosen base type plus the upload context when the user picks an option. */
     selectUploadType = output<DotContentDriveUploadSelection>();

@@ -106,12 +106,11 @@
 
 <!-- The Asset/File selector is defined once here (one event binding, one handler) and rendered
      into whichever presentation is active: a popover for the Upload button, a modal for drag-drop. -->
-<ng-template #uploadSelectorTpl let-variant="variant">
+<ng-template #uploadSelectorTpl>
     @if ($uploadSelectorPayload(); as payload) {
         <dot-content-drive-dialog-upload-selector
             class="block"
             data-testId="dialog-upload-selector"
-            [variant]="variant ?? 'menu'"
             [targetFolder]="payload.targetFolder"
             [files]="payload.files"
             (selectUploadType)="onUploadTypeSelected($event)" />
@@ -138,9 +137,7 @@
     [style]="{ width: '26rem' }"
     [pt]="{ content: { class: 'p-0!' } }"
     (visibleChange)="onUploadModalVisibleChange($event)">
-    <ng-container
-        [ngTemplateOutlet]="uploadSelectorTpl"
-        [ngTemplateOutletContext]="{ variant: 'cards' }" />
+    <ng-container [ngTemplateOutlet]="uploadSelectorTpl" />
 </p-dialog>
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
