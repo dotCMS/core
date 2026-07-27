@@ -31,6 +31,7 @@ import {
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
+    DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
@@ -80,6 +81,8 @@ describe('DotContentDriveShellComponent', () => {
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
     // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
+    // Reactive so the shell's $extraColumns computed recomputes when the fields change.
+    let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -132,6 +135,7 @@ describe('DotContentDriveShellComponent', () => {
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
+        showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
 
         spectator = createComponent({
             providers: [
@@ -181,7 +185,9 @@ describe('DotContentDriveShellComponent', () => {
                     setShowAddToBundle: jest.fn(),
                     userSearchableFields: jest.fn().mockReturnValue([]),
                     userSearchableActive: jest.fn().mockReturnValue([]),
+                    showInListFields: showInListFieldsSignal,
                     setUserSearchableFields: jest.fn(),
+                    setShowInListFields: jest.fn(),
                     addUserSearchableField: jest.fn(),
                     clearUserSearchableFilters: jest.fn()
                 }),
@@ -1965,6 +1971,78 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'scroll', new Event('scroll'));
 
             expect(store.resetContextMenu).toHaveBeenCalled();
+        });
+    });
+
+    describe('extra columns (Show In List)', () => {
+        beforeEach(() => spectator.detectChanges());
+
+        it('should map Show In List fields to typed table columns by data/field type', () => {
+            showInListFieldsSignal.set([
+                { variable: 'summary', name: 'Summary', dataType: 'TEXT', fieldType: 'Text' },
+                { variable: 'count', name: 'Count', dataType: 'INTEGER', fieldType: 'Text' },
+                { variable: 'active', name: 'Active', dataType: 'BOOL', fieldType: 'Checkbox' },
+                { variable: 'pub', name: 'Published', dataType: 'DATE', fieldType: 'Date' },
+                { variable: 'evt', name: 'Event', dataType: 'DATE', fieldType: 'Date-and-Time' },
+                { variable: 'clock', name: 'Clock', dataType: 'DATE', fieldType: 'Time' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'summary', header: 'Summary', type: 'text' }),
+                expect.objectContaining({ field: 'count', type: 'number' }),
+                expect.objectContaining({ field: 'active', type: 'boolean' }),
+                expect.objectContaining({ field: 'pub', type: 'date' }),
+                expect.objectContaining({ field: 'evt', type: 'datetime' }),
+                expect.objectContaining({ field: 'clock', type: 'time' })
+            ]);
+        });
+
+        it('should expose no extra columns when there are no Show In List fields', () => {
+            showInListFieldsSignal.set([]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([]);
+        });
+
+        it('should mark a column sortable only when the field is indexed', () => {
+            showInListFieldsSignal.set([
+                {
+                    variable: 'idx',
+                    name: 'Indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: true
+                },
+                {
+                    variable: 'noidx',
+                    name: 'Not indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: false
+                }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'idx', sortable: true }),
+                expect.objectContaining({ field: 'noidx', sortable: false })
+            ]);
+        });
+
+        it('should map Image/Binary/File fields to the image (thumbnail) column type', () => {
+            showInListFieldsSignal.set([
+                { variable: 'photo', name: 'Photo', dataType: 'SYSTEM', fieldType: 'Image' },
+                { variable: 'doc', name: 'Doc', dataType: 'SYSTEM', fieldType: 'Binary' },
+                { variable: 'attach', name: 'Attach', dataType: 'SYSTEM', fieldType: 'File' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'photo', type: 'image' }),
+                expect.objectContaining({ field: 'doc', type: 'image' }),
+                expect.objectContaining({ field: 'attach', type: 'image' })
+            ]);
         });
     });
 });

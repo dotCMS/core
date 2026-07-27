@@ -7673,6 +7673,15 @@ paths:
         name: ensure
         schema:
           type: string
+      - description: |-
+          Whether to include system Content Types (e.g. Host, Favorite Page) in the response.
+
+          When `true` or omitted, system Content Types are included (default, backward-compatible). When `false`, they are excluded. Combines with `filter`.
+        in: query
+        name: system
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           content:
