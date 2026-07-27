@@ -5,7 +5,8 @@ import { generateBase64Credentials } from '@utils/generateBase64Credential';
 import {
     type ContentType,
     type CreateContentTypePayload,
-    createFakeContentType
+    createFakeContentType,
+    deleteContentType
 } from '../requests/contentType';
 import { createFieldVariable } from '../requests/field-variables';
 import {
@@ -265,6 +266,7 @@ export const test = base.extend<{
     testSuffix: string;
     apiHelpers: {
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
+        deleteContentType: (id: string) => Promise<void>;
         createContentlet: (ct: string, fields: Record<string, unknown>) => Promise<TestContentlet>;
         /** Bulk create; returned array sorted by `title` (API completion order is not guaranteed). */
         createContentlets: (
@@ -307,6 +309,7 @@ export const test = base.extend<{
     apiHelpers: async ({ request }, use) => {
         await use({
             createContentType: (payload) => createFakeContentType(request, payload),
+            deleteContentType: (id) => deleteContentType(request, id),
             createContentlet: (ct, fields) => fireContentlet(request, ct, fields),
             createContentlets: (ct, fieldsList) => fireContentlets(request, ct, fieldsList),
             createContentletWithRelationship: (ct, fields, rels) =>

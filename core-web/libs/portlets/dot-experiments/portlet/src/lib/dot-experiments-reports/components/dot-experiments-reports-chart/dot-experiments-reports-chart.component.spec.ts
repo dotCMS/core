@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { MockModule } from 'ng-mocks';
 
 import { ChartModule, UIChart } from 'primeng/chart';

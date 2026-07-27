@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
@@ -153,6 +153,8 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toBe(EVENT_DATA.language);
         expect(blockEditor.value).toEqual(EVENT_DATA.content);
+        // The editor must fill the drawer height when rendered inline in the UVE sidebar.
+        expect(blockEditor.fillHeight).toBe(true);
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
     });
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
+import { SpectatorHost, createHostFactory } from '@openng/spectator/jest';
 
 import { CommonModule } from '@angular/common';
 

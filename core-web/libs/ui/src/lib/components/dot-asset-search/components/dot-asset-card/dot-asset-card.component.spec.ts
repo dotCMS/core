@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Card, CardModule } from 'primeng/card';
 
@@ -32,10 +32,10 @@ describe('DotAssetCardComponent', () => {
         });
     });
 
-    it('should use the dot-contentlet-thumbnail', () => {
+    it('should use the dot-content-thumbnail', () => {
         const card = spectator.query(Card);
-        const thumbnail = spectator.query('dot-contentlet-thumbnail');
-        expect(thumbnail).toBeDefined();
+        const thumbnail = spectator.query('dot-content-thumbnail');
+        expect(thumbnail).toBeTruthy();
         expect(card).toBeDefined();
     });
 

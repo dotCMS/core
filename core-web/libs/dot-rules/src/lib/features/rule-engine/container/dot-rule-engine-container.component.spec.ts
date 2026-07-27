@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { BehaviorSubject, NEVER, Subject, of } from 'rxjs';
 
 import { HttpHeaders } from '@angular/common/http';

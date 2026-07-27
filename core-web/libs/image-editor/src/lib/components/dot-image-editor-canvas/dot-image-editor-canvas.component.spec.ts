@@ -1,5 +1,5 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Dispatcher } from '@ngrx/signals/events';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent, MockInstance } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 

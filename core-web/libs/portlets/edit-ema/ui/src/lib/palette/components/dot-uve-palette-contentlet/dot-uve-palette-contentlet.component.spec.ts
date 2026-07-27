@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/jest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -115,17 +115,14 @@ describe('DotUvePaletteContentletComponent', () => {
     });
 
     describe('Template Rendering', () => {
-        it('should render dot-contentlet-thumbnail with correct properties', () => {
-            const thumbnail = spectator.query(
-                '[data-testid="contentlet-thumbnail"]'
-            ) as HTMLElement & {
-                iconSize: string;
-                contentlet: DotCMSContentlet;
-            };
+        it('should render dot-content-thumbnail with the resolved model', () => {
+            const thumbnail = spectator.query('[data-testid="contentlet-thumbnail"]');
 
             expect(thumbnail).toBeTruthy();
-            expect(thumbnail.contentlet).toBeDefined();
-            expect(thumbnail.contentlet.identifier).toBe('test-identifier');
+            expect(thumbnail.tagName.toLowerCase()).toBe('dot-content-thumbnail');
+            expect(spectator.component.$thumbnail()).toEqual(
+                expect.objectContaining({ type: expect.any(String), icon: expect.any(String) })
+            );
         });
 
         it('should render contentlet title', () => {

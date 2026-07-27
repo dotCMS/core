@@ -1,0 +1,473 @@
+# Automated documentation audit for closed issues.
+#
+# When an issue closes, this workflow decides whether its delivery warrants a
+# documentation change: it runs for Epics and for issues labeled
+# "Doc : Needs Doc" or "Changelog: Needs Doc", and skips sub-tasks of an Epic
+# (the Epic's own closure covers them).
+#
+# For qualifying issues it assembles the issue, its related PRs, and any
+# dotcms-aios vault context into an evaluation prompt, then runs Claude to
+# audit current documentation coverage via dotCMS AI semantic search. Claude
+# produces a report that determines one of three actions: none (no doc change
+# needed), update (revise an existing page), or create (draft a new page).
+# The report is posted as a comment on the issue, and update/create drafts
+# are applied to the dotCMS documentation site through its content API.
+name: Autodoc — Epic Documentation Audit
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  preflight:
+    name: Determine whether to run
+    if: |
+      github.event.issue.type.name == 'Epic' ||
+      contains(github.event.issue.labels.*.name, 'Doc : Needs Doc') ||
+      contains(github.event.issue.labels.*.name, 'Changelog: Needs Doc')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+
+    steps:
+      - name: Check run conditions
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          HAS_EPIC: ${{ github.event.issue.type.name == 'Epic' }}
+        run: |
+          if [ "$HAS_EPIC" = "true" ]; then
+            echo "Issue #$ISSUE_NUMBER has Epic type — proceeding unconditionally."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PARENT_TYPE=$(gh api graphql \
+            -f query='
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  issue(number: $number) {
+                    parent {
+                      issueType { name }
+                    }
+                  }
+                }
+              }
+            ' \
+            -f owner="${REPO%/*}" \
+            -f repo="${REPO#*/}" \
+            -F number="$ISSUE_NUMBER" \
+            --jq '.data.repository.issue.parent.issueType.name // ""')
+
+          if [ "$PARENT_TYPE" = "Epic" ]; then
+            echo "Issue #$ISSUE_NUMBER is a sub-task of an Epic — skipping; Epic closure will handle docs."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Issue #$ISSUE_NUMBER has a doc label and is not an Epic sub-task — proceeding."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  autodoc:
+    name: Run documentation audit
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+      id-token: write
+
+    env:
+      EPIC_NUMBER: ${{ github.event.issue.number }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Used by the Claude subprocess when it executes the curl in burlap.txt — not called directly here.
+      AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
+      AUTODOC_DOTCMS_API_TOKEN_DRAFTING: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
+      AUTODOC_DOTCMS_BASE_URL: ${{ secrets.AUTODOC_DOTCMS_BASE_URL }}
+      AUTODOC_DOTCMS_SITE_FOLDER: ${{ secrets.AUTODOC_DOTCMS_SITE_FOLDER }}
+
+    steps:
+      - name: Checkout triggering repo
+        uses: actions/checkout@v4
+
+      - name: Checkout dotcms-aios
+        uses: actions/checkout@v4
+        with:
+          repository: dotCMS/dotcms-aios
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          path: dotcms-aios
+
+      - name: Configure AWS credentials (Bedrock)
+        if: vars.BEDROCK_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.BEDROCK_ROLE_ARN }}
+          aws-region: ${{ vars.BEDROCK_AWS_REGION || 'us-east-1' }}
+
+      - name: Write prompt
+        run: |
+          cat > /tmp/burlap.txt << 'PROMPTEOF'
+          The context block above contains an Epic with its related PRs already assembled.
+          Your task is to assess whether this Epic's delivery requires new or updated
+          documentation in the dotCMS docs.
+
+          If a `## Vault Context` section is present in this block, use it to inform the
+          grouping and audience sections of the report — target personas, product pillar,
+          GTM status, and strategic framing. If no Vault Context is present, infer from
+          the Epic and PR content.
+
+          Run one or more dotCMS AI semantic searches to assess current documentation
+          coverage. Use the Bash tool to execute each search:
+
+            curl -s -X POST "https://cdn.dotcms.dev/api/v1/ai/search" \
+              -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_AISEARCH" \
+              -H "Content-Type: application/json" \
+              -H "Origin: https://dev.dotcms.com" \
+              -H "Referer: https://dev.dotcms.com/" \
+              -d '{"model":"gpt-5.2","indexName":"default","prompt":"<your query here>","operator":"cosine","threshold":".25","searchLimit":20}'
+
+          Run multiple searches with varied queries to thoroughly assess coverage. Use the
+          results to determine whether documentation exists, is sufficient, or needs updating.
+
+          **Source material quality check:** before drafting anything, assess whether the
+          Epic and its PRs contain enough real technical detail to write accurate
+          documentation. If the Epic is a placeholder, has no associated PRs, or describes
+          a feature without specifying its behaviour, configuration, or user-facing surface —
+          set `action: none` and explain that the source material is insufficient. Do not
+          infer, invent, or pad from general knowledge. A short honest `none` report is
+          always preferable to a hallucinated draft.
+
+          Then write the report to the path shown at the bottom of this context block,
+          using the Write tool.
+
+          **Every report, regardless of outcome, must contain a machine-readable metadata
+          block placed immediately after the report header and before the `## Determination`
+          section.** Use exactly this structure and no other:
+
+          ```
+          <!-- BEGIN_DOC_META -->
+          action: none
+          <!-- END_DOC_META -->
+          ```
+
+          For `update` reports, add `urlTitle` (the urlTitle of the page being updated):
+
+          ```
+          <!-- BEGIN_DOC_META -->
+          action: update
+          urlTitle: saml-authentication
+          <!-- END_DOC_META -->
+          ```
+
+          For `create` reports, add `urlTitle` (proposed), `title`, `tags`
+          (comma-separated), and `seoDescription`:
+
+          ```
+          <!-- BEGIN_DOC_META -->
+          action: create
+          urlTitle: vanity-urls-s3-static-publishing
+          title: Vanity URLs in S3 Static Publishing
+          tags: static publishing, push publishing, vanity urls, AWS S3
+          seoDescription: Learn how to enable and configure opt-in Vanity URL materialization for AWS S3 static publishing in dotCMS.
+          <!-- END_DOC_META -->
+          ```
+
+          The style of report depends upon a determination that must be made here:
+
+          - There is a chance that no documentation change is warranted. This is common when
+            the Epic delivers internal architecture work, bug fixes, or a feature that is
+            already fully documented. Some cases will be clear and some uncertain — evaluate
+            whether the Epic's delivery is both end-user relevant and documentable. If no
+            documentation is needed, the report must explain why. No `<!-- BEGIN_DOC_DRAFT -->`
+            token appears anywhere in no-documentation reports.
+
+          - There is a chance that relevant documentation exists but needs an update. If the
+            docs are not fully current with what the Epic delivered, the report should first
+            present a differential explaining what changes are necessary and where. After all
+            analysis, the report must end with the token `<!-- BEGIN_DOC_DRAFT -->` on its
+            own line, immediately followed by the **complete, final content of the page's
+            `documentation` field** — the full existing document with all proposed changes
+            already incorporated. This is not a diff and not an insertion fragment: it is the
+            entire field value as it should exist after the update, ready to be submitted to
+            the API as-is. The draft runs to the end of the file with no trailing content
+            after it.
+
+          - There is a chance that the Epic introduces something documentable with no
+            existing coverage. In this case, the report should include a differential on the
+            documentation gap, a list of appropriate tags, a short SEO description, a
+            description of what feature this documentation should be grouped with, and what
+            user personas it is most relevant to. After all analysis, the report must end
+            with the token `<!-- BEGIN_DOC_DRAFT -->` on its own line, immediately followed
+            by the complete draft of the new documentation page. The draft runs to the end
+            of the file with no trailing content after it.
+
+            When drafting the documentation page, use horizontal rules (`---`) sparingly.
+            Headings already provide clear visual and structural separation; `---` should
+            be reserved only for the most stark structural breaks and must not appear
+            between ordinary subsections.
+          PROMPTEOF
+
+      - name: Build eval context
+        run: |
+          cat > /tmp/ctx.py << 'PYEOF'
+          import json, os, subprocess, sys
+
+          epic_num = os.environ['EPIC_NUMBER']
+          repo     = os.environ['REPO']
+          MAX_COMMENT_CHARS = 4000
+
+          result = subprocess.run(
+              ['gh', 'issue', 'view', epic_num, '--repo', repo,
+               '--json', 'number,title,body,labels,state,url,'
+                         'closedByPullRequestsReferences,comments'],
+              capture_output=True, text=True, check=True)
+          epic = json.loads(result.stdout)
+
+          labels  = ', '.join(l['name'] for l in epic.get('labels', []))
+          pr_nums = [r['number'] for r in epic.get('closedByPullRequestsReferences', [])]
+
+          def render_comments(comments):
+              parts, skipped = [], 0
+              for c in (comments or []):
+                  body = (c.get('body') or '').strip()
+                  if not body:
+                      continue
+                  if len(body) > MAX_COMMENT_CHARS:
+                      skipped += 1
+                      continue
+                  login = (c.get('author') or {}).get('login', '?')
+                  parts.append(f'**{login}:** {body}')
+              out = '\n\n'.join(parts)
+              if skipped:
+                  out += (f'\n\n*({skipped} comment{"s" if skipped > 1 else ""}'
+                          f' omitted — exceeded {MAX_COMMENT_CHARS}-character limit)*')
+              return out
+
+          lines = [
+              '# Evaluation Context', '',
+              f'## Epic: #{epic["number"]} — {repo}',
+              f'**Title:** {epic["title"]}',
+              f'**URL:** {epic.get("url", "")}',
+              f'**State:** {epic.get("state", "?")}',
+              f'**Labels:** {labels or "(none)"}',
+              f'**Related PRs:** {", ".join(f"#{n}" for n in pr_nums) or "(none)"}',
+              '', '### Epic Body', '',
+              (epic.get('body') or '').strip(),
+          ]
+          ct = render_comments(epic.get('comments'))
+          if ct:
+              lines += ['', '### Comments', '', ct]
+
+          for pr_num in pr_nums:
+              r = subprocess.run(
+                  ['gh', 'pr', 'view', str(pr_num), '--repo', repo,
+                   '--json', 'number,title,body,state,mergedAt,author,comments'],
+                  capture_output=True, text=True)
+              if r.returncode != 0:
+                  continue
+              pr = json.loads(r.stdout)
+              author = (pr.get('author') or {}).get('login', '?')
+              lines += [
+                  '', '---', '',
+                  f'## Related PR: #{pr["number"]} — {pr["title"]}',
+                  f'**State:** {pr.get("state","?")}  |  '
+                  f'**Author:** {author}  |  '
+                  f'**Merged:** {pr.get("mergedAt") or "N/A"}',
+                  '',
+                  (pr.get('body') or '').strip(),
+              ]
+              pct = render_comments(pr.get('comments'))
+              if pct:
+                  lines += ['', '### Comments', '', pct]
+
+          g = subprocess.run(
+              ['grep', '-rl', f'/issues/{epic_num}', 'dotcms-aios/work/epics/'],
+              capture_output=True, text=True)
+          vault_file = g.stdout.strip().split('\n')[0] if g.stdout.strip() else ''
+          if vault_file:
+              lines += ['', '---', '', '## Vault Context', '',
+                        open(vault_file).read().strip()]
+          else:
+              print(f'warning: no vault file for Epic #{epic_num}', file=sys.stderr)
+
+          prompt = open('/tmp/burlap.txt').read().strip()
+          report_path = f'/tmp/Epic-{epic_num}_burlap.md'
+          lines += [
+              '', '---', '', '## Prompt: burlap', '', prompt,
+              '', '---', '',
+              f'**Report path:** `{report_path}`',
+              '',
+              'Use the Write tool to write the report to exactly that path.',
+          ]
+
+          with open('/tmp/eval_context.md', 'w') as f:
+              f.write('\n'.join(lines))
+          PYEOF
+          python3 /tmp/ctx.py
+
+      - name: Load eval context
+        id: eval_context
+        run: |
+          {
+            echo 'content<<__AUTODOC_EOF__'
+            cat /tmp/eval_context.md
+            echo '__AUTODOC_EOF__'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Compose Claude args
+        id: claude_args
+        env:
+          BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID }}
+        run: |
+          ARGS="--allowedTools Bash,Write"
+          if [ -n "$BEDROCK_MODEL_ID" ]; then
+            ARGS="--model $BEDROCK_MODEL_ID $ARGS"
+          fi
+          echo "value=$ARGS" >> "$GITHUB_OUTPUT"
+
+      - name: Run Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          use_bedrock: ${{ vars.BEDROCK_ROLE_ARN != '' && 'true' || 'false' }}
+          prompt: ${{ steps.eval_context.outputs.content }}
+          claude_args: ${{ steps.claude_args.outputs.value }}
+          use_sticky_comment: 'false'
+          track_progress: 'false'
+
+      - name: Post report comment
+        run: |
+          REPORT="/tmp/Epic-${EPIC_NUMBER}_burlap.md"
+
+          if [ ! -f "$REPORT" ]; then
+            echo "No report at $REPORT — skipping finalize."
+            echo "ACTION=none" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          # Build comment body: prepend idempotency marker and collapse the doc draft
+          # under a <details> block so the comment isn't a wall of text.
+          export REPORT
+          python3 << 'PYEOF'
+          import os
+          report = open(os.environ['REPORT']).read()
+          marker = '<!-- BEGIN_DOC_DRAFT -->'
+          if marker in report:
+              before, draft = report.split(marker, 1)
+              body = (before.rstrip()
+                      + '\n\n<details>\n<summary>Documentation Draft</summary>\n\n'
+                      + draft.lstrip('\n')
+                      + '\n</details>')
+          else:
+              body = report
+          with open('/tmp/comment_body.md', 'w') as f:
+              f.write('<!-- autodoc-report -->\n' + body.rstrip())
+          PYEOF
+
+          # Edit the existing autodoc comment if one exists, otherwise create a new one.
+          # --paginate ensures we search all comments, not just the first page.
+          EXISTING=$(gh api "repos/$REPO/issues/$EPIC_NUMBER/comments" --paginate \
+            --jq '[.[] | select(.body | contains("<!-- autodoc-report -->")) | .id] | first // empty')
+          if [ -n "$EXISTING" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$EXISTING" \
+              -F "body=@/tmp/comment_body.md"
+          else
+            gh issue comment "$EPIC_NUMBER" --repo "$REPO" --body-file /tmp/comment_body.md
+          fi
+
+          # Parse action and urlTitle from the machine-readable meta block and export
+          # for the downstream apply steps.
+          ACTION=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^action:/{print $2; exit}' "$REPORT")
+          URL_TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^urlTitle:/{sub(/^urlTitle:[[:space:]]*/,"");print;exit}' "$REPORT")
+          echo "ACTION=${ACTION:-none}" >> "$GITHUB_ENV"
+          echo "URL_TITLE=$URL_TITLE"   >> "$GITHUB_ENV"
+
+      - name: Apply doc update to dotCMS
+        if: env.ACTION == 'update'
+        run: |
+          REPORT="/tmp/Epic-${EPIC_NUMBER}_burlap.md"
+
+          # Validate urlTitle is a URL slug before interpolating into the JSON query.
+          # Non-slug chars (quotes, backslashes) would break the shell-built JSON payload.
+          if ! echo "$URL_TITLE" | grep -qE '^[a-z0-9][a-z0-9-]*[a-z0-9]$'; then
+            echo "urlTitle '${URL_TITLE}' is not a valid slug — skipping."
+            exit 0
+          fi
+
+          IDENTIFIER=$(curl -s --fail-with-body -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":{\"query_string\":{\"query\":\"+contentType:DotcmsDocumentation +DotcmsDocumentation.urlTitle:\\\"$URL_TITLE\\\"\"}},\"size\":1}" \
+            | jq -r '(.esresponse[0].hits.hits[0]._source.identifier) // empty')
+
+          # Verify the identifier is UUID-shaped before placing it in a URL.
+          if ! echo "$IDENTIFIER" | grep -qE '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'; then
+            echo "No valid contentlet found for urlTitle '${URL_TITLE}' — skipping."
+            exit 0
+          fi
+
+          export REPORT IDENTIFIER
+          python3 << 'PYEOF'
+          import json, os
+          report = open(os.environ['REPORT']).read()
+          marker = '<!-- BEGIN_DOC_DRAFT -->'
+          draft = report.split(marker, 1)[1].lstrip('\n') if marker in report else ''
+          payload = {'contentlet': {
+              'identifier': os.environ['IDENTIFIER'],
+              'languageId': 1, 'documentation': draft,
+              'disabledWYSIWYG': ['documentation']}}
+          json.dump(payload, open('/tmp/payload.json', 'w'))
+          PYEOF
+
+          curl -s --fail-with-body -X PUT \
+            "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/EDIT?identifier=$IDENTIFIER" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+            -H "Content-Type: application/json" \
+            --data @/tmp/payload.json
+
+      - name: Apply doc create to dotCMS
+        if: env.ACTION == 'create'
+        run: |
+          REPORT="/tmp/Epic-${EPIC_NUMBER}_burlap.md"
+
+          # Validate urlTitle is a URL slug before interpolating into the JSON query.
+          if ! echo "$URL_TITLE" | grep -qE '^[a-z0-9][a-z0-9-]*[a-z0-9]$'; then
+            echo "urlTitle '${URL_TITLE}' is not a valid slug — skipping."
+            exit 0
+          fi
+
+          TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^title:/{sub(/^title:[[:space:]]*/,"");print;exit}' "$REPORT")
+          TAGS=$(awk  '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^tags:/{sub(/^tags:[[:space:]]*/,"");print;exit}'  "$REPORT")
+          SEO=$(awk   '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^seoDescription:/{sub(/^seoDescription:[[:space:]]*/,"");print;exit}' "$REPORT")
+          export REPORT URL_TITLE TITLE TAGS SEO
+          python3 << 'PYEOF'
+          import json, os
+          report = open(os.environ['REPORT']).read()
+          marker = '<!-- BEGIN_DOC_DRAFT -->'
+          draft = report.split(marker, 1)[1].lstrip('\n') if marker in report else ''
+          sf = os.environ.get('AUTODOC_DOTCMS_SITE_FOLDER', '').strip()
+          payload = {'contentlet': {
+              'contentType': 'DotcmsDocumentation',
+              'urlTitle': os.environ['URL_TITLE'],
+              'title': os.environ['TITLE'],
+              'tag': os.environ['TAGS'],
+              'seoDescription': os.environ['SEO'],
+              'languageId': 1, 'documentation': draft,
+              'disabledWYSIWYG': ['documentation']}}
+          if sf:
+              payload['contentlet']['navFolder'] = sf
+          json.dump(payload, open('/tmp/payload.json', 'w'))
+          PYEOF
+
+          curl -s --fail-with-body -X PUT \
+            "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/NEW" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+            -H "Content-Type: application/json" \
+            --data @/tmp/payload.json
+

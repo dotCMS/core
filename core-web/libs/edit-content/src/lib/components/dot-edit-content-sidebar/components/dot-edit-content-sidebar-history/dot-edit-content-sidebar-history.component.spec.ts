@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@openng/spectator/jest';
 
 import { DatePipe } from '@angular/common';
 
@@ -127,6 +127,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
         spectator.setInput('historyItems', mockHistoryItems);
         spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('pushPublishStatus', ComponentStatus.LOADED);
 
         spectator.detectChanges();
     });
@@ -139,24 +140,39 @@ describe('DotEditContentSidebarHistoryComponent', () => {
     });
 
     describe('Loading State', () => {
-        beforeEach(() => {
-            spectator.setInput('status', ComponentStatus.LOADING);
-            spectator.detectChanges();
+        describe('initial load (no items yet)', () => {
+            beforeEach(() => {
+                spectator.setInput('historyItems', []);
+                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.detectChanges();
+            });
+
+            it('should show loading state when isLoading is true', () => {
+                const loadingElement = spectator.query(byTestId('loading-state'));
+                expect(loadingElement).toBeTruthy();
+            });
+
+            it('should show skeleton placeholders', () => {
+                const skeletonElements = spectator.queryAll('p-skeleton');
+                expect(skeletonElements.length).toBeGreaterThan(0);
+            });
+
+            it('should not show history content when loading', () => {
+                const historyTimeline = spectator.query(byTestId('history-timeline'));
+                expect(historyTimeline).toBeFalsy();
+            });
         });
 
-        it('should show loading state when isLoading is true', () => {
-            const loadingElement = spectator.query(byTestId('loading-state'));
-            expect(loadingElement).toBeTruthy();
-        });
+        describe('reload (items already loaded)', () => {
+            beforeEach(() => {
+                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.detectChanges();
+            });
 
-        it('should show skeleton placeholders', () => {
-            const skeletonElements = spectator.queryAll('p-skeleton');
-            expect(skeletonElements.length).toBeGreaterThan(0);
-        });
-
-        it('should not show history content when loading', () => {
-            const historyTimeline = spectator.query(byTestId('history-timeline'));
-            expect(historyTimeline).toBeFalsy();
+            it('should keep showing the timeline instead of collapsing into skeletons', () => {
+                expect(spectator.query(byTestId('loading-state'))).toBeFalsy();
+                expect(spectator.query(byTestId('history-timeline'))).toBeTruthy();
+            });
         });
     });
 
@@ -411,6 +427,36 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
     });
 
+    describe('Loading Version Indicator', () => {
+        beforeEach(() => {
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('historyItems', mockHistoryItems);
+            spectator.detectChanges();
+        });
+
+        it('should mark only the item whose version is being fetched as loading', () => {
+            spectator.setInput('loadingVersionInode', mockHistoryItems[1].inode);
+            spectator.detectChanges();
+
+            const loadingFlags = spectator
+                .queryAll(DotHistoryTimelineItemComponent)
+                .map((item) => item.$isLoadingVersion());
+
+            expect(loadingFlags[1]).toBe(true);
+            expect(loadingFlags.filter(Boolean)).toHaveLength(1);
+            expect(spectator.queryAll(byTestId('version-loading-spinner'))).toHaveLength(1);
+        });
+
+        it('should not mark any item as loading when no version is being fetched', () => {
+            const loadingFlags = spectator
+                .queryAll(DotHistoryTimelineItemComponent)
+                .map((item) => item.$isLoadingVersion());
+
+            expect(loadingFlags.some(Boolean)).toBe(false);
+            expect(spectator.queryAll(byTestId('version-loading-spinner'))).toHaveLength(0);
+        });
+    });
+
     describe('Push Publish Functionality', () => {
         describe('Push Publish Computed Properties', () => {
             it('should compute hasPushPublishHistoryItems correctly', () => {
@@ -451,7 +497,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             });
 
             it('should not emit pushPublishPageChange when already loading', () => {
-                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.setInput('pushPublishStatus', ComponentStatus.LOADING);
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
                 spectator.component.onPushPublishTimelineReachedEnd();
@@ -542,12 +588,20 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         describe('Push Publish Display States', () => {
-            it('should show loading state when status is LOADING', () => {
-                spectator.setInput('status', ComponentStatus.LOADING);
+            it('should show loading state when the push publish status is LOADING', () => {
+                spectator.setInput('pushPublishStatus', ComponentStatus.LOADING);
                 spectator.detectChanges();
 
                 const loadingState = spectator.query('[data-testid="push-publish-loading-state"]');
                 expect(loadingState).toExist();
+            });
+
+            it('should not show loading state when only the versions status is LOADING', () => {
+                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.detectChanges();
+
+                const loadingState = spectator.query('[data-testid="push-publish-loading-state"]');
+                expect(loadingState).toBeFalsy();
             });
 
             it('should show empty state when no push publish history items', () => {

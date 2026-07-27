@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -136,6 +136,17 @@ describe('DotHistoryTimelineItemComponent', () => {
 
         it('should hide variant tag when experimentVariant is false', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
+        });
+
+        it('should show a spinner while the version is being fetched', () => {
+            spectator.setInput('isLoadingVersion', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('version-loading-spinner'))).toBeTruthy();
+        });
+
+        it('should not show a spinner when the version is not being fetched', () => {
+            expect(spectator.query(byTestId('version-loading-spinner'))).toBeFalsy();
         });
 
         it('should show the exact date/time — not "Current" — for the working (most recent) version', () => {

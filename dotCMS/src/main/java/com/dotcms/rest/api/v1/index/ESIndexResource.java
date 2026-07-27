@@ -410,21 +410,36 @@ public class ESIndexResource {
                     .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + indexName)))).build();
         }
 
+        // delete() throws on a primary-provider failure and returns false on an unacknowledged
+        // delete — neither may be reported as success (issue #36430). A DotStateException means
+        // the index is active/building and stays a readable 400 (issue #35640, TC-018).
+        final boolean deleted;
         try {
-            idxApi.delete(resolvedName);
+            deleted = idxApi.delete(resolvedName);
         } catch (final DotStateException e) {
-            // The index is active/building (or its state could not be verified): reject with a
-            // readable 400 instead of a stack trace. See issue #35640, TC-018.
             Logger.warn(this, "Rejected deletion of index '" + resolvedName + "': " + e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_DELETABLE", e.getMessage())))).build();
+        } catch (final Exception e) {
+            // Primary-provider delete failure — error toast + 500, not a success report (#36430).
+            Logger.error(this, "Error deleting index " + resolvedName + ": " + e.getMessage(), e);
+            sendAdminMessage("Index:" + resolvedName + " could not be deleted",
+                    MessageSeverity.ERROR, init.getUser(), 5000);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+        if (!deleted) {
+            // Unacknowledged delete — surface as an error toast + 500 (#36430).
+            sendAdminMessage("Index:" + resolvedName + " could not be deleted",
+                    MessageSeverity.ERROR, init.getUser(), 5000);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
 
         String message = "Index:" + resolvedName + " deleted";
-        
+
+
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
-        
-        
+
+
         return getIndexStatus(request, response);
 
     }

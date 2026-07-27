@@ -118,6 +118,7 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, Object> getFieldMappingAsMap(final String index,
             final String fieldName) throws IOException {
         final String prefixed = physicalName(index);
@@ -135,7 +136,12 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
             return Collections.emptyMap();
         }
 
-        // Serialize FieldMapping (PlainJsonSerializable) to JSON, then parse as plain Map
+        // Serialize FieldMapping (PlainJsonSerializable) to JSON, then parse as plain Map.
+        // The OpenSearch FieldMapping serializes to a wrapper shape
+        // {"full_name":"...","mapping":{"<field>":{...}}}. Return the inner "mapping" sub-map so the
+        // result matches the vendor-neutral contract established by ES (MappingOperationsES returns
+        // sourceAsMap(), keyed by the leaf field name) — callers do map.get(fieldVariable) and would
+        // NPE on the wrapper shape.
         final StringWriter sw = new StringWriter();
         try (final JsonGenerator gen = clientProvider.getClient()
                 ._transport().jsonpMapper()
@@ -143,6 +149,9 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
             fieldMapping.serialize(gen,
                     clientProvider.getClient()._transport().jsonpMapper());
         }
-        return MAPPER.readValue(sw.toString(), new TypeReference<Map<String, Object>>() {});
+        final Map<String, Object> wrapper =
+                MAPPER.readValue(sw.toString(), new TypeReference<Map<String, Object>>() {});
+        final Object inner = wrapper.get("mapping");
+        return (inner instanceof Map) ? (Map<String, Object>) inner : Collections.emptyMap();
     }
 }

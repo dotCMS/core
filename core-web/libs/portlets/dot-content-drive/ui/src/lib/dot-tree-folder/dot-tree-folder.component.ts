@@ -18,9 +18,10 @@ import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
-import { ALL_FOLDER } from '../shared/constants';
+import { ALL_FOLDER, LOAD_MORE_NODE_TYPE } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
+    DotFolderTreeNodeItem,
     DotContentDriveUploadFiles,
     DotContentDriveMoveItems
 } from '../shared/models';
@@ -101,6 +102,14 @@ export class DotTreeFolderComponent {
     onNodeCollapse = output<TreeNodeCollapseEvent>();
 
     /**
+     * Event emitter for when the "Load more" node of a paginated level is clicked.
+     *
+     * @event loadMore
+     * @type {DotFolderTreeNodeItem}
+     */
+    loadMore = output<DotFolderTreeNodeItem>();
+
+    /**
      * Event emitter for when a file is uploaded.
      *
      * @event uploadFiles
@@ -128,6 +137,19 @@ export class DotTreeFolderComponent {
     );
 
     protected readonly ALL_FOLDER_KEY = ALL_FOLDER.key;
+    protected readonly LOAD_MORE_NODE_TYPE = LOAD_MORE_NODE_TYPE;
+
+    /**
+     * Emits the "Load more" node when its button is clicked, stopping propagation so the click is
+     * not treated as a tree-node selection.
+     *
+     * @param {MouseEvent} event - The click event
+     * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
+     */
+    protected onLoadMoreClick(event: MouseEvent, node: DotFolderTreeNodeItem): void {
+        event.stopPropagation();
+        this.loadMore.emit(node);
+    }
 
     /**
      * @description Set the dropzone as active when the drag enters the dropzone

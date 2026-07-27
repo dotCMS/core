@@ -1,5 +1,5 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';

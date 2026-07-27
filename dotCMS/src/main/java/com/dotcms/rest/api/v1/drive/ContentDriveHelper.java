@@ -4,6 +4,8 @@ import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
+import com.dotcms.browser.FieldSearchCriteria;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -36,6 +38,8 @@ import java.util.stream.Collectors;
 public class ContentDriveHelper {
 
     private final BrowserAPI browserAPI;
+    private final ContentDriveFieldFilterResolver fieldFilterResolver =
+            new ContentDriveFieldFilterResolver();
 
     /**
      * Constructor with injected API dependencies
@@ -168,6 +172,25 @@ public class ContentDriveHelper {
              builder.useElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
                  .filterFolderNames(requestForm.filters().filterFolders())
                  .withFilter(requestForm.filters().text());
+        }
+
+        // Per-field value filters (Content Drive). Field types are resolved against a single
+        // content type; index-routed criteria also flip on ES filtering, while DB-routed criteria
+        // (Tag) are resolved in the DB path.
+        if (UtilMethods.isSet(requestForm.userSearchable())) {
+            if (contentTypes.size() != 1) {
+                throw new BadRequestException(
+                        "Exactly one content type is required when using 'userSearchable' field filters.");
+            }
+            final List<FieldSearchCriteria> fieldCriteria =
+                    fieldFilterResolver.parse(requestForm.userSearchable(), contentTypes.get(0));
+            builder.withFieldCriteria(fieldCriteria);
+            final boolean hasIndexCriteria = fieldCriteria.stream()
+                    .anyMatch(criteria ->
+                            criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
+            if (hasIndexCriteria) {
+                builder.useElasticsearchFiltering(true);
+            }
         }
 
         // Workflow filter — split entries into scheme-only (match by content-type assignment,

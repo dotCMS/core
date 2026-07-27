@@ -22,6 +22,7 @@ import {
     getFieldVariablesParsed,
     getStoredUIState,
     isFilteredType,
+    isSingleColumnLayout,
     isValidJson,
     resolveLocker,
     sortLocalesTranslatedFirst,
@@ -1307,6 +1308,28 @@ describe('Utils Functions', () => {
                 const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
                 expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
             });
+        });
+    });
+
+    describe('isSingleColumnLayout', () => {
+        const row = (columnCount: number) => ({
+            divider: {} as DotCMSContentTypeField,
+            columns: Array.from({ length: columnCount }, () => ({
+                columnDivider: {} as DotCMSContentTypeField,
+                fields: [] as DotCMSContentTypeField[]
+            }))
+        });
+
+        it('returns true when every row has exactly one column', () => {
+            expect(isSingleColumnLayout([row(1), row(1)])).toBe(true);
+        });
+
+        it('returns false when any row has more than one column', () => {
+            expect(isSingleColumnLayout([row(1), row(4)])).toBe(false);
+        });
+
+        it('returns false for an empty layout', () => {
+            expect(isSingleColumnLayout([])).toBe(false);
         });
     });
 

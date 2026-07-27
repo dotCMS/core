@@ -1,4 +1,4 @@
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
+import { SpectatorService, createServiceFactory } from '@openng/spectator';
 
 import { TestBed } from '@angular/core/testing';
 

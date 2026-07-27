@@ -1,3 +1,4 @@
+import { patchState } from '@ngrx/signals';
 import {
     createComponentFactory,
     createHostFactory,
@@ -5,8 +6,7 @@ import {
     Spectator,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

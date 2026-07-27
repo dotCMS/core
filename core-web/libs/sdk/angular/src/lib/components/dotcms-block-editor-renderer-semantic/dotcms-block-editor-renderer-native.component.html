@@ -184,6 +184,15 @@
                 </video>
             }
 
+            @case (BLOCKS.DOT_AUDIO) {
+                <audio [controls]="true" preload="metadata">
+                    <source [src]="node.attrs?.['src']" [type]="node.attrs?.['mimeType']" />
+                    Your browser does not support the
+                    <code>audio</code>
+                    element.
+                </audio>
+            }
+
             @case (BLOCKS.TABLE) {
                 <table>
                     <thead>

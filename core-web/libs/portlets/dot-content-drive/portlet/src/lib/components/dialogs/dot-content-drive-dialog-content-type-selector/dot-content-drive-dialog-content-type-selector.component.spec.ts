@@ -5,7 +5,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -41,7 +41,12 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
         ],
         providers: [
             mockProvider(DotContentDriveStore, {
-                closeDialog: jest.fn()
+                closeDialog: jest.fn(),
+                currentSite: jest
+                    .fn()
+                    .mockReturnValue({ hostname: 'demo.dotcms.com', identifier: 'site-1' }),
+                path: jest.fn().mockReturnValue('/about-us/'),
+                selectedNode: jest.fn().mockReturnValue({ data: { inode: 'inode-1' } })
             }),
             mockProvider(DotContentDriveNavigationService, {
                 createContent: jest.fn()
@@ -125,15 +130,36 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should create the content and close the dialog when Create is clicked', () => {
+        it('should create the content in the current folder and close the dialog when Create is clicked', () => {
             const createButton = spectator
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
             spectator.click(createButton);
 
-            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE);
+            // folderPath = hostname + current path (new editor); folderInode = current folder (legacy editor)
+            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
+                folderPath: 'demo.dotcms.com/about-us/',
+                folderInode: 'inode-1'
+            });
             expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should fall back to the current site (no folder) when browsing the root', () => {
+            // Root: no path selected and the root node carries an empty inode.
+            store.path.mockReturnValue(undefined);
+            store.selectedNode.mockReturnValue({ data: { inode: '' } });
+
+            const createButton = spectator
+                .query(byTestId('content-type-selector-create'))
+                ?.querySelector('button');
+
+            spectator.click(createButton);
+
+            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
+                folderPath: 'demo.dotcms.com',
+                folderInode: undefined
+            });
         });
     });
 

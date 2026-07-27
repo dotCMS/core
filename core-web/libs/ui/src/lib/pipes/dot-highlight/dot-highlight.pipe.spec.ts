@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator/jest';
+import { createPipeFactory, SpectatorPipe } from '@openng/spectator/jest';
 
 import { Injector, runInInjectionContext } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';

@@ -1,4 +1,4 @@
-import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator/jest';
+import { createDirectiveFactory, SpectatorDirective } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { forwardRef } from '@angular/core';

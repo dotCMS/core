@@ -1,10 +1,10 @@
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@openng/spectator';
 import {
     createServiceFactory,
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';

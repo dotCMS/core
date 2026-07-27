@@ -1,11 +1,11 @@
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState, WritableStateSource } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { NEVER, of, Subject } from 'rxjs';
 
@@ -56,6 +56,7 @@ import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.compo
 
 import { Activity } from '../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
@@ -131,6 +132,15 @@ describe('DotEditContentSidebarComponent', () => {
                     get snapshot() {
                         return { params: { id: undefined, contentType: undefined } };
                     }
+                }
+            },
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn()
                 }
             }
         ]

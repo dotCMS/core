@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { BehaviorSubject } from 'rxjs';
 
 import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';

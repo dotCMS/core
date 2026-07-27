@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';

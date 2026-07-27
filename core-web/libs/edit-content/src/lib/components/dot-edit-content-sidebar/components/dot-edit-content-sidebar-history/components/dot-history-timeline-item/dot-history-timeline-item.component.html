@@ -16,6 +16,12 @@
             </span>
 
             <div class="flex shrink-0 items-center gap-2">
+                @if ($isLoadingVersion()) {
+                    <i
+                        class="pi pi-spinner pi-spin text-sm text-primary"
+                        data-testid="version-loading-spinner"
+                        aria-hidden="true"></i>
+                }
                 @if ($item().live) {
                     <p-tag
                         severity="success"
