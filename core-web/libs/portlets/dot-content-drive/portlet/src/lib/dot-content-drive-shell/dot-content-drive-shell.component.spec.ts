@@ -705,12 +705,8 @@ describe('DotContentDriveShellComponent', () => {
         baseType: string;
         files?: FileList;
     }) => {
-        // Drag-and-drop prompts with a modal; the Upload button uses a popover — each renders the
-        // selector under a distinct testid.
-        const selectorTestId = selection.files
-            ? 'dialog-upload-selector-modal'
-            : 'dialog-upload-selector';
-
+        // Drag-and-drop prompts with a modal; the Upload button uses a popover — both funnel
+        // through the same code path and render the selector under the same testid.
         if (selection.files) {
             const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
             spectator.triggerEventHandler(dropzone, 'uploadFiles', {
@@ -730,7 +726,9 @@ describe('DotContentDriveShellComponent', () => {
 
         spectator.detectChanges();
 
-        const selector = spectator.debugElement.query(By.css(`[data-testId="${selectorTestId}"]`));
+        const selector = spectator.debugElement.query(
+            By.css('[data-testId="dialog-upload-selector"]')
+        );
         spectator.triggerEventHandler(selector, 'selectUploadType', {
             targetFolder: selection.targetFolder,
             baseType: selection.baseType,

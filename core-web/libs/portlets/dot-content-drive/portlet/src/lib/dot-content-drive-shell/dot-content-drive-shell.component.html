@@ -132,7 +132,7 @@
     (visibleChange)="onUploadModalVisibleChange($event)">
     @if ($uploadSelectorPayload(); as payload) {
         <dot-content-drive-dialog-upload-selector
-            data-testId="dialog-upload-selector-modal"
+            data-testId="dialog-upload-selector"
             [targetFolder]="payload.targetFolder"
             [files]="payload.files"
             (selectUploadType)="onUploadTypeSelected($event)" />

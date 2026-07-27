@@ -402,9 +402,8 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        // No preference: prompt with a modal — drag-and-drop has no trigger element to anchor to.
-        this.$uploadSelectorPayload.set({ targetFolder, files });
-        this.$uploadModalVisible.set(true);
+        // No trigger element: the prompt falls back to a modal (see openUploadSelector).
+        this.openUploadSelector({ targetFolder, files });
     }
 
     /**
@@ -425,11 +424,18 @@ export class DotContentDriveShellComponent {
     }
 
     /**
-     * Opens the upload-type selector popover (Asset vs File), anchored to the Upload button.
+     * Single entry point for the Asset/File prompt. With a trigger event (Upload button) it shows a
+     * popover anchored to the button; without one (drag-and-drop) it falls back to a centered modal.
+     * Both share the same payload and resolve through {@link onUploadTypeSelected}.
      */
-    protected openUploadSelector(payload: DotContentDriveUploadSelectorPayload, event: MouseEvent) {
+    protected openUploadSelector(payload: DotContentDriveUploadSelectorPayload, event?: MouseEvent) {
         this.$uploadSelectorPayload.set(payload);
-        this.$uploadSelectorPopover()?.show(event, event.currentTarget as HTMLElement);
+
+        if (event) {
+            this.$uploadSelectorPopover()?.show(event, event.currentTarget as HTMLElement);
+        } else {
+            this.$uploadModalVisible.set(true);
+        }
     }
 
     /**
