@@ -49,6 +49,11 @@ def cmd_publish(args: argparse.Namespace) -> int:
         return 2
     # Default per site convention: EOL = released date + 1 year (current track).
     if args.eol_date:
+        try:
+            dt.date.fromisoformat(args.eol_date)
+        except ValueError:
+            log.error("invalid --eol-date %r: expected yyyy-MM-dd", args.eol_date)
+            return 2
         eol_date = args.eol_date
     else:
         try:
