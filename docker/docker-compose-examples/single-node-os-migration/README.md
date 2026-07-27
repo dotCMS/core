@@ -31,7 +31,7 @@ docker compose up -d
 | Cluster | Username | Password |
 |---|---|---|
 | OpenSearch 1.x | `admin` | `admin` |
-| OpenSearch 3.x | `admin` | `Dev!Strong-OSAdmin-2026` |
+| OpenSearch 3.x | `admin` | `Dev!Search3-Kx9mP-2026` |
 
 ### Provisioned user (dotCMS)
 
@@ -63,10 +63,10 @@ curl -sk https://localhost:9200/_cat/indices?v -u dotcms-es-user:Dev!dotcms-EsUs
 
 ```bash
 # List indices
-curl -sk https://localhost:9201/_cat/indices?v -u admin:Dev!Strong-OSAdmin-2026
+curl -sk https://localhost:9201/_cat/indices?v -u admin:Dev!Search3-Kx9mP-2026
 
 # List internal users
-curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:Dev!Strong-OSAdmin-2026
+curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:Dev!Search3-Kx9mP-2026
 ```
 
 ### OpenSearch 3.x — provisioned user
