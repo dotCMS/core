@@ -1,14 +1,23 @@
-<div class="flex flex-col divide-y divide-gray-200">
+<div
+    [class]="
+        $variant() === 'cards'
+            ? 'flex flex-col gap-3 p-4'
+            : 'flex flex-col divide-y divide-gray-200'
+    ">
     @for (option of options; track option.baseType) {
         <button
             type="button"
-            class="flex cursor-pointer items-start gap-4 border-0 bg-transparent px-5 py-4 text-left transition-colors hover:bg-primary/5"
+            [class]="
+                $variant() === 'cards'
+                    ? 'flex cursor-pointer items-start gap-4 rounded-lg border border-gray-300 bg-transparent p-4 text-left transition-colors hover:border-primary hover:bg-primary/5'
+                    : 'flex cursor-pointer items-start gap-4 border-0 bg-transparent px-5 py-4 text-left transition-colors hover:bg-primary/5'
+            "
             [attr.data-testid]="'upload-selector-option-' + option.baseType"
             (click)="onSelect(option.baseType)">
             <i class="material-symbols-outlined text-[1.5rem]! leading-none text-primary">
                 {{ option.icon }}
             </i>
-            <span class="flex flex-col gap-1.5">
+            <span class="flex flex-col gap-1">
                 <span class="flex items-center gap-2">
                     <span class="text-base font-semibold text-gray-800">
                         {{ option.labelKey | dm }}
@@ -28,7 +37,13 @@
         </button>
     }
 
-    <p class="m-0 px-5 py-3 text-sm text-gray-600" data-testid="upload-selector-settings-hint">
+    <p
+        [class]="
+            $variant() === 'cards'
+                ? 'm-0 mt-1 text-sm text-gray-600'
+                : 'm-0 px-5 py-3 text-sm text-gray-600'
+        "
+        data-testid="upload-selector-settings-hint">
         {{ 'content-drive.dialog.upload-selector.settings-hint' | dm }}
     </p>
 </div>
