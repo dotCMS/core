@@ -150,11 +150,7 @@ export class DotContentDriveShellComponent {
             : undefined;
     });
 
-    /**
-     * Upload-type selector popover. Anchored imperatively to the trigger (Upload button for the
-     * button flow, the content area for drag-and-drop / sidebar) rather than driven by the shared
-     * dialog state.
-     */
+    /** Upload-type selector popover, anchored imperatively to the Upload button on click. */
     readonly $uploadSelectorPopover = viewChild<Popover>('uploadSelectorPopover');
 
     /** Payload (target folder + optional dropped files) driving the upload-selector body. */
