@@ -4048,74 +4048,6 @@
               ]
             }
           }
-        },
-        {
-          "name": "Cleanup - Delete contentlet",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Contentlet deleted', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/content/{{kvOrderContentId}}",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "content",
-                "{{kvOrderContentId}}"
-              ],
-              "query": []
-            }
-          }
-        },
-        {
-          "name": "Cleanup - Delete content type",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Content type deleted', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/contenttype/{{kvOrderCTId}}",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "contenttype",
-                "{{kvOrderCTId}}"
-              ],
-              "query": []
-            }
-          }
         }
       ]
     }
@@ -4228,11 +4160,6 @@
     {
       "key": "parentContentId",
       "value": ""
-    },
-    {
-      "key": "kvOrderCTId",
-      "value": "",
-      "type": "default"
     },
     {
       "key": "kvOrderCTVarName",
