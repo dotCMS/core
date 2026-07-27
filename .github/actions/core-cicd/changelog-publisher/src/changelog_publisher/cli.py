@@ -40,6 +40,15 @@ def cmd_publish(args: argparse.Namespace) -> int:
     with open(args.notes_file, encoding="utf-8") as fh:
         release_notes = fh.read()
     released_date = args.released_date or dt.date.today().isoformat()
+    # Default per site convention: EOL = released date + 1 year (current track).
+    if args.eol_date:
+        eol_date = args.eol_date
+    else:
+        r = dt.date.fromisoformat(released_date)
+        try:
+            eol_date = r.replace(year=r.year + 1).isoformat()
+        except ValueError:  # Feb 29
+            eol_date = r.replace(year=r.year + 1, day=28).isoformat()
 
     service_account = args.service_account or os.environ.get(_SERVICE_ACCOUNT_ENV, "")
 
@@ -51,6 +60,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
             release_notes=release_notes,
             docker_image=args.docker_image,
             released_date=released_date,
+            eol_date=eol_date,
             service_account=service_account or None,
             force=args.force,
             apply=args.apply,
@@ -80,6 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
     pub.add_argument("--notes-file", required=True, help="path to the release-notes markdown (normally the GitHub release body)")
     pub.add_argument("--docker-image", required=True, help="deployment docker image tag")
     pub.add_argument("--released-date", default="", help="availability date (yyyy-MM-dd); defaults to today")
+    pub.add_argument("--eol-date", default="", help="planned end-of-life date (yyyy-MM-dd); defaults to released date + 1 year")
     pub.add_argument("--apply", action="store_true", help="actually search + fire the Publish action")
     pub.add_argument(
         "--service-account", default="",
