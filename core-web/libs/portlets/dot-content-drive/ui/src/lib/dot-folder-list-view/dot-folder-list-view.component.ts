@@ -224,8 +224,9 @@ export class DotFolderListViewComponent implements OnInit {
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME]: '16rem',
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME]: '9rem',
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.BOOLEAN]: '7rem',
-        // Fixed thumbnail column — sized to the thumbnail box, never measured from content.
-        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.IMAGE]: '6rem'
+        // Fixed thumbnail column — wider than the 4.5rem thumbnail box so a sortable header
+        // (label + sort icon) fits on one line; never measured from content.
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.IMAGE]: '9rem'
     };
 
     /**

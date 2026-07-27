@@ -35,6 +35,7 @@
             @for (column of $columns(); track column.field) {
                 @if (column.sortable) {
                     <th
+                        class="whitespace-nowrap"
                         [pSortableColumn]="column.field"
                         [style.width]="column.width"
                         data-testId="header-column-sortable">
