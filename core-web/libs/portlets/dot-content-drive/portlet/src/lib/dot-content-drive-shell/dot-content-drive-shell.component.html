@@ -109,7 +109,7 @@
 <ng-template #uploadSelectorTpl>
     @if ($uploadSelectorPayload(); as payload) {
         <dot-content-drive-dialog-upload-selector
-            class="block w-96 max-w-[92vw]"
+            class="block"
             data-testId="dialog-upload-selector"
             [targetFolder]="payload.targetFolder"
             [files]="payload.files"
@@ -120,7 +120,7 @@
 <p-popover
     #uploadSelectorPopover
     data-testId="upload-selector-popover"
-    [pt]="{ content: { class: 'p-0!' } }">
+    [pt]="{ content: { class: 'w-96 max-w-[92vw] p-0!' } }">
     <ng-container [ngTemplateOutlet]="uploadSelectorTpl" />
 </p-popover>
 
@@ -134,7 +134,8 @@
     [closeOnEscape]="true"
     appendTo="body"
     data-testId="upload-selector-modal"
-    [pt]="{ content: { class: 'p-0!' } }"
+    [style]="{ width: '26rem' }"
+    [pt]="{ content: { class: 'pt-0! px-3 pb-3' } }"
     (visibleChange)="onUploadModalVisibleChange($event)">
     <ng-container [ngTemplateOutlet]="uploadSelectorTpl" />
 </p-dialog>
