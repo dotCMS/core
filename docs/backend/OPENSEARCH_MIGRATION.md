@@ -24,8 +24,20 @@ Controlled via feature flag: `FEATURE_FLAG_OPEN_SEARCH_PHASE`
 
 Phases are advanced **manually** by changing the value of `FEATURE_FLAG_OPEN_SEARCH_PHASE`
 in `dotmarketing-config.properties` (or the equivalent environment variable).
-The system reads the flag at startup and on each routing decision — no restart is required
-for the change to take effect, but all nodes in the cluster must be updated consistently.
+The system reads the flag on each routing decision, so the **routing** change (which providers receive
+writes / serve reads) takes effect without a restart. All nodes in the cluster must be updated
+consistently.
+
+> **Startup-only phase setup requires a restart.** Routing is live, but the one-time setup for a phase
+> runs only in `InitServlet` → `ContentletIndexAPIImpl.checkAndInitializeIndex()`: the
+> `IndexStartupValidator` connectivity / version-3.x / endpoint-separation checks, the automatic
+> migration shutdown (`haltMigration()`), and the bootstrap of the OS index pair + its `indicies` rows
+> (`initOSCatchup()`, gated on Phase 1/2 requiring *both* providers ready in `indexReady()`). So
+> **activating the migration (Phase 0 → 1) needs a restart** — otherwise dual-writes fan out to an OS
+> index that has not been created yet (misses swallowed fire-and-forget) and validation never runs.
+> Advancing 1 → 2 / 2 → 3 should also restart so the startup validation runs for the phase actually in
+> effect (Phase 3 validation is fail-loud — no ES fallback). An automatic shutdown resets to Phase 0
+> **in memory only**; persist the change in config and restart to make it stick.
 
 | Transition      | Precondition                                                              |
 |-----------------|---------------------------------------------------------------------------|
