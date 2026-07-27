@@ -817,6 +817,34 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
         });
+
+        const dropFiles = () =>
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="dropzone"]')),
+                'uploadFiles',
+                { files: createFileList([createFile()]), targetFolder: TARGET_FOLDER_DATA }
+            );
+
+        it('should close the drag-and-drop modal when the Upload button opens the popover', () => {
+            dropFiles();
+            spectator.detectChanges();
+            expect(spectator.component.$uploadModalVisible()).toBe(true);
+
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(spectator.component.$uploadModalVisible()).toBe(false);
+        });
+
+        it('should hide the button popover when a drag-and-drop opens the modal', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+            const hideSpy = jest.spyOn(spectator.component.$uploadSelectorPopover(), 'hide');
+
+            dropFiles();
+            spectator.detectChanges();
+
+            expect(hideSpy).toHaveBeenCalled();
+            expect(spectator.component.$uploadModalVisible()).toBe(true);
+        });
     });
 
     describe('upload — drag-and-drop flow (files already chosen)', () => {
@@ -1970,6 +1998,34 @@ describe('DotContentDriveShellComponent', () => {
                 label: '/documents/',
                 leaf: false
             });
+        });
+
+        it('should carry the folder defaultBaseType into the selected node', () => {
+            spectator.detectChanges();
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/app/',
+                identifier: 'app',
+                inode: 'app-inode',
+                defaultBaseType: 'DOTASSET'
+            };
+
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.setSelectedNode.mockClear();
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'doubleClick', folderItem);
+
+            expect(store.setSelectedNode).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: 'DOTASSET' })
+                })
+            );
         });
 
         it('should call navigationService.editContent when double clicking a content item', () => {

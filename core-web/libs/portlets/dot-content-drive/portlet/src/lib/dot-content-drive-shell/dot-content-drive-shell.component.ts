@@ -330,6 +330,9 @@ export class DotContentDriveShellComponent {
                     hostname: this.#store.currentSite()?.hostname,
                     id: contentlet.identifier,
                     inode: contentlet.inode,
+                    // Carry the folder's upload preference so the Upload button reflects it right
+                    // away when navigating via the table (not only via the sidebar tree).
+                    defaultBaseType: contentlet.defaultBaseType,
                     fromTable: true
                 },
                 key: contentlet.identifier,
@@ -431,9 +434,13 @@ export class DotContentDriveShellComponent {
     ) {
         this.$uploadSelectorPayload.set(payload);
 
+        // The popover and the modal are mutually exclusive: opening one dismisses the other so a
+        // lingering button-popover can't sit behind the drag-and-drop modal (and vice versa).
         if (event) {
+            this.$uploadModalVisible.set(false);
             this.$uploadSelectorPopover()?.show(event, event.currentTarget as HTMLElement);
         } else {
+            this.$uploadSelectorPopover()?.hide();
             this.$uploadModalVisible.set(true);
         }
     }
