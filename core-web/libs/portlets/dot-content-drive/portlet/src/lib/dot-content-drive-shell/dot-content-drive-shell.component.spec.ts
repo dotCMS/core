@@ -845,6 +845,24 @@ describe('DotContentDriveShellComponent', () => {
             expect(hideSpy).toHaveBeenCalled();
             expect(spectator.component.$uploadModalVisible()).toBe(true);
         });
+
+        it('should keep the shared payload (modal content) when the popover hides during handoff', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            dropFiles();
+            spectator.detectChanges();
+
+            // The popover's onHide must NOT clear the shared payload — the modal just opened with it.
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testId="upload-selector-popover"]')),
+                'onHide',
+                {}
+            );
+            spectator.detectChanges();
+
+            expect(spectator.component.$uploadSelectorPayload()).toBeTruthy();
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+        });
     });
 
     describe('upload — drag-and-drop flow (files already chosen)', () => {

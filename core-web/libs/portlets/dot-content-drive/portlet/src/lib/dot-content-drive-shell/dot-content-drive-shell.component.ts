@@ -436,12 +436,14 @@ export class DotContentDriveShellComponent {
 
         // The popover and the modal are mutually exclusive: opening one dismisses the other so a
         // lingering button-popover can't sit behind the drag-and-drop modal (and vice versa).
+        // The modal's visibility is set BEFORE hiding the popover so the popover's `onHide`
+        // handoff guard sees the modal is taking over and keeps the shared payload.
         if (event) {
             this.$uploadModalVisible.set(false);
             this.$uploadSelectorPopover()?.show(event, event.currentTarget as HTMLElement);
         } else {
-            this.$uploadSelectorPopover()?.hide();
             this.$uploadModalVisible.set(true);
+            this.$uploadSelectorPopover()?.hide();
         }
     }
 
@@ -459,8 +461,14 @@ export class DotContentDriveShellComponent {
     /**
      * Clears the shared selector payload when the Upload-button popover is dismissed without a
      * selection (click outside), keeping it symmetric with {@link onUploadModalVisibleChange}.
+     * Skips clearing when the popover is only being hidden to hand off to the modal (they share the
+     * payload) — otherwise the modal would render empty right as it opens.
      */
     protected onUploadSelectorPopoverHide() {
+        if (this.$uploadModalVisible()) {
+            return;
+        }
+
         this.$uploadSelectorPayload.set(undefined);
     }
 
