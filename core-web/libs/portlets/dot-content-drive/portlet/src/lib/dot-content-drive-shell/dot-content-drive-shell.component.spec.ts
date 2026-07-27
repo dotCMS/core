@@ -34,6 +34,7 @@ import {
     DotContentDriveFolder,
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
+import { DotSidePanelNavController } from '@dotcms/edit-content';
 import {
     DotFolderListViewComponent,
     DotFolderTreeNodeData,
@@ -126,7 +127,12 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: jest.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSidePanelNavController, {
+                shouldCollapse: jest.fn().mockReturnValue(false),
+                acquire: jest.fn(),
+                release: jest.fn()
+            })
         ],
         componentProviders: [DotContentDriveStore],
         detectChanges: false

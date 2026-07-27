@@ -23,9 +23,34 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
+
+/** localStorage key persisting the user's expanded (full-width) preference for the side panel. */
+const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
+
+/**
+ * Reads the persisted expanded preference. Best-effort: returns `false` when storage is
+ * unavailable (SSR/tests) or the value is missing, so a read failure never breaks the panel.
+ */
+function readExpandedPreference(): boolean {
+    try {
+        return localStorage.getItem(EXPANDED_STORAGE_KEY) === 'true';
+    } catch {
+        return false;
+    }
+}
+
+/** Persists the expanded preference; silently ignores storage failures. */
+function writeExpandedPreference(expanded: boolean): void {
+    try {
+        localStorage.setItem(EXPANDED_STORAGE_KEY, String(expanded));
+    } catch {
+        // best-effort: quota errors / disabled storage must not break the panel.
+    }
+}
 
 /**
  * Renders the new Edit Content editor inside a right-to-left slide-in panel (`p-drawer`), as an
@@ -68,6 +93,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
 export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #navController = inject(DotSidePanelNavController);
 
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
@@ -81,8 +107,12 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     /** Emitted on each successful save, so the opener can refresh its view. */
     readonly saved = output<DotCMSContentlet>();
 
-    /** Whether the panel is expanded to the full viewport width (vs the default ~70%). */
-    protected readonly $expanded = signal(false);
+    /**
+     * Whether the panel is expanded to the full viewport width (vs the default ~70%). Seeded from
+     * the user's persisted preference so a panel opens in the mode last chosen (see
+     * {@link toggleExpanded}).
+     */
+    protected readonly $expanded = signal(readExpandedPreference());
 
     /** Last successfully-saved contentlet, forwarded to `data.onContentSaved` when the panel closes. */
     #lastSaved: DotCMSContentlet | null = null;
@@ -101,6 +131,10 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     constructor() {
         // Give the editor a clean form-bridge slot; restore the previous one on close.
         pushFormBridge();
+
+        // Collapse the main navigation while the panel is open (restored on close). In
+        // afterNextRender so the store mutation lands after the current render, not during it.
+        afterNextRender(() => this.#navController.acquire());
 
         // Forward each save to the opener so it can refresh its view. The overlay host is resolved
         // AFTER construction (afterNextRender) on purpose: resolving it in the constructor would
@@ -137,6 +171,16 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         }
     }
 
+    /**
+     * Toggles the expanded (full-width) state and persists it, so the next panel the user opens
+     * starts in the same mode.
+     */
+    protected toggleExpanded(): void {
+        const next = !this.$expanded();
+        this.$expanded.set(next);
+        writeExpandedPreference(next);
+    }
+
     /** Fires the `data` lifecycle callbacks on close, matching {@link DotEditContentDialogComponent}. */
     #fireCloseCallbacks(): void {
         const data = this.data();
@@ -150,5 +194,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
 
     ngOnDestroy(): void {
         popFormBridge();
+        // Restore the main navigation once the last panel closes.
+        this.#navController.release();
     }
 }

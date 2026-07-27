@@ -35,7 +35,7 @@ import {
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
+import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
     DotFolderListViewComponent,
     DotContentDriveUploadFiles,
@@ -111,6 +111,7 @@ export class DotContentDriveShellComponent {
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #sidePanelNav = inject(DotSidePanelNavController);
 
     /** Edit Content side panel request, driven by the navigation service; read by the template. */
     protected readonly $editPanelRequest = this.#navigationService.editPanelRequest;
@@ -118,6 +119,35 @@ export class DotContentDriveShellComponent {
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+
+    /** True while the folder tree is collapsed *by* the side panel (so we only restore what we hid). */
+    #treeCollapsedByPanel = false;
+
+    /**
+     * Collapses the Content Drive folder tree while the Edit Content side panel is open, and
+     * restores it on close — but only if it was expanded to begin with (a tree the user already
+     * collapsed stays collapsed). `untracked` guards the store reads/writes so the effect only
+     * re-runs when the panel open/close state changes, never on a tree toggle.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #collapseTreeWithPanelEffect = effect(() => {
+        const panelOpen = !!this.$editPanelRequest();
+
+        untracked(() => {
+            if (
+                panelOpen &&
+                !this.#treeCollapsedByPanel &&
+                this.$treeExpanded() &&
+                this.#sidePanelNav.shouldCollapse()
+            ) {
+                this.#treeCollapsedByPanel = true;
+                this.#store.setIsTreeExpanded(false);
+            } else if (!panelOpen && this.#treeCollapsedByPanel) {
+                this.#treeCollapsedByPanel = false;
+                this.#store.setIsTreeExpanded(true);
+            }
+        });
+    });
 
     readonly $contextMenuData = this.#store.contextMenu;
 

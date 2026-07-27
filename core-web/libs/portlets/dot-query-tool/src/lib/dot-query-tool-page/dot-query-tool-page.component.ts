@@ -168,7 +168,7 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly DEFAULT_LIMIT = DEFAULT_LIMIT;
     readonly DEFAULT_OFFSET = DEFAULT_OFFSET;
 
-    readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
+    readonly splitterPt = { root: { class: 'border-0! rounded-none!' }, panel: {} };
     readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
     readonly tabPanelPt = { root: { class: 'h-full p-0!' } };
 
@@ -241,8 +241,8 @@ export class DotQueryToolPageComponent implements OnInit {
         this.store.setQuery(value);
     }
 
-    onTabChange(value: string): void {
-        if (VALID_TABS.has(value as QueryToolActiveTab)) {
+    onTabChange(value: string | number | undefined): void {
+        if (typeof value === 'string' && VALID_TABS.has(value as QueryToolActiveTab)) {
             this.store.setActiveTab(value as QueryToolActiveTab);
         }
     }

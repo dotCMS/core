@@ -1,11 +1,12 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     createFakeContentlet,
@@ -109,6 +110,8 @@ describe('DotRelationshipFieldComponent', () => {
             mockProvider(DialogService, {
                 open: jest.fn()
             }),
+            // Side panel flag off by default → "create new" uses the centered dialog.
+            mockProvider(DotPropertiesService, { getFeatureFlag: jest.fn(() => of(false)) }),
             {
                 provide: EDIT_CONTENT_HOST,
                 useValue: {
@@ -193,6 +196,19 @@ describe('DotRelationshipFieldComponent', () => {
             const dialogService = spectator.inject(DialogService);
             spectator.click(byTestId('relationship-empty-relate-link'));
             expect(dialogService.open).toHaveBeenCalled();
+        });
+
+        it('opens the create-new content in the centered dialog when the side panel flag is off', async () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockClear();
+
+            await spectator.component.showCreateNewContentDialog();
+
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            const [, config] = (dialogService.open as jest.Mock).mock.calls[0];
+            expect(config.data).toEqual(
+                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
+            );
         });
     });
 

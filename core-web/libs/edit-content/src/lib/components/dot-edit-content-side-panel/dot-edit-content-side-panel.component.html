@@ -27,7 +27,7 @@
                     [text]="true"
                     severity="secondary"
                     [attr.aria-label]="$expanded() ? 'Collapse panel' : 'Expand panel'"
-                    (onClick)="$expanded.set(!$expanded())"
+                    (onClick)="toggleExpanded()"
                     data-testId="side-panel-expand">
                     <ng-template #icon>
                         <i class="material-symbols-outlined text-xl!">

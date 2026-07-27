@@ -10,6 +10,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent } from './dot-edit-content-side-panel.component';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
@@ -46,11 +47,20 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     beforeEach(() => {
+        // Isolate the persisted expanded preference between tests.
+        localStorage.clear();
         saved$ = new Subject<DotCMSContentlet>();
         mockHost = { saved$: saved$.asObservable() };
 
         spectator = createComponent({
-            providers: [{ provide: OverlayEditContentHost, useValue: mockHost }],
+            providers: [
+                { provide: OverlayEditContentHost, useValue: mockHost },
+                // Stub so the component doesn't pull the real controller (and GlobalStore) in tests.
+                {
+                    provide: DotSidePanelNavController,
+                    useValue: { acquire: jest.fn(), release: jest.fn() }
+                }
+            ],
             detectChanges: false
         });
     });
@@ -91,15 +101,35 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.click(button as HTMLElement);
     };
 
-    it('should toggle expanded state with the expand button', () => {
+    it('should toggle expanded state with the expand button and persist it', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
         clickButton('side-panel-expand');
         expect(spectator.component['$expanded']()).toBe(true);
+        expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('true');
 
         clickButton('side-panel-expand');
         expect(spectator.component['$expanded']()).toBe(false);
+        expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('false');
+    });
+
+    it('should open expanded when the persisted preference is expanded', () => {
+        // Persist the preference, then create a fresh panel — it should seed from storage.
+        localStorage.setItem('dot-edit-content-side-panel-expanded', 'true');
+        const freshSpectator = createComponent({
+            providers: [
+                { provide: OverlayEditContentHost, useValue: mockHost },
+                // Stub so the component doesn't pull the real controller (and GlobalStore) in tests.
+                {
+                    provide: DotSidePanelNavController,
+                    useValue: { acquire: jest.fn(), release: jest.fn() }
+                }
+            ],
+            detectChanges: false
+        });
+
+        expect(freshSpectator.component['$expanded']()).toBe(true);
     });
 
     it('should route close through the editor guard and emit `closed` when it proceeds', () => {
