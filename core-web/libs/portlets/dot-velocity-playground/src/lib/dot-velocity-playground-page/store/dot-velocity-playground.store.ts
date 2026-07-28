@@ -15,7 +15,7 @@ import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, withPersistedQuery } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
@@ -66,6 +66,7 @@ const initialState: VelocityPlaygroundState = {
 
 export const DotVelocityPlaygroundStore = signalStore(
     withState<VelocityPlaygroundState>(initialState),
+    withPersistedQuery({ portletKey: 'velocity-playground', field: 'code' }),
     withComputed((store) => ({
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
         hasOutput: computed(
@@ -174,8 +175,7 @@ export const DotVelocityPlaygroundStore = signalStore(
             patchState(store, {
                 history: sanitizedHistory,
                 splitterRatio: sanitizedRatio,
-                wrapCode: typeof wrapCode === 'boolean' ? wrapCode : true,
-                code: sanitizedHistory[0] ?? ''
+                wrapCode: typeof wrapCode === 'boolean' ? wrapCode : true
             });
         }
     })
