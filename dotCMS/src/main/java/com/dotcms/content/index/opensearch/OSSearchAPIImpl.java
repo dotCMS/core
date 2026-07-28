@@ -12,6 +12,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -297,8 +298,13 @@ public class OSSearchAPIImpl implements SearchAPI {
 
         final StringBuffer perms = new StringBuffer();
         if (!isAdmin && !queryJson.has("permissions:")) {
-            APILocator.getContentletAPIImpl()
-                    .addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+            final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
+            contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+            // Secondary category-permission filter: mirror the ES path
+            // (ESContentletAPIImpl.applyPermissionsToQuery). Without this the categoryperms:
+            // clause is never added under OS, so content restricted by category read permissions
+            // leaks to users who lack the category role (Phase 3 permission-filter gap).
+            contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
         }
 
         if (perms.length() > 0) {

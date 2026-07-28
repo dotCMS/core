@@ -2,6 +2,7 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -13,6 +14,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -512,9 +514,181 @@ public class ContentTypesPaginatorTest {
     }
 
     /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: Multiple base types (CONTENT + WIDGET), each with one system and one regular
+     * Content Type, filtered by a shared name token, exercising the multi-type UNION path.
+     *
+     * Expected Result:
+     * <ul>
+     *     <li>With the {@code system} param omitted, all 4 types are returned (backward compat):
+     *     system types are still present, total is exact.</li>
+     *     <li>With {@code system=false}, only the 2 regular types are returned; no system type
+     *     appears and the total reflects the filter exactly (no client-side adjustment).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getItems_multiType_systemParam_excludesSystemTypesAndKeepsExactCount() {
+        final long ts = System.currentTimeMillis();
+        final String token = "sysflag" + ts;
+        ContentType contentReg = null;
+        ContentType contentSys = null;
+        ContentType widgetReg = null;
+        ContentType widgetSys = null;
+
+        try {
+            contentReg = createTypeWithSystemFlag(BaseContentType.CONTENT, token + "ContentReg", token + "cr", false);
+            contentSys = createTypeWithSystemFlag(BaseContentType.CONTENT, token + "ContentSys", token + "cs", true);
+            widgetReg = createTypeWithSystemFlag(BaseContentType.WIDGET, token + "WidgetReg", token + "wr", false);
+            widgetSys = createTypeWithSystemFlag(BaseContentType.WIDGET, token + "WidgetSys", token + "ws", true);
+
+            final ContentTypesPaginator paginator = new ContentTypesPaginator();
+            final Set<String> baseTypes = Set.of(BaseContentType.CONTENT.name(), BaseContentType.WIDGET.name());
+
+            // Backward compat: system omitted -> all 4 present, system types included.
+            final Map<String, Object> paramsDefault = new HashMap<>();
+            paramsDefault.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, baseTypes);
+            final PaginatedArrayList<Map<String, Object>> all =
+                    paginator.getItems(user, token, -1, 0, "name", OrderDirection.ASC, paramsDefault);
+
+            assertEquals("All 4 filtered types must be returned when system is omitted", 4, all.size());
+            assertEquals("Total must include system types when system is omitted", 4, all.getTotalResults());
+            assertTrue("System types must be present (backward compat)",
+                    all.stream().anyMatch(ct -> Boolean.TRUE.equals(ct.get("system"))));
+
+            // system=false -> only the 2 regular types, no system, exact total.
+            final Map<String, Object> paramsNoSystem = new HashMap<>();
+            paramsNoSystem.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, baseTypes);
+            paramsNoSystem.put(ContentTypesPaginator.SYSTEM_PARAMETER_NAME, false);
+            final PaginatedArrayList<Map<String, Object>> noSystem =
+                    paginator.getItems(user, token, -1, 0, "name", OrderDirection.ASC, paramsNoSystem);
+
+            assertEquals("Only the 2 regular types must be returned when system=false", 2, noSystem.size());
+            assertEquals("Total must be exact when system=false (no client-side -1)", 2, noSystem.getTotalResults());
+            assertTrue("No system type must be returned when system=false",
+                    noSystem.stream().noneMatch(ct -> Boolean.TRUE.equals(ct.get("system"))));
+        } finally {
+            removeQuietly(contentReg);
+            removeQuietly(contentSys);
+            removeQuietly(widgetReg);
+            removeQuietly(widgetSys);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: A single base type (CONTENT) with one system and one regular Content Type
+     * sharing a name token, exercising the single-type path with {@code filter} + {@code system}.
+     *
+     * Expected Result: {@code system=false} combined with the name filter returns only the regular
+     * type; the count is exact. This proves the single-type path honors the system predicate.
+     */
+    @Test
+    public void test_getItems_singleType_filterAndSystemFalse_combine() {
+        final long ts = System.currentTimeMillis();
+        final String token = "sysflagsingle" + ts;
+        ContentType regular = null;
+        ContentType systemType = null;
+
+        try {
+            regular = createTypeWithSystemFlag(BaseContentType.CONTENT, token + "Reg", token + "reg", false);
+            systemType = createTypeWithSystemFlag(BaseContentType.CONTENT, token + "Sys", token + "sys", true);
+
+            final ContentTypesPaginator paginator = new ContentTypesPaginator();
+            final Set<String> singleBaseType = Set.of(BaseContentType.CONTENT.name());
+
+            // system omitted -> both present.
+            final Map<String, Object> paramsDefault = new HashMap<>();
+            paramsDefault.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, singleBaseType);
+            final PaginatedArrayList<Map<String, Object>> both =
+                    paginator.getItems(user, token, -1, 0, "name", OrderDirection.ASC, paramsDefault);
+            assertEquals("Both types must be returned when system is omitted", 2, both.size());
+            assertEquals(2, both.getTotalResults());
+
+            // filter + system=false -> only the regular type.
+            final Map<String, Object> paramsNoSystem = new HashMap<>();
+            paramsNoSystem.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, singleBaseType);
+            paramsNoSystem.put(ContentTypesPaginator.SYSTEM_PARAMETER_NAME, false);
+            final PaginatedArrayList<Map<String, Object>> noSystem =
+                    paginator.getItems(user, token, -1, 0, "name", OrderDirection.ASC, paramsNoSystem);
+
+            assertEquals("Only the regular type must be returned for filter + system=false", 1, noSystem.size());
+            assertEquals("Total must be exact for filter + system=false", 1, noSystem.getTotalResults());
+            assertFalse("The returned type must not be a system type",
+                    Boolean.TRUE.equals(noSystem.get(0).get("system")));
+        } finally {
+            removeQuietly(regular);
+            removeQuietly(systemType);
+        }
+    }
+
+    private ContentType createTypeWithSystemFlag(final BaseContentType baseType, final String name,
+            final String varName, final boolean system) {
+        return new ContentTypeDataGen()
+                .baseContentType(baseType)
+                .name(name)
+                .velocityVarName(varName)
+                .system(system)
+                .nextPersisted();
+    }
+
+    private void removeQuietly(final ContentType contentType) {
+        if (null != contentType) {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: A regular (non-system) Content Type whose {@code structure.system} column is
+     * forced to {@code NULL} at the DB level (the column is a nullable boolean, so legacy/externally
+     * created rows may be NULL), queried with {@code system=false}.
+     *
+     * Expected Result: The Content Type is still returned. The system predicate uses
+     * {@code coalesce(system, false)} (so a NULL {@code system} is treated as non-system and not
+     * silently dropped by a plain {@code system = false} equality), and the DB-to-object transform
+     * maps a NULL {@code system} to {@code false} instead of throwing.
+     */
+    @Test
+    public void test_getItems_systemFalse_includesTypeWithNullSystemColumn() throws Exception {
+        final long ts = System.currentTimeMillis();
+        final String token = "nullsys" + ts;
+        ContentType contentType = null;
+
+        try {
+            contentType = createTypeWithSystemFlag(BaseContentType.CONTENT, token + "Reg",
+                    token + "reg", false);
+
+            // Simulate a row whose system column is NULL (nullable boolean, no NOT NULL constraint).
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("update structure set system = null where inode = ?");
+            dc.addParam(contentType.inode());
+            dc.loadResult();
+
+            final Map<String, Object> params = new HashMap<>();
+            params.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
+                    Set.of(BaseContentType.CONTENT.name()));
+            params.put(ContentTypesPaginator.SYSTEM_PARAMETER_NAME, false);
+
+            final ContentTypesPaginator paginator = new ContentTypesPaginator();
+            final PaginatedArrayList<Map<String, Object>> result =
+                    paginator.getItems(user, token, -1, 0, "name", OrderDirection.ASC, params);
+
+            assertEquals("A Content Type with a NULL system column must not be dropped by system=false",
+                    1, result.size());
+            assertEquals(1, result.getTotalResults());
+            assertEquals(token + "Reg", result.get(0).get("name"));
+        } finally {
+            removeQuietly(contentType);
+        }
+    }
+
+    /**
      * Helper method to create a Content Type with a specific Base Type
      */
-    private ContentType createContentTypeWithBaseType(BaseContentType baseType, String name) 
+    private ContentType createContentTypeWithBaseType(BaseContentType baseType, String name)
             throws DotSecurityException, DotDataException {
         final long timestamp = System.currentTimeMillis();
         final String variable = "velocityVar" + name + timestamp;
