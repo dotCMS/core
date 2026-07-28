@@ -312,19 +312,38 @@ describe('DotContentDriveDialogFolderComponent', () => {
         });
 
         it('should add extension on enter key if not duplicate', () => {
+            const target = { value: '*.pdf' };
             spectator.triggerEventHandler(
                 '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keyup.enter',
-                {
-                    target: {
-                        value: '*.pdf'
-                    }
-                }
+                'keydown.enter',
+                { target, preventDefault: jest.fn() }
             );
 
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toContain('*.pdf');
+            // Input is cleared so the next entry starts fresh and existing chips are preserved.
+            expect(target.value).toBe('');
+        });
+
+        it('should preserve existing selection when adding another extension', () => {
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg']
+            });
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler(
+                '[data-testid="allowed-file-extensions-autocomplete"]',
+                'keydown.enter',
+                { target: { value: '*.png' }, preventDefault: jest.fn() }
+            );
+
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([
+                '*.jpg',
+                '*.png'
+            ]);
         });
 
         it('should not add duplicate extension on enter key', () => {
@@ -335,17 +354,101 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
             spectator.triggerEventHandler(
                 '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keyup.enter',
-                {
-                    target: {
-                        value: '*.pdf'
-                    }
-                }
+                'keydown.enter',
+                { target: { value: '*.pdf' }, preventDefault: jest.fn() }
             );
 
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.pdf']);
+        });
+    });
+
+    describe('upload behavior (defaultBaseType)', () => {
+        const editableFolder = (
+            overrides: Partial<DotContentDriveFolder> = {}
+        ): DotContentDriveFolder =>
+            ({
+                name: 'app',
+                title: 'App',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder',
+                ...overrides
+            }) as DotContentDriveFolder;
+
+        it('should render the three upload-behavior options', () => {
+            expect(spectator.query('[data-testid="upload-behavior-option-null"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="upload-behavior-option-DOTASSET"]')).toBeTruthy();
+            expect(
+                spectator.query('[data-testid="upload-behavior-option-FILEASSET"]')
+            ).toBeTruthy();
+        });
+
+        it('should default to "Ask each time" (null) on create', () => {
+            expect(component.folderForm.get('defaultBaseType')?.value).toBeNull();
+        });
+
+        it('should pre-select the radio from the folder defaultBaseType on edit', () => {
+            spectator.setInput('folder', editableFolder({ defaultBaseType: 'DOTASSET' }));
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('defaultBaseType')?.value).toBe('DOTASSET');
+        });
+
+        it('should normalize a non-uppercase defaultBaseType to the uppercase radio value', () => {
+            // The radio options and the shell/toolbar consumers use the uppercase enum; a
+            // lowercase backend value must still select the matching option (not "Ask each time").
+            spectator.setInput('folder', editableFolder({ defaultBaseType: 'dotasset' }));
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('defaultBaseType')?.value).toBe('DOTASSET');
+        });
+
+        it('should send defaultBaseType in the body when a preference is chosen', () => {
+            component.folderForm.patchValue({
+                title: 'App',
+                name: 'app',
+                defaultBaseType: 'FILEASSET'
+            });
+            spectator.detectChanges();
+
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+
+            expect(folderService.createFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: 'FILEASSET' })
+                })
+            );
+        });
+
+        it('should send defaultBaseType as null when "Ask each time" so the backend can clear it', () => {
+            component.folderForm.patchValue({ title: 'App', name: 'app' });
+            spectator.detectChanges();
+
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+
+            expect(folderService.createFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: null })
+                })
+            );
         });
     });
 
@@ -371,7 +474,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -394,7 +498,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });
@@ -416,7 +521,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 5,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -438,7 +544,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -539,7 +646,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: true,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -579,7 +687,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 5,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -618,7 +727,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });
@@ -656,7 +766,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: 'Video'
+                    defaultAssetType: 'Video',
+                    defaultBaseType: null
                 }
             });
         });
@@ -933,7 +1044,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: true,
                     sortOrder: 1,
                     defaultAssetType: 'File',
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });

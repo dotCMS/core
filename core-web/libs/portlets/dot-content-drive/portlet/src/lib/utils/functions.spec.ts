@@ -24,6 +24,7 @@ import {
     decodeFilters,
     encodeFilters,
     decodeByFilterKey,
+    folderSearchViewToDotFolder,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
     isFolder,
@@ -1023,5 +1024,28 @@ describe('User-searchable field helpers', () => {
 
             expect(payload).toBeUndefined();
         });
+    });
+});
+
+describe('folderSearchViewToDotFolder', () => {
+    it('should carry defaultBaseType through to the DotFolder', () => {
+        const view = createFakeFolderSearchView({
+            id: 'f1',
+            name: 'app',
+            path: '/',
+            defaultBaseType: 'DOTASSET'
+        });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.defaultBaseType).toBe('DOTASSET');
+    });
+
+    it('should leave defaultBaseType undefined when the view has no preference', () => {
+        const view = createFakeFolderSearchView({ id: 'f2', name: 'docs', path: '/' });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.defaultBaseType).toBeUndefined();
     });
 });
