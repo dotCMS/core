@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
@@ -677,6 +678,14 @@ public class OSIndexAPIImpl implements IndexAPI {
      * cluster and is rejected, most notably an {@code HTTP 403} on index creation when the
      * configured OS user's role does not cover the dotCMS index-name prefix (issue #36222).</p>
      */
+    /**
+     * Matches an HTTP 401/403 status code that is not part of a longer digit run, so a real status
+     * code is recognised ({@code status: 403}, {@code HTTP/1.1 403}) while the same digits appearing
+     * inside an index-name timestamp are not (see {@link #classifyConnectionError}).
+     */
+    private static final Pattern AUTH_STATUS_CODE =
+            Pattern.compile("(?<![0-9])(401|403)(?![0-9])");
+
     public enum ConnectionFailureKind {
         TLS_SCHEME_MISMATCH("TLS/scheme mismatch — the client scheme likely does not match the"
                 + " server (e.g. http:// against an https-only OS port, or https:// against a"
@@ -731,8 +740,13 @@ public class OSIndexAPIImpl implements IndexAPI {
                     || msg.contains("connection closed")) {
                 return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
             }
-            // Authentication / authorization.
-            if (msg.contains("401") || msg.contains("403")
+            // Authentication / authorization. The status code must not be matched as a bare
+            // substring: dotCMS wrapper messages embed the physical index name, whose
+            // _yyyyMMddHHmmss timestamp regularly contains the digits 401/403 (e.g. an index
+            // created at 12:04:03 → working_20260728120403.os), which would misreport an unrelated
+            // failure — a settings-parse or orphan-delete error — as a permission problem and send
+            // the operator to change DOT_DOTCMS_CLUSTER_ID for nothing (issue #36222).
+            if (AUTH_STATUS_CODE.matcher(msg).find()
                     || msg.contains("unauthorized") || msg.contains("forbidden")) {
                 return ConnectionFailureKind.AUTH_FORBIDDEN;
             }

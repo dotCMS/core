@@ -1,7 +1,7 @@
 package com.dotcms.content.index;
 
-import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
+import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -157,8 +157,8 @@ public class IndexAPIImpl implements IndexAPI {
         }
         final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
         if (!osNames.isEmpty()) {
-            // The reported result is the ES one while ES is still the authoritative store: an OS
-            // force-merge failure is logged, not turned into a failed maintenance action.
+            // While OS is only the shadow store its force-merge failure is logged instead of failing
+            // a maintenance action whose ES half already succeeded; from Phase 2 on it propagates.
             result &= isolateOsSubsetFailure("optimize", osNames,
                     () -> router.osImpl().optimize(osNames)).orElse(true);
         }
@@ -176,9 +176,11 @@ public class IndexAPIImpl implements IndexAPI {
      * from a different {@code DOT_DOTCMS_CLUSTER_ID} with {@code HTTP 403} — an OS-only
      * misconfiguration that surfaced as a 500 on a maintenance action while ES was perfectly fine.</p>
      *
-     * <p>Phase-aware, matching the rest of the migration's error policy: while ES is still active
-     * (phases 0-2) the OS failure is logged at {@code WARN} and absorbed; in Phase 3 OS is the only
-     * store, so it is re-thrown.</p>
+     * <p>Phase-aware, matching {@link PhaseRouter}'s rule that only the <em>shadow</em> provider's
+     * failures are absorbed: the OS failure is swallowed while OS is the shadow store (Phase 1 — and
+     * Phase 0 never dispatches OS names), and re-thrown once OS serves reads (phases 2 and 3), where
+     * silently reporting success would tell the operator that the store their searches hit was
+     * optimized / flushed when it was not.</p>
      *
      * @param operation operation name, for the log message
      * @param osNames   the OS-tagged names the operation was dispatched with, for the log message
@@ -192,8 +194,8 @@ public class IndexAPIImpl implements IndexAPI {
             // isolation wrapper — an absent value is handled by the caller's default.
             return Optional.ofNullable(action.get());
         } catch (final RuntimeException e) {
-            if (isMigrationComplete()) {
-                // Phase 3: OS is the primary store — there is nothing to degrade to.
+            if (isReadEnabled()) {
+                // Phases 2 and 3: OS serves reads — the caller must see the failure.
                 throw e;
             }
             final OSIndexAPIImpl.ConnectionFailureKind kind =
@@ -424,8 +426,9 @@ public class IndexAPIImpl implements IndexAPI {
         }
         final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
         if (!osNames.isEmpty()) {
-            // An OS-only failure must not fail the flush for the ES indices that already succeeded;
-            // the returned shard counts then cover only the providers actually contacted.
+            // While OS is only the shadow store, its failure must not fail the flush for the ES
+            // indices that already succeeded; the returned shard counts then cover only the
+            // providers actually contacted. From Phase 2 on (OS serves reads) it propagates.
             final Map<String, Integer> osResult = isolateOsSubsetFailure("cache flush", osNames,
                     () -> router.osImpl().flushCaches(osNames)).orElse(Map.of());
             failedShards += osResult.getOrDefault("failedShards", 0);

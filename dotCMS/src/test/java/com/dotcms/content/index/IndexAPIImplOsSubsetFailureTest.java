@@ -28,14 +28,17 @@ import org.junit.Test;
  * split the incoming name list by vendor tag and call each provider with the names it owns, which
  * means they never inherited the router's shadow-failure handling. Any exception from the OS half
  * propagated to the caller, so an OS-only problem — the motivating one being a role scoped to
- * {@code cluster_<customer>*} rejecting names built from a different {@code DOT_DOTCMS_CLUSTER_ID}
- * with HTTP 403 — turned a maintenance action into a 500 even though the ES half had succeeded.</p>
+ * {@code cluster_&lt;customer&gt;*} rejecting names built from a different
+ * {@code DOT_DOTCMS_CLUSTER_ID} with HTTP 403 — turned a maintenance action into a 500 even though
+ * the ES half had succeeded.</p>
  *
  * <h2>Contract under test</h2>
  * <ul>
- *   <li>Dual-write phase: the ES half runs, the OS failure is absorbed, and the caller sees the ES
- *       outcome (for {@code flushCaches}, shard counts covering the providers actually contacted).</li>
- *   <li>Phase 3: OS is the only store, so the failure propagates.</li>
+ *   <li>Phase 1 (OS is the shadow store): the ES half runs, the OS failure is absorbed, and the
+ *       caller sees the ES outcome (for {@code flushCaches}, shard counts covering the providers
+ *       actually contacted).</li>
+ *   <li>Phases 2 and 3 (OS serves reads): the failure propagates — reporting success for the store
+ *       that answers searches would hide that nothing was optimized or flushed there.</li>
  * </ul>
  *
  * @author Fabrizzio Araya
@@ -109,15 +112,15 @@ public class IndexAPIImplOsSubsetFailureTest {
     }
 
     /**
-     * Given : Phase 2, a cache flush over one ES and one OS index, and an OS provider that rejects
+     * Given : Phase 1, a cache flush over one ES and one OS index, and an OS provider that rejects
      *         the flush with 403.
      * When  : flushCaches() runs.
      * Then  : the ES shard counts are still returned (the OS indices are simply not represented),
      *         instead of the whole flush failing.
      */
     @Test
-    public void flushCaches_phase2_osForbidden_returnsEsShardCounts() {
-        setPhase(MigrationPhase.PHASE_2_DUAL_WRITE_OS_READS);
+    public void flushCaches_phase1_osForbidden_returnsEsShardCounts() {
+        setPhase(MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS);
 
         final ESIndexAPI esImpl = mock(ESIndexAPI.class);
         final OSIndexAPIImpl osImpl = mock(OSIndexAPIImpl.class);
@@ -149,6 +152,55 @@ public class IndexAPIImplOsSubsetFailureTest {
         try {
             new IndexAPIImpl(mock(ESIndexAPI.class), osImpl).flushCaches(List.of(OS_INDEX));
             fail("In Phase 3 OS is the only store — the failure must propagate");
+        } catch (final RuntimeException expected) {
+            assertTrue("Expected the OS failure, got: " + expected.getMessage(),
+                    expected.getMessage().contains("OpenSearch indices"));
+        }
+    }
+
+    /**
+     * Given : Phase 2 — OpenSearch is the provider that serves reads — and an OS provider that
+     *         rejects the force-merge with 403.
+     * When  : optimize() runs.
+     * Then  : the failure propagates. Absorbing it here would report a successful optimize for the
+     *         store the site's searches actually hit.
+     */
+    @Test
+    public void optimize_phase2_osForbidden_propagates() {
+        setPhase(MigrationPhase.PHASE_2_DUAL_WRITE_OS_READS);
+
+        final ESIndexAPI esImpl = mock(ESIndexAPI.class);
+        final OSIndexAPIImpl osImpl = mock(OSIndexAPIImpl.class);
+        when(esImpl.optimize(anyList())).thenReturn(true);
+        when(osImpl.optimize(anyList())).thenThrow(forbidden("optimize"));
+
+        try {
+            new IndexAPIImpl(esImpl, osImpl).optimize(List.of(ES_INDEX, OS_INDEX));
+            fail("In Phase 2 OpenSearch serves reads — the failure must reach the caller");
+        } catch (final RuntimeException expected) {
+            assertTrue("Expected the OS failure, got: " + expected.getMessage(),
+                    expected.getMessage().contains("OpenSearch indices"));
+        }
+    }
+
+    /**
+     * Given : Phase 2 and an OS provider that rejects the cache flush with 403.
+     * When  : flushCaches() runs.
+     * Then  : the failure propagates, for the same reason as optimize in Phase 2.
+     */
+    @Test
+    public void flushCaches_phase2_osForbidden_propagates() {
+        setPhase(MigrationPhase.PHASE_2_DUAL_WRITE_OS_READS);
+
+        final ESIndexAPI esImpl = mock(ESIndexAPI.class);
+        final OSIndexAPIImpl osImpl = mock(OSIndexAPIImpl.class);
+        when(esImpl.flushCaches(List.of(ES_INDEX)))
+                .thenReturn(Map.of("successfulShards", 4, "failedShards", 0));
+        when(osImpl.flushCaches(anyList())).thenThrow(forbidden("flush"));
+
+        try {
+            new IndexAPIImpl(esImpl, osImpl).flushCaches(List.of(ES_INDEX, OS_INDEX));
+            fail("In Phase 2 OpenSearch serves reads — the failure must reach the caller");
         } catch (final RuntimeException expected) {
             assertTrue("Expected the OS failure, got: " + expected.getMessage(),
                     expected.getMessage().contains("OpenSearch indices"));

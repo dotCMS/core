@@ -128,8 +128,12 @@ public class OsBootstrapForbiddenIndexIT extends IntegrationTestBase {
         final String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
         // Before the fix this threw DotStateException("Failed to create index: ...").
-        newApiWithForbiddenOs().bootstrapAndPointOS(workingIndex, liveIndex);
+        final boolean osPointed =
+                newApiWithForbiddenOs().bootstrapAndPointOS(workingIndex, liveIndex);
 
+        assertFalse("The bootstrap must report that no OS index was registered, so callers do not"
+                        + " advertise an index that does not exist",
+                osPointed);
         assertEquals("A shadow-phase OS bootstrap failure must halt the migration (ES-only),"
                         + " not abort index initialisation",
                 MigrationPhase.PHASE_0_MIGRATION_NOT_STARTED, MigrationPhase.current());
@@ -163,6 +167,46 @@ public class OsBootstrapForbiddenIndexIT extends IntegrationTestBase {
 
         assertEquals("Phase 3 must never be auto-rolled back to ES",
                 MigrationPhase.PHASE_3_OPENSEARCH_ONLY, MigrationPhase.current());
+    }
+
+    /**
+     * Given : Phase 1 and a full reindex whose OS reindex indices are rejected with 403.
+     * When  : the reindex slots are created and registered.
+     * Then  : the ES reindex slots are registered as usual, and the OS store is left WITHOUT reindex
+     *         pointers — pointing it at indices the provider rejected would make the reindex write to
+     *         names that do not exist, so OpenSearch would auto-create a dynamically-mapped twin that
+     *         the switchover later promotes to active.
+     */
+    @Test
+    public void phase1_forbiddenOsCreate_doesNotRegisterOsReindexSlots() throws DotDataException {
+
+        setPhase(MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS);
+        warmUpOsClient();
+        Config.setProperty(OS_ENDPOINTS_KEY, new String[]{UNUSED_OS_ENDPOINT});
+
+        final String timeStamp = String.valueOf(System.currentTimeMillis());
+        final IndiciesInfo originalEsIndices = APILocator.getIndiciesAPI().loadIndicies();
+
+        try {
+            newApiWithForbiddenOs().initAndPointReindex(timeStamp);
+
+            final IndiciesInfo esAfter = APILocator.getIndiciesAPI().loadIndicies();
+            assertTrue("The ES reindex slots must still be registered: the Elasticsearch reindex is"
+                            + " unaffected by an OpenSearch rejection. Got: " + esAfter.getReindexWorking(),
+                    esAfter.getReindexWorking() != null
+                            && esAfter.getReindexWorking().contains(timeStamp));
+
+            assertOsStoreDoesNotPointAt(timeStamp);
+
+            Logger.info(this, "✅ Phase 1: OS reindex slots left unregistered after a forbidden create");
+        } finally {
+            // Restore the ES store and drop the reindex indices this test created.
+            Try.run(() -> APILocator.getIndiciesAPI().point(originalEsIndices));
+            Try.run(() -> APILocator.getContentletIndexAPI()
+                    .delete(IndexType.REINDEX_WORKING.getPrefix() + "_" + timeStamp));
+            Try.run(() -> APILocator.getContentletIndexAPI()
+                    .delete(IndexType.REINDEX_LIVE.getPrefix() + "_" + timeStamp));
+        }
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
@@ -229,6 +273,10 @@ public class OsBootstrapForbiddenIndexIT extends IntegrationTestBase {
                     indices.working().filter(name -> name.contains(timeStamp)).isPresent());
             assertFalse("The OS store must not point at a live index that was never created",
                     indices.live().filter(name -> name.contains(timeStamp)).isPresent());
+            assertFalse("The OS store must not point at a reindex-working index that was never created",
+                    indices.reindexWorking().filter(name -> name.contains(timeStamp)).isPresent());
+            assertFalse("The OS store must not point at a reindex-live index that was never created",
+                    indices.reindexLive().filter(name -> name.contains(timeStamp)).isPresent());
         });
     }
 }
