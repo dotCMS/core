@@ -13,7 +13,7 @@ self-service track selection ships.
 
 | Doc | Use it for |
 |---|---|
-| [RUNBOOK.md](RUNBOOK.md) — operator runbook | Exception operations: tainting a bad release, holding a track, holding a single environment. Incident work, not routine requests. |
+| [RUNBOOK.md](RUNBOOK.md) — operator runbook | Exception operations: tainting a bad release, holding a track, holding a single environment. Incident work, not routine requests. **Lands with [PR #36770](https://github.com/dotCMS/core/pull/36770)** — until that merges, the file (and the links to it below) won't resolve; escalate to platform, who have the procedures. |
 | [README.md](README.md) | How the track tags themselves advance (the promote action, cadence, approval gate). |
 | [dev.dotcms.com/docs/evergreen-tracks](https://dev.dotcms.com/docs/evergreen-tracks) | The published customer-facing explanation. **Everything you tell a customer must match this page.** |
 | ["dotCMS Maintenance Pause List & Evergreen Tracks" sheet](https://docs.google.com/spreadsheets/d/1pDSXjBYuUfGLufNcrhK-zVeSLrGb-c38qpZzDM3LUfg/edit) | The CX-facing registry of who is on what track and who is paused. Updated by hand — see step 4.4. |
@@ -39,8 +39,9 @@ Two facts that drive almost every support answer:
    version backward. It simply stops advancing until the slower track catches up to the version it
    already runs.
 
-Fleet snapshot (2026-07-28): 190 subscribed environments — 180 `standard`, 9 `trailing`
-(greensky, lennox, lennox-dr, suny), 1 `latest` (bcbs `dev-2310`).
+Fleet snapshot (2026-07-28): 190 subscribed environments — 180 `standard`; 9 `trailing`, which are
+9 *environments* across 4 tenants (greensky ×4, lennox ×2, lennox-dr ×1, suny ×2); 1 `latest`
+(bcbs `dev-2310`). Re-count with the `grep` in step 3.1 rather than trusting this line.
 
 ---
 
@@ -178,6 +179,12 @@ metadata:
         image: mirror.gcr.io/dotcms/dotcms:26.07.27-01@sha256:d0e1515a70989e2deb1d59364773ef76802af9857b7ea058dffb282b8f34f19d
 ```
 
+That is bcbs `dev-2310`'s real pin — and its digest deliberately **differs** from the `latest`
+digest in the step 4.3 table even though both say `26.07.27-01`: the same version gets rebuilt, so
+one version can have several digests. **A pin whose digest doesn't match the table is not by itself
+drift** — check the version first, and only treat a digest difference as something to raise if the
+*version* is behind.
+
 So the label alone changes *future* behavior; it does not move the running version.
 
 | Move | Edit | Effect |
@@ -214,7 +221,9 @@ Snapshot for orientation — **re-resolve, never copy these** (2026-07-28):
 | `trailing` | 26.06.22-03 | `sha256:d28362adad00db09faf941f5c0de39a7b1ba6f6dca5d1903442a1ffb1fe7e2e6` |
 
 Note that the same version can exist as several rebuild digests (e.g. `26.07.27-01` and
-`26.07.27-01_66cdc38`). Always pin the digest the *track tag* currently resolves to.
+`26.07.27-01_66cdc38`). Always pin the digest the *track tag* currently resolves to — and that is
+why the example pin in step 4.2 shows `26.07.27-01` on a different digest than the `latest` row
+above. Same version, different rebuild; not a mismatch to escalate.
 
 ### 4.4 Ship it
 
@@ -267,13 +276,15 @@ running to check.
 
 | Track | Answer |
 |---|---|
-| `latest` | On the next GA release. |
+| `latest` | On the next GA release — once platform ships the pin bump for it. |
 | `standard` | At our next scheduled maintenance window, landing on the newest GA release older than ~14 days. |
 | `trailing` | At our next scheduled maintenance window, landing on the newest GA release older than ~28 days. |
 
-Do **not** promise a specific date or a fixed day-of-week. `standard` and `trailing` advance only
-when an operator dispatches the promote action at a maintenance window — that human step *is* the
-cadence gate. If the customer needs a date, ask platform for the next window rather than guessing.
+Do **not** promise a specific date or a fixed day-of-week — for **any** track, including `latest`.
+While the reconciler is in dry-run (see step 4.2), *no* environment advances by itself: `latest`
+tracks each GA release but still needs the pin shipped, and `standard`/`trailing` advance only when
+an operator dispatches the promote action at a maintenance window. If the customer needs a date,
+ask platform rather than guessing.
 
 ### 6.3 "Can we go back to version X?"
 
@@ -325,7 +336,7 @@ Be honest about these on tickets; they are the reason this runbook says "interim
 - **No self-service.** Every track change is a manifest PR by platform. Self-service selection is
   on the roadmap (Workstream B).
 - **No automatic version advance yet.** The reconciler is deployed but dry-run everywhere, so
-  `standard`/`trailing` envs move only when a human ships the pin. Never tell a customer their
+  **every** env — `latest` included — moves only when a human ships the pin. Never tell a customer their
   environment will update itself on a specific date.
 - **Sheet ↔ git drift.** The CX sheet is updated by hand. Verify against git before answering
   "what track am I on".
