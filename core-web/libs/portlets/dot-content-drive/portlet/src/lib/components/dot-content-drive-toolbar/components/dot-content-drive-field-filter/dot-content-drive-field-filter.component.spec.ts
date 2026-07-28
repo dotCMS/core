@@ -22,6 +22,7 @@ import { DotContentDriveFieldFilterComponent } from './dot-content-drive-field-f
 
 import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
+import { toLocalIsoString } from '../../../../utils/functions';
 
 const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTypeField =>
     ({
@@ -382,14 +383,14 @@ describe('DotContentDriveFieldFilterComponent', () => {
         beforeEach(() => jest.useFakeTimers());
         afterEach(() => jest.useRealTimers());
 
-        // Local Dates + toISOString keep the assertions timezone-independent (the component
-        // serializes with the same toISOString the test computes the expected value with).
+        // Local Dates + toLocalIsoString keep the assertions timezone-independent (the component
+        // serializes with the same helper the test computes the expected value with).
         const seededFrom = new Date(2024, 0, 1, 17, 0, 0);
         const seededTo = new Date(2024, 0, 1, 9, 0, 0);
 
         const openInvertedTimeRange = () => {
             store.getFilterValue.mockReturnValue(
-                `${seededFrom.toISOString()},${seededTo.toISOString()}`
+                `${toLocalIsoString(seededFrom)},${toLocalIsoString(seededTo)}`
             );
             spectator.setInput('field', field({ variable: 'body', fieldType: 'Time' }));
             spectator.detectChanges();
@@ -415,7 +416,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({
-                'us.body': `${seededFrom.toISOString()},${correctedTo.toISOString()}`
+                'us.body': `${toLocalIsoString(seededFrom)},${toLocalIsoString(correctedTo)}`
             });
         });
 
@@ -432,7 +433,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({
-                'us.body': `${from.toISOString()},${to.toISOString()}`
+                'us.body': `${toLocalIsoString(from)},${toLocalIsoString(to)}`
             });
         });
     });
@@ -447,7 +448,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
         const openWithSeededRange = () => {
             store.getFilterValue.mockReturnValue(
-                `${seededFrom.toISOString()},${seededTo.toISOString()}`
+                `${toLocalIsoString(seededFrom)},${toLocalIsoString(seededTo)}`
             );
             spectator.setInput('field', field({ variable: 'body', fieldType: 'Date-and-Time' }));
             spectator.detectChanges();
@@ -468,7 +469,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             const expectedTo = new Date(2024, 2, 25, 18, 0, 0);
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({
-                'us.body': `${expectedFrom.toISOString()},${expectedTo.toISOString()}`
+                'us.body': `${toLocalIsoString(expectedFrom)},${toLocalIsoString(expectedTo)}`
             });
         });
 
@@ -485,7 +486,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             // Time changes to 10:30, the seeded from date (Jan 10) is kept; to bound unchanged.
             const expectedFrom = new Date(2024, 0, 10, 10, 30, 0);
             expect(store.patchFilters).toHaveBeenCalledWith({
-                'us.body': `${expectedFrom.toISOString()},${seededTo.toISOString()}`
+                'us.body': `${toLocalIsoString(expectedFrom)},${toLocalIsoString(seededTo)}`
             });
         });
 
@@ -501,14 +502,16 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
             const expectedTo = new Date(2024, 0, 20, 20, 45, 0);
             expect(store.patchFilters).toHaveBeenCalledWith({
-                'us.body': `${seededFrom.toISOString()},${expectedTo.toISOString()}`
+                'us.body': `${toLocalIsoString(seededFrom)},${toLocalIsoString(expectedTo)}`
             });
         });
     });
 
     describe('$timeRangeInvalid for Date-and-Time (full-instant comparison)', () => {
         const seedRange = (from: Date, to: Date) => {
-            store.getFilterValue.mockReturnValue(`${from.toISOString()},${to.toISOString()}`);
+            store.getFilterValue.mockReturnValue(
+                `${toLocalIsoString(from)},${toLocalIsoString(to)}`
+            );
             spectator.setInput('field', field({ variable: 'body', fieldType: 'Date-and-Time' }));
             spectator.detectChanges();
             openPopover();
@@ -569,7 +572,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             jest.advanceTimersByTime(DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({
-                'us.body': `${from.toISOString()},${to.toISOString()}`
+                'us.body': `${toLocalIsoString(from)},${toLocalIsoString(to)}`
             });
         });
 
