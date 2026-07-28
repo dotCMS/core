@@ -39,3 +39,9 @@ Pass `--apply` to actually move tags. Without it, the command prints the plan an
 ## Test
 
     uv run pytest
+
+## Support-facing docs
+
+Customer track-change requests are handled per
+[SUPPORT-RUNBOOK.md](SUPPORT-RUNBOOK.md) (intake → validate → apply → verify → escalate), with
+[CX-BRIEFING.md](CX-BRIEFING.md) as the agenda for walking CX through it.
