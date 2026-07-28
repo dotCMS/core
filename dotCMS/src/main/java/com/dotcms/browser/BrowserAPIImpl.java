@@ -1179,7 +1179,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     String buildBaseESQuery(final BrowserQuery browserQuery) {
         final StringBuilder textGroup = new StringBuilder();
 
-        if (UtilMethods.isSet(browserQuery.filter)) {
+        // When the keyword is DB-resolved (resolveTextInDb), skip the free-text group here — otherwise
+        // ES would re-filter on the lagging index and drop just-saved items. The index-routed field
+        // clauses (below) still apply.
+        if (UtilMethods.isSet(browserQuery.filter) && !browserQuery.resolveTextInDb) {
             final String titleFilters = String.format(
                     "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:*%s*^10",
                     browserQuery.filter,
@@ -1484,12 +1487,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return {@code true} if ES should be used for filtering, {@code false} to use SQL filtering
      */
     boolean isUseElasticSearchForFiltering(final BrowserQuery browserQuery) {
-        final boolean hasTextFilter = UtilMethods.isSet(browserQuery.filter) ||
-                UtilMethods.isSet(browserQuery.fileName);
+        // The free-text filter only forces the ES path when it is NOT DB-resolved (resolveTextInDb).
+        // fileName remains ES-routed. Index-routed field criteria always require ES.
+        final boolean textNeedsEs = (UtilMethods.isSet(browserQuery.filter) && !browserQuery.resolveTextInDb)
+                || UtilMethods.isSet(browserQuery.fileName);
         final boolean hasIndexFieldCriteria = browserQuery.getFieldCriteria().stream()
                 .anyMatch(criteria ->
                         criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
-        return browserQuery.useElasticsearchFiltering && (hasTextFilter || hasIndexFieldCriteria);
+        return browserQuery.useElasticsearchFiltering && (textNeedsEs || hasIndexFieldCriteria);
     }
 
     /**
@@ -1891,11 +1896,16 @@ public class BrowserAPIImpl implements BrowserAPI {
                 : resolveArchiveTargetSteps(browserQuery.workflowStepIds);
         appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
                 browserQuery.workflowStepIds, archiveStepIds, parameters);
-        //We only build the filtering bits of the SQL Query if we're not using ES
-        if (!browserQuery.useElasticsearchFiltering) {
+        // Free-text keyword: resolved in the DB when ES filtering is off OR when resolveTextInDb is
+        // set (Content Drive keyword search — read-your-writes per ADR-0018). This keeps the text
+        // predicate in the candidate SQL even while the ES path narrows by index-routed field clauses.
+        if (!browserQuery.useElasticsearchFiltering || browserQuery.resolveTextInDb) {
             if (UtilMethods.isSet(browserQuery.filter)) {
                 appendFilterQuery(selectQuery, browserQuery.filter, parameters);
             }
+        }
+        // fileName stays on the legacy ES-gated path (only resolved in the DB when ES is off).
+        if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.fileName)) {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
             }

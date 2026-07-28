@@ -167,9 +167,12 @@ public class ContentDriveHelper {
         //This ensures that despite the site passed systemHost will be included too
         builder.forceSystemHost(requestForm.includeSystemHost());
 
-        // Enable Elasticsearch filtering for text search when filter is provided
+        // Keyword/title search resolves in the DB (read-your-writes, ADR-0018): a just-saved item is
+        // findable by name immediately, without waiting for ES indexing. Only index-routed field
+        // filters (below) flip on Elasticsearch; the text term is carried by resolveTextInDb so it
+        // still resolves in the DB even when the ES path runs for those field clauses.
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
-             builder.useElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
+             builder.resolveTextInDb(true)
                  .filterFolderNames(requestForm.filters().filterFolders())
                  .withFilter(requestForm.filters().text());
         }
