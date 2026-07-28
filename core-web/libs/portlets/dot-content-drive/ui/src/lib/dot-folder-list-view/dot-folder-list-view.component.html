@@ -135,19 +135,21 @@
                         @if (!isFolder) {
                             @let value = item[column.field];
                             @switch (column.type) {
-                                <!-- Date/time content fields render as ABSOLUTE values on purpose.
-                                     Intentionally NOT the `dotRelativeDate` pipe used for `modDate`
-                                     below: that shows relative text ("3 days ago") which suits an
-                                     audit timestamp but would misrepresent an arbitrary content
-                                     date field (e.g. an event date shown as "in 2 days"). -->
+                                <!-- Date/time content fields render as ABSOLUTE values on purpose
+                                     (not the relative `modDate` pipe below, which would misrepresent
+                                     a content date as "in 2 days"). Formatted in UTC — dotCMS stores
+                                     these fields against the server timezone (UTC), and the editor
+                                     shows/edits them in that zone; formatting in the browser's zone
+                                     (DatePipe's default) would shift a 09:00 event to 12:00 for a
+                                     UTC+3 user, so the table wouldn't match the editor or the filter. -->
                                 @case (COLUMN_TYPE.DATE) {
-                                    {{ value ? (value | date: 'MM/dd/yyyy') : '' }}
+                                    {{ value ? (value | date: 'MM/dd/yyyy' : 'UTC') : '' }}
                                 }
                                 @case (COLUMN_TYPE.DATETIME) {
-                                    {{ value ? (value | date: 'MM/dd/yyyy h:mm a') : '' }}
+                                    {{ value ? (value | date: 'MM/dd/yyyy h:mm a' : 'UTC') : '' }}
                                 }
                                 @case (COLUMN_TYPE.TIME) {
-                                    {{ value ? (value | date: 'h:mm a') : '' }}
+                                    {{ value ? (value | date: 'h:mm a' : 'UTC') : '' }}
                                 }
                                 @case (COLUMN_TYPE.BOOLEAN) {
                                     <!-- Only render for an actual boolean value; a missing value

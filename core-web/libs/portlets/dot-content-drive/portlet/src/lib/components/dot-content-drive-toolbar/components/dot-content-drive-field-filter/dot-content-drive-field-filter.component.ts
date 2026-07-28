@@ -69,7 +69,8 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 import {
     isDateFieldFilterType,
     parseMultiValue,
-    serializeUserSearchableValue
+    serializeUserSearchableValue,
+    toLocalIsoString
 } from '../../../../utils/functions';
 import {
     DotContentDriveLazyMultiselectComponent,
@@ -691,8 +692,8 @@ export class DotContentDriveFieldFilterComponent {
         this.$dateValue.set(dates);
         const [from, to] = dates ?? [];
         const range = {
-            from: from ? from.toISOString() : '',
-            to: to ? to.toISOString() : ''
+            from: from ? toLocalIsoString(from) : '',
+            to: to ? toLocalIsoString(to) : ''
         };
         this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
     }
@@ -744,8 +745,8 @@ export class DotContentDriveFieldFilterComponent {
         const from = this.$timeFrom();
         const to = this.$timeTo();
         const range = {
-            from: from ? from.toISOString() : '',
-            to: to ? to.toISOString() : ''
+            from: from ? toLocalIsoString(from) : '',
+            to: to ? toLocalIsoString(to) : ''
         };
         this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
     }

@@ -578,6 +578,26 @@ function isDateRange(value: DotContentDriveUserSearchableValue): value is DotCon
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Formats a Date as a timezone-naive local wall-clock ISO string (`yyyy-MM-ddTHH:mm:ss`, no `Z` or
+ * offset) — i.e. the exact date/time the user sees in the picker.
+ *
+ * Date/Date-and-Time/Time filters must send the wall-clock, not a UTC instant: `toISOString()`
+ * shifts by the browser's offset (a UTC-3 user's 10:00 becomes `13:00Z`), and the backend then
+ * parses that `Z` value as an instant and reformats it in the SERVER zone — so the bound no longer
+ * matches what the user picked. A no-offset value instead round-trips as identity: the backend
+ * parses it in the server zone and formats it back in the server zone (see
+ * `BrowserAPIImpl#parseFlexibleDate` → `LocalDateTime.parse(...)` and `normalizeDateBound`). On the
+ * FE, `new Date('…T10:00:00')` (no offset) also parses as local, so the picker round-trips too.
+ */
+export function toLocalIsoString(date: Date): string {
+    // Shift the instant back by the local timezone offset so JS's own (UTC) toISOString() prints
+    // the LOCAL wall-clock, then drop the trailing ".sssZ" → "yyyy-MM-ddTHH:mm:ss".
+    const localMs = date.getTime() - date.getTimezoneOffset() * 60_000;
+
+    return new Date(localMs).toISOString().slice(0, 19);
+}
+
 export function serializeUserSearchableValue(
     value: DotContentDriveUserSearchableValue | null | undefined,
     fieldType: string
