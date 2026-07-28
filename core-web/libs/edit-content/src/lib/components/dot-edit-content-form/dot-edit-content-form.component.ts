@@ -11,6 +11,7 @@ import {
     DestroyRef,
     DOCUMENT,
     effect,
+    ElementRef,
     inject,
     OnInit,
     output,
@@ -119,12 +120,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         ])
     ],
     host: {
-        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden',
-        // Detect the first REAL user interaction (a pointer/keyboard event bubbling up from any
-        // field). Async CVAs populating on load never fire these, so this reliably tells a genuine
-        // edit apart from load-time noise — see onUserTouch / initializeFormListener.
-        '(pointerdown)': 'onUserTouch()',
-        '(keydown)': 'onUserTouch()'
+        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden'
     }
 })
 export class DotEditContentFormComponent implements OnInit {
@@ -132,6 +128,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #elementRef = inject(ElementRef);
     readonly #fb = inject(FormBuilder);
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
@@ -212,17 +209,12 @@ export class DotEditContentFormComponent implements OnInit {
     protected readonly $shouldRenderPreservedFields = signal(true);
 
     /**
-     * True once the user has genuinely interacted with a field (see the host `pointerdown`/`keydown`
-     * listeners). While false, any form value change is async-CVA populate noise, so
+     * True once the user has genuinely interacted with a field (see the capture-phase listeners set
+     * up in the constructor). While false, any form value change is async-CVA populate noise, so
      * {@link initializeFormListener} re-marks the form pristine — decoupling "the user edited
      * something" from load timing. Reset on each (re)build of the form in {@link initializeForm}.
      */
     #userTouched = false;
-
-    /** Host handler: the first real pointer/keyboard interaction inside the form flips the flag. */
-    onUserTouch(): void {
-        this.#userTouched = true;
-    }
 
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
@@ -309,6 +301,24 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     constructor() {
+        // Detect the first REAL user interaction (pointer/keyboard/input from any field) in the
+        // CAPTURE phase, so `#userTouched` is set BEFORE the field's value-accessor emits
+        // `valueChanges` (which runs in the target/bubble phase) — only then can
+        // initializeFormListener tell a genuine edit apart from async-CVA populate noise.
+        // Programmatic `writeValue` on load never dispatches these DOM events, so it never trips it.
+        const host = this.#elementRef.nativeElement as HTMLElement;
+        const markTouched = () => {
+            this.#userTouched = true;
+        };
+        const interactionEvents = ['pointerdown', 'keydown', 'input'] as const;
+        const listenerOptions: AddEventListenerOptions = { capture: true };
+        interactionEvents.forEach((type) => host.addEventListener(type, markTouched, listenerOptions));
+        this.#destroyRef.onDestroy(() =>
+            interactionEvents.forEach((type) =>
+                host.removeEventListener(type, markTouched, listenerOptions)
+            )
+        );
+
         /**
          * Effect that reinitializes the form when contentlet changes (e.g., when viewing historical versions)
          *

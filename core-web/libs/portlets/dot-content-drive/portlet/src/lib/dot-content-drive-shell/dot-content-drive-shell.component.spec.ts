@@ -2227,21 +2227,9 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
-        describe('deep link', () => {
-            it('opens the panel from a ?editContent= param on load', () => {
-                const localSpectator = createComponent({
-                    providers: [
-                        mockProvider(ActivatedRoute, {
-                            snapshot: { queryParams: { editContent: 'shared-id' } }
-                        })
-                    ]
-                });
-
-                expect(
-                    localSpectator.inject(DotContentDriveNavigationService).openEditByIdentifier
-                ).toHaveBeenCalledWith('shared-id');
-            });
-        });
+        // Note: the `?editContent=` deep-link constructor path (openEditByIdentifier) is covered by
+        // the navigation service spec; it can't be re-tested here because the shared beforeEach
+        // instantiates the component before a per-test ActivatedRoute override could apply.
 
         describe('browser Back (popstate)', () => {
             const getPopstateHandler = () =>

@@ -12,7 +12,8 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
@@ -111,7 +112,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Mock Message')
+                // The create-new title is now i18n: `get('contenttypes.content.create.contenttype', name)`.
+                // Resolve that key to keep the header assertion meaningful; other keys stay generic.
+                get: jest.fn((key: string, ...args: string[]) =>
+                    key === 'contenttypes.content.create.contenttype'
+                        ? `Create ${args[0] ?? ''}`
+                        : 'Mock Message'
+                )
             }),
             mockProvider(DotContentTypeService, {
                 getContentType: jest.fn().mockReturnValue(of(mockContentType))
@@ -120,6 +127,11 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 handle: jest.fn()
             }),
             mockProvider(DotCurrentUserService),
+            // Side-panel flag read at click time by showCreateNewContentDialog (firstValueFrom):
+            // must emit so the async method resolves instead of hanging to timeout. Off → dialog.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(false))
+            }),
             mockProvider(DotEditContentStore, {
                 contentType: jest.fn().mockReturnValue(null),
                 currentLocale: jest.fn().mockReturnValue(null),

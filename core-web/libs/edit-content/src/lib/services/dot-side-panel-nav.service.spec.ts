@@ -33,12 +33,16 @@ describe('DotSidePanelNavController', () => {
     const setWideViewport = () => setViewportWidth(1920);
 
     beforeEach(() => {
+        // mockProvider's jest.fn()s are shared across tests, so call counts (and any
+        // per-test mockReturnValue override) would leak. Clear counts, then re-assert the default.
+        jest.clearAllMocks();
         localStorage.clear();
         // Narrow viewport by default so the collapse behavior is active for these tests.
         setViewportWidth(800);
         spectator = createService();
         service = spectator.service;
         globalStore = spectator.inject(GlobalStore) as unknown as typeof globalStore;
+        globalStore.isNavigationCollapsed.mockReturnValue(false);
     });
 
     // Distinct tokens standing in for panel component instances.
