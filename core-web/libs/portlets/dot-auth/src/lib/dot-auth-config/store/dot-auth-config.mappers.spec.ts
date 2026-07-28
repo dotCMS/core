@@ -446,19 +446,25 @@ describe('dot-auth-config.mappers', () => {
             config.saml.wantAssertionsSigned = true;
             config.saml.wantResponseSigned = false;
             expect(
-                (toPayload(config, 'test-site-id').values as Record<string, unknown>)['signatureValidationType']
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
+                    'signatureValidationType'
+                ]
             ).toBe('assertion');
 
             config.saml.wantAssertionsSigned = false;
             config.saml.wantResponseSigned = true;
             expect(
-                (toPayload(config, 'test-site-id').values as Record<string, unknown>)['signatureValidationType']
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
+                    'signatureValidationType'
+                ]
             ).toBe('response');
 
             config.saml.wantAssertionsSigned = false;
             config.saml.wantResponseSigned = false;
             expect(
-                (toPayload(config, 'test-site-id').values as Record<string, unknown>)['signatureValidationType']
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
+                    'signatureValidationType'
+                ]
             ).toBe('none');
         });
 
