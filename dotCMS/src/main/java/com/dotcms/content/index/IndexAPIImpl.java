@@ -1,5 +1,6 @@
 package com.dotcms.content.index;
 
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 
 import com.dotcms.cdi.CDIUtils;
@@ -15,6 +16,7 @@ import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +25,9 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -153,9 +157,53 @@ public class IndexAPIImpl implements IndexAPI {
         }
         final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
         if (!osNames.isEmpty()) {
-            result &= router.osImpl().optimize(osNames);
+            // The reported result is the ES one while ES is still the authoritative store: an OS
+            // force-merge failure is logged, not turned into a failed maintenance action.
+            result &= isolateOsSubsetFailure("optimize", osNames,
+                    () -> router.osImpl().optimize(osNames)).orElse(true);
         }
         return result;
+    }
+
+    /**
+     * Runs the OS half of a tag-dispatched operation, keeping an OS-only failure from aborting an
+     * operation whose ES half already succeeded (issue #36222).
+     *
+     * <p>{@link #optimize} and {@link #flushCaches} dispatch <em>by index-name tag</em> instead of
+     * going through {@link PhaseRouter}, so they never got the router's shadow-failure handling: any
+     * exception from the OS provider propagated straight to the caller. The failure mode that
+     * motivated this is an OS role scoped to {@code cluster_&lt;customer&gt;*} rejecting names built
+     * from a different {@code DOT_DOTCMS_CLUSTER_ID} with {@code HTTP 403} — an OS-only
+     * misconfiguration that surfaced as a 500 on a maintenance action while ES was perfectly fine.</p>
+     *
+     * <p>Phase-aware, matching the rest of the migration's error policy: while ES is still active
+     * (phases 0-2) the OS failure is logged at {@code WARN} and absorbed; in Phase 3 OS is the only
+     * store, so it is re-thrown.</p>
+     *
+     * @param operation operation name, for the log message
+     * @param osNames   the OS-tagged names the operation was dispatched with, for the log message
+     * @param action    the OS-side call
+     * @return the OS result, or empty when an OS failure was absorbed
+     */
+    private <R> Optional<R> isolateOsSubsetFailure(final String operation,
+            final List<String> osNames, final Supplier<R> action) {
+        try {
+            // ofNullable, not of: a provider returning null must not become an NPE inside the
+            // isolation wrapper — an absent value is handled by the caller's default.
+            return Optional.ofNullable(action.get());
+        } catch (final RuntimeException e) {
+            if (isMigrationComplete()) {
+                // Phase 3: OS is the primary store — there is nothing to degrade to.
+                throw e;
+            }
+            final OSIndexAPIImpl.ConnectionFailureKind kind =
+                    OSIndexAPIImpl.classifyConnectionError(e);
+            Logger.warn(this, "OpenSearch " + operation + " failed for " + osNames
+                    + " — likelyCause=" + kind.name() + " (" + kind.remediation() + ")."
+                    + " The Elasticsearch side of this operation is unaffected; only the OpenSearch"
+                    + " indices were skipped. Cause: " + e.getMessage(), e);
+            return java.util.Optional.empty();
+        }
     }
 
     @Override
@@ -376,7 +424,10 @@ public class IndexAPIImpl implements IndexAPI {
         }
         final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
         if (!osNames.isEmpty()) {
-            final Map<String, Integer> osResult = router.osImpl().flushCaches(osNames);
+            // An OS-only failure must not fail the flush for the ES indices that already succeeded;
+            // the returned shard counts then cover only the providers actually contacted.
+            final Map<String, Integer> osResult = isolateOsSubsetFailure("cache flush", osNames,
+                    () -> router.osImpl().flushCaches(osNames)).orElse(Map.of());
             failedShards += osResult.getOrDefault("failedShards", 0);
             successfulShards += osResult.getOrDefault("successfulShards", 0);
         }
