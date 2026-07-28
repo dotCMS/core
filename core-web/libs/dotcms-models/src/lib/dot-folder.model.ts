@@ -18,6 +18,11 @@ export interface DotFolder {
     path: string;
     addChildrenAllowed: boolean;
     hasChildren?: boolean;
+    /**
+     * Folder upload preference: `DOTASSET`/`FILEASSET` forces every upload to that base type,
+     * `null`/`undefined` means "ask each time" (no preference). Backed by #35577.
+     */
+    defaultBaseType?: string | null;
 }
 
 /**
@@ -31,6 +36,7 @@ export interface DotFolder {
  * @property {number} [data.sortOrder] - The sort order position of the folder
  * @property {string[]} [data.fileMasks] - Array of file patterns/masks allowed in this folder
  * @property {string} [data.defaultAssetType] - The default type for new assets created in this folder
+ * @property {string | null} [data.defaultBaseType] - The upload preference for this folder: `DOTASSET`/`FILEASSET` forces uploads to that base type, `null` means "ask each time" (no preference)
  * @property {string} [data.url] - The URL of the folder
  */
 export interface DotFolderEntity {
@@ -41,6 +47,7 @@ export interface DotFolderEntity {
         sortOrder?: number;
         fileMasks?: string[];
         defaultAssetType?: string;
+        defaultBaseType?: string | null;
         name?: string;
     };
 }
@@ -65,6 +72,11 @@ export interface FolderSearchView {
     path: string;
     addChildrenAllowed: boolean;
     hasChildren: boolean;
+    /**
+     * Folder upload preference (`DOTASSET`/`FILEASSET`, or `null`/absent for "ask each time").
+     * Pending backend support on `/api/v1/folder/search` — see #36649.
+     */
+    defaultBaseType?: string | null;
 }
 
 /**
