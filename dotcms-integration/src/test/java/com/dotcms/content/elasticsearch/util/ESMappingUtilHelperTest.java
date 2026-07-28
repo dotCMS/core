@@ -10,6 +10,7 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndexType;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -407,7 +408,10 @@ public class ESMappingUtilHelperTest {
             throws DotSecurityException, DotDataException, IOException, DotIndexException {
         ContentType contentType = null;
         String workingIndex = null;
-        String oldWorkingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+        // Strip the .os tag so the whole test handles bare logical index names in every phase:
+        // getActiveIndexName() returns the OS-tagged name under Phase 3, but createContentIndex/
+        // activateIndex/delete below all take the bare name and re-tag via toPhysicalName.
+        String oldWorkingIndex = IndexTag.strip(contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()));
         try {
             contentType = new ContentTypeDataGen().nextPersisted();
 
@@ -427,7 +431,7 @@ public class ESMappingUtilHelperTest {
 
             contentletIndexAPI.activateIndex(workingIndex);
 
-            assertEquals(workingIndex, contentletIndexAPI.getActiveIndexName( IndexType.WORKING.getPrefix()));
+            assertEquals(workingIndex, IndexTag.strip(contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix())));
 
             new ContentletDataGen(contentType.id())
                     .setProperty("myDateField", new Date())
@@ -437,7 +441,7 @@ public class ESMappingUtilHelperTest {
 
             //verifies mapping type for common text fields
             Map<String, String> mapping = (Map<String, String>) esMappingAPI
-                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                    .getFieldMappingAsMap(contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()),
                             contentType.variable().toLowerCase() + "." + dateField.variable()
                                     .toLowerCase()).entrySet()
                     .iterator()
@@ -447,7 +451,7 @@ public class ESMappingUtilHelperTest {
             assertEquals(formatExpected, mapping.get("format"));
 
             mapping = (Map<String, String>) esMappingAPI
-                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                    .getFieldMappingAsMap(contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()),
                             contentType.variable().toLowerCase() + "." + dateTimeField.variable()
                                     .toLowerCase()).entrySet()
                     .iterator()
@@ -457,7 +461,7 @@ public class ESMappingUtilHelperTest {
             assertEquals(formatExpected, mapping.get("format"));
 
             mapping = (Map<String, String>) esMappingAPI
-                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                    .getFieldMappingAsMap(contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()),
                             "moddate").entrySet().iterator().next().getValue();
             assertTrue(UtilMethods.isSet(mapping.get("type")));
             assertEquals("date", mapping.get("type"));
@@ -728,7 +732,7 @@ public class ESMappingUtilHelperTest {
 
             //verifies analyzer for common text fields
             final Map<String, String> mapping = (Map<String, String>) esMappingAPI
-                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                    .getFieldMappingAsMap(contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()),
                             "calendarevent.title").entrySet().iterator()
                     .next().getValue();
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -760,7 +764,7 @@ public class ESMappingUtilHelperTest {
             Logger.info(this,
                     "Validating mapping for case: " + testCase + ". Field Name: " + field);
             mapping = (Map<String, String>) esMappingAPI
-                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                    .getFieldMappingAsMap(contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix()),
                             expectedResult.equals("geo_point") ? contentTypeVarName
                                     + StringPool.PERIOD + field : field).entrySet().iterator()
                     .next().getValue();
