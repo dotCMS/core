@@ -672,8 +672,12 @@ public class OSIndexAPIImpl implements IndexAPI {
      * instead of only echoing a raw transport message (issue #36244 follow-up: error classification
      * hardening). Motivated by a TLS-scheme mismatch (an {@code http://} client against an
      * {@code https}-only OS 3.x port) that surfaced only as an opaque {@code ConnectionClosedException}.
+     *
+     * <p>Also reused to classify <em>operation</em> failures — an OS request that reaches the
+     * cluster and is rejected, most notably an {@code HTTP 403} on index creation when the
+     * configured OS user's role does not cover the dotCMS index-name prefix (issue #36222).</p>
      */
-    enum ConnectionFailureKind {
+    public enum ConnectionFailureKind {
         TLS_SCHEME_MISMATCH("TLS/scheme mismatch — the client scheme likely does not match the"
                 + " server (e.g. http:// against an https-only OS port, or https:// against a"
                 + " plaintext port). Align OS_PROTOCOL / OS_TLS_ENABLED with the server's scheme"
@@ -690,7 +694,7 @@ public class OSIndexAPIImpl implements IndexAPI {
             this.remediation = remediation;
         }
 
-        String remediation() {
+        public String remediation() {
             return remediation;
         }
     }
@@ -705,10 +709,10 @@ public class OSIndexAPIImpl implements IndexAPI {
      * <p>Order matters: TLS/scheme is checked first (its symptoms — closed connection, SSL/plaintext
      * — otherwise look like a generic unreachable), then auth (401/403), then unreachable.</p>
      *
-     * @param error the last connection error observed, or {@code null}
+     * @param error the last connection or operation error observed, or {@code null}
      * @return the inferred {@link ConnectionFailureKind}; never {@code null}
      */
-    static ConnectionFailureKind classifyConnectionError(final Throwable error) {
+    public static ConnectionFailureKind classifyConnectionError(final Throwable error) {
         for (Throwable t = error; t != null; t = t.getCause()) {
             final String type = t.getClass().getName().toLowerCase(Locale.ROOT);
             final String msg  = t.getMessage() == null

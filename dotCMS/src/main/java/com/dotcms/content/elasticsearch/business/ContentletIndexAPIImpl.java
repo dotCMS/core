@@ -24,7 +24,10 @@ import com.dotcms.content.elasticsearch.util.MappingHelper;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexAPIImpl;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.content.index.opensearch.IndexStartupValidator;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.VersionedIndices;
@@ -865,12 +868,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *
      * <p>Applies to all phases.</p>
      *
+     * <p>ES is bootstrapped first so that a shadow-phase OS failure — which is absorbed by
+     * {@link #handleOsBootstrapFailure} — can never leave ES without indices (issue #36222).</p>
+     *
      * @param ts       timestamp string produced by {@link ContentletIndexAPI#threadSafeTimestampFormatter}
      * @param needsES  {@code true} when ES working/live indices must be created
      * @param needsOS  {@code true} when OS working/live indices must be created
      * @throws DotDataException on persistence or creation failure
      */
-    private void bootstrapAndPoint(final String ts,
+    @VisibleForTesting
+    void bootstrapAndPoint(final String ts,
                                    final boolean needsES,
                                    final boolean needsOS) throws DotDataException {
 
@@ -1013,15 +1020,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * not yet initialised.</p>
      *
      * <p>If either {@link #createContentIndex} call returns {@code false} (soft failure),
-     * the error is logged but execution continues and {@link #pointOS} is still called.
-     * A hard failure propagates as {@link DotDataException}.</p>
+     * the error is logged but execution continues and {@link #pointOS} is still called.</p>
+     *
+     * <p><b>Hard failures are phase-aware</b> (issue #36222): in a dual-write phase the failure is
+     * absorbed by {@link #handleOsBootstrapFailure} — the migration is halted (ES-only) and
+     * {@link #pointOS} is skipped — so an OS-side problem never aborts index initialisation for ES.
+     * In Phase 3 (OS is the primary store) it propagates as {@link DotDataException}.</p>
      *
      * @param workingName logical working index name (no cluster prefix, no vendor tag)
      * @param liveName    logical live index name (no cluster prefix, no vendor tag)
-     * @throws DotDataException if index creation throws {@link IOException} or the OS
-     *                          store cannot be updated
+     * @throws DotDataException if index creation fails in Phase 3, or the OS store cannot be updated
      */
-    private void bootstrapAndPointOS(final String workingName, final String liveName)
+    @VisibleForTesting
+    void bootstrapAndPointOS(final String workingName, final String liveName)
             throws DotDataException {
 
         // Separation gate (issue #36419): OS must be a SEPARATE cluster from ES. Config-only,
@@ -1069,7 +1080,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // Targeted: executed directly against this provider only. No phase fan-out here.
             result = createContentIndex(workingName, 1, IndexTag.OS);
             result &= createContentIndex(liveName, 1, IndexTag.OS);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            // Exception (not IOException): the OS client also reports rejections as unchecked
+            // DotStateException — e.g. the HTTP 403 raised when the OS user's role does not cover
+            // the dotCMS index-name prefix (issue #36222). Catching only IOException let those
+            // escape uncaught, aborting the whole index bootstrap (ES included).
+            if (handleOsBootstrapFailure(workingName, liveName, e)) {
+                return;
+            }
             throw new DotDataException(String.format(
                     "Error creating content indices for indices[ %s ,%s ] with message: %s",
                     workingName, liveName, e.getMessage()), e);
@@ -1081,6 +1099,71 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
         pointOS(operationsOS.toPhysicalName(workingName),
                 operationsOS.toPhysicalName(liveName), null, null);
+    }
+
+    /**
+     * Phase-aware handling of a hard OpenSearch index-bootstrap failure (issue #36222).
+     *
+     * <p>Mirrors the outcome policy of the OS connection gate
+     * ({@code OSIndexAPIImpl.waitUtilIndexReady()}): a shadow-phase OS problem must never take
+     * down an installation whose authoritative store is still ES. The gate only probes
+     * {@code GET /}, which a restricted OS user is allowed to call, so an authorization failure
+     * scoped to <em>index names</em> — the classic case being a role that grants
+     * {@code cluster_&lt;customer&gt;*} while {@code DOT_DOTCMS_CLUSTER_ID} yields a different prefix —
+     * passes the gate and only surfaces here, on the create request.</p>
+     *
+     * <ul>
+     *   <li><strong>Phase 1 / 2 (shadow)</strong> — log an actionable ERROR naming the physical
+     *       index names and the likely cause, halt the migration (ES-only) and return {@code true}
+     *       so the caller skips {@link #pointOS} and completes normally.</li>
+     *   <li><strong>Phase 3 (OS only)</strong> — return {@code false}: OS is the primary store and
+     *       there is no ES to fall back to, so the caller must propagate the failure.</li>
+     * </ul>
+     *
+     * @param workingName logical working index name (no cluster prefix, no vendor tag)
+     * @param liveName    logical live index name (no cluster prefix, no vendor tag)
+     * @param e           the failure raised by the OS provider
+     * @return {@code true} when the failure was absorbed and the migration halted (ES-only);
+     *         {@code false} when the caller must propagate it (Phase 3)
+     */
+    @VisibleForTesting
+    boolean handleOsBootstrapFailure(final String workingName, final String liveName,
+            final Exception e) {
+
+        final MigrationPhase phase = MigrationPhase.current();
+        if (phase.isMigrationComplete()) {
+            // Phase 3: OS is the primary store and ES is decommissioned — no fallback is possible.
+            Logger.fatal(this.getClass(), "OpenSearch index bootstrap failed in " + phase.name()
+                    + " (working=" + workingName + ", live=" + liveName + "): OS is the primary"
+                    + " store, so the failure cannot be degraded to ES. Cause: " + e.getMessage(), e);
+            return false;
+        }
+
+        final ConnectionFailureKind kind = OSIndexAPIImpl.classifyConnectionError(e);
+        final StringBuilder detail = new StringBuilder()
+                .append("OpenSearch index bootstrap failed — working=")
+                .append(operationsOS.toPhysicalName(workingName))
+                .append(", live=").append(operationsOS.toPhysicalName(liveName))
+                .append(", likelyCause=").append(kind.name())
+                .append(" (").append(kind.remediation()).append(")")
+                .append(", error=").append(e.getMessage());
+
+        if (kind == ConnectionFailureKind.AUTH_FORBIDDEN) {
+            // Name the index-prefix mismatch explicitly: it is the permission problem that passes
+            // the connection gate and only fails on create, and its fix is a config change.
+            detail.append(". The OS user reached the cluster but is not allowed to operate on these")
+                  .append(" index names — verify that its role's index pattern covers them, i.e.")
+                  .append(" that DOT_DOTCMS_CLUSTER_ID starts with the customer name the OS role")
+                  .append(" was provisioned for (a role scoped to 'cluster_acme*' rejects an index")
+                  .append(" named 'cluster_other.working_….os')");
+        }
+
+        Logger.error(this.getClass(), detail
+                + " — OS is a shadow store in " + phase.name() + "; falling back to ES-only"
+                + " (resetting FEATURE_FLAG_OPEN_SEARCH_PHASE to 0 via haltMigration)."
+                + " Fix the cause above and re-enable the migration phase when ready.", e);
+        haltMigration();
+        return true;
     }
 
     /**

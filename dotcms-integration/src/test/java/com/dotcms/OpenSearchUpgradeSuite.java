@@ -5,6 +5,7 @@ import com.dotcms.content.elasticsearch.business.MigrationPhaseStoreBootstrapIT;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseSwitchIntegrationTest;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMidReindexRollbackIT;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMigrationIntegrationTest;
+import com.dotcms.content.elasticsearch.business.OsBootstrapForbiddenIndexIT;
 import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.OSCreateContentIndexIntegrationTest;
@@ -54,6 +55,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletIndexAPIImplMidReindexRollbackIT.class,
         MigrationPhaseStoreBootstrapIT.class,
         DeactivateIndexEmptyStoreIT.class,
+        OsBootstrapForbiddenIndexIT.class,
         OSSearchAPIImplIntegrationTest.class,
         OSSiteSearchAPIIntegrationTest.class,
         SiteSearchDualWriteRouterIT.class
