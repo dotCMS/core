@@ -22,6 +22,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -43,6 +44,7 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotRouterService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -248,6 +250,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     });
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotRouterService = inject(DotRouterService);
+    private readonly router = inject(Router);
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
@@ -1713,8 +1717,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.translatePage({ page, newLanguage: language.id });
             },
             reject: () => {
-                // If is rejected, bring back the current language on selector
-                this.#goBackToCurrentLanguage();
+                // The user declined creating the translation, so there is no page to show
+                // in this language. Take them out of the dead-end instead of reloading the
+                // same untranslated URL (which would re-open this dialog — see #36661).
+                this.#redirectAfterTranslationRejected();
             }
         });
     }
@@ -1724,20 +1730,46 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Use the Page Language to navigate back to the current language
+     * Navigate the user away from an untranslated page after they decline creating a
+     * translation for it.
      *
-     * @memberof DotEmaShellComponent
+     * Redirects to the last different dotCMS URL the user was on before entering this
+     * UVE session; if there is no usable previous URL, falls back to the Pages portlet.
+     *
+     * Why `DotRouterService.previousUrl` is the right source:
+     * - Intra-UVE navigation (page/language/persona changes) is done with `pageLoad()` +
+     *   a silent `Location.go()` in the shell, which does NOT emit a router `NavigationEnd`.
+     *   So `previousUrl` is not polluted by same-page language switches — it holds the URL
+     *   from before the editor opened (e.g. the Pages portlet, or another portlet).
+     * - It is always an internal Angular route, never an external referrer, so the
+     *   "only follow dotCMS URLs" requirement is satisfied by construction.
+     *
+     * We deliberately skip previous URLs that are:
+     * - empty (no history — user opened the editor directly),
+     * - public routes (e.g. the login page),
+     * - any `/edit-page` route, which could resolve to the same untranslated page and
+     *   re-open this dialog (the #36661 loop).
+     *
+     * In all skipped cases we fall back to the Pages portlet so the user always lands on
+     * a valid page and is never left stuck on the untranslated one.
+     *
+     * @memberof EditEmaEditorComponent
      */
-    #goBackToCurrentLanguage(): void {
-        // Must not navigate back to the current (untranslated) language — doing so would
-        // reload the same state and re-trigger the dialog.
-        // Note: the /api/v1/page/{id}/languages endpoint does not include defaultLanguage in
-        // its response (Language.toMap() omits it), so we simply take the first translated
-        // language. If none exists, bail without reloading to avoid any loop.
-        const targetLanguage = this.uveStore.pageLanguages().find((l) => l.translated);
-        if (targetLanguage) {
-            this.uveStore.pageLoad({ language_id: targetLanguage.id.toString() });
+    #redirectAfterTranslationRejected(): void {
+        const previousUrl = this.dotRouterService.previousUrl;
+
+        const canUsePreviousUrl =
+            !!previousUrl &&
+            !this.dotRouterService.isPublicUrl(previousUrl) &&
+            !previousUrl.startsWith('/edit-page');
+
+        if (canUsePreviousUrl) {
+            this.router.navigateByUrl(previousUrl);
+
+            return;
         }
+
+        this.dotRouterService.gotoPortlet('/pages');
     }
 
     #clientPayload() {
