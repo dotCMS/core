@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { forkJoin, Observable } from 'rxjs';
 
 import { map } from 'rxjs/operators';
@@ -589,13 +590,18 @@ function isDateRange(value: DotContentDriveUserSearchableValue): value is DotCon
  * parses it in the server zone and formats it back in the server zone (see
  * `BrowserAPIImpl#parseFlexibleDate` → `LocalDateTime.parse(...)` and `normalizeDateBound`). On the
  * FE, `new Date('…T10:00:00')` (no offset) also parses as local, so the picker round-trips too.
+ *
+ * Returns `''` for an invalid/absent Date: the typeable Time picker (`[keepInvalid]="true"`) can
+ * emit an `Invalid Date` mid-typing, and `date-fns` `format` throws `RangeError` on one — so a
+ * partial time simply clears that bound instead of blowing up `#applyRange`.
  */
 export function toLocalIsoString(date: Date): string {
-    // Shift the instant back by the local timezone offset so JS's own (UTC) toISOString() prints
-    // the LOCAL wall-clock, then drop the trailing ".sssZ" → "yyyy-MM-ddTHH:mm:ss".
-    const localMs = date.getTime() - date.getTimezoneOffset() * 60_000;
+    if (!date || Number.isNaN(date.getTime())) {
+        return '';
+    }
 
-    return new Date(localMs).toISOString().slice(0, 19);
+    // `date-fns` formats by the Date's LOCAL components, so this is the wall-clock with no offset/Z.
+    return format(date, "yyyy-MM-dd'T'HH:mm:ss");
 }
 
 export function serializeUserSearchableValue(

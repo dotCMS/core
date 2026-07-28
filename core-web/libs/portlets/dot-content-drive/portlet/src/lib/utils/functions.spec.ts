@@ -59,6 +59,11 @@ describe('Utility Functions', () => {
             expect(result).toBe('2026-01-01T00:00:00');
             expect(result).not.toContain('Z');
         });
+
+        it('returns an empty string for an Invalid Date (typeable picker can emit one)', () => {
+            // Guards the RangeError date-fns `format` would throw on an invalid instant.
+            expect(toLocalIsoString(new Date('not-a-date'))).toBe('');
+        });
     });
 
     describe('decodeFilters', () => {

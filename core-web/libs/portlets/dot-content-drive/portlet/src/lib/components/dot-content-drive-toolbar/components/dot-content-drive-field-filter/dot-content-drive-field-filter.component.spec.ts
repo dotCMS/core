@@ -509,7 +509,9 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
     describe('$timeRangeInvalid for Date-and-Time (full-instant comparison)', () => {
         const seedRange = (from: Date, to: Date) => {
-            store.getFilterValue.mockReturnValue(`${toLocalIsoString(from)},${toLocalIsoString(to)}`);
+            store.getFilterValue.mockReturnValue(
+                `${toLocalIsoString(from)},${toLocalIsoString(to)}`
+            );
             spectator.setInput('field', field({ variable: 'body', fieldType: 'Date-and-Time' }));
             spectator.detectChanges();
             openPopover();
