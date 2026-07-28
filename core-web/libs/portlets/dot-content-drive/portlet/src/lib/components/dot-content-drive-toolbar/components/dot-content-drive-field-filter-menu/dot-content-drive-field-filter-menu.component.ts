@@ -66,7 +66,7 @@ export class DotContentDriveFieldFilterMenuComponent {
 
     protected readonly $loading = signal(false);
 
-    /** Monotonic cache of eligible fields per content-type variable, to avoid refetching. */
+    /** Monotonic cache of the raw fields per content-type variable, to avoid refetching. */
     readonly #fieldsCache = signal<Record<string, DotCMSContentTypeField[]>>({});
 
     /** The previously-active single content-type variable, used to detect real changes. */
@@ -109,13 +109,13 @@ export class DotContentDriveFieldFilterMenuComponent {
                     return this.#contentTypeService.getContentType(contentTypeVar).pipe(
                         take(1),
                         map((contentType: DotCMSContentType) => {
-                            const eligible = this.#eligibleFields(contentType?.fields ?? []);
+                            const raw = contentType?.fields ?? [];
                             this.#fieldsCache.update((cache) => ({
                                 ...cache,
-                                [contentTypeVar]: eligible
+                                [contentTypeVar]: raw
                             }));
 
-                            return eligible;
+                            return raw;
                         }),
                         catchError((error) => {
                             this.#httpErrorManager.handle(error);
@@ -127,7 +127,10 @@ export class DotContentDriveFieldFilterMenuComponent {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((fields) => {
-                this.#store.setUserSearchableFields(fields);
+                // One fetch feeds two consumers: the field-filter chips (searchable + indexed
+                // fields) and the results table's extra columns ("Show In List" fields).
+                this.#store.setUserSearchableFields(this.#eligibleFields(fields));
+                this.#store.setShowInListFields(fields.filter((field) => field.listed));
                 this.$loading.set(false);
             });
 
@@ -158,6 +161,7 @@ export class DotContentDriveFieldFilterMenuComponent {
 
         if (active === null) {
             this.#store.setUserSearchableFields([]);
+            this.#store.setShowInListFields([]);
 
             return;
         }

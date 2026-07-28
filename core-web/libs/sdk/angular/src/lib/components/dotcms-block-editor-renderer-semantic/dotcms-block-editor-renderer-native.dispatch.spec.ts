@@ -477,6 +477,22 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(spectator.query('dotcms-block-editor-renderer-video')).toBeNull();
         });
 
+        it('should render a real <audio> for dotAudio, with no wrapper element', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_AUDIO,
+                    attrs: { src: 'audio.mp3', mimeType: 'audio/mpeg' },
+                    content: []
+                }
+            ]);
+
+            const audio = spectator.query('audio');
+            expect(audio).toBeTruthy();
+            expect(audio?.querySelector('source')?.getAttribute('src')).toBe('audio.mp3');
+            expect(audio?.querySelector('source')?.getAttribute('type')).toBe('audio/mpeg');
+            expect(spectator.query('dotcms-block-editor-renderer-audio')).toBeNull();
+        });
+
         it('should render a real <table> for the table block, with no wrapper element', () => {
             render([{ type: BlockEditorDefaultBlocks.TABLE, content: [] }]);
             expect(spectator.query('table')).toBeTruthy();

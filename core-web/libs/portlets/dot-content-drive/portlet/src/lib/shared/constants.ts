@@ -137,15 +137,38 @@ export const FIELD_FILTER_DATE_TYPES = ['Date', 'Date-and-Time', 'Time'] as cons
 export const FIELD_FILTER_TIME_ONLY_TYPE = 'Time';
 export const FIELD_FILTER_DATE_TIME_TYPE = 'Date-and-Time';
 
+/**
+ * Text-backed field types the legacy content search only ever offered via a plain textbox. They
+ * render the same `text` control here and filter as a single contains term against the field's
+ * indexed value (JSON/Story-Block/Custom = full text, Binary = file name).
+ */
+export const FIELD_FILTER_JSON_TYPE = 'JSON-Field';
+export const FIELD_FILTER_STORY_BLOCK_TYPE = 'Story-Block';
+export const FIELD_FILTER_CUSTOM_TYPE = 'Custom-Field';
+export const FIELD_FILTER_BINARY_TYPE = 'Binary';
+export const FIELD_FILTER_TEXT_FALLBACK_TYPES = [
+    FIELD_FILTER_JSON_TYPE,
+    FIELD_FILTER_STORY_BLOCK_TYPE,
+    FIELD_FILTER_CUSTOM_TYPE,
+    FIELD_FILTER_BINARY_TYPE
+] as const;
+/**
+ * Key/Value field. Rendered with a single input + a `key:value` shorthand; the value is stored as
+ * the user typed it and translated to the `key_value` joined term when building the search payload.
+ */
+export const FIELD_FILTER_KEY_VALUE_TYPE = 'Key-Value';
+
 /** Every field type eligible to become a filter (excludes Host-Folder + out-of-scope types). */
 export const USER_SEARCHABLE_FIELD_TYPES: readonly string[] = [
     ...FIELD_FILTER_TEXT_TYPES,
     ...FIELD_FILTER_SINGLE_SELECT_TYPES,
     ...FIELD_FILTER_MULTI_SELECT_TYPES,
     ...FIELD_FILTER_DATE_TYPES,
+    ...FIELD_FILTER_TEXT_FALLBACK_TYPES,
     FIELD_FILTER_TAG_TYPE,
     FIELD_FILTER_CATEGORY_TYPE,
-    FIELD_FILTER_RELATIONSHIP_TYPE
+    FIELD_FILTER_RELATIONSHIP_TYPE,
+    FIELD_FILTER_KEY_VALUE_TYPE
 ];
 
 /**
@@ -162,8 +185,7 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 // Dialog type
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
-    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
-    UPLOAD_SELECTOR: 'UPLOAD_SELECTOR'
+    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR'
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
@@ -189,6 +211,34 @@ export const UPLOAD_SELECTOR_OPTIONS = [
         recommended: false
     }
 ] as const;
+
+/**
+ * Options for the folder settings "Upload Behavior" radio group. `value` is persisted to the
+ * folder's `defaultBaseType`: `null` means "ask each time" (the upload menu is shown on every
+ * upload), `DOTASSET`/`FILEASSET` force every upload to that base type. The backend routes the
+ * concrete content type by file type.
+ */
+export const FOLDER_UPLOAD_BEHAVIOR_OPTIONS: {
+    value: DotCMSBaseTypesContentTypes | null;
+    labelKey: string;
+    descriptionKey: string;
+}[] = [
+    {
+        value: null,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.DOTASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-assets',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-assets.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.FILEASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-files',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-files.description'
+    }
+];
 
 export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
     '*.jpg',

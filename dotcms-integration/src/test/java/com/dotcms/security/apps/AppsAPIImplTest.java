@@ -10,8 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
@@ -1528,8 +1527,11 @@ public class AppsAPIImplTest {
     public void Test_AppKeyByHost_On_Index_Deactivation()
             throws DotDataException, IOException, DotSecurityException {
         final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
-        final IndiciesAPI indiciesAPI = APILocator.getIndiciesAPI();
-        final IndiciesInfo indiciesInfo = indiciesAPI.loadIndicies();
+        // Resolve the active index names through the phase-aware getter: loadIndicies() reports the
+        // ES store, which is empty under Phase 3 (OS-only), so its getWorking()/getLive() return null
+        // and activateIndex(null) throws. getActiveIndexName() resolves from the OS store in Phase 3.
+        final String workingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+        final String liveIndex = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
         try {
 
             AppSecrets.Builder builder = new AppSecrets.Builder();
@@ -1543,8 +1545,8 @@ public class AppsAPIImplTest {
 
             final Host host = new SiteDataGen().nextPersisted();
 
-            contentletIndexAPI.deactivateIndex(indiciesInfo.getWorking());
-            contentletIndexAPI.deactivateIndex(indiciesInfo.getLive());
+            contentletIndexAPI.deactivateIndex(workingIndex);
+            contentletIndexAPI.deactivateIndex(liveIndex);
 
             final AppsAPI api = APILocator.getAppsAPI();
             api.saveSecrets(bean,host,APILocator.systemUser());
@@ -1553,8 +1555,8 @@ public class AppsAPIImplTest {
             assertTrue(keysByHost.get(host.getIdentifier()).contains(appKey.toLowerCase()));
 
         } finally {
-            contentletIndexAPI.activateIndex(indiciesInfo.getWorking());
-            contentletIndexAPI.activateIndex(indiciesInfo.getLive());
+            contentletIndexAPI.activateIndex(workingIndex);
+            contentletIndexAPI.activateIndex(liveIndex);
         }
     }
 

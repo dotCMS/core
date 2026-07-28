@@ -419,7 +419,7 @@ flowchart LR
     Check -->|Integration| IT[Integration Tests<br/>6 suites]
     Check -->|Postman| PM[Postman Tests<br/>11 collections]
     Check -->|Karate| KT[Karate Tests<br/>1 suite]
-    Check -->|E2E| E2E[E2E Tests<br/>2 suites]
+    Check -->|E2E| E2E[E2E Tests<br/>3 Playwright shards]
     
     subgraph "Integration Suites"
         IT --> IT1[MainSuite 1a]

@@ -412,6 +412,20 @@
             <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
         </button>
     }
+    @if (isAllowed('audio')) {
+        <button
+            type="button"
+            [attr.aria-label]="'dot.block.editor.toolbar.insert-audio' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.insert-audio' | dm"
+            [tooltipPosition]="TOOLTIP_POSITION"
+            [tooltipOptions]="overlayTooltipOptions()"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
+            data-testid="toolbar-insert-audio"
+            [class]="btnClass(false)"
+            (mousedown)="openAudioDialog($event)">
+            <span aria-hidden="true" class="material-symbols-outlined">audiotrack</span>
+        </button>
+    }
     @if (showAssetByUrl()) {
         <button
             type="button"

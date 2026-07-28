@@ -24,13 +24,13 @@ export const FULLSCREEN_AWARE_OVERLAY_OPTIONS: OverlayOptions = {
 
 /**
  * Shared centered-modal configuration for editor dialogs that mount
- * `DotBrowserSelectorComponent` from `@dotcms/ui` (currently the dotCMS image and
- * video pickers). Locking sizing, mask styling, and the picker's data-payload
- * defaults in one place keeps every browse-an-asset flow consistent and avoids
- * drift when a new mime-type variant is added.
+ * `DotBrowserSelectorComponent` from `@dotcms/ui` (currently the dotCMS image,
+ * video, and audio pickers). Locking sizing, mask styling, and the picker's
+ * data-payload defaults in one place keeps every browse-an-asset flow consistent
+ * and avoids drift when a new mime-type variant is added.
  *
  * Callers provide only the dialog header and the contentlet mime-type allowlist
- * (e.g. `['image']` or `['video']`). Everything else mirrors the file-field's
+ * (e.g. `['image']`, `['video']`, or `['audio']`). Everything else mirrors the file-field's
  * configuration so customers see the same UX whether they're picking an asset
  * for a file field or for a Story Block.
  */
