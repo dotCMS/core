@@ -259,7 +259,8 @@ export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: st
         hostName,
         path: `${parentPath}${view.name}/`,
         addChildrenAllowed: view.addChildrenAllowed,
-        hasChildren: view.hasChildren
+        hasChildren: view.hasChildren,
+        defaultBaseType: view.defaultBaseType
     };
 }
 

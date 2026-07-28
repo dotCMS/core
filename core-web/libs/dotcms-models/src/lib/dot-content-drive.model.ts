@@ -20,6 +20,11 @@ export interface DotContentDriveLazyLoadEvent {
 export interface DotContentDriveFolder {
     __icon__: 'folderIcon';
     defaultFileType: string;
+    /**
+     * Folder upload preference: `DOTASSET`/`FILEASSET` forces every upload to that base type,
+     * `null`/`undefined` means "ask each time" (no preference). Backed by #35577.
+     */
+    defaultBaseType?: string | null;
     description: string;
     extension: 'folder';
     filesMasks: string;
