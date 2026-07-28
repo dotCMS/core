@@ -33,13 +33,18 @@ import {
 import {
     ContextMenuData,
     DotCMSBaseTypesContentTypes,
+    DotCMSContentTypeField,
+    DotCMSDataTypes,
+    DotCMSFieldTypes,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
+    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotContentDriveUploadFiles,
+    DotFolderListViewColumn,
     DotFolderTreeNodeData,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
@@ -207,6 +212,59 @@ export class DotContentDriveShellComponent {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /**
+     * Extra table columns for the current selection: the selected single content type's "Show In
+     * List" fields mapped to the list-view column shape, with a display type and width derived from
+     * each field's data type. Empty when 0 or >1 content types are selected; the table appends
+     * these after the fixed Type column.
+     */
+    readonly $extraColumns = computed<DotFolderListViewColumn[]>(() =>
+        this.#store.showInListFields().map((field, index) => ({
+            field: field.variable,
+            header: field.name,
+            // Sortable follows the field's `indexed` flag: the backend sorts via `sortBy` on the
+            // index, so a non-indexed (but listed) field can't be sorted. The schema has no explicit
+            // `sortable`; `indexed` is the determinant.
+            sortable: field.indexed,
+            order: index,
+            type: this.#columnTypeForField(field)
+        }))
+    );
+
+    /**
+     * Maps a content-type field to the table's generic display type. Image/Binary/File fields render
+     * as a thumbnail of the field's own asset. Date, Date-and-Time and Time all share `dataType`
+     * DATE, so the date sub-type is resolved from `fieldType` first (to keep the time part). The
+     * table decides each column's width from this type + its own row values.
+     */
+    #columnTypeForField(field: DotCMSContentTypeField): DotFolderListViewColumn['type'] {
+        if (
+            field.fieldType === DotCMSFieldTypes.IMAGE ||
+            field.fieldType === DotCMSFieldTypes.BINARY ||
+            field.fieldType === DotCMSFieldTypes.FILE
+        ) {
+            return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.IMAGE;
+        }
+        if (field.fieldType === DotCMSFieldTypes.DATE_AND_TIME) {
+            return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME;
+        }
+        if (field.fieldType === DotCMSFieldTypes.TIME) {
+            return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME;
+        }
+
+        switch (field.dataType) {
+            case DotCMSDataTypes.DATE:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATE;
+            case DotCMSDataTypes.BOOLEAN:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.BOOLEAN;
+            case DotCMSDataTypes.INTEGER:
+            case DotCMSDataTypes.FLOAT:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.NUMBER;
+            default:
+                return DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TEXT;
+        }
+    }
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
 
