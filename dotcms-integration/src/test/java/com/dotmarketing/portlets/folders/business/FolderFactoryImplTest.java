@@ -28,6 +28,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -89,6 +90,51 @@ public class FolderFactoryImplTest extends IntegrationTestBase {
         assertNotNull(result);
         assertEquals(childFolder.getInode(), result.getInode());
         assertEquals(childFolder.getTitle(), result.getTitle());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link FolderFactoryImpl#save(Folder)} + the Folder DB
+     *     transformer read path.</li>
+     *     <li><b>Given Scenario:</b> Save a folder with {@code defaultBaseType} set to
+     *     {@code DOTASSET}, then {@code FILEASSET}, then {@code null}, clearing the cache and
+     *     re-reading from the DB each time.</li>
+     *     <li><b>Expected Result:</b> Each value round-trips through the upsert and the transformer;
+     *     a freshly-created folder reads back {@code null} (no preference).</li>
+     * </ul>
+     */
+    @Test
+    public void test_DefaultBaseType_Persistence_RoundTrip() throws DotDataException {
+        final FolderFactoryImpl folderFactory = new FolderFactoryImpl();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().name("dbt-" + System.currentTimeMillis())
+                .site(host).nextPersisted();
+
+        // A freshly-created folder has no preference
+        CacheLocator.getFolderCache().clearCache();
+        Folder read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertNull(read.getDefaultBaseType());
+
+        // DOTASSET round-trips
+        folder.setDefaultBaseType("DOTASSET");
+        folderFactory.save(folder);
+        CacheLocator.getFolderCache().clearCache();
+        read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertEquals("DOTASSET", read.getDefaultBaseType());
+
+        // FILEASSET round-trips
+        folder.setDefaultBaseType("FILEASSET");
+        folderFactory.save(folder);
+        CacheLocator.getFolderCache().clearCache();
+        read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertEquals("FILEASSET", read.getDefaultBaseType());
+
+        // null clears the preference
+        folder.setDefaultBaseType(null);
+        folderFactory.save(folder);
+        CacheLocator.getFolderCache().clearCache();
+        read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertNull(read.getDefaultBaseType());
     }
 
     /**

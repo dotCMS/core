@@ -283,7 +283,18 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   private void internalRelocateThenDispose(final ContentType source, final ContentType target, final boolean asyncDeleteWithJob) {
     try {
-      APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(source);
+      // Removing the content type's documents from the search index is best-effort: the content
+      // type is being deleted regardless. A failure here (e.g. an OpenSearch version conflict or a
+      // missing index) must NOT abort relocation, the DB deletion, or the ContentTypeDeletedEvent
+      // that drives downstream cleanup (e.g. the unique_fields table) — otherwise a transient index
+      // error silently orphans that cleanup and leaves the content type half-deleted.
+      try {
+        APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(source);
+      } catch (final Exception indexEx) {
+        Logger.error(ContentTypeFactoryImpl.class, String.format(
+            "Error removing content from index for ContentType [%s] — continuing with deletion",
+            source.variable()), indexEx);
+      }
       final Integer relocated = APILocator.getContentTypeDestroyAPI().relocateContentletsForDeletion(source, target);
 
       Logger.info(ContentTypeFactoryImpl.class, String.format("::: Relocated %d contentlets for ContentType [%s] to [%s] :::", relocated, source.variable(), target.variable()));
