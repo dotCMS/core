@@ -533,14 +533,34 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         const extensionUrls = data?.extensions?.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const moduleObj = customModules.reduce(this.parsedCustomModules, {});
-        const extensions = Object.values(moduleObj) as AnyExtension[];
-        const registeredExtensionNames = extensions
+        const loadedExtensions = Object.values(moduleObj) as AnyExtension[];
+        const registeredExtensionNames = loadedExtensions
             .map((extension) => extension?.name)
             .filter((name): name is string => typeof name === 'string' && name.length > 0);
 
         warnOnUnmatchedRemoteBlockNames(data, registeredExtensionNames);
 
-        return extensions;
+        // Only register the remote blocks this field actually allows. A remote block
+        // deselected in Allowed Blocks is never added to the schema, so it cannot be
+        // inserted (slash menu included) — while any existing content using it still
+        // round-trips as a `dotUnsupportedBlock` placeholder, since an unregistered
+        // node is unknown to `#knownEditorNodeNames`.
+        return loadedExtensions.filter((extension) => this.#isRemoteBlockAllowed(extension?.name));
+    }
+
+    /**
+     * Whether a remote block may be registered on this field.
+     *
+     * Unrestricted fields (`allowedBlocks.length <= 1`, i.e. paragraph-only) register
+     * everything, matching `getAllowedCustomNodes`. On a restricted field the block's
+     * declared `action.name` must appear in `allowedBlocks`.
+     */
+    #isRemoteBlockAllowed(extensionName: string | undefined): boolean {
+        if (this.#allowedBlocks.length <= 1) {
+            return true;
+        }
+
+        return typeof extensionName === 'string' && this.#allowedBlocks.includes(extensionName);
     }
 
     private getEditorNodes(): AnyExtension[] {
@@ -806,7 +826,22 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         );
     }
 
+    /**
+     * Declared remote block names that this field also allows.
+     *
+     * Passing these to `removeInvalidNodes` keeps a selected remote block's content intact
+     * even when its bundle fails to load. Names the field does not allow are deliberately
+     * excluded so deselecting a remote block actually restricts it — the node is then
+     * wrapped as a `dotUnsupportedBlock` placeholder (never stripped, since that
+     * placeholder is always allowed), so restricting still never destroys content.
+     */
     #getDeclaredRemoteBlockNames(): string[] {
-        return getDeclaredRemoteBlockNames(this.getParsedCustomBlocks());
+        const declaredNames = getDeclaredRemoteBlockNames(this.getParsedCustomBlocks());
+
+        if (this.#allowedBlocks.length <= 1) {
+            return declaredNames;
+        }
+
+        return declaredNames.filter((name) => this.#allowedBlocks.includes(name));
     }
 }
