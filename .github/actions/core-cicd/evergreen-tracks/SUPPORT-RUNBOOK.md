@@ -4,6 +4,11 @@
 engineer who applies them. **Interim** because track changes are a manual manifest edit until
 self-service track selection ships.
 
+> **Published copy for CX:** this file is the canonical source; the copy support actually reads is
+> the Google Doc **[Evergreen Tracks — Support Runbook (interim)](https://docs.google.com/document/d/1tLEzbZOC5D5cXDq0S_bHtsKqd0-13hSUAcXfPeLlblI/edit)**
+> (Engineering shared drive → `dotEvergreen`). **Land corrections here, then re-publish the Doc** —
+> the Doc carries a banner saying so, but nothing enforces it.
+
 **Related docs**
 
 | Doc | Use it for |

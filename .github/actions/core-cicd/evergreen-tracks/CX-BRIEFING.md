@@ -4,8 +4,13 @@ Agenda for the live session with **Dean Gonzalez / CX**. Goal: CX can take a tra
 end to end using [SUPPORT-RUNBOOK.md](SUPPORT-RUNBOOK.md) without asking engineering what the words
 mean. 30 minutes plus Q&A.
 
-**Pre-read (send with the invite):** [SUPPORT-RUNBOOK.md](SUPPORT-RUNBOOK.md) and the published
-customer doc [dev.dotcms.com/docs/evergreen-tracks](https://dev.dotcms.com/docs/evergreen-tracks).
+**Pre-read (send with the invite)** — send the Google Doc links, not the GitHub ones:
+
+- [Evergreen Tracks — Support Runbook (interim)](https://docs.google.com/document/d/1tLEzbZOC5D5cXDq0S_bHtsKqd0-13hSUAcXfPeLlblI/edit) (source: [SUPPORT-RUNBOOK.md](SUPPORT-RUNBOOK.md))
+- [Evergreen Tracks — CX / Support Briefing Outline](https://docs.google.com/document/d/1DyjRKAB_aiwnRShLuQLYx-PbnyiH5Ft5XeCgPNDc1YY/edit) — this agenda
+- The published customer doc [dev.dotcms.com/docs/evergreen-tracks](https://dev.dotcms.com/docs/evergreen-tracks)
+
+Both Docs live in the **Engineering** shared drive → `dotEvergreen`, editable by `all@dotcms.com`.
 
 ---
 
@@ -70,8 +75,8 @@ a gap in the runbook: update the runbook, don't just answer it once.
 
 Known open items to raise if CX doesn't:
 - What SLA does a track-change request get? (Not defined yet — CX to propose.)
-- Who publishes the runbook to the internal KB, and where does it live so it doesn't fork from
-  this file?
+- The Google Doc above is the published copy today. Does CX also want it mirrored into their own KB
+  (e.g. Freshdesk solutions), and if so who owns keeping that copy in sync with the repo file?
 - Do we proactively tell customers which track they're on, or answer on request only?
 
 ---

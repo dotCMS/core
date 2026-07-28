@@ -45,3 +45,23 @@ Pass `--apply` to actually move tags. Without it, the command prints the plan an
 Customer track-change requests are handled per
 [SUPPORT-RUNBOOK.md](SUPPORT-RUNBOOK.md) (intake → validate → apply → verify → escalate), with
 [CX-BRIEFING.md](CX-BRIEFING.md) as the agenda for walking CX through it.
+
+Both are published as Google Docs for support to read — [Support
+Runbook](https://docs.google.com/document/d/1tLEzbZOC5D5cXDq0S_bHtsKqd0-13hSUAcXfPeLlblI/edit) /
+[CX Briefing](https://docs.google.com/document/d/1DyjRKAB_aiwnRShLuQLYx-PbnyiH5Ft5XeCgPNDc1YY/edit)
+(Engineering shared drive → `dotEvergreen`). These files stay canonical: change them here, then
+re-publish the Docs.
+
+To re-publish after editing, render the markdown to HTML and push it over the existing Doc — same
+file ID, so the links above never change (needs the [`gws`](https://github.com/dotCMS/platform) CLI
+authenticated as a dotCMS user):
+
+    uv run --with markdown python -c 'import markdown,sys,pathlib; \
+      pathlib.Path("out.html").write_text(markdown.markdown(pathlib.Path(sys.argv[1]).read_text(), \
+      extensions=["tables","sane_lists","fenced_code"]))' SUPPORT-RUNBOOK.md
+    gws drive files update \
+      --params '{"fileId":"1tLEzbZOC5D5cXDq0S_bHtsKqd0-13hSUAcXfPeLlblI","supportsAllDrives":true}' \
+      --upload out.html --upload-content-type text/html
+
+Keep the "canonical copy" banner at the top of the Doc — it is what stops the two copies forking.
+`fenced_code` is not optional: without it, code blocks arrive in the Doc with stray ``` markers.
