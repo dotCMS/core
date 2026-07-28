@@ -61,15 +61,6 @@ public class BrowserQuery {
     final boolean showShorties;
     final boolean showDefaultLangItems;
     final boolean useElasticsearchFiltering;
-    /**
-     * When {@code true} the free-text {@code filter} is resolved in the database (via
-     * {@code appendFilterQuery}) even if Elasticsearch filtering is on for other criteria. This
-     * preserves read-your-writes for keyword/title search (ADR-0018): a just-saved item is found by
-     * name immediately, without waiting for ES indexing. The ES narrowing then carries only the
-     * index-routed field clauses, never the text group. Defaults to {@code false} so the legacy
-     * Site Browser path is unchanged.
-     */
-    final boolean resolveTextInDb;
     final boolean filterFolderNames;
     final Set<Long> languageIds;
     final String luceneQuery;
@@ -149,7 +140,6 @@ public class BrowserQuery {
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
-        this.resolveTextInDb = builder.resolveTextInDb;
         this.skipFolder = builder.skipFolder;
         this.ignoreSiteForFolders = builder.ignoreSiteForFolders;
         this.filterFolderNames = builder.filterFolderNames;
@@ -271,7 +261,6 @@ public class BrowserQuery {
         private int folderCursor = 0;
         private User user;
         private boolean useElasticsearchFiltering = false;
-        private boolean resolveTextInDb = false;
         private boolean filterFolderNames = false;
         private String filter = null;
         private String fileName = null;
@@ -313,7 +302,6 @@ public class BrowserQuery {
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
             this.useElasticsearchFiltering = browserQuery.useElasticsearchFiltering;
-            this.resolveTextInDb = browserQuery.resolveTextInDb;
             this.forceSystemHost = browserQuery.forceSystemHost;
             this.skipFolder = browserQuery.skipFolder;
             this.ignoreSiteForFolders = browserQuery.ignoreSiteForFolders;
@@ -410,21 +398,6 @@ public class BrowserQuery {
          */
         public Builder useElasticsearchFiltering(boolean useElasticsearchFiltering) {
             this.useElasticsearchFiltering = useElasticsearchFiltering;
-            return this;
-        }
-
-        /**
-         * Resolves the free-text {@code filter} in the database instead of Elasticsearch, preserving
-         * read-your-writes for keyword/title search (ADR-0018). When {@code true}, the text predicate
-         * is applied in the DB {@code selectQuery} even if ES filtering is on for index-routed field
-         * criteria, and the ES narrowing omits the text group. Leave {@code false} for the legacy
-         * Site Browser path.
-         *
-         * @param resolveTextInDb flag
-         * @return this
-         */
-        public Builder resolveTextInDb(boolean resolveTextInDb) {
-            this.resolveTextInDb = resolveTextInDb;
             return this;
         }
 

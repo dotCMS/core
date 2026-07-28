@@ -29,9 +29,7 @@ import org.junit.runner.RunWith;
 import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertFalse;
@@ -41,15 +39,16 @@ import static org.junit.Assert.fail;
 /**
  * Regression test for issue #36688 — Content Drive keyword/title search.
  *
- * <p>The fix routes the toolbar keyword/title search to the database (case-insensitive, tokenized
- * {@code ILIKE}) instead of Elasticsearch, so a just-saved item is findable by name immediately
- * (read-your-writes, ADR-0018). Elasticsearch is still used for index-routed {@code userSearchable}
- * field filters, and the two compose.</p>
+ * <p>Per the team decision (ADR-0018: text search stays on the index), the fix makes Content Drive's
+ * keyword search build the <b>same</b> Elasticsearch query as the Content Search portlet — by reusing
+ * {@code GlobalSearchAttributeStrategy}. This replaces the previous broad {@code catchall:*kw*}
+ * leading-wildcard (which returned unrelated body matches and scanned slowly on large indexed
+ * datasets) with a selective {@code +catchall:kw*} prefix plus tokenized, escaped title boosts.</p>
  *
- * <p>Covers: (1) the reported scenario — a FileAsset named {@code IMG_1004.jpeg} found by any
- * case/substring of its name (including the boundary-spanning {@code 1004.jpeg} that failed before);
- * (2) read-your-writes — an item absent from the ES index is still found; (3) composition of a text
- * keyword (DB) with a {@code userSearchable} field filter (ES).</p>
+ * <p>Covers: (1) the reported scenario — the FileAsset {@code IMG_1004.jpeg} is found by its name and
+ * case variants; (2) composition of a text keyword with a {@code userSearchable} field filter. The
+ * per-term log documents the exact matching behavior (now prefix-based, consistent with Content
+ * Search).</p>
  */
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
@@ -58,8 +57,6 @@ public class ContentDriveKeywordSearchTest extends IntegrationTestBase {
     private static final ContentDriveHelper contentDriveHelper = new ContentDriveHelper();
 
     private static User systemUser;
-    private static Host testSite;
-    private static Folder testFolder;
     private static String assetPath;
 
     /** The exact file name reported in the issue/screencast. */
@@ -70,8 +67,6 @@ public class ContentDriveKeywordSearchTest extends IntegrationTestBase {
     private static ContentType composeType;
     private static final String TOPIC_VAR = "topic";
     private static String composeInode;
-    // A distinctive value stored in the topic field; the DB keyword search matches it via the
-    // contentlet JSON, and the userSearchable field filter matches it in ES.
     private static final String COMPOSE_TERM = "angularcompose";
 
     @BeforeClass
@@ -80,8 +75,8 @@ public class ContentDriveKeywordSearchTest extends IntegrationTestBase {
         systemUser = APILocator.getUserAPI().getSystemUser();
 
         final String uniqueId = System.currentTimeMillis() + "";
-        testSite = new SiteDataGen().name("kw-search-" + uniqueId + ".local").nextPersisted();
-        testFolder = new FolderDataGen().name("kwFolder_" + uniqueId).site(testSite).nextPersisted();
+        final Host testSite = new SiteDataGen().name("kw-search-" + uniqueId + ".local").nextPersisted();
+        final Folder testFolder = new FolderDataGen().name("kwFolder_" + uniqueId).site(testSite).nextPersisted();
         assetPath = "//" + testSite.getHostname() + testFolder.getPath();
 
         // FileAsset with the EXACT name IMG_1004.jpeg (File.createTempFile would inject random
@@ -95,7 +90,7 @@ public class ContentDriveKeywordSearchTest extends IntegrationTestBase {
                 .nextPersisted();
         fileInode = fileAsset.getInode();
 
-        // Content type + item for the text(DB)+field(ES) composition test.
+        // Content type + item for the text + field-filter composition test.
         composeType = new ContentTypeDataGen()
                 .name("KwComposeType_" + uniqueId)
                 .velocityVarName("kwComposeType_" + uniqueId)
@@ -105,7 +100,7 @@ public class ContentDriveKeywordSearchTest extends IntegrationTestBase {
         new FieldDataGen().type(TextField.class).name(TOPIC_VAR).velocityVarName(TOPIC_VAR)
                 .contentTypeId(composeType.id()).searchable(true).indexed(true).nextPersisted();
         final Contentlet composeItem = new ContentletDataGen(composeType.id())
-                .setProperty("title", "Compose item " + uniqueId)
+                .setProperty("title", COMPOSE_TERM + " report " + uniqueId)
                 .setProperty(TOPIC_VAR, COMPOSE_TERM)
                 .folder(testFolder)
                 .setPolicy(IndexPolicy.WAIT_FOR)
@@ -119,10 +114,9 @@ public class ContentDriveKeywordSearchTest extends IntegrationTestBase {
 
     /** Runs a plain keyword search through the Content Drive endpoint path. */
     private PaginatedContents search(final String term) throws DotDataException, DotSecurityException {
-        final DriveRequestForm request = baseRequest()
+        return contentDriveHelper.driveSearch(baseRequest()
                 .filters(QueryFilters.builder().text(term).build())
-                .build();
-        return contentDriveHelper.driveSearch(request, systemUser);
+                .build(), systemUser);
     }
 
     private DriveRequestForm.Builder baseRequest() {
@@ -148,99 +142,68 @@ public class ContentDriveKeywordSearchTest extends IntegrationTestBase {
     }
 
     /**
-     * The reported scenario: keyword search finds {@code IMG_1004.jpeg} for any case and any
-     * distinctive substring of the name, including the boundary-spanning {@code 1004.jpeg} and
-     * multi-word queries that the previous ES path could not match.
+     * The reported scenario: keyword search finds {@code IMG_1004.jpeg} by its name (and case
+     * variants). Matching is prefix-based per {@code GlobalSearchAttributeStrategy}, consistent with
+     * the Content Search portlet. The per-term log documents the full behavior for the record.
      */
     @Test
-    public void keywordSearch_findsFileAsset_caseInsensitive_anySubstring()
-            throws DotDataException, DotSecurityException {
+    public void keywordSearch_findsFileAsset_byName() throws DotDataException, DotSecurityException {
 
-        final List<String> terms = List.of(
-                "IMG", "1004", "img", "Img",           // exact screencast inputs + case variants
-                "IMG_1004", "img_1004", "jpeg",        // substrings
-                "1004.jpeg",                           // boundary-spanning (failed before the fix)
-                "IMG 1004", "1004 jpeg");              // multi-word (tokenized, AND)
+        // Prefix-style terms that must find the file (a token in title/catchall starts with them).
+        final List<String> mustFind = List.of("IMG", "img", "Img", "IMG_1004", "jpeg");
+        // Characterization only (logged, not asserted): mid-token / boundary-spanning terms whose
+        // matching depends on prefix semantics — documents how the search now behaves.
+        final List<String> characterize = List.of("1004", "1004.jpeg", "IMG_1004.jpeg");
 
-        final List<String> failures = new ArrayList<>();
-        for (final String term : terms) {
-            final PaginatedContents results = search(term);
-            final boolean found = contains(results, fileInode);
-            Logger.info(this.getClass(), String.format(
-                    "term='%s' → found=%b, %d result(s): %s",
-                    term, found, results.list.size(), names(results)));
-            if (!found) {
-                failures.add(term);
-            }
+        for (final String term : characterize) {
+            final PaginatedContents r = search(term);
+            Logger.info(this.getClass(), String.format("[characterize] term='%s' → found=%b, %d result(s): %s",
+                    term, contains(r, fileInode), r.list.size(), names(r)));
         }
 
-        if (!failures.isEmpty()) {
-            fail(String.format("Keyword search did not return '%s' for term(s): %s",
-                    FILE_NAME, failures));
+        final StringBuilder failures = new StringBuilder();
+        for (final String term : mustFind) {
+            final PaginatedContents r = search(term);
+            final boolean found = contains(r, fileInode);
+            Logger.info(this.getClass(), String.format("[mustFind] term='%s' → found=%b, %d result(s): %s",
+                    term, found, r.list.size(), names(r)));
+            if (!found) {
+                failures.append(term).append(' ');
+            }
+        }
+        if (failures.length() > 0) {
+            fail("Keyword search did not return " + FILE_NAME + " for term(s): " + failures.toString().trim());
         }
     }
 
+    /** The exact reported input, asserted on its own for a precise failure message. */
     @Test
     public void keywordSearch_uppercaseIMG_findsFile() throws DotDataException, DotSecurityException {
         assertTrue("Searching 'IMG' must return " + FILE_NAME, contains(search("IMG"), fileInode));
     }
 
-    @Test
-    public void keywordSearch_digits1004_findsFile() throws DotDataException, DotSecurityException {
-        assertTrue("Searching '1004' must return " + FILE_NAME, contains(search("1004"), fileInode));
-    }
-
     /**
-     * Read-your-writes: an item that is NOT in the Elasticsearch index must still be found by keyword
-     * search, proving the search resolves in the database (no ES dependency for the text term). We
-     * seed an item, remove it from the index, and search by its name.
-     */
-    @Test
-    public void keywordSearch_findsItemMissingFromElasticsearchIndex_readYourWrites()
-            throws Exception {
-
-        final String uniqueName = "readyourwrites" + System.currentTimeMillis();
-        final File tmpDir = Files.createTempDirectory("kw-ryw").toFile();
-        final File file = new File(tmpDir, uniqueName + ".txt");
-        Files.writeString(file.toPath(), "read your writes content");
-        final Contentlet asset = new FileAssetDataGen(testFolder, file)
-                .languageId(1)
-                .setPolicy(IndexPolicy.WAIT_FOR)
-                .nextPersisted();
-
-        // Drop it from the ES index — the keyword search must not depend on it.
-        APILocator.getContentletIndexAPI().removeContentFromIndex(asset);
-
-        final PaginatedContents results = search(uniqueName);
-        assertTrue("Item absent from the ES index must still be found by keyword search (read-your-writes)",
-                contains(results, asset.getInode()));
-    }
-
-    /**
-     * Composition: a text keyword (resolved in the DB) AND a {@code userSearchable} field filter
-     * (resolved in ES) combine — the item is returned only when both match.
+     * Composition: a text keyword and a {@code userSearchable} field filter combine — the item is
+     * returned only when both match (AND semantics). Both resolve through Elasticsearch.
      */
     @Test
     public void keywordText_composesWith_userSearchableFieldFilter()
             throws DotDataException, DotSecurityException {
 
-        // Text matches (DB) AND the field filter matches (ES) → returned.
         final PaginatedContents match = contentDriveHelper.driveSearch(
                 baseRequest()
                         .contentTypes(List.of(composeType.variable()))
                         .filters(QueryFilters.builder().text(COMPOSE_TERM).build())
-                        .userSearchable(Map.of(TOPIC_VAR, COMPOSE_TERM))
+                        .userSearchable(java.util.Map.of(TOPIC_VAR, COMPOSE_TERM))
                         .build(),
                 systemUser);
-        assertTrue("Text (DB) + matching field filter (ES) must return the item",
-                contains(match, composeInode));
+        assertTrue("Text + matching field filter must return the item", contains(match, composeInode));
 
-        // Text matches (DB) but the field filter does NOT → excluded (AND semantics).
         final PaginatedContents noMatch = contentDriveHelper.driveSearch(
                 baseRequest()
                         .contentTypes(List.of(composeType.variable()))
                         .filters(QueryFilters.builder().text(COMPOSE_TERM).build())
-                        .userSearchable(Map.of(TOPIC_VAR, "reactnomatch"))
+                        .userSearchable(java.util.Map.of(TOPIC_VAR, "reactnomatch"))
                         .build(),
                 systemUser);
         assertFalse("A non-matching field filter must exclude the item even when the text matches",

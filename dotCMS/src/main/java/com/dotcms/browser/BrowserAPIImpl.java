@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
+import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -1179,17 +1180,17 @@ public class BrowserAPIImpl implements BrowserAPI {
     String buildBaseESQuery(final BrowserQuery browserQuery) {
         final StringBuilder textGroup = new StringBuilder();
 
-        // When the keyword is DB-resolved (resolveTextInDb), skip the free-text group here — otherwise
-        // ES would re-filter on the lagging index and drop just-saved items. The index-routed field
-        // clauses (below) still apply.
-        if (UtilMethods.isSet(browserQuery.filter) && !browserQuery.resolveTextInDb) {
-            final String titleFilters = String.format(
-                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:*%s*^10",
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter);
-            textGroup.append(titleFilters);
+        if (UtilMethods.isSet(browserQuery.filter)) {
+            // Reuse the Content Search global-search strategy so Content Drive keyword search stays
+            // consistent with the Search portlet (issue #36688). It builds a selective mandatory
+            // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
+            // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
+            // scanned slowly on large, indexed datasets.
+            final FieldContext globalSearchContext = new FieldContext.Builder()
+                    .withFieldName("title")
+                    .withFieldValue(browserQuery.filter)
+                    .build();
+            textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1487,14 +1488,12 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return {@code true} if ES should be used for filtering, {@code false} to use SQL filtering
      */
     boolean isUseElasticSearchForFiltering(final BrowserQuery browserQuery) {
-        // The free-text filter only forces the ES path when it is NOT DB-resolved (resolveTextInDb).
-        // fileName remains ES-routed. Index-routed field criteria always require ES.
-        final boolean textNeedsEs = (UtilMethods.isSet(browserQuery.filter) && !browserQuery.resolveTextInDb)
-                || UtilMethods.isSet(browserQuery.fileName);
+        final boolean hasTextFilter = UtilMethods.isSet(browserQuery.filter) ||
+                UtilMethods.isSet(browserQuery.fileName);
         final boolean hasIndexFieldCriteria = browserQuery.getFieldCriteria().stream()
                 .anyMatch(criteria ->
                         criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
-        return browserQuery.useElasticsearchFiltering && (textNeedsEs || hasIndexFieldCriteria);
+        return browserQuery.useElasticsearchFiltering && (hasTextFilter || hasIndexFieldCriteria);
     }
 
     /**
@@ -1896,16 +1895,11 @@ public class BrowserAPIImpl implements BrowserAPI {
                 : resolveArchiveTargetSteps(browserQuery.workflowStepIds);
         appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
                 browserQuery.workflowStepIds, archiveStepIds, parameters);
-        // Free-text keyword: resolved in the DB when ES filtering is off OR when resolveTextInDb is
-        // set (Content Drive keyword search — read-your-writes per ADR-0018). This keeps the text
-        // predicate in the candidate SQL even while the ES path narrows by index-routed field clauses.
-        if (!browserQuery.useElasticsearchFiltering || browserQuery.resolveTextInDb) {
+        //We only build the filtering bits of the SQL Query if we're not using ES
+        if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
                 appendFilterQuery(selectQuery, browserQuery.filter, parameters);
             }
-        }
-        // fileName stays on the legacy ES-gated path (only resolved in the DB when ES is off).
-        if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.fileName)) {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
             }
