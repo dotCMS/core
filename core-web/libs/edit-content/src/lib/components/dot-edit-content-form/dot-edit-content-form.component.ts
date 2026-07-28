@@ -312,7 +312,9 @@ export class DotEditContentFormComponent implements OnInit {
         };
         const interactionEvents = ['pointerdown', 'keydown', 'input'] as const;
         const listenerOptions: AddEventListenerOptions = { capture: true };
-        interactionEvents.forEach((type) => host.addEventListener(type, markTouched, listenerOptions));
+        interactionEvents.forEach((type) =>
+            host.addEventListener(type, markTouched, listenerOptions)
+        );
         this.#destroyRef.onDestroy(() =>
             interactionEvents.forEach((type) =>
                 host.removeEventListener(type, markTouched, listenerOptions)
