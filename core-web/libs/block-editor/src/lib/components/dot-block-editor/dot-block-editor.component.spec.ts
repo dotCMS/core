@@ -4,6 +4,8 @@ import { createComponentFactory } from '@openng/spectator/jest';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 
+import { AnyExtension, JSONContent } from '@tiptap/core';
+
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
@@ -61,6 +63,155 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+    });
+
+    describe('customBlocks parsing', () => {
+        it('accepts action.name without discarding the remote extension payload', () => {
+            const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+            blockEditorComponent.customBlocks = JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            expect((blockEditorComponent as any).getParsedCustomBlocks()).toEqual({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            });
+        });
+    });
+
+    describe('per-field remote block restriction', () => {
+        const CUSTOM_BLOCKS = JSON.stringify({
+            extensions: [
+                {
+                    url: 'https://example.com/custom-gallery.js',
+                    actions: [
+                        {
+                            command: 'insertGallery',
+                            menuLabel: 'Custom Gallery',
+                            icon: 'photo_library',
+                            name: 'customGallery'
+                        }
+                    ]
+                }
+            ]
+        });
+
+        /** The behaviour under test lives on private members, reached through this seam. */
+        interface EditorInternals {
+            setAllowedBlocks(blocks: string): void;
+            getCustomRemoteExtensions(): Promise<{ name?: string }[]>;
+            setEditorJSONContent(content: JSONContent): void;
+            editor: unknown;
+            content: JSONContent[];
+        }
+
+        let component: DotBlockEditorComponent;
+        let internals: EditorInternals;
+        let realEditor: unknown;
+
+        beforeEach(() => {
+            component = spectator.query(DotBlockEditorComponent);
+            component.customBlocks = CUSTOM_BLOCKS;
+            internals = component as unknown as EditorInternals;
+            realEditor = internals.editor;
+        });
+
+        afterEach(() => {
+            // Restore the real editor so the stub below cannot leak into later suites.
+            internals.editor = realEditor;
+        });
+
+        const setAllowedBlocks = (blocks: string[]) => internals.setAllowedBlocks(blocks.join(','));
+
+        const loadRemoteExtensions = (): Promise<{ name?: string }[]> => {
+            jest.spyOn(component, 'loadCustomBlocks').mockResolvedValue([
+                {
+                    status: 'fulfilled',
+                    value: { customGallery: { name: 'customGallery' } }
+                } as unknown as PromiseFulfilledResult<AnyExtension>
+            ]);
+
+            return internals.getCustomRemoteExtensions();
+        };
+
+        /** Renders `content` through the load-time path with a minimal stub schema. */
+        const loadContentWithoutRemoteSchema = (): JSONContent[] => {
+            internals.editor = { schema: { nodes: { doc: {}, paragraph: {} } } };
+            internals.setEditorJSONContent({
+                type: 'doc',
+                content: [{ type: 'customGallery', attrs: { id: 'abc' } }]
+            });
+
+            return internals.content;
+        };
+
+        it('registers a remote block that the field allows', async () => {
+            setAllowedBlocks(['heading1', 'customGallery']);
+
+            const extensions = await loadRemoteExtensions();
+
+            expect(extensions.map((extension) => extension.name)).toEqual(['customGallery']);
+        });
+
+        it('does not register a remote block deselected on a restricted field', async () => {
+            setAllowedBlocks(['heading1', 'bulletList']);
+
+            const extensions = await loadRemoteExtensions();
+
+            // Never added to the schema, so it cannot be inserted via the slash menu.
+            expect(extensions).toEqual([]);
+        });
+
+        it('registers every remote block on an unrestricted field', async () => {
+            const extensions = await loadRemoteExtensions();
+
+            expect(extensions.map((extension) => extension.name)).toEqual(['customGallery']);
+        });
+
+        it('keeps an allowed remote block intact when its bundle fails to load', () => {
+            setAllowedBlocks(['heading1', 'customGallery']);
+
+            // Bundle never loaded, so the node is absent from the schema.
+            const [node] = loadContentWithoutRemoteSchema();
+
+            expect(node.type).toBe('dotUnsupportedBlock');
+        });
+
+        it('preserves content of a deselected remote block as a placeholder', () => {
+            setAllowedBlocks(['heading1', 'bulletList']);
+
+            const [node] = loadContentWithoutRemoteSchema();
+
+            // Restricted, but never destroyed: it round-trips through the placeholder.
+            expect(node.type).toBe('dotUnsupportedBlock');
+            expect(node.attrs?.['originalNode']).toEqual({
+                type: 'customGallery',
+                attrs: { id: 'abc' }
+            });
+        });
     });
 
     it('should update form value when onBlockEditorChange is called', () => {

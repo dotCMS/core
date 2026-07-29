@@ -6,6 +6,8 @@ import type { DotMessageService } from '@dotcms/data-access';
 
 import { createEditorExtensions } from './editor-extensions';
 
+import { UNKNOWN_BLOCK_NODE_NAME } from '../utils/unknown-block.utils';
+
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
 /**
@@ -56,5 +58,9 @@ describe('createEditorExtensions', () => {
         const names = build([remoteCustom]);
 
         expect(names).toContain('customNode');
+    });
+
+    it('always registers the unsupported-block catch-all node', () => {
+        expect(build()).toContain(UNKNOWN_BLOCK_NODE_NAME);
     });
 });
