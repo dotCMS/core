@@ -164,13 +164,16 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     }
 
     /**
-     * Close intent (X button or ESC). Routes through the editor's unsaved-changes guard so the
-     * user is prompted when the form is dirty; only closes once it is safe. On close it fires the
-     * `data` callbacks (`onContentSaved` with the last save, then `onCancel`) — mirroring the
-     * dialog's contract so dialog-based openers can switch to the panel unchanged — and emits
-     * `closed` for openers that drive it via a signal.
+     * Close intent (X button, ESC, or browser Back routed by the opener). Routes through the
+     * editor's unsaved-changes guard so the user is prompted when the form is dirty; only closes
+     * once it is safe. On close it fires the `data` callbacks (`onContentSaved` with the last save,
+     * then `onCancel`) — mirroring the dialog's contract so dialog-based openers can switch to the
+     * panel unchanged — and emits `closed` for openers that drive it via a signal.
+     *
+     * Public so an opener (e.g. Content Drive on browser Back) can route its own close intent
+     * through the same guard instead of tearing the panel down and losing unsaved edits silently.
      */
-    protected requestClose(): void {
+    requestClose(): void {
         const layout = this.$layout();
         const proceed = () => {
             this.#fireCloseCallbacks();

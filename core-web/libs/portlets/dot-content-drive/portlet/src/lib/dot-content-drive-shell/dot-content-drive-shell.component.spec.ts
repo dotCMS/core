@@ -41,7 +41,7 @@ import {
     DotContentDriveFolder,
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
-import { DotSidePanelNavController } from '@dotcms/edit-content';
+import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
     DotFolderListViewComponent,
     DotFolderTreeNodeData,
@@ -219,6 +219,7 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(Location, {
                     go: jest.fn(),
+                    replaceState: jest.fn(),
                     path: jest.fn().mockReturnValue(''),
                     // Return a real subscription so the shell's popstate listener can be captured
                     // and torn down without throwing on destroy.
@@ -2237,19 +2238,32 @@ describe('DotContentDriveShellComponent', () => {
                     url: string;
                 }) => void;
 
-            it('closes the panel when Back removes the editContent param', () => {
+            it('routes Back through the panel close guard (does not discard silently)', () => {
+                const requestClose = jest.fn();
+                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
+                    requestClose
+                } as unknown as DotEditContentSidePanelComponent);
                 setPanelRequest(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
 
-                expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
+                // Routes through the guard instead of tearing the panel down directly.
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+                // Restores the param so the URL matches the still-open panel while the guard decides.
+                expect(location.replaceState).toHaveBeenCalledTimes(1);
             });
 
             it('keeps the panel open when Back preserves the same editContent param', () => {
+                const requestClose = jest.fn();
+                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
+                    requestClose
+                } as unknown as DotEditContentSidePanelComponent);
                 setPanelRequest(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=id-1' });
 
+                expect(requestClose).not.toHaveBeenCalled();
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
             });
         });

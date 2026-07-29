@@ -128,6 +128,9 @@ export class DotContentDriveShellComponent {
     /** Edit Content side panel request, driven by the navigation service; read by the template. */
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
+    /** The rendered side panel, so browser Back can route its close through the panel's guard. */
+    protected readonly $sidePanel = viewChild(DotEditContentSidePanelComponent);
+
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
@@ -252,16 +255,28 @@ export class DotContentDriveShellComponent {
         }
 
         // Browser Back/Forward: the open panel's `?editContent=` param is written via `Location.go`
-        // (no router navigation), so nothing else reacts to popstate. Close the panel when Back
-        // removes or changes that param while it is open, so Back returns to the previous view
-        // instead of leaving a stuck panel over a URL that no longer references it.
+        // (no router navigation), so nothing else reacts to popstate. When Back removes or changes
+        // that param while the panel is open, route the close through the panel's unsaved-changes
+        // guard — a direct `closeEditPanel()` would tear the editor down and discard unsaved edits
+        // silently.
         const locationSubscription = this.#location.subscribe((event) => {
             const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
             const editContentParam = params.get('editContent');
             const request = this.#navigationService.$editPanelRequest();
 
             if (request?.mode === 'edit' && request.identifier !== editContentParam) {
-                this.#navigationService.closeEditPanel();
+                // Restore the param so the URL matches the still-open panel while the guard decides.
+                // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
+                // emits `closed` → onEditPanelClosed → closeEditPanel clears the param; Keep editing
+                // → the panel stays open and the URL is already back in sync.
+                const restoredUrl = this.#router
+                    .createUrlTree([], {
+                        queryParams: { editContent: request.identifier },
+                        queryParamsHandling: 'merge'
+                    })
+                    .toString();
+                this.#location.replaceState(restoredUrl);
+                this.$sidePanel()?.requestClose();
             }
         });
         this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());

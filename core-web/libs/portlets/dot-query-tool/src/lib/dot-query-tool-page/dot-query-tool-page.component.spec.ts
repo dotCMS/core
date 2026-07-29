@@ -7,6 +7,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import {
     DotContentletEditUrlService,
+    DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -90,6 +91,10 @@ describe('DotQueryToolPageComponent', () => {
             mockProvider(DotQueryToolService),
             mockProvider(DotContentletEditUrlService, {
                 resolveEditUrl: jest.fn()
+            }),
+            // Deep-link resolve for `?editContent=`; empty by default (no panel opens on load).
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
             })
         ],
         componentProviders: [
@@ -113,7 +118,15 @@ describe('DotQueryToolPageComponent', () => {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
                 },
-                { provide: Location, useValue: { replaceState: locationReplaceStateSpy } }
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: locationReplaceStateSpy,
+                        go: jest.fn(),
+                        path: jest.fn().mockReturnValue(''),
+                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                    }
+                }
             ]
         });
         return spectator.inject(DotQueryToolStore, true);
@@ -380,7 +393,10 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),
             mockProvider(DotQueryToolService),
-            mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() })
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
+            })
         ],
         componentProviders: [
             { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
@@ -400,7 +416,15 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap({}) } }
                 },
-                { provide: Location, useValue: { replaceState: jest.fn() } }
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: jest.fn(),
+                        go: jest.fn(),
+                        path: jest.fn().mockReturnValue(''),
+                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                    }
+                }
             ]
         });
     });
@@ -420,6 +444,38 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
             identifier: 'id-1',
             title: 'Home'
         });
+    });
+
+    it('reflects the open panel in the URL via editContent (history push, so Back can pop it)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        const location = spectator.inject(Location);
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+        spectator.flushEffects();
+
+        expect(location.go).toHaveBeenCalledWith(expect.stringContaining('editContent=id-1'));
+    });
+
+    it('routes browser Back through the panel close guard (does not clear silently)', () => {
+        const requestClose = jest.fn();
+        jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
+            requestClose
+        } as unknown as DotEditContentSidePanelComponent);
+        spectator.component.$editPanelRequest.set({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1'
+        });
+        const location = spectator.inject(Location);
+        const popstate = (location.subscribe as jest.Mock).mock.calls[0][0] as (event: {
+            url: string;
+        }) => void;
+
+        popstate({ url: '/query-tool?q=x' });
+
+        expect(requestClose).toHaveBeenCalledTimes(1);
+        expect(location.replaceState).toHaveBeenCalled();
     });
 
     it('opens legacy-editor results in a new tab (not the panel)', () => {

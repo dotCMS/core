@@ -1,9 +1,11 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { EMPTY } from 'rxjs';
 
 import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     effect,
     inject,
     OnInit,
@@ -29,10 +31,11 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import {
     DotContentletEditUrlService,
+    DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotMessageService,
@@ -107,8 +110,13 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #location = inject(Location);
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
     readonly #dotPropertiesService = inject(DotPropertiesService);
+    readonly #contentSearch = inject(DotContentSearchService);
+    readonly #destroyRef = inject(DestroyRef);
 
     #lastSyncedUrl: string | null = null;
+
+    /** The rendered side panel, so browser Back can route its close through the panel's guard. */
+    readonly $sidePanel = viewChild(DotEditContentSidePanelComponent);
 
     /**
      * Feature flag gating the side panel. When off, editing a result opens the editor in a new
@@ -124,6 +132,23 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /** Content shown in the Edit Content side panel, or `null` when it is closed. */
     readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Reflects the open edit panel in the URL (`?editContent=<identifier>`) so it is shareable,
+     * refresh-safe, and dismissible with browser Back (see the popstate listener in ngOnInit).
+     * Written with `Location.go` (a history push) — NOT `replaceState` like the search-param sync
+     * above — precisely so Back has an entry to pop. `merge` preserves the query-tool params.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects
+    readonly #editContentUrlEffect = effect(() => {
+        const request = this.$editPanelRequest();
+
+        untracked(() =>
+            this.#syncEditContentParam(
+                request?.mode === 'edit' ? (request.identifier ?? null) : null
+            )
+        );
+    });
 
     // Mirrors store state into the address bar via Location.replaceState, but only
     // once the search settles (LOADED or ERROR). Tying the sync to `status` instead
@@ -232,6 +257,38 @@ export class DotQueryToolPageComponent implements OnInit {
         if (query.trim()) {
             this.store.runSearch();
         }
+
+        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. No flag
+        // gate — the param is only ever written while the side panel is active (flag on), so its
+        // presence already implies a panel context (and the flag may not have resolved yet).
+        const editContent = params.get('editContent');
+        if (editContent) {
+            this.#resolveAndOpenByIdentifier(editContent);
+        }
+
+        // Browser Back/Forward: nothing else reacts to the `editContent` param (written via
+        // Location.go, not the router). When Back removes/changes it while the panel is open, route
+        // the close through the panel's unsaved-changes guard — a direct clear would tear the editor
+        // down and discard unsaved edits silently.
+        const locationSubscription = this.#location.subscribe((event) => {
+            const backParams = new URLSearchParams(event.url?.split('?')[1] ?? '');
+            const editContentParam = backParams.get('editContent');
+            const request = this.$editPanelRequest();
+
+            if (request?.mode === 'edit' && request.identifier !== editContentParam) {
+                // Restore the param so the URL matches the still-open panel while the guard decides.
+                const restored = this.#router
+                    .createUrlTree([], {
+                        relativeTo: this.#route,
+                        queryParams: { editContent: request.identifier },
+                        queryParamsHandling: 'merge'
+                    })
+                    .toString();
+                this.#location.replaceState(restored);
+                this.$sidePanel()?.requestClose();
+            }
+        });
+        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
     }
 
     onQueryChange(value: string): void {
@@ -317,6 +374,47 @@ export class DotQueryToolPageComponent implements OnInit {
      */
     #isNewEditorUrl(url: string): boolean {
         return url.startsWith('/dotAdmin/#/content/');
+    }
+
+    /** Idempotent write/clear of `editContent` (history push, merged) so browser Back can pop it. */
+    #syncEditContentParam(identifier: string | null): void {
+        const url = this.#router
+            .createUrlTree([], {
+                relativeTo: this.#route,
+                queryParams: { editContent: identifier },
+                queryParamsHandling: 'merge'
+            })
+            .toString();
+
+        if (url !== this.#location.path(true)) {
+            this.#location.go(url);
+        }
+    }
+
+    /** Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel. */
+    #resolveAndOpenByIdentifier(identifier: string): void {
+        this.#contentSearch
+            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
+                query: `+identifier:${identifier} +working:true`,
+                limit: 1
+            })
+            .pipe(
+                take(1),
+                catchError(() => EMPTY)
+            )
+            .subscribe((entity) => {
+                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
+                if (!contentlet?.inode) {
+                    return;
+                }
+
+                this.$editPanelRequest.set({
+                    mode: 'edit',
+                    contentletInode: contentlet.inode,
+                    identifier,
+                    title: contentlet.title
+                });
+            });
     }
 
     useExample(query: string): void {
