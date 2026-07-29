@@ -190,20 +190,37 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      */
     @Override
     public Map<String, String> getAliasToIndexMap() {
-        // Query the .os-tagged physical names; getIndexAlias returns index(.os) -> alias.
-        final Map<String, String> indexToAlias = indexApi.getIndexAlias(
-                listIndices().stream().map(OSSiteSearchAPI::osTagged).collect(Collectors.toList()));
+        // Query the .os-tagged physical names; getIndexAlias returns index(.os) -> alias. The pure
+        // reverse + multi-index detection lives in reverseAliasToIndexMap so it is unit-testable.
+        return reverseAliasToIndexMap(indexApi.getIndexAlias(
+                listIndices().stream().map(OSSiteSearchAPI::osTagged).collect(Collectors.toList())));
+    }
+
+    /**
+     * Reverses a raw {@code index(.os) -> alias} map into a logical {@code alias -> index} map:
+     * strips the {@code .os} tag off the index values and defensively resolves multi-index aliases.
+     * Package-private and {@code static} (no cluster state) so it can be unit-tested directly.
+     *
+     * <p>If two distinct OpenSearch indices share one alias — a stale/duplicate alias that should not
+     * exist once {@code createAlias}'s existence check is honored (issue #36360) — a {@code WARN} is
+     * logged and the <strong>newest</strong> index is kept ({@code sitesearch_<timestamp>} sorts
+     * chronologically), so the result is deterministic and never depends on map-iteration order.</p>
+     *
+     * @param indexToAlias raw physical-index-name → alias-name map (as returned by
+     *                     {@code IndexAPI#getIndexAlias}); index keys may carry the {@code .os} tag
+     * @return logical alias → index map (index values stripped of {@code .os})
+     */
+    static Map<String, String> reverseAliasToIndexMap(final Map<String, String> indexToAlias) {
         final Map<String, String> aliasToIndex = new HashMap<>();
         for (final Map.Entry<String, String> entry : indexToAlias.entrySet()) {
             final String logicalIndex = IndexTag.strip(entry.getKey()); // .os -> logical
             final String alias = entry.getValue();                      // aliases carry no .os
             final String previous = aliasToIndex.put(alias, logicalIndex);
             if (previous != null && !previous.equals(logicalIndex)) {
-                // Two distinct OS indices share one alias — a stale/duplicate alias, not a valid
-                // state. Keep the newest deterministically (sitesearch_<timestamp> sorts
-                // chronologically) instead of a non-deterministic last-wins, and surface it.
+                // Two distinct OS indices share one alias — keep the newest deterministically
+                // (chronological name order) instead of a non-deterministic last-wins, and surface it.
                 final String kept = previous.compareTo(logicalIndex) >= 0 ? previous : logicalIndex;
-                Logger.warn(this.getClass(), String.format(
+                Logger.warn(OSSiteSearchAPI.class, String.format(
                         "Multi-index Site Search alias '%s' resolves to multiple OpenSearch indices "
                                 + "('%s' and '%s'); keeping '%s'. Reconcile the OS aliases (issue #36360).",
                         alias, previous, logicalIndex, kept));
