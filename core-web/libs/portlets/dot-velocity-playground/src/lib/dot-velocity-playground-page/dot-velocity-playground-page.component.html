@@ -107,7 +107,9 @@
                             (onClick)="store.clearHistory()"
                             data-testid="velocity-playground-clear-history-btn">
                             <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                            {{ 'velocityPlayground.action.clearHistory' | dm }}
+                            <span class="p-button-label">
+                                {{ 'velocityPlayground.action.clearHistory' | dm }}
+                            </span>
                         </p-button>
                     </div>
                 </div>
@@ -122,7 +124,7 @@
                     (onClick)="onRun()"
                     data-testid="velocity-playground-run-btn">
                     <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
-                    {{ 'velocityPlayground.action.run' | dm }}
+                    <span class="p-button-label">{{ 'velocityPlayground.action.run' | dm }}</span>
                 </p-button>
             </div>
         </div>
@@ -196,7 +198,9 @@
                                 size="small"
                                 (onClick)="toggleExportMenu($event)"
                                 data-testid="velocity-playground-share-btn">
-                                {{ 'velocityPlayground.action.share' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'velocityPlayground.action.share' | dm }}
+                                </span>
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     keyboard_arrow_down
                                 </span>
@@ -210,7 +214,9 @@
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     download
                                 </span>
-                                {{ 'velocityPlayground.action.export' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'velocityPlayground.action.export' | dm }}
+                                </span>
                             </p-button>
                         </div>
                     }
@@ -254,7 +260,9 @@
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     content_copy
                                 </span>
-                                {{ 'velocityPlayground.help.copy' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'velocityPlayground.help.copy' | dm }}
+                                </span>
                             </p-button>
                             <p-button
                                 text

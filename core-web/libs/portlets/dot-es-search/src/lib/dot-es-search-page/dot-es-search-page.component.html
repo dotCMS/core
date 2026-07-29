@@ -127,7 +127,7 @@
                     (onClick)="onRun()"
                     data-testid="es-search-run-btn">
                     <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
-                    {{ 'esSearch.action.run' | dm }}
+                    <span class="p-button-label">{{ 'esSearch.action.run' | dm }}</span>
                 </p-button>
             </div>
         </div>
@@ -197,7 +197,9 @@
                                 size="small"
                                 (onClick)="toggleExportMenu($event)"
                                 data-testid="es-search-share-btn">
-                                {{ 'esSearch.action.share' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'esSearch.action.share' | dm }}
+                                </span>
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     keyboard_arrow_down
                                 </span>
@@ -211,7 +213,9 @@
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     download
                                 </span>
-                                {{ 'esSearch.action.export' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'esSearch.action.export' | dm }}
+                                </span>
                             </p-button>
                         </div>
                     }
@@ -542,7 +546,9 @@
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     content_copy
                                 </span>
-                                {{ 'esSearch.help.copy' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'esSearch.help.copy' | dm }}
+                                </span>
                             </p-button>
                             <p-button
                                 text

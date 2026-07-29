@@ -112,7 +112,7 @@
                     (onClick)="onRun()"
                     data-testid="query-tool-run-btn">
                     <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
-                    {{ 'queryTool.action.run' | dm }}
+                    <span class="p-button-label">{{ 'queryTool.action.run' | dm }}</span>
                 </p-button>
             </div>
         </div>
@@ -178,7 +178,9 @@
                                 size="small"
                                 (onClick)="toggleExportMenu($event)"
                                 data-testid="query-tool-share-btn">
-                                {{ 'queryTool.action.share' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'queryTool.action.share' | dm }}
+                                </span>
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     keyboard_arrow_down
                                 </span>
@@ -192,7 +194,9 @@
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     download
                                 </span>
-                                {{ 'queryTool.action.export' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'queryTool.action.export' | dm }}
+                                </span>
                             </p-button>
                         </div>
                     }
@@ -385,7 +389,9 @@
                                 <span class="material-symbols-rounded" aria-hidden="true">
                                     content_copy
                                 </span>
-                                {{ 'queryTool.help.copy' | dm }}
+                                <span class="p-button-label">
+                                    {{ 'queryTool.help.copy' | dm }}
+                                </span>
                             </p-button>
                             <p-button
                                 text

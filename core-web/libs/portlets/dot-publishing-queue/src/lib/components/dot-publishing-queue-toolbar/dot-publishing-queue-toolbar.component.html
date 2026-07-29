@@ -32,8 +32,8 @@
                 [text]="true"
                 (onClick)="store.refresh()"
                 [pt]="{ root: { 'data-testid': 'pq-refresh-btn' } }">
-                <span class="material-symbols-rounded text-xl!" aria-hidden="true">refresh</span>
-                {{ 'publishing-queue.refresh' | dm }}
+                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+                <span class="p-button-label">{{ 'publishing-queue.refresh' | dm }}</span>
             </p-button>
             @if ($hasBulkActions()) {
                 <p-button
@@ -53,7 +53,9 @@
                     (onClick)="addBundleMenu.toggle($event)"
                     [attr.aria-label]="'publishing-queue.add-bundle' | dm"
                     data-testid="pq-add-bundle-btn">
-                    {{ 'publishing-queue.add-bundle' | dm }}
+                    <span class="p-button-label">
+                        {{ 'publishing-queue.add-bundle' | dm }}
+                    </span>
                     <span class="material-symbols-rounded" aria-hidden="true">
                         keyboard_arrow_down
                     </span>
