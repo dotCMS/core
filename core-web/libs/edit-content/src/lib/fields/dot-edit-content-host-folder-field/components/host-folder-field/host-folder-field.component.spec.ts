@@ -80,7 +80,7 @@ describe('DotHostFolderFieldComponent', () => {
         ]
     });
 
-    let overlayMock: { toggle: jest.Mock; hide: jest.Mock };
+    let overlayMock: { toggle: jest.Mock; hide: jest.Mock; container?: HTMLElement };
 
     const createToggleEvent = (offsetWidth = 320): Event => {
         const trigger = document.createElement('button');
@@ -621,9 +621,8 @@ describe('DotHostFolderFieldComponent', () => {
             });
 
             const container = document.createElement('div');
-            container.classList.add('p-popover');
             Object.defineProperty(container, 'offsetWidth', { value: 640 });
-            document.body.appendChild(container);
+            overlayMock.container = container;
 
             const event = new Event('click');
             Object.defineProperty(event, 'currentTarget', { value: trigger });
@@ -633,7 +632,6 @@ describe('DotHostFolderFieldComponent', () => {
             await spectator.fixture.whenStable();
 
             expect(container.style.left).toBe('80px');
-            document.body.removeChild(container);
         });
 
         it('should schedule a scroll to the selected folder once the overlay renders', async () => {

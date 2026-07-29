@@ -319,29 +319,13 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     #alignPopoverToTrigger(): void {
         const trigger = this.#overlayTrigger;
-        const container = this.#resolvePopoverContainer();
+        const container = this.$overlay()?.container;
 
         if (!trigger || !container) {
             return;
         }
 
         alignOverlayLeftToTrigger(trigger, container);
-    }
-
-    #resolvePopoverContainer(): HTMLElement | null {
-        const popover = this.$overlay() as Popover & {
-            container?: HTMLElement | { nativeElement: HTMLElement };
-        };
-
-        if (!popover?.container) {
-            const overlays = document.body.querySelectorAll('.p-popover');
-
-            return overlays.length > 0 ? (overlays[overlays.length - 1] as HTMLElement) : null;
-        }
-
-        return popover.container instanceof HTMLElement
-            ? popover.container
-            : popover.container.nativeElement;
     }
 
     /**
