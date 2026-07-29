@@ -29,7 +29,11 @@
                             [attr.aria-label]="'velocityPlayground.action.help' | dm"
                             (onClick)="$helpPopover().toggle($event)"
                             data-testid="velocity-playground-help-btn">
-                            <span class="material-symbols-rounded text-lg! leading-0">help</span>
+                            <span
+                                class="material-symbols-rounded text-lg! leading-none"
+                                aria-hidden="true">
+                                help
+                            </span>
                         </p-button>
                     </div>
                 </ng-template>
@@ -72,7 +76,7 @@
                 }"
                 data-testid="velocity-playground-history-panel">
                 <ng-template pTemplate="headericons">
-                    <span class="material-symbols-rounded">
+                    <span class="material-symbols-rounded" aria-hidden="true">
                         {{ $historyOpen() ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
                     </span>
                 </ng-template>
@@ -102,7 +106,7 @@
                             [disabled]="!store.hasHistory()"
                             (onClick)="store.clearHistory()"
                             data-testid="velocity-playground-clear-history-btn">
-                            <span class="material-symbols-rounded">delete</span>
+                            <span class="material-symbols-rounded" aria-hidden="true">delete</span>
                             {{ 'velocityPlayground.action.clearHistory' | dm }}
                         </p-button>
                     </div>
@@ -117,7 +121,7 @@
                     [loading]="store.isLoading()"
                     (onClick)="onRun()"
                     data-testid="velocity-playground-run-btn">
-                    <span class="material-symbols-rounded">play_arrow</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
                     {{ 'velocityPlayground.action.run' | dm }}
                 </p-button>
             </div>
@@ -135,7 +139,7 @@
                     }"
                     data-testid="velocity-playground-error-banner">
                     <ng-template #icon>
-                        <span class="material-symbols-rounded">warning</span>
+                        <span class="material-symbols-rounded" aria-hidden="true">warning</span>
                     </ng-template>
                     {{ store.errorMessage() | dm }}
                 </p-message>
@@ -172,7 +176,8 @@
                         }
                         <span
                             class="material-symbols-rounded text-xl! text-green-600"
-                            style="font-variation-settings: 'FILL' 1">
+                            style="font-variation-settings: 'FILL' 1"
+                            aria-hidden="true">
                             circle
                         </span>
                         {{ 'velocityPlayground.output.ready' | dm }}
@@ -192,7 +197,9 @@
                                 (onClick)="toggleExportMenu($event)"
                                 data-testid="velocity-playground-share-btn">
                                 {{ 'velocityPlayground.action.share' | dm }}
-                                <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    keyboard_arrow_down
+                                </span>
                             </p-button>
                             <p-menu #exportMenu [model]="exportItems" [popup]="true" />
                             <p-button
@@ -200,7 +207,9 @@
                                 size="small"
                                 (onClick)="downloadOutput()"
                                 data-testid="velocity-playground-export-btn">
-                                <span class="material-symbols-rounded">download</span>
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    download
+                                </span>
                                 {{ 'velocityPlayground.action.export' | dm }}
                             </p-button>
                         </div>
@@ -242,7 +251,9 @@
                                 size="small"
                                 (onClick)="copyToClipboard(example.code)"
                                 data-testid="velocity-playground-help-copy-btn">
-                                <span class="material-symbols-rounded">content_copy</span>
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    content_copy
+                                </span>
                                 {{ 'velocityPlayground.help.copy' | dm }}
                             </p-button>
                             <p-button

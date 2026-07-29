@@ -2,7 +2,9 @@
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon>
-                <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                    search
+                </span>
             </p-inputIcon>
             <input
                 pInputText
@@ -30,7 +32,7 @@
                 [text]="true"
                 (onClick)="store.refresh()"
                 [pt]="{ root: { 'data-testid': 'pq-refresh-btn' } }">
-                <span class="material-symbols-rounded">refresh</span>
+                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
                 {{ 'publishing-queue.refresh' | dm }}
             </p-button>
             @if ($hasBulkActions()) {
@@ -52,7 +54,9 @@
                     [attr.aria-label]="'publishing-queue.add-bundle' | dm"
                     data-testid="pq-add-bundle-btn">
                     {{ 'publishing-queue.add-bundle' | dm }}
-                    <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">
+                        keyboard_arrow_down
+                    </span>
                 </p-button>
             }
         </div>

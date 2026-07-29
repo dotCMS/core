@@ -3,7 +3,11 @@
         <div class="flex w-full items-center gap-2 py-3">
             <p-iconField iconPosition="left">
                 <p-inputIcon>
-                    <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        search
+                    </span>
                 </p-inputIcon>
                 <input
                     #searchInput
@@ -76,7 +80,9 @@
                             (onClick)="openRowMenu($event, locale, vm)"
                             [attr.aria-label]="'locales.menu' | dm"
                             data-testid="locale-actions-btn">
-                            <span class="material-symbols-rounded text-lg! leading-0">
+                            <span
+                                class="material-symbols-rounded text-lg! leading-none"
+                                aria-hidden="true">
                                 more_vert
                             </span>
                         </p-button>

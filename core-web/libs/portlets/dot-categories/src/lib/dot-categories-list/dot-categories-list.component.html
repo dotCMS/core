@@ -2,7 +2,9 @@
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon>
-                <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                    search
+                </span>
             </p-inputIcon>
             <input
                 pInputText
@@ -22,7 +24,7 @@
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="category-delete-btn">
-                    <span class="material-symbols-rounded">delete</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
                     {{ 'categories.delete' | dm }}
                 </p-button>
             }
@@ -43,7 +45,7 @@
                 (onClick)="onToolbarMenuToggle($event)"
                 data-testid="category-toolbar-menu-btn"
                 [attr.aria-label]="'categories.more.actions' | dm">
-                <span class="material-symbols-rounded">more_vert</span>
+                <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
             </p-button>
         </div>
     </div>
@@ -57,7 +59,7 @@
     (homeClick)="onHomeClick()"
     data-testid="category-breadcrumb">
     <ng-template pTemplate="separator">
-        <span class="material-symbols-rounded text-base!">chevron_right</span>
+        <span class="material-symbols-rounded text-base!" aria-hidden="true">chevron_right</span>
     </ng-template>
 </p-breadcrumb>
 
@@ -140,7 +142,7 @@
                         (onClick)="openRowMenu($event, category)"
                         [attr.aria-label]="'categories.actions' | dm"
                         data-testid="category-actions-btn">
-                        <span class="material-symbols-rounded">more_vert</span>
+                        <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
                     </p-button>
                 </td>
             </tr>

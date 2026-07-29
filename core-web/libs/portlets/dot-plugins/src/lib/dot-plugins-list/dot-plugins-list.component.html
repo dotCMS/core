@@ -24,7 +24,11 @@
         <div class="flex w-full items-center gap-4 py-3">
             <p-iconfield iconPosition="left">
                 <p-inputicon>
-                    <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        search
+                    </span>
                 </p-inputicon>
                 <input
                     #searchInput
@@ -52,7 +56,7 @@
                     [text]="true"
                     (onClick)="refresh()"
                     data-testid="plugins-refresh-btn">
-                    <span class="material-symbols-rounded">refresh</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
                     {{ 'plugins.refresh-table' | dm }}
                 </p-button>
                 <p-button
@@ -71,7 +75,7 @@
                     (onClick)="onToolbarMenuToggle($event)"
                     data-testid="plugins-toolbar-menu-btn"
                     [attr.aria-label]="'plugins.more-actions' | dm">
-                    <span class="material-symbols-rounded">more_vert</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
                 </p-button>
             </div>
         </div>
@@ -230,7 +234,9 @@
                                     (onClick)="onContextMenu($event, bundle)"
                                     data-testid="plugin-actions-btn"
                                     [attr.aria-label]="'plugins.table.actions' | dm">
-                                    <span class="material-symbols-rounded w-6 text-center">
+                                    <span
+                                        class="material-symbols-rounded w-6 text-center"
+                                        aria-hidden="true">
                                         more_vert
                                     </span>
                                 </p-button>

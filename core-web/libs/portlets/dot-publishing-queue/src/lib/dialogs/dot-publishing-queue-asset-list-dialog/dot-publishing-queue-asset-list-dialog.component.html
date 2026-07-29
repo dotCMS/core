@@ -5,7 +5,11 @@
         <div class="mt-1 flex justify-end" data-testid="pq-asset-list-search-bar">
             <p-iconField iconPosition="left">
                 <p-inputIcon>
-                    <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        search
+                    </span>
                 </p-inputIcon>
                 <input
                     pInputText
@@ -76,7 +80,11 @@
                                 [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
                                 (onClick)="onRemoveAsset(asset)"
                                 data-testid="pq-asset-remove-btn">
-                                <span class="material-symbols-rounded w-6 text-center">delete</span>
+                                <span
+                                    class="material-symbols-rounded w-6 text-center"
+                                    aria-hidden="true">
+                                    delete
+                                </span>
                             </p-button>
                         </td>
                     }

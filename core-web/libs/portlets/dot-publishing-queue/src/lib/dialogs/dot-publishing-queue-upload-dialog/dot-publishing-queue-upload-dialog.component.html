@@ -6,7 +6,7 @@
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="pq-upload-error">
             <ng-template #icon>
-                <span class="material-symbols-rounded">cancel</span>
+                <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
             </ng-template>
             {{ $errorMessage() }}
         </p-message>
@@ -40,7 +40,9 @@
                     (click)="fileUpload.choose()">
                     <div
                         class="flex size-24 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
-                        <span class="material-symbols-rounded text-4xl!">upload</span>
+                        <span class="material-symbols-rounded text-4xl!" aria-hidden="true">
+                            upload
+                        </span>
                     </div>
 
                     <p class="text-2xl font-semibold text-color">

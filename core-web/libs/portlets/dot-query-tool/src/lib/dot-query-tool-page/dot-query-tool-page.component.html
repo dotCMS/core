@@ -21,7 +21,11 @@
                             [attr.aria-label]="'queryTool.action.help' | dm"
                             (onClick)="$helpPopover().toggle($event)"
                             data-testid="query-tool-help-btn">
-                            <span class="material-symbols-rounded text-lg! leading-0">help</span>
+                            <span
+                                class="material-symbols-rounded text-lg! leading-none"
+                                aria-hidden="true">
+                                help
+                            </span>
                         </p-button>
                     </div>
                 </ng-template>
@@ -48,7 +52,7 @@
                 }"
                 data-testid="query-tool-params-panel">
                 <ng-template pTemplate="headericons">
-                    <span class="material-symbols-rounded">
+                    <span class="material-symbols-rounded" aria-hidden="true">
                         {{ $paramsOpen() ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
                     </span>
                 </ng-template>
@@ -107,7 +111,7 @@
                     [loading]="store.isLoading()"
                     (onClick)="onRun()"
                     data-testid="query-tool-run-btn">
-                    <span class="material-symbols-rounded">play_arrow</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
                     {{ 'queryTool.action.run' | dm }}
                 </p-button>
             </div>
@@ -140,7 +144,8 @@
                     <div class="flex flex-wrap items-center gap-1.5">
                         <span
                             class="material-symbols-rounded text-xl! text-green-600"
-                            style="font-variation-settings: 'FILL' 1">
+                            style="font-variation-settings: 'FILL' 1"
+                            aria-hidden="true">
                             circle
                         </span>
                         <span>{{ 'queryTool.results.ready' | dm }}</span>
@@ -174,7 +179,9 @@
                                 (onClick)="toggleExportMenu($event)"
                                 data-testid="query-tool-share-btn">
                                 {{ 'queryTool.action.share' | dm }}
-                                <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    keyboard_arrow_down
+                                </span>
                             </p-button>
                             <p-menu #exportMenu [model]="exportItems" [popup]="true" />
                             <p-button
@@ -182,7 +189,9 @@
                                 size="small"
                                 (onClick)="downloadRawJson()"
                                 data-testid="query-tool-export-btn">
-                                <span class="material-symbols-rounded">download</span>
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    download
+                                </span>
                                 {{ 'queryTool.action.export' | dm }}
                             </p-button>
                         </div>
@@ -195,7 +204,7 @@
                         [pt]="{ root: { class: '!rounded-none border-x-0! border-t-0!' } }"
                         data-testid="query-tool-size-cap-warning">
                         <ng-template #icon>
-                            <span class="material-symbols-rounded">warning</span>
+                            <span class="material-symbols-rounded" aria-hidden="true">warning</span>
                         </ng-template>
                         {{ 'queryTool.results.sizeCapped' | dm: [MAX_RESULTS.toString()] }}
                     </p-message>
@@ -290,7 +299,8 @@
                                                         "
                                                         data-testid="query-tool-copy-inode">
                                                         <span
-                                                            class="material-symbols-rounded text-base!">
+                                                            class="material-symbols-rounded text-base!"
+                                                            aria-hidden="true">
                                                             content_copy
                                                         </span>
                                                     </p-button>
@@ -321,7 +331,8 @@
                                                         "
                                                         data-testid="query-tool-copy-identifier">
                                                         <span
-                                                            class="material-symbols-rounded text-base!">
+                                                            class="material-symbols-rounded text-base!"
+                                                            aria-hidden="true">
                                                             content_copy
                                                         </span>
                                                     </p-button>
@@ -371,7 +382,9 @@
                                 size="small"
                                 (onClick)="copyToClipboard(example.query)"
                                 data-testid="query-tool-help-copy-btn">
-                                <span class="material-symbols-rounded">content_copy</span>
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    content_copy
+                                </span>
                                 {{ 'queryTool.help.copy' | dm }}
                             </p-button>
                             <p-button

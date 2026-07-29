@@ -4,7 +4,9 @@
     <div class="flex items-center gap-2">
         <p-iconfield iconPosition="left" class="flex-1">
             <p-inputicon>
-                <span class="material-symbols-rounded text-xl! leading-none!">search</span>
+                <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                    search
+                </span>
             </p-inputicon>
             <input
                 pInputText
@@ -34,7 +36,9 @@
                 (onClick)="prevMatch()"
                 data-testid="plugins-extra-packages-search-prev"
                 [attr.aria-label]="'plugins.extra-packages.search.prev' | dm">
-                <span class="material-symbols-rounded w-6 text-center">keyboard_arrow_up</span>
+                <span class="material-symbols-rounded w-6 text-center" aria-hidden="true">
+                    keyboard_arrow_up
+                </span>
             </p-button>
             <p-button
                 [rounded]="true"
@@ -44,7 +48,9 @@
                 (onClick)="nextMatch()"
                 data-testid="plugins-extra-packages-search-next"
                 [attr.aria-label]="'plugins.extra-packages.search.next' | dm">
-                <span class="material-symbols-rounded w-6 text-center">keyboard_arrow_down</span>
+                <span class="material-symbols-rounded w-6 text-center" aria-hidden="true">
+                    keyboard_arrow_down
+                </span>
             </p-button>
         }
     </div>

@@ -156,7 +156,9 @@
                                 [attr.aria-label]="'publishing-queue.copy-bundle-id' | dm"
                                 (onClick)="$event.stopPropagation(); copyToClipboard(row.bundleId)"
                                 data-testid="pq-bundles-bundle-id-copy">
-                                <span class="material-symbols-rounded text-base!">
+                                <span
+                                    class="material-symbols-rounded text-base!"
+                                    aria-hidden="true">
                                     content_copy
                                 </span>
                             </p-button>
@@ -232,7 +234,9 @@
                                 (onClick)="kebab.toggle($event)"
                                 [attr.aria-label]="'publishing-queue.row.actions' | dm"
                                 data-testid="pq-bundles-kebab-btn">
-                                <span class="material-symbols-rounded w-6 text-center">
+                                <span
+                                    class="material-symbols-rounded w-6 text-center"
+                                    aria-hidden="true">
                                     more_vert
                                 </span>
                             </p-button>

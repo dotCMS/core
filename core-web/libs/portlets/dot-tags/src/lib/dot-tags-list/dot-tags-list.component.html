@@ -2,7 +2,9 @@
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon>
-                <span class="material-symbols-rounded text-xl! leading-none">search</span>
+                <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+                    search
+                </span>
             </p-inputIcon>
             <input
                 pInputText
@@ -34,7 +36,7 @@
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="tag-delete-btn">
-                    <span class="material-symbols-rounded">delete</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
                     {{ 'tags.delete' | dm }}
                 </p-button>
                 <p-splitButton
@@ -44,12 +46,16 @@
                     data-testid="tag-export-split-btn">
                     <ng-template #content>
                         <span class="inline-flex items-center gap-2">
-                            <span class="material-symbols-rounded">download</span>
+                            <span class="material-symbols-rounded" aria-hidden="true">
+                                download
+                            </span>
                             <span>{{ 'tags.export' | dm }}</span>
                         </span>
                     </ng-template>
                     <ng-template #dropdownicon>
-                        <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                        <span class="material-symbols-rounded" aria-hidden="true">
+                            keyboard_arrow_down
+                        </span>
                     </ng-template>
                 </p-splitButton>
             }
@@ -59,7 +65,9 @@
                 [model]="addTagMenuItems"
                 data-testid="tag-add-split-btn">
                 <ng-template #dropdownicon>
-                    <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                    <span class="material-symbols-rounded" aria-hidden="true">
+                        keyboard_arrow_down
+                    </span>
                 </ng-template>
             </p-splitButton>
         </div>

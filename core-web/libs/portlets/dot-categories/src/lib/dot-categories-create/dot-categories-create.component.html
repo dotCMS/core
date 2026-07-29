@@ -6,7 +6,7 @@
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="category-parent-hint">
             <ng-template #icon>
-                <span class="material-symbols-rounded">info</span>
+                <span class="material-symbols-rounded" aria-hidden="true">info</span>
             </ng-template>
             {{ 'categories.form.parent.hint' | dm: [parentName] }}
         </p-message>

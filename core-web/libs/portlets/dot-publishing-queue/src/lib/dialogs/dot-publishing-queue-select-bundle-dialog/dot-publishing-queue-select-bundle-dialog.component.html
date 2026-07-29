@@ -20,7 +20,9 @@
                         [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
                         (onClick)="onBackToList()"
                         data-testid="pq-select-bundle-back-btn">
-                        <span class="material-symbols-rounded w-6 text-center">arrow_back</span>
+                        <span class="material-symbols-rounded w-6 text-center" aria-hidden="true">
+                            arrow_back
+                        </span>
                     </p-button>
                     <h2
                         class="m-0 text-xl font-bold text-color"
@@ -51,7 +53,9 @@
                         (onClick)="onBackToList()"
                         [disabled]="$isDownloading()"
                         data-testid="pq-select-bundle-download-back-btn">
-                        <span class="material-symbols-rounded w-6 text-center">arrow_back</span>
+                        <span class="material-symbols-rounded w-6 text-center" aria-hidden="true">
+                            arrow_back
+                        </span>
                     </p-button>
                     <h2
                         class="m-0 text-xl font-bold text-color"
@@ -68,7 +72,7 @@
             [attr.aria-label]="'publishing-queue.close' | dm"
             (onClick)="closeDialog()"
             data-testid="pq-select-bundle-close-btn">
-            <span class="material-symbols-rounded w-6 text-center">close</span>
+            <span class="material-symbols-rounded w-6 text-center" aria-hidden="true">close</span>
         </p-button>
     </div>
 
@@ -82,7 +86,9 @@
                     <div class="px-4 py-3">
                         <p-iconField iconPosition="left">
                             <p-inputIcon>
-                                <span class="material-symbols-rounded text-xl! leading-none!">
+                                <span
+                                    class="material-symbols-rounded text-xl! leading-none!"
+                                    aria-hidden="true">
                                     search
                                 </span>
                             </p-inputIcon>
@@ -237,7 +243,9 @@
                             (onClick)="onBundlesPagePrev()"
                             [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
                             data-testid="pq-select-bundle-prev">
-                            <span class="material-symbols-rounded w-6 text-center">
+                            <span
+                                class="material-symbols-rounded w-6 text-center"
+                                aria-hidden="true">
                                 keyboard_arrow_left
                             </span>
                         </p-button>
@@ -250,7 +258,9 @@
                             (onClick)="onBundlesPageNext()"
                             [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
                             data-testid="pq-select-bundle-next">
-                            <span class="material-symbols-rounded w-6 text-center">
+                            <span
+                                class="material-symbols-rounded w-6 text-center"
+                                aria-hidden="true">
                                 keyboard_arrow_right
                             </span>
                         </p-button>
@@ -341,7 +351,8 @@
                                                 "
                                                 data-testid="pq-select-bundle-asset-delete">
                                                 <span
-                                                    class="material-symbols-rounded w-6 text-center">
+                                                    class="material-symbols-rounded w-6 text-center"
+                                                    aria-hidden="true">
                                                     delete
                                                 </span>
                                             </p-button>
@@ -386,7 +397,9 @@
                             (onClick)="onAssetsPagePrev()"
                             [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
                             data-testid="pq-select-bundle-asset-prev">
-                            <span class="material-symbols-rounded w-6 text-center">
+                            <span
+                                class="material-symbols-rounded w-6 text-center"
+                                aria-hidden="true">
                                 keyboard_arrow_left
                             </span>
                         </p-button>
@@ -399,7 +412,9 @@
                             (onClick)="onAssetsPageNext()"
                             [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
                             data-testid="pq-select-bundle-asset-next">
-                            <span class="material-symbols-rounded w-6 text-center">
+                            <span
+                                class="material-symbols-rounded w-6 text-center"
+                                aria-hidden="true">
                                 keyboard_arrow_right
                             </span>
                         </p-button>
