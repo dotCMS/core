@@ -32,7 +32,7 @@
                 [text]="true"
                 (onClick)="store.refresh()"
                 [pt]="{ root: { 'data-testid': 'pq-refresh-btn' } }">
-                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+                <span class="material-symbols-rounded text-xl!" aria-hidden="true">refresh</span>
                 {{ 'publishing-queue.refresh' | dm }}
             </p-button>
             @if ($hasBulkActions()) {
