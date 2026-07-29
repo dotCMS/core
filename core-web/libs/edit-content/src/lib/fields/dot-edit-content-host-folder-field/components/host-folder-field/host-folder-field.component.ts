@@ -129,6 +129,16 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     };
 
     /**
+     * PrimeNG tooltip text uses `white-space: pre-line` and `word-break: break-word`, and the
+     * root caps width at `--p-tooltip-max-width` (12.5rem). Inline overrides keep site hostnames
+     * on one line; Tailwind classes on tooltipStyleClass do not reach `.p-tooltip-text`.
+     */
+    protected readonly siteTooltipPt = {
+        root: { style: { maxWidth: 'none' } },
+        text: { style: { whiteSpace: 'nowrap', wordBreak: 'normal' } }
+    };
+
+    /**
      * Removes PrimeNG's default tree padding; the folders section manages its own spacing.
      * Search results use top-aligned icons and roomier row spacing to match the design.
      * PrimeNG sets node gap/padding via CSS variables (`--p-tree-node-gap`, etc.) which beat

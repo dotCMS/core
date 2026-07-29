@@ -156,7 +156,8 @@
                                     [class.hover:bg-gray-100]="!isSelectedSite"
                                     [pTooltip]="site.label"
                                     [tooltipDisabled]="site.label.length <= 10"
-                                    tooltipPosition="top"
+                                    tooltipPosition="right"
+                                    [pTooltipPT]="siteTooltipPt"
                                     [showDelay]="800"
                                     data-testid="host-folder-site-item"
                                     (click)="onSiteSelect(site)">
