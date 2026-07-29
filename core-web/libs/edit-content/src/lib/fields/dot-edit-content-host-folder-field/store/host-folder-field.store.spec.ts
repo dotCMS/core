@@ -1761,6 +1761,68 @@ describe('HostFolderFiledStore', () => {
 
             expect(store.showFolderSearch()).toBe(true);
         });
+
+        it('should stay true while folder search is loading with an active search term', fakeAsync(() => {
+            const search$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.searchFolders.mockReturnValue(search$.asObservable());
+
+            store.selectSite(site);
+            store.openOverlay();
+            store.search('ab');
+            tick(300);
+
+            expect(store.searchLoading()).toBe(true);
+            expect(store.showFoldersPanelLoading()).toBe(true);
+            expect(store.showFolderSearch()).toBe(true);
+
+            search$.next({ folders: [], pagination: mockPagination });
+            search$.complete();
+            tick();
+        }));
+    });
+
+    describe('sitesSearchLoading', () => {
+        beforeEach(() => {
+            mockSitesPage(service, TREE_SELECT_SITES_MOCK);
+            store.loadSites({ path: null, isRequired: false });
+            store.openOverlay();
+        });
+
+        it('should be false during the initial sites catalog load', () => {
+            patchState(unprotected(store), {
+                siteSearchTerm: '',
+                sitesPagination: {
+                    page: 1,
+                    hasMore: false,
+                    loading: true,
+                    totalEntries: 0
+                }
+            });
+
+            expect(store.sitesSearchLoading()).toBe(false);
+        });
+
+        it('should be true while a sites search request is in flight', fakeAsync(() => {
+            const sites$ = new Subject<{
+                sites: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.getSitesPage.mockReturnValue(sites$.asObservable());
+
+            store.filterSites('demo');
+            tick(300);
+
+            expect(store.sitesSearchLoading()).toBe(true);
+
+            sites$.next(createSitesPageResponse([TREE_SELECT_SITES_MOCK[0]]));
+            sites$.complete();
+            tick();
+
+            expect(store.sitesSearchLoading()).toBe(false);
+        }));
     });
 
     describe('filterSites', () => {
@@ -1777,7 +1839,7 @@ describe('HostFolderFiledStore', () => {
             tick(100);
 
             expect(store.sites()).toEqual(initialSites);
-            expect(store.siteSearchTerm()).toBe('');
+            expect(store.siteSearchTerm()).toBe('demo');
         }));
 
         it('should debounce and query the sites API with the search term', fakeAsync(() => {
@@ -1785,7 +1847,7 @@ describe('HostFolderFiledStore', () => {
             service.getSitesPage.mockClear();
 
             store.filterSites('demo');
-            expect(store.siteSearchTerm()).toBe('');
+            expect(store.siteSearchTerm()).toBe('demo');
 
             tick(300);
 

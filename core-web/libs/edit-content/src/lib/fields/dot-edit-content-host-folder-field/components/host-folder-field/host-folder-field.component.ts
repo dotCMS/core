@@ -7,6 +7,7 @@ import {
     Component,
     computed,
     DestroyRef,
+    ElementRef,
     forwardRef,
     inject,
     Injector,
@@ -28,6 +29,8 @@ import { Tree, TreeModule } from 'primeng/tree';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
+
+import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
 
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { HostFolderFiledStore } from '../../store/host-folder-field.store';
@@ -84,6 +87,11 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * committing a selection.
      */
     $overlay = viewChild<Popover>(Popover);
+    /**
+     * References to the overlay search inputs, used to restore focus after clearing.
+     */
+    $sitesSearchInput = viewChild<ElementRef<HTMLInputElement>>('sitesSearchInput');
+    $folderSearchInput = viewChild<ElementRef<HTMLInputElement>>('folderSearchInput');
     /**
      * Reference to the folders tree, used to scroll the selected node into view when the
      * overlay opens.
@@ -168,6 +176,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     readonly #injector = inject(Injector);
     readonly #clipboard = inject(Clipboard);
     #copyResetTimer: ReturnType<typeof setTimeout> | undefined;
+    #overlayTrigger: HTMLElement | null = null;
 
     constructor() {
         super();
@@ -186,17 +195,23 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
         }
 
         const trigger = event.currentTarget as HTMLElement;
+        this.#overlayTrigger = trigger;
         this.$overlayWidth.set(`${trigger.offsetWidth}px`);
         this.$overlay()?.toggle(event, trigger);
     }
 
     /**
-     * Opens the overlay and scrolls the currently selected folder into view once the tree
-     * has finished rendering (and loading, if the initial folders request is still pending).
+     * Opens the overlay, left-aligns it to the trigger, and scrolls the selected folder into view.
      */
     onOverlayShow(): void {
         this.store.openOverlay();
-        afterNextRender(() => this.#scrollSelectedFolderIntoView(), { injector: this.#injector });
+        afterNextRender(
+            () => {
+                this.#alignPopoverToTrigger();
+                this.#scrollSelectedFolderIntoView();
+            },
+            { injector: this.#injector }
+        );
     }
 
     /**
@@ -233,6 +248,22 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     onSiteSearchInput(event: Event): void {
         this.store.filterSites(this.#readInputValue(event));
+    }
+
+    /**
+     * Clears the sites search and restores focus to the input.
+     */
+    clearSitesSearch(): void {
+        this.store.filterSites('');
+        this.#focusSearchInput(this.$sitesSearchInput());
+    }
+
+    /**
+     * Clears the folders search and restores focus to the input.
+     */
+    clearFolderSearch(): void {
+        this.store.search('');
+        this.#focusSearchInput(this.$folderSearchInput());
     }
 
     /**
@@ -280,6 +311,37 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     #readInputValue(event: Event): string {
         return (event.target as HTMLInputElement).value;
+    }
+
+    #focusSearchInput(inputRef: ElementRef<HTMLInputElement> | undefined): void {
+        afterNextRender(() => inputRef?.nativeElement.focus(), { injector: this.#injector });
+    }
+
+    #alignPopoverToTrigger(): void {
+        const trigger = this.#overlayTrigger;
+        const container = this.#resolvePopoverContainer();
+
+        if (!trigger || !container) {
+            return;
+        }
+
+        alignOverlayLeftToTrigger(trigger, container);
+    }
+
+    #resolvePopoverContainer(): HTMLElement | null {
+        const popover = this.$overlay() as Popover & {
+            container?: HTMLElement | { nativeElement: HTMLElement };
+        };
+
+        if (!popover?.container) {
+            const overlays = document.body.querySelectorAll('.p-popover');
+
+            return overlays.length > 0 ? (overlays[overlays.length - 1] as HTMLElement) : null;
+        }
+
+        return popover.container instanceof HTMLElement
+            ? popover.container
+            : popover.container.nativeElement;
     }
 
     /**

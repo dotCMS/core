@@ -66,6 +66,7 @@
     (onHide)="store.closeOverlay()"
     (onShow)="onOverlayShow()"
     [dismissable]="true"
+    [focusOnShow]="false"
     [style]="{ width: $overlayWidth(), minWidth: '40rem' }"
     appendTo="body"
     [pt]="popoverPt"
@@ -81,6 +82,7 @@
                     <p-iconField class="mb-3 w-full shrink-0">
                         <p-inputIcon class="pi pi-search text-sm text-surface-500" />
                         <input
+                            #sitesSearchInput
                             pInputText
                             size="large"
                             type="text"
@@ -91,6 +93,16 @@
                                 'dot.file.field.host.folder.sites.search.placeholder' | dm
                             "
                             (input)="onSiteSearchInput($event)" />
+                        @if (store.sitesSearchLoading()) {
+                            <p-inputIcon
+                                class="pi pi-spinner pi-spin text-sm text-surface-500"
+                                data-testid="host-folder-sites-search-loading" />
+                        } @else if (store.siteSearchTerm()) {
+                            <p-inputIcon
+                                class="pi pi-times cursor-pointer text-xs text-surface-500 hover:text-surface-800"
+                                data-testid="host-folder-sites-search-clear"
+                                (click)="clearSitesSearch()" />
+                        }
                     </p-iconField>
                 } @else {
                     <span class="block shrink-0 pb-3 text-xs font-semibold text-gray-600 uppercase">
@@ -174,6 +186,7 @@
                     <p-iconField class="w-full shrink-0">
                         <p-inputIcon class="pi pi-search text-sm text-surface-500" />
                         <input
+                            #folderSearchInput
                             pInputText
                             size="large"
                             type="text"
@@ -182,6 +195,16 @@
                             [value]="store.searchTerm()"
                             [placeholder]="'dot.file.field.host.folder.search.placeholder' | dm"
                             (input)="onSearchInput($event)" />
+                        @if (store.searchLoading()) {
+                            <p-inputIcon
+                                class="pi pi-spinner pi-spin text-sm text-surface-500"
+                                data-testid="host-folder-search-loading" />
+                        } @else if (store.searchTerm()) {
+                            <p-inputIcon
+                                class="pi pi-times cursor-pointer text-xs text-surface-500 hover:text-surface-800"
+                                data-testid="host-folder-search-clear"
+                                (click)="clearFolderSearch()" />
+                        }
                     </p-iconField>
                 }
 
