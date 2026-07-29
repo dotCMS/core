@@ -1,5 +1,6 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@page import="com.dotcms.content.index.IndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexTag"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -44,7 +45,13 @@ List<String> indices=ssapi.listIndices();
 List<String> closedIndices=ssapi.listClosedIndices();
 
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
-Map<String, String> alias = esapi.getIndexAlias(indexInfo.keySet().toArray(new String[indexInfo.size()]));
+// Site-search .os-aware alias resolution (issue #36360): resolve through the site-search API and
+// reverse (alias->index) into index->alias for per-row display. The content-index router (esapi)
+// misses site-search aliases in Phases 2/3 because it queries OpenSearch without the .os tag.
+Map<String, String> alias = new java.util.HashMap<>();
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMap().entrySet()) {
+	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
+}
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
@@ -107,8 +114,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		</tr>
 	</thead>
 	<%for(String x : indices){%>
-		<%ClusterIndexHealth health = map.get(x); %>
-		<%IndexStats status = indexInfo.get(x); %>
+		<%// .os-aware lookup (issue #36360): OS keys getIndicesStats/getClusterHealth WITH the .os tag,
+		  // but x is the logical (bare) name from listIndices(); fall back to the .os-tagged key so
+		  // OS-backed indices (Phases 2/3) still show Count/Shards/Replicas/Size/Health. %>
+		<%ClusterIndexHealth health = map.get(x); if (health == null) { health = map.get(IndexTag.OS.tag(x)); } %>
+		<%IndexStats status = indexInfo.get(x); if (status == null) { status = indexInfo.get(IndexTag.OS.tag(x)); } %>
 
 		<%boolean active =x.equals(info.getSiteSearch());%>
 		<%	Date d = null;

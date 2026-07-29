@@ -120,6 +120,12 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         return indices;
     }
 
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        // ES physical names never carry the .os tag, so the logical index list resolves directly.
+        return indexApi.getAliasToIndexMap(listIndices());
+    }
+
     /**
      * Set the default site search index to the specified position of the arraylist
      */

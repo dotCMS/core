@@ -165,6 +165,18 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         return indices;
     }
 
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        // listIndices() returns logical (.os-stripped) names; re-tag with .os so the alias lookup hits
+        // the physical OpenSearch indices, then strip the .os back off the resolved index names so the
+        // returned map stays purely logical — no .os leaks past the site-search API (issue #36360).
+        // Mirrors the re-tag-before-lookup pattern already used by resolveIndexOrAlias.
+        return indexApi.getAliasToIndexMap(
+                        listIndices().stream().map(OSSiteSearchAPI::osTagged).collect(Collectors.toList()))
+                .entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> IndexTag.strip(e.getValue())));
+    }
+
     /**
      * Moves the active (default) site-search index to {@code indexPosition} of the list, mirroring
      * {@link ESSiteSearchAPI} but resolving the default from {@link VersionedIndicesAPI}.

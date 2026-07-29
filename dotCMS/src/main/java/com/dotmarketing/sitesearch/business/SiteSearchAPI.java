@@ -25,6 +25,18 @@ public interface SiteSearchAPI {
 	List<String> listIndices();
 
 	/**
+	 * Resolves site-search aliases to their backing index names, phase-aware and OpenSearch
+	 * {@code .os}-aware. Keys (alias) and values (index) are both logical names; the {@code .os}
+	 * tag is applied only internally when the active phase reads from OpenSearch, so callers never
+	 * handle it. Use this instead of resolving aliases through the content-index router
+	 * ({@code IndexAPI#getAliasToIndexMap}), which is not site-search {@code .os}-aware and fails to
+	 * resolve site-search aliases in Phases 2/3 (issue #36360).
+	 *
+	 * @return map of logical alias name to logical index name
+	 */
+	Map<String, String> getAliasToIndexMap();
+
+	/**
 	 * This basically tells you if the index passed as parameter is the default site search index or not
 	 * @param indexName
 	 * @return

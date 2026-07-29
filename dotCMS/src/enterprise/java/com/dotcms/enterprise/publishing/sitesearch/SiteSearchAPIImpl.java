@@ -123,6 +123,13 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
         return new ArrayList<>(merged);
     }
 
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        // Phase-aware read: each engine resolves aliases against its own physical names (ES plain,
+        // OS .os-tagged), so the returned logical alias -> index map is correct in every phase.
+        return router.read(SiteSearchAPI::getAliasToIndexMap);
+    }
+
     // -------------------------------------------------------------------------
     // Reads — read provider
     // -------------------------------------------------------------------------
