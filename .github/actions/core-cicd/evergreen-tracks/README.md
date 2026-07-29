@@ -29,6 +29,11 @@ tags plus `<version>_tainted` / `<track>_hold` markers).
   registry-mutation lock, so a pending approval never blocks the release from moving
   `latest`.
 
+## Operator procedures
+
+See [RUNBOOK.md](RUNBOOK.md) for tainting a release, holding a track, and holding a single
+customer environment.
+
 ## Run locally (dry-run is the default)
 
     uv run evergreen-tracks promote --repo dotcms/dotcms-test

@@ -2011,6 +2011,172 @@
 					"response": []
 				},
 				{
+					"name": "Get ContentTypes without system param (system types included)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var json = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Default listing (no 'system' param) includes system Content Types\", function () {",
+									"    var list = json.entity;",
+									"    var systemCount = list.filter(function (ct) { return ct.system === true; }).length;",
+									"    pm.expect(systemCount, \"There must be at least one system Content Type in the default listing\").to.be.gte(1);",
+									"    // Persist the baseline for the system=false / system=true comparisons below.",
+									"    pm.collectionVariables.set(\"ctAllTotal\", json.pagination.totalEntries);",
+									"    pm.collectionVariables.set(\"ctSystemCount\", systemCount);",
+									"});",
+									"",
+									"pm.test(\"Total is coherent with the returned list\", function () {",
+									"    pm.expect(json.pagination.totalEntries).to.eql(json.entity.length);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?per_page=1000",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "1000"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ContentTypes with system=false (excludes system types)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var json = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No system Content Type is returned when system=false\", function () {",
+									"    var withSystem = json.entity.filter(function (ct) { return ct.system === true; });",
+									"    pm.expect(withSystem.length, \"system=false must exclude every system Content Type\").to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Total excludes the system types and stays coherent with the list\", function () {",
+									"    var allTotal = Number(pm.collectionVariables.get(\"ctAllTotal\"));",
+									"    var systemCount = Number(pm.collectionVariables.get(\"ctSystemCount\"));",
+									"    // The total no longer counts the excluded system types...",
+									"    pm.expect(json.pagination.totalEntries, \"Total must drop exactly the system types\").to.eql(allTotal - systemCount);",
+									"    // ...and it still matches the actual number of items returned (no client-side adjustment).",
+									"    pm.expect(json.pagination.totalEntries).to.eql(json.entity.length);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?per_page=1000&system=false",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "1000"
+								},
+								{
+									"key": "system",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ContentTypes with system=true (includes system types)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var json = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"system=true includes system Content Types and matches the default total\", function () {",
+									"    var systemCount = json.entity.filter(function (ct) { return ct.system === true; }).length;",
+									"    pm.expect(systemCount, \"system=true must include system Content Types\").to.be.gte(1);",
+									"    var allTotal = Number(pm.collectionVariables.get(\"ctAllTotal\"));",
+									"    pm.expect(json.pagination.totalEntries, \"system=true total must equal the default (no param) total\").to.eql(allTotal);",
+									"});",
+									"",
+									"pm.test(\"Total is coherent with the returned list\", function () {",
+									"    pm.expect(json.pagination.totalEntries).to.eql(json.entity.length);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?per_page=1000&system=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "1000"
+								},
+								{
+									"key": "system",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get ContentTypes sending not existing hostID",
 					"event": [
 						{

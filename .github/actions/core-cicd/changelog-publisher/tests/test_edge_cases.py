@@ -30,7 +30,7 @@ def _publish(client, version, **overrides):
     kwargs = dict(
         release_notes="**dotCMS %s** notes\n" % version,
         docker_image=f"dotcms/dotcms:{version}_abc1234",
-        released_date="2026-07-16",
+        eol_date="2027-01-01", released_date="2026-07-16",
         apply=True,
     )
     kwargs.update(overrides)
@@ -96,7 +96,7 @@ def test_older_line_patch_carries_todays_date_and_touches_only_its_version():
     _add_fire()
     client = CorpsitesClient(token="t")
 
-    result = _publish(client, "26.05.27-04", released_date="2026-07-16")
+    result = _publish(client, "26.05.27-04", eol_date="2027-01-01", released_date="2026-07-16")
 
     assert result.status == "created"
     body = _fire_bodies()[0]
