@@ -120,9 +120,13 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         return indices;
     }
 
+    /**
+     * Elasticsearch adapter for the vendor-neutral alias handle. ES physical names never carry the
+     * {@code .os} tag, so the logical index list resolves directly — no re-tag/strip round-trip is
+     * needed (contrast {@code OSSiteSearchAPI#getAliasToIndexMap}, which must apply {@code .os}).
+     */
     @Override
     public Map<String, String> getAliasToIndexMap() {
-        // ES physical names never carry the .os tag, so the logical index list resolves directly.
         return indexApi.getAliasToIndexMap(listIndices());
     }
 

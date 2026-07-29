@@ -25,14 +25,48 @@ public interface SiteSearchAPI {
 	List<String> listIndices();
 
 	/**
-	 * Resolves site-search aliases to their backing index names, phase-aware and OpenSearch
-	 * {@code .os}-aware. Keys (alias) and values (index) are both logical names; the {@code .os}
-	 * tag is applied only internally when the active phase reads from OpenSearch, so callers never
-	 * handle it. Use this instead of resolving aliases through the content-index router
-	 * ({@code IndexAPI#getAliasToIndexMap}), which is not site-search {@code .os}-aware and fails to
-	 * resolve site-search aliases in Phases 2/3 (issue #36360).
+	 * Resolves site-search aliases to their backing index names — phase-aware and OpenSearch
+	 * {@code .os}-aware. Keys (alias) and values (index) are both <strong>logical</strong> names.
 	 *
-	 * @return map of logical alias name to logical index name
+	 * <h4>Design decision — why this lives on {@code SiteSearchAPI}, not the content-index router</h4>
+	 * A Site Search index is <em>one logical index mirrored across both engines</em>, so this API's
+	 * surface speaks in logical (untagged) names — a vendor-neutral handle — and each engine adapter
+	 * translates that handle to its physical form at the boundary (ES uses it verbatim; OpenSearch
+	 * appends {@code .os}). Alias resolution therefore MUST live here: the OpenSearch adapter knows to
+	 * re-tag the lookup with {@code .os}, whereas the content-index router
+	 * ({@code IndexAPI#getAliasToIndexMap}) builds the OS physical name <em>without</em> {@code .os}
+	 * and, in Phases&nbsp;2/3 (OS reads), queries a name that does not exist — silently returning
+	 * nothing ("Index Alias not found"). Routing site-search alias resolution through the content
+	 * router was the root cause fixed in issue #36360; callers must use this method and never the
+	 * content router with a logical Site Search name.
+	 *
+	 * <p>The {@code .os} tag never crosses this boundary: it is applied only inside the OpenSearch
+	 * adapter for the lookup and stripped back off the resolved value, so both the alias keys and the
+	 * index values returned here are logical and directly comparable against {@link #listIndices()}
+	 * output.</p>
+	 *
+	 * <h4>Why dual-write phases cannot collide the map</h4>
+	 * In Phases&nbsp;1/2 the ES twin ({@code xxx}) and the OpenSearch twin ({@code xxx.os}) carry the
+	 * same alias, so a naive ES&cup;OS <em>merge</em> would map one alias key to two different index
+	 * values and silently drop one. This method avoids that by resolving against a <strong>single
+	 * engine — the current phase's read provider</strong> (ES in Phases&nbsp;0/1, OS in
+	 * Phases&nbsp;2/3), never a union. The two twins never land in the same map: Phase&nbsp;1 returns
+	 * {@code {lol=xxx}} from ES; Phase&nbsp;2 returns {@code {lol=xxx}} from OS ({@code xxx.os} with the
+	 * tag stripped). Because both twins share the same logical base, a synchronized cluster resolves
+	 * the alias to the same logical name in every phase.
+	 *
+	 * <p>Two residual edges, both benign here:</p>
+	 * <ol>
+	 *   <li><strong>Multi-index alias within one engine</strong> (one alias pointing at two indices on
+	 *       the same provider) would lose one entry to the reverse-map — but that state is prevented
+	 *       upstream by the {@code createAlias} existence check (issue #36360). A healthy cluster has
+	 *       one index per alias per engine.</li>
+	 *   <li><strong>Mirror desync</strong> (the ES and OS aliases point at <em>different</em> logical
+	 *       indices) makes the result diverge by phase — which is correct, since you resolve against
+	 *       the engine you read from; it is a mirror-reconciliation concern, not a collision.</li>
+	 * </ol>
+	 *
+	 * @return map of logical alias name to logical index name; empty when nothing resolves
 	 */
 	Map<String, String> getAliasToIndexMap();
 

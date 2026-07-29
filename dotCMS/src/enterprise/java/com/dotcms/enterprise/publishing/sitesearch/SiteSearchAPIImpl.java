@@ -123,10 +123,14 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
         return new ArrayList<>(merged);
     }
 
+    /**
+     * Phase-aware alias resolution. Delegated to the current read provider (ES in Phases 0/1, OS in
+     * Phases 2/3, with the Phase-2 ES fallback of {@link PhaseRouter#read}) — each engine resolves
+     * aliases against its own physical names (ES plain, OS {@code .os}-tagged) and returns logical
+     * names, so the map is correct in every phase without this router touching the {@code .os} tag.
+     */
     @Override
     public Map<String, String> getAliasToIndexMap() {
-        // Phase-aware read: each engine resolves aliases against its own physical names (ES plain,
-        // OS .os-tagged), so the returned logical alias -> index map is correct in every phase.
         return router.read(SiteSearchAPI::getAliasToIndexMap);
     }
 
