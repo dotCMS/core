@@ -424,8 +424,9 @@ export const HostFolderFiledStore = signalStore(
                         sitesCatalogTotal() > SITE_SEARCH_THRESHOLD
                 ),
                 /**
-                 * Whether the folders panel should show the search input. Hidden while the panel
-                 * loading state is shown and when the selected site has no folders after load.
+                 * Whether the folders panel should show the search input. Hidden during the initial
+                 * folders load (unless a search term is already set) and when the selected site has
+                 * no folders after load. Stays visible while a search request is in flight.
                  */
                 showFolderSearch: computed(() => {
                     if (searchTerm().length > 0) {

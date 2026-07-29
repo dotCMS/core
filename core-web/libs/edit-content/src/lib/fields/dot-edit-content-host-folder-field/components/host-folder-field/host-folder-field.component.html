@@ -99,9 +99,12 @@
                                 data-testid="host-folder-sites-search-loading" />
                         } @else if (store.siteSearchTerm()) {
                             <p-inputIcon
-                                class="pi pi-times cursor-pointer text-xs text-surface-500 hover:text-surface-800"
+                                class="cursor-pointer text-xs text-surface-500 hover:text-surface-800"
+                                [attr.aria-label]="'edit.content.sidebar.activities.clear' | dm"
                                 data-testid="host-folder-sites-search-clear"
-                                (click)="clearSitesSearch()" />
+                                (click)="clearSitesSearch()">
+                                <i class="pi pi-times"></i>
+                            </p-inputIcon>
                         }
                     </p-iconField>
                 } @else {
@@ -202,9 +205,12 @@
                                 data-testid="host-folder-search-loading" />
                         } @else if (store.searchTerm()) {
                             <p-inputIcon
-                                class="pi pi-times cursor-pointer text-xs text-surface-500 hover:text-surface-800"
+                                class="cursor-pointer text-xs text-surface-500 hover:text-surface-800"
+                                [attr.aria-label]="'edit.content.sidebar.activities.clear' | dm"
                                 data-testid="host-folder-search-clear"
-                                (click)="clearFolderSearch()" />
+                                (click)="clearFolderSearch()">
+                                <i class="pi pi-times"></i>
+                            </p-inputIcon>
                         }
                     </p-iconField>
                 }
