@@ -104,6 +104,7 @@ public final class TiptapMarkdown {
 
     private static final Parser PARSER = Parser.builder().extensions(EXTENSIONS).build();
 
+    /** Static utility; not instantiable. */
     private TiptapMarkdown() { }
 
     // ---------------------------------------------------------------------
@@ -238,6 +239,26 @@ public final class TiptapMarkdown {
     /** Asset node types whose {@code attrs.data} is rehydrated from identifier+languageId on read. */
     private static final Set<String> ASSET_NODE_TYPES = Set.of("dotContent", "dotImage", "dotVideo");
 
+    /** {@code dotImage} attrs that {@code ![alt](src "title")} cannot carry, so require a fence. */
+    private static final String[] DECORATED_IMAGE_ATTRS = {"href", "target", "textWrap", "textAlign"};
+
+    /**
+     * True when a {@code dotImage} is more than plain Markdown can express: it carries a dotCMS
+     * asset binding ({@code attrs.data.identifier}) or a link/layout decoration. Such an image
+     * is emitted as a {@code dotcms-image} fence and counts as a rich block in the overwrite diff.
+     */
+    private static boolean isRichDotImage(final JsonNode attrs) {
+        if (attrs.path("data").hasNonNull("identifier")) {
+            return true;
+        }
+        for (final String key : DECORATED_IMAGE_ATTRS) {
+            if (attrs.path(key).isTextual() && !attrs.path(key).asText().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * True when every block in the document is Markdown-representable (see
      * {@link #MARKDOWN_NODE_TYPES}). Used to detect a Markdown overwrite that would
@@ -262,6 +283,7 @@ public final class TiptapMarkdown {
         }
     }
 
+    /** Recursive worker for {@link #isMarkdownRepresentable(String)}. */
     private static boolean isMarkdownRepresentable(final JsonNode node) {
         if (node == null) {
             return true;
@@ -286,6 +308,7 @@ public final class TiptapMarkdown {
         return true;
     }
 
+    /** True when a table cell spans more than one column or row (no pipe-table form). */
     private static boolean hasMergedSpan(final JsonNode cell) {
         final JsonNode attrs = cell.path("attrs");
         return attrs.path("colspan").asInt(1) > 1 || attrs.path("rowspan").asInt(1) > 1;
@@ -328,6 +351,7 @@ public final class TiptapMarkdown {
         }
     }
 
+    /** Walks {@code node} tallying each rich block by its identity signature into {@code sigs}. */
     private static void collectRichBlockSignatures(final JsonNode node, final Map<String, Integer> sigs) {
         if (node == null || !node.isObject()) {
             return;
@@ -336,8 +360,8 @@ public final class TiptapMarkdown {
         String sig = null;
         if (!type.isEmpty() && !"text".equals(type) && !MARKDOWN_NODE_TYPES.contains(type)) {
             sig = describeRichNode(type, node);
-        } else if ("dotImage".equals(type) && node.path("attrs").path("data").hasNonNull("identifier")) {
-            // A plain dotImage is markdown-representable; one bound to a dotCMS asset is not.
+        } else if ("dotImage".equals(type) && isRichDotImage(node.path("attrs"))) {
+            // A plain dotImage round-trips as ![alt](src); a bound or decorated one needs a fence.
             sig = describeRichNode(type, node);
         } else if ("youtube".equals(type)) {
             // Representable (a plain link keeps the reference), but still an embed the caller
@@ -361,6 +385,7 @@ public final class TiptapMarkdown {
         }
     }
 
+    /** Identity signature for a rich node: type plus identifier, else src, else bare type. */
     private static String describeRichNode(final String type, final JsonNode node) {
         final JsonNode attrs = node.path("attrs");
         final String identifier = attrs.path("data").path("identifier").asText("");
@@ -371,6 +396,7 @@ public final class TiptapMarkdown {
         return src.isEmpty() ? type : type + " " + src;
     }
 
+    /** True when any cell in the table carries a merged span. */
     private static boolean containsMergedCells(final JsonNode table) {
         for (final JsonNode row : table.path("content")) {
             for (final JsonNode cell : row.path("content")) {
@@ -411,6 +437,7 @@ public final class TiptapMarkdown {
         /** Guards the verbatim-payload validators against pathologically nested documents. */
         static final int MAX_NODE_DEPTH = 64;
 
+        /** Static helper; not instantiable. */
         private DotcmsFences() { }
 
         /**
@@ -446,6 +473,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** {@code dotcms-content} → {@code dotContent}; requires {@code identifier}. */
         private static ObjectNode parseContent(final JsonNode payload) {
             final String identifier = requiredString(payload, "identifier");
             if (identifier == null) {
@@ -461,6 +489,7 @@ public final class TiptapMarkdown {
             return node;
         }
 
+        /** {@code dotcms-image} → {@code dotImage}; requires {@code identifier} or {@code src}. */
         private static ObjectNode parseImage(final JsonNode payload) {
             final String identifier = optionalString(payload, "identifier");
             final String src = optionalString(payload, "src");
@@ -485,6 +514,7 @@ public final class TiptapMarkdown {
             return node;
         }
 
+        /** {@code dotcms-video} → {@code dotVideo}; requires {@code identifier} or {@code src}. */
         private static ObjectNode parseVideo(final JsonNode payload) {
             final String identifier = optionalString(payload, "identifier");
             final String src = optionalString(payload, "src");
@@ -507,6 +537,7 @@ public final class TiptapMarkdown {
             return node;
         }
 
+        /** {@code dotcms-youtube} → {@code youtube}; requires {@code src}. */
         private static ObjectNode parseYoutube(final JsonNode payload) {
             final String src = requiredString(payload, "src");
             if (src == null) {
@@ -522,6 +553,7 @@ public final class TiptapMarkdown {
             return node;
         }
 
+        /** {@code dotcms-ai} → {@code aiContent}; requires a textual {@code content}. */
         private static ObjectNode parseAi(final JsonNode payload) {
             final JsonNode content = payload.get("content");
             if (content == null || !content.isTextual()) {
@@ -533,6 +565,7 @@ public final class TiptapMarkdown {
             return node;
         }
 
+        /** {@code dotcms-grid} → verbatim {@code gridBlock} with exactly two {@code gridColumn} children. */
         private static ObjectNode parseGrid(final JsonNode payload) {
             if (!"gridBlock".equals(payload.path("type").asText(""))) {
                 return null;
@@ -556,6 +589,7 @@ public final class TiptapMarkdown {
             return parseVerbatim(payload);
         }
 
+        /** {@code dotcms-node} → the payload stored as-is once {@link #isPlausibleNodeTree} passes. */
         private static ObjectNode parseVerbatim(final JsonNode payload) {
             if (!isPlausibleNodeTree(payload, 0)) {
                 return null;
@@ -606,6 +640,7 @@ public final class TiptapMarkdown {
             return true;
         }
 
+        /** Configured max fence-payload size in bytes (default 64KB). */
         static int payloadMaxBytes() {
             return Config.getIntProperty(PAYLOAD_MAX_BYTES_PROP, PAYLOAD_MAX_BYTES_DEFAULT);
         }
@@ -623,17 +658,20 @@ public final class TiptapMarkdown {
             return requiredString(payload, field);
         }
 
+        /** Int field value, or {@code fallback} when absent or non-integral. */
         private static int optionalInt(final JsonNode payload, final String field, final int fallback) {
             final JsonNode v = payload.get(field);
             return (v != null && v.canConvertToInt()) ? v.asInt() : fallback;
         }
 
+        /** Sets {@code key} on {@code attrs} only when {@code value} is non-null. */
         private static void putIfPresent(final ObjectNode attrs, final String key, final String value) {
             if (value != null) {
                 attrs.put(key, value);
             }
         }
 
+        /** Copies {@code key} from {@code payload} to {@code attrs} only when it is integral. */
         private static void putIntIfPresent(final ObjectNode attrs, final String key, final JsonNode payload) {
             final JsonNode v = payload.get(key);
             if (v != null && v.canConvertToInt()) {
@@ -641,6 +679,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** True when {@code node} is an array of exactly {@code expectedSize} numbers. */
         private static boolean isNumberArray(final JsonNode node, final int expectedSize) {
             if (!node.isArray() || node.size() != expectedSize) {
                 return false;
@@ -679,22 +718,26 @@ public final class TiptapMarkdown {
         /** Attrs from a {@code dotcms:attrs} comment, waiting to decorate the next block. */
         private ObjectNode pendingBlockAttrs;
 
+        /** Starts an empty {@code doc} node with its content array on the stack. */
         TiptapBuilder() {
             doc.put("type", "doc");
             contentStack.push(docContent);
         }
 
+        /** The built ProseMirror {@code doc}. */
         ObjectNode document() {
             return doc;
         }
 
         // ---- block nodes ------------------------------------------------
 
+        /** Root: walks the document's children. */
         @Override
         public void visit(final Document node) {
             visitChildren(node);
         }
 
+        /** {@code # …} → {@code heading} with its level. */
         @Override
         public void visit(final Heading node) {
             final ObjectNode n = newNode("heading");
@@ -706,6 +749,7 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /** {@code paragraph}. */
         @Override
         public void visit(final Paragraph node) {
             // Tiptap renders bare image-only paragraphs as an image block in some schemas, but
@@ -716,6 +760,7 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /** {@code > …} → {@code blockquote}. */
         @Override
         public void visit(final BlockQuote node) {
             final ObjectNode n = newNode("blockquote");
@@ -724,6 +769,7 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /** {@code - …} → {@code bulletList}. */
         @Override
         public void visit(final BulletList node) {
             final ObjectNode n = newNode("bulletList");
@@ -732,6 +778,7 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /** {@code 1. …} → {@code orderedList}, preserving its start number. */
         @Override
         public void visit(final OrderedList node) {
             final ObjectNode n = newNode("orderedList");
@@ -742,6 +789,7 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /** {@code listItem}. */
         @Override
         public void visit(final ListItem node) {
             final ObjectNode n = newNode("listItem");
@@ -750,6 +798,11 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /**
+         * A {@code dotcms-*} info string routes to the fence vocabulary (degrading to a plain
+         * code block on any validation failure); every other fence becomes a {@code codeBlock}
+         * whose info string is its language.
+         */
         @Override
         public void visit(final FencedCodeBlock node) {
             final String info = node.getInfo() == null ? "" : node.getInfo().strip();
@@ -765,7 +818,7 @@ public final class TiptapMarkdown {
             }
             final ObjectNode n = newNode("codeBlock");
             if (!info.isEmpty()) {
-                attrsOf(n).put("language", node.getInfo());
+                attrsOf(n).put("language", info);
             }
             final ArrayNode arr = n.putArray("content");
             if (!text.isEmpty()) {
@@ -773,6 +826,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Indented code → {@code codeBlock} (no language). */
         @Override
         public void visit(final IndentedCodeBlock node) {
             final ObjectNode n = newNode("codeBlock");
@@ -783,11 +837,16 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** {@code ---} → {@code horizontalRule}. */
         @Override
         public void visit(final ThematicBreak node) {
             newNode("horizontalRule");
         }
 
+        /**
+         * A {@code dotcms:attrs} comment becomes a pending decoration and emits nothing; any
+         * other HTML block is preserved as a paragraph of literal text.
+         */
         @Override
         public void visit(final HtmlBlock node) {
             final String literal = node.getLiteral() == null ? "" : node.getLiteral();
@@ -835,6 +894,7 @@ public final class TiptapMarkdown {
 
         // ---- inline nodes -----------------------------------------------
 
+        /** Inline text → a {@code text} node (empty tokens skipped). */
         @Override
         public void visit(final Text node) {
             // Commonmark occasionally produces empty Text tokens (e.g. after consuming a link
@@ -844,12 +904,14 @@ public final class TiptapMarkdown {
             currentContent().add(textNode(literal));
         }
 
+        /** Soft break → a space in inline content. */
         @Override
         public void visit(final SoftLineBreak node) {
             // ProseMirror represents soft breaks as a space inside inline content.
             currentContent().add(textNode(" "));
         }
 
+        /** {@code "  \n"} → {@code hardBreak}. */
         @Override
         public void visit(final HardLineBreak node) {
             final ObjectNode br = MAPPER.createObjectNode();
@@ -857,6 +919,7 @@ public final class TiptapMarkdown {
             currentContent().add(br);
         }
 
+        /** {@code *…*} → {@code italic} mark. */
         @Override
         public void visit(final Emphasis node) {
             pushMark("italic", null);
@@ -864,6 +927,7 @@ public final class TiptapMarkdown {
             markStack.pop();
         }
 
+        /** {@code **…**} → {@code bold} mark. */
         @Override
         public void visit(final StrongEmphasis node) {
             pushMark("bold", null);
@@ -871,6 +935,7 @@ public final class TiptapMarkdown {
             markStack.pop();
         }
 
+        /** {@code `…`} → text with a {@code code} mark. */
         @Override
         public void visit(final Code node) {
             // Inline code: emit a text node with a `code` mark — content not visited further.
@@ -885,6 +950,7 @@ public final class TiptapMarkdown {
             currentContent().add(txt);
         }
 
+        /** {@code [text](href "title")} → {@code link} mark. */
         @Override
         public void visit(final Link node) {
             final ObjectNode attrs = MAPPER.createObjectNode();
@@ -897,6 +963,7 @@ public final class TiptapMarkdown {
             markStack.pop();
         }
 
+        /** {@code ![alt](src "title")} → {@code dotImage} (src/alt/title only). */
         @Override
         public void visit(final Image node) {
             final ObjectNode img = MAPPER.createObjectNode();
@@ -920,6 +987,7 @@ public final class TiptapMarkdown {
 
         // ---- extensions: strikethrough, tables --------------------------
 
+        /** Strikethrough extension → {@code strike} mark. */
         @Override
         public void visit(final org.commonmark.node.CustomNode node) {
             if (node instanceof Strikethrough) {
@@ -931,6 +999,7 @@ public final class TiptapMarkdown {
             super.visit(node);
         }
 
+        /** Tables extension → {@code table}. */
         @Override
         public void visit(final org.commonmark.node.CustomBlock node) {
             if (node instanceof TableBlock) {
@@ -940,6 +1009,7 @@ public final class TiptapMarkdown {
             super.visit(node);
         }
 
+        /** Builds a {@code table} node from the GFM table's head and body rows. */
         private void emitTable(final TableBlock table) {
             final ObjectNode tableNode = newNode("table");
             pushChildrenInto(tableNode);
@@ -954,6 +1024,7 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /** Builds a {@code tableRow} from one GFM table row. */
         private void emitRow(final TableRow row, final boolean headerRow) {
             final ObjectNode rowNode = newNode("tableRow");
             pushChildrenInto(rowNode);
@@ -965,6 +1036,7 @@ public final class TiptapMarkdown {
             contentStack.pop();
         }
 
+        /** Builds a {@code tableHeader}/{@code tableCell} with default span attrs and a wrapping paragraph. */
         private void emitCell(final TableCell cell, final boolean headerRow) {
             final boolean asHeader = headerRow || cell.isHeader();
             final ObjectNode cellNode = newNode(asHeader ? "tableHeader" : "tableCell");
@@ -990,6 +1062,7 @@ public final class TiptapMarkdown {
 
         // ---- helpers ----------------------------------------------------
 
+        /** Creates a typed node, applies any pending decoration, and appends it to the current content. */
         private ObjectNode newNode(final String type) {
             final ObjectNode n = MAPPER.createObjectNode();
             n.put("type", type);
@@ -1008,6 +1081,7 @@ public final class TiptapMarkdown {
             currentContent().add(node);
         }
 
+        /** Merges a pending {@code dotcms:attrs} decoration into the node, then clears it. */
         private void applyPendingAttrs(final ObjectNode n) {
             if (pendingBlockAttrs != null) {
                 // Decoration keys go in first so structural attrs set afterwards (e.g. a
@@ -1023,14 +1097,17 @@ public final class TiptapMarkdown {
             return attrs instanceof ObjectNode ? (ObjectNode) attrs : n.putObject("attrs");
         }
 
+        /** The content array nodes are currently appended to. */
         private ArrayNode currentContent() {
             return contentStack.peek();
         }
 
+        /** Pushes the parent's new {@code content} array so children append into it. */
         private void pushChildrenInto(final ObjectNode parent) {
             contentStack.push(parent.putArray("content"));
         }
 
+        /** Pushes a mark (with optional attrs) onto the active-mark stack. */
         private void pushMark(final String type, final ObjectNode attrs) {
             final ObjectNode mark = MAPPER.createObjectNode();
             mark.put("type", type);
@@ -1040,6 +1117,7 @@ public final class TiptapMarkdown {
             markStack.push(mark);
         }
 
+        /** Builds a {@code text} node carrying a copy of the currently active marks. */
         private ObjectNode textNode(final String text) {
             final ObjectNode n = MAPPER.createObjectNode();
             n.put("type", "text");
@@ -1056,6 +1134,7 @@ public final class TiptapMarkdown {
             return n;
         }
 
+        /** Concatenated text and inline-code content of a node subtree. */
         private static String collectText(final Node n) {
             final StringBuilder sb = new StringBuilder();
             n.accept(new AbstractVisitor() {
@@ -1065,10 +1144,12 @@ public final class TiptapMarkdown {
             return sb.toString();
         }
 
+        /** Null for null/empty input, else the string unchanged. */
         private static String emptyToNull(final String s) {
             return (s == null || s.isEmpty()) ? null : s;
         }
 
+        /** The string with trailing CR/LF removed (empty for null). */
         private static String stripTrailingNewline(final String s) {
             if (s == null) return "";
             int end = s.length();
@@ -1092,14 +1173,17 @@ public final class TiptapMarkdown {
         /** Unknown node/mark types we've already logged this conversion — log once each. */
         private final Set<String> loggedUnknown = new HashSet<>();
 
+        /** Creates a writer emitting in the given {@link Flavor}. */
         MarkdownWriter(final Flavor flavor) {
             this.flavor = flavor;
         }
 
+        /** True when emitting the lossless ROUNDTRIP flavor. */
         private boolean roundtrip() {
             return flavor == Flavor.ROUNDTRIP;
         }
 
+        /** Logs an unsupported node/mark type once per conversion. */
         private void noteUnknown(final String kind, final String type) {
             if (type == null || type.isEmpty()) return;
             final String key = kind + ":" + type;
@@ -1109,6 +1193,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Returns the accumulated markdown with trailing blank lines collapsed. */
         String finish() {
             // collapse trailing blank lines down to a single newline
             while (out.length() > 0 && out.charAt(out.length() - 1) == '\n') {
@@ -1119,6 +1204,7 @@ public final class TiptapMarkdown {
 
         // ----- block dispatch -------------------------------------------
 
+        /** Emits one block node; rich nodes become {@code dotcms-*} fences in ROUNDTRIP. */
         void renderNode(final JsonNode node, final JsonNode parent) {
             if (node == null) return;
             final String type = node.path("type").asText("");
@@ -1161,7 +1247,7 @@ public final class TiptapMarkdown {
                 case "dotImage":
                     // Plain external images stay plain markdown in every flavor; only a
                     // dotImage carrying more than ![alt](src "title") can hold needs the fence.
-                    if (roundtrip() && "dotImage".equals(type) && isDecoratedImage(node.path("attrs"))) {
+                    if (roundtrip() && "dotImage".equals(type) && isRichDotImage(node.path("attrs"))) {
                         emitFence(DotcmsFences.LABEL_IMAGE, imagePayload(node.path("attrs")));
                     } else {
                         emitBlock(renderImage(node));
@@ -1294,6 +1380,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Renders each child of {@code node} as a block. */
         private void renderBlockChildren(final JsonNode node) {
             final JsonNode content = node.path("content");
             if (!content.isArray()) return;
@@ -1302,6 +1389,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Writes a block with the active prefix, followed by a blank-line separator. */
         private void emitBlock(final String text) {
             // Ensure block separation: blank line between blocks at top level / inside blockquotes,
             // newline only inside list items where the caller manages indentation.
@@ -1309,6 +1397,7 @@ public final class TiptapMarkdown {
             ensureBlankLine();
         }
 
+        /** Writes {@code text}, prepending the active block prefix (e.g. {@code "> "}) to each line. */
         private void applyPrefix(final String text) {
             if (blockPrefix.isEmpty()) {
                 out.append(text);
@@ -1328,6 +1417,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Ensures the buffer ends with a blank line separating this block from the next. */
         private void ensureBlankLine() {
             if (out.length() == 0) return;
             // collapse to exactly one blank line between blocks
@@ -1339,6 +1429,7 @@ public final class TiptapMarkdown {
 
         // ----- specific block renderers ---------------------------------
 
+        /** Emits a blockquote by pushing a {@code "> "} prefix around its children. */
         private void renderBlockquote(final JsonNode node) {
             blockPrefix.push("> ");
             try {
@@ -1354,6 +1445,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Emits a bullet or ordered list, one marker per item. */
         private void renderList(final JsonNode node, final boolean ordered) {
             final JsonNode items = node.path("content");
             if (!items.isArray() || items.size() == 0) return;
@@ -1370,6 +1462,7 @@ public final class TiptapMarkdown {
             if (listDepth == 0) ensureBlankLine();
         }
 
+        /** Emits one list item: marker on the first line, hanging indent on the rest. */
         private void renderListItem(final JsonNode item, final String marker) {
             // Render each child block; first child gets the marker, others get hanging indent.
             final JsonNode content = item.path("content");
@@ -1495,19 +1588,7 @@ public final class TiptapMarkdown {
             emitBlock("<!-- dotcms:attrs " + json + " -->");
         }
 
-        /** More than {@code ![alt](src "title")} can hold: an asset binding or link/layout attrs. */
-        private static boolean isDecoratedImage(final JsonNode attrs) {
-            if (attrs.path("data").hasNonNull("identifier")) {
-                return true;
-            }
-            for (final String key : new String[] {"href", "target", "textWrap", "textAlign"}) {
-                if (attrs.path(key).isTextual() && !attrs.path(key).asText().isEmpty()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
+        /** Builds the {@code dotcms-image} fence payload from a rich image's attrs. */
         private static ObjectNode imagePayload(final JsonNode attrs) {
             final ObjectNode payload = MAPPER.createObjectNode();
             final JsonNode data = attrs.path("data");
@@ -1526,6 +1607,7 @@ public final class TiptapMarkdown {
             return payload;
         }
 
+        /** Copies an integral {@code attrs} value into the fence payload when present. */
         private static void copyIntAttr(final JsonNode node, final String key, final ObjectNode payload) {
             final JsonNode value = node.path("attrs").path(key);
             if (value.canConvertToInt()) {
@@ -1544,6 +1626,7 @@ public final class TiptapMarkdown {
             return copy;
         }
 
+        /** Recursively trims each asset node's {@code attrs.data} to its reference fields. */
         private static void trimAssetDataInPlace(final JsonNode node) {
             if (node.isObject()) {
                 final ObjectNode obj = (ObjectNode) node;
@@ -1569,6 +1652,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Picks a backtick fence long enough to enclose a body containing backtick runs. */
         private String pickFence(final String body) {
             // Use a longer fence if the body itself contains triple backticks.
             int max = 2;
@@ -1584,6 +1668,7 @@ public final class TiptapMarkdown {
             return repeat('`', Math.max(3, max + 1));
         }
 
+        /** Emits {@code ![alt](src "title")} for an image node. */
         private String renderImage(final JsonNode node) {
             final JsonNode attrs = node.path("attrs");
             final String alt = attrs.path("alt").asText("");
@@ -1596,6 +1681,7 @@ public final class TiptapMarkdown {
             return sb.toString();
         }
 
+        /** Emits a GFM pipe table with a header row, separator, and column padding. */
         private void renderTable(final JsonNode node) {
             // Tiptap table: rows of tableHeader/tableCell. First row is the header in GFM tables.
             final JsonNode rows = node.path("content");
@@ -1636,6 +1722,7 @@ public final class TiptapMarkdown {
             emitBlock(sb.toString());
         }
 
+        /** Builds one padded {@code | a | b |} table row. */
         private String buildRow(final List<String> rowCells, final int[] widths) {
             final StringBuilder sb = new StringBuilder("|");
             for (int c = 0; c < widths.length; c++) {
@@ -1645,6 +1732,7 @@ public final class TiptapMarkdown {
             return sb.toString();
         }
 
+        /** Renders a table cell's paragraphs to a single line, joined by {@code <br>}. */
         private String renderCellInline(final JsonNode cell) {
             // Cell contains paragraph(s) of inline content; render and replace newlines with <br>.
             final StringBuilder sb = new StringBuilder();
@@ -1660,6 +1748,7 @@ public final class TiptapMarkdown {
 
         // ----- inline rendering with mark tracking ----------------------
 
+        /** Renders inline content, opening/closing mark delimiters as spans change. */
         private String renderInline(final JsonNode nodes) {
             if (nodes == null || !nodes.isArray()) return "";
             final StringBuilder sb = new StringBuilder();
@@ -1784,6 +1873,7 @@ public final class TiptapMarkdown {
             return ws;
         }
 
+        /** Leading spaces/tabs of the string (may be empty). */
         private static String leadingWhitespace(final String s) {
             int i = 0;
             while (i < s.length()) {
@@ -1794,6 +1884,7 @@ public final class TiptapMarkdown {
             return s.substring(0, i);
         }
 
+        /** Nesting order for marks (link outermost … code innermost) so spans nest consistently. */
         private static int rank(final String mark) {
             switch (mark) {
                 case "link":   return 0;
@@ -1805,6 +1896,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Closes active marks not wanted by the next span (or whose attrs changed), innermost first. */
         private void closeMarksDownTo(final StringBuilder sb,
                                       final List<String> active, final Map<String, ObjectNode> activeAttrs,
                                       final List<String> wanted, final Map<String, ObjectNode> wantedAttrs) {
@@ -1839,6 +1931,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Opens any wanted marks not yet active, in rank order. */
         private void openMarksUpTo(final StringBuilder sb,
                                    final List<String> active, final Map<String, ObjectNode> activeAttrs,
                                    final List<String> wanted, final Map<String, ObjectNode> wantedAttrs) {
@@ -1850,6 +1943,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Closes every open mark (innermost first) and clears the active set. */
         private void closeAllMarks(final StringBuilder sb, final List<String> active,
                                    final Map<String, ObjectNode> activeAttrs) {
             for (int i = active.size() - 1; i >= 0; i--) {
@@ -1859,6 +1953,7 @@ public final class TiptapMarkdown {
             activeAttrs.clear();
         }
 
+        /** Opening delimiter for a mark. */
         private static String openMark(final String type, final ObjectNode attrs) {
             switch (type) {
                 case "bold":   return "**";
@@ -1870,6 +1965,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Closing delimiter for a mark; for links, the {@code ](href "title")} tail. */
         private static String closeMark(final String type, final ObjectNode attrs) {
             switch (type) {
                 case "bold":   return "**";
@@ -1888,6 +1984,7 @@ public final class TiptapMarkdown {
             }
         }
 
+        /** Value-equality of two (nullable) attr objects. */
         private static boolean sameAttrs(final ObjectNode a, final ObjectNode b) {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
@@ -1896,6 +1993,7 @@ public final class TiptapMarkdown {
 
         // ----- escaping --------------------------------------------------
 
+        /** Backslash-escapes Markdown-significant characters (no-op inside inline code). */
         private static String escapeText(final String s, final boolean inCode) {
             if (inCode) return s; // literal inside ` ... `
             final StringBuilder sb = new StringBuilder(s.length());
@@ -1914,24 +2012,28 @@ public final class TiptapMarkdown {
             return sb.toString();
         }
 
+        /** Escapes the brackets in link/image alt text. */
         private static String escapeLinkText(final String s) {
             return s.replace("[", "\\[").replace("]", "\\]");
         }
 
         // ----- string utils ---------------------------------------------
 
+        /** A string of {@code n} copies of char {@code c}. */
         private static String repeat(final char c, final int n) {
             final char[] a = new char[Math.max(0, n)];
             Arrays.fill(a, c);
             return new String(a);
         }
 
+        /** A string of {@code n} copies of {@code s}. */
         private static String repeatStr(final String s, final int n) {
             final StringBuilder sb = new StringBuilder(s.length() * Math.max(0, n));
             for (int i = 0; i < n; i++) sb.append(s);
             return sb.toString();
         }
 
+        /** Right-pads {@code s} with spaces to {@code width} (returns as-is if already wider). */
         private static String padRight(final String s, final int width) {
             if (s.length() >= width) return s;
             return s + repeat(' ', width - s.length());
@@ -1939,6 +2041,7 @@ public final class TiptapMarkdown {
 
         // ----- list context ---------------------------------------------
 
+        /** Bookkeeping for an open list level. */
         private static final class ListCtx {
             final String kind; int idx; final int start;
             ListCtx(final String kind, final int start) { this.kind = kind; this.start = start; this.idx = start; }

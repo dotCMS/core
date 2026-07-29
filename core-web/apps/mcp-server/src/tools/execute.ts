@@ -58,11 +58,11 @@ Binary responses (small/programmatic reads only — for real files use \`downloa
 Block Editor (Story Block) fields:
 - A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. The server converts it to the Block Editor structure **on save**, so the field immediately reads back as structured content.
 - Example: \`{ "contentType": "Blog", "title": "My Post", "body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>" }\` — where \`body\` is the Story Block field.
-- Rich blocks are expressed in Markdown as fenced code blocks: the info string is a \`dotcms-*\` label, the body is one JSON object. Labels and payload fields (required in CAPS):
-    - \`dotcms-content\` — embedded contentlet: \`{"IDENTIFIER": "<contentlet-id>", "languageId": 1}\`. The server rehydrates the full embed data from the identifier on read.
-    - \`dotcms-image\` — dotCMS-bound/decorated image: IDENTIFIER or SRC; optional \`alt\`, \`title\`, \`href\`, \`target\`, \`textWrap\`, \`textAlign\`, \`languageId\`. Plain external images need no fence — \`![alt](url "title")\` works.
-    - \`dotcms-video\` — IDENTIFIER or SRC; optional \`mimeType\`, \`width\`, \`height\`, \`languageId\`.
-    - \`dotcms-youtube\` — SRC; optional \`start\` (seconds), \`width\`, \`height\`.
+- Rich blocks are expressed in Markdown as fenced code blocks: the info string is a \`dotcms-*\` label, the body is one JSON object. All keys are lowercase; **bold** keys are required (a payload missing them, or with a wrong-typed required key, silently degrades to a plain code block):
+    - \`dotcms-content\` — embedded contentlet: \`{"identifier": "<contentlet-id>", "languageId": 1}\`. Required: **\`identifier\`**; optional \`languageId\` (default 1). The server rehydrates the full embed data from the identifier on read.
+    - \`dotcms-image\` — dotCMS-bound/decorated image. Required: one of **\`identifier\`** or **\`src\`**; optional \`alt\`, \`title\`, \`href\`, \`target\`, \`textWrap\`, \`textAlign\`, \`languageId\`. Plain external images need no fence — \`![alt](url "title")\` works.
+    - \`dotcms-video\` — Required: one of **\`identifier\`** or **\`src\`**; optional \`mimeType\`, \`width\`, \`height\`, \`languageId\`.
+    - \`dotcms-youtube\` — Required: **\`src\`**; optional \`start\` (seconds), \`width\`, \`height\`.
     - \`dotcms-grid\` — verbatim \`gridBlock\` node JSON: \`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[<exactly two gridColumn nodes>]}\`.
     - \`dotcms-node\` — any other node type verbatim: \`{"type": "<nodeType>", ...}\` (fallback for custom blocks).
 - Block styling (e.g. alignment) is an HTML comment on its own line immediately before the block: \`<!-- dotcms:attrs {"textAlign":"center"} -->\`.

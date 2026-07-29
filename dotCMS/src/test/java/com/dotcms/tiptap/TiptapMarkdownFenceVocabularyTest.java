@@ -550,6 +550,24 @@ public class TiptapMarkdownFenceVocabularyTest extends UnitTestBase {
         assertTrue(TiptapMarkdown.missingRichBlocks(EXISTING_RICH, incoming).isEmpty());
     }
 
+    /**
+     * A decorated-but-unbound dotImage (href/target/etc., no data.identifier) is emitted as a
+     * dotcms-image fence in ROUNDTRIP, so dropping it must also raise a replacement warning.
+     */
+    @Test
+    public void missing_rich_blocks_reports_dropped_decorated_image() {
+        final String existing = "{\"type\":\"doc\",\"content\":[{\"type\":\"dotImage\",\"attrs\":{"
+                + "\"src\":\"/dA/x.png\",\"href\":\"https://dotcms.com\",\"target\":\"_blank\"}}]}";
+        final List<String> missing =
+                TiptapMarkdown.missingRichBlocks(existing, TiptapMarkdown.toTiptap("plain rewrite"));
+        assertEquals(1, missing.size());
+        assertTrue(missing.get(0).contains("dotImage"));
+        // A plain (undecorated) external image is representable and must NOT warn.
+        assertTrue(TiptapMarkdown.missingRichBlocks(
+                "{\"type\":\"doc\",\"content\":[{\"type\":\"dotImage\",\"attrs\":{\"src\":\"/dA/x.png\",\"alt\":\"a\"}}]}",
+                TiptapMarkdown.toTiptap("plain rewrite")).isEmpty());
+    }
+
     @Test
     public void missing_rich_blocks_counts_merged_cell_tables() {
         final String existing = "{\"type\":\"doc\",\"content\":[{\"type\":\"table\",\"content\":["
