@@ -24,6 +24,16 @@ import {
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
 
+/**
+ * Logs a verbose DotCMS GraphQL error with rich contextual information.
+ *
+ * @param {string} url - The page or API URL associated with the error.
+ * @param {string} message - The main error message to log.
+ * @param {Object} details - Additional error details for debugging.
+ * @param {number} [details.status] - Optional status code associated with the error.
+ * @param {string} [details.code] - Optional error code describing the error type.
+ * @param {Record<string, unknown>} details.variables - The GraphQL variables used in the query.
+ */
 function logVerboseError(
     url: string,
     message: string,
