@@ -39,7 +39,9 @@
                     (click)="fileUpload.choose()">
                     <div
                         class="flex size-24 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
-                        <span class="material-symbols-rounded text-4xl!" aria-hidden="true">
+                        <span
+                            class="material-symbols-rounded text-5xl! leading-none!"
+                            aria-hidden="true">
                             upload
                         </span>
                     </div>
@@ -59,7 +61,7 @@
                     <div class="text-color-secondary flex items-center gap-2 text-base">
                         <span>{{ 'categories.import.flat-only' | dm }}</span>
                         <span
-                            class="material-symbols-rounded"
+                            class="material-symbols-rounded text-xl!"
                             [pTooltip]="'categories.import.flat-only.tooltip' | dm"
                             tooltipPosition="right"
                             [attr.aria-label]="'categories.import.flat-only.tooltip' | dm"

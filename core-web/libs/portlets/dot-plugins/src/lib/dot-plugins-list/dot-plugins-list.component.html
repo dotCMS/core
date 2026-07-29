@@ -56,7 +56,11 @@
                     [text]="true"
                     (onClick)="refresh()"
                     data-testid="plugins-refresh-btn">
-                    <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        refresh
+                    </span>
                     {{ 'plugins.refresh-table' | dm }}
                 </p-button>
                 <p-button
@@ -75,7 +79,9 @@
                     (onClick)="onToolbarMenuToggle($event)"
                     data-testid="plugins-toolbar-menu-btn"
                     [attr.aria-label]="'plugins.more-actions' | dm">
-                    <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
+                    <span class="material-symbols-rounded text-xl!" aria-hidden="true">
+                        more_vert
+                    </span>
                 </p-button>
             </div>
         </div>
@@ -235,7 +241,7 @@
                                     data-testid="plugin-actions-btn"
                                     [attr.aria-label]="'plugins.table.actions' | dm">
                                     <span
-                                        class="material-symbols-rounded w-6 text-center"
+                                        class="material-symbols-rounded text-center text-xl!"
                                         aria-hidden="true">
                                         more_vert
                                     </span>
