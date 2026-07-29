@@ -561,4 +561,50 @@ describe('DotContentDriveNavigationService (side panel disabled)', () => {
         });
         expect(service.$editPanelRequest()).toBeNull();
     });
+
+    it('should navigate to the full-screen editor instead of opening the panel for a deep link (?editContent=)', () => {
+        // The param can outlive the flag being on (shared link, bookmark, staging→prod) — reading
+        // the flag here (not skipping it) keeps this path honoring AC15 when the flag is off.
+        const contentSearch = spectator.inject(DotContentSearchService);
+        (contentSearch.get as jest.Mock).mockReturnValue(
+            of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'inode-y' })] } })
+        );
+
+        service.openEditByIdentifier('shared-identifier');
+
+        expect(router.navigate).toHaveBeenCalledWith(['content/inode-y']);
+        expect(service.$editPanelRequest()).toBeNull();
+    });
+});
+
+describe('DotContentDriveNavigationService (feature-flag read fails)', () => {
+    // `getFeatureFlag` has no error handling of its own and is cached with `shareReplay`, so a
+    // failed config read would otherwise be rethrown by `toSignal` on every later read. Own factory
+    // because `$sidePanelEnabled` is set at construction time (`toSignal`), so the throwing mock
+    // must be in place BEFORE the service is built.
+    const createService = createServiceFactory({
+        service: DotContentDriveNavigationService,
+        providers: [
+            mockProvider(Router, { navigate: jest.fn() }),
+            mockProvider(DotContentTypeService, { getContentType: jest.fn() }),
+            mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
+            mockProvider(Location, { path: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn().mockReturnValue(of({})) }),
+            mockProvider(DotContentSearchService, { get: jest.fn() }),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest
+                    .fn()
+                    .mockReturnValue(throwError(() => new Error('config down')))
+            })
+        ]
+    });
+
+    it('degrades $sidePanelEnabled to false instead of throwing on every read', () => {
+        const spectator = createService();
+
+        // Reading the signal must not throw — a failed config call must not make every later
+        // "New Content" / result click / palette drop throw and appear as a dead button.
+        expect(() => spectator.service.$sidePanelEnabled()).not.toThrow();
+        expect(spectator.service.$sidePanelEnabled()).toBe(false);
+    });
 });

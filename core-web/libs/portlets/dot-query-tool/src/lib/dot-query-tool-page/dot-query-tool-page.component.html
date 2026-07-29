@@ -379,11 +379,23 @@
 </p-popover>
 
 <!-- Edit Content side panel (opens in-page for new-editor results when the feature flag is on;
-     legacy/page results still open in a new tab). Reloads the results on save. -->
-@if ($editPanelRequest(); as data) {
-    <dot-edit-content-side-panel
-        data-testid="query-tool-edit-panel"
-        [data]="data"
-        (saved)="onEditPanelSaved()"
-        (closed)="onEditPanelClosed()" />
+     legacy/page results still open in a new tab). Reloads the results on save.
+     `@defer` splits the editor out of this portlet's chunk, fetched only on the first open. The
+     inner `@if` still mounts/destroys a fresh editor on every open/close — `@defer`'s `when`
+     trigger only gates the one-time chunk load, it does not toggle like `@if`. -->
+@defer (when $editPanelRequest()) {
+    @if ($editPanelRequest(); as data) {
+        <dot-edit-content-side-panel
+            #sidePanelRef
+            data-testid="query-tool-edit-panel"
+            [data]="data"
+            (saved)="onEditPanelSaved()"
+            (closed)="onEditPanelClosed()" />
+    }
+} @loading {
+    <div
+        class="fixed right-4 bottom-4 z-10000 rounded-full bg-white p-3 shadow-lg"
+        data-testid="edit-content-side-panel-loading">
+        <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="loading editor" />
+    </div>
 }

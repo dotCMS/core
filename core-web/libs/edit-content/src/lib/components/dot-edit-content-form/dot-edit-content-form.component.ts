@@ -310,7 +310,11 @@ export class DotEditContentFormComponent implements OnInit {
         const markTouched = () => {
             this.#userTouched = true;
         };
-        const interactionEvents = ['pointerdown', 'keydown', 'input'] as const;
+        // `drop` is included because dragging a file in from the OS (e.g. onto the binary/file
+        // field) sets the control value programmatically via `(fileDropped)` — the drag starts
+        // outside the window, so no `pointerdown` precedes it. Without latching here, that first
+        // interaction would look like async-CVA populate and the edit would be marked pristine.
+        const interactionEvents = ['pointerdown', 'keydown', 'input', 'drop'] as const;
         const listenerOptions: AddEventListenerOptions = { capture: true };
         interactionEvents.forEach((type) =>
             host.addEventListener(type, markTouched, listenerOptions)
@@ -454,7 +458,12 @@ export class DotEditContentFormComponent implements OnInit {
         race(this.#appRef.isStable.pipe(filter(Boolean)), timer(500))
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => {
-                this.form?.markAsPristine();
+                // Gate on `#userTouched` for the same reason `initializeFormListener` does: if the
+                // user genuinely edited a field within the isStable/500ms window, clearing dirty
+                // here would silently drop that edit. Only clear load-time (untouched) CVA noise.
+                if (!this.#userTouched) {
+                    this.form?.markAsPristine();
+                }
             });
     }
 

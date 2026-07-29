@@ -20,6 +20,7 @@ import { MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
 import { catchError } from 'rxjs/operators';
@@ -81,6 +82,13 @@ import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters, isFolder } from '../utils/functions';
 
+/**
+ * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
+ * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
+ * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
+ */
+const NEW_CONTENT_MARKER = 'new';
+
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [
@@ -100,7 +108,8 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
         DotSeverityIconComponent,
-        DotEditContentSidePanelComponent
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -128,39 +137,47 @@ export class DotContentDriveShellComponent {
     /** Edit Content side panel request, driven by the navigation service; read by the template. */
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
-    /** The rendered side panel, so browser Back can route its close through the panel's guard. */
-    protected readonly $sidePanel = viewChild(DotEditContentSidePanelComponent);
+    /**
+     * Whether the last `editContent` URL write reflected an open panel. Lets the effect push when
+     * opening (so Back can pop the panel) but replace when closing — a push on close would leave a
+     * phantom entry whose Back puts the just-removed param back with no panel rendered.
+     */
+    #editPanelUrlWasSet = false;
+
+    /**
+     * The rendered side panel, so browser Back can route its close through the panel's guard.
+     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
+     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
+     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
+     * erased at compile time — it leaves no runtime reference).
+     */
+    protected readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
 
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
-    readonly $treeExpanded = this.#store.isTreeExpanded;
-
-    /** True while the folder tree is collapsed *by* the side panel (so we only restore what we hid). */
-    #treeCollapsedByPanel = false;
 
     /**
-     * Collapses the Content Drive folder tree while the Edit Content side panel is open, and
-     * restores it on close — but only if it was expanded to begin with (a tree the user already
-     * collapsed stays collapsed). `untracked` guards the store reads/writes so the effect only
-     * re-runs when the panel open/close state changes, never on a tree toggle.
+     * The tree's VISUAL expanded state (drives width/animation). Combines the user's real
+     * preference with any transient collapse the side panel is forcing — see
+     * `isTreeVisuallyExpanded` on the store for why these are kept separate.
+     */
+    readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
+
+    /**
+     * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
+     * narrow viewport, and clears the override on close. Purely derived from the panel's open
+     * state each time it runs — no bookkeeping needed (unlike a real preference, "should the panel
+     * currently be forcing a collapse" has no history to restore: it is always correctly
+     * recomputed from the CURRENT panel/viewport state, including right after a refresh with the
+     * panel already open from a deep link). `untracked` guards the store read/write so the effect
+     * only re-runs when the panel open/close state changes.
      */
     // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
-    #collapseTreeWithPanelEffect = effect(() => {
+    #forceCollapseTreeWithPanelEffect = effect(() => {
         const panelOpen = !!this.$editPanelRequest();
 
         untracked(() => {
-            if (
-                panelOpen &&
-                !this.#treeCollapsedByPanel &&
-                this.$treeExpanded() &&
-                this.#sidePanelNav.shouldCollapse()
-            ) {
-                this.#treeCollapsedByPanel = true;
-                this.#store.setIsTreeExpanded(false);
-            } else if (!panelOpen && this.#treeCollapsedByPanel) {
-                this.#treeCollapsedByPanel = false;
-                this.#store.setIsTreeExpanded(true);
-            }
+            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanelNav.shouldCollapse());
         });
     });
 
@@ -249,29 +266,39 @@ export class DotContentDriveShellComponent {
 
         // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
+        // The `new`-mode marker is ignored — creating is not shareable, so only real identifiers
+        // are resolved.
         const editContent = this.#route.snapshot.queryParams['editContent'];
-        if (editContent) {
+        if (editContent && editContent !== NEW_CONTENT_MARKER) {
             this.#navigationService.openEditByIdentifier(editContent);
         }
 
-        // Browser Back/Forward: the open panel's `?editContent=` param is written via `Location.go`
+        // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
         // (no router navigation), so nothing else reacts to popstate. When Back removes or changes
-        // that param while the panel is open, route the close through the panel's unsaved-changes
-        // guard — a direct `closeEditPanel()` would tear the editor down and discard unsaved edits
-        // silently.
+        // that param while a panel is open (edit OR new), route the close through the panel's
+        // unsaved-changes guard — a direct `closeEditPanel()` would tear the editor down and discard
+        // unsaved edits silently.
         const locationSubscription = this.#location.subscribe((event) => {
             const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
             const editContentParam = params.get('editContent');
             const request = this.#navigationService.$editPanelRequest();
+            if (!request) {
+                return;
+            }
 
-            if (request?.mode === 'edit' && request.identifier !== editContentParam) {
+            // The param the URL should carry for the currently-open panel: the identifier for edit,
+            // the marker for new. If Back changed it away from that, the panel should close.
+            const expected =
+                request.mode === 'edit' ? (request.identifier ?? null) : NEW_CONTENT_MARKER;
+
+            if (expected !== editContentParam) {
                 // Restore the param so the URL matches the still-open panel while the guard decides.
                 // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
                 // emits `closed` → onEditPanelClosed → closeEditPanel clears the param; Keep editing
                 // → the panel stays open and the URL is already back in sync.
                 const restoredUrl = this.#router
                     .createUrlTree([], {
-                        queryParams: { editContent: request.identifier },
+                        queryParams: { editContent: expected },
                         queryParamsHandling: 'merge'
                     })
                     .toString();
@@ -381,25 +408,34 @@ export class DotContentDriveShellComponent {
             queryParams['filters'] = null;
         }
 
-        // Reflect the open edit panel in a shareable `editContent=<identifier>` param (edit only;
-        // creating is not shareable). Cleared when the panel is closed. Written here — via
-        // Location.go — so it does not trigger a navigation or a content reload.
+        // Reflect the open panel in the `editContent` param: the shareable identifier for edit, or
+        // a non-shareable marker for new (so browser Back has an entry to pop). Cleared when the
+        // panel is closed. Written via Location.go/replaceState so it triggers no navigation/reload.
         const editRequest = this.$editPanelRequest();
-        queryParams['editContent'] =
-            editRequest?.mode === 'edit' ? (editRequest.identifier ?? null) : null;
+        const editContent = editRequest
+            ? editRequest.mode === 'edit'
+                ? (editRequest.identifier ?? null)
+                : NEW_CONTENT_MARKER
+            : null;
+        queryParams['editContent'] = editContent;
 
         const urlTree = this.#router.createUrlTree([], {
             queryParams,
             queryParamsHandling: 'merge'
         });
 
-        // Only write when the URL actually changes. When the panel is closed by browser Back, the
-        // URL already reflects the new state, so re-writing it would push a redundant history entry
-        // (a phantom Back stop). This keeps the write idempotent.
+        // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
+        // moved the URL). Push when opening the panel so Back can pop it (AC8); replace when closing
+        // it, so no phantom history entry is left whose Back would resurrect the removed param.
         const newUrl = urlTree.toString();
         if (newUrl !== this.#location.path(true)) {
-            this.#location.go(newUrl);
+            if (editContent === null && this.#editPanelUrlWasSet) {
+                this.#location.replaceState(newUrl);
+            } else {
+                this.#location.go(newUrl);
+            }
         }
+        this.#editPanelUrlWasSet = editContent !== null;
     });
 
     /**

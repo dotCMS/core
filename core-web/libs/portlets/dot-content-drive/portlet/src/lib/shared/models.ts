@@ -172,6 +172,14 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * >1 content types are selected. Consumed by the results table as extra columns.
      */
     showInListFields: DotCMSContentTypeField[];
+    /**
+     * Whether the Edit Content side panel is forcing the folder tree visually collapsed on a
+     * narrow viewport. Purely transient UI state — never persisted, never read from or written to
+     * the URL — kept separate from {@link DotContentDriveInit.isTreeExpanded} (the user's real,
+     * shareable preference) so the panel's temporary collapse can never overwrite it. See
+     * `isTreeVisuallyExpanded` (the computed both should render from) and `setTreeForceCollapsed`.
+     */
+    isTreeForceCollapsed: boolean;
 }
 
 /**

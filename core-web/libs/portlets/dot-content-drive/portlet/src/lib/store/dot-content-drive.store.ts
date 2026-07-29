@@ -61,6 +61,7 @@ const initialState: DotContentDriveState = {
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
+    isTreeForceCollapsed: false,
     pages: [DEFAULT_PAGE],
     userSearchableFields: [],
     userSearchableActive: [],
@@ -71,8 +72,26 @@ const initialState: DotContentDriveState = {
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
     withComputed(
-        ({ path, filters, currentSite, pagination, sort, pages, userSearchableFields }) => {
+        ({
+            path,
+            filters,
+            currentSite,
+            pagination,
+            sort,
+            pages,
+            userSearchableFields,
+            isTreeExpanded,
+            isTreeForceCollapsed
+        }) => {
             return {
+                /**
+                 * The tree's VISUAL expanded state — the user's real preference (`isTreeExpanded`,
+                 * persisted/shareable via the URL) minus any transient collapse the side panel is
+                 * forcing on a narrow viewport (`isTreeForceCollapsed`, never persisted). Kept
+                 * separate so the panel's temporary collapse can never leak into the shareable
+                 * state — see `setTreeForceCollapsed`.
+                 */
+                isTreeVisuallyExpanded: computed(() => isTreeExpanded() && !isTreeForceCollapsed()),
                 $request: computed<DotContentDriveSearchRequest>(
                     () => {
                         const paginationSignal = pagination();
@@ -236,6 +255,15 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
+            },
+            /**
+             * Sets the side panel's transient tree-collapse override (see `isTreeVisuallyExpanded`).
+             * Never touches `isTreeExpanded` — the real, shareable preference — so a panel-forced
+             * collapse can never be persisted to the URL or survive a refresh as if it were the
+             * user's own choice.
+             */
+            setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
+                patchState(store, { isTreeForceCollapsed });
             },
             getFilterValue(filter: string) {
                 return store.filters()[filter];

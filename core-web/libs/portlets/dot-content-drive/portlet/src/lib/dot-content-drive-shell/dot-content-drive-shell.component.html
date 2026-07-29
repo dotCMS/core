@@ -146,11 +146,23 @@
 <input type="file" (change)="onFileChange($event)" #fileInput hidden />
 
 <!-- Edit Content side panel: opens the new editor over Content Drive instead of navigating away.
-     Mounted only while a content is requested, so each open is a fresh editor. -->
-@if ($editPanelRequest(); as data) {
-    <dot-edit-content-side-panel
-        data-testId="edit-content-side-panel"
-        [data]="data"
-        (saved)="onEditPanelSaved()"
-        (closed)="onEditPanelClosed()" />
+     `@defer` splits the editor (and its Block Editor dependency chain) out of this portlet's chunk,
+     fetched only on the first open. The inner `@if` still mounts/destroys a fresh editor on every
+     open/close — `@defer`'s `when` trigger only gates the one-time chunk load, it does not toggle
+     like `@if` (once resolved, the block stays resolved for the rest of this shell's lifetime). -->
+@defer (when $editPanelRequest()) {
+    @if ($editPanelRequest(); as data) {
+        <dot-edit-content-side-panel
+            #sidePanelRef
+            data-testId="edit-content-side-panel"
+            [data]="data"
+            (saved)="onEditPanelSaved()"
+            (closed)="onEditPanelClosed()" />
+    }
+} @loading {
+    <div
+        class="fixed right-4 bottom-4 z-10000 rounded-full bg-white p-3 shadow-lg"
+        data-testid="edit-content-side-panel-loading">
+        <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="loading editor" />
+    </div>
 }

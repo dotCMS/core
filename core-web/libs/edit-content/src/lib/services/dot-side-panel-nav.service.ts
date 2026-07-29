@@ -3,15 +3,18 @@ import { inject, Injectable } from '@angular/core';
 import { GlobalStore } from '@dotcms/store';
 
 /**
- * localStorage key remembering the main navigation's collapsed state from BEFORE the first side
- * panel opened, so it can be restored when the last panel closes — and survive a hard refresh
- * while a panel is open (e.g. a shared `?editContent=` link).
+ * sessionStorage key remembering the main navigation's collapsed state from BEFORE the first side
+ * panel opened, so it can be restored when the last panel closes. `sessionStorage` (not
+ * `localStorage`) on purpose: it survives an in-page refresh while a panel is open (e.g. a shared
+ * `?editContent=` link, same tab), but is cleared for a genuinely new session — so a key left
+ * behind by a tab that closed/crashed before `release()` could clear it self-clears instead of
+ * making the next session wrongly expand a nav the user had chosen to keep collapsed.
  */
 const PREV_NAV_COLLAPSED_KEY = 'dot-edit-content-side-panel-prev-nav-collapsed';
 
 function readPrevNavCollapsed(): boolean | null {
     try {
-        const raw = localStorage.getItem(PREV_NAV_COLLAPSED_KEY);
+        const raw = sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY);
 
         return raw === null ? null : raw === 'true';
     } catch {
@@ -21,7 +24,7 @@ function readPrevNavCollapsed(): boolean | null {
 
 function writePrevNavCollapsed(collapsed: boolean): void {
     try {
-        localStorage.setItem(PREV_NAV_COLLAPSED_KEY, String(collapsed));
+        sessionStorage.setItem(PREV_NAV_COLLAPSED_KEY, String(collapsed));
     } catch {
         // best-effort: storage failures must not break the panel.
     }
@@ -29,7 +32,7 @@ function writePrevNavCollapsed(collapsed: boolean): void {
 
 function clearPrevNavCollapsed(): void {
     try {
-        localStorage.removeItem(PREV_NAV_COLLAPSED_KEY);
+        sessionStorage.removeItem(PREV_NAV_COLLAPSED_KEY);
     } catch {
         // best-effort.
     }
@@ -45,7 +48,8 @@ const COLLAPSE_MAX_WIDTH = 1800;
  *
  * Ref-counted because the relationship field can stack a second panel on top: the nav must stay
  * collapsed until EVERY panel has closed, not just the top one. The pre-panel state is kept in
- * localStorage so it is remembered even across a refresh that happens while a panel is open.
+ * sessionStorage so it is remembered across a refresh that happens while a panel is open, but not
+ * leaked into a new session (see {@link PREV_NAV_COLLAPSED_KEY}).
  */
 @Injectable({ providedIn: 'root' })
 export class DotSidePanelNavController {

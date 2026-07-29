@@ -39,7 +39,7 @@ describe('DotEditContentSidePanelComponent', () => {
                             DrawerModule,
                             ButtonModule,
                             MockComponent(DotEditContentLayoutComponent),
-                            MockPipe(DotMessagePipe)
+                            MockPipe(DotMessagePipe, (key: string) => key)
                         ],
                         providers: [{ provide: OverlayEditContentHost, useValue: undefined }]
                     }
@@ -107,23 +107,51 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.click(button as HTMLElement);
     };
 
+    /**
+     * Reads the expand button's icon glyph — the user-visible reflection of `$expanded`
+     * (`open_in_full` when collapsed, `close_fullscreen` when expanded). Asserting on this instead
+     * of the protected signal covers what the user actually sees. `{ root: true }` because
+     * `appendTo="body"` teleports the header out of the fixture.
+     */
+    const expandIcon = (): string | undefined =>
+        spectator
+            .query(byTestId('side-panel-expand'), { root: true })
+            ?.querySelector('i')
+            ?.textContent?.trim();
+
+    /** Expand button aria-label (i18n key via MockPipe) — user-facing expanded/collapsed cue. */
+    const expandAriaLabel = (): string | null | undefined =>
+        spectator.query(byTestId('side-panel-expand'), { root: true })?.getAttribute('aria-label');
+
+    /**
+     * Drawer width from the `pt.root.style` binding (`70%` collapsed / `100%` expanded). The drawer
+     * is teleported to `document.body`, so query from the document root.
+     */
+    const drawerWidth = (): string =>
+        (spectator.query('.p-drawer', { root: true }) as HTMLElement | null)?.style?.width ?? '';
+
     it('should toggle expanded state with the expand button and persist it', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
+        expect(expandIcon()).toBe('open_in_full');
+        expect(expandAriaLabel()).toBe('edit.content.side-panel.expand');
+        expect(drawerWidth()).toBe('70%');
+
         clickButton('side-panel-expand');
-        expect(spectator.component['$expanded']()).toBe(true);
+        spectator.detectChanges();
+        expect(expandIcon()).toBe('close_fullscreen');
+        expect(expandAriaLabel()).toBe('edit.content.side-panel.collapse');
+        expect(drawerWidth()).toBe('100%');
         expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('true');
 
         clickButton('side-panel-expand');
-        expect(spectator.component['$expanded']()).toBe(false);
+        spectator.detectChanges();
+        expect(expandIcon()).toBe('open_in_full');
+        expect(expandAriaLabel()).toBe('edit.content.side-panel.expand');
+        expect(drawerWidth()).toBe('70%');
         expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('false');
     });
-
-    // Note: seeding `$expanded` from the persisted preference on construction isn't unit-tested
-    // here — it needs a component built AFTER localStorage is set, which the shared beforeEach
-    // (creates the panel with storage cleared) can't express without a dedicated factory. The
-    // persistence WRITE is covered by the toggle test above.
 
     it('should route close through the editor guard and emit `closed` when it proceeds', () => {
         spectator.setInput('data', EDIT_DATA);
@@ -246,5 +274,105 @@ describe('DotEditContentSidePanelComponent', () => {
 
         expect(onContentSaved).not.toHaveBeenCalled();
         expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+});
+
+/**
+ * Construction-time seeding of `$expanded` from the persisted preference. Kept in its own describe
+ * with a dedicated factory because it needs a component built AFTER localStorage is seeded — the
+ * main describe's shared beforeEach constructs the panel with storage already cleared.
+ */
+describe('DotEditContentSidePanelComponent — persisted expanded preference', () => {
+    let spectator: Spectator<DotEditContentSidePanelComponent>;
+
+    const EDIT_DATA: EditContentDialogData = {
+        mode: 'edit',
+        contentletInode: 'inode-1',
+        identifier: 'id-1',
+        title: 'My Content'
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentSidePanelComponent,
+        overrideComponents: [
+            [
+                DotEditContentSidePanelComponent,
+                {
+                    set: {
+                        imports: [
+                            DrawerModule,
+                            ButtonModule,
+                            MockComponent(DotEditContentLayoutComponent),
+                            MockPipe(DotMessagePipe, (key: string) => key)
+                        ],
+                        providers: [{ provide: OverlayEditContentHost, useValue: undefined }]
+                    }
+                }
+            ]
+        ]
+    });
+
+    afterEach(() => {
+        localStorage.clear();
+    });
+
+    const buildAndAssertOpenState = (expected: {
+        icon: string;
+        ariaLabel: string;
+        width: string;
+    }) => {
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: OverlayEditContentHost,
+                    useValue: { saved$: new Subject<DotCMSContentlet>().asObservable() }
+                },
+                {
+                    provide: DotSidePanelNavController,
+                    useValue: {
+                        acquire: jest.fn(),
+                        release: jest.fn(),
+                        isTop: jest.fn().mockReturnValue(true)
+                    }
+                }
+            ],
+            detectChanges: false
+        });
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        expect(
+            spectator
+                .query(byTestId('side-panel-expand'), { root: true })
+                ?.querySelector('i')
+                ?.textContent?.trim()
+        ).toBe(expected.icon);
+        expect(
+            spectator
+                .query(byTestId('side-panel-expand'), { root: true })
+                ?.getAttribute('aria-label')
+        ).toBe(expected.ariaLabel);
+        // Width is the user-visible outcome of reading `$expanded` on construction (`pt.root.style`).
+        expect(
+            (spectator.query('.p-drawer', { root: true }) as HTMLElement | null)?.style?.width
+        ).toBe(expected.width);
+    };
+
+    it('opens expanded when the persisted preference is `true`', () => {
+        localStorage.setItem('dot-edit-content-side-panel-expanded', 'true');
+        buildAndAssertOpenState({
+            icon: 'close_fullscreen',
+            ariaLabel: 'edit.content.side-panel.collapse',
+            width: '100%'
+        });
+    });
+
+    it('opens collapsed when there is no persisted preference', () => {
+        localStorage.removeItem('dot-edit-content-side-panel-expanded');
+        buildAndAssertOpenState({
+            icon: 'open_in_full',
+            ariaLabel: 'edit.content.side-panel.expand',
+            width: '70%'
+        });
     });
 });

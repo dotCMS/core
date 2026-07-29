@@ -19,7 +19,7 @@ jest.mock(
 );
 
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -36,6 +36,8 @@ import {
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
+// Resolves to the mock declared in the jest.mock above (same module path the component imports).
+import { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
@@ -256,6 +258,44 @@ describe('DotRelationshipFieldComponent', () => {
             // Flag on → the side panel is created imperatively, NOT the centered dialog.
             expect(dialogService.open).not.toHaveBeenCalled();
             expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
+        });
+
+        it('falls back to the centered dialog when the feature-flag read rejects', async () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockClear();
+            // getFeatureFlag has no catchError of its own, so a rejected config read is reachable.
+            (spectator.inject(DotPropertiesService).getFeatureFlag as jest.Mock).mockReturnValue(
+                throwError(() => new Error('config unavailable'))
+            );
+
+            await spectator.component.showCreateNewContentDialog();
+
+            // The rejected read must not leave the "New content" action a silent no-op: the catch
+            // falls back to the centered dialog (previous behavior).
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            const [, config] = (dialogService.open as jest.Mock).mock.calls[0];
+            expect(config.data).toEqual(
+                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
+            );
+        });
+
+        it('destroys the side panel when it emits `closed`', async () => {
+            (spectator.inject(DotPropertiesService).getFeatureFlag as jest.Mock).mockReturnValue(
+                of(true)
+            );
+
+            await spectator.component.showCreateNewContentDialog();
+            spectator.detectChanges();
+
+            const panel = spectator.query(DotEditContentSidePanelComponent);
+            expect(panel).toBeTruthy();
+
+            // Emitting `closed` must tear the panel down: its subscription calls #closeSidePanel,
+            // which destroys the ComponentRef. A broken/missing subscription would leave it mounted.
+            panel?.closed.emit();
+            spectator.detectChanges();
+
+            expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
         });
     });
 

@@ -1,4 +1,4 @@
-import { EMPTY } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -6,7 +6,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, map, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -44,11 +44,16 @@ export class DotContentDriveNavigationService {
      * Feature flag gating the side panel. When off, the new editor opens via full-screen route
      * navigation (the previous behavior); when on, it opens in the side panel. Defaults to `false`
      * until the flag resolves, so the safe/previous behavior is used meanwhile.
+     *
+     * `catchError(() => of(false))`: `getFeatureFlag` has no error handling of its own and caches
+     * the observable with `shareReplay`, so a failed `/api/v1/configuration` call would otherwise
+     * be replayed to every read — and `toSignal` rethrows on each read — making every later click
+     * handler that reads this signal throw. Degrade to `false` (previous full-screen behavior).
      */
     readonly $sidePanelEnabled = toSignal(
-        this.#dotPropertiesService.getFeatureFlag(
-            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
-        ),
+        this.#dotPropertiesService
+            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
+            .pipe(catchError(() => of(false))),
         { initialValue: false }
     );
 
@@ -216,15 +221,16 @@ export class DotContentDriveNavigationService {
     }
 
     /**
-     * Opens the Edit Content side panel for a content addressed by its stable `identifier`
-     * (e.g. from a shared `?editContent=<identifier>` URL). Resolves the identifier to its
-     * current working inode — the editor loads by inode — and opens the panel. No-op when the
-     * content can't be resolved (deleted, no permission, bad id).
+     * Opens the Edit Content editor for a content addressed by its stable `identifier` (e.g. from a
+     * shared `?editContent=<identifier>` URL). Resolves the identifier to its current working inode
+     * (the editor loads by inode), then routes by the side-panel flag: on → the panel; off → the
+     * full-screen editor. The flag is gated here (not skipped) because the param can outlive the
+     * flag being on — a shared link, a bookmark, or a URL that travels staging→prod — and AC15
+     * requires full-screen when the flag is off. Read at call time (not the construction-time
+     * signal) so a cold deep-link load waits for the flag to resolve. No-op when the content can't
+     * be resolved (deleted, no permission, bad id).
      */
     openEditByIdentifier(identifier: string): void {
-        // No flag gate here on purpose: the `?editContent` param is only ever written while the
-        // side panel is active (flag on), so its presence already implies a panel context — and
-        // the flag may not have resolved yet on this cold load.
         this.#contentSearch
             .get<ContentSearchEntity>({
                 query: `+identifier:${identifier} +working:true`,
@@ -232,15 +238,34 @@ export class DotContentDriveNavigationService {
             })
             .pipe(
                 take(1),
+                switchMap((entity) => {
+                    const contentlet = entity?.jsonObjectView?.contentlets?.[0];
+                    if (!contentlet?.inode) {
+                        return EMPTY;
+                    }
+
+                    // `catchError(of(false))`: a failed config read degrades to the safe
+                    // full-screen path rather than throwing (see $sidePanelEnabled).
+                    return this.#dotPropertiesService
+                        .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
+                        .pipe(
+                            take(1),
+                            catchError(() => of(false)),
+                            map((sidePanelEnabled) => ({ contentlet, sidePanelEnabled }))
+                        );
+                }),
                 catchError((error: HttpErrorResponse) => {
                     this.#httpErrorManager.handle(error);
 
                     return EMPTY;
                 })
             )
-            .subscribe((entity) => {
-                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
-                if (!contentlet?.inode) {
+            .subscribe(({ contentlet, sidePanelEnabled }) => {
+                if (!sidePanelEnabled) {
+                    // Flag off: full-screen new editor (the panel only ever opened for
+                    // CONTENT_EDITOR2 content, so its full-screen equivalent is `content/<inode>`).
+                    this.#router.navigate([`content/${contentlet.inode}`]);
+
                     return;
                 }
 

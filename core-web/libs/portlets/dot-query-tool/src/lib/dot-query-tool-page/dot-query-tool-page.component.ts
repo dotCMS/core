@@ -1,5 +1,5 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { EMPTY } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { DOCUMENT, Location } from '@angular/common';
 import {
@@ -25,13 +25,14 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 import { SplitterModule } from 'primeng/splitter';
 import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentletEditUrlService,
@@ -90,7 +91,8 @@ const QUERY_EDITOR_OPTIONS = {
         PopoverModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
-        DotEditContentSidePanelComponent
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule
     ],
     // MessageService: the Edit Content side panel's editor injects PrimeNG's MessageService for
     // inline toasts; provide it here (as Content Drive's shell does) so the panel works in-page.
@@ -115,23 +117,39 @@ export class DotQueryToolPageComponent implements OnInit {
 
     #lastSyncedUrl: string | null = null;
 
-    /** The rendered side panel, so browser Back can route its close through the panel's guard. */
-    readonly $sidePanel = viewChild(DotEditContentSidePanelComponent);
+    /**
+     * The rendered side panel, so browser Back can route its close through the panel's guard.
+     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
+     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
+     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
+     * erased at compile time — it leaves no runtime reference).
+     */
+    readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
 
     /**
      * Feature flag gating the side panel. When off, editing a result opens the editor in a new
      * browser tab (the previous behavior); when on, results that resolve to the new content
      * editor open in the in-page side panel instead. Defaults to `false` until it resolves.
+     *
+     * `catchError(() => of(false))`: a failed `/api/v1/configuration` call is cached by
+     * `getFeatureFlag` (shareReplay) and rethrown by `toSignal` on every read, which would make the
+     * result-click handler throw. Degrade to `false` (previous new-tab behavior).
      */
     readonly $sidePanelEnabled = toSignal(
-        this.#dotPropertiesService.getFeatureFlag(
-            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
-        ),
+        this.#dotPropertiesService
+            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
+            .pipe(catchError(() => of(false))),
         { initialValue: false }
     );
 
     /** Content shown in the Edit Content side panel, or `null` when it is closed. */
     readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Whether the last `editContent` URL write reflected an open panel — so a close writes with
+     * replaceState instead of a history push whose Back would resurrect the just-removed param.
+     */
+    #editContentUrlWasSet = false;
 
     /**
      * Reflects the open edit panel in the URL (`?editContent=<identifier>`) so it is shareable,
@@ -376,7 +394,11 @@ export class DotQueryToolPageComponent implements OnInit {
         return url.startsWith('/dotAdmin/#/content/');
     }
 
-    /** Idempotent write/clear of `editContent` (history push, merged) so browser Back can pop it. */
+    /**
+     * Writes/clears `editContent` (merged with the query-tool params). Pushes when opening the
+     * panel (so browser Back can pop it) but replaces when closing — a push on close would leave a
+     * phantom history entry whose Back puts the removed param back with no panel rendered.
+     */
     #syncEditContentParam(identifier: string | null): void {
         const url = this.#router
             .createUrlTree([], {
@@ -387,20 +409,44 @@ export class DotQueryToolPageComponent implements OnInit {
             .toString();
 
         if (url !== this.#location.path(true)) {
-            this.#location.go(url);
+            if (identifier === null && this.#editContentUrlWasSet) {
+                this.#location.replaceState(url);
+            } else {
+                this.#location.go(url);
+            }
         }
+
+        this.#editContentUrlWasSet = identifier !== null;
     }
 
-    /** Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel. */
+    /**
+     * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel.
+     * Gated on the side-panel flag (read at call time so a cold deep-link load waits for it): with
+     * the flag off there is no in-page editor in Query Tool — editing opens a new tab, which needs a
+     * user gesture and can't be triggered on load — so the deep link is ignored (AC15). The param
+     * can outlive the flag being on (shared link / bookmark / staging→prod), hence the gate.
+     */
     #resolveAndOpenByIdentifier(identifier: string): void {
-        this.#contentSearch
-            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                query: `+identifier:${identifier} +working:true`,
-                limit: 1
-            })
+        this.#dotPropertiesService
+            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
             .pipe(
                 take(1),
-                catchError(() => EMPTY)
+                catchError(() => of(false)),
+                switchMap((sidePanelEnabled) => {
+                    if (!sidePanelEnabled) {
+                        return EMPTY;
+                    }
+
+                    return this.#contentSearch
+                        .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
+                            query: `+identifier:${identifier} +working:true`,
+                            limit: 1
+                        })
+                        .pipe(
+                            take(1),
+                            catchError(() => EMPTY)
+                        );
+                })
             )
             .subscribe((entity) => {
                 const contentlet = entity?.jsonObjectView?.contentlets?.[0];

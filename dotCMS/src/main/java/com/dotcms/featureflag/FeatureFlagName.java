@@ -77,7 +77,8 @@ public interface FeatureFlagName {
 
     /**
      * Opens the new content editor (Edit Content v2) in a right slide-in side panel instead of
-     * navigating full-screen (Content Drive) or a centered dialog (UVE). Off by default.
+     * navigating full-screen (Content Drive) or a centered dialog (UVE). On by default
+     * ({@code dotmarketing-config.properties} sets {@code FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL=true}).
      * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL}.
      */
     String FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = "FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL";

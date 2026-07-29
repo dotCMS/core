@@ -65,7 +65,6 @@ function writeExpandedPreference(expanded: boolean): void {
  */
 @Component({
     selector: 'dot-edit-content-side-panel',
-    standalone: true,
     imports: [DrawerModule, ButtonModule, DotEditContentLayoutComponent, DotMessagePipe],
     providers: [
         OverlayEditContentHost,

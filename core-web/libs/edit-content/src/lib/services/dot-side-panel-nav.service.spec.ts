@@ -36,7 +36,7 @@ describe('DotSidePanelNavController', () => {
         // mockProvider's jest.fn()s are shared across tests, so call counts (and any
         // per-test mockReturnValue override) would leak. Clear counts, then re-assert the default.
         jest.clearAllMocks();
-        localStorage.clear();
+        sessionStorage.clear();
         // Narrow viewport by default so the collapse behavior is active for these tests.
         setViewportWidth(800);
         spectator = createService();
@@ -53,12 +53,12 @@ describe('DotSidePanelNavController', () => {
         service.acquire(outer);
 
         expect(globalStore.collapseNavigation).toHaveBeenCalledTimes(1);
-        expect(localStorage.getItem(LS_KEY)).toBe('false');
+        expect(sessionStorage.getItem(LS_KEY)).toBe('false');
 
         service.release(outer);
 
         expect(globalStore.expandNavigation).toHaveBeenCalledTimes(1);
-        expect(localStorage.getItem(LS_KEY)).toBeNull();
+        expect(sessionStorage.getItem(LS_KEY)).toBeNull();
     });
 
     it('keeps an already-collapsed nav collapsed (no collapse, no restore)', () => {
@@ -66,7 +66,7 @@ describe('DotSidePanelNavController', () => {
 
         service.acquire(outer);
         expect(globalStore.collapseNavigation).not.toHaveBeenCalled();
-        expect(localStorage.getItem(LS_KEY)).toBe('true');
+        expect(sessionStorage.getItem(LS_KEY)).toBe('true');
 
         service.release(outer);
         expect(globalStore.expandNavigation).not.toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('DotSidePanelNavController', () => {
 
         service.acquire(outer);
         expect(globalStore.collapseNavigation).not.toHaveBeenCalled();
-        expect(localStorage.getItem(LS_KEY)).toBeNull();
+        expect(sessionStorage.getItem(LS_KEY)).toBeNull();
 
         service.release(outer);
         expect(globalStore.expandNavigation).not.toHaveBeenCalled();
@@ -116,19 +116,19 @@ describe('DotSidePanelNavController', () => {
     it('does not overwrite the persisted pre-panel state on a refresh with a panel open', () => {
         // Simulate a refresh: LS already holds the original (expanded) pre-panel state, and the nav
         // is currently collapsed (from before the refresh).
-        localStorage.setItem(LS_KEY, 'false');
+        sessionStorage.setItem(LS_KEY, 'false');
         globalStore.isNavigationCollapsed.mockReturnValue(true);
 
         service.acquire(outer);
 
         // Did not re-capture (still 'false' = was expanded) and did not collapse again.
-        expect(localStorage.getItem(LS_KEY)).toBe('false');
+        expect(sessionStorage.getItem(LS_KEY)).toBe('false');
         expect(globalStore.collapseNavigation).not.toHaveBeenCalled();
 
         service.release(outer);
 
         // Restores to the original expanded state.
         expect(globalStore.expandNavigation).toHaveBeenCalledTimes(1);
-        expect(localStorage.getItem(LS_KEY)).toBeNull();
+        expect(sessionStorage.getItem(LS_KEY)).toBeNull();
     });
 });

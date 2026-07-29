@@ -1,3 +1,13 @@
+<!--
+    maskStyle forces a transparent mask (AC3: the area behind the panel stays visible). The
+    `!important` is required to override PrimeNG's default dimmed mask background, which the theme
+    and the `pt` API do not otherwise let us clear — it is deliberate, not a leftover.
+
+    The left-cast shadow on `pt.root.class` is an arbitrary Tailwind value on purpose: the drawer
+    uses `appendTo="body"` (teleported out of this component's DOM), so component-scoped SCSS /
+    `:host ::ng-deep` cannot reach it, and no dotCMS `$shadow-*` token is left-directional (they all
+    cast downward, but a right-anchored drawer needs the shadow cast to the left).
+-->
 <p-drawer
     [visible]="!!data()"
     [modal]="true"

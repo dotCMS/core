@@ -31,6 +31,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -176,7 +177,8 @@ const MESSAGE_KEY = {
         TooltipModule,
         DotMessagePipe,
         DotUveDeviceControlsComponent,
-        DotEditContentSidePanelComponent
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule
     ],
     providers: [
         DotPaletteListStore,
@@ -286,11 +288,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     /**
      * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
      * dialog (previous behavior). Defaults to `false` until resolved, so the dialog is used meanwhile.
+     *
+     * `catchError(() => of(false))`: a failed `/api/v1/configuration` call is cached by
+     * `getFeatureFlag` (shareReplay) and rethrown by `toSignal` on every read, which would make the
+     * edit / palette-drop handlers throw. Degrade to `false` (previous centered-dialog behavior).
      */
     protected readonly $sidePanelEnabled = toSignal(
-        this.dotPropertiesService.getFeatureFlag(
-            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
-        ),
+        this.dotPropertiesService
+            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
+            .pipe(catchError(() => of(false))),
         { initialValue: false }
     );
 
