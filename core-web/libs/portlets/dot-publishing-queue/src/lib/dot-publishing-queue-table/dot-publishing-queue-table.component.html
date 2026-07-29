@@ -150,7 +150,7 @@
                             <p-button
                                 text
                                 size="small"
-                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
+                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-4! h-4! min-w-0!"
                                 [pTooltip]="'publishing-queue.copy-bundle-id' | dm"
                                 tooltipPosition="top"
                                 [attr.aria-label]="'publishing-queue.copy-bundle-id' | dm"
@@ -231,11 +231,12 @@
                                 [rounded]="true"
                                 size="small"
                                 severity="secondary"
+                                styleClass="w-9 h-9 p-0"
                                 (onClick)="kebab.toggle($event)"
                                 [attr.aria-label]="'publishing-queue.row.actions' | dm"
                                 data-testid="pq-bundles-kebab-btn">
                                 <span
-                                    class="material-symbols-rounded w-6 text-center text-xl!"
+                                    class="material-symbols-rounded w-6 text-center text-xl! leading-none!"
                                     aria-hidden="true">
                                     more_vert
                                 </span>
