@@ -961,4 +961,22 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             expect(store.userSearchableActive()).toEqual(['title', 'tags']);
         });
     });
+
+    describe('Show In List fields', () => {
+        it('should set and expose the Show In List fields', () => {
+            const fields = [createFakeTextField({ variable: 'summary' })];
+
+            store.setShowInListFields(fields);
+
+            expect(store.showInListFields()).toEqual(fields);
+        });
+
+        it('should clear the Show In List fields when field filters are cleared', () => {
+            store.setShowInListFields([createFakeTextField({ variable: 'summary' })]);
+
+            store.clearUserSearchableFilters();
+
+            expect(store.showInListFields()).toEqual([]);
+        });
+    });
 });
