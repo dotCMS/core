@@ -62,6 +62,7 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
                 userSearchableActive: signal<string[]>([]),
                 addUserSearchableField: jest.fn(),
                 setUserSearchableFields: jest.fn(),
+                setShowInListFields: jest.fn(),
                 clearUserSearchableFilters: jest.fn()
             }),
             mockProvider(DotHttpErrorManagerService),
@@ -180,5 +181,40 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
 
         expect(httpErrorManager.handle).toHaveBeenCalled();
         expect(store.setUserSearchableFields).toHaveBeenCalledWith([]);
+    });
+
+    it('should populate the Show In List fields from the content type listed fields', () => {
+        contentTypeService.getContentType.mockReturnValue(
+            of({
+                id: 'blog',
+                fields: [
+                    field({ variable: 'title', name: 'Title' }), // not listed
+                    field({ variable: 'summary', name: 'Summary', listed: true }),
+                    field({ variable: 'author', name: 'Author', listed: true })
+                ]
+            } as DotCMSContentType)
+        );
+        store.getFilterValue.mockReturnValue(['blog']);
+
+        spectator.detectChanges();
+
+        expect(store.setShowInListFields).toHaveBeenCalledWith([
+            expect.objectContaining({ variable: 'summary' }),
+            expect.objectContaining({ variable: 'author' })
+        ]);
+    });
+
+    it('should clear the Show In List fields when the single content-type selection is removed', () => {
+        const contentType = signal<string[] | undefined>(['blog']);
+        store.getFilterValue.mockImplementation((key: string) =>
+            key === 'contentType' ? contentType() : undefined
+        );
+
+        spectator.detectChanges();
+
+        contentType.set(undefined);
+        spectator.detectChanges();
+
+        expect(store.setShowInListFields).toHaveBeenLastCalledWith([]);
     });
 });

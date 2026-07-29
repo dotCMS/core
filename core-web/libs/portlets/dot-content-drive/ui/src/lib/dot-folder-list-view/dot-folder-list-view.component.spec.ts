@@ -1460,4 +1460,195 @@ describe('DotFolderListViewComponent', () => {
             expect(() => spectator.component.ngOnDestroy()).not.toThrow();
         });
     });
+
+    describe('Extra columns', () => {
+        const rows = [
+            {
+                identifier: '1',
+                type: 'content',
+                title: 'A',
+                contentType: 'Blog',
+                myText: 'hello',
+                myBool: true,
+                myDate: 1700000000000,
+                myDateTime: 1700000000000
+            },
+            {
+                identifier: '2',
+                type: 'content',
+                title: 'B',
+                contentType: 'Blog',
+                myText: 'a longer value here',
+                myBool: false,
+                myDate: 1700000000000,
+                myDateTime: 1700000000000
+            }
+        ] as unknown as (typeof mockItems)[number][];
+
+        const notSortableHeaders = () =>
+            spectator.queryAll(byTestId('header-column-not-sortable')) as HTMLElement[];
+        const headerByLabel = (label: string) =>
+            notSortableHeaders().find((th) => th.textContent?.trim() === label);
+
+        beforeEach(() => {
+            spectator.setInput('items', rows);
+            spectator.setInput('loading', false);
+        });
+
+        it('should render the extra column header and a cell per row after the Type column', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'myText', header: 'My Text', order: 0, type: 'text' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerByLabel('My Text')).toBeTruthy();
+
+            const cells = spectator.queryAll(byTestId('item-extra-myText'));
+            expect(cells.length).toBe(2);
+            expect(cells[0].textContent?.trim()).toBe('hello');
+
+            // Sits right after the Type cell in the row.
+            const firstRowCells = Array.from(
+                spectator.query(byTestId('item-row'))?.querySelectorAll('td') ?? []
+            );
+            const typeIdx = firstRowCells.findIndex(
+                (td) => td.getAttribute('data-testid') === 'item-content-type'
+            );
+            expect(firstRowCells[typeIdx + 1].getAttribute('data-testid')).toBe(
+                'item-extra-myText'
+            );
+        });
+
+        it('should drop an extra column whose field key collides with a fixed column', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'title', header: 'Dup', order: 0, type: 'text' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-extra-title'))).toBeFalsy();
+            expect(headerByLabel('Dup')).toBeFalsy();
+        });
+
+        it('should render a thumbnail cell for an image column (per-field asset)', () => {
+            spectator.setInput('items', [
+                {
+                    identifier: '1',
+                    type: 'content',
+                    title: 'A',
+                    contentType: 'Blog',
+                    photo: '/dA/abc/photo/pic.png'
+                }
+            ] as unknown as (typeof mockItems)[number][]);
+            spectator.setInput('extraColumns', [
+                { field: 'photo', header: 'Photo', order: 0, type: 'image' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-extra-image-photo'))).toBeTruthy();
+        });
+
+        it('should render distinct boolean icons for true/false and stay blank when absent', () => {
+            spectator.setInput('items', [
+                { identifier: '1', type: 'content', title: 'A', myBool: true },
+                { identifier: '2', type: 'content', title: 'B', myBool: false },
+                { identifier: '3', type: 'content', title: 'C' } // no value → blank, not "false"
+            ] as unknown as (typeof mockItems)[number][]);
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool', order: 0, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            const cells = spectator.queryAll(byTestId('item-extra-myBool'));
+            expect(
+                cells[0].querySelector('[data-testId="item-extra-bool"]')?.textContent?.trim()
+            ).toBe('check_circle');
+            expect(
+                cells[1].querySelector('[data-testId="item-extra-bool"]')?.textContent?.trim()
+            ).toBe('cancel');
+            expect(cells[2].querySelector('[data-testId="item-extra-bool"]')).toBeFalsy();
+        });
+
+        it('should include the time for datetime but not for date', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'myDate', header: 'D', order: 0, type: 'date' },
+                { field: 'myDateTime', header: 'DT', order: 1, type: 'datetime' }
+            ]);
+            spectator.detectChanges();
+
+            const dateText = spectator.query(byTestId('item-extra-myDate'))?.textContent ?? '';
+            const dateTimeText =
+                spectator.query(byTestId('item-extra-myDateTime'))?.textContent ?? '';
+            expect(dateText).not.toContain(':');
+            expect(dateTimeText).toContain(':');
+        });
+
+        it('formats date/datetime/time columns in UTC, not the viewer timezone', () => {
+            // dotCMS stores these fields against the server zone (UTC) and the editor shows them in
+            // that zone, so the table's DatePipe pins ':UTC' — otherwise a UTC+/-N viewer sees a
+            // shifted day/hour that mismatches the editor and the filter. Run under a non-UTC zone
+            // and seed a near-midnight-UTC instant so the calendar day AND hour differ from UTC:
+            // dropping ':UTC' would render 01/14 21:30 (EST) and fail these exact assertions.
+            const originalTz = process.env.TZ;
+            process.env.TZ = 'America/New_York'; // UTC-5 in January
+
+            try {
+                const epoch = Date.UTC(2026, 0, 15, 2, 30); // 2026-01-15 02:30 UTC → 2026-01-14 21:30 EST
+                spectator.setInput('items', [
+                    { identifier: '1', type: 'content', title: 'A', d: epoch, dt: epoch, t: epoch }
+                ] as unknown as (typeof mockItems)[number][]);
+                spectator.setInput('extraColumns', [
+                    { field: 'd', header: 'D', order: 0, type: 'date' },
+                    { field: 'dt', header: 'DT', order: 1, type: 'datetime' },
+                    { field: 't', header: 'T', order: 2, type: 'time' }
+                ]);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('item-extra-d'))?.textContent?.trim()).toBe(
+                    '01/15/2026'
+                );
+                expect(spectator.query(byTestId('item-extra-dt'))?.textContent?.trim()).toBe(
+                    '01/15/2026 2:30 AM'
+                );
+                expect(spectator.query(byTestId('item-extra-t'))?.textContent?.trim()).toBe(
+                    '2:30 AM'
+                );
+            } finally {
+                if (originalTz === undefined) {
+                    delete process.env.TZ;
+                } else {
+                    process.env.TZ = originalTz;
+                }
+            }
+        });
+
+        it('should size a text column by content (ch) and a date column with a fixed width', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'myText', header: 'T', order: 0, type: 'text' },
+                { field: 'myDate', header: 'D', order: 1, type: 'date' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerByLabel('T')?.style.width).toMatch(/ch$/);
+            expect(headerByLabel('D')?.style.width).toBe('12rem');
+        });
+
+        it('should clamp a text column width to the max for very long values', () => {
+            spectator.setInput('items', [
+                { identifier: '1', type: 'content', title: 'A', long: 'x'.repeat(200) }
+            ] as unknown as (typeof mockItems)[number][]);
+            spectator.setInput('extraColumns', [
+                { field: 'long', header: 'L', order: 0, type: 'text' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerByLabel('L')?.style.width).toBe('32ch');
+        });
+
+        it('should leave the table unchanged when no extra columns are provided', () => {
+            spectator.setInput('extraColumns', []);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-extra-myText'))).toBeFalsy();
+        });
+    });
 });

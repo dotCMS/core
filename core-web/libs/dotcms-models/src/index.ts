@@ -9,6 +9,8 @@ export * from './lib/dot-analytics-tracker.model';
 export * from './lib/dot-apps.model';
 export * from './lib/dot-asset-create-options.model';
 export * from './lib/dot-block-editor.model';
+export * from './lib/dot-block-editor-custom-blocks.util';
+export * from './lib/unknown-block.util';
 export * from './lib/dot-bundle';
 export * from './lib/dot-categories.model';
 export * from './lib/dot-container.model';
