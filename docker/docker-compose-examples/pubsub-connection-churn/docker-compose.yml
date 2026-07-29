@@ -1,0 +1,157 @@
+# Repro harness for issue #36544 — pub/sub listener connection churn -> pool exhaustion.
+#
+# A 2-node dotCMS cluster against a shared Postgres, deliberately configured with the
+# pathological knob set observed in the firstmac incident so the failure reproduces in
+# minutes instead of appearing once in production.
+#
+# See README.md for the procedure. Run ./churn.sh once both nodes are up.
+#
+# NOTE: this is a diagnostic harness, NOT an example of a good configuration.
+#       Several values here are intentionally wrong. Do not copy them into a real
+#       deployment.
+
+networks:
+  db_net:
+  opensearch-net:
+
+volumes:
+  dbdata:
+  opensearch-data:
+
+x-dotcms-common: &dotcms-common
+  image: dotcms/dotcms:latest
+  environment: &dotcms-env
+    CMS_JAVA_OPTS: '-Xmx1g'
+    LANG: 'C.UTF-8'
+    TZ: 'UTC'
+    DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+    DB_USERNAME: 'dotcmsdbuser'
+    DB_PASSWORD: 'password'
+    DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+    DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+    DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+    DOT_DOTCMS_CLUSTER_ID: 'dotcms-repro-36544'
+
+    # --- Amplifier 1: a small pool, so exhaustion is reached in minutes. -----------
+    # Production default is 60 (SystemEnvDataSourceStrategy.java:59-63).
+    DB_MAX_TOTAL: '15'
+    DB_MIN_IDLE: '2'
+
+    # Matches the customer's observed timeout in the Loki evidence
+    # ("request timed out after 30000ms"). The product default is 5000.
+    # This is also how long JDBCPubSubImpl.listener() can block while holding the
+    # static PGListener.class monitor (JDBCPubSubImpl.java:59, 121).
+    DB_CONNECTION_TIMEOUT: '30000'
+
+    # --- Amplifier 2: the #34921 naming bug, reproduced at its default. ------------
+    # DB_MAX_WAIT maps to HikariConfig.setMaxLifetime(), NOT to a borrow timeout
+    # (SystemEnvDataSourceStrategy.java:82-85). Unset, it defaults to 60000ms, so
+    # every pooled connection is recycled within 60s of being returned.
+    #
+    # Note: this does NOT retire the pub/sub LISTEN connection. HikariCP never
+    # retires an in-use connection, and that one is checked out permanently by
+    # design. It does force constant physical reconnection of every other
+    # connection, which combined with the validation query below is what makes
+    # each borrow expensive.
+    DB_MAX_WAIT: '60000'
+
+    # --- Amplifier 3: the validation query, set via the DOT_ prefix. ---------------
+    # This is the spike's secondary question. SystemEnvironmentProperties.getVariable()
+    # resolves DB_VALIDATION_QUERY in this order:
+    #   System.getProperty(name) -> System.getProperty("DOT_"+name)
+    #     -> System.getenv(name) -> System.getenv("DOT_"+name)
+    # so DOT_DB_VALIDATION_QUERY lands in HikariConfig.setConnectionTestQuery()
+    # (SystemEnvDataSourceStrategy.java:87-88), which has no default. That is why
+    # the customer reports plain DB_VALIDATION_QUERY as empty while the query still
+    # runs on every validated borrow.
+    #
+    # On a large inode table this costs ~148ms per borrow. Comment this line out to
+    # A/B the effect: Hikari then falls back to the JDBC4 isValid() check.
+    DOT_DB_VALIDATION_QUERY: 'select count(*) as test from inode'
+
+    # Surface Hikari's ProxyLeakTask warnings immediately rather than after 5min.
+    # Be aware: the pub/sub connection is held forever ON PURPOSE, so it will always
+    # trip this. The warning alone is NOT evidence of a leak — see README.
+    DB_LEAK_DETECTION_THRESHOLD: '2000'
+
+    # --- Rewire pressure: evaluate cluster membership 12x more often than prod. ----
+    # ServerHeartbeatJob -> ClusterFactory.rewireClusterIfNeeded()
+    # (DotInitScheduler.java:583-584 defaults are 60s / 60s).
+    DOT_SERVER_HEARTBEAT_INITIAL_DELAY_SECONDS: '5'
+    DOT_SERVER_HEARTBEAT_RUN_EVERY_SECONDS: '5'
+
+    # Keep the listener poll loop at its production cadence so the window between
+    # a connection dying and the thread noticing stays realistic.
+    DOT_PGLISTENER_SLEEP_BETWEEN_RUNS: '500'
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:1
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xmx1G"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - opensearch-net
+
+  db:
+    image: pgvector/pgvector:pg18
+    # pg_stat_statements is what makes this harness work: the call count for
+    # "LISTEN cluster_actions" is a direct PGListener-instantiation counter.
+    command: >
+      postgres
+      -c max_connections=400
+      -c shared_buffers=128MB
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c pg_stat_statements.max=10000
+    environment:
+      POSTGRES_USER: 'dotcmsdbuser'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - db_net
+
+  dotcms-node-1:
+    <<: *dotcms-common
+    environment:
+      <<: *dotcms-env
+    depends_on:
+      - db
+      - opensearch
+    networks:
+      - db_net
+      - opensearch-net
+    ports:
+      - "8082:8082"
+      - "8443:8443"
+
+  dotcms-node-2:
+    <<: *dotcms-common
+    environment:
+      <<: *dotcms-env
+    depends_on:
+      - db
+      - opensearch
+      - dotcms-node-1
+    networks:
+      - db_net
+      - opensearch-net
+    ports:
+      - "8081:8082"
+      - "8444:8443"
