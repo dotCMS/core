@@ -51,6 +51,7 @@ import {
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
+import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
@@ -97,7 +98,8 @@ import { encodeFilters, isFolder } from '../utils/functions';
         MessageModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
-        DotSeverityIconComponent
+        DotSeverityIconComponent,
+        DotContentDriveActionCenterComponent
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -183,6 +185,9 @@ export class DotContentDriveShellComponent {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
+            // Action Center: narrower than a form dialog — it is a list of actions, not a form.
+            case DIALOG_TYPE.ACTION_CENTER:
+                return 'w-[44rem] max-w-[92vw] pt-0 p-4';
             default:
                 return 'w-175 pt-0 p-4';
         }

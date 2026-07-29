@@ -32,10 +32,20 @@
                 }
 
                 @if ($displayActions()) {
-                    <dot-content-drive-workflow-actions
-                        animate.enter="toolbar-enter"
-                        animate.leave="toolbar-leave"
-                        data-testid="workflow-actions" />
+                    @if ($displayActionCenter()) {
+                        <p-button
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            icon="pi pi-bolt"
+                            [label]="'content-drive.action-center.header' | dm"
+                            data-testid="action-center-button"
+                            (click)="onOpenActionCenter()" />
+                    } @else {
+                        <dot-content-drive-workflow-actions
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            data-testid="workflow-actions" />
+                    }
                 }
             </div>
         </div>

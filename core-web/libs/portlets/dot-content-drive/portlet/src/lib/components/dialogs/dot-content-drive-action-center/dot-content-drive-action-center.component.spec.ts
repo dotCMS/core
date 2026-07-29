@@ -1,0 +1,327 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import { of, throwError } from 'rxjs';
+
+import { provideHttpClient } from '@angular/common/http';
+import { signal } from '@angular/core';
+
+import { MessageService } from 'primeng/api';
+
+import {
+    DotMessageService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
+import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+
+import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
+
+import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
+
+const contentlet = (
+    overrides: Partial<DotContentDriveItem> & { inode: string }
+): DotContentDriveItem =>
+    ({
+        baseType: 'CONTENT',
+        live: false,
+        working: true,
+        archived: false,
+        locked: false,
+        ...overrides
+    }) as DotContentDriveItem;
+
+const folder = (inode: string): DotContentDriveItem =>
+    ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
+
+const BULK_ACTIONS_RESPONSE = {
+    schemes: [
+        {
+            scheme: { id: 'editorial', name: 'Editorial Workflow' },
+            steps: [
+                {
+                    step: {
+                        count: 2,
+                        workflowStep: { id: 'step-1', name: 'Draft', schemeId: 'editorial' }
+                    },
+                    actions: [
+                        {
+                            count: 2,
+                            pushPublish: false,
+                            moveable: false,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-review',
+                                name: 'Send for Review',
+                                assignable: false,
+                                commentable: false
+                            }
+                        },
+                        {
+                            count: 2,
+                            pushPublish: true,
+                            moveable: false,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-pp',
+                                name: 'Push Publish',
+                                assignable: false,
+                                commentable: false
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+} as DotBulkActionView;
+
+describe('DotContentDriveActionCenterComponent', () => {
+    let spectator: Spectator<DotContentDriveActionCenterComponent>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
+    let messageService: SpyObject<MessageService>;
+    let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
+    let fireService: SpyObject<DotWorkflowActionsFireService>;
+
+    const mockSelectedItems = signal<DotContentDriveItem[]>([]);
+
+    const createComponent = createComponentFactory({
+        component: DotContentDriveActionCenterComponent,
+        providers: [
+            provideHttpClient(),
+            mockProvider(DotContentDriveStore, {
+                selectedItems: mockSelectedItems,
+                loadItems: jest.fn(),
+                setStatus: jest.fn(),
+                setSelectedItems: jest.fn(),
+                closeDialog: jest.fn()
+            }),
+            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockImplementation((key: string) => key)
+            })
+        ],
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        mockSelectedItems.set([
+            contentlet({ inode: 'inode-1' }),
+            contentlet({ inode: 'inode-2', live: true })
+        ]);
+
+        spectator = createComponent();
+
+        store = spectator.inject(DotContentDriveStore, true);
+        messageService = spectator.inject(MessageService, true);
+        workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
+        fireService = spectator.inject(DotWorkflowActionsFireService, true);
+
+        jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+            of(BULK_ACTIONS_RESPONSE)
+        );
+        jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(of([]));
+        jest.spyOn(fireService, 'bulkFire').mockReturnValue(
+            of({ successCount: 2, skippedCount: 0, fails: [] })
+        );
+        jest.spyOn(store, 'closeDialog');
+        jest.spyOn(store, 'loadItems');
+        jest.spyOn(messageService, 'add');
+    });
+
+    afterEach(() => {
+        // The store mock is shared across tests; without this, call counts accumulate and
+        // "should not have been called" assertions see calls from earlier tests.
+        jest.clearAllMocks();
+    });
+
+    describe('loading the available actions', () => {
+        it('should request bulk actions with the selected inodes', () => {
+            spectator.detectChanges();
+
+            expect(workflowsActionsService.getBulkActions).toHaveBeenCalledWith({
+                contentletIds: ['inode-1', 'inode-2']
+            });
+        });
+
+        it('should exclude folders from the request', () => {
+            mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
+
+            spectator.detectChanges();
+
+            expect(workflowsActionsService.getBulkActions).toHaveBeenCalledWith({
+                contentletIds: ['inode-1']
+            });
+        });
+
+        it('should not call the endpoint when the selection is folders only', () => {
+            mockSelectedItems.set([folder('folder-1'), folder('folder-2')]);
+
+            spectator.detectChanges();
+
+            expect(workflowsActionsService.getBulkActions).not.toHaveBeenCalled();
+        });
+
+        it('should render one panel per scheme', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="workflow-schemes"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="no-workflow-actions"]')).toBeFalsy();
+        });
+
+        it('should show the empty state when no scheme exposes actions', () => {
+            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+                of({ schemes: [] })
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="no-workflow-actions"]')).toBeTruthy();
+        });
+
+        it('should show an inline error when the lookup fails', () => {
+            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+                throwError(() => new Error('boom'))
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="workflow-actions-error"]')).toBeTruthy();
+        });
+    });
+
+    describe('folders in the selection', () => {
+        it('should warn that folders are ignored', () => {
+            mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeTruthy();
+        });
+
+        it('should not warn when the selection has no folders', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeFalsy();
+        });
+    });
+
+    describe('quick actions', () => {
+        it('should render a quick action for the eligible subset', () => {
+            spectator.detectChanges();
+
+            // inode-1 is not live, so Publish applies to exactly one item.
+            expect(spectator.query('[data-testid="quick-action-PUBLISH"]')).toBeTruthy();
+        });
+
+        it('should fire the system action over the selection', () => {
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-PUBLISH"]');
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'PUBLISH',
+                inodes: ['inode-1', 'inode-2']
+            });
+        });
+
+        it('should refresh the grid and close the dialog on success', () => {
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-PUBLISH"]');
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should report an error without closing the dialog', () => {
+            jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(
+                throwError(() => new Error('boom'))
+            );
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-PUBLISH"]');
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'error' })
+            );
+            expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('workflow actions', () => {
+        it('should keep Execute disabled until an action is selected', () => {
+            spectator.detectChanges();
+
+            // PrimeNG puts `disabled` on the inner <button>, not on the p-button host.
+            const execute = spectator.query(
+                '[data-testid="execute-workflow-editorial"] button'
+            ) as HTMLButtonElement;
+
+            expect(execute.disabled).toBe(true);
+        });
+
+        it('should fire the selected action with the selection inodes', () => {
+            spectator.detectChanges();
+
+            spectator.component['$selectedActionId'].set('action-review');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="execute-workflow-editorial"]');
+
+            expect(fireService.bulkFire).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    workflowActionId: 'action-review',
+                    contentletIds: ['inode-1', 'inode-2']
+                })
+            );
+        });
+
+        it('should not fire when no action is selected', () => {
+            spectator.detectChanges();
+
+            spectator.component['onExecuteWorkflowAction']();
+
+            expect(fireService.bulkFire).not.toHaveBeenCalled();
+        });
+
+        it('should surface skipped items in the result message', () => {
+            jest.spyOn(fireService, 'bulkFire').mockReturnValue(
+                of({ successCount: 1, skippedCount: 1, fails: [] })
+            );
+
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('action-review');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="execute-workflow-editorial"]');
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    detail: 'content-drive.action-center.toast.executed-with-skips'
+                })
+            );
+        });
+
+        it('should disable actions that need extra input', () => {
+            spectator.detectChanges();
+
+            const pushPublish = spectator.query(
+                '[data-testid="workflow-action-action-pp"] input'
+            ) as HTMLInputElement;
+
+            expect(pushPublish.disabled).toBe(true);
+        });
+    });
+
+    describe('done', () => {
+        it('should close the dialog without firing anything', () => {
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-center-done"]');
+
+            expect(store.closeDialog).toHaveBeenCalled();
+            expect(fireService.bulkFire).not.toHaveBeenCalled();
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+        });
+    });
+});

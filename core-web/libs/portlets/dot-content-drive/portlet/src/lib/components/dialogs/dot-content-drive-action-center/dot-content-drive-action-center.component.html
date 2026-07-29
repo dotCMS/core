@@ -1,0 +1,164 @@
+<div class="flex flex-col gap-5" data-testid="action-center">
+    <p class="text-sm text-gray-600" data-testid="selection-summary">
+        {{
+            'content-drive.action-center.items-selected'
+                | dm: [$contentletCount().toString()]
+        }}
+    </p>
+
+    @if ($ignoredFolderCount() > 0) {
+        <p-message severity="info" data-testid="folders-ignored-message">
+            {{
+                'content-drive.action-center.folders-ignored'
+                    | dm: [$ignoredFolderCount().toString()]
+            }}
+        </p-message>
+    }
+
+    <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->
+    <section class="flex flex-col gap-2" data-testid="quick-actions-section">
+        <h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            {{ 'content-drive.action-center.quick-actions' | dm }}
+        </h3>
+
+        @if ($quickActions().length) {
+            <div class="flex flex-col divide-y divide-gray-200 rounded-sm border border-gray-200">
+                @for (quickAction of $quickActions(); track quickAction.id) {
+                    <p-button
+                        [text]="true"
+                        [severity]="quickAction.danger ? 'danger' : 'secondary'"
+                        [disabled]="$executing()"
+                        styleClass="w-full justify-between rounded-none py-3"
+                        [attr.data-testid]="'quick-action-' + quickAction.id"
+                        (click)="onExecuteQuickAction(quickAction)">
+                        <span class="flex items-center gap-3">
+                            <i [class]="quickAction.icon" aria-hidden="true"></i>
+                            <span class="font-medium">{{ quickAction.name | dm }}</span>
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <p-badge [value]="quickAction.count.toString()" severity="secondary" />
+                            <i class="pi pi-chevron-right text-xs" aria-hidden="true"></i>
+                        </span>
+                    </p-button>
+                }
+            </div>
+        } @else {
+            <p-message severity="info" data-testid="no-quick-actions">
+                {{ 'content-drive.action-center.no-quick-actions' | dm }}
+            </p-message>
+        }
+    </section>
+
+    <!-- Workflow Actions: one panel per scheme, counts from the backend aggregation. -->
+    <section class="flex flex-col gap-2" data-testid="workflow-actions-section">
+        <h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            {{ 'content-drive.action-center.workflow-actions' | dm }}
+        </h3>
+
+        @if ($loadingSchemes()) {
+            <div class="flex flex-col gap-2" data-testid="workflow-actions-loading">
+                @for (placeholder of [1, 2, 3]; track placeholder) {
+                    <p-skeleton height="2.75rem" />
+                }
+            </div>
+        } @else if ($schemesError()) {
+            <p-message severity="error" data-testid="workflow-actions-error">
+                {{ 'content-drive.action-center.workflow-actions.error' | dm }}
+            </p-message>
+        } @else if (!$schemes().length) {
+            <p-message severity="info" data-testid="no-workflow-actions">
+                {{ 'content-drive.action-center.no-workflow-actions' | dm }}
+            </p-message>
+        } @else {
+            <p-accordion [multiple]="true" data-testid="workflow-schemes">
+                @for (scheme of $schemes(); track scheme.id) {
+                    <p-accordion-panel [value]="scheme.id">
+                        <p-accordion-header>
+                            <span class="flex w-full items-center gap-2">
+                                <span class="font-semibold">{{ scheme.name }}</span>
+                                <span class="text-gray-500">({{ scheme.count }})</span>
+                                @if (schemeOwnsSelection(scheme)) {
+                                    <p-badge
+                                        class="ml-auto mr-2"
+                                        severity="info"
+                                        [value]="
+                                            'content-drive.action-center.one-selected' | dm
+                                        " />
+                                }
+                            </span>
+                        </p-accordion-header>
+
+                        <p-accordion-content>
+                            <div class="flex flex-col">
+                                @for (action of scheme.actions; track action.id) {
+                                    <label
+                                        class="flex cursor-pointer items-center gap-3 border-b border-gray-200 py-3 last:border-b-0"
+                                        [class.opacity-60]="action.requiresInput"
+                                        [attr.for]="action.id">
+                                        <p-radiobutton
+                                            name="actionCenterAction"
+                                            [inputId]="action.id"
+                                            [value]="action.id"
+                                            [disabled]="action.requiresInput || $executing()"
+                                            [ngModel]="$selectedActionId()"
+                                            [attr.data-testid]="'workflow-action-' + action.id"
+                                            (ngModelChange)="$selectedActionId.set($event)" />
+
+                                        <span class="font-medium">{{ action.name }}</span>
+
+                                        @if (action.requiresInput) {
+                                            <i
+                                                class="pi pi-info-circle text-xs text-gray-500"
+                                                [pTooltip]="
+                                                    'content-drive.action-center.requires-input'
+                                                        | dm
+                                                "
+                                                aria-hidden="true"></i>
+                                        }
+
+                                        <span class="ml-auto flex items-center gap-1 text-gray-500">
+                                            @if (action.approximateCount) {
+                                                <i
+                                                    class="pi pi-info-circle text-xs"
+                                                    [pTooltip]="
+                                                        'content-drive.action-center.approximate-count'
+                                                            | dm
+                                                    "
+                                                    aria-hidden="true"></i>
+                                                <span>≤ {{ action.count }}</span>
+                                            } @else {
+                                                <span>({{ action.count }})</span>
+                                            }
+                                        </span>
+                                    </label>
+                                }
+                            </div>
+
+                            <div class="flex justify-end pt-3">
+                                <p-button
+                                    icon="pi pi-play"
+                                    iconPos="right"
+                                    [label]="'content-drive.action-center.execute-workflow' | dm"
+                                    [disabled]="!schemeOwnsSelection(scheme) || $executing()"
+                                    [loading]="$executing()"
+                                    [attr.data-testid]="'execute-workflow-' + scheme.id"
+                                    (click)="onExecuteWorkflowAction()" />
+                            </div>
+                        </p-accordion-content>
+                    </p-accordion-panel>
+                }
+            </p-accordion>
+        }
+    </section>
+
+    <footer class="flex items-center justify-between border-t border-gray-200 pt-4">
+        <span class="text-sm italic text-gray-500">
+            {{ 'content-drive.action-center.one-at-a-time' | dm }}
+        </span>
+        <p-button
+            [label]="'content-drive.action-center.done' | dm"
+            [disabled]="$executing()"
+            data-testid="action-center-done"
+            (click)="onDone()" />
+    </footer>
+</div>

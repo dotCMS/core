@@ -185,7 +185,8 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 // Dialog type
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
-    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR'
+    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
+    ACTION_CENTER: 'ACTION_CENTER'
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];

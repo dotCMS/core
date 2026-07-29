@@ -102,6 +102,9 @@
                     [listType]="listType" />
             }
         }
+        @case (DIALOG_TYPE.ACTION_CENTER) {
+            <dot-content-drive-action-center data-testId="dialog-action-center" />
+        }
     }
 </p-dialog>
 

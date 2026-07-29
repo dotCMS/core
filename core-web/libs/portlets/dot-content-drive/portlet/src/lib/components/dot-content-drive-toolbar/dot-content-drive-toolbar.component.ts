@@ -31,6 +31,7 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { excludeFolders } from '../../utils/action-center';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -273,6 +274,29 @@ export class DotContentDriveToolbarComponent {
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
+
+    /**
+     * Once more than one contentlet is selected, the flat action buttons are replaced by a single
+     * "Action Center" button that opens the bulk dialog. Bulk actions need the dialog because that
+     * is where per-action eligibility counts are shown — a flat button cannot express that a given
+     * action applies to only part of the selection.
+     *
+     * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
+     * folders, so selecting a folder alongside one contentlet is still a single-item action context.
+     */
+    readonly $displayActionCenter = computed(
+        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 1
+    );
+
+    /**
+     * Opens the Action Center dialog for the current selection.
+     */
+    protected onOpenActionCenter(): void {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.ACTION_CENTER,
+            header: this.#dotMessageService.get('content-drive.action-center.header')
+        });
+    }
 
     readonly $togglerStyles = computed(() => ({
         opacity: this.$treeExpanded() ? '0' : '1',
