@@ -46,6 +46,18 @@ on:
         required: false
         type: boolean
         default: false
+      opensearch_phase:
+        description: >-
+          ES->OS migration phase(s) to run the integration suites under. Empty, 'none' or '0'
+          (default) keeps the existing single-store/phase-0 behavior. Accepts a single phase
+          ('2'), a comma list ('1,2,3') or the alias 'all' (= 1,2,3): every integration
+          MainSuite/Junit5 matrix entry is fanned out once per phase with -Dopensearch.phase=<N>
+          appended (activating the opensearch-phase-suite Maven profile: two clusters +
+          DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE), name/stage_name suffixed per phase. The OpenSearch
+          Upgrade Suite is left untouched.
+        required: false
+        type: string
+        default: ''
       e2e:
         required: false
         type: boolean
@@ -95,6 +107,9 @@ jobs:
       - name: Generate test matrix
         id: generate-matrix
         uses: actions/github-script@v7
+        env:
+          # Passed via env (not interpolated into the script) to avoid script injection.
+          OPENSEARCH_PHASE: ${{ inputs.opensearch_phase }}
         with:
           script: |
             const fs = require('fs');
@@ -114,7 +129,19 @@ jobs:
               'integration': ${{ inputs.integration }},
               'e2e': ${{ inputs.e2e }}
             };
-            
+
+            // ES->OS migration phases to sweep. The input accepts a single phase ('2'),
+            // a comma list ('1,2,3'), or the alias 'all' (= 1,2,3). Anything else
+            // (empty, 'none', '0') yields an empty list => phase-0/default behavior.
+            const rawPhase = (process.env.OPENSEARCH_PHASE || '').toLowerCase();
+            const phaseList = [...new Set(
+              (rawPhase === 'all' ? '1,2,3' : rawPhase)
+                .split(',').map(s => s.trim()).filter(s => /^[1-3]$/.test(s))
+            )].sort();
+            if (phaseList.length) {
+              console.log(`OpenSearch phase sweep: [${phaseList.join(', ')}]`);
+            }
+
             // Process each test type
             for (const [testType, testConfig] of Object.entries(config.test_types)) {
               // Check if explicitly disabled (false) - this overrides run-all-tests
@@ -155,13 +182,33 @@ jobs:
                   // Use base_maven_args if no specific maven_args
                   testEntry.maven_args = testEntry.base_maven_args;
                 }
-                
+
                 // Clean up temporary fields
                 delete testEntry.base_maven_args;
                 delete testEntry.test_class;
                 delete testEntry.collection;
-                
-                matrix.push(testEntry);
+
+                // ES->OS migration phase fan-out: run the integration battery under each
+                // requested phase. Only for integration suites, and never for the OpenSearch
+                // Upgrade Suite (it already drives OS via -Dopensearch.upgrade.test — activating
+                // -Dopensearch.phase too would collide the two Maven profiles). The mere presence
+                // of -Dopensearch.phase activates the opensearch-phase-suite profile (see
+                // dotcms-integration/pom.xml). name/stage_name are suffixed per phase so job
+                // labels and the resulting build-reports-<stage_name> artifacts stay unique.
+                const phaseable = testEntry.test_type === 'integration'
+                  && !testEntry.maven_args.includes('opensearch.upgrade.test');
+                if (phaseList.length && phaseable) {
+                  for (const p of phaseList) {
+                    matrix.push({
+                      ...testEntry,
+                      maven_args: `${testEntry.maven_args} -Dopensearch.phase=${p}`,
+                      name: `${testEntry.name} [OS Phase ${p}]`,
+                      stage_name: `${testEntry.stage_name} - os-phase-${p}`,
+                    });
+                  }
+                } else {
+                  matrix.push(testEntry);
+                }
               }
             }
             
@@ -181,7 +228,11 @@ jobs:
     env:
       MAVEN_OPTS: ${{ matrix.maven_opts }}
     strategy:
-      fail-fast: true
+      # Keep the current fast-fail for normal runs, but let ANY phased run (single phase,
+      # a comma-list subset like '1,2', or 'all') run every suite/phase to completion so
+      # failures are attributable per phase. Derived from "phase off" rather than an
+      # exact-match list so comma-list subsets are covered too.
+      fail-fast: ${{ inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0' }}
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
     steps:          

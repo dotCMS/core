@@ -181,35 +181,41 @@
                         picked for either bound, and either can be left empty (open-ended range).
                     -->
                     <div
-                        class="flex flex-col items-center px-3 pt-2"
+                        class="flex flex-col items-center gap-2 p-3"
                         data-testid="field-filter-time">
                         <div class="flex items-start justify-center gap-6">
-                            <div class="flex flex-col items-center gap-1">
+                            <div class="flex flex-col items-start gap-1">
                                 <label class="text-xs font-semibold text-slate-500">
                                     {{ 'from' | dm }}
                                 </label>
                                 <p-datePicker
                                     [timeOnly]="true"
-                                    [inline]="true"
+                                    appendTo="body"
+                                    [showIcon]="true"
+                                    icon="pi pi-clock"
+                                    [inputStyle]="{ width: '7rem' }"
+                                    [keepInvalid]="true"
                                     [ngModel]="$timeFrom()"
                                     (ngModelChange)="onTimeBoundChange($event, 'from')"
                                     [ngModelOptions]="{ standalone: true }"
-                                    [pt]="timePickerPt"
                                     [attr.aria-label]="$title() + ' ' + ('from' | dm)"
                                     data-testid="field-filter-time-from" />
                             </div>
-                            <div class="flex flex-col items-center gap-1">
+                            <div class="flex flex-col items-start gap-1">
                                 <label class="text-xs font-semibold text-slate-500">
                                     {{ 'To' | dm }}
                                 </label>
                                 <p-datePicker
                                     [timeOnly]="true"
-                                    [inline]="true"
+                                    appendTo="body"
+                                    [showIcon]="true"
+                                    icon="pi pi-clock"
+                                    [inputStyle]="{ width: '7rem' }"
+                                    [keepInvalid]="true"
                                     [disabled]="!$timeFrom()"
                                     [ngModel]="$timeTo()"
                                     (ngModelChange)="onTimeBoundChange($event, 'to')"
                                     [ngModelOptions]="{ standalone: true }"
-                                    [pt]="timePickerPt"
                                     [attr.aria-label]="$title() + ' ' + ('To' | dm)"
                                     data-testid="field-filter-time-to" />
                             </div>

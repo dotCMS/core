@@ -5,12 +5,15 @@
                 {{ 'content-drive.dialog.folder.general.header' | dm }}
             </p-tab>
             <p-tab [value]="1">
+                {{ 'content-drive.dialog.folder.upload-behavior.header' | dm }}
+            </p-tab>
+            <p-tab [value]="2">
                 {{ 'content-drive.dialog.folder.advanced.header' | dm }}
             </p-tab>
         </p-tablist>
         <p-tabpanels>
-            <p-tabpanel [value]="0" class="flex flex-col gap-4 mt-4">
-                <div class="flex flex-col gap-2 mb-4">
+            <p-tabpanel [value]="0" class="mt-4 flex flex-col gap-4">
+                <div class="mb-4 flex flex-col gap-2">
                     <label [checkIsRequiredControl]="'name'" for="name" dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.name' | dm }}
                     </label>
@@ -20,7 +23,7 @@
                         aria-describedby="name-help"
                         formControlName="name" />
                 </div>
-                <div class="flex flex-col gap-2 mb-4">
+                <div class="mb-4 flex flex-col gap-2">
                     <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.title' | dm }}
                     </label>
@@ -32,26 +35,46 @@
                         [autofocus]="true" />
                 </div>
 
-                <div class="flex flex-col gap-2 mb-4">
+                <div class="mb-4 flex flex-col gap-2">
                     <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
-                    <p class="bg-gray-100 rounded-md px-2 flex items-center m-0 h-[2.607em]">
+                    <p
+                        class="m-0 flex h-[2.607em] items-center rounded-md bg-gray-100 px-2"
+                        data-testid="folder-path-preview">
                         {{ $finalPath() }}
                     </p>
                 </div>
             </p-tabpanel>
-            <p-tabpanel [value]="1" class="flex flex-col gap-4 mt-4">
-                <div class="flex flex-col gap-2 mb-4">
-                    <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
-                        {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
-                    </label>
-                    <p-inputNumber
-                        inputId="minmax"
-                        mode="decimal"
-                        [min]="0"
-                        formControlName="sortOrder" />
+            <p-tabpanel [value]="1" class="mt-4 flex flex-col gap-4">
+                <div class="mb-4 flex flex-col gap-2">
+                    <label>{{ 'content-drive.dialog.folder.field.upload-behavior' | dm }}</label>
+                    <div class="flex flex-col gap-4">
+                        @for (option of uploadBehaviorOptions; track option.labelKey) {
+                            <label
+                                class="flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition-colors"
+                                [class]="
+                                    folderForm.controls.defaultBaseType.value === option.value
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-gray-300 hover:border-primary'
+                                "
+                                [attr.data-testid]="'upload-behavior-option-' + option.value">
+                                <p-radiobutton
+                                    formControlName="defaultBaseType"
+                                    [value]="option.value"
+                                    [inputId]="'upload-behavior-' + option.value" />
+                                <span class="flex flex-col gap-1">
+                                    <span class="text-base font-semibold text-gray-800">
+                                        {{ option.labelKey | dm }}
+                                    </span>
+                                    <span class="text-sm text-gray-600">
+                                        {{ option.descriptionKey | dm }}
+                                    </span>
+                                </span>
+                            </label>
+                        }
+                    </div>
                 </div>
 
-                <div class="flex flex-col gap-2 mb-4">
+                <div class="mb-4 flex flex-col gap-2">
                     <label
                         [checkIsRequiredControl]="'allowedFileExtensions'"
                         for="allowedFileExtensions"
@@ -64,13 +87,15 @@
                         (completeMethod)="onCompleteMethod($event)"
                         [suggestions]="$filteredAllowedFileExtensions()"
                         [multiple]="true"
-                        (keyup.enter)="onEnterKey($event)" />
+                        [unique]="true"
+                        [forceSelection]="false"
+                        (keydown.enter)="onEnterKey($event)" />
                     <small id="allowedFileExtensions-help">
                         {{ 'content-drive.dialog.folder.field.allowed-file-extensions.help' | dm }}
                     </small>
                 </div>
 
-                <div class="flex flex-col gap-2 mb-4">
+                <div class="mb-4 flex flex-col gap-2">
                     <label
                         [checkIsRequiredControl]="'defaultFileAssetType'"
                         for="defaultFileAssetType"
@@ -89,8 +114,20 @@
                         "
                         formControlName="defaultFileAssetType" />
                 </div>
+            </p-tabpanel>
+            <p-tabpanel [value]="2" class="mt-4 flex flex-col gap-4">
+                <div class="mb-4 flex flex-col gap-2">
+                    <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
+                    </label>
+                    <p-inputNumber
+                        inputId="minmax"
+                        mode="decimal"
+                        [min]="0"
+                        formControlName="sortOrder" />
+                </div>
 
-                <div class="flex flex-col gap-2 mb-4">
+                <div class="mb-4 flex flex-col gap-2">
                     <label
                         [checkIsRequiredControl]="'showOnMenu'"
                         for="showOnMenu"
@@ -107,7 +144,7 @@
     </p-tabs>
 </div>
 
-<div class="flex justify-end gap-4 mt-4 px-6">
+<div class="mt-4 flex justify-end gap-4 px-6">
     <button
         pButton
         type="button"
