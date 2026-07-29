@@ -31,8 +31,11 @@ public class GlobalSearchAttributeStrategy implements FieldStrategy {
         // "IMG_1004.jpeg" tokenizes to "img_1004"+"jpeg", so a "1004" or a full-name search never
         // satisfies a catchall-only prefix gate — without reintroducing an unscoped,
         // whole-document wildcard like the old broad catchall:*value* (issue #36688).
-        luceneQuery.append("+(catchall:").append(value).append("* OR ")
-                .append(fieldName).append("_dotraw:*").append(value).append("*^5)").append(" ");
+        // Boosts are deliberately asymmetric: catchall (a real token-prefix hit) outranks
+        // _dotraw (a raw substring hit that can land anywhere, including mid-word) so a document
+        // found only via the substring fallback still ranks below a genuine prefix match.
+        luceneQuery.append("+(catchall:").append(value).append("*^10 OR ")
+                .append(fieldName).append("_dotraw:*").append(value).append("*^2)").append(" ");
         luceneQuery.append(fieldName).append(":'").append(value).append("'^15").append(" ");
         final String[] titleSplit = value.split(VALUE_SPLIT_REGEX);
         if (titleSplit.length > 1) {
