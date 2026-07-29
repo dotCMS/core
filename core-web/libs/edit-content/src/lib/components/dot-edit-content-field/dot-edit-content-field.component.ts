@@ -66,7 +66,6 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentCategoryFieldComponent,
         DotEditContentBlockEditorComponent,
         DotEditContentKeyValueComponent,
-        DotEditContentWYSIWYGFieldComponent,
         DotEditContentFileFieldComponent,
         DotEditContentRelationshipFieldComponent,
         DotEditContentLineDividerFieldComponent

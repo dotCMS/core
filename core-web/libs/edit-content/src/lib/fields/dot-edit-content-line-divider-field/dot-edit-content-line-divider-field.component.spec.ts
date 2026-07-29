@@ -29,7 +29,7 @@ describe('DotEditContentLineDividerFieldComponent', () => {
         const title = spectator.query(byTestId('line-divider-title'));
 
         expect(divider).toBeTruthy();
-        expect(divider).toHaveClass('bg-surface-50', 'border-surface-200');
+        expect(divider).toHaveClass('bg-surface-100');
         expect(title?.textContent?.trim()).toBe(field.name);
     });
 
