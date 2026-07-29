@@ -24,7 +24,15 @@ public class GlobalSearchAttributeStrategy implements FieldStrategy {
         final String fieldName = fieldContext.fieldName();
         String value = fieldContext.fieldValue().toString();
         final StringBuilder luceneQuery = new StringBuilder();
-        luceneQuery.append("+catchall:").append(value).append("*").append(" ");
+        // Mandatory gate: match either a catchall token PREFIX (fast, existing behavior) OR the
+        // fieldName_dotraw raw value via wildcard. Unlike catchall (which aggregates every field
+        // of the document), _dotraw is scoped to this one field, so this alternative recovers
+        // mid-token and exact-full-value matches (issue #36791) — e.g. a file named
+        // "IMG_1004.jpeg" tokenizes to "img_1004"+"jpeg", so a "1004" or a full-name search never
+        // satisfies a catchall-only prefix gate — without reintroducing an unscoped,
+        // whole-document wildcard like the old broad catchall:*value* (issue #36688).
+        luceneQuery.append("+(catchall:").append(value).append("* OR ")
+                .append(fieldName).append("_dotraw:*").append(value).append("*^5)").append(" ");
         luceneQuery.append(fieldName).append(":'").append(value).append("'^15").append(" ");
         final String[] titleSplit = value.split(VALUE_SPLIT_REGEX);
         if (titleSplit.length > 1) {
@@ -32,7 +40,6 @@ public class GlobalSearchAttributeStrategy implements FieldStrategy {
                 luceneQuery.append(fieldName).append(":").append(term).append("^5").append(" ");
             }
         }
-        luceneQuery.append(fieldName).append("_dotraw:*").append(value).append("*^5").append(" ");
         value = value.replaceAll("\\*", "");
         value = value.replaceAll(SPECIAL_CHARS_TO_ESCAPE, "\\\\$1");
         luceneQuery.append("title:").append(value).append("*");
