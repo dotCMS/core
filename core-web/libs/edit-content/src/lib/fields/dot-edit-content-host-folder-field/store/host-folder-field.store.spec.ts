@@ -1823,6 +1823,35 @@ describe('HostFolderFiledStore', () => {
 
             expect(store.sitesSearchLoading()).toBe(false);
         }));
+
+        it('should stay false while loading more sites with an active search term', fakeAsync(() => {
+            const pageOne = createSiteList(SITE_PAGE_LIMIT);
+            const pageTwo$ = new Subject<{
+                sites: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+
+            mockSitesPage(service, pageOne);
+            store.filterSites('demo');
+            tick(300);
+
+            expect(store.sitesSearchLoading()).toBe(false);
+            expect(store.siteSearchTerm()).toBe('demo');
+
+            service.getSitesPage.mockReturnValue(pageTwo$.asObservable());
+            store.loadMoreSites();
+            tick();
+
+            expect(store.sitesPagination().loading).toBe(true);
+            expect(store.sites().length).toBeGreaterThan(0);
+            expect(store.sitesSearchLoading()).toBe(false);
+
+            pageTwo$.next(createSitesPageResponse(createSiteList(1, 'page-two'), 80, 2));
+            pageTwo$.complete();
+            tick();
+
+            expect(store.sitesSearchLoading()).toBe(false);
+        }));
     });
 
     describe('filterSites', () => {

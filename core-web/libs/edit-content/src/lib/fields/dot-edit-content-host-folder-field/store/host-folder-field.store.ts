@@ -444,12 +444,16 @@ export const HostFolderFiledStore = signalStore(
                     return folders().length > 0;
                 }),
                 /**
-                 * Whether the sites search input should show a loading spinner (active search only,
-                 * not the initial catalog load).
+                 * Whether the sites search input should show a loading spinner.
+                 * True only for a fresh search request (term set, list cleared, page-1 in flight) —
+                 * not the initial catalog load, and not background load-more pagination (which
+                 * keeps existing sites and uses the virtual scroller loading indicator instead).
                  */
                 sitesSearchLoading: computed(
                     () =>
-                        siteSearchTerm().trim().length > 0 && sitesPagination().loading
+                        siteSearchTerm().trim().length > 0 &&
+                        sitesPagination().loading &&
+                        sites().length === 0
                 ),
                 /**
                  * Sites currently loaded for the panel (API-backed list; no local filtering).
