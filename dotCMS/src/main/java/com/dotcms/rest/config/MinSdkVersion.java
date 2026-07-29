@@ -41,7 +41,7 @@ public final class MinSdkVersion {
      * previously published SDK version is still considered compatible. The first real
      * bump of this value should replace this baseline.
      */
-    public static final String VALUE = "0.0.0";
+    public static final String VALUE = "26.07.28-01";
 
     private MinSdkVersion() {
         // utility class, no instances
