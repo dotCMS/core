@@ -377,15 +377,19 @@ export class DotContentDriveDialogFolderComponent {
     #getAssetPath(name: string) {
         const slugName = this.#getSlugTitle(name);
 
-        if (!slugName) {
-            return `//${this.#hostName}/`;
-        }
-
+        // Always anchor on the currently opened folder (store.path()) so the preview reflects where
+        // the folder will actually be created — even before a name is typed. This reads a signal in
+        // a pure computed only; it never writes a form control, so it can't re-introduce the
+        // form-control-write feedback loop that the old title→name `urlEffect` caused.
         const path = this.#store.path();
         let finalPath = this.#hostName;
 
         if (path) {
             finalPath += `${path.replace(/\/$/, '')}`;
+        }
+
+        if (!slugName) {
+            return `//${finalPath}/`;
         }
 
         return `//${finalPath}/${slugName}/`;

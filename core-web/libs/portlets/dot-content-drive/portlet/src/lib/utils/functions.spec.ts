@@ -37,13 +37,35 @@ import {
     parseUserSearchableValue,
     serializeUserSearchableValue,
     buildUserSearchablePayload,
-    getUserSearchableActive
+    getUserSearchableActive,
+    toLocalIsoString
 } from './functions';
 
 import { FOLDER_TREE_PAGE_SIZE, FOLDER_TREE_SEARCH_PAGE_SIZE } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
+    describe('toLocalIsoString', () => {
+        it('formats a Date as a no-offset local wall-clock ISO string (what the user sees)', () => {
+            // Built from LOCAL components, so the assertion is timezone-independent.
+            const date = new Date(2026, 6, 28, 9, 5, 3); // 2026-07-28 09:05:03 local
+
+            expect(toLocalIsoString(date)).toBe('2026-07-28T09:05:03');
+        });
+
+        it('zero-pads and never appends a Z/offset (so the backend keeps the wall-clock)', () => {
+            const result = toLocalIsoString(new Date(2026, 0, 1, 0, 0, 0));
+
+            expect(result).toBe('2026-01-01T00:00:00');
+            expect(result).not.toContain('Z');
+        });
+
+        it('returns an empty string for an Invalid Date (typeable picker can emit one)', () => {
+            // Guards the RangeError date-fns `format` would throw on an invalid instant.
+            expect(toLocalIsoString(new Date('not-a-date'))).toBe('');
+        });
+    });
+
     describe('decodeFilters', () => {
         it('should return an empty object when input is empty string', () => {
             const result = decodeFilters('');

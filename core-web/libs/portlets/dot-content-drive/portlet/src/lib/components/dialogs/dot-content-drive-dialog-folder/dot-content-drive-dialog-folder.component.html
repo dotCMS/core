@@ -37,7 +37,9 @@
 
                 <div class="mb-4 flex flex-col gap-2">
                     <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
-                    <p class="m-0 flex h-[2.607em] items-center rounded-md bg-gray-100 px-2">
+                    <p
+                        class="m-0 flex h-[2.607em] items-center rounded-md bg-gray-100 px-2"
+                        data-testid="folder-path-preview">
                         {{ $finalPath() }}
                     </p>
                 </div>
