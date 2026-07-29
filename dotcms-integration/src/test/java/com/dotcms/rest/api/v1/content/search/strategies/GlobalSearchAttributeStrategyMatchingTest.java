@@ -64,11 +64,15 @@ public class GlobalSearchAttributeStrategyMatchingTest extends IntegrationTestBa
     private static ContentType bodyType;
     private static String unrelatedBodyInode;
 
-    // A content item whose title genuinely STARTS with "1004" as a token — matches the catchall
-    // prefix clause (and, incidentally, the _dotraw clause too, since a prefix is also a
-    // substring). Used to verify relevance ranking against the FILE_NAME item above, which for
-    // "1004" matches ONLY via the _dotraw fallback (mid-token, no genuine prefix).
+    // Ranking pair — BOTH of the same Content Type on purpose: score-based ordering only kicks in
+    // when a content type is selected (LuceneQueryBuilder.getOrderByClause() downgrades the default
+    // "score,modDate desc" to plain "modDate desc" when contentTypeIds is empty), and the content
+    // type filter would otherwise exclude one of the two.
+    // - prefixMatchInode: title STARTS with the "1004" token → satisfies the catchall prefix clause.
+    // - midTokenContentInode: title contains "1004" only mid-token → satisfies only the _dotraw
+    //   substring fallback.
     private static String prefixMatchInode;
+    private static String midTokenContentInode;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -95,6 +99,16 @@ public class GlobalSearchAttributeStrategyMatchingTest extends IntegrationTestBa
                 .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
         prefixMatchInode = prefixMatch.getInode();
+
+        // Same Content Type as the prefix item, created AFTER it (newer modDate). Its title only
+        // contains "1004" mid-token, so for the term "1004" it can only match via the _dotraw
+        // substring fallback — never the catchall prefix clause.
+        final Contentlet midTokenContent = new ContentletDataGen(bodyType.id())
+                .setProperty("title", FILE_NAME)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+        midTokenContentInode = midTokenContent.getInode();
 
         // Created SECOND (newer modDate than the prefix item above) — only matches "1004" via the
         // _dotraw mid-token fallback, never a genuine catchall prefix.
@@ -153,6 +167,36 @@ public class GlobalSearchAttributeStrategyMatchingTest extends IntegrationTestBa
         return contentlets.stream().anyMatch(c -> inode.equals(c.getInode()));
     }
 
+    /**
+     * Same as {@link #search(String)} but scoped to a single Content Type, which is what actually
+     * enables relevance ordering: {@code LuceneQueryBuilder.getOrderByClause()} downgrades the
+     * default {@code "score,modDate desc"} to plain {@code "modDate desc"} whenever
+     * {@code contentTypeIds} is empty — so without a content type the boosts never influence the
+     * order at all.
+     */
+    private List<Contentlet> searchWithinContentType(final String term, final String contentTypeVar)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Object> systemSearchableFields = new HashMap<>();
+        systemSearchableFields.put("languageId", 1);
+        systemSearchableFields.put("siteId", site.getIdentifier());
+        systemSearchableFields.put("systemHostContent", false);
+        final Map<String, Map<String, Object>> byContentType = new HashMap<>();
+        byContentType.put(contentTypeVar, new HashMap<>());
+        final ContentSearchForm contentSearchForm = new ContentSearchForm.Builder()
+                .globalSearch(term)
+                .systemSearchableFields(systemSearchableFields)
+                .searchableFieldsByContentType(byContentType)
+                .perPage(100)
+                .page(1)
+                .build();
+        final LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, systemUser);
+        final String orderBy = luceneQueryBuilder.getOrderByClause();
+        Logger.info(this.getClass(), String.format("term='%s' (CT=%s) → orderBy: %s | query: %s",
+                term, contentTypeVar, orderBy, luceneQueryBuilder.build()));
+        return APILocator.getContentletAPI().search(luceneQueryBuilder.build(), 100, 0,
+                orderBy, systemUser, false);
+    }
+
     /** Position of the given inode in the results list, or -1 if absent. */
     private static int indexOfInode(final List<Contentlet> contentlets, final String inode) {
         for (int i = 0; i < contentlets.size(); i++) {
@@ -193,6 +237,40 @@ public class GlobalSearchAttributeStrategyMatchingTest extends IntegrationTestBa
     }
 
     /**
+     * Exhaustive matching matrix for the reported file name: every substring shape a user might
+     * reasonably type — token prefixes, mid-token fragments, boundary-spanning fragments, partial
+     * tokens, and the exact full name — in both the original and lower case. Each case is logged
+     * with its outcome so the resulting behavior is documented, and any miss fails with the full
+     * list rather than at the first one.
+     */
+    @Test
+    public void allSubstringShapes_findContent() throws DotDataException, DotSecurityException {
+        final List<String> terms = List.of(
+                "1004",            // mid-token digits
+                "jpeg",            // second token, full
+                "1004.jpeg",       // spans the '.' boundary
+                "IMG",             // first token prefix
+                "IMG_",            // token prefix ending in the underscore
+                "IMG_1004",        // full first token
+                "G_1004.jpe",      // mid-substring spanning the boundary, mixed case
+                "g_1004.jpe",      // same, lower case
+                "IMG_1004.jpeg",   // exact full name
+                "img_1004.jpeg",   // exact full name, lower case
+                "MG_100",          // pure mid-substring, no token boundary at either end
+                ".jpeg");          // extension with leading dot
+
+        final List<String> misses = new java.util.ArrayList<>();
+        for (final String term : terms) {
+            final boolean found = containsInode(search(term), fileInode);
+            Logger.info(this.getClass(), String.format("[matrix] term='%s' → found=%b", term, found));
+            if (!found) {
+                misses.add(term);
+            }
+        }
+        assertTrue("These search terms did not return " + FILE_NAME + ": " + misses, misses.isEmpty());
+    }
+
+    /**
      * Regression guard for #36688: a "1004" search must NOT return an unrelated item just because
      * some other content elsewhere contains "1004" in an unrelated way. The unrelated item seeded
      * here has no "1004" anywhere (title or body) — it is a negative control confirming the fix
@@ -206,28 +284,32 @@ public class GlobalSearchAttributeStrategyMatchingTest extends IntegrationTestBa
 
     /**
      * Relevance ranking: a genuine catchall token-PREFIX match (title starting with "1004") must
-     * rank ABOVE a mid-token-only match (the "1004" hidden inside "img_1004") for the same term.
+     * rank ABOVE a mid-token-only match (the "1004" buried inside "img_1004") for the same term.
      * This is why the mandatory gate's two alternatives carry different boosts (catchall^10 vs
      * _dotraw^2) — the fallback that recovers mid-token/exact-name matches must not let those items
      * outrank a document whose title actually starts with the search term.
      * <p>
-     * The prefix-match item is deliberately seeded OLDER (created first) than the mid-token-only
-     * item (see {@code prepare()}): the default sort is {@code score,modDate desc}, so if the
-     * prefix item still comes first despite being older, the order is driven by the score boost,
-     * not by recency — ruling out "newest wins" as an alternative explanation.
+     * Two things make this assertion meaningful rather than accidental:
+     * <ul>
+     *   <li>The search is scoped to a <b>single Content Type</b>. Without one,
+     *       {@code getOrderByClause()} downgrades {@code "score,modDate desc"} to {@code "modDate
+     *       desc"} and relevance plays no part in the ordering at all.</li>
+     *   <li>The prefix item is seeded <b>older</b> than the mid-token item, so a recency-driven
+     *       order would rank it last. It ranking first can therefore only come from the score.</li>
+     * </ul>
      */
     @Test
     public void prefixMatch_ranksAboveMidTokenOnlyMatch() throws DotDataException, DotSecurityException {
-        final List<Contentlet> results = search("1004");
+        final List<Contentlet> results = searchWithinContentType("1004", bodyType.variable());
         final int prefixIndex = indexOfInode(results, prefixMatchInode);
-        final int midTokenIndex = indexOfInode(results, fileInode);
+        final int midTokenIndex = indexOfInode(results, midTokenContentInode);
         Logger.info(this.getClass(), String.format(
                 "prefix match index=%d, mid-token-only match index=%d (lower = ranks higher)",
                 prefixIndex, midTokenIndex));
         assertTrue("Both the prefix-match and mid-token-only items must be present in the results",
                 prefixIndex >= 0 && midTokenIndex >= 0);
         assertTrue("A genuine token-prefix match ('1004 Annual Report', older) must rank above a "
-                        + "mid-token-only match ('img_1004.jpeg', newer) for the same term '1004' — "
+                        + "mid-token-only match ('IMG_1004.jpeg', newer) for the same term '1004' — "
                         + "otherwise the order is just recency, not the intended relevance boost",
                 prefixIndex < midTokenIndex);
     }
