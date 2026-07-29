@@ -2234,10 +2234,15 @@ describe('EditEmaEditorComponent', () => {
                         .mockResolvedValue(true);
                     const pageLoadSpy = jest.spyOn(store, 'pageLoad');
 
-                    const reject = () =>
-                        (confirmSpy.mock.calls[0][0] as Confirmation).reject?.();
+                    const reject = () => (confirmSpy.mock.calls[0][0] as Confirmation).reject?.();
 
-                    return { dotRouterService, navigateByUrlSpy, gotoPortletSpy, pageLoadSpy, reject };
+                    return {
+                        dotRouterService,
+                        navigateByUrlSpy,
+                        gotoPortletSpy,
+                        pageLoadSpy,
+                        reject
+                    };
                 };
 
                 /**
@@ -2257,8 +2262,13 @@ describe('EditEmaEditorComponent', () => {
                 };
 
                 it('should redirect to the previous dotCMS URL when the user rejects creating a new translation', () => {
-                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, pageLoadSpy, reject } =
-                        triggerTranslationReject();
+                    const {
+                        dotRouterService,
+                        navigateByUrlSpy,
+                        gotoPortletSpy,
+                        pageLoadSpy,
+                        reject
+                    } = triggerTranslationReject();
 
                     stubPreviousUrl(dotRouterService, '/pages/import');
 
@@ -2290,7 +2300,10 @@ describe('EditEmaEditorComponent', () => {
 
                     // A previous /edit-page URL could resolve to the same untranslated page
                     // and re-open the dialog, so it must be skipped in favor of /pages.
-                    stubPreviousUrl(dotRouterService, '/edit-page/content?url=/index&language_id=2');
+                    stubPreviousUrl(
+                        dotRouterService,
+                        '/edit-page/content?url=/index&language_id=2'
+                    );
 
                     reject();
 
