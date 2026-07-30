@@ -259,13 +259,15 @@ public class SiteSearchJobImpl {
             // crawl (issue #36360).
             final boolean mirrorReadyForIncremental = !indexMetaData.isNewIndex()
                     && siteSearchAPI.writeMirrorsInSync(indexMetaData.getIndexName());
-            final boolean incremental = (incrementalParam && !isRunNowJob && !indexMetaData
-                    .isNewIndex() && !indexMetaData.isEmpty() && !recentAudits.isEmpty()
-                    && mirrorReadyForIncremental);
+            // The base preconditions for an incremental crawl (independent of mirror sync). Extracted to
+            // a single local so the decision below and the "forcing full rebuild" log cannot drift out
+            // of step if one copy is later edited and the other is not (issue #36360).
+            final boolean incrementalEligible = incrementalParam && !isRunNowJob
+                    && !indexMetaData.isNewIndex() && !indexMetaData.isEmpty()
+                    && !recentAudits.isEmpty();
+            final boolean incremental = incrementalEligible && mirrorReadyForIncremental;
             //We can only run incrementally if all the above pre-requisites are met.
-            if (incrementalParam && !isRunNowJob && !indexMetaData.isNewIndex()
-                    && !indexMetaData.isEmpty() && !recentAudits.isEmpty()
-                    && !mirrorReadyForIncremental) {
+            if (incrementalEligible && !mirrorReadyForIncremental) {
                 Logger.info(SiteSearchJobImpl.class, () -> String.format(
                         "Site-search index `%s` is missing on a write engine or its engine copies are "
                                 + "out of sync; forcing a full rebuild instead of an incremental crawl "

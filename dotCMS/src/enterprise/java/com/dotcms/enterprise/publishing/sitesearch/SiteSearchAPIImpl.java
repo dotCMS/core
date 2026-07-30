@@ -146,10 +146,12 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
      * checked first (a missing twin is out of sync); then each write provider's own document count is
      * compared. A single write engine (Phases 0/3) has nothing to compare, so it is trivially in sync.
      *
-     * <p>The per-engine count comes from each leaf's own {@code search} (ES counts the plain index, OS
-     * the {@code .os} twin), a match-all with {@code rows=0}. Any drift — including a shadow write that
-     * failed fire-and-forget on OpenSearch — makes this {@code false} so the caller rebuilds fully
-     * instead of layering another incremental delta on top of divergent copies (issue #36360).</p>
+     * <p>The per-engine count comes from each leaf's {@link SiteSearchAPI#documentCount(String)} — an
+     * exact count (not a plain {@code search} total, which is capped at 10,000 and would hide drift on
+     * large indices). Any drift — including a shadow write that failed fire-and-forget on OpenSearch —
+     * makes this {@code false} so the caller rebuilds fully instead of layering another incremental delta
+     * on top of divergent copies. A count that fails on any engine ({@code -1}) is treated as out of sync
+     * so an unknown state is never mistaken for "in sync" (issue #36360).</p>
      */
     @Override
     public boolean writeMirrorsInSync(final String indexName) {
@@ -162,7 +164,12 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
         }
         long expected = -1L;
         for (final SiteSearchAPI provider : providers) {
-            final long count = provider.search(indexName, "*", 0, 0).getTotalResults();
+            final long count = provider.documentCount(indexName);
+            if (count < 0L) {
+                // a count query failed on this engine — the real state is unknown, so fail safe to a
+                // full rebuild rather than let a 0==0 (both-failed) match permit an incremental (#36360)
+                return false;
+            }
             if (expected < 0L) {
                 expected = count;
             } else if (count != expected) {
@@ -170,6 +177,17 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
             }
         }
         return true;
+    }
+
+    /**
+     * Router: the exact document count from the current read provider (ES in Phases 0/1, OS in Phases
+     * 2/3). The mirror parity gate does not use this router method — it counts each write provider leaf
+     * directly — but the neutral surface exposes it for a single-engine caller (see
+     * {@link SiteSearchAPI#documentCount}).
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        return router.read(provider -> provider.documentCount(indexName));
     }
 
     /**

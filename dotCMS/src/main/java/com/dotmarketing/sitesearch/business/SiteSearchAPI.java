@@ -75,6 +75,25 @@ public interface SiteSearchAPI {
 	boolean writeMirrorsInSync(String indexName);
 
 	/**
+	 * Accurate document count of this index's physical copy on this engine (Elasticsearch the plain
+	 * index, OpenSearch the {@code .os} twin) — the primitive behind the {@link #writeMirrorsInSync(String)}
+	 * parity check.
+	 *
+	 * <p>Unlike a plain {@code search(...).getTotalResults()}, this returns an <strong>exact</strong>
+	 * total. Default hit-count tracking on the Elasticsearch 7.x / OpenSearch clients caps reported
+	 * totals at 10,000, so two large mirrors that have genuinely drifted (e.g. 15,000 vs 12,000) would
+	 * both read back {@code 10000} and compare equal, hiding the drift the gate exists to catch. This
+	 * method issues a real count (a dedicated count request / {@code track_total_hits}) so drift is
+	 * detected above 10k docs (issue #36360).</p>
+	 *
+	 * @param indexName the logical site-search index name (no {@code .os} tag)
+	 * @return the exact document count; {@code 0} if the index does not exist on this engine; {@code -1}
+	 *         if the count query failed — callers must treat a failed count as "not in sync" (rebuild),
+	 *         never as an empty index
+	 */
+	long documentCount(String indexName);
+
+	/**
 	 * Resolves site-search aliases to their backing index names — phase-aware and OpenSearch
 	 * {@code .os}-aware. Keys (alias) and values (index) are both <strong>logical</strong> names.
 	 *

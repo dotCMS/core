@@ -65,12 +65,6 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
         Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, String.valueOf(ordinal));
     }
 
-    private static SiteSearchResults resultsWithTotal(final long total) {
-        final SiteSearchResults results = new SiteSearchResults();
-        results.setTotalResults(total);
-        return results;
-    }
-
     // =======================================================================
     // existsOnAllWriteEngines — the incremental-crawl gate
     // =======================================================================
@@ -118,8 +112,8 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
         setPhase(PHASE_1_DUAL_WRITE_ES_READS);
         when(esImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
         when(osImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
-        when(esImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(100));
-        when(osImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(100));
+        when(esImpl.documentCount(IDX)).thenReturn(100L);
+        when(osImpl.documentCount(IDX)).thenReturn(100L);
 
         assertTrue(router.writeMirrorsInSync(IDX));
     }
@@ -130,8 +124,38 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
         setPhase(PHASE_1_DUAL_WRITE_ES_READS);
         when(esImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
         when(osImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
-        when(esImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(100));
-        when(osImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(60));
+        when(esImpl.documentCount(IDX)).thenReturn(100L);
+        when(osImpl.documentCount(IDX)).thenReturn(60L);
+
+        assertFalse(router.writeMirrorsInSync(IDX));
+    }
+
+    /**
+     * Drift above the default 10k hit-count cap: the parity gate uses the exact {@code documentCount}
+     * (not a capped search total), so ES 15,000 vs OS 12,000 is caught as drift (issue #36360).
+     */
+    @Test
+    public void writeMirrorsInSync_dualWrite_driftAboveTenThousand_false() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS);
+        when(esImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(osImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(esImpl.documentCount(IDX)).thenReturn(15_000L);
+        when(osImpl.documentCount(IDX)).thenReturn(12_000L);
+
+        assertFalse(router.writeMirrorsInSync(IDX));
+    }
+
+    /**
+     * A failed count on any engine ({@code -1}) is fail-safe: treated as out of sync so the caller
+     * rebuilds, rather than a both-failed {@code 0 == 0} being mistaken for "in sync" (issue #36360).
+     */
+    @Test
+    public void writeMirrorsInSync_dualWrite_failedCount_false() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS);
+        when(esImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(osImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(esImpl.documentCount(IDX)).thenReturn(-1L); // count query errored on ES
+        when(osImpl.documentCount(IDX)).thenReturn(-1L); // ...and on OS too
 
         assertFalse(router.writeMirrorsInSync(IDX));
     }
@@ -145,7 +169,7 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
 
         assertFalse(router.writeMirrorsInSync(IDX));
         // counts are never consulted once a twin is known to be missing
-        verify(esImpl, never()).search(IDX, "*", 0, 0);
+        verify(esImpl, never()).documentCount(IDX);
     }
 
     /** Phase 0 writes to a single engine — nothing to reconcile, so trivially in sync. */

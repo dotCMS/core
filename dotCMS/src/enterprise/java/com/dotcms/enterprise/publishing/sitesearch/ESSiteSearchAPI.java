@@ -60,6 +60,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
@@ -130,6 +132,30 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     @Override
     public boolean writeMirrorsInSync(final String indexName) {
         return true;
+    }
+
+    /**
+     * Single-engine leaf: exact document count of this Elasticsearch index (plain name, no {@code .os}).
+     * Uses a dedicated {@code _count} request so the total is not capped at 10,000 like a default search,
+     * which would hide content drift above 10k docs in the mirror parity gate (issue #36360). Returns
+     * {@code 0} when the index is absent and {@code -1} when the count query fails.
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        if (!indexApi.indexExists(indexName)) {
+            return 0L;
+        }
+        try {
+            final CountRequest countRequest =
+                    new CountRequest(indexApi.getNameWithClusterIDPrefix(indexName));
+            final CountResponse response = RestHighLevelClientProvider.getInstance().getClient()
+                    .count(countRequest, RequestOptions.DEFAULT);
+            return response.getCount();
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Site Search document count failed for ES index '%s': %s", indexName, e.getMessage()));
+            return -1L;
+        }
     }
 
     /**

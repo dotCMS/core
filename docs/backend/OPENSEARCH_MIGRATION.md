@@ -323,8 +323,13 @@ fragile). Two mechanisms (issue #36360):
 1. **Incremental-crawl gate — existence *and* document-count parity.**
    `SiteSearchAPI.existsOnAllWriteEngines(name)` reports whether the index exists on *every* current
    write engine; `writeMirrorsInSync(name)` adds a **document-count comparison** across those engines
-   (each leaf counts its own physical index — ES the plain name, OS the `.os` twin — via a match-all
-   `rows=0`). `SiteSearchJobImpl` gates the incremental crawl on `writeMirrorsInSync`: a missing twin
+   (each leaf reports its own physical index's count — ES the plain name, OS the `.os` twin — via
+   `SiteSearchAPI.documentCount`). That count is an **exact** total (a dedicated `_count` request on ES,
+   a `size:0` match-all with `track_total_hits:true` on OS) — *not* a plain search total, which the ES
+   7.x / OpenSearch clients cap at 10,000, so two large mirrors that had genuinely drifted (e.g. 15,000
+   vs 12,000) would both read `10000` and wrongly compare equal. A count that fails on any engine
+   (`-1`) is treated as **out of sync** (fail-safe rebuild), so a both-failed `0 == 0` is never mistaken
+   for "in sync". `SiteSearchJobImpl` gates the incremental crawl on `writeMirrorsInSync`: a missing twin
    **or** a count mismatch demotes the crawl to a **full rebuild**, which recreates identical copies
    (correct mapping) on every engine and re-points the alias. This heals both desync kinds — the
    missing/partial twin *and* content drift from a swallowed shadow write — on the next crawl, and the
