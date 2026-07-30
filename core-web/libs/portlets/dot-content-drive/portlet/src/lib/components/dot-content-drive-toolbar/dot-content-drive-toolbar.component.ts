@@ -276,10 +276,10 @@ export class DotContentDriveToolbarComponent {
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
 
     /**
-     * Once more than one contentlet is selected, the flat action buttons are replaced by a single
-     * "Action Center" button that opens the bulk dialog. Bulk actions need the dialog because that
-     * is where per-action eligibility counts are shown — a flat button cannot express that a given
-     * action applies to only part of the selection.
+     * Once more than one contentlet is selected, an "Action Center" button is offered *alongside*
+     * the flat action buttons — not instead of them. The flat buttons stay available for any
+     * selection; the dialog adds what they cannot express, namely per-action eligibility counts and
+     * the workflow actions grouped by scheme.
      *
      * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
      * folders, so selecting a folder alongside one contentlet is still a single-item action context.
