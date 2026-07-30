@@ -51,6 +51,9 @@ describe('DotContentDriveToolbarComponent', () => {
     const isTreeExpandedSignal = signal(false);
     const filtersSignal = signal<Record<string, unknown>>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
+    const selectedNodeSignal = signal<{ data?: { defaultBaseType?: string | null } } | undefined>(
+        undefined
+    );
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
@@ -65,6 +68,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 filters: filtersSignal,
                 setDialog: jest.fn(),
                 selectedItems: selectedItemsSignal,
+                selectedNode: selectedNodeSignal,
                 userSearchableFields: signal([]),
                 userSearchableActive: signal<string[]>([]),
                 setUserSearchableFields: jest.fn(),
@@ -121,6 +125,7 @@ describe('DotContentDriveToolbarComponent', () => {
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
         selectedItemsSignal.set([]);
+        selectedNodeSignal.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -304,10 +309,40 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     describe('Upload button', () => {
+        const uploadLabel = () =>
+            spectator
+                .query(byTestId('upload-asset-button'))
+                ?.querySelector('.p-button-label')
+                ?.textContent?.trim();
+
         it('should render the upload button when no items are selected', async () => {
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+
+        it('should label the button "Upload" when the current folder has no preference', async () => {
+            selectedNodeSignal.set({ data: {} });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload');
+        });
+
+        it('should label the button "Upload Asset" when the folder defaults to Assets', async () => {
+            selectedNodeSignal.set({ data: { defaultBaseType: 'DOTASSET' } });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload-asset');
+        });
+
+        it('should label the button "Upload File" when the folder defaults to Files', async () => {
+            selectedNodeSignal.set({ data: { defaultBaseType: 'FILEASSET' } });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload-file');
         });
 
         it('should emit upload when the upload button is clicked', async () => {

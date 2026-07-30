@@ -70,6 +70,7 @@ def build_contentlet(
     release_notes: str,
     docker_image: str,
     released_date: str,
+    eol_date: str,
     identifier: str | None = None,
 ) -> dict:
     """Build the fire payload's contentlet.
@@ -84,6 +85,9 @@ def build_contentlet(
         "releaseNotes": release_notes,
         "dockerImage": docker_image,
         "releasedDate": released_date,
+        # Required field on the live type (validated 2026-07-27: the fire 400s without
+        # it). Site convention: released date + 1 year for current-track entries.
+        "eolDate": eol_date,
         "showInChangeLog": True,
         "lts": _LTS_CURRENT,
         "released": _RELEASED,
@@ -102,6 +106,7 @@ def publish(
     release_notes: str,
     docker_image: str,
     released_date: str,
+    eol_date: str,
     service_account: str | None = None,
     force: bool = False,
     apply: bool,
@@ -122,6 +127,7 @@ def publish(
             release_notes=release_notes,
             docker_image=docker_image,
             released_date=released_date,
+            eol_date=eol_date,
         )
         client.fire(contentlet, apply=apply)
         if apply and not _wait_until_searchable(client, version):
@@ -149,6 +155,7 @@ def publish(
         release_notes=release_notes,
         docker_image=docker_image,
         released_date=released_date,
+        eol_date=eol_date,
         identifier=hit.identifier,
     )
     client.fire(contentlet, apply=apply)
