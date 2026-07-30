@@ -107,11 +107,17 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                     overflow: 'hidden'
                 }
             }
-        },
-        // Panel styling has to go through `pt`: `p-accordion-panel` exposes only a `value` input,
-        // so a `styleClass`/`class` attribute on it is inert. `overflow: hidden` here is what clips
-        // the header and content corners to the panel radius.
-        panel: {
+        }
+    };
+
+    /**
+     * Panel styling has to go on `p-accordion-panel`'s `pt.root`: Accordion's PassThrough
+     * only exposes `root`/`motion`, and `p-accordion-panel` only accepts a `value` input, so a
+     * `class`/`styleClass` attribute on it is inert. `overflow-hidden` clips header/content
+     * corners to the panel radius.
+     */
+    protected readonly accordionPanelPt = {
+        root: {
             class: 'rounded-xl overflow-hidden'
         }
     };

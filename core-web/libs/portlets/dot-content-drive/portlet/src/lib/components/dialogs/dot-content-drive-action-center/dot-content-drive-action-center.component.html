@@ -58,7 +58,7 @@
                     @for (quickAction of $quickActions(); track quickAction.id) {
                         <button
                             type="button"
-                            class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-60"
+                            class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all hover:cursor-pointer hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-60"
                             [disabled]="$executing()"
                             [attr.data-testid]="'quick-action-' + quickAction.id"
                             (click)="onExecuteQuickAction(quickAction)">
@@ -131,7 +131,7 @@
                     [value]="$openSchemeId()"
                     (valueChange)="onOpenSchemeChange($event)">
                     @for (scheme of $schemes(); track scheme.id) {
-                        <p-accordion-panel [value]="scheme.id">
+                        <p-accordion-panel [value]="scheme.id" [pt]="accordionPanelPt">
                             <p-accordion-header>
                                 <span class="flex w-full items-center gap-3">
                                     <span
