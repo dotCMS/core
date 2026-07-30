@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
@@ -11,10 +11,9 @@ import {
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
-    DotMessageService,
-    DotPropertiesService
+    DotMessageService
 } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
 import { DotClipboardUtil } from '@dotcms/ui';
 
@@ -54,6 +53,8 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
         .fn()
         .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
     limitWasCapped: jest.fn().mockReturnValue(false),
+    // `withFlags` slice — side panel off by default (empty map ⇒ `flags()[FLAG] ?? false` is false).
+    flags: jest.fn().mockReturnValue({}),
     emptyStateConfig: jest
         .fn()
         .mockReturnValue({ title: 'Empty', icon: 'pi-search', subtitle: '' }),
@@ -99,10 +100,8 @@ describe('DotQueryToolPageComponent', () => {
         ],
         componentProviders: [
             { provide: DotQueryToolStore, useFactory: () => buildStoreMock(pendingStoreOverrides) },
-            DotClipboardUtil,
-            // Flag off by default → results open in a new tab (placeholder path). In
-            // componentProviders so the field-initializer toSignal resolves it at construction.
-            { provide: DotPropertiesService, useValue: { getFeatureFlag: () => of(false) } }
+            DotClipboardUtil
+            // Flag off by default (store mock's `flags()` returns `{}`) → results open in a new tab.
         ]
     });
 
@@ -399,12 +398,18 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
             })
         ],
         componentProviders: [
-            { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
-            DotClipboardUtil,
-            // Flag on → new-editor results open in the side panel. In componentProviders (node
-            // injector) so the component's field-initializer `toSignal(getFeatureFlag(...))`
-            // resolves the mock at construction.
-            { provide: DotPropertiesService, useValue: { getFeatureFlag: () => of(true) } }
+            // Flag on (store mock's `flags()` reports the side panel enabled) → new-editor results
+            // open in the side panel instead of a new tab.
+            {
+                provide: DotQueryToolStore,
+                useFactory: () =>
+                    buildStoreMock({
+                        flags: jest.fn().mockReturnValue({
+                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+                        })
+                    })
+            },
+            DotClipboardUtil
         ]
     });
 
@@ -529,7 +534,8 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
 // still needs its own `ActivatedRoute`/flag value before construction, hence a dedicated describe.
 describe('DotQueryToolPageComponent (editContent deep link)', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
-    let getFeatureFlag: jest.Mock;
+    // Side-panel flag as reported by the store's `withFlags` slice; set per test before mounting.
+    let flagsValue: Partial<Record<FeaturedFlags, boolean>>;
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -553,19 +559,21 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
             mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() })
         ],
         componentProviders: [
-            { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
+            {
+                provide: DotQueryToolStore,
+                useFactory: () => buildStoreMock({ flags: jest.fn(() => flagsValue) })
+            },
             DotClipboardUtil
         ]
     });
 
     beforeEach(() => {
-        getFeatureFlag = jest.fn().mockReturnValue(of(true));
+        flagsValue = { [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true };
     });
 
     const mount = (editContent: string) =>
         createComponent({
             providers: [
-                { provide: DotPropertiesService, useValue: { getFeatureFlag } },
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap({ editContent }) } }
@@ -592,7 +600,6 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
     it('resolves and opens the panel from a shared link when the side panel flag is on', () => {
         spectator = mount('id-1');
 
-        expect(getFeatureFlag).toHaveBeenCalled();
         expect(spectator.component.$editPanelRequest()).toEqual({
             mode: 'edit',
             contentletInode: 'inode-1',
@@ -602,15 +609,17 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
     });
 
     it('ignores the deep link when the side panel flag is off (no in-page editor to open it in)', () => {
-        getFeatureFlag.mockReturnValue(of(false));
+        flagsValue = {};
 
         spectator = mount('id-1');
 
         expect(spectator.component.$editPanelRequest()).toBeNull();
     });
 
-    it('ignores the deep link when the feature-flag read fails (degrades to off, same as #3)', () => {
-        getFeatureFlag.mockReturnValue(throwError(() => new Error('config down')));
+    it('ignores the deep link when the flag never resolved (empty slice ⇒ off, same as #3)', () => {
+        // withFlags degrades to an empty slice on a failed config read; the deep link must not throw
+        // and must not open the panel — same safe outcome as the flag being explicitly off.
+        flagsValue = {};
 
         expect(() => (spectator = mount('id-1'))).not.toThrow();
         expect(spectator.component.$editPanelRequest()).toBeNull();

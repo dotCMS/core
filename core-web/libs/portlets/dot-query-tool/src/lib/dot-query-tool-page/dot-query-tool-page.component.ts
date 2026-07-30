@@ -1,10 +1,11 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
 import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     DestroyRef,
     effect,
     inject,
@@ -13,7 +14,6 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -32,15 +32,14 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, switchMap, take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import {
     DotContentletEditUrlService,
     DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
-    DotMessageService,
-    DotPropertiesService
+    DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, EditContentDialogData } from '@dotcms/edit-content';
@@ -111,7 +110,6 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
     readonly #location = inject(Location);
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
-    readonly #dotPropertiesService = inject(DotPropertiesService);
     readonly #contentSearch = inject(DotContentSearchService);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -128,18 +126,13 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /**
      * Feature flag gating the side panel. When off, editing a result opens the editor in a new
-     * browser tab (the previous behavior); when on, results that resolve to the new content
-     * editor open in the in-page side panel instead. Defaults to `false` until it resolves.
-     *
-     * `catchError(() => of(false))`: a failed `/api/v1/configuration` call is cached by
-     * `getFeatureFlag` (shareReplay) and rethrown by `toSignal` on every read, which would make the
-     * result-click handler throw. Degrade to `false` (previous new-tab behavior).
+     * browser tab (the previous behavior); when on, results that resolve to the new content editor
+     * open in the in-page side panel instead. Read from the store's `withFlags` slice (batch-fetched
+     * once on init, degrades to `false` on a failed config read) — defaults to `false` until it
+     * resolves, so the safe/previous new-tab behavior is used meanwhile.
      */
-    readonly $sidePanelEnabled = toSignal(
-        this.#dotPropertiesService
-            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
-            .pipe(catchError(() => of(false))),
-        { initialValue: false }
+    readonly $sidePanelEnabled = computed(
+        () => this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
     );
 
     /** Content shown in the Edit Content side panel, or `null` when it is closed. */
@@ -421,34 +414,31 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /**
      * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel.
-     * Gated on the side-panel flag (read at call time so a cold deep-link load waits for it): with
-     * the flag off there is no in-page editor in Query Tool — editing opens a new tab, which needs a
-     * user gesture and can't be triggered on load — so the deep link is ignored (AC15). The param
-     * can outlive the flag being on (shared link / bookmark / staging→prod), hence the gate.
+     * Gated on the side-panel flag: with the flag off there is no in-page editor in Query Tool —
+     * editing opens a new tab, which needs a user gesture and can't be triggered on load — so the
+     * deep link is ignored (AC15). The param can outlive the flag being on (shared link / bookmark /
+     * staging→prod), hence the gate.
+     *
+     * The flag is read from `$sidePanelEnabled` (the store's `withFlags` slice) after the resolve.
+     * On a cold deep-link load the flag is usually resolved by then (the config fetch starts on
+     * store init, before this search); in the rare case it hasn't, the deep link is dropped — safe,
+     * just not the panel.
      */
     #resolveAndOpenByIdentifier(identifier: string): void {
-        this.#dotPropertiesService
-            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
+        this.#contentSearch
+            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
+                query: `+identifier:${identifier} +working:true`,
+                limit: 1
+            })
             .pipe(
                 take(1),
-                catchError(() => of(false)),
-                switchMap((sidePanelEnabled) => {
-                    if (!sidePanelEnabled) {
-                        return EMPTY;
-                    }
-
-                    return this.#contentSearch
-                        .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                            query: `+identifier:${identifier} +working:true`,
-                            limit: 1
-                        })
-                        .pipe(
-                            take(1),
-                            catchError(() => EMPTY)
-                        );
-                })
+                catchError(() => EMPTY)
             )
             .subscribe((entity) => {
+                if (!this.$sidePanelEnabled()) {
+                    return;
+                }
+
                 const contentlet = entity?.jsonObjectView?.contentlets?.[0];
                 if (!contentlet?.inode) {
                     return;

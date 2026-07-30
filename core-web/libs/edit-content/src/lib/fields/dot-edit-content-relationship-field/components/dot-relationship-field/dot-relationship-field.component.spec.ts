@@ -19,15 +19,14 @@ jest.mock(
 );
 
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     createFakeContentlet,
     createFakeLanguage,
@@ -104,6 +103,8 @@ describe('DotRelationshipFieldComponent', () => {
         contentType: jest.fn().mockReturnValue({ id: 'ct-1' }),
         formattedRelationship: jest.fn().mockReturnValue('id-1'),
         lastChangeSource: jest.fn().mockReturnValue('load'),
+        // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
+        flags: jest.fn().mockReturnValue({}),
         initialize: jest.fn(),
         setData: jest.fn(),
         deleteItem: jest.fn(),
@@ -132,8 +133,6 @@ describe('DotRelationshipFieldComponent', () => {
             mockProvider(DialogService, {
                 open: jest.fn()
             }),
-            // Side panel flag off by default → "create new" uses the centered dialog.
-            mockProvider(DotPropertiesService, { getFeatureFlag: jest.fn(() => of(false)) }),
             {
                 provide: EDIT_CONTENT_HOST,
                 useValue: {
@@ -248,9 +247,9 @@ describe('DotRelationshipFieldComponent', () => {
         it('opens the create-new content in the side panel when the flag is on', async () => {
             const dialogService = spectator.inject(DialogService);
             (dialogService.open as jest.Mock).mockClear();
-            (spectator.inject(DotPropertiesService).getFeatureFlag as jest.Mock).mockReturnValue(
-                of(true)
-            );
+            storeMock.flags.mockReturnValue({
+                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+            });
 
             await spectator.component.showCreateNewContentDialog();
             spectator.detectChanges();
@@ -260,18 +259,16 @@ describe('DotRelationshipFieldComponent', () => {
             expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
         });
 
-        it('falls back to the centered dialog when the feature-flag read rejects', async () => {
+        it('falls back to the centered dialog when the flag slice has not resolved', async () => {
             const dialogService = spectator.inject(DialogService);
             (dialogService.open as jest.Mock).mockClear();
-            // getFeatureFlag has no catchError of its own, so a rejected config read is reachable.
-            (spectator.inject(DotPropertiesService).getFeatureFlag as jest.Mock).mockReturnValue(
-                throwError(() => new Error('config unavailable'))
-            );
+            // Empty slice = withFlags degraded on a failed config read, or a click before it
+            // resolved. Either way the create-new action must not be a silent no-op: fall back to
+            // the centered dialog (previous behavior).
+            storeMock.flags.mockReturnValue({});
 
             await spectator.component.showCreateNewContentDialog();
 
-            // The rejected read must not leave the "New content" action a silent no-op: the catch
-            // falls back to the centered dialog (previous behavior).
             expect(dialogService.open).toHaveBeenCalledTimes(1);
             const [, config] = (dialogService.open as jest.Mock).mock.calls[0];
             expect(config.data).toEqual(
@@ -280,9 +277,9 @@ describe('DotRelationshipFieldComponent', () => {
         });
 
         it('destroys the side panel when it emits `closed`', async () => {
-            (spectator.inject(DotPropertiesService).getFeatureFlag as jest.Mock).mockReturnValue(
-                of(true)
-            );
+            storeMock.flags.mockReturnValue({
+                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+            });
 
             await spectator.component.showCreateNewContentDialog();
             spectator.detectChanges();

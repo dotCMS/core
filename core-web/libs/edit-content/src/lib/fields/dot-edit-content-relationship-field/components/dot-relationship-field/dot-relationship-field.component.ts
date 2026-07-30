@@ -1,5 +1,4 @@
 import { signalMethod } from '@ngrx/signals';
-import { firstValueFrom } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -27,7 +26,7 @@ import { TagModule } from 'primeng/tag';
 
 import { filter } from 'rxjs/operators';
 
-import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -144,7 +143,6 @@ export class DotRelationshipFieldComponent
 
     /** Used to create the Edit Content side panel imperatively (see {@link showCreateNewContentDialog}). */
     readonly #viewContainerRef = inject(ViewContainerRef);
-    readonly #dotPropertiesService = inject(DotPropertiesService);
 
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
@@ -461,22 +459,13 @@ export class DotRelationshipFieldComponent
             }
         };
 
-        // Read the flag at click time (not at construction): this component is created lazily and
-        // deep in the editor, so a construction-time signal could be read before the flag resolves.
-        // getFeatureFlag is cached (shareReplay), so this is cheap.
-        let sidePanelEnabled = false;
-        try {
-            sidePanelEnabled = await firstValueFrom(
-                this.#dotPropertiesService.getFeatureFlag(
-                    FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
-                )
-            );
-        } catch {
-            // This runs from a fire-and-forget menu `command`, so a rejected flag read would be an
-            // unhandled rejection and the "New content" action would silently do nothing. Fall back
-            // to the dialog (previous behavior) instead.
-            sidePanelEnabled = false;
-        }
+        // Read the flag from the store's `withFlags` slice (batch-fetched once on store init).
+        // Read at click time, not construction: this component is created lazily and deep in the
+        // editor, but the store's init fetch has run long before the user clicks, so `flags()` is
+        // resolved by now. If it somehow isn't (empty slice ⇒ `undefined`), fall back to the dialog
+        // (previous behavior) — the safe default.
+        const sidePanelEnabled =
+            this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
 
         if (sidePanelEnabled) {
             await this.#openCreateContentSidePanel(dialogData);

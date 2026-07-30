@@ -20,7 +20,8 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
 import {
@@ -71,6 +72,9 @@ const initialState: QueryToolState = {
 
 export const DotQueryToolStore = signalStore(
     withState<QueryToolState>(initialState),
+    // Side-panel feature flag, batch-fetched once on init and exposed as `flags()`. The page
+    // component reads it to decide whether editing a result opens the in-page side panel or a tab.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed((store) => ({
         contentlets: computed<DotCMSContentlet[]>(
             () => store.response()?.jsonObjectView.contentlets ?? []

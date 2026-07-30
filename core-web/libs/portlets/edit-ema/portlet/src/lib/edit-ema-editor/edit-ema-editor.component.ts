@@ -20,7 +20,7 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -44,7 +44,6 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotPropertiesService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -265,7 +264,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotContentletService = inject(DotContentletService);
     private readonly dialogService = inject(DialogService);
-    private readonly dotPropertiesService = inject(DotPropertiesService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
@@ -287,17 +285,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
-     * dialog (previous behavior). Defaults to `false` until resolved, so the dialog is used meanwhile.
-     *
-     * `catchError(() => of(false))`: a failed `/api/v1/configuration` call is cached by
-     * `getFeatureFlag` (shareReplay) and rethrown by `toSignal` on every read, which would make the
-     * edit / palette-drop handlers throw. Degrade to `false` (previous centered-dialog behavior).
+     * dialog (previous behavior). Read from the UVE store's `withFlags` slice (batch-fetched once on
+     * init, degrades to `false` on a failed config read) — defaults to `false` until it resolves, so
+     * the dialog is used meanwhile.
      */
-    protected readonly $sidePanelEnabled = toSignal(
-        this.dotPropertiesService
-            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
-            .pipe(catchError(() => of(false))),
-        { initialValue: false }
+    protected readonly $sidePanelEnabled = computed(
+        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
     );
 
     // Component builds its own editor props locally

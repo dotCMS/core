@@ -4,9 +4,10 @@ import { EMPTY, of, throwError } from 'rxjs';
 import {
     DotCurrentUserService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import {
     DEFAULT_LIMIT,
@@ -43,6 +44,14 @@ describe('DotQueryToolStore', () => {
             mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: jest.fn().mockReturnValue(of({ admin: true }))
+            }),
+            // `withFlags` batch-fetches the side-panel flag on init.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest
+                    .fn()
+                    .mockReturnValue(
+                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true })
+                    )
             })
         ]
     });
@@ -64,6 +73,15 @@ describe('DotQueryToolStore', () => {
 
     it('hydrates isAdmin from the current user service', () => {
         expect(spectator.service.isAdmin()).toBe(true);
+    });
+
+    it('resolves the side-panel feature flag into the flags slice on init', () => {
+        expect(spectator.inject(DotPropertiesService).getFeatureFlags).toHaveBeenCalledWith([
+            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
+        ]);
+        expect(spectator.service.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]).toBe(
+            true
+        );
     });
 
     describe('setters', () => {
