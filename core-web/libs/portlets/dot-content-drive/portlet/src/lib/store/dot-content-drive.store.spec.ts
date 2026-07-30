@@ -6,7 +6,11 @@ import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
+import {
+    DotContentDriveService,
+    DotFolderService,
+    DotPropertiesService
+} from '@dotcms/data-access';
 import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
@@ -45,6 +49,10 @@ describe('DotContentDriveStore', () => {
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
                 subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient()
         ]
@@ -698,6 +706,10 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(Location, {
                 subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
             }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
@@ -827,6 +839,10 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
                 subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient()
         ]

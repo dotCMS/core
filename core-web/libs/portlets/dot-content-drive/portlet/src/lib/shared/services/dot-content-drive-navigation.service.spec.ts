@@ -9,19 +9,27 @@ import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import {
     DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
-    DotPropertiesService,
     DotRouterService
 } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotContentDriveNavigationService } from './dot-content-drive-navigation.service';
+
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+
+/** Builds a mock store exposing only what the nav service reads: the `flags()` slice. */
+const mockStoreWithFlag = (enabled: boolean) =>
+    mockProvider(DotContentDriveStore, {
+        flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: enabled })
+    });
 
 describe('DotContentDriveNavigationService', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
@@ -54,11 +62,9 @@ describe('DotContentDriveNavigationService', () => {
             mockProvider(DotContentSearchService, {
                 get: jest.fn()
             }),
-            // Side panel feature flag ON by default so the side-panel tests below apply; the
-            // "side panel disabled" block re-creates the service with it off.
-            mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true))
-            })
+            // Side panel feature flag ON by default (read from the store's flags slice) so the
+            // side-panel tests below apply; the "side panel disabled" block re-creates it off.
+            mockStoreWithFlag(true)
         ]
     });
 
@@ -528,9 +534,7 @@ describe('DotContentDriveNavigationService (side panel disabled)', () => {
                 handle: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotContentSearchService, { get: jest.fn() }),
-            mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(false))
-            })
+            mockStoreWithFlag(false)
         ]
     });
 
@@ -577,11 +581,13 @@ describe('DotContentDriveNavigationService (side panel disabled)', () => {
     });
 });
 
-describe('DotContentDriveNavigationService (feature-flag read fails)', () => {
-    // `getFeatureFlag` has no error handling of its own and is cached with `shareReplay`, so a
-    // failed config read would otherwise be rethrown by `toSignal` on every later read. Own factory
-    // because `$sidePanelEnabled` is set at construction time (`toSignal`), so the throwing mock
-    // must be in place BEFORE the service is built.
+describe('DotContentDriveNavigationService ($sidePanelEnabled)', () => {
+    // The flag now comes from the store's `withFlags` slice; the nav service just maps it to a
+    // boolean. The failed-config-read degradation is owned (and tested) by withFlags itself — here
+    // an empty/unresolved flags map (its degraded value) must simply read as `false`.
+    const flagsSignal = signal<Partial<Record<FeaturedFlags, boolean>>>({});
+    let spectator: SpectatorService<DotContentDriveNavigationService>;
+
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
         providers: [
@@ -591,19 +597,30 @@ describe('DotContentDriveNavigationService (feature-flag read fails)', () => {
             mockProvider(Location, { path: jest.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn().mockReturnValue(of({})) }),
             mockProvider(DotContentSearchService, { get: jest.fn() }),
-            mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest
-                    .fn()
-                    .mockReturnValue(throwError(() => new Error('config down')))
-            })
+            mockProvider(DotContentDriveStore, { flags: flagsSignal })
         ]
     });
 
-    it('degrades $sidePanelEnabled to false instead of throwing on every read', () => {
-        const spectator = createService();
+    beforeEach(() => {
+        flagsSignal.set({});
+        spectator = createService();
+    });
 
-        // Reading the signal must not throw — a failed config call must not make every later
-        // "New Content" / result click / palette drop throw and appear as a dead button.
+    it('is true when the store reports the flag enabled', () => {
+        flagsSignal.set({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true });
+
+        expect(spectator.service.$sidePanelEnabled()).toBe(true);
+    });
+
+    it('is false when the store reports the flag disabled', () => {
+        flagsSignal.set({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false });
+
+        expect(spectator.service.$sidePanelEnabled()).toBe(false);
+    });
+
+    it('is false (never throws) when the flags map is empty — the withFlags degraded/unresolved value', () => {
+        flagsSignal.set({});
+
         expect(() => spectator.service.$sidePanelEnabled()).not.toThrow();
         expect(spectator.service.$sidePanelEnabled()).toBe(false);
     });

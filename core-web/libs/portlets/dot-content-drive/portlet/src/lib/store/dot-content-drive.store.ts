@@ -18,9 +18,10 @@ import { DotContentDriveService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotContentDriveItem,
-    DotContentDriveSearchRequest
+    DotContentDriveSearchRequest,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
+import { GlobalStore, withFlags } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
@@ -73,6 +74,10 @@ const initialState: DotContentDriveState = {
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
+    // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
+    // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
+    // vs full-screen editor.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed(
         ({
             path,

@@ -1,18 +1,16 @@
-import { EMPTY, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
-    DotPropertiesService,
     DotRouterService
 } from '@dotcms/data-access';
 import {
@@ -23,14 +21,16 @@ import {
 import { EditContentDialogData } from '@dotcms/edit-content';
 import { mapQueryParamsToCDParams } from '@dotcms/utils';
 
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+
 /** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
 interface ContentSearchEntity {
     jsonObjectView: { contentlets: DotCMSContentlet[] };
 }
 
-@Injectable({
-    providedIn: 'root'
-})
+// Provided at the Content Drive shell level (not `root`) so it can inject the shell-scoped
+// DotContentDriveStore and read the side-panel feature flag from it.
+@Injectable()
 export class DotContentDriveNavigationService {
     readonly #router = inject(Router);
     readonly #location = inject(Location);
@@ -38,23 +38,16 @@ export class DotContentDriveNavigationService {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #contentSearch = inject(DotContentSearchService);
-    readonly #dotPropertiesService = inject(DotPropertiesService);
+    readonly #store = inject(DotContentDriveStore);
 
     /**
      * Feature flag gating the side panel. When off, the new editor opens via full-screen route
-     * navigation (the previous behavior); when on, it opens in the side panel. Defaults to `false`
-     * until the flag resolves, so the safe/previous behavior is used meanwhile.
-     *
-     * `catchError(() => of(false))`: `getFeatureFlag` has no error handling of its own and caches
-     * the observable with `shareReplay`, so a failed `/api/v1/configuration` call would otherwise
-     * be replayed to every read — and `toSignal` rethrows on each read — making every later click
-     * handler that reads this signal throw. Degrade to `false` (previous full-screen behavior).
+     * navigation (the previous behavior); when on, it opens in the side panel. Read from the
+     * store's `withFlags` slice (batch-fetched once on init, degrades to `false` on a failed config
+     * read) — defaults to `false` until it resolves, so the safe/previous behavior is used meanwhile.
      */
-    readonly $sidePanelEnabled = toSignal(
-        this.#dotPropertiesService
-            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
-            .pipe(catchError(() => of(false))),
-        { initialValue: false }
+    readonly $sidePanelEnabled = computed(
+        () => this.#store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
     );
 
     readonly #editPanelRequest = signal<EditContentDialogData | null>(null);
@@ -226,9 +219,13 @@ export class DotContentDriveNavigationService {
      * (the editor loads by inode), then routes by the side-panel flag: on → the panel; off → the
      * full-screen editor. The flag is gated here (not skipped) because the param can outlive the
      * flag being on — a shared link, a bookmark, or a URL that travels staging→prod — and AC15
-     * requires full-screen when the flag is off. Read at call time (not the construction-time
-     * signal) so a cold deep-link load waits for the flag to resolve. No-op when the content can't
-     * be resolved (deleted, no permission, bad id).
+     * requires full-screen when the flag is off. No-op when the content can't be resolved (deleted,
+     * no permission, bad id).
+     *
+     * The flag is read from `$sidePanelEnabled` (the store's `withFlags` slice) after the resolve.
+     * On a cold deep-link load the flag is usually resolved by then (the config fetch starts on
+     * store init, before this search); in the rare case it hasn't, this falls back to the
+     * full-screen editor — safe and functional, just not the panel.
      */
     openEditByIdentifier(identifier: string): void {
         this.#contentSearch
@@ -238,30 +235,19 @@ export class DotContentDriveNavigationService {
             })
             .pipe(
                 take(1),
-                switchMap((entity) => {
-                    const contentlet = entity?.jsonObjectView?.contentlets?.[0];
-                    if (!contentlet?.inode) {
-                        return EMPTY;
-                    }
-
-                    // `catchError(of(false))`: a failed config read degrades to the safe
-                    // full-screen path rather than throwing (see $sidePanelEnabled).
-                    return this.#dotPropertiesService
-                        .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL)
-                        .pipe(
-                            take(1),
-                            catchError(() => of(false)),
-                            map((sidePanelEnabled) => ({ contentlet, sidePanelEnabled }))
-                        );
-                }),
                 catchError((error: HttpErrorResponse) => {
                     this.#httpErrorManager.handle(error);
 
                     return EMPTY;
                 })
             )
-            .subscribe(({ contentlet, sidePanelEnabled }) => {
-                if (!sidePanelEnabled) {
+            .subscribe((entity) => {
+                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
+                if (!contentlet?.inode) {
+                    return;
+                }
+
+                if (!this.$sidePanelEnabled()) {
                     // Flag off: full-screen new editor (the panel only ever opened for
                     // CONTENT_EDITOR2 content, so its full-screen equivalent is `content/<inode>`).
                     this.#router.navigate([`content/${contentlet.inode}`]);

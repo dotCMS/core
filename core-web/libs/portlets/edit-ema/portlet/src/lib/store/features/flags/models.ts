@@ -7,7 +7,3 @@ type UVEFlagKeys =
     | FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION;
 
 export type UVEFlags = { [K in UVEFlagKeys]?: boolean };
-
-export interface WithFlagsState {
-    flags: UVEFlags;
-}

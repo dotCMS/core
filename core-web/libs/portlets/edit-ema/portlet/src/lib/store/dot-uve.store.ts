@@ -1,12 +1,12 @@
 import { patchState, signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 
+import { withFlags } from '@dotcms/store';
 import { DotCMSPageAsset } from '@dotcms/types';
 
 import { withContentTypeCache } from './features/content-type-cache/withContentTypeCache';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
 import { withSelectionAnchor } from './features/editor/withSelectionAnchor';
-import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withPage } from './features/page/withPage';
 import { withPageApi } from './features/page-api/withPageApi';

@@ -111,7 +111,15 @@ const NEW_CONTENT_MARKER = 'new';
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule
     ],
-    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
+    providers: [
+        DotContentDriveStore,
+        // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
+        // the side-panel feature flag; shared with the child components in this shell's subtree.
+        DotContentDriveNavigationService,
+        DotWorkflowsActionsService,
+        MessageService,
+        DotFolderService
+    ],
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {

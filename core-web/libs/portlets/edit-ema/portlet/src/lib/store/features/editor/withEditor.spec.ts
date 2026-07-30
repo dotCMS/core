@@ -12,6 +12,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
@@ -38,7 +39,6 @@ import { ActionPayload, SelectedContentlet } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
-import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 import { withWorkflow } from '../workflow/withWorkflow';
 

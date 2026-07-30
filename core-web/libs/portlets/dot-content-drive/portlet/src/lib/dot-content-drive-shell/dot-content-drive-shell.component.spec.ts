@@ -33,7 +33,8 @@ import {
     DotLanguagesService,
     DotFolderService,
     DotUploadFileService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -131,6 +132,10 @@ describe('DotContentDriveShellComponent', () => {
             // which can make HTTP calls no test here mocks explicitly (e.g. languages). Without
             // this, an unmocked call attempts a real network fetch and fails the test.
             provideHttpClientTesting(),
+            // The store composes withFlags, which fetches feature flags on init; stub it.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
             }),
@@ -2508,6 +2513,10 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             // which can make HTTP calls no test here mocks explicitly (e.g. languages). Without
             // this, an unmocked call attempts a real network fetch and fails the test.
             provideHttpClientTesting(),
+            // The store composes withFlags, which fetches feature flags on init; stub it.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
             }),
