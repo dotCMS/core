@@ -5,7 +5,7 @@ import { signal } from '@angular/core';
 import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
+import { AgentChangedFile, AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -53,6 +53,8 @@ describe('DotA11yRunComponent', () => {
     let heartbeat: AgentHeartbeat | null = null;
     // Bumped when the working render changes → preview iframe cache-buster.
     let previewRevision = 0;
+    // Files the agent changed — drives the "View file changes" button.
+    let changedFiles: AgentChangedFile[] = [];
     // Whether a scan result is present (drives report vs. iframe in the pane).
     let hasScan = false;
     // The page path (as URL segments) the run component reads on init.
@@ -142,6 +144,7 @@ describe('DotA11yRunComponent', () => {
             report?.results.filter((r) => r.status !== 'fixed-to-working').length ?? 0,
         rehydrateStatus: () => rehydrateStatus,
         previewRevision: () => previewRevision,
+        changedFiles: () => changedFiles,
         runScan,
         stopScan,
         startFix,
@@ -215,6 +218,7 @@ describe('DotA11yRunComponent', () => {
         rehydrateStatus = 'idle';
         heartbeat = null;
         previewRevision = 0;
+        changedFiles = [];
         hasScan = false;
         pathSegments = ['about-us'];
         currentSiteIdSignal.set('site-1');
@@ -455,6 +459,24 @@ describe('DotA11yRunComponent', () => {
                 ?.querySelector('button');
             spectator.click(btn as HTMLElement);
             expect(discard).toHaveBeenCalled();
+        });
+
+        it('hides the view-file-changes button when no files changed', () => {
+            expect(spectator.query(byTestId('studio-viewdiff-btn'))).toBeFalsy();
+        });
+
+        it('shows the view-file-changes button and navigates to the diff route', () => {
+            changedFiles = [{ path: '//demo/a.vtl', identifier: 'id-a' }];
+            render('done', MOCK_FIX_REPORT);
+
+            const btn = spectator
+                .query(byTestId('studio-viewdiff-btn'))
+                ?.querySelector('button');
+            expect(btn).toBeTruthy();
+
+            spectator.click(btn as HTMLElement);
+            // /about-us → segments ['about-us'] + 'diff'.
+            expect(navigate).toHaveBeenCalledWith(['/agents/a11y', 'about-us', 'diff']);
         });
     });
 

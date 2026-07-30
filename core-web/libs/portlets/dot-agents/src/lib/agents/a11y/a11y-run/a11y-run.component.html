@@ -354,6 +354,24 @@
             </div>
         }
 
+        <!-- View file changes: opens the working-vs-live source diff. Shown once
+             the agent has changed files (done / published). -->
+        @if (
+            (store.isDone() || store.isPublished()) && store.changedFiles().length > 0
+        ) {
+            <p-button
+                [label]="
+                    'accessibility.studio.diff.view'
+                        | dm: [store.changedFiles().length.toString()]
+                "
+                icon="pi pi-code"
+                severity="secondary"
+                [text]="true"
+                styleClass="w-full mb-3"
+                (onClick)="viewDiff()"
+                data-testid="studio-viewdiff-btn" />
+        }
+
         @switch (store.phase()) {
             @case ('ready') {
                 <div class="mb-3 flex items-center justify-between">

@@ -578,6 +578,19 @@ export class DotA11yRunComponent {
         this.toPicker();
     }
 
+    /**
+     * Open the working-vs-live file diff for this page (`<path>/diff`). Built from
+     * the current page path so the diff is deep-linkable, matching the run route.
+     */
+    viewDiff(): void {
+        const page = this.store.selected();
+        if (!page) {
+            return;
+        }
+        const segments = page.path.split('/').filter(Boolean);
+        this.router.navigate(['/agents/a11y', ...segments, 'diff']);
+    }
+
     runScan(): void {
         this.store.runScan();
     }
