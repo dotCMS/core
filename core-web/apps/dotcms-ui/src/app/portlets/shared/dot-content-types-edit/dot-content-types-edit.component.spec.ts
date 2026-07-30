@@ -281,7 +281,8 @@ describe('DotContentTypesEditComponent', () => {
         it('should disable the dialog focusOnShow while leaving focus trap and closable alone', () => {
             // PrimeNG focuses the first focusable element in DOM order once the open transition
             // ends, which would steal focus from the Name input. See dialogFocusOnShow.
-            // The real focus outcome is asserted in content-types-form-dialog-focus.spec.ts.
+            // The real focus outcome is asserted in
+            // content-types-form-dialog-focus.integration.spec.ts.
             expect(dialog.componentInstance.focusOnShow).toBe(false);
             expect(dialog.componentInstance.focusTrap).toBe(true);
             expect(dialog.componentInstance.closable).toBe(false);

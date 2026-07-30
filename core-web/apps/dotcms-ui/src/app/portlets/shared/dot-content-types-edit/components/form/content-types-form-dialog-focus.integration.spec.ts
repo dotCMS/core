@@ -89,7 +89,15 @@ class DialogFocusHostComponent {
 const NAME_INPUT_SELECTOR = '#content-type-form-name';
 const NEW_EDIT_CONTENT_CHECKBOX_SELECTOR = '#newEditContentLabel';
 
-describe('ContentTypesFormComponent focus inside p-dialog', () => {
+/**
+ * Integration tests: the real ContentTypesFormComponent rendered inside a real PrimeNG p-dialog.
+ *
+ * These are not unit tests. The behavior under test only exists when both collaborate -- who wins
+ * the initial focus between the form and the dialog. Neither of the sibling unit specs can cover
+ * it: content-types-form.component.spec.ts renders no dialog, and
+ * dot-content-types-edit.component.spec.ts stubs the form away.
+ */
+describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => {
     let fixture: ComponentFixture<DialogFocusHostComponent>;
     let originalOffsetParent: PropertyDescriptor;
 
