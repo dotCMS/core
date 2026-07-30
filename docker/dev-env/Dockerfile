@@ -39,9 +39,6 @@ RUN apt-get update && \
 
 
 RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-# --no-install-recommends: the recommends chain drags in networkd-dispatcher/python3-gi,
-# whose maintainer scripts fail under the QEMU-emulated arm64 build (#36806) — and a
-# database container has no business managing host network config anyway.
 RUN apt install -y --no-install-recommends postgresql-$PG_VERSION-pgvector
 
 
