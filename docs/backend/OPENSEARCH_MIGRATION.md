@@ -295,6 +295,53 @@ can preview `.os` (and the ES/OS twin as distinct rows) while normal users keep 
 view — is the one place the two UIs should converge; it does **not** require changing the internal
 handle model, only the display sink.
 
+#### Site Search mirror reconciliation (write path) — self-heal on crawl
+
+The logical-handle model above makes *reads* correct, but a Site Search index can still end up
+physically **out of sync** between engines: the ES index and its OS twin may hold different content,
+or the twin may be missing entirely. This happens through paths that skip the happy path (a full
+crawl in a dual-write phase, which creates both twins and re-points the alias on both):
+
+- **Forward-only phase change** — moving Phase 0→1/2 does not retroactively build OS twins of
+  indices that already existed in ES.
+- **Phase-0 crawl** builds an ES-only index; its OS twin never existed.
+- **Incremental crawl** writes documents *in place* and never calls `createSiteSearchIndex`. If the
+  OS twin is missing, the raw `putToIndex` would let OpenSearch **auto-create** it with a *dynamic*
+  mapping (`keyword`→`text`, breaking aggregations) and only the incremental delta — a partial,
+  wrongly-mapped twin.
+- **Fire-and-forget shadow create** — a failed OS `createSiteSearchIndex` in Phase 1 is swallowed at
+  `WARN` (shadow policy), so the missing twin is invisible until reads move to OS.
+- **Phase-scoped delete** — a delete that fans out only to the current phase's write providers leaves
+  a twin on the *other* engine as an orphan after a rollback.
+
+**The fix is self-heal on crawl, not a big-bang rebuild on phase change** (the latter is expensive and
+fragile). Two mechanisms (issue #36360):
+
+1. **Incremental-crawl gate.** `SiteSearchAPI.existsOnAllWriteEngines(name)` reports whether the index
+   exists on *every* current write engine. `SiteSearchJobImpl` requires it before running an
+   incremental crawl; when it is `false` the crawl is demoted to a **full rebuild**, which recreates
+   the index (correct mapping) on every engine and re-points the alias. The missing/partial twin is
+   thus reconstructed on the next crawl — and the dynamic-mapping auto-create path can no longer be
+   reached through the gated crawl.
+2. **Delete sweeps both engines.** `SiteSearchAPIImpl.deleteIndex` deletes on the primary (current
+   read provider) authoritatively and best-effort on the *other* engine, so a rollback leftover is
+   swept even in a single-provider phase (0/3). The other engine is tolerant: an unreachable or
+   decommissioned engine logs a `WARN` and never fails the delete.
+
+**Residual limitation — the no-crawl window.** Because reconciliation is *on crawl*, the gap is only
+closed when a crawl actually runs in a dual-write phase (1 or 2). In the window before that:
+
+- In **Phase 2** a *missing* OS twin is caught by the read fallback (OS errors → read from ES), so
+  reads stay correct; the dangerous silent case (a *partial* twin returning incomplete results with
+  no error) is the one the gate prevents from ever being created.
+- **Phase 3 is the cliff:** ES is decommissioned, so there is no fallback. Reaching Phase 3 with a
+  twin that was never rebuilt, and never crawling, is a hard gap.
+
+**Operational rule (pairs with the code):** before promoting the phase — especially into Phase 3 —
+ensure every Site Search index has been crawled at least once so its OS twin exists. A targeted
+verify/repair job (detect twins without a pair → rebuild full) that closes the no-crawl window
+without depending on a crawl is deferred as a follow-up under the same issue.
+
 #### Tag manipulation is the sole responsibility of `IndexTag`
 
 All read/write of the vendor marker on an index name MUST go through the `IndexTag` enum.
