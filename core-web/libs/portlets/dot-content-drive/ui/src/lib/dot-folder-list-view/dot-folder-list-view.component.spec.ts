@@ -1582,6 +1582,45 @@ describe('DotFolderListViewComponent', () => {
             expect(dateTimeText).toContain(':');
         });
 
+        it('formats date/datetime/time columns in UTC, not the viewer timezone', () => {
+            // dotCMS stores these fields against the server zone (UTC) and the editor shows them in
+            // that zone, so the table's DatePipe pins ':UTC' — otherwise a UTC+/-N viewer sees a
+            // shifted day/hour that mismatches the editor and the filter. Run under a non-UTC zone
+            // and seed a near-midnight-UTC instant so the calendar day AND hour differ from UTC:
+            // dropping ':UTC' would render 01/14 21:30 (EST) and fail these exact assertions.
+            const originalTz = process.env.TZ;
+            process.env.TZ = 'America/New_York'; // UTC-5 in January
+
+            try {
+                const epoch = Date.UTC(2026, 0, 15, 2, 30); // 2026-01-15 02:30 UTC → 2026-01-14 21:30 EST
+                spectator.setInput('items', [
+                    { identifier: '1', type: 'content', title: 'A', d: epoch, dt: epoch, t: epoch }
+                ] as unknown as (typeof mockItems)[number][]);
+                spectator.setInput('extraColumns', [
+                    { field: 'd', header: 'D', order: 0, type: 'date' },
+                    { field: 'dt', header: 'DT', order: 1, type: 'datetime' },
+                    { field: 't', header: 'T', order: 2, type: 'time' }
+                ]);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('item-extra-d'))?.textContent?.trim()).toBe(
+                    '01/15/2026'
+                );
+                expect(spectator.query(byTestId('item-extra-dt'))?.textContent?.trim()).toBe(
+                    '01/15/2026 2:30 AM'
+                );
+                expect(spectator.query(byTestId('item-extra-t'))?.textContent?.trim()).toBe(
+                    '2:30 AM'
+                );
+            } finally {
+                if (originalTz === undefined) {
+                    delete process.env.TZ;
+                } else {
+                    process.env.TZ = originalTz;
+                }
+            }
+        });
+
         it('should size a text column by content (ch) and a date column with a fixed width', () => {
             spectator.setInput('extraColumns', [
                 { field: 'myText', header: 'T', order: 0, type: 'text' },

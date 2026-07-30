@@ -80,7 +80,7 @@ describe('DotHostFolderFieldComponent', () => {
         ]
     });
 
-    let overlayMock: { toggle: jest.Mock; hide: jest.Mock };
+    let overlayMock: { toggle: jest.Mock; hide: jest.Mock; container?: HTMLElement };
 
     const createToggleEvent = (offsetWidth = 320): Event => {
         const trigger = document.createElement('button');
@@ -605,6 +605,35 @@ describe('DotHostFolderFieldComponent', () => {
             expect(store.openOverlay).toHaveBeenCalled();
         });
 
+        it('should left-align the popover to the trigger after show', async () => {
+            const trigger = document.createElement('button');
+            Object.defineProperty(trigger, 'offsetWidth', { value: 300 });
+            jest.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+                left: 80,
+                top: 0,
+                right: 380,
+                bottom: 40,
+                width: 300,
+                height: 40,
+                x: 80,
+                y: 0,
+                toJSON: () => ({})
+            });
+
+            const container = document.createElement('div');
+            Object.defineProperty(container, 'offsetWidth', { value: 640 });
+            overlayMock.container = container;
+
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            spectator.component.toggleOverlay(event);
+            spectator.component.onOverlayShow();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(container.style.left).toBe('80px');
+        });
+
         it('should schedule a scroll to the selected folder once the overlay renders', async () => {
             const node = TREE_SELECT_MOCK[0].children[0];
             store.setPendingNode(node);
@@ -825,6 +854,117 @@ describe('DotHostFolderFieldComponent', () => {
             expect(queryInOverlay('host-folder-folders-loading')).toHaveText('Loading folders...');
             expect(queryInOverlay('host-folder-search-input')).toBeNull();
         }));
+
+        it('should keep the folders search input visible while search is loading', fakeAsync(() => {
+            const queryInOverlay = (testId: string): Element | null =>
+                spectator.query(byTestId(testId)) ??
+                document.querySelector(`[data-testid="${testId}"]`);
+
+            jest.spyOn(store, 'sitesLoading').mockReturnValue(false);
+            jest.spyOn(store, 'showFoldersPanelLoading').mockReturnValue(true);
+            jest.spyOn(store, 'showFolderSearch').mockReturnValue(true);
+            jest.spyOn(store, 'searchLoading').mockReturnValue(true);
+            jest.spyOn(store, 'searchTerm').mockReturnValue('ab');
+            jest.spyOn(store, 'displayedFolders').mockReturnValue([]);
+            spectator.detectChanges();
+
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const trigger = document.createElement('button');
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            popover.show(event, trigger);
+            spectator.detectChanges();
+
+            expect(queryInOverlay('host-folder-search-input')).toBeTruthy();
+            expect(queryInOverlay('host-folder-search-loading')).toBeTruthy();
+            expect(queryInOverlay('host-folder-search-clear')).toBeNull();
+        }));
+    });
+
+    describe('search clear controls', () => {
+        const openOverlay = () => {
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const trigger = document.createElement('button');
+            const event = new Event('click');
+            Object.defineProperty(event, 'currentTarget', { value: trigger });
+            popover.show(event, trigger);
+            spectator.detectChanges();
+        };
+
+        const queryInOverlay = (testId: string): Element | null =>
+            spectator.query(byTestId(testId)) ??
+            document.querySelector(`[data-testid="${testId}"]`);
+
+        it('should show the sites search clear control when the term is not empty and not loading', () => {
+            jest.spyOn(store, 'showSitesSearch').mockReturnValue(true);
+            jest.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
+            jest.spyOn(store, 'sitesSearchLoading').mockReturnValue(false);
+            spectator.detectChanges();
+            openOverlay();
+
+            expect(queryInOverlay('host-folder-sites-search-clear')).toBeTruthy();
+            expect(queryInOverlay('host-folder-sites-search-loading')).toBeNull();
+        });
+
+        it('should show the sites search loading spinner instead of the clear control', () => {
+            jest.spyOn(store, 'showSitesSearch').mockReturnValue(true);
+            jest.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
+            jest.spyOn(store, 'sitesSearchLoading').mockReturnValue(true);
+            spectator.detectChanges();
+            openOverlay();
+
+            expect(queryInOverlay('host-folder-sites-search-loading')).toBeTruthy();
+            expect(queryInOverlay('host-folder-sites-search-clear')).toBeNull();
+        });
+
+        it('should clear the sites search and restore focus', async () => {
+            jest.spyOn(store, 'showSitesSearch').mockReturnValue(true);
+            jest.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
+            jest.spyOn(store, 'sitesSearchLoading').mockReturnValue(false);
+            jest.spyOn(store, 'filterSites');
+            spectator.detectChanges();
+            openOverlay();
+
+            const input = queryInOverlay('host-folder-sites-search-input') as HTMLInputElement;
+            input.focus();
+            spectator.click(byTestId('host-folder-sites-search-clear'));
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(store.filterSites).toHaveBeenCalledWith('');
+            expect(document.activeElement).toBe(input);
+        });
+
+        it('should show the folders search clear control when the term is not empty and not loading', () => {
+            jest.spyOn(store, 'showFolderSearch').mockReturnValue(true);
+            jest.spyOn(store, 'searchTerm').mockReturnValue('ab');
+            jest.spyOn(store, 'searchLoading').mockReturnValue(false);
+            spectator.detectChanges();
+            openOverlay();
+
+            expect(queryInOverlay('host-folder-search-clear')).toBeTruthy();
+            expect(queryInOverlay('host-folder-search-loading')).toBeNull();
+        });
+
+        it('should clear the folders search and restore focus', async () => {
+            jest.spyOn(store, 'showFolderSearch').mockReturnValue(true);
+            jest.spyOn(store, 'searchTerm').mockReturnValue('ab');
+            jest.spyOn(store, 'searchLoading').mockReturnValue(false);
+            jest.spyOn(store, 'search');
+            spectator.detectChanges();
+            openOverlay();
+
+            const input = queryInOverlay('host-folder-search-input') as HTMLInputElement;
+            input.focus();
+            spectator.click(byTestId('host-folder-search-clear'));
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(store.search).toHaveBeenCalledWith('');
+            expect(document.activeElement).toBe(input);
+        });
     });
 
     it('should propagate the committed value through the form control accessor', () => {

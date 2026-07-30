@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
@@ -161,22 +161,30 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/new-folder/');
         });
 
-        it('should return hostname only when name is empty', () => {
+        it('should preview the current folder (not root) when name is empty', () => {
             component.folderForm.patchValue({ name: '' });
             spectator.detectChanges();
 
-            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
         });
 
-        it('should return hostname only when name is null', () => {
+        it('should preview the current folder (not root) when name is null', () => {
             component.folderForm.patchValue({ name: null });
             spectator.detectChanges();
 
-            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
         });
 
-        it('should return hostname only when name is whitespace', () => {
+        it('should preview the current folder (not root) when name is whitespace', () => {
             component.folderForm.patchValue({ name: '   ' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
+        });
+
+        it('should preview the site root when at root (no path) and name is empty', () => {
+            store.path.mockReturnValue(undefined);
+            component.folderForm.patchValue({ name: '' });
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/');
@@ -202,6 +210,21 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/test-folder-name/');
+        });
+    });
+
+    describe('create form respects the currently opened folder', () => {
+        it('previews the opened folder as the parent before a name is typed', () => {
+            // Opening "New folder" while inside /documents must show that folder as the parent in
+            // the create form — not the site root — otherwise the form misrepresents where the
+            // folder will be created (issue: "New button not respecting the current opened folder").
+            store.path.mockReturnValue('/documents');
+            component.folderForm.patchValue({ name: '' });
+            spectator.detectChanges();
+
+            const preview = spectator.query(byTestId('folder-path-preview'))?.textContent?.trim();
+
+            expect(preview).toBe('//demo.dotcms.com/documents/');
         });
     });
 
