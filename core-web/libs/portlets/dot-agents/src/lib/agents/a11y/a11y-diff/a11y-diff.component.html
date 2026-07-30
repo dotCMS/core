@@ -101,8 +101,10 @@
                                             class="truncate text-[13px] font-semibold text-gray-900">
                                             {{ file.name }}
                                         </div>
-                                        <div class="truncate text-[11px] text-gray-400">
-                                            {{ file.origin }}
+                                        <div
+                                            class="truncate text-[11px] text-gray-400"
+                                            [title]="file.folder">
+                                            {{ file.folder }}
                                         </div>
                                     </div>
                                     <span

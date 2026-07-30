@@ -117,11 +117,18 @@ describe('DotPageSourcesService', () => {
                 .flush({ entity: RENDER_SOURCES });
 
             const css = result.find((f) => f.identifier === 'css-1');
-            expect(css).toMatchObject({ name: 'awazon.css', extension: 'css', origin: 'theme' });
+            expect(css).toMatchObject({
+                name: 'awazon.css',
+                // The containing folder — path minus the filename, host + trailing slash kept.
+                folder: '//demo/application/themes/awazon/css/',
+                extension: 'css',
+                origin: 'theme'
+            });
 
             const widget = result.find((f) => f.identifier === 'vtl-widget-1');
             expect(widget).toMatchObject({
                 name: 'AwazonNewsletter.vtl',
+                folder: '//demo/application/containers/awazon-content/',
                 extension: 'vtl',
                 origin: 'widget'
             });
@@ -142,6 +149,7 @@ describe('DotPageSourcesService', () => {
                 identifier: 'vtl-1',
                 path: '//demo/a.vtl',
                 name: 'a.vtl',
+                folder: '//demo/',
                 extension: 'vtl',
                 origin: 'container'
             }

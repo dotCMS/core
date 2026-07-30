@@ -101,6 +101,11 @@ export interface PageSourceFile {
     path: string;
     /** Basename for display, e.g. `header.vtl`. */
     name: string;
+    /**
+     * Host-qualified path of the folder that contains the file — the file's `path`
+     * minus its filename, e.g. `//demo/application/themes/awazon/css/`.
+     */
+    folder: string;
     /** Lowercased extension without the dot, e.g. `vtl`, `css`. */
     extension: string;
     /** Where in the page this file comes from. */
