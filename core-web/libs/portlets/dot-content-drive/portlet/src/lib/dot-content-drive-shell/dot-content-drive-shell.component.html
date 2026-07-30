@@ -67,6 +67,12 @@
     </ng-template>
 </p-toast>
 
+<!-- Owns its own p-dialog (custom header/footer, body-only scroll), so it renders as a sibling of
+     the shared dialog rather than inside its content switch. -->
+@if ($actionCenterVisible()) {
+    <dot-content-drive-action-center data-testId="dialog-action-center" />
+}
+
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
         (cancel)="cancelAddToBundle()"
@@ -77,7 +83,7 @@
 <div
     class="col-start-3 row-span-2 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
 <p-dialog
-    [visible]="$dialogVisible()"
+    [visible]="$sharedDialogVisible()"
     [header]="$activeDialog()?.header"
     [draggable]="false"
     [resizable]="false"
@@ -101,9 +107,6 @@
                     data-testId="dialog-content-type-selector"
                     [listType]="listType" />
             }
-        }
-        @case (DIALOG_TYPE.ACTION_CENTER) {
-            <dot-content-drive-action-center data-testId="dialog-action-center" />
         }
     }
 </p-dialog>

@@ -12,6 +12,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -69,6 +70,7 @@ import {
         AccordionModule,
         BadgeModule,
         ButtonModule,
+        DialogModule,
         DotMessagePipe,
         FormsModule,
         MessageModule,
@@ -190,6 +192,16 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /** Closes the dialog without firing anything. */
     protected onDone(): void {
         this.#store.closeDialog();
+    }
+
+    /**
+     * Propagates a user-driven close (X / ESC / mask) to the store, which is what actually unmounts
+     * this component.
+     */
+    protected onVisibleChange(visible: boolean): void {
+        if (!visible) {
+            this.#store.closeDialog();
+        }
     }
 
     /**

@@ -18,6 +18,7 @@ export interface DotActionCenterQuickAction {
     id: WORKFLOW_ACTION_ID;
     /** i18n key for the label. */
     name: string;
+    /** Material Symbols glyph name, rendered inside the row's icon chip. */
     icon: string;
     count: number;
     /** Destructive action — rendered with the danger severity, as in the design. */
@@ -47,31 +48,31 @@ const QUICK_ACTIONS: {
 }[] = [
     {
         id: WORKFLOW_ACTION_ID.PUBLISH,
-        icon: 'pi pi-upload',
+        icon: 'publish',
         danger: false,
         eligibleWhen: (item) => !item.live && !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.UNPUBLISH,
-        icon: 'pi pi-eye-slash',
+        icon: 'visibility_off',
         danger: false,
         eligibleWhen: (item) => !!item.live && !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.ARCHIVE,
-        icon: 'pi pi-inbox',
+        icon: 'archive',
         danger: true,
         eligibleWhen: (item) => !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.UNARCHIVE,
-        icon: 'pi pi-undo',
+        icon: 'unarchive',
         danger: false,
         eligibleWhen: (item) => !!item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.DELETE,
-        icon: 'pi pi-trash',
+        icon: 'delete',
         danger: true,
         eligibleWhen: (item) => !!item.archived
     }
