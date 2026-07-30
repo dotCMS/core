@@ -1,9 +1,9 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef, Injectable } from '@angular/core';
+import { ApplicationRef } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
@@ -26,52 +26,19 @@ import {
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     DotWorkflowServiceMock,
-    MockDotMessageService,
     mockWorkflows,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
+import {
+    createContentTypesFormMessageServiceMock,
+    MockDotLicenseService
+} from './content-types-form.testing';
 
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 
-@Injectable()
-class MockDotLicenseService {
-    isEnterprise(): Observable<boolean> {
-        return of(false);
-    }
-}
-
-const messageServiceMock = new MockDotMessageService({
-    'contenttypes.form.field.detail.page': 'Detail Page',
-    'contenttypes.form.field.expire.date.field': 'Expire Date Field',
-    'contenttypes.form.field.host_folder.label': 'Host or Folder',
-    'contenttypes.form.identifier': 'Identifier',
-    'contenttypes.form.label.publish.date.field': 'Publish Date Field',
-    'contenttypes.hint.URL.map.pattern.hint1': 'Hello World',
-    'contenttypes.form.label.URL.pattern': 'URL Pattern',
-    'contenttypes.content.variable': 'Variable',
-    'contenttypes.form.label.workflow': 'Workflow',
-    'contenttypes.action.cancel': 'Cancel',
-    'contenttypes.form.label.description': 'Description',
-    'contenttypes.form.name': 'Name',
-    'contenttypes.action.save': 'Save',
-    'contenttypes.action.update': 'Update',
-    'contenttypes.action.create': 'Create',
-    'contenttypes.action.edit': 'Edit',
-    'contenttypes.action.delete': 'Delete',
-    'contenttypes.form.name.error.required': 'Error is wrong',
-    'contenttypes.action.form.cancel': 'Cancel',
-    'contenttypes.content.contenttype': 'content type',
-    'contenttypes.content.fileasset': 'fileasset',
-    'contenttypes.content.content': 'Content',
-    'contenttypes.content.form': 'Form',
-    'contenttypes.content.persona': 'Persona',
-    'contenttypes.content.widget': 'Widget',
-    'contenttypes.content.htmlpage': 'Page',
-    'contenttypes.content.key_value': 'Key Value',
-    'contenttypes.content.vanity_url:': 'Vanity Url'
-});
+const messageServiceMock = createContentTypesFormMessageServiceMock();
 
 const mockActivatedRoute = {
     snapshot: {

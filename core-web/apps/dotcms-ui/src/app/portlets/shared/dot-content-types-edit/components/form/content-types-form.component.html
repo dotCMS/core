@@ -27,7 +27,8 @@
             pInputText
             type="text"
             name="name"
-            formControlName="name" />
+            formControlName="name"
+            data-testid="content-type-form-name" />
         <dot-field-validation-message
             [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
             [field]="form.get('name')" />

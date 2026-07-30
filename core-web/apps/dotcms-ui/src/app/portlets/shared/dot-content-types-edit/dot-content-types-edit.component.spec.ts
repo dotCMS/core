@@ -284,8 +284,10 @@ describe('DotContentTypesEditComponent', () => {
             // The real focus outcome is asserted in
             // content-types-form-dialog-focus.integration.spec.ts.
             expect(dialog.componentInstance.focusOnShow).toBe(false);
-            expect(dialog.componentInstance.focusTrap).toBe(true);
             expect(dialog.componentInstance.closable).toBe(false);
+            // focusTrap is never bound by us -- this asserts PrimeNG's default as a tripwire, so
+            // disabling focusOnShow can never be mistaken for disabling the trap too.
+            expect(dialog.componentInstance.focusTrap).toBe(true);
         });
 
         describe('create', () => {
@@ -606,8 +608,9 @@ describe('DotContentTypesEditComponent', () => {
             // Same reason as create mode: PrimeNG would steal focus from the Name input after the
             // open transition. focusTrap is an independent input and stays enabled.
             expect(dialog.componentInstance.focusOnShow).toBe(false);
-            expect(dialog.componentInstance.focusTrap).toBe(true);
             expect(dialog.componentInstance.closable).toBe(true);
+            // See the create-mode counterpart: asserting PrimeNG's own focusTrap default.
+            expect(dialog.componentInstance.focusTrap).toBe(true);
         });
 
         it('should send notifications to add rows & tab divider', () => {

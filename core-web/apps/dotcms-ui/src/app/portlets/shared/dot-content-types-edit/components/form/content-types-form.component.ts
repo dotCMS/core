@@ -93,7 +93,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private dotLicenseService = inject(DotLicenseService);
     private dotMessageService = inject(DotMessageService);
     private readonly route = inject(ActivatedRoute);
-    private readonly injector = inject(Injector);
+    readonly #injector = inject(Injector);
 
     readonly $inputName = viewChild.required<ElementRef>('name');
 
@@ -128,7 +128,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         // inside the dialog -- a synchronous focus() here is a no-op.
         if (!this.isEditMode()) {
             afterNextRender(() => this.$inputName().nativeElement.focus(), {
-                injector: this.injector
+                injector: this.#injector
             });
         }
 

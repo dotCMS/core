@@ -1,9 +1,9 @@
 import { mockProvider } from '@openng/spectator/jest';
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef, Component, Injectable } from '@angular/core';
+import { ApplicationRef, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -17,54 +17,22 @@ import {
     DotSiteService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentType,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
     createFakeSite,
     dotcmsContentTypeBasicMock,
-    DotWorkflowServiceMock,
-    MockDotMessageService
+    DotWorkflowServiceMock
 } from '@dotcms/utils-testing';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
+import {
+    buildActivatedRouteMock,
+    createContentTypesFormMessageServiceMock,
+    MockDotLicenseService
+} from './content-types-form.testing';
 
-@Injectable()
-class MockDotLicenseService {
-    isEnterprise(): Observable<boolean> {
-        return of(false);
-    }
-}
-
-const messageServiceMock = new MockDotMessageService({
-    'contenttypes.content.content': 'Content',
-    'contenttypes.content.widget': 'Widget',
-    'contenttypes.form.name': 'Name',
-    'contenttypes.form.label.icon': 'Icon',
-    'contenttypes.form.label.description': 'Description',
-    'contenttypes.form.field.host_folder.label': 'Host or Folder',
-    'contenttypes.form.label.workflow': 'Workflow',
-    'contenttypes.form.label.workflow.actions': 'Workflow Actions',
-    'contenttypes.form.label.publish.date.field': 'Publish Date Field',
-    'contenttypes.form.field.expire.date.field': 'Expire Date Field',
-    'contenttypes.form.field.detail.page': 'Detail Page',
-    'contenttypes.form.label.URL.pattern': 'URL Pattern',
-    'content.type.form.banner.message': 'Try the new content editor'
-});
-
-/** Fresh route per test so no shared mutable flag state leaks between them. */
-const buildActivatedRoute = (newContentEditorEnabled: boolean) => ({
-    snapshot: {
-        data: {
-            featuredFlags: {
-                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: newContentEditorEnabled
-            }
-        }
-    }
-});
+const messageServiceMock = createContentTypesFormMessageServiceMock();
 
 const fakeSite = createFakeSite({ hostname: 'demo.dotcms.com', archived: false });
 
@@ -86,7 +54,9 @@ class DialogFocusHostComponent {
     };
 }
 
-const NAME_INPUT_SELECTOR = '#content-type-form-name';
+const NAME_INPUT_SELECTOR = '[data-testid="content-type-form-name"]';
+// PrimeNG renders the focusable input behind p-checkbox's inputId, so target that rather than a
+// data-testid on the p-checkbox host, which is not the element that receives focus.
 const NEW_EDIT_CONTENT_CHECKBOX_SELECTOR = '#newEditContentLabel';
 
 /**
@@ -139,7 +109,7 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: ActivatedRoute,
-                    useValue: buildActivatedRoute(newContentEditorEnabled)
+                    useValue: buildActivatedRouteMock(newContentEditorEnabled)
                 },
                 mockProvider(DotSiteService, {
                     getSites: jest.fn().mockReturnValue(
