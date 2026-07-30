@@ -176,6 +176,12 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         return indexApi.indexExists(osTagged(indexName));
     }
 
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
     /**
      * OpenSearch adapter for the vendor-neutral alias handle: <em>re-tag before lookup, strip on
      * return</em>.

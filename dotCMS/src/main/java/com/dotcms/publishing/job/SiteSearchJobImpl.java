@@ -249,13 +249,16 @@ public class SiteSearchJobImpl {
 
             // An incremental crawl writes documents in place into the existing index; it never
             // rebuilds it. During an ES→OS migration a site-search index is one logical index
-            // mirrored across both engines, so if a write engine is missing its copy the in-place
-            // write would auto-create it with a dynamic (wrong) mapping. Require the index to exist
-            // on EVERY current write engine; otherwise fall back to a full rebuild, which recreates
-            // the index (correct mapping) on every engine and re-points the alias — self-healing the
-            // missing mirror on this crawl (issue #36360).
+            // mirrored across both engines, so an incremental crawl is only safe when those mirrors
+            // are in sync — the index exists on EVERY write engine AND their document counts match.
+            // If a twin is missing, the in-place write would auto-create it with a dynamic (wrong)
+            // mapping; if the twins drifted (e.g. a shadow write failed fire-and-forget), an
+            // incremental would layer a new delta on top of divergent copies and never reconcile them.
+            // In either case fall back to a full rebuild, which recreates identical copies (correct
+            // mapping) on every engine and re-points the alias — self-healing the mirror on this
+            // crawl (issue #36360).
             final boolean mirrorReadyForIncremental = !indexMetaData.isNewIndex()
-                    && siteSearchAPI.existsOnAllWriteEngines(indexMetaData.getIndexName());
+                    && siteSearchAPI.writeMirrorsInSync(indexMetaData.getIndexName());
             final boolean incremental = (incrementalParam && !isRunNowJob && !indexMetaData
                     .isNewIndex() && !indexMetaData.isEmpty() && !recentAudits.isEmpty()
                     && mirrorReadyForIncremental);
@@ -264,8 +267,9 @@ public class SiteSearchJobImpl {
                     && !indexMetaData.isEmpty() && !recentAudits.isEmpty()
                     && !mirrorReadyForIncremental) {
                 Logger.info(SiteSearchJobImpl.class, () -> String.format(
-                        "Site-search index `%s` is missing on one or more write engines; forcing a "
-                                + "full rebuild instead of an incremental crawl to restore the mirror.",
+                        "Site-search index `%s` is missing on a write engine or its engine copies are "
+                                + "out of sync; forcing a full rebuild instead of an incremental crawl "
+                                + "to restore the mirror.",
                         indexMetaData.getIndexName()));
             }
             if (incremental) {

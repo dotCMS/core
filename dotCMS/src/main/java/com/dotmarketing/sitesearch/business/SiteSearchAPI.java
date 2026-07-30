@@ -50,6 +50,31 @@ public interface SiteSearchAPI {
 	boolean existsOnAllWriteEngines(String indexName);
 
 	/**
+	 * Whether the index's copies on every current write engine are <strong>in sync</strong> — i.e.
+	 * the index exists on all of them (see {@link #existsOnAllWriteEngines(String)}) <em>and</em> its
+	 * document counts match across engines.
+	 *
+	 * <h4>Why counts, not just existence</h4>
+	 * A missing twin is one kind of desync; the other is <em>content drift</em> — both engines hold
+	 * the index but with different documents (e.g. an OpenSearch shadow write failed fire-and-forget
+	 * during a previous incremental crawl, so ES has documents OpenSearch does not). Existence alone
+	 * cannot see that. Because a Site Search index is written only by the crawl job (single writer,
+	 * immediate refresh) and no crawl on the same index runs concurrently, at crawl-planning time the
+	 * copies are quiescent, so equal document counts is a sound in-sync invariant and a mismatch is
+	 * real drift.
+	 *
+	 * <p>The incremental-crawl gate uses this instead of bare existence: an incremental crawl writes
+	 * only the new delta and would perpetuate any pre-existing drift, so when the mirrors are out of
+	 * sync the crawl is demoted to a full rebuild that re-creates identical copies on every engine
+	 * (issue #36360). For a single write engine there is nothing to compare, so this is trivially
+	 * {@code true}; the phase-aware router aggregates it across all current write providers.</p>
+	 *
+	 * @param indexName the logical site-search index name (no {@code .os} tag)
+	 * @return {@code true} only if the index exists on every write engine with matching document counts
+	 */
+	boolean writeMirrorsInSync(String indexName);
+
+	/**
 	 * Resolves site-search aliases to their backing index names — phase-aware and OpenSearch
 	 * {@code .os}-aware. Keys (alias) and values (index) are both <strong>logical</strong> names.
 	 *

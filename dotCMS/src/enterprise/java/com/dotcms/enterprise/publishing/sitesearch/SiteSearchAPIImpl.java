@@ -141,6 +141,38 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
     }
 
     /**
+     * True only when the index is present on every current write engine AND their document counts
+     * match — the incremental-crawl gate (see {@link SiteSearchAPI#writeMirrorsInSync}). Existence is
+     * checked first (a missing twin is out of sync); then each write provider's own document count is
+     * compared. A single write engine (Phases 0/3) has nothing to compare, so it is trivially in sync.
+     *
+     * <p>The per-engine count comes from each leaf's own {@code search} (ES counts the plain index, OS
+     * the {@code .os} twin), a match-all with {@code rows=0}. Any drift — including a shadow write that
+     * failed fire-and-forget on OpenSearch — makes this {@code false} so the caller rebuilds fully
+     * instead of layering another incremental delta on top of divergent copies (issue #36360).</p>
+     */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        final List<SiteSearchAPI> providers = router.writeProviders();
+        if (providers.size() < 2) {
+            return true; // single write engine — no mirror to reconcile
+        }
+        if (!existsOnAllWriteEngines(indexName)) {
+            return false; // a twin is missing
+        }
+        long expected = -1L;
+        for (final SiteSearchAPI provider : providers) {
+            final long count = provider.search(indexName, "*", 0, 0).getTotalResults();
+            if (expected < 0L) {
+                expected = count;
+            } else if (count != expected) {
+                return false; // document counts diverge across engines → content drift
+            }
+        }
+        return true;
+    }
+
+    /**
      * Phase-aware alias resolution. Delegated to the current read provider (ES in Phases 0/1, OS in
      * Phases 2/3, with the Phase-2 ES fallback of {@link PhaseRouter#read}) — each engine resolves
      * aliases against its own physical names (ES plain, OS {@code .os}-tagged) and returns logical

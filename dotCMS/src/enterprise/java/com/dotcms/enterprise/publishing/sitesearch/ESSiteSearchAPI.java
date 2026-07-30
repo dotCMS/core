@@ -126,6 +126,12 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         return indexApi.indexExists(indexName);
     }
 
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
     /**
      * Elasticsearch adapter for the vendor-neutral alias handle. ES physical names never carry the
      * {@code .os} tag, so the logical index list resolves directly — no re-tag/strip round-trip is
