@@ -247,9 +247,27 @@ public class SiteSearchJobImpl {
             final List<SiteSearchAudit> recentAudits = isRunNowJob ? Collections.emptyList()
                     : siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
 
+            // An incremental crawl writes documents in place into the existing index; it never
+            // rebuilds it. During an ES→OS migration a site-search index is one logical index
+            // mirrored across both engines, so if a write engine is missing its copy the in-place
+            // write would auto-create it with a dynamic (wrong) mapping. Require the index to exist
+            // on EVERY current write engine; otherwise fall back to a full rebuild, which recreates
+            // the index (correct mapping) on every engine and re-points the alias — self-healing the
+            // missing mirror on this crawl (issue #36360).
+            final boolean mirrorReadyForIncremental = !indexMetaData.isNewIndex()
+                    && siteSearchAPI.existsOnAllWriteEngines(indexMetaData.getIndexName());
             final boolean incremental = (incrementalParam && !isRunNowJob && !indexMetaData
-                    .isNewIndex() && !indexMetaData.isEmpty() && !recentAudits.isEmpty());
+                    .isNewIndex() && !indexMetaData.isEmpty() && !recentAudits.isEmpty()
+                    && mirrorReadyForIncremental);
             //We can only run incrementally if all the above pre-requisites are met.
+            if (incrementalParam && !isRunNowJob && !indexMetaData.isNewIndex()
+                    && !indexMetaData.isEmpty() && !recentAudits.isEmpty()
+                    && !mirrorReadyForIncremental) {
+                Logger.info(SiteSearchJobImpl.class, () -> String.format(
+                        "Site-search index `%s` is missing on one or more write engines; forcing a "
+                                + "full rebuild instead of an incremental crawl to restore the mirror.",
+                        indexMetaData.getIndexName()));
+            }
             if (incremental) {
                 //Incremental mode is useful only if there's already an index previously built.
                 //Incremental mode also implies that we have to have a date range to work on.

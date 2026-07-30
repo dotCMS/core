@@ -166,6 +166,17 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     }
 
     /**
+     * Single-engine leaf: whether this OpenSearch cluster holds the index. The physical OS index is
+     * {@code .os}-tagged, so the tag is (re)applied at this physical boundary before the existence
+     * check — matching {@link #physicalName(String)} / create / search. The router aggregates this
+     * across all write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(osTagged(indexName));
+    }
+
+    /**
      * OpenSearch adapter for the vendor-neutral alias handle: <em>re-tag before lookup, strip on
      * return</em>.
      *

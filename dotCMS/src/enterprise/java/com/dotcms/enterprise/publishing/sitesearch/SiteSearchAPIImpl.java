@@ -20,6 +20,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -121,6 +122,22 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
         final Set<String> merged = new LinkedHashSet<>(esImpl.listClosedIndices());
         merged.addAll(osImpl.listClosedIndices());
         return new ArrayList<>(merged);
+    }
+
+    /**
+     * True only when {@code indexName} exists on <em>every</em> engine that receives writes in the
+     * current phase — the incremental-crawl safety gate (see {@link SiteSearchAPI#existsOnAllWriteEngines}).
+     * Aggregates the per-engine leaf checks across {@link PhaseRouter#writeProviders()}: a single
+     * missing twin makes an in-place incremental write unsafe, so the caller must rebuild fully.
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        for (final SiteSearchAPI impl : router.writeProviders()) {
+            if (!impl.existsOnAllWriteEngines(indexName)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -288,12 +305,30 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
             throw new DotStateException("Site-search index '" + indexName
                     + "' is active and cannot be deleted. Deactivate it first.");
         }
+        // A site-search index is one logical index mirrored across both engines, so a delete must
+        // clear it from BOTH — not only the current phase's write providers. A phase rollback can
+        // leave a twin on an engine that is no longer in the write set (e.g. a Phase-2 OpenSearch
+        // twin after rolling back to Phase 0/1, or an ES index after Phase 3); a phase-scoped delete
+        // would strand it as an unmanageable orphan. The primary (current read provider) delete is
+        // authoritative and its failure propagates; the other engine is swept best-effort so an
+        // unreachable or decommissioned engine never blocks the delete. Each leaf delete is already
+        // idempotent — it skips when the index is absent (issue #36360).
+        final SiteSearchAPI primary = router.readProvider();
+        final SiteSearchAPI secondary = primary == esImpl ? osImpl : esImpl;
         try {
-            router.writeChecked(impl -> impl.deleteIndex(indexName));
+            primary.deleteIndex(indexName);
         } catch (DotDataException | IOException e) {
             throw e;
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
+        }
+        try {
+            secondary.deleteIndex(indexName);
+        } catch (final Exception e) {
+            Logger.warn(SiteSearchAPIImpl.class, String.format(
+                    "Best-effort delete of site-search index '%s' on the non-primary engine failed "
+                            + "(a leftover twin may remain; reconcile if the engine comes back): %s",
+                    indexName, e.getMessage()), e);
         }
     }
 

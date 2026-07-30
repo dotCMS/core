@@ -106,18 +106,24 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return Collections.EMPTY_LIST;
 
-        final List<String> indices = new ArrayList<>();
-
-        indices.addAll(
-            indexApi.listIndices().stream()
-                    .filter(IndexType.SITE_SEARCH::is)
-                    .collect(Collectors.toList())
-        );
+        final List<String> indices = new ArrayList<>(indexApi.listIndices().stream()
+                .filter(IndexType.SITE_SEARCH::is)
+                .toList());
 
         Collections.sort(indices);
         Collections.reverse(indices);
         setDefaultToSpecificPosition(indices, 0);
         return indices;
+    }
+
+    /**
+     * Single-engine leaf: whether this Elasticsearch cluster holds the index. ES physical names carry
+     * no {@code .os} tag, so the logical name is used verbatim. The router aggregates this across all
+     * write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(indexName);
     }
 
     /**
