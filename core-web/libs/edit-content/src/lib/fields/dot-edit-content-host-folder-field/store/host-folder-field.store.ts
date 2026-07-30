@@ -424,16 +424,17 @@ export const HostFolderFiledStore = signalStore(
                         sitesCatalogTotal() > SITE_SEARCH_THRESHOLD
                 ),
                 /**
-                 * Whether the folders panel should show the search input. Hidden while the panel
-                 * loading state is shown and when the selected site has no folders after load.
+                 * Whether the folders panel should show the search input. Hidden during the initial
+                 * folders load (unless a search term is already set) and when the selected site has
+                 * no folders after load. Stays visible while a search request is in flight.
                  */
                 showFolderSearch: computed(() => {
-                    if (showFoldersPanelLoading()) {
-                        return false;
+                    if (searchTerm().length > 0) {
+                        return true;
                     }
 
-                    if (searchTerm().length >= MIN_SEARCH_LENGTH) {
-                        return true;
+                    if (showFoldersPanelLoading()) {
+                        return false;
                     }
 
                     if (foldersStatus() !== ComponentStatus.LOADED) {
@@ -442,6 +443,18 @@ export const HostFolderFiledStore = signalStore(
 
                     return folders().length > 0;
                 }),
+                /**
+                 * Whether the sites search input should show a loading spinner.
+                 * True only for a fresh search request (term set, list cleared, page-1 in flight) —
+                 * not the initial catalog load, and not background load-more pagination (which
+                 * keeps existing sites and uses the virtual scroller loading indicator instead).
+                 */
+                sitesSearchLoading: computed(
+                    () =>
+                        siteSearchTerm().trim().length > 0 &&
+                        sitesPagination().loading &&
+                        sites().length === 0
+                ),
                 /**
                  * Sites currently loaded for the panel (API-backed list; no local filtering).
                  */
@@ -913,14 +926,14 @@ export const HostFolderFiledStore = signalStore(
              */
             filterSites: rxMethod<string>(
                 pipe(
+                    tap((term: string) => patchState(store, { siteSearchTerm: term })),
                     debounceTime(300),
                     filter(() => store.overlayOpen()),
                     map((term) => ({ term, epoch: store.queryEpoch() })),
                     distinctUntilChanged((a, b) => a.term === b.term && a.epoch === b.epoch),
                     map(({ term }) => term),
-                    tap((term: string) =>
+                    tap(() =>
                         patchState(store, {
-                            siteSearchTerm: term,
                             sitesPagination: {
                                 ...store.sitesPagination(),
                                 loading: true

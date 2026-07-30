@@ -132,7 +132,11 @@ public record SearchHit(
                 .id(osHit.id())
                 .index(osHit.index())
                 .sourceAsMap(sourceMap)
-                .score(osHit.score() != null ? osHit.score().floatValue() : 0.0f)
+                // Map an absent OS score (field-sorted / non-relevance-scored hits, where OS omits
+                // _score) to NaN, matching the ES client, which returns NaN for the same case. The
+                // legacy JSON adapter coerces non-finite scores to null (#36478); defaulting to 0.0f
+                // instead serialized a spurious 0.0 for field-sorted OS queries.
+                .score(osHit.score() != null ? osHit.score().floatValue() : Float.NaN)
                 .sortValues(sortValues)
                 .build();
     }
