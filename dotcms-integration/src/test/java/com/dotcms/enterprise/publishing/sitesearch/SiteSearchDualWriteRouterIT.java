@@ -271,6 +271,36 @@ public class SiteSearchDualWriteRouterIT extends IntegrationTestBase {
     }
 
     /**
+     * Given Scenario: dual-write phase; an index exists on both engines with equal content, then a
+     *                 document is written to the OpenSearch twin ALONE (simulating an ES shadow-write
+     *                 that failed fire-and-forget, so the engines drift while both still exist).
+     * When : {@code writeMirrorsInSync(IDX)} is queried.
+     * Then : it reports {@code true} while the counts match and {@code false} once they diverge — the
+     *        content-drift half of the incremental-crawl gate, which existence alone cannot catch
+     *        (issue #36360).
+     */
+    @Test
+    public void test_writeMirrorsInSync_falseOnContentDrift() throws Exception {
+        router.createSiteSearchIndex(IDX, null, 1);
+        assertTrue("Fresh mirror (both empty) must be in sync", router.writeMirrorsInSync(IDX));
+
+        // Drift: write one document to the OpenSearch twin only, bypassing the router fan-out.
+        final SiteSearchResult doc = new SiteSearchResult();
+        doc.setId(DOC_ID);
+        doc.setUrl("/ss-drift-it/" + RUN_ID);
+        doc.setTitle("Drift doc " + RUN_ID);
+        doc.setMimeType("text/html");
+        doc.setContent("dotcms mirror drift " + RUN_ID);
+        doc.setContentLength(doc.getContent().length());
+        osSiteSearchAPI.putToIndex(IDX, doc, "content");
+
+        assertFalse("OS twin ahead of ES → mirrors must be reported out of sync",
+                router.writeMirrorsInSync(IDX));
+
+        Logger.info(this, "✅ test_writeMirrorsInSync_falseOnContentDrift passed");
+    }
+
+    /**
      * Given Scenario: an index is created on both engines in a dual-write phase, then the system is
      *                 rolled back to Phase 0 (ES is the only write provider).
      * When : {@code router.deleteIndex(IDX)} is called in Phase 0.

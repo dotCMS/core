@@ -65,6 +65,12 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
         Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, String.valueOf(ordinal));
     }
 
+    private static SiteSearchResults resultsWithTotal(final long total) {
+        final SiteSearchResults results = new SiteSearchResults();
+        results.setTotalResults(total);
+        return results;
+    }
+
     // =======================================================================
     // existsOnAllWriteEngines — the incremental-crawl gate
     // =======================================================================
@@ -99,6 +105,55 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
 
         assertTrue(router.existsOnAllWriteEngines(IDX));
         verify(esImpl).existsOnAllWriteEngines(IDX);
+        verify(osImpl, never()).existsOnAllWriteEngines(IDX);
+    }
+
+    // =======================================================================
+    // writeMirrorsInSync — existence + document-count parity (content-drift gate)
+    // =======================================================================
+
+    /** Dual-write, both twins present with equal document counts → in sync. */
+    @Test
+    public void writeMirrorsInSync_dualWrite_equalCounts_true() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS);
+        when(esImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(osImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(esImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(100));
+        when(osImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(100));
+
+        assertTrue(router.writeMirrorsInSync(IDX));
+    }
+
+    /** Dual-write, both present but the OpenSearch twin holds fewer docs (drift) → NOT in sync. */
+    @Test
+    public void writeMirrorsInSync_dualWrite_countDrift_false() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS);
+        when(esImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(osImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(esImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(100));
+        when(osImpl.search(IDX, "*", 0, 0)).thenReturn(resultsWithTotal(60));
+
+        assertFalse(router.writeMirrorsInSync(IDX));
+    }
+
+    /** Dual-write, the OpenSearch twin is missing → NOT in sync (existence short-circuits counts). */
+    @Test
+    public void writeMirrorsInSync_dualWrite_twinMissing_false() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS);
+        when(esImpl.existsOnAllWriteEngines(IDX)).thenReturn(true);
+        when(osImpl.existsOnAllWriteEngines(IDX)).thenReturn(false);
+
+        assertFalse(router.writeMirrorsInSync(IDX));
+        // counts are never consulted once a twin is known to be missing
+        verify(esImpl, never()).search(IDX, "*", 0, 0);
+    }
+
+    /** Phase 0 writes to a single engine — nothing to reconcile, so trivially in sync. */
+    @Test
+    public void writeMirrorsInSync_phase0_true() {
+        setPhase(PHASE_0_ES_ONLY);
+
+        assertTrue(router.writeMirrorsInSync(IDX));
         verify(osImpl, never()).existsOnAllWriteEngines(IDX);
     }
 
