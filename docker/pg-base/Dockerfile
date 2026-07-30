@@ -17,7 +17,7 @@ RUN apt update -y \
   && apt install -y --no-install-recommends $BUILD_PACKAGES $RUNTIME_PACKAGES \
   && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
   && apt update -y \
-  && apt install -y --no-install-recommends postgresql-client-16 \
+  && apt install postgresql-client-16 -y \
   && apt remove -y $BUILD_PACKAGES \
   && apt purge -y \
   && apt autoremove -y \
