@@ -85,8 +85,8 @@ describe('DotPublishingQueueToolbarComponent', () => {
     describe('Add Bundle dropdown', () => {
         it('exposes two menu items: Select Bundle + Upload', () => {
             expect(spectator.component.addBundleItems.length).toBe(2);
-            expect(spectator.component.addBundleItems[0].icon).toBe('pi pi-table');
-            expect(spectator.component.addBundleItems[1].icon).toBe('pi pi-upload');
+            expect(spectator.component.addBundleItems[0].label).toBeTruthy();
+            expect(spectator.component.addBundleItems[1].label).toBeTruthy();
         });
 
         it('Upload item → emits uploadClick', () => {

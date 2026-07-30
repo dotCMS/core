@@ -132,7 +132,8 @@ export class DotVelocityPlaygroundPageComponent {
     readonly emptyOutputConfig: PrincipalConfiguration = {
         title: this.#messageService.get('velocityPlayground.output.empty'),
         subtitle: this.#messageService.get('velocityPlayground.output.empty.hint'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     // 5. Lifecycle

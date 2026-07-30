@@ -2,10 +2,12 @@
     @if (errorMessage()) {
         <p-message
             severity="error"
-            icon="pi pi-times-circle"
             class="-mx-6 mb-4"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="tag-import-error">
+            <ng-template #icon>
+                <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
+            </ng-template>
             {{ errorMessage() }}
         </p-message>
     }
@@ -17,7 +19,6 @@
         <p-fileupload
             #fileUpload
             mode="advanced"
-            chooseIcon="pi pi-upload"
             [showUploadButton]="false"
             [showCancelButton]="false"
             [multiple]="false"
@@ -40,7 +41,11 @@
                     (click)="fileUpload.choose()">
                     <div
                         class="flex size-24 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
-                        <i class="pi pi-upload text-4xl!"></i>
+                        <span
+                            class="material-symbols-rounded text-5xl! leading-none!"
+                            aria-hidden="true">
+                            upload
+                        </span>
                     </div>
 
                     <p class="text-2xl font-semibold text-color">
@@ -53,10 +58,13 @@
 
                     <div class="text-color-secondary flex items-center gap-2 text-base">
                         <span>{{ 'tags.import.csv-support' | dm }}</span>
-                        <i
-                            class="pi pi-info-circle"
+                        <span
+                            class="material-symbols-rounded text-xl!"
                             [pTooltip]="tooltipMessage()"
-                            tooltipPosition="right"></i>
+                            tooltipPosition="right"
+                            aria-hidden="true">
+                            info
+                        </span>
                     </div>
 
                     @if (selectedFile(); as file) {
