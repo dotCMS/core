@@ -131,9 +131,7 @@
                     [value]="$openSchemeId()"
                     (valueChange)="onOpenSchemeChange($event)">
                     @for (scheme of $schemes(); track scheme.id) {
-                        <p-accordion-panel
-                            [value]="scheme.id"
-                            styleClass="rounded-xl bg-surface-50 overflow-hidden">
+                        <p-accordion-panel [value]="scheme.id">
                             <p-accordion-header>
                                 <span class="flex w-full items-center gap-3">
                                     <span

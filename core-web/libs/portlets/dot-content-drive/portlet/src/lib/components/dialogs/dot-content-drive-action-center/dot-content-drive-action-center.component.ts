@@ -107,6 +107,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                     overflow: 'hidden'
                 }
             }
+        },
+        // Panel styling has to go through `pt`: `p-accordion-panel` exposes only a `value` input,
+        // so a `styleClass`/`class` attribute on it is inert. `overflow: hidden` here is what clips
+        // the header and content corners to the panel radius.
+        panel: {
+            class: 'rounded-xl overflow-hidden'
         }
     };
 
@@ -126,6 +132,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         panel: {
             borderWidth: '1px',
             borderColor: '{surface.200}'
+        },
+        // Matches the Quick Actions list: the row sits on `surface-50` and lifts to white on hover,
+        // and an expanded scheme stays white so it reads as the active card.
+        header: {
+            background: '{surface.50}',
+            hoverBackground: '{surface.0}',
+            activeBackground: '{surface.0}',
+            activeHoverBackground: '{surface.0}'
         },
         content: {
             padding: '0',
