@@ -599,10 +599,12 @@ describe('DotContentTypesEditComponent', () => {
             expect(comp.show()).toBeTruthy();
         });
 
-        it('should keep the PrimeNG dialog focus defaults untouched in edit mode', () => {
+        it('should disable the dialog focusOnShow while leaving focus trap and closable alone', () => {
             clickEditButton();
 
-            expect(dialog.componentInstance.focusOnShow).toBe(true);
+            // Same reason as create mode: PrimeNG would steal focus from the Name input after the
+            // open transition. focusTrap is an independent input and stays enabled.
+            expect(dialog.componentInstance.focusOnShow).toBe(false);
             expect(dialog.componentInstance.focusTrap).toBe(true);
             expect(dialog.componentInstance.closable).toBe(true);
         });
@@ -1059,9 +1061,8 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
 
                 expect(comp.startFormDialog).toHaveBeenCalled();
-                // Opening via query param must not change focus behavior either: the flag is
-                // resolved once from the edit/create mode, not from which trigger opened it.
-                expect(comp.dialogFocusOnShow).toBe(true);
+                // Opening via query param gets the same focus handling as every other trigger.
+                expect(comp.dialogFocusOnShow).toBe(false);
             }));
 
             it('should not open form dialog when open-config is false', (done) => {

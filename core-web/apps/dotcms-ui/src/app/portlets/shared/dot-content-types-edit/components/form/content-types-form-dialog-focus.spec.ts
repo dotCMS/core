@@ -185,7 +185,7 @@ describe('ContentTypesFormComponent focus inside p-dialog', () => {
         cleanUpDialog(fixture);
     });
 
-    describe('focusOnShow disabled (create mode)', () => {
+    describe('focusOnShow disabled (the production value, both create and edit)', () => {
         // The binding does not branch on baseType, but every base type reaches this same dialog
         // through create/:type — so the focus outcome is asserted for real, not just inferred.
         it.each<DotCMSBaseTypesContentTypes>(['CONTENT', 'WIDGET'])(
@@ -228,13 +228,16 @@ describe('ContentTypesFormComponent focus inside p-dialog', () => {
         });
     });
 
-    describe('focusOnShow enabled (edit mode)', () => {
-        it('should focus the first focusable element in DOM order', () => {
-            // Documents the current, intentionally untouched edit-mode behavior: PrimeNG wins the
-            // race and focuses the DOM-first focusable element instead of the name input.
+    describe('focusOnShow enabled (reproduces the bug being fixed)', () => {
+        it('should let PrimeNG steal focus to the first focusable element in DOM order', () => {
+            // Not a production configuration -- this reproduces the defect so the reason the
+            // binding must stay disabled is pinned in a test. Leaving focusOnShow on lets PrimeNG's
+            // post-transition focus() win over the form's own focus, landing on the banner
+            // checkbox. This was the visible "focus appears on Name, then jumps away" symptom.
             openDialogAndSettleFocus({ focusOnShow: true, newContentEditorEnabled: true });
 
             expect(document.activeElement).toBe(queryElement(NEW_EDIT_CONTENT_CHECKBOX_SELECTOR));
+            expect(document.activeElement).not.toBe(queryElement(NAME_INPUT_SELECTOR));
         });
     });
 });
