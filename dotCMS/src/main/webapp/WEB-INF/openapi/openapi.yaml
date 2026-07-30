@@ -7673,6 +7673,15 @@ paths:
         name: ensure
         schema:
           type: string
+      - description: |-
+          Whether to include system Content Types (e.g. Host, Favorite Page) in the response.
+
+          When `true` or omitted, system Content Types are included (default, backward-compatible). When `false`, they are excluded. Combines with `filter`.
+        in: query
+        name: system
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           content:
@@ -27269,6 +27278,8 @@ components:
     Folder:
       type: object
       properties:
+        defaultBaseType:
+          type: string
         defaultFileType:
           type: string
         filesMasks:
@@ -27330,6 +27341,15 @@ components:
           type: string
           description: Default asset type for files uploaded to this folder
           example: FileAsset
+        defaultBaseType:
+          type: string
+          description: "Content Drive upload-mode preference for this folder, recorded\
+            \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
+            \ also accepts the alternate names DotAsset/File and stored canonically\
+            \ in uppercase). On create, omit for no preference (\"ask each time\"\
+            ); on update, omit to leave the current preference unchanged. This is\
+            \ orthogonal to defaultAssetType and does not change FileAsset behavior."
+          example: DOTASSET
         fileMasks:
           type: array
           description: "List of file patterns that are allowed in this folder (e.g.,\
@@ -37031,6 +37051,15 @@ components:
           type: string
           description: Default asset type for files uploaded to this folder
           example: FileAsset
+        defaultBaseType:
+          type: string
+          description: "Content Drive upload-mode preference for this folder, recorded\
+            \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
+            \ also accepts the alternate names DotAsset/File and stored canonically\
+            \ in uppercase). On create, omit for no preference (\"ask each time\"\
+            ); on update, omit to leave the current preference unchanged. This is\
+            \ orthogonal to defaultAssetType and does not change FileAsset behavior."
+          example: DOTASSET
         fileMasks:
           type: array
           description: "List of file patterns that are allowed in this folder (e.g.,\

@@ -842,7 +842,8 @@ public class FolderAPIImpl implements FolderAPI  {
 					return new FolderSearchView(
 							folder.getIdentifier(), folder.getInode(), folder.getName(),
 							parentPath, canAddIds.contains(folder.getPermissionId()),
-							parentPathsWithVisibleChildren.contains(folder.getPath()));
+							parentPathsWithVisibleChildren.contains(folder.getPath()),
+							folder.getDefaultBaseType());
 				})
 				.toList();
 

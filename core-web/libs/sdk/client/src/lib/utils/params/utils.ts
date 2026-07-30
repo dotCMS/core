@@ -1,5 +1,6 @@
 /**
- * Utility functions for AI search parameter mapping and processing
+ * Utility functions for AI search parameter mapping and processing.
+ * This module provides functionality for mapping and appending parameters to a URLSearchParams object.
  */
 
 /**
