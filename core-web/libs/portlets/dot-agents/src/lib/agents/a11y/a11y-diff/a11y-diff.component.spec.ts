@@ -38,7 +38,6 @@ const DIFF_FILES: PageDiffFile[] = [
         identifier: 'vtl-1',
         path: '//demo/application/containers/awazon/a.vtl',
         name: 'a.vtl',
-        folder: '//demo/application/containers/awazon/',
         extension: 'vtl',
         origin: 'container',
         working: 'new\ncode',
@@ -50,7 +49,6 @@ const DIFF_FILES: PageDiffFile[] = [
         identifier: 'css-1',
         path: '//demo/application/themes/x/style.css',
         name: 'style.css',
-        folder: '//demo/application/themes/x/',
         extension: 'css',
         origin: 'theme',
         working: '.a{color:red}',
@@ -168,13 +166,17 @@ describe('DotA11yDiffComponent', () => {
         expect(spectator.query(byTestId('diff-file-count'))).toHaveText('2');
     });
 
-    it('shows each file name with its containing folder path', () => {
+    it('shows each file name and its +/- line counts, but not the folder path', () => {
         render();
         const rows = spectator.queryAll(byTestId('diff-file-row'));
-        // First row: name + full folder path (not the origin label).
+        // First row: name + line counts, no folder path.
         expect(rows[0].textContent).toContain('a.vtl');
-        expect(rows[0].textContent).toContain('//demo/application/containers/awazon/');
-        expect(rows[1].textContent).toContain('//demo/application/themes/x/');
+        expect(rows[0].textContent).toContain('+1');
+        expect(rows[0].textContent).toContain('1');
+        expect(rows[0].textContent).not.toContain('//demo/application/containers/');
+        // Second row: css file name + all-added count.
+        expect(rows[1].textContent).toContain('style.css');
+        expect(rows[1].textContent).not.toContain('//demo/application/themes/');
     });
 
     it('selects the first file by default and renders a Monaco diff editor', () => {

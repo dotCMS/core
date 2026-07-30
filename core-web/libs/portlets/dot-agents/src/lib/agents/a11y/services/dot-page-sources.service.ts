@@ -202,7 +202,6 @@ function flattenSources(view: PageRenderSourcesView | undefined): PageSourceFile
             identifier,
             path,
             name: basename(path),
-            folder: dirname(path),
             extension: (extension ?? extensionOf(path)).toLowerCase(),
             origin
         });
@@ -229,18 +228,6 @@ function basename(path: string): string {
     const parts = path.split('/').filter(Boolean);
 
     return parts.length ? parts[parts.length - 1] : path;
-}
-
-/**
- * Host-qualified folder that contains the file — the path minus its filename,
- * with the leading `//host` prefix and a trailing slash preserved, e.g.
- * `//host/a/b/header.vtl` → `//host/a/b/`. Returns the path unchanged when it has
- * no `/` to strip.
- */
-function dirname(path: string): string {
-    const lastSlash = path.lastIndexOf('/');
-
-    return lastSlash > -1 ? path.slice(0, lastSlash + 1) : path;
 }
 
 /** Lowercased extension without the dot, e.g. `header.vtl` → `vtl`; `''` when none. */
