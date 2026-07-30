@@ -99,6 +99,11 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $schemesError = signal<boolean>(false);
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
+    /**
+     * The expanded scheme panel. Single-expand, matching the prototype: opening one scheme collapses
+     * the others, which also keeps the "one action per execute" rule visually obvious.
+     */
+    protected readonly $openSchemeId = signal<string | undefined>(undefined);
     /** True while an action is being fired; disables the whole dialog. */
     protected readonly $executing = signal<boolean>(false);
 
@@ -187,6 +192,26 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                     this.onExecuteSuccess(actionName, result?.successCount, result?.skippedCount),
                 error: (error) => this.onExecuteError(error)
             });
+    }
+
+    /**
+     * Tracks which scheme panel is expanded, and clears the pending action when a different scheme
+     * takes over so the Execute button can't stay armed for a panel the user has collapsed.
+     */
+    protected onOpenSchemeChange(value: string | number | string[] | number[] | undefined): void {
+        const openId = Array.isArray(value) ? value[0]?.toString() : value?.toString();
+
+        this.$openSchemeId.set(openId);
+
+        const selectedId = this.$selectedActionId();
+        const stillVisible = this.$schemes().some(
+            (scheme) =>
+                scheme.id === openId && scheme.actions.some((action) => action.id === selectedId)
+        );
+
+        if (!stillVisible) {
+            this.$selectedActionId.set(null);
+        }
     }
 
     /** Closes the dialog without firing anything. */

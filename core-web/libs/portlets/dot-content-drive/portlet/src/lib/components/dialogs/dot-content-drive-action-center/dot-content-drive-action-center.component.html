@@ -1,12 +1,11 @@
 <!--
-    The Action Center owns its own p-dialog rather than reusing the shell's shared one, because it
-    needs a custom header AND footer. PrimeNG queries `#header`/`#footer` with `descendants: false`,
-    so those templates must be direct children of `p-dialog` and cannot sit inside an `@switch` —
-    and giving the shared dialog a footer template would render an empty footer for every other
-    dialog type.
+    Styled against the design prototype (remix_-content-drive/components/ActionCenterDialog.tsx).
+    The prototype's raw `slate-*` / `#1D1B4B` / `#1D4ED8` values are mapped onto the theme tokens
+    `tailwindcss-primeui` exposes (`surface-*`, `primary-*`, `border-surface`) so the dialog follows
+    the active PrimeNG theme instead of pinning one palette.
 
-    Scroll ownership: the content area gets `overflow-hidden p-0` via `pt` and the inner body div is
-    the only scroll container, so the header and footer stay pinned.
+    Layout follows the prototype: the dialog is a fixed-height flex column, so the content area is
+    the only thing that scrolls and the header/footer stay pinned.
 -->
 <p-dialog
     [visible]="true"
@@ -17,15 +16,18 @@
     [closeOnEscape]="true"
     appendTo="body"
     data-testid="action-center-dialog"
-    [style]="{ width: '44rem', maxWidth: '92vw' }"
-    [pt]="{ content: { class: 'p-0! overflow-hidden' } }"
+    [style]="{ width: '42rem', maxWidth: '92vw', height: '80vh' }"
+    [pt]="{
+        root: { class: 'flex flex-col' },
+        content: { class: 'flex-1 overflow-y-auto p-0!' }
+    }"
     (visibleChange)="onVisibleChange($event)">
     <ng-template #header>
         <div class="flex flex-col gap-1">
-            <span class="text-xl font-semibold text-gray-900">
+            <span class="text-xl font-bold text-surface-800">
                 {{ 'content-drive.action-center.header' | dm }}
             </span>
-            <span class="text-sm text-gray-500" data-testid="selection-summary">
+            <span class="text-sm font-medium text-surface-500" data-testid="selection-summary">
                 {{
                     'content-drive.action-center.items-selected'
                         | dm: [$contentletCount().toString()]
@@ -34,8 +36,7 @@
         </div>
     </ng-template>
 
-    <!-- The only scrollable region in the dialog. -->
-    <div class="flex max-h-[60vh] flex-col gap-6 overflow-y-auto px-6 py-5" data-testid="action-center">
+    <div class="flex flex-col gap-8 p-6" data-testid="action-center">
         @if ($ignoredFolderCount() > 0) {
             <p-message severity="info" data-testid="folders-ignored-message">
                 {{
@@ -46,44 +47,49 @@
         }
 
         <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->
-        <section class="flex flex-col gap-3" data-testid="quick-actions-section">
-            <h3 class="text-xs font-semibold tracking-wider text-gray-400 uppercase">
+        <section data-testid="quick-actions-section">
+            <h3 class="mb-3 px-2 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
                 {{ 'content-drive.action-center.quick-actions' | dm }}
             </h3>
 
             @if ($quickActions().length) {
                 <div
-                    class="flex flex-col divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200">
+                    class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50">
                     @for (quickAction of $quickActions(); track quickAction.id) {
                         <button
                             type="button"
-                            class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-60"
                             [disabled]="$executing()"
                             [attr.data-testid]="'quick-action-' + quickAction.id"
                             (click)="onExecuteQuickAction(quickAction)">
                             <span
-                                class="flex size-9 shrink-0 items-center justify-center rounded-lg border"
+                                class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
                                 [class]="
                                     quickAction.danger
-                                        ? 'border-red-200 bg-red-50'
-                                        : 'border-gray-200 bg-gray-50'
+                                        ? 'bg-red-50 text-red-500 group-hover:bg-red-100'
+                                        : 'bg-surface-0 text-surface-400 shadow-sm group-hover:text-primary'
                                 ">
                                 <i
-                                    class="material-symbols-outlined text-[1.125rem]! leading-none"
-                                    [class]="quickAction.danger ? 'text-red-500' : 'text-gray-600'"
+                                    class="material-symbols-outlined text-[20px]!"
                                     aria-hidden="true">
                                     {{ quickAction.icon }}
                                 </i>
                             </span>
 
                             <span
-                                class="flex-1 font-medium"
-                                [class]="quickAction.danger ? 'text-red-600' : 'text-gray-800'">
+                                class="flex-1 text-sm font-semibold"
+                                [class]="quickAction.danger ? 'text-red-600' : 'text-surface-700'">
                                 {{ quickAction.name | dm }}
                             </span>
 
-                            <span class="text-sm text-gray-400">({{ quickAction.count }})</span>
-                            <i class="pi pi-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+                            <span class="text-xs font-medium text-surface-400">
+                                ({{ quickAction.count }})
+                            </span>
+                            <i
+                                class="material-symbols-outlined text-[20px]! text-surface-300"
+                                aria-hidden="true">
+                                chevron_right
+                            </i>
                         </button>
                     }
                 </div>
@@ -95,15 +101,15 @@
         </section>
 
         <!-- Workflow Actions: one panel per scheme, counts from the backend aggregation. -->
-        <section class="flex flex-col gap-3" data-testid="workflow-actions-section">
-            <h3 class="text-xs font-semibold tracking-wider text-gray-400 uppercase">
+        <section data-testid="workflow-actions-section">
+            <h3 class="mb-3 px-2 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
                 {{ 'content-drive.action-center.workflow-actions' | dm }}
             </h3>
 
             @if ($loadingSchemes()) {
-                <div class="flex flex-col gap-2" data-testid="workflow-actions-loading">
+                <div class="flex flex-col gap-3" data-testid="workflow-actions-loading">
                     @for (placeholder of [1, 2, 3]; track placeholder) {
-                        <p-skeleton height="3rem" />
+                        <p-skeleton height="3rem" borderRadius="0.75rem" />
                     }
                 </div>
             } @else if ($schemesError()) {
@@ -115,36 +121,44 @@
                     {{ 'content-drive.action-center.no-workflow-actions' | dm }}
                 </p-message>
             } @else {
+                <!-- Single-expand, matching the prototype: opening one scheme collapses the others. -->
                 <p-accordion
-                    [multiple]="true"
-                    styleClass="flex flex-col gap-2"
-                    data-testid="workflow-schemes">
+                    styleClass="flex flex-col gap-3"
+                    data-testid="workflow-schemes"
+                    [value]="$openSchemeId()"
+                    (valueChange)="onOpenSchemeChange($event)">
                     @for (scheme of $schemes(); track scheme.id) {
                         <p-accordion-panel
                             [value]="scheme.id"
-                            styleClass="rounded-lg border border-gray-200 overflow-hidden">
+                            styleClass="rounded-xl border border-surface-100 bg-surface-50 overflow-hidden">
                             <p-accordion-header>
-                                <span class="flex w-full items-center gap-2">
-                                    <span class="font-semibold text-gray-800">
+                                <span class="flex w-full items-center gap-3">
+                                    <span
+                                        class="text-sm font-bold"
+                                        [class]="
+                                            $openSchemeId() === scheme.id
+                                                ? 'text-primary'
+                                                : 'text-surface-800'
+                                        ">
                                         {{ scheme.name }}
                                     </span>
-                                    <span class="text-gray-400">({{ scheme.count }})</span>
+                                    <span class="text-xs font-medium text-surface-400">
+                                        ({{ scheme.count }})
+                                    </span>
                                     @if (schemeOwnsSelection(scheme)) {
-                                        <p-badge
-                                            class="mr-2 ml-auto"
-                                            severity="info"
-                                            [value]="
-                                                'content-drive.action-center.one-selected' | dm
-                                            " />
+                                        <span
+                                            class="mr-2 ml-auto rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                            {{ 'content-drive.action-center.one-selected' | dm }}
+                                        </span>
                                     }
                                 </span>
                             </p-accordion-header>
 
                             <p-accordion-content>
-                                <div class="flex flex-col divide-y divide-gray-200">
+                                <div class="divide-y divide-surface-100 bg-surface-0">
                                     @for (action of scheme.actions; track action.id) {
                                         <label
-                                            class="flex cursor-pointer items-center gap-3 py-3"
+                                            class="flex cursor-pointer items-center gap-4 px-2 py-3.5 transition-colors hover:bg-surface-50"
                                             [class.opacity-60]="action.requiresInput"
                                             [attr.for]="action.id">
                                             <p-radiobutton
@@ -156,13 +170,13 @@
                                                 [attr.data-testid]="'workflow-action-' + action.id"
                                                 (ngModelChange)="$selectedActionId.set($event)" />
 
-                                            <span class="font-medium text-gray-800">
+                                            <span class="text-sm font-semibold text-surface-700">
                                                 {{ action.name }}
                                             </span>
 
                                             @if (action.requiresInput) {
                                                 <i
-                                                    class="pi pi-info-circle text-xs text-gray-400"
+                                                    class="pi pi-info-circle text-xs text-surface-400"
                                                     [pTooltip]="
                                                         'content-drive.action-center.requires-input'
                                                             | dm
@@ -171,10 +185,10 @@
                                             }
 
                                             <span
-                                                class="ml-auto flex items-center gap-1 text-sm text-gray-400">
+                                                class="ml-auto flex items-center gap-1 text-xs font-medium text-surface-400">
                                                 @if (action.approximateCount) {
                                                     <i
-                                                        class="pi pi-info-circle text-xs"
+                                                        class="pi pi-info-circle"
                                                         [pTooltip]="
                                                             'content-drive.action-center.approximate-count'
                                                                 | dm
@@ -189,10 +203,13 @@
                                     }
                                 </div>
 
-                                <div class="flex justify-end pt-3">
+                                <div
+                                    class="flex justify-end border-t border-surface-100 bg-surface-50 px-2 py-4">
                                     <p-button
+                                        size="small"
                                         icon="pi pi-play"
                                         iconPos="right"
+                                        styleClass="uppercase tracking-wider font-bold"
                                         [label]="
                                             'content-drive.action-center.execute-workflow' | dm
                                         "
@@ -211,7 +228,7 @@
 
     <ng-template #footer>
         <div class="flex w-full items-center justify-between">
-            <span class="text-sm text-gray-500 italic">
+            <span class="text-xs font-medium text-surface-400 italic">
                 {{ 'content-drive.action-center.one-at-a-time' | dm }}
             </span>
             <p-button
