@@ -127,10 +127,15 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 handle: jest.fn()
             }),
             mockProvider(DotCurrentUserService),
-            // Side-panel flag read at click time by showCreateNewContentDialog (firstValueFrom):
-            // must emit so the async method resolves instead of hanging to timeout. Off → dialog.
+            // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
+            // must be mocked (not just `getFeatureFlag`) or the real store throws on construction.
+            // Side panel off by default → showCreateNewContentDialog uses the centered dialog.
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(false))
+                getFeatureFlags: jest
+                    .fn()
+                    .mockReturnValue(
+                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                    )
             }),
             mockProvider(DotEditContentStore, {
                 contentType: jest.fn().mockReturnValue(null),
@@ -628,6 +633,15 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             handle: jest.fn()
         }),
         mockProvider(DotCurrentUserService),
+        // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
+        // must be mocked or the real store throws on construction.
+        mockProvider(DotPropertiesService, {
+            getFeatureFlags: jest
+                .fn()
+                .mockReturnValue(
+                    of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                )
+        }),
         mockProvider(DotEditContentStore, {
             contentType: jest.fn().mockReturnValue(null),
             currentLocale: jest.fn().mockReturnValue(null),

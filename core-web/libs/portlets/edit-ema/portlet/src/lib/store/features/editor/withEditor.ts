@@ -19,7 +19,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_PERSONA, UVEFeatureFlags } from '../../../shared/consts';
 import { EDITOR_STATE } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -93,6 +93,14 @@ export function withEditor() {
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
+            // `withFlags` (composed earlier in the root store) contributes `flags` at runtime, but
+            // this feature's `state: type<UVEState>()` constraint doesn't declare it — the flags
+            // slice type is derived from `UVE_FEATURE_FLAGS`, not part of `UVEState`. Widening the
+            // constraint to include it hits ngrx/signals' 13-feature overload ceiling at the root
+            // store's composition (`dot-uve.store.ts` chains exactly 13). Narrow cast instead,
+            // same pattern as the documented cross-feature casts elsewhere in this store.
+            const flags = (store as unknown as { flags: Signal<UVEFeatureFlags> }).flags;
+
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageAsset()?.page?.canEdit;
                 const isExperimentRunning = [
@@ -145,7 +153,7 @@ export function withEditor() {
             });
 
             const editorCanEditStyles = computed(() => {
-                return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR;
+                return flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR;
             });
 
             const editorEnableInlineEdit = computed(() => {
@@ -153,7 +161,7 @@ export function withEditor() {
             });
 
             const $isEmaLegacyScriptInjectionEnabled = computed(
-                () => store.flags()?.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION === true
+                () => flags()?.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION === true
             );
 
             return {

@@ -10,8 +10,6 @@ import {
 import { DotCMSPage } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
-import { UVEFlags } from './features/flags/models';
-
 import {
     Container,
     ContentletArea,
@@ -76,10 +74,6 @@ export interface UVEState {
     // ============ UVE SYSTEM (withUve) ============
     uveStatus: UVE_STATUS;
     uveCurrentUser: CurrentUser | null;
-
-    // ============ FLAGS (withFlags) ============
-    // Note: flags added by withFlags feature - kept optional for backwards compatibility
-    flags?: UVEFlags;
 
     // ============ PAGE DOMAIN (withPage) ============
     pageParams: DotPageAssetParams | null;

@@ -24,8 +24,6 @@ const initialState: UVEState = {
     // UVE system state (managed by withUve)
     uveStatus: UVE_STATUS.LOADING,
     uveCurrentUser: null,
-    // Flags (managed by withFlags)
-    flags: {}, // Will be populated by withFlags feature
     // Page state (managed by withPage)
     pageParams: null,
     pageLanguages: [],

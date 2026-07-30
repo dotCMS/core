@@ -25,6 +25,7 @@ import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import { UVEFeatureFlags } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
@@ -114,11 +115,19 @@ export function withWorkflow() {
             workflowLockIsLoading: false
         }),
         withComputed((store) => {
+            // `withFlags` (composed earlier in the root store) contributes `flags` at runtime, but
+            // this feature's `state: type<UVEState>()` constraint doesn't declare it — the flags
+            // slice type is derived from `UVE_FEATURE_FLAGS`, not part of `UVEState`. Widening the
+            // constraint to include it hits ngrx/signals' 13-feature overload ceiling at the root
+            // store's composition (`dot-uve.store.ts` chains exactly 13). Narrow cast instead,
+            // same pattern as the documented cross-feature casts elsewhere in this store.
+            const flags = (store as unknown as { flags: Signal<UVEFeatureFlags> }).flags;
+
             const $lockIsPageLocked = computed(() => {
                 return computeIsPageLocked(store.pageAsset()?.page ?? null, store.uveCurrentUser());
             });
 
-            const $lockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+            const $lockFeatureEnabled = computed(() => flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
 
             const $lockOptions = computed<WorkflowLockOptions | null>(() => {
                 const page = store.pageAsset()?.page;
