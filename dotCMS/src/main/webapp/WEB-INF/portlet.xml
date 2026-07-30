@@ -523,4 +523,10 @@
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>users-beta</portlet-name>
+        <display-name>Users (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
 </portlet-app>

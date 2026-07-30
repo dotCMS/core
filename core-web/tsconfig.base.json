@@ -81,6 +81,7 @@
             ],
             "@dotcms/portlets/dot-tags/portlet": ["libs/portlets/dot-tags/src/index.ts"],
             "@dotcms/portlets/dot-usage": ["libs/portlets/dot-usage/src/index.ts"],
+            "@dotcms/portlets/dot-users/portlet": ["libs/portlets/dot-users/src/index.ts"],
             "@dotcms/portlets/dot-velocity-playground/portlet": [
                 "libs/portlets/dot-velocity-playground/src/index.ts"
             ],
