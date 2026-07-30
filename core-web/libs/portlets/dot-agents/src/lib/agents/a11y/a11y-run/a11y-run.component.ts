@@ -447,29 +447,21 @@ export class DotA11yRunComponent {
     });
 
     /**
-     * The live "working" bubble shown at the bottom of the log while fixing. It
-     * shows what the agent is doing now — the latest streamed step's text — and,
-     * when a step runs long and quiet (only heartbeats arriving), swaps to cycling
-     * reassurance copy so it never looks hung. The elapsed seconds on the current
-     * action (from the heartbeat) ride along as the sub-line.
+     * The live "thinking" copy shown while fixing. It is ALWAYS generic
+     * loading/working/thinking text — never the last step's message — so the
+     * indicator reads clearly as "the agent is busy" and doesn't get mistaken for a
+     * finished step. The phrases cycle (and loop) as the run progresses so the line
+     * keeps visibly changing; elapsed seconds on the current action ride along as
+     * the sub-line.
      */
     readonly workingMessage = computed<AgentMessage | null>(() => {
         if (!this.store.isFixing()) {
             return null;
         }
-        const heartbeat = this.store.heartbeat();
-        const latest = this.store.latestStep();
-
-        // Long, quiet step (agent thinking) → reassurance copy; else the step text.
-        const QUIET_MS = 6000;
-        const quiet = (heartbeat?.sinceLastEventMs ?? 0) >= QUIET_MS;
-        const text =
-            quiet || !latest
-                ? this.dm.get(this.workingReassuranceKey(heartbeat?.sinceLastEventMs ?? 0))
-                : latest.message;
+        const sinceLastEventMs = this.store.heartbeat()?.sinceLastEventMs ?? 0;
 
         // Elapsed on the current action, once it's been running a beat.
-        const sinceSec = Math.floor((heartbeat?.sinceLastEventMs ?? 0) / 1000);
+        const sinceSec = Math.floor(sinceLastEventMs / 1000);
         const sub =
             sinceSec >= 3
                 ? this.dm.get('accessibility.studio.working.elapsed', String(sinceSec))
@@ -478,27 +470,27 @@ export class DotA11yRunComponent {
         return {
             id: 'agent-working',
             icon: 'pi pi-spin pi-spinner',
-            text,
+            text: this.dm.get(this.workingReassuranceKey(sinceLastEventMs)),
             sub,
             tone: 'info'
         };
     });
 
     /**
-     * Pick a reassurance line for a long, quiet step. Cycles by how long the
-     * current action has run so the copy visibly changes as heartbeats arrive
-     * (rather than freezing on one phrase).
+     * Pick a generic reassurance line. Cycles through the phrases as the current
+     * action runs so the copy keeps visibly changing — and LOOPS, since a step can
+     * run for minutes and no phrase should imply it's nearly done or freeze on one
+     * message.
      */
     private workingReassuranceKey(sinceLastEventMs: number): string {
         const KEYS = [
             'accessibility.studio.working.thinking',
             'accessibility.studio.working.analyzing',
             'accessibility.studio.working.reasoning',
-            'accessibility.studio.working.stillworking',
-            'accessibility.studio.working.almost'
+            'accessibility.studio.working.stillworking'
         ];
-        // Advance one phrase roughly every 5s of quiet, capping at the last.
-        const index = Math.min(KEYS.length - 1, Math.floor(sinceLastEventMs / 5000));
+        // Advance one phrase roughly every 5s, wrapping around forever.
+        const index = Math.floor(sinceLastEventMs / 5000) % KEYS.length;
 
         return KEYS[index];
     }
@@ -554,24 +546,32 @@ export class DotA11yRunComponent {
 
     /**
      * The page rendered in the given mode. `host_id` disambiguates which site's
-     * copy renders. Shared by the two side-by-side frames (§8.2).
+     * copy renders. Shared by the two side-by-side frames (§8.2). An optional
+     * cache-busting `rev` forces the iframe to reload when the working render
+     * changes (see {@link previewUrl}).
      */
-    private urlFor(mode: 'PREVIEW_MODE' | 'LIVE'): string {
+    private urlFor(mode: 'PREVIEW_MODE' | 'LIVE', rev = 0): string {
         const page = this.store.selected();
         if (!page) {
             return '';
         }
         const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
-        return `${this.previewPathPrefix}${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=${mode}`;
+        const bust = rev > 0 ? `&rev=${rev}` : '';
+        return `${this.previewPathPrefix}${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=${mode}${bust}`;
     }
 
     /**
      * The two frames shown side by side so the diff reads at a glance:
      *   LIVE     — the published render (what visitors see today, pre-fix) + markers
      *   PREVIEW  — the working render (carries the agent's fixes, the "after")
+     *
+     * The PREVIEW url carries the store's `previewRevision` as a cache-buster, so
+     * the iframe reloads whenever the agent applies fixes (each mid-fix re-scan +
+     * the final report) and the page updates visually. LIVE never changes mid-run
+     * (it's the published render), so it takes no revision.
      */
     readonly liveUrl = computed(() => this.urlFor('LIVE'));
-    readonly previewUrl = computed(() => this.urlFor('PREVIEW_MODE'));
+    readonly previewUrl = computed(() => this.urlFor('PREVIEW_MODE', this.store.previewRevision()));
 
     backToPicker(): void {
         this.store.backToPicker();

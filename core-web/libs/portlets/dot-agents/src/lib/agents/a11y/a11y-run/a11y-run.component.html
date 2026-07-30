@@ -464,20 +464,22 @@
 <main class="grid min-h-0 grid-cols-2 gap-4 bg-surface-100 p-5">
     <!-- AFTER — the working render carrying the agent's fixes -->
     <section
-        class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-primary-200 bg-white shadow-lg">
+        class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
         <div
-            class="flex h-10 flex-none items-center gap-2 border-b border-surface-100 bg-primary-50 px-3.5">
-            <span
-                class="inline-flex items-center gap-1.5 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white"
-                data-testid="studio-preview-label">
-                <i class="pi pi-sparkles text-[11px]!" aria-hidden="true"></i>
-                {{ 'accessibility.studio.preview.mode.preview' | dm }}
-            </span>
+            class="flex h-10 flex-none items-center border-b border-surface-100 bg-surface-50 px-3.5">
+            <!-- Single address bar: lock + URL, with the mode badge as a segment
+                 on the right inside the same pill. -->
             <div
-                class="mx-auto flex h-6.5 max-w-[420px] flex-1 items-center gap-1.5 rounded-full border border-surface-200 bg-white px-3">
+                class="mx-auto flex h-6.5 w-full max-w-[460px] items-center gap-1.5 overflow-hidden rounded-full border border-surface-200 bg-white pl-3">
                 <i class="pi pi-lock text-[11px]! text-gray-400" aria-hidden="true"></i>
-                <span class="truncate text-xs text-gray-500">
+                <span class="min-w-0 flex-1 truncate text-xs text-gray-500">
                     {{ store.selected()?.hostName }}{{ store.selected()?.path }}
+                </span>
+                <span
+                    class="inline-flex flex-none items-center gap-1 self-stretch border-l border-surface-200 bg-surface-200 px-2.5 text-[11px] font-semibold text-gray-600"
+                    data-testid="studio-preview-label">
+                    <i class="pi pi-sparkles text-[11px]!" aria-hidden="true"></i>
+                    {{ 'accessibility.studio.preview.mode.preview' | dm }}
                 </span>
             </div>
         </div>
@@ -499,18 +501,20 @@
     <section
         class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
         <div
-            class="flex h-10 flex-none items-center gap-2 border-b border-surface-100 bg-surface-50 px-3.5">
-            <span
-                class="inline-flex items-center gap-1.5 rounded-full bg-surface-200 px-2 py-0.5 text-[11px] font-semibold text-gray-600"
-                data-testid="studio-live-label">
-                <i class="pi pi-globe text-[11px]!" aria-hidden="true"></i>
-                {{ 'accessibility.studio.preview.mode.live' | dm }}
-            </span>
+            class="flex h-10 flex-none items-center border-b border-surface-100 bg-surface-50 px-3.5">
+            <!-- Single address bar: lock + URL, with the mode badge as a segment
+                 on the right inside the same pill. -->
             <div
-                class="mx-auto flex h-6.5 max-w-[420px] flex-1 items-center gap-1.5 rounded-full border border-surface-200 bg-white px-3">
+                class="mx-auto flex h-6.5 w-full max-w-[460px] items-center gap-1.5 overflow-hidden rounded-full border border-surface-200 bg-white pl-3">
                 <i class="pi pi-lock text-[11px]! text-gray-400" aria-hidden="true"></i>
-                <span class="truncate text-xs text-gray-500">
+                <span class="min-w-0 flex-1 truncate text-xs text-gray-500">
                     {{ store.selected()?.hostName }}{{ store.selected()?.path }}
+                </span>
+                <span
+                    class="inline-flex flex-none items-center gap-1 self-stretch border-l border-surface-200 bg-surface-200 px-2.5 text-[11px] font-semibold text-gray-600"
+                    data-testid="studio-live-label">
+                    <i class="pi pi-globe text-[11px]!" aria-hidden="true"></i>
+                    {{ 'accessibility.studio.preview.mode.live' | dm }}
                 </span>
             </div>
         </div>

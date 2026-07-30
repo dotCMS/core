@@ -51,6 +51,8 @@ describe('DotA11yRunComponent', () => {
     let fixError: string | null = null;
     let rehydrateStatus: 'idle' | 'loading' | 'not-found' = 'idle';
     let heartbeat: AgentHeartbeat | null = null;
+    // Bumped when the working render changes → preview iframe cache-buster.
+    let previewRevision = 0;
     // Whether a scan result is present (drives report vs. iframe in the pane).
     let hasScan = false;
     // The page path (as URL segments) the run component reads on init.
@@ -139,6 +141,7 @@ describe('DotA11yRunComponent', () => {
         reportedCount: () =>
             report?.results.filter((r) => r.status !== 'fixed-to-working').length ?? 0,
         rehydrateStatus: () => rehydrateStatus,
+        previewRevision: () => previewRevision,
         runScan,
         stopScan,
         startFix,
@@ -164,7 +167,6 @@ describe('DotA11yRunComponent', () => {
                     'accessibility.studio.working.analyzing': 'Analyzing the page…',
                     'accessibility.studio.working.reasoning': 'Working through the fix…',
                     'accessibility.studio.working.stillworking': 'Still working on it…',
-                    'accessibility.studio.working.almost': 'Hang tight…',
                     'accessibility.studio.working.elapsed': '{0}s'
                 })
             },
@@ -212,6 +214,7 @@ describe('DotA11yRunComponent', () => {
         fixError = null;
         rehydrateStatus = 'idle';
         heartbeat = null;
+        previewRevision = 0;
         hasScan = false;
         pathSegments = ['about-us'];
         currentSiteIdSignal.set('site-1');
@@ -371,30 +374,40 @@ describe('DotA11yRunComponent', () => {
             expect(stopAgent).toHaveBeenCalled();
         });
 
-        it('renders a settled bubble per streamed step plus the live working bubble', () => {
-            // 3 streamed steps (settled) + 1 appended live "working" bubble = 4.
-            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(4);
+        it('renders one settled bubble per streamed step, plus a separate thinking item', () => {
+            // 3 streamed steps as settled message bubbles…
+            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
+            // …and the live state is its own thinking component, not a 4th message.
+            expect(spectator.query(byTestId('agent-thinking'))).not.toBeNull();
         });
 
-        it('appends a single live working bubble (spinner) below the settled steps', () => {
-            const bubbles = spectator.queryAll(byTestId('agent-message'));
-            const working = bubbles[bubbles.length - 1];
-            // Only the working bubble is live; settled steps keep their own icons.
-            expect(spectator.queryAll('.pi-spinner').length).toBe(1);
-            expect(working.querySelector('.pi-spinner')).not.toBeNull();
-            // With no heartbeat yet it mirrors the latest step (role prefix stripped).
-            expect(working).toHaveText('reading activity.vtl');
+        it('shows generic thinking copy — never the last step text', () => {
+            const thinking = spectator.query(byTestId('agent-thinking'));
+            expect(thinking).not.toBeNull();
+            // Always generic loading copy; must NOT echo the latest step.
+            expect(thinking).not.toHaveText('reading activity.vtl');
+            // No heartbeat yet → first cycling phrase.
+            expect(thinking).toHaveText('Thinking…');
         });
 
-        it('swaps the working bubble to reassurance copy on a long, quiet heartbeat', () => {
+        it('shows the elapsed seconds sub-line from the heartbeat', () => {
             heartbeat = { elapsedMs: 20000, sinceLastEventMs: 12000 };
             render('fixing', null, LIVE_STEPS);
-            const bubbles = spectator.queryAll(byTestId('agent-message'));
-            const working = bubbles[bubbles.length - 1];
-            // Quiet (>6s since last event) → cycling reassurance key, not the step text.
-            expect(working).not.toHaveText('reading activity.vtl');
+            const thinking = spectator.query(byTestId('agent-thinking'));
+            // Still generic copy, never the step text.
+            expect(thinking).not.toHaveText('reading activity.vtl');
             // Elapsed seconds on the current action ride along as the sub-line.
-            expect(working).toHaveText('12s');
+            expect(thinking).toHaveText('12s');
+        });
+
+        it('keeps cycling reassurance copy on a very long step (loops, never freezes)', () => {
+            // 5-minute step: index wraps (300000/5000 % 4 = 0 → "Thinking…"), so the
+            // copy keeps moving rather than sticking on a "nearly done" phrase.
+            heartbeat = { elapsedMs: 305000, sinceLastEventMs: 300000 };
+            render('fixing', null, LIVE_STEPS);
+            const thinking = spectator.query(byTestId('agent-thinking'));
+            expect(thinking).toHaveText('Thinking…');
+            expect(thinking).toHaveText('300s');
         });
     });
 
@@ -478,6 +491,24 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.query(byTestId('studio-preview-label'))).toBeTruthy();
             // No dropdown anymore — the two versions are shown simultaneously.
             expect(spectator.query(byTestId('studio-preview-mode-select'))).toBeFalsy();
+        });
+
+        it('reloads the PREVIEW iframe when previewRevision advances (cache-buster)', () => {
+            // Revision 0 → no cache-buster.
+            expect(
+                spectator.query(byTestId('studio-preview-iframe'))?.getAttribute('src')
+            ).not.toContain('rev=');
+
+            // A fix landing bumps the revision → src carries rev → iframe reloads.
+            previewRevision = 3;
+            render('fixing', null, [{ message: 'working', meta: { phase: 'fix' } }]);
+            expect(
+                spectator.query(byTestId('studio-preview-iframe'))?.getAttribute('src')
+            ).toContain('rev=3');
+            // LIVE never reloads mid-run (published render is fixed).
+            expect(
+                spectator.query(byTestId('studio-live-iframe'))?.getAttribute('src')
+            ).not.toContain('rev=');
         });
     });
 

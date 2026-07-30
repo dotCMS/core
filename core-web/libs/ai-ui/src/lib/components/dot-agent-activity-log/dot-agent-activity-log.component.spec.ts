@@ -35,23 +35,22 @@ describe('DotAgentActivityLogComponent', () => {
         expect(steps[1]).toHaveText('Fixed alt text');
     });
 
-    it('renders no live bubble and no spinner when not working', () => {
+    it('renders no thinking indicator when not working', () => {
         spectator.setInput({ messages: MESSAGES, working: false });
         expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
-        expect(spectator.query('.pi-spinner')).toBeNull();
+        expect(spectator.query(byTestId('agent-thinking'))).toBeNull();
     });
 
-    it('appends one live working bubble (spinner) below the settled steps while working', () => {
+    it('shows the thinking indicator (separate from the settled steps) while working', () => {
         spectator.setInput({ messages: MESSAGES, working: true });
-        const bubbles = spectator.queryAll(byTestId('agent-message'));
-        // 3 settled + 1 appended live bubble.
-        expect(bubbles.length).toBe(4);
-        // Exactly one live spinner, on the appended (last) bubble.
-        expect(spectator.queryAll('.pi-spinner').length).toBe(1);
-        expect(bubbles[bubbles.length - 1].querySelector('.pi-spinner')).not.toBeNull();
+        // Settled steps stay as message bubbles; the thinking item is its own node.
+        expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
+        const thinking = spectator.query(byTestId('agent-thinking'));
+        expect(thinking).not.toBeNull();
+        expect(thinking?.querySelector('.agent-shimmer')).not.toBeNull();
     });
 
-    it('renders the supplied workingMessage as the live bubble', () => {
+    it('renders the supplied workingMessage text + sub in the thinking indicator', () => {
         spectator.setInput({
             messages: MESSAGES,
             working: true,
@@ -63,22 +62,21 @@ describe('DotAgentActivityLogComponent', () => {
                 tone: 'info'
             } as AgentMessage
         });
-        const bubbles = spectator.queryAll(byTestId('agent-message'));
-        expect(bubbles.length).toBe(4);
-        expect(bubbles[bubbles.length - 1]).toHaveText('Still working…');
-        expect(bubbles[bubbles.length - 1]).toHaveText('8s');
+        const thinking = spectator.query(byTestId('agent-thinking'));
+        expect(thinking).toHaveText('Still working…');
+        expect(thinking).toHaveText('8s');
     });
 
-    it('synthesizes a fallback working bubble when working with no workingMessage', () => {
+    it('falls back to the working key in the thinking indicator when no workingMessage', () => {
         spectator.setInput({
             messages: [],
             working: true,
             workingMessage: null,
             workingFallbackKey: 'my.working.key'
         });
-        const bubbles = spectator.queryAll(byTestId('agent-message'));
-        expect(bubbles.length).toBe(1);
-        expect(bubbles[0]).toHaveText('my.working.key');
-        expect(bubbles[0].querySelector('.pi-spinner')).not.toBeNull();
+        expect(spectator.queryAll(byTestId('agent-message')).length).toBe(0);
+        const thinking = spectator.query(byTestId('agent-thinking'));
+        expect(thinking).toHaveText('my.working.key');
+        expect(thinking?.querySelector('.agent-shimmer')).not.toBeNull();
     });
 });

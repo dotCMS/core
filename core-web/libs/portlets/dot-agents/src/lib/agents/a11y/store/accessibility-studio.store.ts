@@ -107,6 +107,13 @@ interface AccessibilityStudioState {
     fixError: string | null;
     /** The §6 run report — populated when the fix pass completes (SSE `done`). */
     report: FixReport | null;
+    /**
+     * Monotonic counter bumped whenever the working (preview) render changes — each
+     * mid-fix re-scan and the terminal report. The preview iframe keys its URL off
+     * this so it reloads to show the agent's applied fixes visually. Not otherwise
+     * meaningful; only its changes matter.
+     */
+    previewRevision: number;
 }
 
 const initialState: AccessibilityStudioState = {
@@ -128,7 +135,8 @@ const initialState: AccessibilityStudioState = {
     runId: null,
     heartbeat: null,
     fixError: null,
-    report: null
+    report: null,
+    previewRevision: 0
 };
 
 /**
@@ -218,12 +226,27 @@ export const AccessibilityStudioStore = signalStore(
                 .filter((g) => g.type === 'warning')
                 .sort((a, b) => b.count - a.count)
         ),
-        /** Total violations found by the real initial scan (error elements). */
-        beforeCount: computed(() =>
-            buildA11yGroups(store.scanResult())
+        /**
+         * The BASELINE violation count — the "before" side of the before→after
+         * comparison. It must stay pinned to the ORIGINAL scan even as the preview
+         * is re-scanned mid-fix (which mutates `scanResult` and would otherwise drag
+         * this down). Source order: the report's frozen `scan.before` once the run
+         * completes; the agent's `progress.baseline` while fixing; otherwise the
+         * pre-run scan's error count.
+         */
+        beforeCount: computed(() => {
+            const report = store.report();
+            if (report) {
+                return report.scan.before.violations;
+            }
+            const progress = store.progress();
+            if (store.phase() === 'fixing' && progress) {
+                return progress.baseline;
+            }
+            return buildA11yGroups(store.scanResult())
                 .filter((g) => g.type === 'error')
-                .reduce((total, g) => total + g.count, 0)
-        ),
+                .reduce((total, g) => total + g.count, 0);
+        }),
         /** Violations remaining after the fix pass. */
         afterCount: computed(() => store.report()?.scan.after.violations ?? 0),
         fixedResults: computed<FixResult[]>(
@@ -282,9 +305,22 @@ export const AccessibilityStudioStore = signalStore(
             );
             return errorGroups.reduce((total, g) => total + g.count, 0);
         }),
-        fixedCount: computed<number>(() =>
-            store.report()?.results.filter((r) => r.status === 'fixed-to-working').length ?? 0
-        ),
+        /**
+         * How many issues have been fixed so far. While fixing it's the agent's live
+         * `progress.cleared`; once the run completes it's the report's authoritative
+         * count of `fixed-to-working` results. Drives the "N fixed to working so far"
+         * footer, which now ticks up live during the run.
+         */
+        fixedCount: computed<number>(() => {
+            const report = store.report();
+            if (report) {
+                return report.results.filter((r) => r.status === 'fixed-to-working').length;
+            }
+            if (store.phase() === 'fixing') {
+                return Math.max(0, store.progress()?.cleared ?? 0);
+            }
+            return 0;
+        }),
         reportedCount: computed<number>(
             () =>
                 store
@@ -307,6 +343,10 @@ export const AccessibilityStudioStore = signalStore(
         // The comparison-only LIVE scan, tracked separately so Stop cancels it too
         // without coupling it to the UI-driving preview scan's lifecycle.
         let liveScanSub: Subscription | null = null;
+        // The mid-fix re-scan of the PREVIEW render, triggered by `progress` frames
+        // so the ring + per-severity legend track the agent's live fixes. Held so a
+        // newer progress frame supersedes an in-flight one (no stampede / stale writes).
+        let fixRescanSub: Subscription | null = null;
 
         /**
          * The dotCMS backend origin the agent must render + call against. In prod the
@@ -349,6 +389,42 @@ export const AccessibilityStudioStore = signalStore(
             url.searchParams.set('language_id', String(page.languageId));
             url.searchParams.set('mode', mode);
             return url.toString();
+        }
+
+        /**
+         * Re-scan the PREVIEW render mid-fix and fold the fresh axe result into
+         * `scanResult`, so the score ring, per-severity legend, and issue list track
+         * the agent's live fixes as they land. Triggered by each `progress` frame.
+         *
+         * A newer call supersedes an in-flight one (unsubscribe aborts it), so bursts
+         * of progress frames don't stampede the scanner or write stale results. Stays
+         * in the `fixing` phase throughout; failures are swallowed (the run continues
+         * and the next progress frame retries). Guarded to the fixing phase so a late
+         * response after done/abort can't overwrite the report-driven widgets.
+         */
+        function rescanPreviewDuringFix() {
+            const page = store.selected();
+            if (store.phase() !== 'fixing' || !page) {
+                return;
+            }
+            fixRescanSub?.unsubscribe();
+            fixRescanSub = scannerService
+                .checkA11y(buildScanUrl(page, 'EDIT_MODE'))
+                .pipe(
+                    take(1),
+                    catchError(() => EMPTY)
+                )
+                .subscribe((scanResult) => {
+                    // Only apply if we're still fixing (a done/abort may have landed).
+                    if (store.phase() === 'fixing') {
+                        // Bump previewRevision so the preview iframe reloads and shows
+                        // the fixes that this re-scan just picked up.
+                        patchState(store, {
+                            scanResult,
+                            previewRevision: store.previewRevision() + 1
+                        });
+                    }
+                });
         }
 
         function loadPages() {
@@ -407,7 +483,8 @@ export const AccessibilityStudioStore = signalStore(
                 runId: null,
                 heartbeat: null,
                 fixError: null,
-                report: null
+                report: null,
+                previewRevision: 0
             });
         }
 
@@ -502,7 +579,8 @@ export const AccessibilityStudioStore = signalStore(
                     runId: null,
                     heartbeat: null,
                     fixError: null,
-                    report: null
+                    report: null,
+                    previewRevision: 0
                 });
             },
 
@@ -595,7 +673,8 @@ export const AccessibilityStudioStore = signalStore(
                     runId: null,
                     heartbeat: null,
                     fixError: null,
-                    report: null
+                    report: null,
+                    previewRevision: 0
                 });
 
                 // The Java proxy (plan §8.1) resolves page details and builds the full
@@ -631,6 +710,10 @@ export const AccessibilityStudioStore = signalStore(
                             case 'progress':
                                 // Live violation count → drives the score donut down.
                                 patchState(store, { progress: event.progress });
+                                // Re-scan the preview so the ring segments, legend, and
+                                // issue list reflect the fixes that just landed (the
+                                // progress totals alone carry no per-severity split).
+                                rescanPreviewDuringFix();
                                 break;
                             case 'workingChanged':
                                 // Each frame carries the full set of changed files so
@@ -649,14 +732,23 @@ export const AccessibilityStudioStore = signalStore(
                                 // report (fixes already applied are kept). Both land on
                                 // the done screen with the report the agent returned; sync
                                 // the changed-file list to the report's authoritative set.
+                                // Cancel any pending mid-fix rescan first so it can't
+                                // overwrite the report-driven widgets afterwards.
+                                fixRescanSub?.unsubscribe();
+                                fixRescanSub = null;
                                 patchState(store, {
                                     phase: 'done',
                                     report: event.result,
-                                    changedFiles: event.result.changedFiles ?? store.changedFiles()
+                                    changedFiles: event.result.changedFiles ?? store.changedFiles(),
+                                    // Final reload so the preview reflects the finished
+                                    // working render.
+                                    previewRevision: store.previewRevision() + 1
                                 });
                                 break;
                             case 'error':
                                 // Terminal error event from the agent.
+                                fixRescanSub?.unsubscribe();
+                                fixRescanSub = null;
                                 patchState(store, {
                                     phase: 'scanned',
                                     fixError: event.message

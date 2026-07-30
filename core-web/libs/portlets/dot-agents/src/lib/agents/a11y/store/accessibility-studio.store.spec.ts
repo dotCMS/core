@@ -464,6 +464,87 @@ describe('AccessibilityStudioStore', () => {
             expect(store.openCount()).toBe(2);
         });
 
+        it('re-scans the preview on each progress frame so the legend/ring track fixes', () => {
+            scannerService.checkA11y.mockClear();
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } },
+                    { type: 'progress', progress: { baseline: 5, current: 1, cleared: 4 } }
+                )
+            );
+            store.runScan(); // (preview + live comparison scans)
+            scannerService.checkA11y.mockClear();
+            store.startFix();
+            // One EDIT_MODE re-scan per progress frame (2), all against the preview.
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
+            expect(scannerService.checkA11y.mock.calls[0][0]).toContain('mode=EDIT_MODE');
+            // Each applied re-scan bumps previewRevision so the iframe reloads.
+            expect(store.previewRevision()).toBe(2);
+        });
+
+        it('fixedCount reflects the live progress.cleared while fixing', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('fixing');
+            // "N fixed to working so far" ticks up live from progress.cleared.
+            expect(store.fixedCount()).toBe(3);
+        });
+
+        it('keeps beforeCount pinned to the baseline while the preview re-scan shrinks', () => {
+            // A smaller re-scan result the mid-fix rescan returns (only 1 error left).
+            const REDUCED_SCAN = {
+                ok: true,
+                standard: 'WCAG2AA',
+                axe: {
+                    violations: [
+                        {
+                            id: 'image-alt',
+                            impact: 'critical',
+                            description: 'Images must have alternate text',
+                            help: '',
+                            helpUrl: '',
+                            tags: [],
+                            nodes: [
+                                {
+                                    html: '<img>',
+                                    target: ['img.a'],
+                                    impact: 'critical',
+                                    failureSummary: ''
+                                }
+                            ]
+                        }
+                    ],
+                    incomplete: []
+                }
+            } as unknown as PageScannerA11yResponse;
+
+            // Initial scan → 5 errors; the mid-fix re-scan → 1 error.
+            scannerService.checkA11y
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // preview scan
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // live comparison scan
+                .mockReturnValueOnce(of(REDUCED_SCAN)); // mid-fix re-scan
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 1, cleared: 4 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+
+            // The re-scan shrank the live scan → error count follows down…
+            expect(store.errorCount()).toBe(1);
+            // …but "before" stays pinned to the baseline for the comparison.
+            expect(store.beforeCount()).toBe(5);
+        });
+
         it('workingChanged events accumulate the changed-file set while fixing', () => {
             const files = [
                 { path: '//site/a.css', identifier: 'id-a' },

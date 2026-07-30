@@ -1,0 +1,10 @@
+<!-- Spinner + gradient-text shimmer (AI-chatbot style): the spinner is the clear
+     motion cue; the shimmer sweeps a band through the label as it works. The
+     shimmer is plain CSS (see the component styles) so it never clips the text. -->
+<i class="pi pi-spin pi-spinner flex-none text-sm! text-primary" aria-hidden="true"></i>
+<span class="agent-shimmer min-w-0 text-[13px] font-medium">
+    {{ text() }}
+</span>
+@if (sub()) {
+    <span class="flex-none text-xs text-gray-400 tabular-nums">{{ sub() }}</span>
+}
