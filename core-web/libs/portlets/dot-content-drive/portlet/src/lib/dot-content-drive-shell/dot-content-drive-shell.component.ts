@@ -67,7 +67,8 @@ import {
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    NEW_CONTENT_MARKER
 } from '../shared/constants';
 import {
     DotContentDriveContentTypeSelectorPayload,
@@ -81,13 +82,6 @@ import {
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters, isFolder } from '../utils/functions';
-
-/**
- * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
- * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
- * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
- */
-const NEW_CONTENT_MARKER = 'new';
 
 @Component({
     selector: 'dot-content-drive-shell',
