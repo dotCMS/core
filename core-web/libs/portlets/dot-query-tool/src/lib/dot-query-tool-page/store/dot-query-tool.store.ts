@@ -192,7 +192,8 @@ export const DotQueryToolStore = signalStore(
             patchState(store, {
                 emptyStateConfig: {
                     title: messageService.get('queryTool.results.empty'),
-                    icon: 'pi-search',
+                    icon: 'search',
+                    iconStyle: 'material-symbols-rounded',
                     subtitle: messageService.get('queryTool.results.empty.hint')
                 }
             });

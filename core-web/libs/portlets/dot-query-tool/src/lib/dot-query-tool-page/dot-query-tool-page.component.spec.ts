@@ -55,9 +55,12 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     limitWasCapped: jest.fn().mockReturnValue(false),
     // `withFlags` slice — side panel off by default (empty map ⇒ `flags()[FLAG] ?? false` is false).
     flags: jest.fn().mockReturnValue({}),
-    emptyStateConfig: jest
-        .fn()
-        .mockReturnValue({ title: 'Empty', icon: 'pi-search', subtitle: '' }),
+    emptyStateConfig: jest.fn().mockReturnValue({
+        title: 'Empty',
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded',
+        subtitle: ''
+    }),
     setQuery: jest.fn(),
     setSort: jest.fn(),
     setOffset: jest.fn(),
