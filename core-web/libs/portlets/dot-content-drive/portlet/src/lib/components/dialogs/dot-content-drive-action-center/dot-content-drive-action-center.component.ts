@@ -91,6 +91,32 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
+    /**
+     * Required for a collapsed accordion panel to actually take up no space.
+     *
+     * PrimeNG 21 collapses accordion content by animating the motion wrapper's
+     * `grid-template-rows` to `0fr`, but that wrapper hides with `hideStrategy: 'visibility'` and
+     * stays mounted (`unmountOnLeave: false`), so it keeps its layout box. Without `overflow: hidden`
+     * the content overflows the zero-height row and a collapsed panel still reserves its full
+     * height. Same workaround as `dot-page-scanner-a11y-report`.
+     */
+    protected readonly accordionPt = {
+        motion: {
+            root: {
+                style: {
+                    overflow: 'hidden'
+                }
+            }
+        }
+    };
+
+    /** Content padding is owned by the rows inside, matching the design's full-bleed dividers. */
+    protected readonly accordionDt = {
+        content: {
+            padding: '0'
+        }
+    };
+
     /** Workflow schemes with a flat action list, loaded from the bulk-actions endpoint. */
     protected readonly $schemes = signal<DotActionCenterScheme[]>([]);
     /** True while the bulk-actions lookup is in flight. */
