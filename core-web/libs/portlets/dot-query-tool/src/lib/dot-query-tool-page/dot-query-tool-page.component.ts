@@ -9,11 +9,13 @@ import {
     DestroyRef,
     effect,
     inject,
+    Injector,
     OnInit,
     signal,
     untracked,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -32,7 +34,7 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentletEditUrlService,
@@ -112,6 +114,7 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
     readonly #contentSearch = inject(DotContentSearchService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #injector = inject(Injector);
 
     #lastSyncedUrl: string | null = null;
 
@@ -414,31 +417,34 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /**
      * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel.
-     * Gated on the side-panel flag: with the flag off there is no in-page editor in Query Tool —
-     * editing opens a new tab, which needs a user gesture and can't be triggered on load — so the
-     * deep link is ignored (AC15). The param can outlive the flag being on (shared link / bookmark /
-     * staging→prod), hence the gate.
+     * Gated on the side-panel flag (via `$sidePanelEnabled`, the store's `withFlags` slice, awaited
+     * through `toObservable` + `filter(Boolean)`): with the flag off there is no in-page editor in
+     * Query Tool — editing opens a new tab, which needs a user gesture and can't be triggered on
+     * load — so the deep link is ignored (AC15) and the content search never fires. The param can
+     * outlive the flag being on (shared link / bookmark / staging→prod), hence the gate.
      *
-     * The flag is read from `$sidePanelEnabled` (the store's `withFlags` slice) after the resolve.
-     * On a cold deep-link load the flag is usually resolved by then (the config fetch starts on
-     * store init, before this search); in the rare case it hasn't, the deep link is dropped — safe,
-     * just not the panel.
+     * Waiting on the flag (rather than checking it after firing the search) avoids two problems: a
+     * wasted content search on every deep-link load while the flag is off, and a race between the
+     * flag's config fetch and this search where the search could resolve first and silently drop a
+     * valid deep link. `filter(Boolean)` never emits while the flag is `false`, so `takeUntilDestroyed`
+     * is required to stop waiting if the component is destroyed first.
      */
     #resolveAndOpenByIdentifier(identifier: string): void {
-        this.#contentSearch
-            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                query: `+identifier:${identifier} +working:true`,
-                limit: 1
-            })
+        toObservable(this.$sidePanelEnabled, { injector: this.#injector })
             .pipe(
+                filter(Boolean),
                 take(1),
-                catchError(() => EMPTY)
+                switchMap(() =>
+                    this.#contentSearch
+                        .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
+                            query: `+identifier:${identifier} +working:true`,
+                            limit: 1
+                        })
+                        .pipe(catchError(() => EMPTY))
+                ),
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((entity) => {
-                if (!this.$sidePanelEnabled()) {
-                    return;
-                }
-
                 const contentlet = entity?.jsonObjectView?.contentlets?.[0];
                 if (!contentlet?.inode) {
                     return;
