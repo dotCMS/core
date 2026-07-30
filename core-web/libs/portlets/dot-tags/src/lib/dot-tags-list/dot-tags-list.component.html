@@ -36,7 +36,11 @@
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="tag-delete-btn">
-                    <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">delete</span>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        delete
+                    </span>
                     <span class="p-button-label">{{ 'tags.delete' | dm }}</span>
                 </p-button>
                 <p-splitButton
@@ -46,14 +50,18 @@
                     data-testid="tag-export-split-btn">
                     <ng-template #content>
                         <span class="inline-flex items-center gap-2">
-                            <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                            <span
+                                class="material-symbols-rounded text-xl! leading-none!"
+                                aria-hidden="true">
                                 download
                             </span>
                             <span class="p-button-label">{{ 'tags.export' | dm }}</span>
                         </span>
                     </ng-template>
                     <ng-template #dropdownicon>
-                        <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                        <span
+                            class="material-symbols-rounded text-xl! leading-none!"
+                            aria-hidden="true">
                             keyboard_arrow_down
                         </span>
                     </ng-template>
@@ -64,7 +72,6 @@
                 (onClick)="openCreateDialog()"
                 [model]="addTagMenuItems"
                 [pt]="{
-                    
                     pcDropdown: { root: { class: 'px-2.5! py-0!' } }
                 }"
                 data-testid="tag-add-split-btn">

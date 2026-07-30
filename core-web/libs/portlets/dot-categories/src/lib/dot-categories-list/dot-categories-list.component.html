@@ -24,7 +24,11 @@
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="category-delete-btn">
-                    <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">delete</span>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        delete
+                    </span>
                     <span class="p-button-label">{{ 'categories.delete' | dm }}</span>
                 </p-button>
             }
@@ -45,7 +49,9 @@
                 (onClick)="onToolbarMenuToggle($event)"
                 data-testid="category-toolbar-menu-btn"
                 [attr.aria-label]="'categories.more.actions' | dm">
-                <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">more_vert</span>
+                <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                    more_vert
+                </span>
             </p-button>
         </div>
     </div>
@@ -57,9 +63,7 @@
     [pt]="{ itemLink: { class: 'cursor-pointer' } }"
     (onItemClick)="onBreadcrumbClick($event)"
     (homeClick)="onHomeClick()"
-    data-testid="category-breadcrumb">
-    
-</p-breadcrumb>
+    data-testid="category-breadcrumb"></p-breadcrumb>
 
 <!-- Table -->
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="categories-table-wrapper">
@@ -140,7 +144,11 @@
                         (onClick)="openRowMenu($event, category)"
                         [attr.aria-label]="'categories.actions' | dm"
                         data-testid="category-actions-btn">
-                        <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">more_vert</span>
+                        <span
+                            class="material-symbols-rounded text-xl! leading-none!"
+                            aria-hidden="true">
+                            more_vert
+                        </span>
                     </p-button>
                 </td>
             </tr>
