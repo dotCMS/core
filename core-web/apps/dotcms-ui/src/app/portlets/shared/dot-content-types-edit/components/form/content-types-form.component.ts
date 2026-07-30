@@ -4,8 +4,10 @@ import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
+    Injector,
     OnDestroy,
     OnInit,
+    afterNextRender,
     inject,
     input,
     output,
@@ -43,7 +45,6 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import {
-    DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -77,7 +78,6 @@ import { DotFieldHelperComponent } from '../../../../../view/components/dot-fiel
         InputTextModule,
         DotMessagePipe,
         DotFieldRequiredDirective,
-        DotAutofocusDirective,
         DotFieldValidationMessageComponent,
         DotMdIconSelectorComponent,
         DotSiteComponent,
@@ -93,6 +93,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private dotLicenseService = inject(DotLicenseService);
     private dotMessageService = inject(DotMessageService);
     private readonly route = inject(ActivatedRoute);
+    private readonly injector = inject(Injector);
 
     readonly $inputName = viewChild.required<ElementRef>('name');
 
@@ -117,7 +118,20 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.bindActionButtonState();
 
         this.nameFieldLabel = this.setNameFieldLabel();
-        this.$inputName().nativeElement.focus();
+
+        // Only when creating: the Name field is the first thing to fill in, so typing should work
+        // without a click. When editing, the content type already has a name and nothing should
+        // grab focus. The dialog hosting this form disables PrimeNG's own focusOnShow, so this is
+        // the single place deciding what gets focused.
+        //
+        // Deferred because the input is not focusable yet while this form is still being rendered
+        // inside the dialog -- a synchronous focus() here is a no-op.
+        if (!this.isEditMode()) {
+            afterNextRender(() => this.$inputName().nativeElement.focus(), {
+                injector: this.injector
+            });
+        }
+
         this.newContentEditorEnabled =
             this.route.snapshot?.data?.featuredFlags[
                 FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED

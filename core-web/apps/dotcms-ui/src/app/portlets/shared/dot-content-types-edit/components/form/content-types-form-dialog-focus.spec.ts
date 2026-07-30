@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, Injectable } from '@angular/core';
+import { ApplicationRef, Component, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -104,18 +104,22 @@ describe('ContentTypesFormComponent focus inside p-dialog', () => {
      * Renders the dialog and settles focus.
      *
      * jsdom never fires a CSS transition end, so PrimeNG's `onAfterEnter` is invoked directly to
-     * reproduce its post-animation focus call. Both contenders are one-shot timers pending at that
-     * point (dotAutofocus at 100ms, PrimeNG at its transition duration), so flushing pending timers
-     * runs them in their real order without coupling the test to either vendor's delay.
+     * reproduce its post-animation focus call, then its pending one-shot timer is flushed. Flushing
+     * pending timers rather than advancing a fixed amount keeps the test decoupled from PrimeNG's
+     * transition duration.
+     *
+     * Passing an `id` puts the form in edit mode, the same way production does.
      */
     const openDialogAndSettleFocus = ({
         focusOnShow,
         newContentEditorEnabled,
-        baseType = 'CONTENT'
+        baseType = 'CONTENT',
+        id = null
     }: {
         focusOnShow: boolean;
         newContentEditorEnabled: boolean;
         baseType?: DotCMSBaseTypesContentTypes;
+        id?: string;
     }): void => {
         TestBed.configureTestingModule({
             imports: [DialogFocusHostComponent],
@@ -146,9 +150,13 @@ describe('ContentTypesFormComponent focus inside p-dialog', () => {
         fixture.componentInstance.focusOnShow = focusOnShow;
         fixture.componentInstance.contentType = {
             ...dotcmsContentTypeBasicMock,
-            baseType
+            baseType,
+            id
         };
         fixture.detectChanges();
+        // The form focuses the Name input from afterNextRender, and those hooks run on the
+        // application tick rather than on detectChanges.
+        TestBed.inject(ApplicationRef).tick();
 
         const dialog: Dialog = fixture.debugElement.query(By.directive(Dialog)).componentInstance;
         dialog.onAfterEnter();
@@ -185,7 +193,7 @@ describe('ContentTypesFormComponent focus inside p-dialog', () => {
         cleanUpDialog(fixture);
     });
 
-    describe('focusOnShow disabled (the production value, both create and edit)', () => {
+    describe('create mode', () => {
         // The binding does not branch on baseType, but every base type reaches this same dialog
         // through create/:type — so the focus outcome is asserted for real, not just inferred.
         it.each<DotCMSBaseTypesContentTypes>(['CONTENT', 'WIDGET'])(
@@ -225,6 +233,33 @@ describe('ContentTypesFormComponent focus inside p-dialog', () => {
 
             expect(form.get('name').value).toBe('My Content Type');
             expect(form.get('newEditContent').value).toBe(newEditContentBefore);
+        });
+    });
+
+    describe('edit mode', () => {
+        it('should not focus anything when the content type already exists', () => {
+            openDialogAndSettleFocus({
+                focusOnShow: false,
+                newContentEditorEnabled: true,
+                id: '1234-5678-edit'
+            });
+
+            // Nothing should grab focus while editing: the name is already filled in.
+            expect(document.activeElement).toBe(document.body);
+            expect(document.activeElement).not.toBe(queryElement(NAME_INPUT_SELECTOR));
+            expect(document.activeElement).not.toBe(
+                queryElement(NEW_EDIT_CONTENT_CHECKBOX_SELECTOR)
+            );
+        });
+
+        it('should not focus anything when the new content banner is hidden', () => {
+            openDialogAndSettleFocus({
+                focusOnShow: false,
+                newContentEditorEnabled: false,
+                id: '1234-5678-edit'
+            });
+
+            expect(document.activeElement).toBe(document.body);
         });
     });
 

@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Injectable } from '@angular/core';
+import { ApplicationRef, Injectable } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
@@ -204,7 +204,23 @@ describe('ContentTypesFormComponent', () => {
             baseType: 'CONTENT'
         });
         spectator.detectChanges();
+        // The focus runs in an afterNextRender hook, which fires on the application tick.
+        spectator.inject(ApplicationRef).tick();
+
         expect(spectator.component.$inputName().nativeElement).toBe(document.activeElement);
+    });
+
+    it('should not focus the name on edit mode', () => {
+        spectator.setInput('contentType', {
+            ...dotcmsContentTypeBasicMock,
+            baseType: 'CONTENT',
+            id: '1234-5678-edit'
+        });
+        spectator.detectChanges();
+        spectator.inject(ApplicationRef).tick();
+
+        // Editing an existing content type must not steal focus into the already-filled Name field.
+        expect(document.activeElement).not.toBe(spectator.component.$inputName().nativeElement);
     });
 
     it('should have canSave property false by default (form is invalid)', () => {
