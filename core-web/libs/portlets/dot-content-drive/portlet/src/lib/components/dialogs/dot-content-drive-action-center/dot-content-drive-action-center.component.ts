@@ -110,10 +110,28 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         }
     };
 
-    /** Content padding is owned by the rows inside, matching the design's full-bleed dividers. */
+    /**
+     * Accordion design tokens.
+     *
+     * The border has to come from `dt` rather than a Tailwind utility: the theme ships
+     * `accordion.panel.border.width` as `0 0 1px 0` (inter-panel dividers for a single stacked
+     * accordion) and its runtime-injected CSS wins over a `border` utility class. Overriding the
+     * token gives each scheme a full border, which is what the design shows — the panels here are
+     * separate cards with a gap, not a stack.
+     *
+     * Content padding is zeroed so the rows own their own insets (full-bleed dividers), and the
+     * content's top border supplies the divider under an expanded header.
+     */
     protected readonly accordionDt = {
+        panel: {
+            borderWidth: '1px',
+            borderColor: '{surface.200}'
+        },
         content: {
-            padding: '0'
+            padding: '0',
+            borderWidth: '1px 0 0 0',
+            borderColor: '{surface.100}',
+            background: '{surface.0}'
         }
     };
 

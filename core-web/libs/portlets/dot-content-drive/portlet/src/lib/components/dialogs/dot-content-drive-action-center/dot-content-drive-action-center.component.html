@@ -133,7 +133,7 @@
                     @for (scheme of $schemes(); track scheme.id) {
                         <p-accordion-panel
                             [value]="scheme.id"
-                            styleClass="rounded-xl border border-surface-100 bg-surface-50 overflow-hidden">
+                            styleClass="rounded-xl bg-surface-50 overflow-hidden">
                             <p-accordion-header>
                                 <span class="flex w-full items-center gap-3">
                                     <span
@@ -158,7 +158,7 @@
                             </p-accordion-header>
 
                             <p-accordion-content>
-                                <div class="divide-y divide-surface-100 bg-surface-0">
+                                <div class="divide-y divide-surface-100">
                                     @for (action of scheme.actions; track action.id) {
                                         <label
                                             class="flex cursor-pointer items-center gap-4 px-6 py-3.5 transition-colors hover:bg-surface-50"
