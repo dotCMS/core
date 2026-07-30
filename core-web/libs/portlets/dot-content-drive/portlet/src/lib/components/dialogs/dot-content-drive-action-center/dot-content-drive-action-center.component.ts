@@ -40,7 +40,7 @@ import {
 } from '../../../utils/action-center';
 
 /**
- * Bulk action dialog for a multi-item selection in Content Drive.
+ * Bulk action dialog for the current Content Drive selection, offered from one contentlet upward.
  *
  * Two sections:
  *

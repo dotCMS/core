@@ -276,16 +276,16 @@ export class DotContentDriveToolbarComponent {
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
 
     /**
-     * Once more than one contentlet is selected, an "Action Center" button is offered *alongside*
-     * the flat action buttons — not instead of them. The flat buttons stay available for any
-     * selection; the dialog adds what they cannot express, namely per-action eligibility counts and
-     * the workflow actions grouped by scheme.
+     * The "Action Center" button is offered from the first selected contentlet, *alongside* the flat
+     * action buttons rather than instead of them. The flat buttons cover the common per-item
+     * actions; the dialog adds what they cannot express — per-action eligibility counts and the
+     * workflow actions grouped by scheme — and that is just as useful for one item as for many.
      *
      * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
-     * folders, so selecting a folder alongside one contentlet is still a single-item action context.
+     * folders, so a folder-only selection offers no Action Center.
      */
     readonly $displayActionCenter = computed(
-        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 1
+        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 0
     );
 
     /**
