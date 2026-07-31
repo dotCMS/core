@@ -1,10 +1,12 @@
 package com.dotcms.tiptap;
 
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Comment;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
@@ -14,6 +16,10 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Converts an HTML fragment into a Tiptap JSON (ProseMirror document) node, server-side, without
@@ -24,13 +30,25 @@ import java.util.Set;
  * two ingestion paths produce documents the dotCMS Block Editor loads the same way.
  *
  * <h3>Scope</h3>
- * Output is restricted to the same primitive node/mark set the Markdown leg can produce
+ * Output is restricted to the same node/mark set the Markdown leg can produce
  * (see {@link TiptapMarkdown#isMarkdownRepresentable(String)}): paragraphs, headings, blockquotes,
  * bullet/ordered lists, code blocks, tables, horizontal rules, hard breaks, {@code dotImage}, and the
  * bold/italic/strike/code/link marks. Anything outside that set degrades gracefully — dangerous
  * elements are dropped, unknown-but-safe elements are made transparent (their text is kept) — and the
  * converter never throws (a bad fragment yields an empty document, mirroring
  * {@link TiptapMarkdown#toTiptap(String)} on {@code null}).
+ *
+ * <h3>Rich-node vocabulary (#36659)</h3>
+ * The {@code dotcms-*} fence vocabulary the Markdown leg gained in #36658 is accepted here as
+ * namespaced custom elements carrying the same thin payloads, validated by the very same code
+ * ({@link TiptapMarkdown.DotcmsFences}) so the two legs produce identical nodes. Scalar payloads
+ * ride as element attributes (hyphenated, e.g. {@code language-id} → {@code languageId});
+ * structured payloads ({@code dotcms-ai}, {@code dotcms-grid}, {@code dotcms-node}) ride the
+ * fence-identical JSON as the element's text body. A standalone
+ * {@code <!-- dotcms:attrs {...} -->} comment decorates the next block exactly as in Markdown.
+ * Validation failure degrades, never throws: structured labels keep their body as a visible
+ * {@code codeBlock} (fence parity), scalar labels drop (they carry no text to preserve), and
+ * unknown {@code dotcms-*} elements stay transparent like any unknown tag.
  *
  * <h3>Sanitization</h3>
  * HTML from non-interactive clients is untrusted. This converter drops executable/active-content
@@ -75,8 +93,48 @@ public final class TiptapHtml {
     /** Sane ceiling for a single cell's span; malformed HTML can carry absurd values. */
     private static final int MAX_SPAN = 1000;
 
+    /** Tag prefix of the rich-node vocabulary (#36659); mirrors the Markdown fence labels. */
+    private static final String DOTCMS_PREFIX = "dotcms-";
+
+    /** {@code dotcms-*} labels whose thin payload rides as flat element attributes. */
+    private static final Set<String> DOTCMS_ATTR_LABELS = Set.of(
+            "dotcms-content", "dotcms-image", "dotcms-video", "dotcms-youtube");
+
+    /** {@code dotcms-*} labels whose payload is the fence-identical JSON element body. */
+    private static final Set<String> DOTCMS_BODY_LABELS = Set.of(
+            "dotcms-ai", "dotcms-grid", "dotcms-node");
+
+    /**
+     * A value opening with one of the KNOWN vocabulary elements (see
+     * {@link #startsWithDotcmsElement}). Built from the label sets so it cannot drift from
+     * them, and deliberately not a bare {@code dotcms-} prefix: an unrecognized hyphenated
+     * element — a typo, or an unrelated dotCMS web component such as
+     * {@code <dotcms-block-editor>} — keeps the route it has today.
+     */
+    private static final Pattern DOTCMS_ELEMENT_START = Pattern.compile(
+            "^<(" + String.join("|", new java.util.TreeSet<>(
+                    Stream.concat(DOTCMS_ATTR_LABELS.stream(), DOTCMS_BODY_LABELS.stream())
+                            .collect(Collectors.toSet()))) + ")[\\s/>]",
+            Pattern.CASE_INSENSITIVE);
+
+    /** Inner text of a {@code <!-- dotcms:attrs {...} -->} decoration comment. */
+    private static final Pattern DOTCMS_ATTRS_COMMENT_DATA = Pattern.compile(
+            "^\\s*dotcms:attrs\\s+(\\{.*})\\s*$", Pattern.DOTALL);
+
     /** Static utility; not instantiable. */
     private TiptapHtml() { }
+
+    /**
+     * True when the value OPENS with a KNOWN {@code <dotcms-*>} rich-vocabulary element. The
+     * save path's HTML-vs-Markdown router needs this carve-out because its HTML detection regex
+     * only matches spec-simple tag names — a value starting with a hyphenated custom element
+     * would otherwise route to the Markdown converter and store as literal text (the mirror of
+     * {@link TiptapMarkdown#startsWithDotcmsAttrsComment(String)}). Only the vocabulary's own
+     * labels qualify, so no value that routes somewhere today changes route.
+     */
+    public static boolean startsWithDotcmsElement(final String value) {
+        return value != null && DOTCMS_ELEMENT_START.matcher(value.stripLeading()).find();
+    }
 
     /**
      * Parse an HTML fragment into a Tiptap document node ({@code {"type":"doc","content":[...]}}).
@@ -91,8 +149,46 @@ public final class TiptapHtml {
         }
         // Empty base URI: never absolutize hrefs/srcs — store them exactly as authored.
         final Element body = Jsoup.parseBodyFragment(html, "").body();
-        renderBlocks(body, content, new ArrayDeque<>(), 0);
+        renderBlocks(body, content, new WalkState(), 0);
         return doc;
+    }
+
+    /**
+     * Mutable state threaded through the block walkers: the active mark stack plus a pending
+     * {@code dotcms:attrs} decoration awaiting the next block (mirrors
+     * {@code TiptapMarkdown.TiptapBuilder}'s {@code pendingBlockAttrs}).
+     */
+    private static final class WalkState {
+
+        final Deque<ObjectNode> marks = new ArrayDeque<>();
+
+        /** Attrs from a {@code dotcms:attrs} comment, waiting to decorate the next block. */
+        ObjectNode pendingBlockAttrs;
+
+        /** Consume the pending decoration: it decorates the immediately-next block or nothing. */
+        ObjectNode takePendingAttrs() {
+            final ObjectNode pending = pendingBlockAttrs;
+            pendingBlockAttrs = null;
+            return pending;
+        }
+    }
+
+    /**
+     * Merge a consumed pending decoration into the node's {@code attrs}. Called after the
+     * node's structural attrs are set: on a key collision the structural attr wins, exactly as
+     * in the Markdown leg.
+     */
+    private static void decorate(final ObjectNode node, final WalkState st) {
+        final ObjectNode pending = st.takePendingAttrs();
+        if (pending == null) {
+            return;
+        }
+        final ObjectNode merged = pending.deepCopy();
+        final JsonNode structural = node.get("attrs");
+        if (structural instanceof ObjectNode) {
+            merged.setAll((ObjectNode) structural);
+        }
+        node.set("attrs", merged);
     }
 
     // =====================================================================
@@ -102,31 +198,35 @@ public final class TiptapHtml {
 
     /** Walk {@code parent}'s children as a block sequence, gathering loose inline content into paragraphs. */
     private static void renderBlocks(final Element parent, final ArrayNode sink,
-                                     final Deque<ObjectNode> marks, final int depth) {
+                                     final WalkState st, final int depth) {
         if (depth > MAX_DEPTH) {
             noteDepthExceeded();
             return;
         }
         final InlineRun run = new InlineRun();
         for (final Node child : parent.childNodes()) {
-            dispatchBlock(child, sink, run, marks, depth);
+            dispatchBlock(child, sink, run, st, depth);
         }
-        run.flushInto(sink);
+        run.flushInto(sink, st);
     }
 
     /** Route one child in a block context to the right emitter: block, mark, image, break, or transparent wrapper. */
     private static void dispatchBlock(final Node child, final ArrayNode sink, final InlineRun run,
-                                      final Deque<ObjectNode> marks, final int depth) {
+                                      final WalkState st, final int depth) {
         if (depth > MAX_DEPTH) {
             noteDepthExceeded();
             return;
         }
         if (child instanceof TextNode) {
-            run.addText(((TextNode) child).getWholeText(), marks);
+            run.addText(((TextNode) child).getWholeText(), st.marks);
+            return;
+        }
+        if (child instanceof Comment) {
+            noteDotcmsAttrsComment((Comment) child, run, st);
             return;
         }
         if (!(child instanceof Element)) {
-            return; // comments, doctype, etc.
+            return; // doctype, data nodes, etc.
         }
         final Element e = (Element) child;
         final String tag = e.normalName();
@@ -134,18 +234,22 @@ public final class TiptapHtml {
         if (DROP_SUBTREE.contains(tag)) {
             return;
         }
+        if (tag.startsWith(DOTCMS_PREFIX)) {
+            emitDotcmsElement(tag, e, sink, run, st, depth);
+            return;
+        }
         final ObjectNode mark = markFor(tag, e);
         if (mark != null || isMarkTag(tag)) {
             // A mark element may itself contain block content (e.g. <b><p>x</p></b>): recurse in the
             // SAME block context so those blocks lift out correctly, with the mark still active.
             if (mark != null) {
-                marks.push(mark);
+                st.marks.push(mark);
             }
             for (final Node grand : e.childNodes()) {
-                dispatchBlock(grand, sink, run, marks, depth + 1);
+                dispatchBlock(grand, sink, run, st, depth + 1);
             }
             if (mark != null) {
-                marks.pop();
+                st.marks.pop();
             }
             return;
         }
@@ -154,7 +258,7 @@ public final class TiptapHtml {
             return;
         }
         if ("img".equals(tag)) {
-            final ObjectNode img = imageNode(e, marks);
+            final ObjectNode img = imageNode(e);
             if (img != null) {
                 run.add(img);
             }
@@ -162,52 +266,219 @@ public final class TiptapHtml {
         }
         if (TRANSPARENT_BLOCK.contains(tag)) {
             // Unmapped block element: acts as a paragraph boundary, its children are their own blocks.
-            run.flushInto(sink);
-            renderBlocks(e, sink, marks, depth + 1);
+            run.flushInto(sink, st);
+            renderBlocks(e, sink, st, depth + 1);
             return;
         }
         if (isHandledBlock(tag)) {
-            run.flushInto(sink);
-            emitBlock(tag, e, sink, marks, depth);
+            run.flushInto(sink, st);
+            emitBlock(tag, e, sink, st, depth);
             return;
         }
         // Unknown inline element (span, u, sub, sup, font, ...): transparent, keep the text.
         for (final Node grand : e.childNodes()) {
-            dispatchBlock(grand, sink, run, marks, depth + 1);
+            dispatchBlock(grand, sink, run, st, depth + 1);
+        }
+    }
+
+    /**
+     * A standalone {@code <!-- dotcms:attrs {...} -->} comment decorates the NEXT block,
+     * exactly as in the Markdown leg (#36658 §2.4) — last-wins, an invalid payload clears any
+     * previous pending decoration. A comment mid-paragraph is inline position, mirroring
+     * commonmark's {@code HtmlInline}, and is ignored; any other comment is dropped as before.
+     */
+    private static void noteDotcmsAttrsComment(final Comment comment, final InlineRun run,
+                                               final WalkState st) {
+        final Matcher m = DOTCMS_ATTRS_COMMENT_DATA.matcher(comment.getData());
+        if (m.matches() && run.isEmpty()) {
+            st.pendingBlockAttrs = TiptapMarkdown.parseDecorationAttrs(m.group(1));
+        }
+    }
+
+    /**
+     * Emit one {@code <dotcms-*>} rich-vocabulary element (#36659). The payload is normalized —
+     * allow-listed attributes for the scalar labels, the element's text body for the structured
+     * labels — and routed through the very validator the Markdown fences use
+     * ({@link TiptapMarkdown.DotcmsFences}), so both legs produce identical nodes. A pending
+     * decoration is consumed but never applied to a rich node (fence parity: its attrs validate
+     * as a unit). Failure degrades, never throws: structured labels keep their body as a
+     * visible {@code codeBlock} exactly like an invalid fence, scalar labels drop (their
+     * attributes carry no text to preserve), unknown labels stay transparent.
+     */
+    private static void emitDotcmsElement(final String tag, final Element e, final ArrayNode sink,
+                                          final InlineRun run, final WalkState st, final int depth) {
+        if (DOTCMS_ATTR_LABELS.contains(tag)) {
+            final ObjectNode node = TiptapMarkdown.DotcmsFences.parse(tag, dotcmsAttrPayload(tag, e));
+            if (node != null) {
+                run.flushInto(sink, st);
+                st.takePendingAttrs();
+                sink.add(node);
+            } else {
+                Logger.debug(TiptapHtml.class, () -> "dotcms element <" + tag
+                        + "> failed validation, dropped (its attributes carry no text to keep)");
+            }
+            // Children are unexpected (the payload rides on attributes) but must not be lost:
+            // HTML parsing ignores the '/' in a self-closed <dotcms-video/>, silently swallowing
+            // the following siblings as children — walk them in this same block context.
+            for (final Node grand : e.childNodes()) {
+                dispatchBlock(grand, sink, run, st, depth + 1);
+            }
+            return;
+        }
+        if (DOTCMS_BODY_LABELS.contains(tag)) {
+            // The body is the fence payload verbatim (entity-decoded by the HTML parse). Size
+            // cap, structural validation and depth cap all happen inside DotcmsFences.
+            final String body = e.wholeText().strip();
+            final ObjectNode node = TiptapMarkdown.DotcmsFences.parse(tag, body);
+            run.flushInto(sink, st);
+            if (node != null) {
+                st.takePendingAttrs();
+                sink.add(node);
+                return;
+            }
+            // Fence-parity degrade: keep the body visible as a codeBlock labeled with the tag
+            // (a decoration applies to it, as it would to the degraded fence in Markdown).
+            final ObjectNode code = MAPPER.createObjectNode();
+            code.put("type", "codeBlock");
+            code.putObject("attrs").put("language", tag);
+            decorate(code, st);
+            // The content array is always present, even empty — the byte-exact shape the
+            // Markdown leg's degraded fence produces.
+            final ArrayNode codeText = code.putArray("content");
+            if (!body.isEmpty()) {
+                codeText.add(textNode(body, null));
+            }
+            sink.add(code);
+            return;
+        }
+        // Unknown dotcms-* element: transparent like any other unknown tag — keep the text.
+        for (final Node grand : e.childNodes()) {
+            dispatchBlock(grand, sink, run, st, depth + 1);
+        }
+    }
+
+    /**
+     * Normalize a scalar-payload {@code <dotcms-*>} element's attributes into the payload
+     * object {@link TiptapMarkdown.DotcmsFences} validates. Only the fields each label defines
+     * are read (never a blanket copy — an {@code onerror=} is never even looked at); attribute
+     * names are the hyphenated spellings of the fence's camelCase keys (HTML lowercases
+     * attribute names, so {@code languageId} could never survive the parse), with the flattened
+     * lowercase form accepted as a courtesy; every URL-bearing field passes
+     * {@link #sanitizeUrl(String)} — stricter than the fence leg, per this converter's
+     * sanitization contract.
+     */
+    private static ObjectNode dotcmsAttrPayload(final String tag, final Element e) {
+        final ObjectNode payload = MAPPER.createObjectNode();
+        switch (tag) {
+            case "dotcms-content":
+                putAttr(payload, "identifier", e, "identifier");
+                putIntAttr(payload, "languageId", e, "language-id");
+                break;
+            case "dotcms-image":
+                putAttr(payload, "identifier", e, "identifier");
+                putIntAttr(payload, "languageId", e, "language-id");
+                putUrlAttr(payload, "src", e, "src");
+                putAttr(payload, "alt", e, "alt");
+                putAttr(payload, "title", e, "title");
+                putUrlAttr(payload, "href", e, "href");
+                putAttr(payload, "target", e, "target");
+                putAttr(payload, "textWrap", e, "text-wrap");
+                putAttr(payload, "textAlign", e, "text-align");
+                break;
+            case "dotcms-video":
+                putAttr(payload, "identifier", e, "identifier");
+                putIntAttr(payload, "languageId", e, "language-id");
+                putUrlAttr(payload, "src", e, "src");
+                putAttr(payload, "mimeType", e, "mime-type");
+                putIntAttr(payload, "width", e, "width");
+                putIntAttr(payload, "height", e, "height");
+                break;
+            case "dotcms-youtube":
+                putUrlAttr(payload, "src", e, "src");
+                putIntAttr(payload, "start", e, "start");
+                putIntAttr(payload, "width", e, "width");
+                putIntAttr(payload, "height", e, "height");
+                break;
+            default:
+                // Not reached: DOTCMS_ATTR_LABELS gates entry.
+                break;
+        }
+        return payload;
+    }
+
+    /** Read an element attribute by its hyphenated name, accepting the flattened lowercase form too. */
+    private static String readDotcmsAttr(final Element e, final String htmlName) {
+        String value = e.attr(htmlName);
+        if (value.isEmpty() && htmlName.indexOf('-') >= 0) {
+            value = e.attr(htmlName.replace("-", ""));
+        }
+        return value.isEmpty() ? null : value;
+    }
+
+    /** Copy a free-text attribute into the payload when present. */
+    private static void putAttr(final ObjectNode payload, final String key, final Element e,
+                                final String htmlName) {
+        final String value = readDotcmsAttr(e, htmlName);
+        if (value != null) {
+            payload.put(key, value);
+        }
+    }
+
+    /** Copy a URL attribute into the payload only when it passes {@link #sanitizeUrl(String)}. */
+    private static void putUrlAttr(final ObjectNode payload, final String key, final Element e,
+                                   final String htmlName) {
+        final String value = sanitizeUrl(readDotcmsAttr(e, htmlName));
+        if (value != null) {
+            payload.put(key, value);
+        }
+    }
+
+    /** Copy an integer attribute into the payload when present and numeric (else omitted). */
+    private static void putIntAttr(final ObjectNode payload, final String key, final Element e,
+                                   final String htmlName) {
+        final String value = readDotcmsAttr(e, htmlName);
+        if (value == null) {
+            return;
+        }
+        try {
+            payload.put(key, Integer.parseInt(value.trim()));
+        } catch (final NumberFormatException ignored) {
+            // Non-numeric: leave the field off, letting the validator's own rules decide.
         }
     }
 
     /** Emit one handled block element ({@code p}, heading, list, {@code pre}, {@code hr}, {@code table}, ...). */
     private static void emitBlock(final String tag, final Element e, final ArrayNode sink,
-                                  final Deque<ObjectNode> marks, final int depth) {
+                                  final WalkState st, final int depth) {
         switch (tag) {
             case "p":
-                emitInlineContainer("paragraph", null, e, sink, marks, depth, true);
+                emitInlineContainer("paragraph", null, e, sink, st, depth, true);
                 break;
             case "h1": case "h2": case "h3": case "h4": case "h5": case "h6":
                 final ObjectNode hAttrs = MAPPER.createObjectNode();
                 hAttrs.put("level", tag.charAt(1) - '0');
-                emitInlineContainer("heading", hAttrs, e, sink, marks, depth, false);
+                emitInlineContainer("heading", hAttrs, e, sink, st, depth, false);
                 break;
             case "blockquote":
-                emitBlockContainer("blockquote", e, sink, marks, depth);
+                emitBlockContainer("blockquote", e, sink, st, depth);
                 break;
             case "ul":
-                emitList("bulletList", e, sink, marks, depth);
+                emitList("bulletList", e, sink, st, depth);
                 break;
             case "ol":
-                emitList("orderedList", e, sink, marks, depth);
+                emitList("orderedList", e, sink, st, depth);
                 break;
             case "pre":
-                emitCodeBlock(e, sink);
+                emitCodeBlock(e, sink, st);
                 break;
             case "hr":
                 final ObjectNode hr = MAPPER.createObjectNode();
                 hr.put("type", "horizontalRule");
+                decorate(hr, st);
                 sink.add(hr);
                 break;
             case "table":
-                emitTable(e, sink, marks, depth);
+                emitTable(e, sink, st, depth);
                 break;
             default:
                 // Not reached: isHandledBlock gates entry.
@@ -222,16 +493,17 @@ public final class TiptapHtml {
      * allows it); an empty heading is dropped.
      */
     private static void emitInlineContainer(final String type, final ObjectNode attrs, final Element e,
-                                            final ArrayNode sink, final Deque<ObjectNode> marks,
+                                            final ArrayNode sink, final WalkState st,
                                             final int depth, final boolean keepIfEmpty) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("type", type);
         if (attrs != null) {
             node.set("attrs", attrs);
         }
+        decorate(node, st);
         final ArrayNode content = MAPPER.createArrayNode();
         final InlineRun run = new InlineRun(content);
-        renderInline(e, run, marks, depth + 1);
+        renderInline(e, run, st.marks, depth + 1);
         run.finish();
         if (content.size() > 0) {
             node.set("content", content);
@@ -243,11 +515,12 @@ public final class TiptapHtml {
 
     /** Block container that requires at least one block child (blockquote). Dropped when empty. */
     private static void emitBlockContainer(final String type, final Element e, final ArrayNode sink,
-                                           final Deque<ObjectNode> marks, final int depth) {
+                                           final WalkState st, final int depth) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("type", type);
+        decorate(node, st);
         final ArrayNode content = MAPPER.createArrayNode();
-        renderBlocks(e, content, marks, depth + 1);
+        renderBlocks(e, content, st, depth + 1);
         if (content.size() > 0) {
             node.set("content", content);
             sink.add(node);
@@ -256,17 +529,18 @@ public final class TiptapHtml {
 
     /** Emit a bullet or ordered list, attaching stray non-{@code li} content to the current item. */
     private static void emitList(final String type, final Element e, final ArrayNode sink,
-                                 final Deque<ObjectNode> marks, final int depth) {
+                                 final WalkState st, final int depth) {
         final ObjectNode list = MAPPER.createObjectNode();
         list.put("type", type);
         if ("orderedList".equals(type)) {
             list.putObject("attrs").put("start", intAttr(e, "start", 1, 1, Integer.MAX_VALUE));
         }
+        decorate(list, st);
         final ArrayNode items = MAPPER.createArrayNode();
         ObjectNode currentItem = null;
         for (final Node child : e.childNodes()) {
             if (child instanceof Element && "li".equals(((Element) child).normalName())) {
-                currentItem = emitListItem((Element) child, marks, depth);
+                currentItem = emitListItem((Element) child, st, depth);
                 items.add(currentItem);
             } else {
                 // Stray content directly under ul/ol (common in legacy WYSIWYG, incl. nested lists):
@@ -277,8 +551,8 @@ public final class TiptapHtml {
                 }
                 final ArrayNode itemContent = (ArrayNode) currentItem.get("content");
                 final InlineRun stray = new InlineRun();
-                dispatchBlock(child, itemContent, stray, marks, depth + 1);
-                stray.flushInto(itemContent);
+                dispatchBlock(child, itemContent, stray, st, depth + 1);
+                stray.flushInto(itemContent, st);
                 normalizeListItem(currentItem);
             }
         }
@@ -289,10 +563,10 @@ public final class TiptapHtml {
     }
 
     /** Emit a single {@code <li>} as a listItem node, rendering its children as blocks with a leading paragraph. */
-    private static ObjectNode emitListItem(final Element li, final Deque<ObjectNode> marks,
+    private static ObjectNode emitListItem(final Element li, final WalkState st,
                                            final int depth) {
         final ObjectNode item = newListItem();
-        renderBlocks(li, (ArrayNode) item.get("content"), marks, depth + 1);
+        renderBlocks(li, (ArrayNode) item.get("content"), st, depth + 1);
         normalizeListItem(item);
         return item;
     }
@@ -314,13 +588,14 @@ public final class TiptapHtml {
     }
 
     /** Emit a codeBlock from {@code <pre>}: verbatim text, optional language, no marks. */
-    private static void emitCodeBlock(final Element pre, final ArrayNode sink) {
+    private static void emitCodeBlock(final Element pre, final ArrayNode sink, final WalkState st) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("type", "codeBlock");
         final String language = codeLanguage(pre);
         if (language != null) {
             node.putObject("attrs").put("language", language);
         }
+        decorate(node, st);
         final ArrayNode content = node.putArray("content");
         // Code is verbatim: no whitespace normalization, no marks, no child elements.
         final String text = pre.wholeText();
@@ -332,9 +607,10 @@ public final class TiptapHtml {
 
     /** Emit a table from this element's own rows; nested tables recurse through their cell. */
     private static void emitTable(final Element table, final ArrayNode sink,
-                                  final Deque<ObjectNode> marks, final int depth) {
+                                  final WalkState st, final int depth) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("type", "table");
+        decorate(node, st);
         final ArrayNode rows = MAPPER.createArrayNode();
         // Collect this table's own <tr> (direct, or one level down through thead/tbody/tfoot) —
         // NOT descendant rows belonging to a nested table, which are handled when that cell recurses.
@@ -342,7 +618,7 @@ public final class TiptapHtml {
         final int totalRows = trs.size();
         for (int i = 0; i < totalRows; i++) {
             final int remainingRows = totalRows - i;
-            final ObjectNode row = emitTableRow(trs.get(i), remainingRows, marks, depth);
+            final ObjectNode row = emitTableRow(trs.get(i), remainingRows, st, depth);
             if (row != null) {
                 rows.add(row);
             }
@@ -373,7 +649,7 @@ public final class TiptapHtml {
 
     /** Emit a tableRow, or {@code null} when the row has no cells. */
     private static ObjectNode emitTableRow(final Element tr, final int remainingRows,
-                                           final Deque<ObjectNode> marks, final int depth) {
+                                           final WalkState st, final int depth) {
         final ObjectNode row = MAPPER.createObjectNode();
         row.put("type", "tableRow");
         final ArrayNode cells = MAPPER.createArrayNode();
@@ -383,7 +659,7 @@ public final class TiptapHtml {
             if (!header && !"td".equals(tag)) {
                 continue;
             }
-            cells.add(emitTableCell(cell, header, remainingRows, marks, depth));
+            cells.add(emitTableCell(cell, header, remainingRows, st, depth));
         }
         if (cells.size() == 0) {
             return null;
@@ -394,7 +670,7 @@ public final class TiptapHtml {
 
     /** Emit a tableCell/tableHeader with clamped colspan/rowspan and at least one paragraph. */
     private static ObjectNode emitTableCell(final Element cell, final boolean header,
-                                            final int remainingRows, final Deque<ObjectNode> marks,
+                                            final int remainingRows, final WalkState st,
                                             final int depth) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("type", header ? "tableHeader" : "tableCell");
@@ -405,7 +681,7 @@ public final class TiptapHtml {
         attrs.putNull("colwidth");
         // Cell content is block+: render its children as blocks, guaranteeing at least one paragraph.
         final ArrayNode content = node.putArray("content");
-        renderBlocks(cell, content, marks, depth + 1);
+        renderBlocks(cell, content, st, depth + 1);
         if (content.size() == 0) {
             content.add(emptyParagraph());
         }
@@ -445,7 +721,7 @@ public final class TiptapHtml {
                 continue;
             }
             if ("img".equals(tag)) {
-                final ObjectNode img = imageNode(e, marks);
+                final ObjectNode img = imageNode(e);
                 if (img != null) {
                     run.add(img);
                 }
@@ -469,7 +745,7 @@ public final class TiptapHtml {
     // =====================================================================
 
     /** Build a {@code dotImage} node from an {@code <img>}, or {@code null} to drop it when its src is unsafe/missing. */
-    private static ObjectNode imageNode(final Element img, final Deque<ObjectNode> marks) {
+    private static ObjectNode imageNode(final Element img) {
         final String src = sanitizeUrl(img.attr("src"));
         if (src == null) {
             return null; // no safe source -> drop the image entirely
@@ -707,14 +983,21 @@ public final class TiptapHtml {
             pendingSpace = false;
         }
 
-        /** Block context: wrap accumulated inline content in a paragraph and reset. */
-        void flushInto(final ArrayNode sink) {
+        /** True when no inline content has accumulated since the last flush. */
+        boolean isEmpty() {
+            return empty;
+        }
+
+        /** Block context: wrap accumulated inline content in a paragraph (decorated if one is
+         *  pending — it is the "next block") and reset. */
+        void flushInto(final ArrayNode sink, final WalkState st) {
             if (empty || target.size() == 0) {
                 reset();
                 return;
             }
             final ObjectNode para = MAPPER.createObjectNode();
             para.put("type", "paragraph");
+            decorate(para, st);
             para.set("content", target.deepCopy());
             sink.add(para);
             reset();
