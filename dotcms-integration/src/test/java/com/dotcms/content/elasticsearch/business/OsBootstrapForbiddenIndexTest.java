@@ -71,14 +71,14 @@ import org.junit.runner.RunWith;
  *
  * <pre>
  *   ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
- *       -Dopensearch.upgrade.test=true -Dit.test=OsBootstrapForbiddenIndexIT
+ *       -Dopensearch.upgrade.test=true -Dit.test=OsBootstrapForbiddenIndexTest
  * </pre>
  *
  * @author Fabrizzio Araya
  */
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
-public class OsBootstrapForbiddenIndexIT extends IntegrationTestBase {
+public class OsBootstrapForbiddenIndexTest extends IntegrationTestBase {
 
     private static final String OS_ENDPOINTS_KEY = "OS_ENDPOINTS";
 
