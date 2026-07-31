@@ -76,6 +76,14 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
 
     /**
+     * Minifies rendered page HTML (collapses insignificant whitespace and strips comments) before
+     * it is written to the response. Off by default.
+     *
+     * @see com.dotcms.rendering.util.HtmlMinifier
+     */
+    String FEATURE_FLAG_MINIFY_HTML = "FEATURE_FLAG_MINIFY_HTML";
+
+    /**
      * libvips image-engine toggle (off by default; the legacy Java2D engine is used
      * otherwise). The new image editor reads this through the configuration endpoint
      * to gate the libvips-only AVIF output format. Not a UI feature flag — kept here so

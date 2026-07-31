@@ -4,6 +4,7 @@ import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
@@ -39,6 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -262,7 +264,19 @@ public class VelocityLiveMode extends VelocityModeHandler {
      */
     private void writePage(final Writer out, final IHTMLPage htmlPage) {
         final Context context = VelocityUtil.getInstance().getContext(request, response);
-        this.getTemplate(htmlPage, mode).merge(context, out);
+
+        if (!HtmlMinifier.isEnabled()) {
+            this.getTemplate(htmlPage, mode).merge(context, out);
+            return;
+        }
+
+        // Merge into memory first so the markup can be minified as a whole. What is written here is
+        // also what gets stored in the page cache, so minification happens once per cache fill
+        // rather than on every cache hit.
+        final StringWriter merged = new StringWriter();
+        this.getTemplate(htmlPage, mode).merge(context, merged);
+        Try.run(() -> out.write(HtmlMinifier.minifyIfEnabled(merged.toString())))
+                .getOrElseThrow(DotRuntimeException::new);
     }
 
 
