@@ -43,8 +43,8 @@ export interface DotActionCenterQuickAction {
  * Quick actions offered in the Action Center.
  *
  * **The order of this array is the display order and is fixed** — Publish, Unpublish, Archive,
- * Delete, Add to Bundle. Rows keep their position whether or not they are selectable, so the list
- * never reshuffles as the selection changes.
+ * Delete, Unarchive, Add to Bundle. Rows keep their position whether or not they are selectable, so
+ * the list never reshuffles as the selection changes.
  *
  * Scope notes for v1:
  * - Every entry except Add to Bundle is a `SystemAction` the multi-contentlet endpoint accepts
@@ -55,8 +55,6 @@ export interface DotActionCenterQuickAction {
  *   enterprise-license gate. Tracked separately.
  * - **Lock / Unlock are absent**: no bulk REST endpoint exists. The legacy JSP drives unlock through
  *   a Struts command (`full_unlock_list`) that loops server-side.
- * - **Unarchive is absent**: it is not in the design's quick-action set. It is a valid `SystemAction`
- *   and was implemented earlier, so re-adding it is a one-line change if the set is revisited.
  *
  * `eligibleWhen` derives the count from row state the grid already has. It is a state heuristic,
  * not a permission check — an item can be counted and still fail at execution.
@@ -92,6 +90,14 @@ const QUICK_ACTIONS: {
         id: WORKFLOW_ACTION_ID.DELETE,
         icon: 'delete',
         danger: true,
+        eligibleWhen: (item) => !!item.archived
+    },
+    {
+        // Sits after Delete so the two archived-only actions are adjacent, and so archiving is not
+        // a one-way trip: without it nothing in this dialog can un-archive.
+        id: WORKFLOW_ACTION_ID.UNARCHIVE,
+        icon: 'unarchive',
+        danger: false,
         eligibleWhen: (item) => !!item.archived
     },
     {

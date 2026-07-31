@@ -124,7 +124,7 @@ describe('action-center utils', () => {
             expect(unpublish?.count).toBe(1);
         });
 
-        it('should count Delete only for archived items', () => {
+        it('should count Delete and Unarchive only for archived items', () => {
             const items = [
                 contentlet({ inode: 'a', archived: true }),
                 contentlet({ inode: 'b', archived: false })
@@ -133,6 +133,7 @@ describe('action-center utils', () => {
             const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
             expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(1);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
         });
 
         it('should still list actions that apply to nothing, with a zero count', () => {
@@ -151,6 +152,7 @@ describe('action-center utils', () => {
                 WORKFLOW_ACTION_ID.UNPUBLISH,
                 WORKFLOW_ACTION_ID.ARCHIVE,
                 WORKFLOW_ACTION_ID.DELETE,
+                WORKFLOW_ACTION_ID.UNARCHIVE,
                 ADD_TO_BUNDLE_ACTION_ID
             ];
 
