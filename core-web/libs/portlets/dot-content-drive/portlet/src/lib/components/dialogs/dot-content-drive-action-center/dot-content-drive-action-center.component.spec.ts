@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
     DotMessageService,
@@ -81,6 +81,7 @@ describe('DotContentDriveActionCenterComponent', () => {
     let messageService: SpyObject<MessageService>;
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     let fireService: SpyObject<DotWorkflowActionsFireService>;
+    let confirmationService: SpyObject<ConfirmationService>;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
 
@@ -115,6 +116,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         messageService = spectator.inject(MessageService, true);
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
         fireService = spectator.inject(DotWorkflowActionsFireService, true);
+        confirmationService = spectator.inject(ConfirmationService, true);
 
         jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
@@ -126,6 +128,8 @@ describe('DotContentDriveActionCenterComponent', () => {
         jest.spyOn(store, 'closeDialog');
         jest.spyOn(store, 'loadItems');
         jest.spyOn(messageService, 'add');
+        // Records the call without accepting, so tests opt in to the accept path explicitly.
+        jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
     });
 
     afterEach(() => {
@@ -252,6 +256,45 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
 
             expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+        });
+
+        it('should confirm before firing Delete, then fire on accept', () => {
+            // Delete only applies to archived items, and only it carries a confirmMessage.
+            mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
+            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
+                config.accept?.();
+
+                return confirmationService;
+            });
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-DELETE"]');
+
+            expect(confirmationService.confirm).toHaveBeenCalled();
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'DELETE',
+                inodes: ['inode-1']
+            });
+        });
+
+        it('should not fire Delete when the confirmation is dismissed', () => {
+            mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
+            // Default mock records the call without invoking `accept`.
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-DELETE"]');
+
+            expect(confirmationService.confirm).toHaveBeenCalled();
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+        });
+
+        it('should fire non-destructive actions without confirming', () => {
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-PUBLISH"]');
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+            expect(fireService.fireDefaultAction).toHaveBeenCalled();
         });
 
         it('should not fire an action that applies to nothing', () => {

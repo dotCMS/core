@@ -8,7 +8,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { isFolder } from './functions';
-import { DEFAULT_WORKFLOW_ACTIONS, WORKFLOW_ACTION_ID } from './workflow-actions';
+import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
 /** Quick action that is not a `SystemAction` and so is not fired through the workflow endpoints. */
 export const ADD_TO_BUNDLE_ACTION_ID = 'ADD_TO_BUNDLE';
@@ -32,6 +32,8 @@ export interface DotActionCenterQuickAction {
     count: number;
     /** Destructive action — rendered with the danger severity, as in the design. */
     danger: boolean;
+    /** i18n key for a confirmation prompt shown before firing, when the action warrants one. */
+    confirmMessage?: string;
     /**
      * i18n key explaining why the action cannot be run at all yet, independent of the selection.
      * When set the row is always non-selectable and shows this as its hint.
@@ -61,53 +63,64 @@ export interface DotActionCenterQuickAction {
  */
 const QUICK_ACTIONS: {
     id: DotActionCenterQuickActionId;
+    /** Label key. Held here rather than borrowed from the toolbar's action list, which no longer
+     *  carries these actions now that the Workflow Center owns them. */
+    nameKey: string;
     icon: string;
     danger: boolean;
     eligibleWhen: (item: DotCMSContentlet) => boolean;
-    /** Label key, for actions with no `DEFAULT_WORKFLOW_ACTIONS` entry to borrow one from. */
-    nameKey?: string;
+    /** Confirmation message key. Set for actions destructive enough to warrant a prompt. */
+    confirmMessage?: string;
     pendingHint?: string;
 }[] = [
     {
         id: WORKFLOW_ACTION_ID.PUBLISH,
+        nameKey: 'Default-Action-Publish',
         icon: 'publish',
         danger: false,
         eligibleWhen: (item) => !item.live && !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.UNPUBLISH,
+        nameKey: 'Default-Action-Unpublish',
         icon: 'visibility_off',
         danger: false,
         eligibleWhen: (item) => !!item.live && !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.ARCHIVE,
+        nameKey: 'Default-Action-Archive',
         icon: 'archive',
         danger: true,
         eligibleWhen: (item) => !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.DELETE,
+        nameKey: 'Default-Action-Delete',
         icon: 'delete',
         danger: true,
-        eligibleWhen: (item) => !!item.archived
+        eligibleWhen: (item) => !!item.archived,
+        // Carried over from the toolbar's Delete, which prompted before firing. Without this the
+        // move into the Workflow Center would have quietly dropped the only guard on a bulk delete.
+        confirmMessage: 'content.drive.worflow.action.delete.confirm'
     },
     {
         // Sits after Delete so the two archived-only actions are adjacent, and so archiving is not
         // a one-way trip: without it nothing in this dialog can un-archive.
         id: WORKFLOW_ACTION_ID.UNARCHIVE,
+        nameKey: 'Default-Action-Unarchive',
         icon: 'unarchive',
         danger: false,
         eligibleWhen: (item) => !!item.archived
     },
     {
         id: ADD_TO_BUNDLE_ACTION_ID,
+        nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
         danger: false,
         // A bundle accepts any asset, so the count is the whole contentlet selection. It is shown
         // for honesty about what the action would cover once the picker exists.
         eligibleWhen: () => true,
-        nameKey: 'content-drive.action-center.add-to-bundle',
         pendingHint: 'content-drive.action-center.add-to-bundle.pending'
     }
 ];
@@ -152,18 +165,15 @@ export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQu
         return [];
     }
 
-    return QUICK_ACTIONS.map((quickAction) => {
-        const definition = DEFAULT_WORKFLOW_ACTIONS.find((action) => action.id === quickAction.id);
-
-        return {
-            id: quickAction.id,
-            name: quickAction.nameKey ?? definition?.name ?? quickAction.id,
-            icon: quickAction.icon,
-            danger: quickAction.danger,
-            count: contentlets.filter(quickAction.eligibleWhen).length,
-            pendingHint: quickAction.pendingHint
-        };
-    });
+    return QUICK_ACTIONS.map((quickAction) => ({
+        id: quickAction.id,
+        name: quickAction.nameKey,
+        icon: quickAction.icon,
+        danger: quickAction.danger,
+        count: contentlets.filter(quickAction.eligibleWhen).length,
+        confirmMessage: quickAction.confirmMessage,
+        pendingHint: quickAction.pendingHint
+    }));
 };
 
 /**

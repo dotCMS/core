@@ -233,6 +233,9 @@
         </section>
     </div>
 
+    <!-- Guards the destructive quick actions. Appended to body so it layers above this dialog. -->
+    <p-confirmDialog appendTo="body" [draggable]="false" [style]="{ width: '500px' }" />
+
     <ng-template #footer>
         <div class="flex w-full items-center justify-between">
             <span class="text-xs font-medium text-surface-400 italic">

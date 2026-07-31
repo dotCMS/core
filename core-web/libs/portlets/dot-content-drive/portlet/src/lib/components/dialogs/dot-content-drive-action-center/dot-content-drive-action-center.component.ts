@@ -9,9 +9,10 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -70,6 +71,7 @@ import {
         AccordionModule,
         BadgeModule,
         ButtonModule,
+        ConfirmDialogModule,
         DialogModule,
         DotMessagePipe,
         FormsModule,
@@ -78,7 +80,7 @@ import {
         SkeletonModule,
         TooltipModule
     ],
-    providers: [DotWorkflowsActionsService, DotWorkflowActionsFireService],
+    providers: [DotWorkflowsActionsService, DotWorkflowActionsFireService, ConfirmationService],
     templateUrl: './dot-content-drive-action-center.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -88,6 +90,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #confirmationService = inject(ConfirmationService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -224,6 +227,26 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
+        if (quickAction.confirmMessage) {
+            this.#confirmationService.confirm({
+                message: this.#dotMessageService.get(quickAction.confirmMessage),
+                header: this.#dotMessageService.get('content-drive.action-center.confirm.header'),
+                acceptLabel: this.#dotMessageService.get('dot.common.yes'),
+                rejectLabel: this.#dotMessageService.get('dot.common.no'),
+                accept: () => this.fireQuickAction(quickAction, inodes)
+            });
+
+            return;
+        }
+
+        this.fireQuickAction(quickAction, inodes);
+    }
+
+    /**
+     * Fires a quick action over the given inodes. Split out of {@link onExecuteQuickAction} so the
+     * confirmation branch and the direct branch share one execution path.
+     */
+    private fireQuickAction(quickAction: DotActionCenterQuickAction, inodes: string[]): void {
         this.$executing.set(true);
 
         this.#workflowActionsFireService
