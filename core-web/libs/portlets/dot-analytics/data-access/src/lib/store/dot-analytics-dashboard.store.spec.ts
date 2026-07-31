@@ -15,12 +15,13 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotAnalyticsDashboardStore } from './dot-analytics-dashboard.store';
 
 import { DotAnalyticsService } from '../services/dot-analytics.service';
+import { SessionEngagementByDayData } from '../types';
 
 describe('DotAnalyticsDashboardStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotAnalyticsDashboardStore>>;
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
     let analyticsService: SpyObject<DotAnalyticsService>;
-    let globalStore: SpyObject<GlobalStore>;
+    let globalStore: SpyObject<InstanceType<typeof GlobalStore>>;
 
     const createService = createServiceFactory({
         service: DotAnalyticsDashboardStore,
@@ -57,7 +58,7 @@ describe('DotAnalyticsDashboardStore', () => {
         });
 
         it("should be true while the active tab's requests are in flight, and false once settled", () => {
-            const engagement$ = new Subject<Record<string, number>>();
+            const engagement$ = new Subject<SessionEngagementByDayData[]>();
 
             spectator = createService();
             store = spectator.service;
@@ -73,16 +74,19 @@ describe('DotAnalyticsDashboardStore', () => {
 
             expect(store.$isReportLoading()).toBe(true);
 
-            engagement$.next({
-                avgEngagedSessionTimeSeconds: 0,
-                avgInteractionsPerEngagedSession: 0,
-                avgSessionTimeSeconds: 0,
-                conversionRate: 0,
-                engagedConversionSessions: 0,
-                engagedSessions: 0,
-                engagementRate: 0,
-                totalSessions: 0
-            });
+            engagement$.next([
+                {
+                    day: '2026-01-01',
+                    avgEngagedSessionTimeSeconds: 0,
+                    avgInteractionsPerEngagedSession: 0,
+                    avgSessionTimeSeconds: 0,
+                    conversionRate: 0,
+                    engagedConversionSessions: 0,
+                    engagedSessions: 0,
+                    engagementRate: 0,
+                    totalSessions: 0
+                }
+            ]);
             engagement$.complete();
 
             expect(store.$isReportLoading()).toBe(false);

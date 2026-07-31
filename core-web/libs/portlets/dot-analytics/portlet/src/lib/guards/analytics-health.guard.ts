@@ -36,14 +36,15 @@ export const analyticsHealthGuard: CanActivateFn = (route, _state) => {
             // unconditionally, so it's already present here correctly.
             const isEnterprise = route.data?.['isEnterprise'] ?? true;
 
-            router.navigate(['/analytics/error'], {
+            // Return the redirect as a UrlTree rather than side-effecting via router.navigate() —
+            // the Angular-preferred pattern for guard redirects: plays nicer with navigation
+            // cancellation and lets tests assert the tree directly.
+            return router.createUrlTree(['/analytics/error'], {
                 queryParams: {
                     status: healthStatus,
                     isEnterprise: isEnterprise
                 }
             });
-
-            return false;
         })
     );
 };

@@ -1,16 +1,6 @@
 /**
- * Full path for conversion **content attribution** (dotCMS analytics proxy).
- * Always use this — never `/api/v1/conversion/content/attribution` without `analytics`:
- * that path is not registered and returns 404 when the UI is served from localhost:4200.
- *
- * Proxies to upstream `/v1/conversion/content/attribution`.
- */
-export const ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL =
-    '/api/v1/analytics/conversion/content/attribution' as const;
-
-/**
- * Domain-driven query resources (dotCMS/core#36628), replacing the per-metric `event`/`session`/
- * `conversion` endpoints above. All three return the same unified tabular envelope
+ * Domain-driven query resources (dotCMS/core#36628), replacing the old per-metric `event`/
+ * `session`/`conversion` proxy endpoints. All three return the same unified tabular envelope
  * ({@link AnalyticsQueryResponse}).
  *
  * Note: `/v1/analytics/conversion` (the old conversions-overview list) has no domain-driven

@@ -13,6 +13,7 @@ import {
     ANALYTICS_SESSIONS_URL,
     AnalyticsApiResponse,
     AnalyticsQueryResponse,
+    ApiGranularity,
     ApiRangeParams,
     ContentAttributionData,
     CubeJSQuery,
@@ -110,48 +111,19 @@ export class DotAnalyticsService {
         );
     }
 
-    /**
-     * Fetches total events via `GET /api/v1/analytics/events?metrics=totalEvents` (dotCMS/core#36628)
-     * — aggregate when `granularity` is omitted, time series when set. The new API's dimension
-     * column is named `day` or `month` to match the requested `granularity`; mapped back to the
-     * old `day` field either way (see {@link TotalEventsByDayData}).
-     */
+    /** Fetches total events via `GET /api/v1/analytics/events?metrics=totalEvents`. */
     getTotalEvents(params: GetTotalEventsWithoutGranularity): Observable<TotalEventsData>;
     getTotalEvents(params: GetTotalEventsWithGranularity): Observable<TotalEventsByDayData[]>;
     getTotalEvents(
         params: GetTotalEventsParams
     ): Observable<TotalEventsData | TotalEventsByDayData[]> {
-        const httpParams = this.#buildDomainQueryParams({
-            ...params,
-            metrics: ['totalEvents'],
-            dimensions: params.granularity ? [params.granularity] : undefined
-        });
-
-        return this.#http
-            .get<DotCMSResponse<AnalyticsQueryResponse>>(ANALYTICS_EVENTS_URL, {
-                params: httpParams
-            })
-            .pipe(
-                map((response) => {
-                    const { rows } = response.entity;
-                    if (!params.granularity) {
-                        return { totalEvents: Number(rows[0]?.['totalEvents'] ?? 0) };
-                    }
-
-                    return rows.map((row) => ({
-                        day: String(row[params.granularity as string]),
-                        totalEvents: Number(row['totalEvents'] ?? 0)
-                    }));
-                })
-            );
+        return this.#queryEventsMetric('totalEvents', params);
     }
 
     /**
-     * Fetches unique visitors via `GET /api/v1/analytics/events?metrics=uniqueVisitors`
-     * (dotCMS/core#36628) — aggregate when `granularity` is omitted, time series when set.
-     * Note: `uniqueVisitors` is a windowed `COUNT(DISTINCT)`, so a day-series sum can legitimately
-     * exceed the scalar aggregate whenever a visitor returns on multiple days — that's expected,
-     * not a bug.
+     * Fetches unique visitors via `GET /api/v1/analytics/events?metrics=uniqueVisitors`.
+     * `uniqueVisitors` is a windowed `COUNT(DISTINCT)`, so a day-series sum can legitimately
+     * exceed the scalar aggregate when a visitor returns on multiple days — expected, not a bug.
      */
     getUniqueVisitors(params: GetUniqueVisitorsWithoutGranularity): Observable<UniqueVisitorsData>;
     getUniqueVisitors(
@@ -160,38 +132,13 @@ export class DotAnalyticsService {
     getUniqueVisitors(
         params: GetUniqueVisitorsParams
     ): Observable<UniqueVisitorsData | UniqueVisitorsByDayData[]> {
-        const httpParams = this.#buildDomainQueryParams({
-            ...params,
-            metrics: ['uniqueVisitors'],
-            dimensions: params.granularity ? [params.granularity] : undefined
-        });
-
-        return this.#http
-            .get<DotCMSResponse<AnalyticsQueryResponse>>(ANALYTICS_EVENTS_URL, {
-                params: httpParams
-            })
-            .pipe(
-                map((response) => {
-                    const { rows } = response.entity;
-                    if (!params.granularity) {
-                        return { uniqueVisitors: Number(rows[0]?.['uniqueVisitors'] ?? 0) };
-                    }
-
-                    return rows.map((row) => ({
-                        day: String(row[params.granularity as string]),
-                        uniqueVisitors: Number(row['uniqueVisitors'] ?? 0)
-                    }));
-                })
-            );
+        return this.#queryEventsMetric('uniqueVisitors', params);
     }
 
     /**
-     * Fetches content conversion attribution rows via `GET /api/v1/analytics/content`
-     * (dotCMS/core#36628), attribution mode — the mode resolved by default when no
-     * `conversionName`/attribution-only metrics or dimensions are explicitly requested, which is
-     * exactly how this method is called today. The new metric column is named `totalEvents`;
-     * mapped back to the old `events` field expected by {@link ContentAttributionData} (read by
-     * `transformContentConversionsData`).
+     * Fetches content attribution rows via `GET /api/v1/analytics/content` (attribution mode,
+     * the default). Maps the `totalEvents` metric column back to the `events` field
+     * {@link ContentAttributionData} expects.
      */
     getContentAttribution(
         params: GetContentAttributionParams
@@ -217,17 +164,10 @@ export class DotAnalyticsService {
     }
 
     /**
-     * Fetches top content via `GET /api/v1/analytics/content` (dotCMS/core#36628), top-content
-     * mode. `metrics: ['totalEvents']` forces top-content mode (attribution mode is the default
-     * otherwise); dimensions are left at the mode's default (`identifier`, `title`) — do NOT add
-     * `eventType` as a dimension, that flips the mode to attribution. `eventType` here is a plain
-     * filter param, confirmed against `ContentAnalyticsService.fetchTopContent()` to have no effect
-     * on mode resolution. `orderBy`/`orderDir` are sent explicitly even though the old caller never
-     * did, to avoid relying on a server-side default for the same "descending" behavior the old
-     * endpoint returned implicitly. No field rename needed — `identifier`/`title`/`totalEvents`
-     * already match {@link TopContentData} exactly.
-     *
-     * @param params - Date range plus optional `siteId` and `eventType` query params
+     * Fetches top content via `GET /api/v1/analytics/content`, top-content mode — forced by
+     * `metrics: ['totalEvents']` (attribution mode is the default otherwise). Do not add
+     * `eventType` as a dimension here; that flips the mode to attribution. `eventType` itself
+     * is a plain filter and safe to pass.
      */
     getTopContent(params: GetRangeSiteEventParams): Observable<TopContentData[]> {
         const httpParams = this.#buildDomainQueryParams({
@@ -332,13 +272,11 @@ export class DotAnalyticsService {
     }
 
     /**
-     * Fetches session engagement grouped by a dimension (device, browser, language) via
-     * `GET /api/v1/analytics/sessions?dimensions=device|browser|language` (dotCMS/core#36628).
-     * `metrics` MUST be explicitly restricted to the 4 "basic" ones below — the backend's default
-     * metric set is all 8, and the other 4 (e.g. `conversionRate`) are invalid on a grouped
-     * dimension and return 400. The dimension column is named by `groupBy` itself (e.g. `device`),
-     * mapped back to the old `name` field with the same blank→`'Other'` fallback as before;
-     * `"n/a"` (a real language bucket) passes through unchanged since it isn't blank.
+     * Fetches session engagement grouped by device/browser/language via
+     * `GET /api/v1/analytics/sessions?dimensions=...`. `metrics` must stay restricted to the 4
+     * "basic" ones below — the other 4 (e.g. `conversionRate`) are invalid on a grouped dimension
+     * and the backend returns 400. `"n/a"` is a real language bucket, not blank — only an empty
+     * value falls back to `'Other'`.
      */
     getSessionEngagementGroupBy(
         params: GetSessionEngagementGrouped
@@ -457,6 +395,45 @@ export class DotAnalyticsService {
         }
 
         return httpParams;
+    }
+
+    /**
+     * Shared aggregate/series query for a single `/analytics/events` metric — `getTotalEvents`
+     * and `getUniqueVisitors` are the same shape (build params → GET → map `rows[0]` for the
+     * scalar case or a per-row series when `granularity` is set), differing only in which metric
+     * name is requested and read back.
+     */
+    #queryEventsMetric<K extends string>(
+        metric: K,
+        params: ApiRangeParams & {
+            granularity?: ApiGranularity;
+            eventType?: string;
+            siteId?: string;
+        }
+    ): Observable<Record<K, number> | Array<{ day: string } & Record<K, number>>> {
+        const httpParams = this.#buildDomainQueryParams({
+            ...params,
+            metrics: [metric],
+            dimensions: params.granularity ? [params.granularity] : undefined
+        });
+
+        return this.#http
+            .get<DotCMSResponse<AnalyticsQueryResponse>>(ANALYTICS_EVENTS_URL, {
+                params: httpParams
+            })
+            .pipe(
+                map((response) => {
+                    const { rows } = response.entity;
+                    if (!params.granularity) {
+                        return { [metric]: Number(rows[0]?.[metric] ?? 0) } as Record<K, number>;
+                    }
+
+                    return rows.map((row) => ({
+                        day: String(row[params.granularity as string]),
+                        [metric]: Number(row[metric] ?? 0)
+                    })) as Array<{ day: string } & Record<K, number>>;
+                })
+            );
     }
 
     /**

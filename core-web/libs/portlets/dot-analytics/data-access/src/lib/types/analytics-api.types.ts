@@ -75,9 +75,7 @@ export interface GetTopContentFilters {
  */
 export type GetRangeSiteEventParams = ApiRangeParams & GetTopContentFilters;
 
-/**
- * Sort columns for GET `/api/v1/analytics/conversion/content/attribution` (analytics proxy → `/v1/conversion/content/attribution`).
- */
+/** Sort columns for content attribution queries (`DotAnalyticsService.getContentAttribution`). */
 export type ContentAttributionOrderBy =
     | 'title'
     | 'identifier'
@@ -85,7 +83,7 @@ export type ContentAttributionOrderBy =
     | 'attributionRate'
     | 'attributionCount';
 
-/** Query params for GET `/api/v1/analytics/conversion/content/attribution` (analytics proxy → `/v1/conversion/content/attribution`). */
+/** Query params for content attribution queries (`DotAnalyticsService.getContentAttribution`). */
 export type GetContentAttributionParams = ApiRangeParams & {
     siteId?: string;
     /** Optional filter such as `content_click` (see API docs). */
@@ -104,13 +102,6 @@ export interface ContentAttributionData {
     events: number;
     identifier: string;
     title: string;
-}
-
-/** Response wrapper from analytics event endpoints (entity.data field) */
-export interface AnalyticsEventResponse<T> {
-    data: T;
-    params?: Record<string, string>;
-    query?: Record<string, string>;
 }
 
 /** Total events (no granularity) */
@@ -139,26 +130,26 @@ export interface UniqueVisitorsByDayData {
     uniqueVisitors: number;
 }
 
-/** Top content item from /api/v1/analytics/event/top-content */
+/** Top content item (`DotAnalyticsService.getTopContent`, top-content mode of `/api/v1/analytics/content`). */
 export interface TopContentData {
     identifier: string;
     title: string;
     totalEvents: number;
 }
 
-/** One row when `GET .../pageviews-by-device-browser` is called with `groupBy=device`. */
+/** One row when `DotAnalyticsService.getPageviewsByDeviceBrowser` is called with `groupBy=device`. */
 export interface DeviceBreakdownData {
     device: string;
     total: number;
 }
 
-/** One row when `GET .../pageviews-by-device-browser` is called with `groupBy=browser`. */
+/** One row when `DotAnalyticsService.getPageviewsByDeviceBrowser` is called with `groupBy=browser`. */
 export interface BrowserBreakdownData {
     browser: string;
     total: number;
 }
 
-/** `groupBy` values supported by `/api/v1/analytics/event/pageviews-by-device-browser`. */
+/** `groupBy` values accepted by `DotAnalyticsService.getPageviewsByDeviceBrowser`. */
 export type DeviceBrowserGroupBy = 'device' | 'browser';
 
 /**
@@ -170,7 +161,7 @@ export type GetPageviewsByDeviceBrowserParams = GetRangeSiteEventParams & {
 };
 
 // ---------------------------------------------------------------------------
-// Session Engagement API — GET /api/v1/analytics/session/engagement
+// Session Engagement API — DotAnalyticsService.getSessionEngagement(GroupBy)
 // ---------------------------------------------------------------------------
 
 /** Dimensions the engagement endpoint can group by. */

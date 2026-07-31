@@ -59,8 +59,6 @@ export interface ConversionsState {
     totalConversions: RequestState<TotalEventsData>;
     /** Converting visitors metric (includes uniqueVisitors and uniqueConvertingVisitors) */
     convertingVisitors: RequestState<ConvertingVisitorsEntity>;
-    /** Site-wide conversion rate */
-    conversionRate: RequestState<number>;
     /** Conversion trend timeline data */
     conversionTrend: RequestState<TotalEventsByDayData[]>;
     /** Traffic vs conversions comparison data (per day) */
@@ -75,7 +73,6 @@ export interface ConversionsState {
 const initialConversionsState: ConversionsState = {
     totalConversions: createInitialRequestState(),
     convertingVisitors: createInitialRequestState(),
-    conversionRate: createInitialRequestState(),
     conversionTrend: createInitialRequestState(),
     trafficVsConversions: createInitialRequestState(),
     contentConversions: createInitialRequestState()
@@ -457,7 +454,6 @@ export function withConversions() {
                         patchState(store, {
                             totalConversions: createInitialRequestState(),
                             convertingVisitors: createInitialRequestState(),
-                            conversionRate: createInitialRequestState(),
                             conversionTrend: createInitialRequestState(),
                             trafficVsConversions: createInitialRequestState(),
                             contentConversions: createInitialRequestState()

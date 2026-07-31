@@ -46,16 +46,19 @@
             </div>
         </div>
     </p-tabs>
-    <div class="analytics-dashboard-body p-8">
+    <div class="analytics-dashboard-body relative p-8">
         <!-- Full-report loading overlay: mirrors dot-edit-content-layout's reload overlay
              (same spinner + semi-transparent backdrop) so the ~2s customer-environment load
              time for each tab reads consistently with the rest of the app, instead of just
              the per-widget skeletons underneath. -->
         @if (store.$isReportLoading()) {
             <div
-                class="analytics-dashboard-body__loading-overlay flex items-center justify-center"
+                class="analytics-dashboard-body__loading-overlay absolute inset-0 z-10 flex items-center justify-center bg-white/60"
+                role="status"
+                aria-live="polite"
+                [attr.aria-label]="'Loading' | dm"
                 data-testid="analytics-dashboard-loading-overlay">
-                <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+                <i class="pi pi-spin pi-spinner text-4xl text-gray-500" aria-hidden="true"></i>
             </div>
         }
         <router-outlet />

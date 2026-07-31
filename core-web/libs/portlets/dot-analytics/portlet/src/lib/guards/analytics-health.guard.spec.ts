@@ -17,7 +17,9 @@ describe('analyticsHealthGuard', () => {
 
     beforeEach(() => {
         mockRouter = {
-            navigate: jest.fn()
+            navigate: jest.fn(),
+            // Echoes back its args so tests can assert the guard's return value directly.
+            createUrlTree: jest.fn((commands, extras) => ({ commands, extras }))
         } as unknown as Router;
 
         // isEnterprise is resolved on the parent 'analytics' route and merges down into this
@@ -56,7 +58,7 @@ describe('analyticsHealthGuard', () => {
         });
     });
 
-    it('should redirect to error page when health status is NOT_AVAILABLE', (done) => {
+    it('should return a UrlTree to the error page when health status is NOT_AVAILABLE', (done) => {
         (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
             of(HealthStatusTypes.NOT_AVAILABLE)
         );
@@ -66,13 +68,22 @@ describe('analyticsHealthGuard', () => {
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
-                    expect(canActivate).toBe(false);
-                    expect(mockRouter.navigate).toHaveBeenCalledWith(['/analytics/error'], {
+                    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/analytics/error'], {
                         queryParams: {
                             status: HealthStatusTypes.NOT_AVAILABLE,
                             isEnterprise: true
                         }
                     });
+                    expect(canActivate).toEqual({
+                        commands: ['/analytics/error'],
+                        extras: {
+                            queryParams: {
+                                status: HealthStatusTypes.NOT_AVAILABLE,
+                                isEnterprise: true
+                            }
+                        }
+                    });
+                    expect(mockRouter.navigate).not.toHaveBeenCalled();
                     done();
                 });
             }
@@ -90,13 +101,13 @@ describe('analyticsHealthGuard', () => {
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
-                    expect(canActivate).toBe(false);
-                    expect(mockRouter.navigate).toHaveBeenCalledWith(['/analytics/error'], {
+                    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/analytics/error'], {
                         queryParams: {
                             status: HealthStatusTypes.NOT_AVAILABLE,
                             isEnterprise: true
                         }
                     });
+                    expect(canActivate).toBeTruthy();
                     done();
                 });
             }
@@ -114,13 +125,13 @@ describe('analyticsHealthGuard', () => {
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
-                    expect(canActivate).toBe(false);
-                    expect(mockRouter.navigate).toHaveBeenCalledWith(['/analytics/error'], {
+                    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/analytics/error'], {
                         queryParams: {
                             status: HealthStatusTypes.NOT_AVAILABLE,
                             isEnterprise: false
                         }
                     });
+                    expect(canActivate).toBeTruthy();
                     done();
                 });
             }
