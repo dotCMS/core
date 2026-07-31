@@ -83,11 +83,12 @@ public class MigrationReadinessResource {
 
     /**
      * Whether {@code user} may read the migration-readiness report: a CMS administrator, or a member
-     * of the configured support role (same config key as the {@code .os} visibility policy). Unlike
-     * {@link MigrationIndexVisibility#canSeeMigrationIndices(User)} this does <em>not</em> open up to
-     * everyone in Phase 3 — the report is an internal support tool in every phase.
+     * of the configured support role ({@link MigrationIndexVisibility#VISIBILITY_ROLE_KEY}, default
+     * {@link MigrationIndexVisibility#DEFAULT_VISIBILITY_ROLE_KEY}). This is an internal support tool
+     * in every phase — it never opens up to everyone, unlike the phase-based index portlet display.
      */
-    private static boolean isMigrationSupportUser(final User user) {
+    @VisibleForTesting
+    static boolean isMigrationSupportUser(final User user) {
         if (user == null) {
             return false;
         }
