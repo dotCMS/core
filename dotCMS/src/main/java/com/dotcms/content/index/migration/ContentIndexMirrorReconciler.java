@@ -87,8 +87,8 @@ public class ContentIndexMirrorReconciler {
         final long osCount = osExists ? osStats.get(osKey).documentCount() : 0L;
 
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
-        out.add(new MirrorStatus(bare, kind, esExists, esCount, osExists, osCount, verdict,
-                recommend(bare, verdict, osExists)));
+        out.add(new MirrorStatus(bare, kind, new MirrorStatus.EngineCopy(esExists, esCount),
+                new MirrorStatus.EngineCopy(osExists, osCount), verdict, recommend(bare, verdict, osExists)));
     }
 
     private static String recommend(final String name, final Verdict verdict, final boolean osExists) {

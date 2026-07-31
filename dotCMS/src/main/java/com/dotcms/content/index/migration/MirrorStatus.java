@@ -8,26 +8,21 @@ package com.dotcms.content.index.migration;
  *
  * <p>Shared by every index family that is mirrored during the migration: the versioned content
  * indices (working/live) and the Site Search indices. The {@link IndexKind} says which family this
- * row belongs to.</p>
+ * row belongs to. Each engine's side is a nested {@link EngineCopy} so the report reads as
+ * {@code es:{exists,docCount}} / {@code os:{exists,docCount}}.</p>
  *
  * @param indexName      the logical index name (no {@code .os} tag)
  * @param kind           which mirrored index family this row belongs to
- * @param esExists       whether the Elasticsearch copy exists
- * @param esDocCount     exact document count in the Elasticsearch copy (0 when absent, -1 when the
- *                       count query failed)
- * @param osExists       whether the OpenSearch ({@code .os}) counterpart exists
- * @param osDocCount     exact document count in the OpenSearch counterpart (0 when absent, -1 when the count
- *                       query failed)
+ * @param es             the Elasticsearch copy (existence + exact document count)
+ * @param os             the OpenSearch ({@code .os}) copy (existence + exact document count)
  * @param verdict        the diff verdict between the two copies
  * @param recommendation human-readable, action-oriented advice for a support technician
  */
 public record MirrorStatus(
         String indexName,
         IndexKind kind,
-        boolean esExists,
-        long esDocCount,
-        boolean osExists,
-        long osDocCount,
+        EngineCopy es,
+        EngineCopy os,
         Verdict verdict,
         String recommendation) {
 
@@ -43,6 +38,14 @@ public record MirrorStatus(
         /** Both copies exist but hold a different number of documents. */
         COUNT_DRIFT
     }
+
+    /**
+     * One engine's copy of the index.
+     *
+     * @param exists   whether this engine holds the index
+     * @param docCount exact document count (0 when absent, -1 when the count query failed)
+     */
+    public record EngineCopy(boolean exists, long docCount) {}
 
     /** Whether this index needs operator action (a re-crawl / reindex) before the phase change. */
     public boolean needsAttention() {

@@ -73,8 +73,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertEquals(IndexKind.CONTENT_WORKING, working.kind());
         assertEquals("working_1", working.indexName()); // logical: cluster prefix stripped, no .os
         assertEquals(Verdict.IN_SYNC, working.verdict());
-        assertEquals(100, working.esDocCount());
-        assertEquals(100, working.osDocCount());
+        assertEquals(100, working.es().docCount());
+        assertEquals(100, working.os().docCount());
         assertEquals(IndexKind.CONTENT_LIVE, statuses.get(1).kind());
         assertEquals(Verdict.IN_SYNC, statuses.get(1).verdict());
     }
@@ -92,8 +92,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
 
         final MirrorStatus working = statuses.get(0);
         assertEquals(Verdict.MISSING_COUNTERPART, working.verdict());
-        assertTrue(working.esExists());
-        assertFalse(working.osExists());
+        assertTrue(working.es().exists());
+        assertFalse(working.os().exists());
         assertTrue(working.needsAttention());
         assertTrue(working.recommendation().contains("OpenSearch"));
     }
@@ -112,8 +112,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         final MirrorStatus live = statuses.get(1);
         assertEquals(IndexKind.CONTENT_LIVE, live.kind());
         assertEquals(Verdict.COUNT_DRIFT, live.verdict());
-        assertEquals(50, live.esDocCount());
-        assertEquals(40, live.osDocCount());
+        assertEquals(50, live.es().docCount());
+        assertEquals(40, live.os().docCount());
     }
 
     /** A null IndiciesInfo (could not be loaded) yields no rows rather than throwing. */

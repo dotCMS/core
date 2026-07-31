@@ -57,7 +57,7 @@ public class MigrationReadinessService {
         // its OpenSearch counterpart would lose that delta after the downgrade (a failed ES count is -1, which
         // is < any real OS count → flagged, fail-safe).
         final boolean esBehindAnywhere = all.stream()
-                .anyMatch(s -> !s.esExists() || s.esDocCount() < s.osDocCount());
+                .anyMatch(s -> !s.es().exists() || s.es().docCount() < s.os().docCount());
 
         final boolean safeToAdvance;
         final String summary;

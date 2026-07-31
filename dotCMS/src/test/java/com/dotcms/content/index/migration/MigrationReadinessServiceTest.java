@@ -54,8 +54,9 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     private static MirrorStatus ss(final String name, final boolean esExists, final long esCount,
             final boolean osExists, final long osCount) {
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
-        return new MirrorStatus(name, IndexKind.SITE_SEARCH, esExists, esCount, osExists, osCount,
-                verdict, "advice");
+        return new MirrorStatus(name, IndexKind.SITE_SEARCH,
+                new MirrorStatus.EngineCopy(esExists, esCount),
+                new MirrorStatus.EngineCopy(osExists, osCount), verdict, "advice");
     }
 
     /** Dual-write phase with every mirror in sync → safe to advance, nothing out of sync. */

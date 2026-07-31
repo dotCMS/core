@@ -69,8 +69,9 @@ public class SiteSearchMirrorReconciler {
         final long esCount = esExists ? esImpl.documentCount(name) : 0L;
         final long osCount = osExists ? osImpl.documentCount(name) : 0L;
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
-        return new MirrorStatus(name, IndexKind.SITE_SEARCH, esExists, esCount, osExists, osCount,
-                verdict, recommend(name, verdict));
+        return new MirrorStatus(name, IndexKind.SITE_SEARCH,
+                new MirrorStatus.EngineCopy(esExists, esCount),
+                new MirrorStatus.EngineCopy(osExists, osCount), verdict, recommend(name, verdict));
     }
 
     private static String recommend(final String name, final Verdict verdict) {
