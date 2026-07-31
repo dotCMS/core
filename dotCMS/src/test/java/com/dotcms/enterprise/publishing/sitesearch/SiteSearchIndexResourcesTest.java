@@ -22,17 +22,34 @@ public class SiteSearchIndexResourcesTest extends UnitTestBase {
         Config.setProperty(SiteSearchIndexResources.ANALYZER_PROPERTY, null);
     }
 
-    /** Unset property: the bundled mapping and settings come back verbatim. */
+    /** Unset property: the bundled mapping and settings come back byte-for-byte. */
     @Test
-    public void default_mapping_and_settings_are_untouched() {
+    public void default_mapping_and_settings_are_untouched() throws Exception {
         final String settings = SiteSearchIndexResources.settings("es-sitesearch-settings.json");
         assertTrue("bundled settings must declare the default analyzer",
                 settings.contains("standard_content"));
 
-        final String mapping = SiteSearchIndexResources.mapping("es-sitesearch-mapping.json");
-        final JSONObject content = new JSONObject(mapping).getJSONObject("properties")
-                .getJSONObject("content");
-        assertEquals("standard_content", content.getString("analyzer"));
+        assertEquals("unset property must return the bundled resource verbatim",
+                readBundledResource("es-sitesearch-mapping.json"),
+                SiteSearchIndexResources.mapping("es-sitesearch-mapping.json"));
+    }
+
+    /** Empty/whitespace values behave like unset — the bundled mapping comes back verbatim. */
+    @Test
+    public void blank_analyzer_values_fall_back_to_default() throws Exception {
+        final String bundled = readBundledResource("es-sitesearch-mapping.json");
+        for (final String blank : new String[]{"", "   "}) {
+            Config.setProperty(SiteSearchIndexResources.ANALYZER_PROPERTY, blank);
+            assertEquals("'" + blank + "' must behave like unset",
+                    bundled, SiteSearchIndexResources.mapping("es-sitesearch-mapping.json"));
+        }
+    }
+
+    private static String readBundledResource(final String resource) throws Exception {
+        try (final java.io.InputStream in = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(resource)) {
+            return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
     }
 
     /**
@@ -41,13 +58,14 @@ public class SiteSearchIndexResourcesTest extends UnitTestBase {
      */
     @Test
     public void analyzer_override_is_applied_to_text_fields() {
-        Config.setProperty(SiteSearchIndexResources.ANALYZER_PROPERTY, "cjk");
+        // padded value also exercises the trim (env files commonly carry stray whitespace)
+        Config.setProperty(SiteSearchIndexResources.ANALYZER_PROPERTY, " cjk ");
 
         final JSONObject properties = new JSONObject(
                 SiteSearchIndexResources.mapping("os-sitesearch-mapping.json"))
                 .getJSONObject("properties");
 
-        for (final String field : new String[]{"content", "title", "description", "author"}) {
+        for (final String field : new String[]{"content", "content_raw", "title", "description", "author"}) {
             assertEquals("cjk", properties.getJSONObject(field).getString("analyzer"));
         }
         final JSONObject ngram = properties.getJSONObject("content").getJSONObject("fields")
