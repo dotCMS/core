@@ -20,6 +20,10 @@ export interface DotActionCenterQuickAction {
     name: string;
     /** Material Symbols glyph name, rendered inside the row's icon chip. */
     icon: string;
+    /**
+     * Number of selected contentlets the action applies to. `0` means it does not apply to this
+     * selection at all; the row is still rendered, but not selectable.
+     */
     count: number;
     /** Destructive action — rendered with the danger severity, as in the design. */
     danger: boolean;
@@ -100,11 +104,16 @@ export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
 /**
  * Builds the Quick Actions list for the current selection, each with its eligible count.
  *
- * Actions that apply to nothing in the selection are dropped rather than shown with `(0)`, so the
- * list stays honest about what will actually happen.
+ * Every action is always returned, including those that apply to nothing — a `count` of `0` means
+ * "does not apply to this selection", and the dialog renders those rows as non-selectable. Keeping
+ * them visible makes the set of available actions stable as the selection changes, instead of rows
+ * appearing and disappearing under the pointer.
+ *
+ * An empty result means there are no contentlets at all (an empty or folder-only selection), where
+ * no action could apply.
  *
  * @param items - The raw selection from the grid
- * @returns Quick actions with a non-zero count, in display order
+ * @returns Every quick action in display order, each with its eligible count (possibly `0`)
  */
 export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQuickAction[] => {
     const contentlets = excludeFolders(items);
@@ -113,25 +122,17 @@ export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQu
         return [];
     }
 
-    return QUICK_ACTIONS.reduce<DotActionCenterQuickAction[]>((acc, quickAction) => {
-        const count = contentlets.filter(quickAction.eligibleWhen).length;
-
-        if (count === 0) {
-            return acc;
-        }
-
+    return QUICK_ACTIONS.map((quickAction) => {
         const definition = DEFAULT_WORKFLOW_ACTIONS.find((action) => action.id === quickAction.id);
 
-        acc.push({
+        return {
             id: quickAction.id,
             name: definition?.name ?? quickAction.id,
             icon: quickAction.icon,
             danger: quickAction.danger,
-            count
-        });
-
-        return acc;
-    }, []);
+            count: contentlets.filter(quickAction.eligibleWhen).length
+        };
+    });
 };
 
 /**

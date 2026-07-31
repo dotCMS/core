@@ -213,6 +213,36 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="quick-action-PUBLISH"]')).toBeTruthy();
         });
 
+        it('should render actions that apply to nothing as non-selectable', () => {
+            // Nothing archived, so Delete applies to no item — the row stays, disabled.
+            spectator.detectChanges();
+
+            const remove = spectator.query(
+                '[data-testid="quick-action-DELETE"]'
+            ) as HTMLButtonElement;
+
+            expect(remove).toBeTruthy();
+            expect(remove.disabled).toBe(true);
+        });
+
+        it('should keep applicable actions selectable', () => {
+            spectator.detectChanges();
+
+            const publish = spectator.query(
+                '[data-testid="quick-action-PUBLISH"]'
+            ) as HTMLButtonElement;
+
+            expect(publish.disabled).toBe(false);
+        });
+
+        it('should not fire an action that applies to nothing', () => {
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-DELETE"]');
+
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+        });
+
         it('should fire the system action over the selection', () => {
             spectator.detectChanges();
 

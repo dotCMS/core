@@ -136,22 +136,32 @@ describe('action-center utils', () => {
             expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
         });
 
-        it('should omit actions that apply to nothing rather than showing a zero count', () => {
-            // Nothing archived, so Delete and Unarchive should not be offered at all.
+        it('should still list actions that apply to nothing, with a zero count', () => {
+            // Nothing archived, so Delete and Unarchive apply to no item — but stay in the list so
+            // the dialog can render them as non-selectable rather than dropping the rows.
             const items = [contentlet({ inode: 'a', archived: false })];
 
-            const ids = getQuickActions(items).map((action) => action.id);
+            const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
-            expect(ids).not.toContain(WORKFLOW_ACTION_ID.DELETE);
-            expect(ids).not.toContain(WORKFLOW_ACTION_ID.UNARCHIVE);
+            expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(0);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(0);
+        });
+
+        it('should offer the same set of actions regardless of the selection', () => {
+            const archived = getQuickActions([contentlet({ inode: 'a', archived: true })]);
+            const live = getQuickActions([contentlet({ inode: 'b', live: true })]);
+
+            expect(archived.map((action) => action.id)).toEqual(live.map((action) => action.id));
         });
 
         it('should not count archived items as publishable', () => {
             const items = [contentlet({ inode: 'a', archived: true, live: false })];
 
-            const ids = getQuickActions(items).map((action) => action.id);
+            const publish = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
+            );
 
-            expect(ids).not.toContain(WORKFLOW_ACTION_ID.PUBLISH);
+            expect(publish?.count).toBe(0);
         });
 
         it('should mark destructive actions as danger', () => {

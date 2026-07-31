@@ -56,10 +56,18 @@
                 <div
                     class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50">
                     @for (quickAction of $quickActions(); track quickAction.id) {
+                        <!-- Rows with a zero count do not apply to this selection. They stay
+                             visible but non-selectable, so the action list is stable as the
+                             selection changes. -->
                         <button
                             type="button"
-                            class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all hover:cursor-pointer hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-60"
-                            [disabled]="$executing()"
+                            class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
+                            [disabled]="$executing() || quickAction.count === 0"
+                            [pTooltip]="
+                                quickAction.count === 0
+                                    ? ('content-drive.action-center.not-applicable' | dm)
+                                    : ''
+                            "
                             [attr.data-testid]="'quick-action-' + quickAction.id"
                             (click)="onExecuteQuickAction(quickAction)">
                             <span
