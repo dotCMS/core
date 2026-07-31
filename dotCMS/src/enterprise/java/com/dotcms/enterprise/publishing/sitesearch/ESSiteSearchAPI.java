@@ -33,9 +33,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -375,12 +373,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             return false;
 
         indexName=indexName.toLowerCase();
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL url = classLoader.getResource("es-sitesearch-settings.json");
-        // read settings and mappings
-        String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-        url = classLoader.getResource("es-sitesearch-mapping.json");
-        String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+        // The mapping honors the SITE_SEARCH_ANALYZER override (e.g. cjk/arabic for CJK/RTL
+        // languages) — see SiteSearchIndexResources.
+        String settings = SiteSearchIndexResources.settings("es-sitesearch-settings.json");
+        String mapping = SiteSearchIndexResources.mapping("es-sitesearch-mapping.json");
 
 
         //create index
