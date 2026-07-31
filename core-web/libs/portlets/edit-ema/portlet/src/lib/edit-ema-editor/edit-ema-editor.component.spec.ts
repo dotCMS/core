@@ -106,7 +106,7 @@ import {
     dotPropertiesServiceMock,
     mockCurrentUser
 } from '../shared/mocks';
-import { ActionPayload } from '../shared/models';
+import { ActionPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { IframeAccessMode } from '../store/models';
 
@@ -2378,6 +2378,106 @@ describe('EditEmaEditorComponent', () => {
                         expect.objectContaining({ inode: 'contentlet-inode-123' })
                     );
                     expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                });
+            });
+
+            describe('handleEditVTL', () => {
+                const VTL_FILE_MOCK: VTLFile = { inode: 'vtl-inode-123', name: 'my-template.vtl' };
+
+                afterEach(() => {
+                    jest.restoreAllMocks();
+                });
+
+                it('should open the legacy VTL dialog when the contentlet lookup fails', () => {
+                    const dotContentletService =
+                        spectator.debugElement.injector.get(DotContentletService);
+                    jest.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editVTLContentlet');
+
+                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(VTL_FILE_MOCK);
+                });
+
+                it('should open the legacy dialog when the resolved content type does not enable the new editor', () => {
+                    const dotContentletService =
+                        spectator.debugElement.injector.get(DotContentletService);
+                    jest.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
+                    );
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+
+                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ inode: 'vtl-inode-123' })
+                    );
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should open the new edit content flow when CONTENT_EDITOR2_ENABLED is true on the resolved content type', async () => {
+                    const dotContentletService =
+                        spectator.debugElement.injector.get(DotContentletService);
+                    jest.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
+                    );
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogRefMock = {
+                        onClose: new Subject<void | unknown>(),
+                        close: jest.fn()
+                    };
+                    const dialogServiceOpenSpy = jest
+                        .spyOn(spectator.inject(DialogService), 'open')
+                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                    spectator.detectChanges();
+
+                    await spectator.fixture.whenStable();
+
+                    expect(dialogSpy).not.toHaveBeenCalled();
+                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                    expect(config.data).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            contentletInode: 'vtl-inode-123'
+                        })
+                    );
                 });
             });
 

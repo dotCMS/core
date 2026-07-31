@@ -1289,7 +1289,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.#openContentForEdit(contentlet);
+        this.openContentForEdit(contentlet);
     }
 
     /**
@@ -1336,10 +1336,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
-     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy
+     * dialog. Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision — and,
+     * since it's public, also by DotEmaShellComponent for the "Properties" nav action (editing the
+     * page's own contentlet), captured via the router-outlet `(activate)` reference to this component.
      */
-    #openContentForEdit(contentlet: DotCMSContentlet): void {
+    openContentForEdit(contentlet: DotCMSContentlet): void {
         const contentTypeVariable = contentlet.contentType;
         if (!contentTypeVariable) {
             this.dialog?.editContentlet(contentlet);
@@ -1452,7 +1454,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
+            this.openContentForEdit(contentlet as unknown as DotCMSContentlet);
             return;
         }
 
@@ -1475,7 +1477,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         this.uveStore.pageReload();
                     }
 
-                    this.#openContentForEdit(target);
+                    this.openContentForEdit(target);
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
@@ -1488,13 +1490,31 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handles the edit of a VTL file.
+     * Handles the edit of a VTL file. `VTLFile` only carries `inode`/`name` (it comes from the
+     * client's postMessage payload), not `contentType`, so `openContentForEdit`'s flag check can't
+     * run on it directly — the full contentlet is resolved by inode first. Falls back to the legacy
+     * dialog if that lookup fails (network/permissions), matching this codebase's established
+     * "swallow the error, keep editing working via the legacy editor" fallback pattern.
      *
      * @param {VTLFile} vtlFile - The VTL file to be edited.
      * @memberof EditEmaEditorComponent
      */
     handleEditVTL(vtlFile: VTLFile) {
-        this.dialog.editVTLContentlet(vtlFile);
+        this.dotContentletService
+            .getContentletByInode(vtlFile.inode)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentlet) => {
+                if (!contentlet) {
+                    this.dialog?.editVTLContentlet(vtlFile);
+                    return;
+                }
+
+                this.openContentForEdit(contentlet);
+            });
     }
 
     /**

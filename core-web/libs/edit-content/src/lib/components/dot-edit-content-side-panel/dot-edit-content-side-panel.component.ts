@@ -17,12 +17,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import {
+    AngularImageEditorLauncher,
+    IMAGE_EDITOR_LAUNCHER
+} from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
@@ -62,6 +66,13 @@ function writeExpandedPreference(expanded: boolean): void {
  * `DialogService`, supplies the {@link DynamicDialogConfig} the host reads identity from — built
  * from the {@link data} input. The header shows the content title plus an expand toggle (70% ↔
  * full width) and a close button.
+ *
+ * It also self-provides `DialogService` and {@link IMAGE_EDITOR_LAUNCHER} — the same pair
+ * `EditContentShellComponent` provides for the full-screen route. None of this panel's openers
+ * (Content Drive, Query Tool, UVE) provide them, so without this the file field's `IMAGE_EDITOR_LAUNCHER`
+ * injection (`{ optional: true }`) silently resolves to `undefined`: the "Edit image" action
+ * disappears for Image/File fields, and Binary falls back to the legacy Dojo editor instead of the
+ * new one. Providing both here — rather than in each opener — fixes it for all three at once.
  */
 @Component({
     selector: 'dot-edit-content-side-panel',
@@ -69,6 +80,9 @@ function writeExpandedPreference(expanded: boolean): void {
     providers: [
         OverlayEditContentHost,
         { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost },
+        // Required by AngularImageEditorLauncher to open the new image editor as a modal.
+        DialogService,
+        { provide: IMAGE_EDITOR_LAUNCHER, useClass: AngularImageEditorLauncher },
         {
             // The overlay host reads the content identity from the dialog config; this panel is not
             // opened through DialogService, so feed it from the `data` input. The `data` getter is
