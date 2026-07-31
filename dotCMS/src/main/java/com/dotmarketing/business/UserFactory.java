@@ -43,9 +43,10 @@ public interface UserFactory {
      * Returns a list of Users in dotCMS that match the specified search criteria. It's worth noting that this method
      * WILL hit the database EVERY time.
      *
-     * @param filter          Any character sequence that might be present in the combination of a User's first and last
-     *                        name. For example, for a {@code filter} value of {@code "hn Do"}, the User named {@code
-     *                        "John Doe"} will match this filter.
+     * @param filter          Any character sequence that might be present in a User's ID, first name, last name,
+     *                        email address, or the combination of their first and last name. For example, for a
+     *                        {@code filter} value of {@code "hn Do"}, the User named {@code "John Doe"} will match
+     *                        this filter.
      * @param roles           The list of {@link Role} objects that Users must match.
      * @param start           The start page of the result set, for pagination purposes.
      * @param limit           The end or limit page of the result set, for pagination purposes.

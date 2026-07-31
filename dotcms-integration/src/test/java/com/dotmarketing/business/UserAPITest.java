@@ -1491,4 +1491,97 @@ public class UserAPITest extends IntegrationTestBase {
 			UserDataGen.remove(user);
 		}
 	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUsersByName(String, List, int, int)} and
+	 * {@link UserAPI#getCountUsersByName(String, List)}
+	 * Given Scenario: A user exists with a known user ID. The search filter is a partial,
+	 * differently-cased fragment of that user ID.
+	 * ExpectedResult: The user is returned and the count matches the item query.
+	 */
+	@Test
+	public void testGetUsersByNameMatchesUserId() throws DotDataException {
+		final String unique = String.valueOf(System.currentTimeMillis());
+		final User user = new UserDataGen().id("filterTestId" + unique).nextPersisted();
+		try {
+			final List<User> users = userAPI.getUsersByName("TESTID" + unique, null, 0, 40);
+			assertEquals(1, users.size());
+			assertEquals(user.getUserId(), users.get(0).getUserId());
+			assertEquals(1, userAPI.getCountUsersByName("TESTID" + unique, null));
+		} finally {
+			UserDataGen.remove(user);
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUsersByName(String, List, int, int)} and
+	 * {@link UserAPI#getCountUsersByName(String, List)}
+	 * Given Scenario: A user exists with a known email address. The search filter is a partial
+	 * fragment of that email address.
+	 * ExpectedResult: The user is returned and the count matches the item query.
+	 */
+	@Test
+	public void testGetUsersByNameMatchesEmailAddress() throws DotDataException {
+		final String unique = String.valueOf(System.currentTimeMillis());
+		final User user = new UserDataGen().emailAddress("filter.test" + unique + "@example.com").nextPersisted();
+		try {
+			final List<User> users = userAPI.getUsersByName("filter.test" + unique, null, 0, 40);
+			assertEquals(1, users.size());
+			assertEquals(user.getUserId(), users.get(0).getUserId());
+			assertEquals(1, userAPI.getCountUsersByName("filter.test" + unique, null));
+		} finally {
+			UserDataGen.remove(user);
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUsersByName(String, List, int, int)}
+	 * Given Scenario: A user named "John Doe"-style is searched with a fragment spanning the end
+	 * of the first name and the beginning of the last name ("hn Do" style).
+	 * ExpectedResult: The user is still found, i.e., the previous full-name matching behavior is
+	 * preserved after widening the filter to user ID and email address.
+	 */
+	@Test
+	public void testGetUsersByNameStillMatchesAcrossFullName() throws DotDataException {
+		final String unique = String.valueOf(System.currentTimeMillis());
+		final User user = new UserDataGen().firstName("Filterjohn" + unique).lastName("Filterdoe" + unique)
+				.nextPersisted();
+		try {
+			final List<User> users = userAPI.getUsersByName(unique + " Filterdoe", null, 0, 40);
+			assertEquals(1, users.size());
+			assertEquals(user.getUserId(), users.get(0).getUserId());
+		} finally {
+			UserDataGen.remove(user);
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUsersByName(String, List, int, int)} and
+	 * {@link UserAPI#getCountUsersByName(String, List)}
+	 * Given Scenario: Two users share a first-name prefix but only one of them holds the Back-end
+	 * User role. The search combines the shared name filter with the Back-end Role.
+	 * ExpectedResult: Only the back-end user is returned, both by the item query and the count.
+	 */
+	@Test
+	public void testGetUsersByNameFilteredByRole() throws DotDataException {
+		final String unique = String.valueOf(System.currentTimeMillis());
+		final Role backendRole = TestUserUtils.getBackendRole();
+		final User backendUser = new UserDataGen().firstName("roleFilter" + unique + "backend")
+				.roles(backendRole).nextPersisted();
+		final User plainUser = new UserDataGen().firstName("roleFilter" + unique + "plain").nextPersisted();
+		try {
+			final List<Role> roles = List.of(backendRole);
+
+			final List<User> allMatches = userAPI.getUsersByName("roleFilter" + unique, null, 0, 40);
+			assertEquals(2, allMatches.size());
+
+			final List<User> backendMatches = userAPI.getUsersByName("roleFilter" + unique, roles, 0, 40);
+			assertEquals(1, backendMatches.size());
+			assertEquals(backendUser.getUserId(), backendMatches.get(0).getUserId());
+			assertEquals(1, userAPI.getCountUsersByName("roleFilter" + unique, roles));
+		} finally {
+			UserDataGen.remove(backendUser);
+			UserDataGen.remove(plainUser);
+		}
+	}
 }

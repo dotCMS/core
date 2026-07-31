@@ -39,6 +39,7 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     public static final String ASSET_INODE_PARAM = "assetinode";
     public static final String PERMISSION_PARAM = "permission";
     public static final String ROLES_PARAM = "roles";
+    public static final String ROLE_KEY_PARAM = "roleKey";
     public static final String REMOVE_CURRENT_USER_PARAM = "removeCurrentUser";
     public static final String REQUEST_PASSWORD_PARAM = "requestPassword";
 

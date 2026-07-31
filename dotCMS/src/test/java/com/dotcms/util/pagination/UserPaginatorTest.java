@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -113,6 +114,42 @@ public class UserPaginatorTest {
 
         assertEquals(usersMap, items);
         assertEquals(totalRecords,items.getTotalResults());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> Request the list of Users passing a Role list under the
+     *     {@link UserPaginator#ROLES_PARAM} extra parameter.</li>
+     *     <li><b>Expected Result:</b> Both the item query and the total-records count receive the same Role
+     *     list, so the page and its {@code totalEntries} stay consistent.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsPassesRolesToQueryAndCount() throws Exception {
+        final String filter = "filter";
+        final long totalRecords = 3;
+        final User user = mock(User.class);
+
+        final List<User> userList = new ArrayList<>();
+        for (int i = 0; i < totalRecords; i++) {
+            final User userMock = mock(User.class);
+            when(userMock.toMap()).thenReturn(new User().toMap());
+            userList.add(userMock);
+        }
+        when(userAPI.getUsersByName(anyString(), eq(roles), anyInt(), anyInt(),
+                any(UserAPI.FilteringParams.class))).thenReturn(userList);
+        when(userAPI.getCountUsersByName(filter, roles)).thenReturn(totalRecords);
+
+        final Map<String, Object> extraParams = Map.of(UserPaginator.ROLES_PARAM, roles);
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(user, filter, 5, 0,
+                null, null, extraParams);
+
+        assertEquals(totalRecords, items.getTotalResults());
+        assertEquals(userList.size(), items.size());
+        verify(userAPI).getUsersByName(eq(filter), eq(roles), anyInt(), anyInt(),
+                any(UserAPI.FilteringParams.class));
+        verify(userAPI).getCountUsersByName(filter, roles);
     }
 
     /**
