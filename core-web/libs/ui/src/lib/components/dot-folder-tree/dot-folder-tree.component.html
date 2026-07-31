@@ -46,7 +46,9 @@
     <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
     <ng-template pTemplate="togglericon" let-expanded let-loading="loading">
         @if (loading) {
-            <i class="pi pi-spin pi-spinner text-sm text-surface-400" data-testid="tree-toggler-loading"></i>
+            <i
+                class="pi pi-spin pi-spinner text-sm text-surface-400"
+                data-testid="tree-toggler-loading"></i>
         } @else {
             <span class="toggler-regular">
                 <i
