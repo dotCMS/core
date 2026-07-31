@@ -98,7 +98,7 @@ public class MigrationReadinessService {
                 phase.isDualWrite());
         final MigrationReadiness.Verdict verdict = new MigrationReadiness.Verdict(
                 safeToAdvance, !esBehindAnywhere, outOfSync.size(), summary, blockers);
-        return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, verdict, content, siteSearch);
+        return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, content, siteSearch, verdict);
     }
 
     private static String readEngine(final MigrationPhase phase) {

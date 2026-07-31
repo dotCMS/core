@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.index;
 import com.dotcms.content.index.MigrationIndexVisibility;
 import com.dotcms.content.index.migration.MigrationReadinessService;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
@@ -78,7 +77,9 @@ public class MigrationReadinessResource {
                             + "support role.");
         }
 
-        return Response.ok(new ResponseEntityView<>(readinessService.evaluate())).build();
+        // Return the readiness model directly (no ResponseEntityView envelope) — this internal endpoint
+        // has no use for the errors/messages/pagination/permissions wrapper.
+        return Response.ok(readinessService.evaluate()).build();
     }
 
     /**

@@ -11,17 +11,17 @@ import java.util.List;
  * @param clusterId         the dotCMS cluster id embedded in every physical index name
  *                          (the {@code <id>} of the {@code cluster_<id>.} prefix); identical for the
  *                          Elasticsearch and OpenSearch backends
- * @param phase             the current migration phase and which engine it reads/writes
- * @param verdict           the overall go/no-go for advancing and rolling back, with reasons
- * @param contentIndices    per-index mirror status for the versioned content indices (working/live)
- * @param siteSearchIndices per-index mirror status for the Site Search indices
+ * @param phase      the current migration phase and which engine it reads/writes
+ * @param content    per-index mirror status for the versioned content indices (working/live)
+ * @param siteSearch per-index mirror status for the Site Search indices
+ * @param verdict    the overall go/no-go for advancing and rolling back, with reasons
  */
 public record MigrationReadiness(
         String clusterId,
         PhaseInfo phase,
-        Verdict verdict,
-        List<MirrorStatus> contentIndices,
-        List<MirrorStatus> siteSearchIndices) {
+        List<MirrorStatus> content,
+        List<MirrorStatus> siteSearch,
+        Verdict verdict) {
 
     /**
      * @param current      the current phase ordinal (0–3)
