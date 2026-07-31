@@ -121,6 +121,16 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     /**
+     * Elasticsearch adapter for the vendor-neutral alias handle. ES physical names never carry the
+     * {@code .os} tag, so the logical index list resolves directly — no re-tag/strip round-trip is
+     * needed (contrast {@code OSSiteSearchAPI#getAliasToIndexMap}, which must apply {@code .os}).
+     */
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        return indexApi.getAliasToIndexMap(listIndices());
+    }
+
+    /**
      * Set the default site search index to the specified position of the arraylist
      */
     private void setDefaultToSpecificPosition(final List<String> list, final int indexPosition) {
