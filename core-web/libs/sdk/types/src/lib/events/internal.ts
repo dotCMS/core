@@ -8,7 +8,7 @@ export enum __DOTCMS_UVE_EVENT__ {
     /**
      * Request to page to reload
      */
-    UVE_RELOAD_PAGE = 'uve-reload-page',
+    UVE_RELOAD_PAGE = 'uve-reload-page-v2',
     /**
      * Tell the SDK to emit page bounds immediately, bypassing the
      * auto-bounds debounce. Used when the editor needs a synchronous
