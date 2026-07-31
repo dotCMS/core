@@ -468,4 +468,153 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
         assertEquals("Existing content must be preserved when Markdown parses to an empty document",
                 existing, result.getStringProperty(STORY_BLOCK_VAR));
     }
+
+    // =====================================================================
+    // #36659 — the dotcms-* rich-node vocabulary on the HTML leg
+    // =====================================================================
+
+    /**
+     * The #36659 headline, end to end, doubling as the routing regression test: the value
+     * OPENS with a {@code <dotcms-content>} element — a hyphenated tag the HTML detection
+     * regex alone would misroute to the Markdown converter (storing it as literal text) — and
+     * must convert on the HTML leg, persist through checkin, and hydrate back to the full
+     * {@code attrs.data} map from its thin identifier reference, exactly like the Markdown
+     * fence (mirror of {@link #fence_created_dotcontent_reads_back_hydrated}).
+     */
+    @Test
+    public void html_element_created_dotcontent_reads_back_hydrated() throws Exception {
+        final Contentlet target = new ContentletDataGen(contentType.id()).nextPersisted();
+        ContentletDataGen.publish(target);
+        final String targetId = target.getIdentifier();
+
+        final Contentlet base = new ContentletDataGen(contentType.id()).next();
+        final Contentlet populated = new MapToContentletPopulator()
+                .populate(base, propsWith("<dotcms-content identifier=\"" + targetId
+                        + "\" language-id=\"" + target.getLanguageId()
+                        + "\"></dotcms-content><p>After the embed.</p>"));
+
+        final Contentlet saved = APILocator.getContentletAPI().checkin(populated, systemUser, false);
+        final Contentlet readBack = APILocator.getContentletAPI()
+                .find(saved.getInode(), systemUser, false);
+
+        final String stored = readBack.getStringProperty(STORY_BLOCK_VAR);
+        assertTrue("Field must read back as a Tiptap doc", TiptapMarkdown.isTiptapDoc(stored));
+        assertTrue("Routed to the HTML leg: the element became a node, not literal text",
+                stored.contains("\"dotContent\""));
+        assertFalse("No literal markup may be stored", stored.contains("<dotcms-content"));
+        assertTrue("The identifier survives", stored.contains(targetId));
+        assertTrue("Sibling content survives too", stored.contains("After the embed."));
+
+        final HttpServletRequest oldRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(
+                    new MockAttributeRequest(Mockito.mock(HttpServletRequest.class)));
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(Mockito.mock(HttpServletResponse.class));
+
+            final com.dotcms.contenttype.business.StoryBlockReferenceResult hydration =
+                    APILocator.getStoryBlockAPI()
+                            .refreshStoryBlockValueReferences(stored, saved.getIdentifier());
+            assertTrue("The thin reference must hydrate", hydration.isRefreshed());
+            assertTrue("Hydration rebuilds the full data map from identifier + languageId",
+                    String.valueOf(hydration.getValue()).contains(target.getInode()));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldResponse);
+        }
+    }
+
+    /** Every rich label plus a decoration, in one HTML value: all stored as their nodes. */
+    @Test
+    public void html_rich_vocabulary_stores_every_label() {
+        final String grid = "{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[6,6]},\"content\":["
+                + "{\"type\":\"gridColumn\",\"content\":[{\"type\":\"paragraph\"}]},"
+                + "{\"type\":\"gridColumn\",\"content\":[{\"type\":\"paragraph\"}]}]}";
+        final Contentlet result = new MapToContentletPopulator()
+                .populate(newContentlet(), propsWith(
+                        "<!-- dotcms:attrs {\"textAlign\":\"center\"} --><p>Centered intro</p>"
+                        + "<dotcms-image src=\"/dA/img/photo.jpg\" alt=\"a\"></dotcms-image>"
+                        + "<dotcms-video src=\"https://cdn.example/v.mp4\" mime-type=\"video/mp4\"></dotcms-video>"
+                        + "<dotcms-youtube src=\"https://www.youtube.com/watch?v=abc\"></dotcms-youtube>"
+                        + "<dotcms-ai>{\"content\":\"generated\"}</dotcms-ai>"
+                        + "<dotcms-grid>" + grid + "</dotcms-grid>"));
+
+        final String stored = result.getStringProperty(STORY_BLOCK_VAR);
+        assertTrue(TiptapMarkdown.isTiptapDoc(stored));
+        assertTrue(stored.contains("\"textAlign\":\"center\""));
+        assertTrue(stored.contains("\"dotImage\""));
+        assertTrue(stored.contains("\"dotVideo\""));
+        assertTrue(stored.contains("\"youtube\""));
+        assertTrue(stored.contains("\"aiContent\""));
+        assertTrue(stored.contains("\"gridBlock\""));
+        assertFalse("No literal custom-element markup may be stored", stored.contains("<dotcms-"));
+    }
+
+    /**
+     * The routing refinement #36659 adds to the #36658 carve-out: a value opening with a
+     * {@code dotcms:attrs} comment routes on what FOLLOWS the comment. Before HTML it must
+     * reach the HTML converter — which now honors the decoration — rather than the Markdown
+     * converter (where the HTML block would be stored as literal text).
+     */
+    @Test
+    public void leading_attrs_comment_before_html_routes_to_html_and_decorates() {
+        final Contentlet result = new MapToContentletPopulator()
+                .populate(newContentlet(), propsWith(
+                        "<!-- dotcms:attrs {\"textAlign\":\"center\"} --><p>Centered via HTML</p>"));
+
+        final String stored = result.getStringProperty(STORY_BLOCK_VAR);
+        assertTrue(TiptapMarkdown.isTiptapDoc(stored));
+        assertTrue("The decoration must survive as the block's attrs",
+                stored.contains("\"textAlign\":\"center\""));
+        assertTrue("The paragraph converted as HTML", stored.contains("Centered via HTML"));
+        assertFalse("The comment itself must not be stored", stored.contains("<!--"));
+        assertFalse("The markup must not be stored as literal text", stored.contains("<p>"));
+    }
+
+    /**
+     * Routing regression guard: an UNTERMINATED {@code dotcms:attrs} comment (no {@code -->})
+     * cannot be skipped past, so the value must keep routing to the Markdown converter exactly
+     * as #36658 shipped it — commonmark preserves the whole malformed block as literal text
+     * rather than the HTML converter silently swallowing it as a comment.
+     */
+    @Test
+    public void unterminated_attrs_comment_still_routes_to_markdown() {
+        final Contentlet result = new MapToContentletPopulator()
+                .populate(newContentlet(), propsWith(
+                        "<!-- dotcms:attrs {\"textAlign\":\"center\"}\n\nTrailing text"));
+
+        final String stored = result.getStringProperty(STORY_BLOCK_VAR);
+        assertTrue(TiptapMarkdown.isTiptapDoc(stored));
+        assertTrue("Malformed comment must survive as literal text via the Markdown route",
+                stored.contains("dotcms:attrs"));
+        assertTrue("Nothing after the malformed comment may be lost",
+                stored.contains("Trailing text"));
+    }
+
+    /**
+     * Accept-with-messages parity (#36659 AC #5): an HTML update that CARRIES the stored rich
+     * block as its {@code <dotcms-content>} element replaces the document without any
+     * replacement warning — the mirror of the Markdown leg's matching-fences behavior.
+     */
+    @Test
+    public void html_update_with_matching_elements_preserves_rich_blocks() {
+        final String richDoc = "{\"type\":\"doc\",\"content\":[{\"type\":\"dotContent\","
+                + "\"attrs\":{\"data\":{\"identifier\":\"emb-9\",\"languageId\":1,\"title\":\"Embedded\"}}}]}";
+        final Contentlet contentlet = newContentlet();
+        contentlet.setProperty(STORY_BLOCK_VAR, richDoc);
+
+        final Contentlet result = new MapToContentletPopulator()
+                .populate(contentlet, propsWith("<p>Updated copy</p>"
+                        + "<dotcms-content identifier=\"emb-9\" language-id=\"1\"></dotcms-content>"));
+
+        final String stored = result.getStringProperty(STORY_BLOCK_VAR);
+        assertTrue("The write must apply", stored.contains("Updated copy"));
+        assertTrue("The carried-over rich block survives as a node", stored.contains("\"dotContent\""));
+        assertTrue("Its identifier survives", stored.contains("emb-9"));
+
+        final List<MessageEntity> messages =
+                MapToContentletPopulator.popStoryBlockConversionMessages(result);
+        assertFalse("No replacement warning when the rich block is carried over",
+                UtilMethods.isSet(messages));
+    }
 }
