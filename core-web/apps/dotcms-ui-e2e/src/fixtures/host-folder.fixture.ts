@@ -48,7 +48,7 @@ export const test = base.extend<{
     apiHelpers: {
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
         deleteContentType: (id: string) => Promise<void>;
-        createFolders: (siteName: string, paths: string[]) => Promise<void>;
+        createFolders: (siteName: string, paths: string[]) => ReturnType<typeof createFolders>;
         buildFolderPaths: (prefix: string, count: number, parentPath?: string) => string[];
         getDefaultSite: () => Promise<Site>;
         getCurrentSite: () => Promise<Site>;
