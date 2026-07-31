@@ -39,7 +39,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         siteSearch = mock(SiteSearchMirrorReconciler.class);
         content = mock(ContentIndexMirrorReconciler.class);
         when(content.statuses()).thenReturn(List.of());
-        service = new MigrationReadinessService(siteSearch, content);
+        service = new MigrationReadinessService(siteSearch, content, () -> "cluster_x");
     }
 
     @After
@@ -55,8 +55,9 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
             final boolean osExists, final long osCount) {
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
         return new MirrorStatus(name, IndexKind.SITE_SEARCH,
-                new MirrorStatus.EngineCopy(esExists, esCount),
-                new MirrorStatus.EngineCopy(osExists, osCount), verdict, "advice");
+                new MirrorStatus.EngineCopy(esExists, esCount, "cluster_x." + name),
+                new MirrorStatus.EngineCopy(osExists, osCount, "cluster_x." + name + ".os"),
+                verdict, "advice");
     }
 
     /** Dual-write phase with every mirror in sync → safe to advance, nothing out of sync. */
@@ -67,6 +68,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
 
         final MigrationReadiness r = service.evaluate();
 
+        assertEquals("cluster_x", r.clusterId());
         assertTrue(r.phase().evaluable());
         assertEquals("Elasticsearch", r.phase().readEngine());
         assertTrue(r.verdict().safeToAdvance());

@@ -2,15 +2,18 @@ package com.dotcms.content.index.migration;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.publishing.sitesearch.OSSiteSearchAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 
 /**
  * Site Search half of the migration-readiness report (issue #36360): compares every logical
@@ -28,15 +31,19 @@ public class SiteSearchMirrorReconciler {
 
     private final SiteSearchAPI esImpl;
     private final SiteSearchAPI osImpl;
+    private final Supplier<String> clusterPrefixSupplier;
 
     public SiteSearchMirrorReconciler() {
-        this(new ESSiteSearchAPI(), CDIUtils.getBeanThrows(OSSiteSearchAPI.class));
+        this(new ESSiteSearchAPI(), CDIUtils.getBeanThrows(OSSiteSearchAPI.class),
+                () -> APILocator.getESIndexAPI().getClusterPrefix());
     }
 
     @VisibleForTesting
-    SiteSearchMirrorReconciler(final SiteSearchAPI esImpl, final SiteSearchAPI osImpl) {
+    SiteSearchMirrorReconciler(final SiteSearchAPI esImpl, final SiteSearchAPI osImpl,
+            final Supplier<String> clusterPrefixSupplier) {
         this.esImpl = esImpl;
         this.osImpl = osImpl;
+        this.clusterPrefixSupplier = clusterPrefixSupplier;
     }
 
     /**
@@ -68,10 +75,15 @@ public class SiteSearchMirrorReconciler {
         final boolean osExists = osImpl.existsOnAllWriteEngines(name);
         final long esCount = esExists ? esImpl.documentCount(name) : 0L;
         final long osCount = osExists ? osImpl.documentCount(name) : 0L;
+        // Physical names as stored: ES is the cluster-prefixed logical name; OS is that + the .os tag
+        // (applied via IndexTag, the sole owner of the marker).
+        final String esPhysical = clusterPrefixSupplier.get() + name;
+        final String osPhysical = IndexTag.OS.tag(esPhysical);
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
         return new MirrorStatus(name, IndexKind.SITE_SEARCH,
-                new MirrorStatus.EngineCopy(esExists, esCount),
-                new MirrorStatus.EngineCopy(osExists, osCount), verdict, recommend(name, verdict));
+                new MirrorStatus.EngineCopy(esExists, esCount, esPhysical),
+                new MirrorStatus.EngineCopy(osExists, osCount, osPhysical),
+                verdict, recommend(name, verdict));
     }
 
     private static String recommend(final String name, final Verdict verdict) {

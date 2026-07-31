@@ -42,10 +42,14 @@ public record MirrorStatus(
     /**
      * One engine's copy of the index.
      *
-     * @param exists   whether this engine holds the index
-     * @param docCount exact document count (0 when absent, -1 when the count query failed)
+     * @param exists       whether this engine holds the index
+     * @param docCount     exact document count (0 when absent, -1 when the count query failed)
+     * @param physicalName the full index name as stored on that engine's server — cluster-prefixed and,
+     *                     for OpenSearch, {@code .os}-tagged (e.g. {@code cluster_08abc3.live_20260406}
+     *                     on ES, {@code cluster_08abc3.live_20260406.os} on OS). Reported whether or not
+     *                     the copy exists, so a missing copy shows the name to look for.
      */
-    public record EngineCopy(boolean exists, long docCount) {}
+    public record EngineCopy(boolean exists, long docCount, String physicalName) {}
 
     /** Whether this index needs operator action (a re-crawl / reindex) before the phase change. */
     public boolean needsAttention() {

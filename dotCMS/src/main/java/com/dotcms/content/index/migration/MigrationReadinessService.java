@@ -1,9 +1,11 @@
 package com.dotcms.content.index.migration;
 
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -28,16 +30,20 @@ public class MigrationReadinessService {
 
     private final SiteSearchMirrorReconciler siteSearchReconciler;
     private final ContentIndexMirrorReconciler contentReconciler;
+    private final Supplier<String> clusterIdSupplier;
 
     public MigrationReadinessService() {
-        this(new SiteSearchMirrorReconciler(), new ContentIndexMirrorReconciler());
+        this(new SiteSearchMirrorReconciler(), new ContentIndexMirrorReconciler(),
+                ClusterFactory::getClusterId);
     }
 
     @VisibleForTesting
     MigrationReadinessService(final SiteSearchMirrorReconciler siteSearchReconciler,
-            final ContentIndexMirrorReconciler contentReconciler) {
+            final ContentIndexMirrorReconciler contentReconciler,
+            final Supplier<String> clusterIdSupplier) {
         this.siteSearchReconciler = siteSearchReconciler;
         this.contentReconciler = contentReconciler;
+        this.clusterIdSupplier = clusterIdSupplier;
     }
 
     /** Builds the readiness report for the current phase. */
@@ -92,7 +98,7 @@ public class MigrationReadinessService {
                 phase.isDualWrite());
         final MigrationReadiness.Verdict verdict = new MigrationReadiness.Verdict(
                 safeToAdvance, !esBehindAnywhere, outOfSync.size(), summary, blockers);
-        return new MigrationReadiness(phaseInfo, verdict, content, siteSearch);
+        return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, verdict, content, siteSearch);
     }
 
     private static String readEngine(final MigrationPhase phase) {

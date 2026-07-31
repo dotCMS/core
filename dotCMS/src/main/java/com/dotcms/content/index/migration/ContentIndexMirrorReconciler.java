@@ -76,8 +76,11 @@ public class ContentIndexMirrorReconciler {
         if (!UtilMethods.isSet(rawName)) {
             return;
         }
-        // IndiciesInfo holds the cluster-prefixed, un-tagged ES name; the stats maps are keyed by the
-        // cluster-stripped name (ES un-tagged, OS carrying .os). Strip first, then tag for the OS key.
+        // IndiciesInfo holds the cluster-prefixed, un-tagged ES name — which IS the full ES physical
+        // name; the OS physical name is that + .os. The stats maps are keyed by the cluster-stripped
+        // name (ES un-tagged, OS carrying .os), so strip for the count lookup, tag for the OS key.
+        final String esPhysical = rawName;
+        final String osPhysical = IndexTag.OS.tag(rawName);
         final String bare = esImpl.removeClusterIdFromName(rawName);
         final String osKey = IndexTag.OS.tag(bare);
 
@@ -87,8 +90,10 @@ public class ContentIndexMirrorReconciler {
         final long osCount = osExists ? osStats.get(osKey).documentCount() : 0L;
 
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
-        out.add(new MirrorStatus(bare, kind, new MirrorStatus.EngineCopy(esExists, esCount),
-                new MirrorStatus.EngineCopy(osExists, osCount), verdict, recommend(bare, verdict, osExists)));
+        out.add(new MirrorStatus(bare, kind,
+                new MirrorStatus.EngineCopy(esExists, esCount, esPhysical),
+                new MirrorStatus.EngineCopy(osExists, osCount, osPhysical),
+                verdict, recommend(bare, verdict, osExists)));
     }
 
     private static String recommend(final String name, final Verdict verdict, final boolean osExists) {

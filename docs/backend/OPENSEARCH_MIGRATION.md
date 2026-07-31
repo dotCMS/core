@@ -371,8 +371,11 @@ through the write-path gate above.
   overall verdict — `safeToAdvance` (toward OpenSearch-only) and `safeToRollback` (downgrade) with an
   `outOfSyncCount`, a human `summary`, and per-index `blockers`; and the per-index ES↔OS mirror diff
   for **both** mirrored families — the versioned content indices (`working`/`live`) and the Site
-  Search indices. Each row carries `{es:{exists,docCount}, os:{exists,docCount}, verdict,
-  recommendation}` with verdict `IN_SYNC` / `MISSING_COUNTERPART` / `COUNT_DRIFT`.
+  Search indices. Each row carries `{indexName (logical), es:{exists,docCount,physicalName},
+  os:{exists,docCount,physicalName}, verdict, recommendation}` — `physicalName` is the full name as
+  stored on each server (cluster-prefixed; `.os`-tagged on OpenSearch) — with verdict `IN_SYNC` /
+  `MISSING_COUNTERPART` / `COUNT_DRIFT`. The top level also carries the `clusterId` embedded in every
+  physical name.
 - **Stateless, from live counts.** Every field is derived at request time. Counts are **exact** — the
   Site Search half uses `SiteSearchAPI.documentCount` and the content half reads each engine leaf's
   `getIndicesStats()` (index `_stats` `primaries.docs.count`), never a search total (which the ES/OS

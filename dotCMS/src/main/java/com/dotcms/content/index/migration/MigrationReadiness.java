@@ -8,12 +8,16 @@ import java.util.List;
  * is safe and, if not, what to do. Read-only and stateless — every field is derived from live index
  * state at request time, nothing is persisted.
  *
+ * @param clusterId         the dotCMS cluster id embedded in every physical index name
+ *                          (the {@code <id>} of the {@code cluster_<id>.} prefix); identical for the
+ *                          Elasticsearch and OpenSearch backends
  * @param phase             the current migration phase and which engine it reads/writes
  * @param verdict           the overall go/no-go for advancing and rolling back, with reasons
  * @param contentIndices    per-index mirror status for the versioned content indices (working/live)
  * @param siteSearchIndices per-index mirror status for the Site Search indices
  */
 public record MigrationReadiness(
+        String clusterId,
         PhaseInfo phase,
         Verdict verdict,
         List<MirrorStatus> contentIndices,

@@ -75,6 +75,9 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertEquals(Verdict.IN_SYNC, working.verdict());
         assertEquals(100, working.es().docCount());
         assertEquals(100, working.os().docCount());
+        // full physical names as stored: ES cluster-prefixed, OS additionally .os-tagged
+        assertEquals("cluster_x.working_1", working.es().physicalName());
+        assertEquals("cluster_x.working_1.os", working.os().physicalName());
         assertEquals(IndexKind.CONTENT_LIVE, statuses.get(1).kind());
         assertEquals(Verdict.IN_SYNC, statuses.get(1).verdict());
     }
