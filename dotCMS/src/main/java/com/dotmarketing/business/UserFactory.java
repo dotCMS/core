@@ -27,6 +27,20 @@ public interface UserFactory {
     long getCountUsersByName(String filter, List<Role> roles);
 
     /**
+     * Returns the total number of Users matching the specified search criteria, applying the exact
+     * same exclusions as {@link #getUsersByName(String, List, int, int, UserAPI.FilteringParams)}
+     * so paginated counts stay consistent with the returned items.
+     *
+     * @param filter          Any character sequence that might be present in a User's ID, first name, last name,
+     *                        email address, or the combination of their first and last name.
+     * @param roles           The list of {@link Role} objects that Users must match.
+     * @param filteringParams Additional filtering parameters. Please refer to {@link UserAPI.FilteringParams}.
+     *
+     * @return The number of Users matching the specified search criteria.
+     */
+    long getCountUsersByName(String filter, List<Role> roles, UserAPI.FilteringParams filteringParams);
+
+    /**
      * This method returns a list of users whose names are like the filter passed in. It also allows
      * filtering through a list of roles
      *

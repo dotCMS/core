@@ -99,7 +99,8 @@ public class UserPaginatorTest {
             roleAPI.doesUserHaveRoles(userId, rolesId);
         }
 
-        when(userAPI.getCountUsersByName( filter, null )).thenReturn( totalRecords );
+        when(userAPI.getCountUsersByName(eq(filter), eq(null), any(UserAPI.FilteringParams.class)))
+                .thenReturn(totalRecords);
         final List<User> userList = new ArrayList<>();
         userList.add(new User());
         userList.add(new User());
@@ -139,7 +140,8 @@ public class UserPaginatorTest {
         }
         when(userAPI.getUsersByName(anyString(), eq(roles), anyInt(), anyInt(),
                 any(UserAPI.FilteringParams.class))).thenReturn(userList);
-        when(userAPI.getCountUsersByName(filter, roles)).thenReturn(totalRecords);
+        when(userAPI.getCountUsersByName(eq(filter), eq(roles), any(UserAPI.FilteringParams.class)))
+                .thenReturn(totalRecords);
 
         final Map<String, Object> extraParams = Map.of(UserPaginator.ROLES_PARAM, roles);
         final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(user, filter, 5, 0,
@@ -149,7 +151,7 @@ public class UserPaginatorTest {
         assertEquals(userList.size(), items.size());
         verify(userAPI).getUsersByName(eq(filter), eq(roles), anyInt(), anyInt(),
                 any(UserAPI.FilteringParams.class));
-        verify(userAPI).getCountUsersByName(filter, roles);
+        verify(userAPI).getCountUsersByName(eq(filter), eq(roles), any(UserAPI.FilteringParams.class));
     }
 
     /**

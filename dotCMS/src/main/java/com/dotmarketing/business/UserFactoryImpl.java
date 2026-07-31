@@ -17,7 +17,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.StringPool;
-import org.apache.logging.log4j.util.Strings;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -160,14 +159,20 @@ public class UserFactoryImpl implements UserFactory {
 
     @Override
     public long getCountUsersByName(String filter, final List<Role> roles) {
-        filter = SQLUtil.sanitizeParameter(filter);
-        final DotConnect dotConnect = new DotConnect();
-        final boolean isFilteredByName = UtilMethods.isSet(filter);
-        filter = (isFilteredByName ? filter : Strings.EMPTY);
-        final StringBuilder baseSql = new StringBuilder(
-                "select count(*) as count from user_ where companyid <> ? and userid <> 'system' ");
+        return getCountUsersByName(filter, roles, new UserAPI.FilteringParams.Builder().build());
+    }
+
+    @Override
+    public long getCountUsersByName(final String filter, final List<Role> roles,
+                                    final UserAPI.FilteringParams filteringParams) {
+        final StringBuilder baseSql = new StringBuilder("select count(*) as count from user_ where ");
+        baseSql.append(!filteringParams.includeDefaultUser() ? "companyid <> ? AND " : StringPool.BLANK);
+        baseSql.append(" userid <> 'system' ");
+        baseSql.append(!filteringParams.includeAnonymousUser() ? " AND userid <> 'anonymous' " : StringPool.BLANK);
         appendRoleFilter(baseSql, roles);
 
+        final String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
+        final boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
         if (isFilteredByName) {
             appendUserFilter(baseSql);
         }
@@ -175,15 +180,17 @@ public class UserFactoryImpl implements UserFactory {
         baseSql.append(AND_DELETE_IN_PROGRESS);
         baseSql.append(DbConnectionFactory.getDBFalse());
 
-        final String sql = baseSql.toString();
-        dotConnect.setSQL(sql);
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(baseSql.toString());
         Logger.debug(UserFactoryImpl.class,
                 "::getCountUsersByName -> query: " + dotConnect.getSQL());
 
-        dotConnect.addParam(User.DEFAULT);
+        if (!filteringParams.includeDefaultUser()) {
+            dotConnect.addParam(User.DEFAULT);
+        }
         addRoleFilterParams(dotConnect, roles);
         if (isFilteredByName) {
-            addUserFilterParams(dotConnect, filter);
+            addUserFilterParams(dotConnect, sanitizeFilter);
         }
 
         return dotConnect.getInt("count");

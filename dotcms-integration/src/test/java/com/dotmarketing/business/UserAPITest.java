@@ -1562,6 +1562,28 @@ public class UserAPITest extends IntegrationTestBase {
 	 * User role. The search combines the shared name filter with the Back-end Role.
 	 * ExpectedResult: Only the back-end user is returned, both by the item query and the count.
 	 */
+	/**
+	 * Method to test: {@link UserAPI#getCountUsersByName(String, List, UserAPI.FilteringParams)}
+	 * Given Scenario: The filter matches the anonymous user's ID. Both the count and the item
+	 * queries run with the same filtering params, first excluding (default) and then including
+	 * the anonymous user.
+	 * ExpectedResult: The count always equals the number of items returned, and including the
+	 * anonymous user grows both by exactly one.
+	 */
+	@Test
+	public void testGetCountUsersByNameStaysConsistentWithItems() throws DotDataException {
+		final UserAPI.FilteringParams excludeAnonymous = new UserAPI.FilteringParams.Builder().build();
+		final List<User> excludedItems = userAPI.getUsersByName("anonymous", null, 0, -1, excludeAnonymous);
+		assertEquals(excludedItems.size(), userAPI.getCountUsersByName("anonymous", null, excludeAnonymous));
+
+		final UserAPI.FilteringParams.Builder builder = new UserAPI.FilteringParams.Builder();
+		builder.includeAnonymousUser(true);
+		final UserAPI.FilteringParams includeAnonymous = builder.build();
+		final List<User> includedItems = userAPI.getUsersByName("anonymous", null, 0, -1, includeAnonymous);
+		assertEquals(includedItems.size(), userAPI.getCountUsersByName("anonymous", null, includeAnonymous));
+		assertEquals(excludedItems.size() + 1, includedItems.size());
+	}
+
 	@Test
 	public void testGetUsersByNameFilteredByRole() throws DotDataException {
 		final String unique = String.valueOf(System.currentTimeMillis());

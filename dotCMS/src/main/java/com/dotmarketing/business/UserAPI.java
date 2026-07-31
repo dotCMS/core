@@ -126,6 +126,22 @@ public interface UserAPI {
 	public long getCountUsersByName(String filter) throws DotDataException;
 
 	public long getCountUsersByName(String filter, List<Role> roles) throws DotDataException;
+
+	/**
+	 * Returns the total number of Users matching the specified search criteria, applying the exact same exclusions as
+	 * {@link #getUsersByName(String, List, int, int, FilteringParams)} so paginated counts stay consistent with the
+	 * returned items.
+	 *
+	 * @param filter          Any character sequence that might be present in a User's ID, first name, last name, email
+	 *                        address, or the combination of their first and last name.
+	 * @param roles           The list of {@link Role} objects that Users must match.
+	 * @param filteringParams Additional filtering parameters. Please refer to {@link FilteringParams}.
+	 *
+	 * @return The number of Users matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when accessing the data source.
+	 */
+	long getCountUsersByName(String filter, List<Role> roles, FilteringParams filteringParams) throws DotDataException;
 	/**
 	 * Creates an instance of a user
      * @param userId Can be null
