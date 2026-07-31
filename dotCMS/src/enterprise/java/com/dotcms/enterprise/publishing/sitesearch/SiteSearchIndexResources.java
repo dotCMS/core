@@ -34,7 +34,14 @@ import java.util.List;
  * {@code content_raw}/{@code title}/{@code description}/{@code author}); unset keeps the bundled
  * defaults untouched. The override takes effect on index creation, so existing indices
  * need a rebuild to pick it up. An analyzer name unknown to the cluster fails index creation
- * loudly with the engine's error.</p>
+ * loudly with the engine's error.
+ *
+ * <p>Operational notes: during ES→OS migration dual-write phases the analyzer must be resolvable
+ * by <b>every</b> active engine — a shadow-engine mapping rejection is only logged by the phase
+ * router, leaving the shadow index on dynamic mapping until reads flip. And when changing the
+ * analyzer, run a fresh site-search job rather than "clear index": clearing deletes and recreates
+ * the active index in place, so a rejected mapping would leave the still-default index
+ * mappingless.</p></p>
  */
 final class SiteSearchIndexResources {
 
