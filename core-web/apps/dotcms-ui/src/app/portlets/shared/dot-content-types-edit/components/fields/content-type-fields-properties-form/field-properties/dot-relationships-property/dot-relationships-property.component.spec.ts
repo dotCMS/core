@@ -129,7 +129,23 @@ describe('DotRelationshipsPropertyComponent', () => {
             imports: [DotRelationshipsPropertyComponent, DotMessagePipe],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
-                DotContentTypeService,
+                {
+                    provide: DotContentTypeService,
+                    useValue: {
+                        getContentType: jest.fn().mockReturnValue(of(mockContentType)),
+                        getContentTypes: jest.fn().mockReturnValue(of([mockContentType])),
+                        getContentTypesWithPagination: jest.fn().mockReturnValue(
+                            of({
+                                contentTypes: [mockContentType],
+                                pagination: {
+                                    currentPage: 1,
+                                    perPage: 40,
+                                    totalEntries: 1
+                                }
+                            })
+                        )
+                    }
+                },
                 {
                     provide: DotEditContentTypeCacheService,
                     useValue: dotEditContentTypeCacheServiceMock
@@ -256,18 +272,18 @@ describe('DotRelationshipsPropertyComponent', () => {
         });
 
         describe('with inverse relationship', () => {
-            // TODO(#35930): Angular 22 FetchBackend + inverse velocityVar triggers async HTTP
-            // outside HttpTestingController in this legacy DOTTestBed spec; re-enable after
-            // migrating this suite to Spectator + provideHttpClientTesting().
-            it.skip('should not have existing and new radio buttonand should show dot-new-relationships', () => {
-                comp.group.get('relationship').setValue({
-                    velocityVar: 'contentType.fieldName',
-                    cardinality: 1
-                });
+            it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
+                // Same object reference as the form control value (legacy DOTTestBed pattern).
+                comp.property.value.velocityVar = 'contentType.fieldName';
                 comp.ngOnInit();
+                fixture.detectChanges();
+                flushRelationshipHttpMocks();
+                fixture.detectChanges();
 
                 expect(comp.editing).toBe(true);
                 expect(comp.status).toBe(comp.STATUS_NEW);
+                expect(de.query(By.css('dot-new-relationships'))).toBeDefined();
+                expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
                 const relationshipValue = comp.group.get('relationship').value;
                 expect(relationshipValue.velocityVar).toEqual('contentType.fieldName');

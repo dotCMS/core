@@ -49,7 +49,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     }
 
     get safeUrl(): SafeUrl | string {
-        if (this.url.startsWith('data:')) {
+        if (this.url.startsWith('data:image/')) {
             return this.sanitizer.bypassSecurityTrustUrl(this.url);
         }
 
