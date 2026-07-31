@@ -1,4 +1,4 @@
-<div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
+<div class="portlet-wrapper flex flex-col" data-testid="analytics-dashboard">
     @if ($showMessage()) {
         <p-message
             severity="info"
@@ -16,11 +16,11 @@
     }
 
     <p-tabs [lazy]="true">
-        <div class="analytics-dashboard-toolbar bg-gray-100 border-b border-gray-300 px-4">
-            <div class="flex justify-between items-center gap-4 min-h-12">
-                <div class="flex items-center gap-4 min-w-0">
+        <div class="analytics-dashboard-toolbar border-b border-gray-300 bg-gray-100 px-4">
+            <div class="flex min-h-12 items-center justify-between gap-4">
+                <div class="flex min-w-0 items-center gap-4">
                     <p-tablist
-                        class="shrink-0 min-w-0 border-0 bg-transparent shadow-none"
+                        class="min-w-0 shrink-0 border-0 bg-transparent shadow-none"
                         [pt]="tabListPt">
                         @for (tab of tabs; track tab.id) {
                             <p-tab
