@@ -18,9 +18,16 @@ import { paramsToTimeRange } from '../utils/filters.utils';
 
 const TAB_CONFIG_MAP = new Map(DASHBOARD_TAB_LIST.map((tab) => [tab.id, tab]));
 
-/** A request is still settling if it hasn't reached a final LOADED/ERROR status yet. */
+/**
+ * A request is still settling — LOADING only, not INIT. `INIT` also covers "never asked to load"
+ * (e.g. the no-`currentSiteId` branches in `loadAllPageviewData`/`loadConversionsData`/
+ * `loadEngagementData`, which return without firing a request), which has no request in flight to
+ * ever resolve it — treating that as unsettled would leave `$isReportLoading` stuck `true`
+ * forever. A real load transitions LOADING synchronously the instant it starts (before any network
+ * round trip), so restricting to LOADING here doesn't miss the overlay for an actual in-flight load.
+ */
 const isUnsettled = (request: RequestState<unknown>): boolean =>
-    request.status === ComponentStatus.INIT || request.status === ComponentStatus.LOADING;
+    request.status === ComponentStatus.LOADING;
 
 /**
  * Analytics Dashboard Store
