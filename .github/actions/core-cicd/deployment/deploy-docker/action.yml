@@ -219,5 +219,8 @@ runs:
         pull: true
         push: ${{ inputs.do_deploy }}
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        # ignore-error: a transient GHA cache-service failure on this WRITE (pure build-speed
+        # optimization) must never fail a release deployment — it skipped Promote-latest,
+        # Release-Notes, and the changelog publish on v26.07.27-01 (#36744).
+        cache-to: type=gha,mode=max,ignore-error=true
         build-args: ${{ inputs.build_args }}

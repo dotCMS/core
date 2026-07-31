@@ -27,11 +27,20 @@ package com.dotcms.rest.config;
  *       breaking-change-labeled PR merged since the last release is in range and this
  *       input was left {@code false} — forgetting is a loud pipeline failure, not a
  *       silent gap.</li>
- *   <li>Once the release fully succeeds (build AND deployment green — never eagerly),
- *       a dedicated job opens a PR against {@code main} bumping {@link #VALUE} to that
- *       release's version and pings Slack asking a human to review and merge it.
- *       {@code main} is never pushed to directly, and nothing changes on {@code main} if
- *       the release fails partway through — there is nothing to roll back.</li>
+ *   <li><strong>That same release</strong> bumps {@link #VALUE} to its own version as part
+ *       of {@code release-prepare}'s existing automated commit on the release branch — so
+ *       the release that introduces the break advertises the new floor from the moment it
+ *       ships, not starting with some future release. This only ever lives on the
+ *       disposable release branch (never merged to {@code main}), so a downstream
+ *       build/deployment failure still can't leave {@code main} advertising a floor for a
+ *       version that never actually shipped.</li>
+ *   <li>Separately, once the release fully succeeds (build AND deployment green — never
+ *       eagerly), a dedicated job opens a PR against {@code main} bumping {@link #VALUE} to
+ *       that same version and pings Slack asking a human to review and merge it, so
+ *       <em>future</em> releases inherit the new floor too instead of reverting to
+ *       {@code main}'s stale value. {@code main} is never pushed to directly, and nothing
+ *       changes on {@code main} if the release fails partway through — there is nothing to
+ *       roll back.</li>
  * </ol>
  */
 public final class MinSdkVersion {

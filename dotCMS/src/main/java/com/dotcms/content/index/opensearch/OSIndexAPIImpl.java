@@ -756,7 +756,12 @@ public class OSIndexAPIImpl implements IndexAPI {
     public void createAlias(final String indexName, final String alias) {
         try {
             // Only create the alias when it is not already pointing at an index — mirrors ES.
-            if (getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices()).get(alias) == null) {
+            // Re-tag the logical site-search names with .os before the lookup: the physical OpenSearch
+            // indices are .os-tagged, so a bare-name lookup always missed and made this a false
+            // negative, letting createAlias add unconditionally and risk a multi-index alias in
+            // Phases 2/3 (issue #36360).
+            if (getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices().stream()
+                    .map(IndexTag.OS::tag).collect(Collectors.toList())).get(alias) == null) {
                 clientProvider.getClient().indices().updateAliases(UpdateAliasesRequest.of(r -> r
                         .actions(a -> a.add(add -> add
                                 .index(getNameWithClusterIDPrefix(indexName))
