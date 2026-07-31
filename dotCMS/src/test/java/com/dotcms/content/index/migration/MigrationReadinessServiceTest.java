@@ -152,4 +152,28 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertEquals("OpenSearch", r.phase().readEngine());
         assertEquals(List.of("OpenSearch"), r.phase().writeEngines());
     }
+
+    /** Content is keyed by slot (WORKING/LIVE); Site Search by logical index name. */
+    @Test
+    public void indices_keyedBySlotAndName() {
+        setPhase(PHASE_2);
+        when(content.statuses()).thenReturn(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", 10),
+                cc(IndexKind.CONTENT_LIVE, "live_1", 5)));
+        when(siteSearch.statuses()).thenReturn(List.of(ss("sitesearch_a", true, 3, true, 3)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertTrue(r.content().containsKey("WORKING"));
+        assertTrue(r.content().containsKey("LIVE"));
+        assertEquals("working_1", r.content().get("WORKING").indexName());
+        assertTrue(r.siteSearch().containsKey("sitesearch_a"));
+    }
+
+    private static MirrorStatus cc(final IndexKind kind, final String name, final long count) {
+        return new MirrorStatus(name, kind,
+                new MirrorStatus.EngineCopy(true, count, "cluster_x." + name),
+                new MirrorStatus.EngineCopy(true, count, "cluster_x." + name + ".os"),
+                Verdict.IN_SYNC, "advice");
+    }
 }

@@ -1,5 +1,7 @@
 package com.dotcms.content.index.migration;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * Per-index ES↔OS mirror status for the migration-readiness report (issue #36360): how one logical
  * index compares against its counterpart across the two engines. Purely factual — the phase-aware
@@ -18,6 +20,7 @@ package com.dotcms.content.index.migration;
  * @param verdict        the diff verdict between the two copies
  * @param recommendation human-readable, action-oriented advice for a support technician
  */
+@JsonIgnoreProperties("kind") // internal grouping/label only — the report keys rows by it, never emits it
 public record MirrorStatus(
         String indexName,
         IndexKind kind,

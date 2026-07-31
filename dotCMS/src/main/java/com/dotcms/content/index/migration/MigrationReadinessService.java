@@ -2,9 +2,12 @@ package com.dotcms.content.index.migration;
 
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -98,7 +101,23 @@ public class MigrationReadinessService {
                 phase.isDualWrite());
         final MigrationReadiness.Verdict verdict = new MigrationReadiness.Verdict(
                 safeToAdvance, !esBehindAnywhere, outOfSync.size(), summary, blockers);
-        return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, content, siteSearch, verdict);
+
+        // Content is keyed by slot (WORKING/LIVE — a fixed pair); Site Search by its logical index
+        // name (an open set). LinkedHashMap keeps the reconcilers' order for a stable response.
+        final Map<String, MirrorStatus> contentBySlot = new LinkedHashMap<>();
+        for (final MirrorStatus s : content) {
+            contentBySlot.put(contentSlot(s.kind()), s);
+        }
+        final Map<String, MirrorStatus> siteSearchByName = new LinkedHashMap<>();
+        for (final MirrorStatus s : siteSearch) {
+            siteSearchByName.put(s.indexName(), s);
+        }
+        return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, contentBySlot,
+                siteSearchByName, verdict);
+    }
+
+    private static String contentSlot(final IndexKind kind) {
+        return kind == IndexKind.CONTENT_WORKING ? "WORKING" : "LIVE";
     }
 
     private static String readEngine(final MigrationPhase phase) {

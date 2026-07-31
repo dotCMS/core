@@ -1,6 +1,7 @@
 package com.dotcms.content.index.migration;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Support-facing ES→OS migration-readiness report (issue #36360): a point-in-time snapshot that a
@@ -12,15 +13,15 @@ import java.util.List;
  *                          (the {@code <id>} of the {@code cluster_<id>.} prefix); identical for the
  *                          Elasticsearch and OpenSearch backends
  * @param phase      the current migration phase and which engine it reads/writes
- * @param content    per-index mirror status for the versioned content indices (working/live)
- * @param siteSearch per-index mirror status for the Site Search indices
+ * @param content    the versioned content indices keyed by slot ({@code WORKING} / {@code LIVE})
+ * @param siteSearch the Site Search indices keyed by their logical index name
  * @param verdict    the overall go/no-go for advancing and rolling back, with reasons
  */
 public record MigrationReadiness(
         String clusterId,
         PhaseInfo phase,
-        List<MirrorStatus> content,
-        List<MirrorStatus> siteSearch,
+        Map<String, MirrorStatus> content,
+        Map<String, MirrorStatus> siteSearch,
         Verdict verdict) {
 
     /**
