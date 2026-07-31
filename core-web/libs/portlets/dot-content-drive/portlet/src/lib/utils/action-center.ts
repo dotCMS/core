@@ -10,12 +10,17 @@ import {
 import { isFolder } from './functions';
 import { DEFAULT_WORKFLOW_ACTIONS, WORKFLOW_ACTION_ID } from './workflow-actions';
 
+/** Quick action that is not a `SystemAction` and so is not fired through the workflow endpoints. */
+export const ADD_TO_BUNDLE_ACTION_ID = 'ADD_TO_BUNDLE';
+
+export type DotActionCenterQuickActionId = WORKFLOW_ACTION_ID | typeof ADD_TO_BUNDLE_ACTION_ID;
+
 /**
  * A quick action as rendered in the Action Center: the action itself, an icon, and the number of
  * selected contentlets it applies to.
  */
 export interface DotActionCenterQuickAction {
-    id: WORKFLOW_ACTION_ID;
+    id: DotActionCenterQuickActionId;
     /** i18n key for the label. */
     name: string;
     /** Material Symbols glyph name, rendered inside the row's icon chip. */
@@ -27,28 +32,43 @@ export interface DotActionCenterQuickAction {
     count: number;
     /** Destructive action — rendered with the danger severity, as in the design. */
     danger: boolean;
+    /**
+     * i18n key explaining why the action cannot be run at all yet, independent of the selection.
+     * When set the row is always non-selectable and shows this as its hint.
+     */
+    pendingHint?: string;
 }
 
 /**
- * Quick actions offered in the Action Center, in display order.
+ * Quick actions offered in the Action Center.
+ *
+ * **The order of this array is the display order and is fixed** — Publish, Unpublish, Archive,
+ * Delete, Add to Bundle. Rows keep their position whether or not they are selectable, so the list
+ * never reshuffles as the selection changes.
  *
  * Scope notes for v1:
- * - Every entry here is a `SystemAction` the multi-contentlet endpoint accepts
+ * - Every entry except Add to Bundle is a `SystemAction` the multi-contentlet endpoint accepts
  *   (`POST /api/v1/workflow/actions/default/fire/{systemAction}`), so each fires in one request.
- * - **Lock / Unlock are deliberately absent**: there is no bulk REST endpoint for them. The legacy
- *   JSP drives them through a Struts command (`full_unlock_list`) that loops server-side. Adding
- *   them means either a client-side N-call loop or a new `_bulklock` / `_bulkunlock` endpoint.
- * - **Add to Bundle is absent** for the same reason: it is only reachable through the legacy
- *   `RemotePublishAjaxAction` servlet, not a REST endpoint.
+ * - **Add to Bundle is present but always disabled.** `POST /api/v1/bundles/assets` does accept a
+ *   list of asset identifiers, so the endpoint is not the blocker: it needs a target bundle, which
+ *   means a picker step (`DotAddToBundleComponent` takes a single identifier today) and an
+ *   enterprise-license gate. Tracked separately.
+ * - **Lock / Unlock are absent**: no bulk REST endpoint exists. The legacy JSP drives unlock through
+ *   a Struts command (`full_unlock_list`) that loops server-side.
+ * - **Unarchive is absent**: it is not in the design's quick-action set. It is a valid `SystemAction`
+ *   and was implemented earlier, so re-adding it is a one-line change if the set is revisited.
  *
  * `eligibleWhen` derives the count from row state the grid already has. It is a state heuristic,
  * not a permission check — an item can be counted and still fail at execution.
  */
 const QUICK_ACTIONS: {
-    id: WORKFLOW_ACTION_ID;
+    id: DotActionCenterQuickActionId;
     icon: string;
     danger: boolean;
     eligibleWhen: (item: DotCMSContentlet) => boolean;
+    /** Label key, for actions with no `DEFAULT_WORKFLOW_ACTIONS` entry to borrow one from. */
+    nameKey?: string;
+    pendingHint?: string;
 }[] = [
     {
         id: WORKFLOW_ACTION_ID.PUBLISH,
@@ -69,16 +89,20 @@ const QUICK_ACTIONS: {
         eligibleWhen: (item) => !item.archived
     },
     {
-        id: WORKFLOW_ACTION_ID.UNARCHIVE,
-        icon: 'unarchive',
-        danger: false,
-        eligibleWhen: (item) => !!item.archived
-    },
-    {
         id: WORKFLOW_ACTION_ID.DELETE,
         icon: 'delete',
         danger: true,
         eligibleWhen: (item) => !!item.archived
+    },
+    {
+        id: ADD_TO_BUNDLE_ACTION_ID,
+        icon: 'inventory_2',
+        danger: false,
+        // A bundle accepts any asset, so the count is the whole contentlet selection. It is shown
+        // for honesty about what the action would cover once the picker exists.
+        eligibleWhen: () => true,
+        nameKey: 'content-drive.action-center.add-to-bundle',
+        pendingHint: 'content-drive.action-center.add-to-bundle.pending'
     }
 ];
 
@@ -127,10 +151,11 @@ export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQu
 
         return {
             id: quickAction.id,
-            name: definition?.name ?? quickAction.id,
+            name: quickAction.nameKey ?? definition?.name ?? quickAction.id,
             icon: quickAction.icon,
             danger: quickAction.danger,
-            count: contentlets.filter(quickAction.eligibleWhen).length
+            count: contentlets.filter(quickAction.eligibleWhen).length,
+            pendingHint: quickAction.pendingHint
         };
     });
 };

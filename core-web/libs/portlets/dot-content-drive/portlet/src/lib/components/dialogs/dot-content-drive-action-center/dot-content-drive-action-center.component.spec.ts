@@ -235,6 +235,25 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(publish.disabled).toBe(false);
         });
 
+        it('should render Add to Bundle but keep it non-selectable', () => {
+            spectator.detectChanges();
+
+            const addToBundle = spectator.query(
+                '[data-testid="quick-action-ADD_TO_BUNDLE"]'
+            ) as HTMLButtonElement;
+
+            expect(addToBundle).toBeTruthy();
+            expect(addToBundle.disabled).toBe(true);
+        });
+
+        it('should not fire Add to Bundle even if its row is clicked', () => {
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+        });
+
         it('should not fire an action that applies to nothing', () => {
             spectator.detectChanges();
 

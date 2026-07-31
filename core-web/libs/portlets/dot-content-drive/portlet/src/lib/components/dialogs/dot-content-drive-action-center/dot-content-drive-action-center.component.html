@@ -62,12 +62,10 @@
                         <button
                             type="button"
                             class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
-                            [disabled]="$executing() || quickAction.count === 0"
-                            [pTooltip]="
-                                quickAction.count === 0
-                                    ? ('content-drive.action-center.not-applicable' | dm)
-                                    : ''
+                            [disabled]="
+                                $executing() || quickAction.count === 0 || !!quickAction.pendingHint
                             "
+                            [pTooltip]="quickActionHint(quickAction) | dm"
                             [attr.data-testid]="'quick-action-' + quickAction.id"
                             (click)="onExecuteQuickAction(quickAction)">
                             <span

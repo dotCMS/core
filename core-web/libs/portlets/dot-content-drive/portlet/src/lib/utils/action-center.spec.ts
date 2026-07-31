@@ -3,6 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
 
 import {
+    ADD_TO_BUNDLE_ACTION_ID,
     excludeFolders,
     getQuickActions,
     toActionCenterSchemes,
@@ -123,28 +124,67 @@ describe('action-center utils', () => {
             expect(unpublish?.count).toBe(1);
         });
 
-        it('should offer Delete and Unarchive only for archived items', () => {
+        it('should count Delete only for archived items', () => {
             const items = [
                 contentlet({ inode: 'a', archived: true }),
                 contentlet({ inode: 'b', archived: false })
             ];
 
-            const actions = getQuickActions(items);
-            const byId = new Map(actions.map((action) => [action.id, action.count]));
+            const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
             expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(1);
-            expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
         });
 
         it('should still list actions that apply to nothing, with a zero count', () => {
-            // Nothing archived, so Delete and Unarchive apply to no item — but stay in the list so
-            // the dialog can render them as non-selectable rather than dropping the rows.
+            // Nothing archived, so Delete applies to no item — but stays in the list so the dialog
+            // can render it as non-selectable rather than dropping the row.
             const items = [contentlet({ inode: 'a', archived: false })];
 
             const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
             expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(0);
-            expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(0);
+        });
+
+        it('should keep a fixed display order regardless of the selection', () => {
+            const expected = [
+                WORKFLOW_ACTION_ID.PUBLISH,
+                WORKFLOW_ACTION_ID.UNPUBLISH,
+                WORKFLOW_ACTION_ID.ARCHIVE,
+                WORKFLOW_ACTION_ID.DELETE,
+                ADD_TO_BUNDLE_ACTION_ID
+            ];
+
+            expect(getQuickActions([contentlet({ inode: 'a' })]).map((a) => a.id)).toEqual(
+                expected
+            );
+            expect(
+                getQuickActions([contentlet({ inode: 'b', archived: true, live: true })]).map(
+                    (a) => a.id
+                )
+            ).toEqual(expected);
+        });
+
+        it('should mark Add to Bundle as pending so it can never be fired', () => {
+            const addToBundle = getQuickActions([contentlet({ inode: 'a' })]).find(
+                (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
+            );
+
+            expect(addToBundle?.pendingHint).toBeTruthy();
+        });
+
+        it('should count Add to Bundle against every selected contentlet', () => {
+            // A bundle accepts any asset, so state does not narrow it.
+            const items = [
+                contentlet({ inode: 'a', archived: true }),
+                contentlet({ inode: 'b', live: true }),
+                folder('f1')
+            ];
+
+            const addToBundle = getQuickActions(items).find(
+                (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
+            );
+
+            expect(addToBundle?.count).toBe(2);
         });
 
         it('should offer the same set of actions regardless of the selection', () => {

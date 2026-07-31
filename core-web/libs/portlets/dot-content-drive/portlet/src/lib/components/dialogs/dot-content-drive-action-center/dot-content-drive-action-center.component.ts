@@ -197,6 +197,20 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
+     * Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears.
+     *
+     * `pendingHint` wins over the not-applicable message: an action that cannot run at all yet
+     * should say so rather than blame the current selection.
+     */
+    protected quickActionHint(quickAction: DotActionCenterQuickAction): string {
+        if (quickAction.pendingHint) {
+            return quickAction.pendingHint;
+        }
+
+        return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
+    }
+
+    /**
      * Fires a system action over every eligible contentlet in one request.
      *
      * @param quickAction - The quick action chosen by the user
@@ -204,7 +218,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected onExecuteQuickAction(quickAction: DotActionCenterQuickAction): void {
         const inodes = toContentletInodes(this.$selectedItems());
 
-        if (!inodes.length) {
+        // `pendingHint` marks an action with no working implementation yet (Add to Bundle needs a
+        // bundle picker). The row is disabled, but guard here too so it can never fire.
+        if (!inodes.length || quickAction.pendingHint || quickAction.count === 0) {
             return;
         }
 
