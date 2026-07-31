@@ -30,9 +30,9 @@ import java.util.List;
  * language analyzer ({@code cjk}, {@code arabic}, {@code thai}, ...) or a plugin-provided one
  * ({@code kuromoji}, {@code nori}, {@code smartcn} — the plugin must be installed on every node).
  * When set, it is applied to every text field of the site-search mapping (replacing the
- * English-stemming {@code standard_content} on {@code content}/{@code content_raw}, and the
- * implicit {@code standard} on {@code title}/{@code description}/{@code author}); unset keeps the
- * bundled defaults untouched. The override takes effect on index creation, so existing indices
+ * English-stemming {@code standard_content} on {@code content}, and the plain {@code standard} on
+ * {@code content_raw}/{@code title}/{@code description}/{@code author}); unset keeps the bundled
+ * defaults untouched. The override takes effect on index creation, so existing indices
  * need a rebuild to pick it up. An analyzer name unknown to the cluster fails index creation
  * loudly with the engine's error.</p>
  */
