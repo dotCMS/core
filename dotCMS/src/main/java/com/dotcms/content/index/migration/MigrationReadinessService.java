@@ -16,10 +16,10 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li><b>Advance</b> (toward OpenSearch-only): meaningful in the dual-write phases (1/2), where it
  *       is safe only when no index needs attention. In Phase 0 there is nothing to reconcile yet
- *       (twins are built during dual-write) and in Phase 3 there is no further phase — both report
+ *       (counterparts are built during dual-write) and in Phase 3 there is no further phase — both report
  *       safe with an explanatory summary.</li>
  *   <li><b>Rollback</b> (downgrade): a downgrade ultimately routes reads back to Elasticsearch
- *       (Phases 0/1), so it is unsafe when any index's ES copy is behind its OpenSearch twin — that
+ *       (Phases 0/1), so it is unsafe when any index's ES copy is behind its OpenSearch counterpart — that
  *       delta (typically content written while OpenSearch served reads) would be silently missing
  *       until a full reindex. Derived from the same live counts, so no historical state is needed.</li>
  * </ul>
@@ -54,7 +54,7 @@ public class MigrationReadinessService {
                 .filter(MirrorStatus::needsAttention)
                 .collect(Collectors.toList());
         // A downgrade routes reads back to Elasticsearch; any index whose ES copy is missing or behind
-        // its OpenSearch twin would lose that delta after the downgrade (a failed ES count is -1, which
+        // its OpenSearch counterpart would lose that delta after the downgrade (a failed ES count is -1, which
         // is < any real OS count → flagged, fail-safe).
         final boolean esBehindAnywhere = all.stream()
                 .anyMatch(s -> !s.esExists() || s.esDocCount() < s.osDocCount());
@@ -65,7 +65,7 @@ public class MigrationReadinessService {
 
         if (phase.isMigrationNotStarted()) {
             safeToAdvance = true;
-            summary = "Phase 0 (Elasticsearch only). OpenSearch twins are built during the dual-write "
+            summary = "Phase 0 (Elasticsearch only). OpenSearch counterparts are built during the dual-write "
                     + "phases, so there is nothing to reconcile yet. Safe to advance to Phase 1.";
         } else if (phase.isMigrationComplete()) {
             safeToAdvance = true; // no phase beyond 3

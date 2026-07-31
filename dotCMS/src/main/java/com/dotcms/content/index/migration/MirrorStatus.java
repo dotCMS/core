@@ -2,7 +2,7 @@ package com.dotcms.content.index.migration;
 
 /**
  * Per-index ES↔OS mirror status for the migration-readiness report (issue #36360): how one logical
- * index compares against its twin across the two engines. Purely factual — the phase-aware
+ * index compares against its counterpart across the two engines. Purely factual — the phase-aware
  * "is this a blocker for changing phase" interpretation is layered on top by
  * {@link MigrationReadinessService}.
  *
@@ -15,8 +15,8 @@ package com.dotcms.content.index.migration;
  * @param esExists       whether the Elasticsearch copy exists
  * @param esDocCount     exact document count in the Elasticsearch copy (0 when absent, -1 when the
  *                       count query failed)
- * @param osExists       whether the OpenSearch ({@code .os}) twin exists
- * @param osDocCount     exact document count in the OpenSearch twin (0 when absent, -1 when the count
+ * @param osExists       whether the OpenSearch ({@code .os}) counterpart exists
+ * @param osDocCount     exact document count in the OpenSearch counterpart (0 when absent, -1 when the count
  *                       query failed)
  * @param verdict        the diff verdict between the two copies
  * @param recommendation human-readable, action-oriented advice for a support technician
@@ -34,12 +34,12 @@ public record MirrorStatus(
     /** Which mirrored index family a status row belongs to. */
     public enum IndexKind { CONTENT_WORKING, CONTENT_LIVE, SITE_SEARCH }
 
-    /** The diff outcome between an index and its twin. */
+    /** The diff outcome between an index and its counterpart. */
     public enum Verdict {
         /** Both copies exist with the same document count. */
         IN_SYNC,
-        /** The index exists on one engine but its twin is missing on the other. */
-        MISSING_TWIN,
+        /** The index exists on one engine but its counterpart is missing on the other. */
+        MISSING_COUNTERPART,
         /** Both copies exist but hold a different number of documents. */
         COUNT_DRIFT
     }
@@ -51,14 +51,14 @@ public record MirrorStatus(
 
     /**
      * Classifies a mirror from raw existence + exact counts: a missing copy on either engine is
-     * {@link Verdict#MISSING_TWIN}; both present with unequal counts is {@link Verdict#COUNT_DRIFT}
+     * {@link Verdict#MISSING_COUNTERPART}; both present with unequal counts is {@link Verdict#COUNT_DRIFT}
      * (a failed count is reported as {@code -1}, which compares unequal and so surfaces as drift —
      * fail-safe); otherwise {@link Verdict#IN_SYNC}.
      */
     public static Verdict verdictFor(final boolean esExists, final boolean osExists,
             final long esDocCount, final long osDocCount) {
         if (!esExists || !osExists) {
-            return Verdict.MISSING_TWIN;
+            return Verdict.MISSING_COUNTERPART;
         }
         if (esDocCount != osDocCount) {
             return Verdict.COUNT_DRIFT;

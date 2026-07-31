@@ -73,13 +73,13 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertTrue(r.verdict().blockers().isEmpty());
     }
 
-    /** Dual-write with a missing twin → NOT safe to advance, one blocker, count reported. */
+    /** Dual-write with a missing counterpart → NOT safe to advance, one blocker, count reported. */
     @Test
-    public void dualWrite_missingTwin_blocksAdvance() {
+    public void dualWrite_missingCounterpart_blocksAdvance() {
         setPhase(PHASE_2);
         when(siteSearch.statuses()).thenReturn(List.of(
                 ss("a", true, 100, true, 100),
-                ss("b", true, 50, false, 0))); // OS twin missing
+                ss("b", true, 50, false, 0))); // OS counterpart missing
 
         final MigrationReadiness r = service.evaluate();
 

@@ -14,11 +14,11 @@ import java.util.TreeSet;
 
 /**
  * Site Search half of the migration-readiness report (issue #36360): compares every logical
- * site-search index against its {@code .os} twin across both engines and produces a factual
- * {@link MirrorStatus} per index — does the ES copy exist, does the OpenSearch twin exist, do their
+ * site-search index against its {@code .os} counterpart across both engines and produces a factual
+ * {@link MirrorStatus} per index — does the ES copy exist, does the OpenSearch counterpart exist, do their
  * exact document counts match — plus a re-crawl recommendation. Never mutates anything.
  *
- * <p>It queries the two engine leaves directly (ES the plain name, OpenSearch the {@code .os} twin)
+ * <p>It queries the two engine leaves directly (ES the plain name, OpenSearch the {@code .os} counterpart)
  * rather than the phase-aware router, so the report shows <em>both</em> sides regardless of which
  * engine the current phase reads from. Counts come from {@link SiteSearchAPI#documentCount(String)}
  * — an exact total, not a search hit-count capped at 10,000 — so content drift on large indices is
@@ -43,7 +43,7 @@ public class SiteSearchMirrorReconciler {
      * Whether a cross-engine mirror comparison is meaningful for a forward phase change in the
      * current phase. Only the dual-write phases (1 and 2) keep both engines populated as write
      * providers; Phase 0 (ES only) and Phase 3 (OS only) have a single write engine, so a "missing
-     * twin" there is either expected (0) or unfixable in-phase (3).
+     * counterpart" there is either expected (0) or unfixable in-phase (3).
      */
     public boolean canEvaluate() {
         return IndexConfigHelper.MigrationPhase.current().isDualWrite();
@@ -51,7 +51,7 @@ public class SiteSearchMirrorReconciler {
 
     /**
      * The per-index mirror status for every logical site-search index that exists on <em>either</em>
-     * engine (so a twin missing on one side still appears). Purely factual and phase-independent.
+     * engine (so a counterpart missing on one side still appears). Purely factual and phase-independent.
      */
     public List<MirrorStatus> statuses() {
         final TreeSet<String> names = new TreeSet<>(esImpl.listIndices());
@@ -77,15 +77,15 @@ public class SiteSearchMirrorReconciler {
         switch (verdict) {
             case IN_SYNC:
                 return "In sync — no action needed.";
-            case MISSING_TWIN:
+            case MISSING_COUNTERPART:
                 return String.format("A copy of site-search index '%s' is missing on one engine. "
-                        + "Re-crawl it (Site Search → Run now) to rebuild the twin before "
+                        + "Re-crawl it (Site Search → Run now) to rebuild the counterpart before "
                         + "promoting to the OpenSearch-only phase.", name);
             case COUNT_DRIFT:
             default:
                 return String.format("The two copies of site-search index '%s' hold a different "
                         + "number of documents. Re-crawl it (Site Search → Run now) to rebuild "
-                        + "the twin before promoting the phase.", name);
+                        + "the counterpart before promoting the phase.", name);
         }
     }
 }

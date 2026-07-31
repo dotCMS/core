@@ -29,7 +29,7 @@ import org.glassfish.jersey.server.JSONP;
  * Internal, role-gated ES→OS migration-readiness endpoint (issue #36360). It condenses the migration
  * status a support technician needs <em>before</em> changing the phase: the current phase and its
  * read/write engines, the per-index ES↔OS mirror diff for both mirrored families (content and Site
- * Search) with missing-twin / count-drift verdicts and re-crawl/reindex recommendations, and an
+ * Search) with missing-counterpart / count-drift verdicts and re-crawl/reindex recommendations, and an
  * overall safe-to-advance / safe-to-rollback verdict. Read-only; it never mutates any index.
  *
  * <p><strong>Not public.</strong> The class is {@link Hidden} so it never appears in the OpenAPI /
