@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { ActivatedRoute, CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
@@ -17,10 +17,9 @@ import { DotAnalyticsService } from '@dotcms/portlets/dot-analytics/data-access'
  * once when entering `/dashboard` (or `/search`) from outside it, not on every child-only
  * navigation within it.
  */
-export const analyticsHealthGuard: CanActivateFn = (_route, _state) => {
+export const analyticsHealthGuard: CanActivateFn = (route, _state) => {
     const analyticsService = inject(DotAnalyticsService);
     const router = inject(Router);
-    const activatedRoute = inject(ActivatedRoute);
 
     return analyticsService.healthCheck().pipe(
         map((healthStatus) => {
@@ -28,7 +27,14 @@ export const analyticsHealthGuard: CanActivateFn = (_route, _state) => {
                 return true;
             }
 
-            const isEnterprise = activatedRoute.snapshot.data?.['isEnterprise'] ?? true;
+            // Read from the guard's own snapshot param, not an injected ActivatedRoute — at
+            // guard-execution time the target route's ActivatedRoute instance doesn't exist yet
+            // (it's only created on activation, after guards pass), so `inject(ActivatedRoute)`
+            // can resolve to whatever route was active *before* this navigation instead of the
+            // one being guarded. `isEnterprise` is resolved on the parent `analytics` route (see
+            // app.routes.ts) and Angular merges resolved `data` down the whole ancestor chain
+            // unconditionally, so it's already present here correctly.
+            const isEnterprise = route.data?.['isEnterprise'] ?? true;
 
             router.navigate(['/analytics/error'], {
                 queryParams: {
