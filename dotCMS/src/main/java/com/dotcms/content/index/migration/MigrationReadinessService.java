@@ -102,18 +102,15 @@ public class MigrationReadinessService {
         final MigrationReadiness.Verdict verdict = new MigrationReadiness.Verdict(
                 safeToAdvance, !esBehindAnywhere, outOfSync.size(), summary, blockers);
 
-        // Content is keyed by slot (WORKING/LIVE — a fixed pair); Site Search by its logical index
-        // name (an open set). LinkedHashMap keeps the reconcilers' order for a stable response.
+        // Content is keyed by slot (WORKING/LIVE — a fixed pair, so a keyed object reads naturally);
+        // Site Search stays a list (an open set with no natural key). LinkedHashMap keeps the
+        // reconciler's order for a stable response.
         final Map<String, MirrorStatus> contentBySlot = new LinkedHashMap<>();
         for (final MirrorStatus s : content) {
             contentBySlot.put(contentSlot(s.kind()), s);
         }
-        final Map<String, MirrorStatus> siteSearchByName = new LinkedHashMap<>();
-        for (final MirrorStatus s : siteSearch) {
-            siteSearchByName.put(s.indexName(), s);
-        }
         return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, contentBySlot,
-                siteSearchByName, verdict);
+                siteSearch, verdict);
     }
 
     private static String contentSlot(final IndexKind kind) {

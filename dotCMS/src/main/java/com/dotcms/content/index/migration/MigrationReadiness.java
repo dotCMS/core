@@ -13,15 +13,17 @@ import java.util.Map;
  *                          (the {@code <id>} of the {@code cluster_<id>.} prefix); identical for the
  *                          Elasticsearch and OpenSearch backends
  * @param phase      the current migration phase and which engine it reads/writes
- * @param content    the versioned content indices keyed by slot ({@code WORKING} / {@code LIVE})
- * @param siteSearch the Site Search indices keyed by their logical index name
+ * @param content    the versioned content indices keyed by slot ({@code WORKING} / {@code LIVE}) — a
+ *                   fixed pair, so a keyed object reads naturally
+ * @param siteSearch the Site Search indices as a list — an open set with no natural key, so a list
+ *                   (each entry carries its own {@code indexName})
  * @param verdict    the overall go/no-go for advancing and rolling back, with reasons
  */
 public record MigrationReadiness(
         String clusterId,
         PhaseInfo phase,
         Map<String, MirrorStatus> content,
-        Map<String, MirrorStatus> siteSearch,
+        List<MirrorStatus> siteSearch,
         Verdict verdict) {
 
     /**

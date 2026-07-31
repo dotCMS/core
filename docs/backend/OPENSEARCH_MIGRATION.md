@@ -371,8 +371,8 @@ through the write-path gate above.
   overall verdict — `safeToAdvance` (toward OpenSearch-only) and `safeToRollback` (downgrade) with an
   `outOfSyncCount`, a human `summary`, and per-index `blockers`; and the per-index ES↔OS mirror diff
   for **both** mirrored families — the versioned content indices (`working`/`live`) and the Site
-  Search indices. `content` is keyed by slot (`WORKING` / `LIVE`); `siteSearch` is keyed by the
-  logical index name. Each entry carries `{indexName, es:{exists,docCount,physicalName},
+  Search indices. `content` is a keyed object by slot (`WORKING` / `LIVE` — a fixed pair);
+  `siteSearch` is a list (an open set). Each entry carries `{indexName, es:{exists,docCount,physicalName},
   os:{exists,docCount,physicalName}, verdict, recommendation}` — `physicalName` is the full name as
   stored on each server (cluster-prefixed; `.os`-tagged on OpenSearch) — with verdict `IN_SYNC` /
   `MISSING_COUNTERPART` / `COUNT_DRIFT`. The top level also carries the `clusterId` embedded in every

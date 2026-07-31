@@ -153,9 +153,9 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertEquals(List.of("OpenSearch"), r.phase().writeEngines());
     }
 
-    /** Content is keyed by slot (WORKING/LIVE); Site Search by logical index name. */
+    /** Content is keyed by slot (WORKING/LIVE); Site Search stays an ordered list. */
     @Test
-    public void indices_keyedBySlotAndName() {
+    public void content_keyedBySlot_siteSearchAsList() {
         setPhase(PHASE_2);
         when(content.statuses()).thenReturn(List.of(
                 cc(IndexKind.CONTENT_WORKING, "working_1", 10),
@@ -167,7 +167,8 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertTrue(r.content().containsKey("WORKING"));
         assertTrue(r.content().containsKey("LIVE"));
         assertEquals("working_1", r.content().get("WORKING").indexName());
-        assertTrue(r.siteSearch().containsKey("sitesearch_a"));
+        assertEquals(1, r.siteSearch().size());
+        assertEquals("sitesearch_a", r.siteSearch().get(0).indexName());
     }
 
     private static MirrorStatus cc(final IndexKind kind, final String name, final long count) {
