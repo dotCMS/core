@@ -373,8 +373,6 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             return false;
 
         indexName=indexName.toLowerCase();
-        // The mapping honors the SITE_SEARCH_ANALYZER override (e.g. cjk/arabic for CJK/RTL
-        // languages) — see SiteSearchIndexResources.
         String settings = SiteSearchIndexResources.settings("es-sitesearch-settings.json");
         String mapping = SiteSearchIndexResources.mapping("es-sitesearch-mapping.json");
 

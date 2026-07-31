@@ -510,8 +510,6 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         // The mapping is functionally identical to es-sitesearch-mapping.json today, but owning a
         // dedicated os-sitesearch-mapping.json decouples the two vendors — a future ES mapping
         // change cannot silently alter OS behaviour.
-        // The mapping honors the SITE_SEARCH_ANALYZER override (e.g. cjk/arabic for CJK/RTL
-        // languages) — see SiteSearchIndexResources.
         final String settings = SiteSearchIndexResources.settings("os-sitesearch-settings.json");
         final String mapping = SiteSearchIndexResources.mapping("os-sitesearch-mapping.json");
 
