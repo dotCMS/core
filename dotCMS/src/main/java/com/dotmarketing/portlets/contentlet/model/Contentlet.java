@@ -157,6 +157,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String VALIDATE_EMPTY_FILE = "_validateEmptyFile_";
   public static final String STYLE_PROPERTIES_KEY = "dotStyleProperties";
 
+  /**
+   * Transient map key holding {@code List<String>} advisory warnings produced while converting
+   * a Story Block field value (Markdown/HTML → Tiptap JSON) on the save path. The REST layer
+   * pops this key off the fired contentlet and surfaces each entry in the response envelope's
+   * {@code messages}; it is never persisted (stripped with the other transient workflow keys).
+   */
+  public static final String STORY_BLOCK_CONVERSION_WARNINGS_KEY = "__storyBlockConversionWarnings__";
+
   // means the contentlet is being used on unit test mode.
   // this is only for unit test. do not use on production.
   @VisibleForTesting
