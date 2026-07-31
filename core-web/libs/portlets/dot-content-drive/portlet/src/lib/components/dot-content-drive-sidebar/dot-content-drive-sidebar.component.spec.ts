@@ -169,7 +169,7 @@ describe('DotContentDriveSidebarComponent', () => {
         it('should pass correct selectedNode input to dot-tree-folder', () => {
             const treeComponent = spectator.query(DotTreeFolderComponent);
             const selectedNode = mockTreeNodes[1];
-            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
+            expect(treeComponent?.$selectedNode()).toEqual(selectedNode);
         });
 
         it('should pass showFolderIconOnFirstOnly as true to dot-tree-folder', () => {
@@ -201,7 +201,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             const treeComponent = spectator.query(DotTreeFolderComponent);
             expect(treeComponent?.$folders()).toEqual(newTreeNodes);
-            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
+            expect(treeComponent?.$selectedNode()).toEqual(selectedNode);
             expect(treeComponent?.$loading()).toBe(true);
         });
     });

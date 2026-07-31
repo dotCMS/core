@@ -1,10 +1,13 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
+import { FolderNamePipe } from '../dot-folder-name/dot-folder-name.pipe';
+
 /**
- * This pipe is used to truncate the path to the last folder name
+ * @deprecated Use {@link FolderNamePipe} (`folderName`) instead. Kept as a thin
+ * alias so existing call sites keep working during migration.
  *
  * @export
- * @class TruncatePathPipe
+ * @class DotTruncatePathPipe
  * @implements {PipeTransform}
  */
 @Pipe({
@@ -12,9 +15,9 @@ import { Pipe, PipeTransform } from '@angular/core';
     pure: true
 })
 export class DotTruncatePathPipe implements PipeTransform {
-    transform(value: string): string {
-        const split = value.split('/').filter((item) => item !== '');
+    private readonly folderNamePipe = new FolderNamePipe();
 
-        return split.pop();
+    transform(value: string): string {
+        return this.folderNamePipe.transform(value);
     }
 }

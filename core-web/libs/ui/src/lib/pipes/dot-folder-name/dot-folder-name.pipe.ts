@@ -1,10 +1,10 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 /**
- * This pipe extracts the folder name from a path
+ * Extracts the last non-empty path segment (folder / site name).
  *
  * @export
- * @class TruncatePathPipe
+ * @class FolderNamePipe
  * @implements {PipeTransform}
  */
 @Pipe({

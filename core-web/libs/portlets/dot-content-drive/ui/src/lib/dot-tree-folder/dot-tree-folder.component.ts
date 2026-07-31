@@ -2,23 +2,21 @@ import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    input,
-    output,
-    computed,
     ElementRef,
     HostListener,
     inject,
+    input,
+    output,
     signal,
     InputSignal
 } from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
-import { TreeModule } from 'primeng/tree';
 import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
-import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
-import { ALL_FOLDER, LOAD_MORE_NODE_TYPE } from '../shared/constants';
+import { ALL_FOLDER } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
@@ -26,129 +24,52 @@ import {
     DotContentDriveMoveItems
 } from '../shared/models';
 
+/**
+ * Content Drive folder tree wrapper: owns drag-and-drop, ALL_FOLDER labeling,
+ * and pulse empty-loading UX around the shared {@link DotFolderTreeComponent}.
+ */
 @Component({
     selector: 'dot-tree-folder',
-    imports: [TreeModule, FolderNamePipe, DotMessagePipe, JsonPipe],
+    imports: [DotFolderTreeComponent, FolderNamePipe, DotMessagePipe, JsonPipe],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'w-full h-full min-h-0 block' }
 })
 export class DotTreeFolderComponent {
-    /**
-     * A signal that emits an array of TreeNode objects representing the folders.
-     *
-     * @type {InputSignal<TreeNode[]>}
-     * @alias folders
-     */
     $folders = input.required<TreeNode[]>({ alias: 'folders' });
 
-    /**
-     * A boolean signal that indicates the loading state.
-     *
-     * @type {InputSignal<boolean>}
-     */
     $loading = input.required<boolean>({ alias: 'loading' });
 
-    /**
-     * A signal that represents the currently selected node in the tree.
-     *
-     * The transform function is used to convert a single TreeNode or null into an array
-     * because PrimeNG's p-tree component expects the selection to be an array of TreeNodes,
-     * even when in single selection mode. This allows us to maintain a cleaner API where
-     * consumers can pass a single node while internally handling PrimeNG's requirements.
-     *
-     * @type {InputSignal<TreeNode | TreeNode[] | null, TreeNode | null>}
-     */
-    $selectedNode = input<TreeNode | TreeNode[] | null, TreeNode | null>(null, {
-        alias: 'selectedNode',
-        transform: (value: TreeNode | null): TreeNode[] => {
-            return value ? [value] : [];
-        }
-    });
+    $selectedNode = input<TreeNode | null>(null, { alias: 'selectedNode' });
 
     /**
      * Controls whether the folder icon should be shown only on the first root node's toggler.
-     * When false, folder icons will be used for all togglers.
-     *
-     * @type {InputSignal<boolean>}
      */
     $showFolderIconOnFirstOnly: InputSignal<boolean> = input<boolean>(false, {
         alias: 'showFolderIconOnFirstOnly'
     });
 
-    /**
-     * Event emitter for when a tree node is expanded.
-     *
-     * This event is triggered when a user expands a node in the tree structure.
-     * It emits an event of type `TreeNodeExpandEvent`.
-     */
     onNodeExpand = output<TreeNodeExpandEvent>();
-
-    /**
-     * Event emitter for when a node is selected in the tree.
-     *
-     * @event onNodeSelect
-     * @type {TreeNodeExpandEvent}
-     */
     onNodeSelect = output<TreeNodeExpandEvent>();
-
-    /**
-     * Event emitter for when a node is collapsed.
-     *
-     * @event onNodeCollapse
-     * @type {TreeNodeCollapseEvent}
-     */
     onNodeCollapse = output<TreeNodeCollapseEvent>();
-
-    /**
-     * Event emitter for when the "Load more" node of a paginated level is clicked.
-     *
-     * @event loadMore
-     * @type {DotFolderTreeNodeItem}
-     */
     loadMore = output<DotFolderTreeNodeItem>();
-
-    /**
-     * Event emitter for when a file is uploaded.
-     *
-     * @event uploadFiles
-     * @type {DotContentDriveUploadFiles}
-     */
     uploadFiles = output<DotContentDriveUploadFiles>();
-
-    /**
-     * Event emitter for when items are moved.
-     *
-     * @event moveItems
-     * @type {DotContentDriveMoveItems}
-     */
     moveItems = output<DotContentDriveMoveItems>();
 
     readonly elementRef = inject(ElementRef);
 
     readonly $activeDropNode = signal<DotFolderTreeNodeData | null>(null);
 
-    /**
-     * Computed style classes for the underlying p-tree component.
-     */
-    readonly treeStyleClasses = computed(
-        () => `w-full h-full ${this.$showFolderIconOnFirstOnly() ? 'first-only' : 'folder-all'}`
-    );
-
     protected readonly ALL_FOLDER_KEY = ALL_FOLDER.key;
-    protected readonly LOAD_MORE_NODE_TYPE = LOAD_MORE_NODE_TYPE;
 
-    /**
-     * Emits the "Load more" node when its button is clicked, stopping propagation so the click is
-     * not treated as a tree-node selection.
-     *
-     * @param {MouseEvent} event - The click event
-     * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
-     */
-    protected onLoadMoreClick(event: MouseEvent, node: DotFolderTreeNodeItem): void {
-        event.stopPropagation();
-        this.loadMore.emit(node);
+    protected readonly treePt = {
+        root: { class: 'w-full h-full border-none overflow-y-auto' },
+        nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' }
+    };
+
+    protected onLoadMore(node: TreeNode): void {
+        this.loadMore.emit(node as DotFolderTreeNodeItem);
     }
 
     /**
@@ -172,13 +93,11 @@ export class DotTreeFolderComponent {
 
         const target = event.target as HTMLElement;
 
-        // First, check if the target itself has the data-json-node attribute
         let activeNodeSpan: HTMLElement | null = null;
 
         if (target.hasAttribute('data-json-node')) {
             activeNodeSpan = target;
         } else {
-            // If not, search for it within the target's children
             activeNodeSpan = target.querySelector('[data-testid="tree-node-label"]');
         }
 
@@ -205,11 +124,10 @@ export class DotTreeFolderComponent {
     onDragLeave(event: DragEvent) {
         event.preventDefault();
 
-        // Check if the relatedTarget (where the drag is going) is still within the dropzone
         const relatedTarget = event.relatedTarget as Node;
 
         if (relatedTarget && this.elementRef.nativeElement.contains(relatedTarget)) {
-            return; // Still within the dropzone, don't deactivate
+            return;
         }
 
         this.$activeDropNode.set(null);

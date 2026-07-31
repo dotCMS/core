@@ -385,6 +385,7 @@ export function buildLoadMoreNode(
     return {
         key,
         label: LOAD_MORE_LABEL_KEY,
+        type: LOAD_MORE_NODE_TYPE,
         data: {
             type: LOAD_MORE_NODE_TYPE,
             path: parentPath,

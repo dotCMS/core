@@ -55,8 +55,14 @@ function createLoadMoreNode(levelKey: string): TreeNodeItem {
         label: '',
         type: LOAD_MORE_NODE_TYPE,
         selectable: false,
-        leaf: true
-    } as TreeNodeItem;
+        leaf: true,
+        data: {
+            type: 'load-more',
+            path: '',
+            hostname: '',
+            id: `load-more:${levelKey}`
+        }
+    };
 }
 
 /**

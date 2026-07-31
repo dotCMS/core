@@ -25,10 +25,9 @@ import { Popover, PopoverModule } from 'primeng/popover';
 import { ScrollerLazyLoadEvent, ScrollerModule } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
-import { Tree, TreeModule } from 'primeng/tree';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
 import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
 
@@ -50,14 +49,14 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         PopoverModule,
         ScrollerModule,
         SkeletonModule,
-        TreeModule,
+        DotFolderTreeComponent,
         ButtonModule,
         TooltipModule,
         IconFieldModule,
         InputIconModule,
         InputTextModule,
         DotMessagePipe,
-        DotTruncatePathPipe
+        FolderNamePipe
     ],
     templateUrl: './host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -96,7 +95,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * Reference to the folders tree, used to scroll the selected node into view when the
      * overlay opens.
      */
-    $folderTree = viewChild<Tree>('folderTree');
+    $folderTree = viewChild<DotFolderTreeComponent>('folderTree');
     /**
      * A readonly instance of the HostFolderFiledStore injected into the component.
      * This store is used to manage the state and actions related to the host folder field.
@@ -364,8 +363,8 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * the folder whose children are being paginated, or `undefined` for the root-level
      * sentinel (which maps to `loadMore(null)`).
      */
-    onLoadMoreNode(node: TreeNodeItem, event: Event): void {
-        event.stopPropagation();
+    onLoadMoreNode(node: TreeNodeItem, event?: Event): void {
+        event?.stopPropagation();
 
         if (this.store.isSearching()) {
             this.store.loadMoreSearchResults();
@@ -418,7 +417,9 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
             return;
         }
 
-        const treeRoot = this.$folderTree()?.el?.nativeElement as HTMLElement | undefined;
+        const folderTree = this.$folderTree();
+        const treeRoot = (folderTree?.tree()?.el?.nativeElement ??
+            folderTree?.elementRef.nativeElement) as HTMLElement | undefined;
         const selectedNode = treeRoot?.querySelector<HTMLElement>(
             '.p-tree-node-content.p-tree-node-selected'
         );

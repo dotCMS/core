@@ -592,7 +592,13 @@ describe('DotHostFolderFieldComponent', () => {
     describe('onOverlayShow', () => {
         const stubFolderTree = (root: HTMLElement | undefined) => {
             Object.defineProperty(spectator.component, '$folderTree', {
-                value: () => (root ? { el: { nativeElement: root } } : undefined),
+                value: () =>
+                    root
+                        ? {
+                              tree: () => ({ el: { nativeElement: root } }),
+                              elementRef: { nativeElement: root }
+                          }
+                        : undefined,
                 writable: true
             });
         };

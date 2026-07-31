@@ -48,4 +48,9 @@ describe('DotTruncatePathPipe', () => {
         spectator = createPipe(`{{ 'demo.com/level1/level2/level3' | dotTruncatePath }}`);
         expect(spectator.element).toHaveText('level3');
     });
+
+    it('should return empty string for empty path', () => {
+        spectator = createPipe(`{{ '' | dotTruncatePath }}`);
+        expect(spectator.element).toHaveText('');
+    });
 });

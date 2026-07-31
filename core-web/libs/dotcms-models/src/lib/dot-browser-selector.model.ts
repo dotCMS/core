@@ -3,20 +3,24 @@ import type { TreeNode } from 'primeng/api';
 import { DotFolder } from './dot-folder.model';
 
 /**
- * Data payload for tree nodes in the browser selector.
- * Represents either a site (host) or a folder within the content tree.
+ * Data payload for tree nodes in the browser selector and shared folder tree.
+ * Represents a site (host), a folder, or a synthetic load-more sentinel.
  *
  * @type TreeNodeData
- * @property {'site' | 'folder'} type - Whether this node represents a site or a folder
+ * @property {'site' | 'folder' | 'load-more'} type - Node kind in the content tree
  * @property {string} path - The full path of the node in the content tree
  * @property {string} hostname - The hostname where the site/folder resides
  * @property {string} id - Unique identifier for the node
+ * @property {number} [nextPage] - For load-more nodes: next 1-based page to request
+ * @property {number} [remaining] - For load-more nodes: folders still remaining at the level
  */
 export type TreeNodeData = {
-    type: 'site' | 'folder';
+    type: 'site' | 'folder' | 'load-more';
     path: string;
     hostname: string;
     id: string;
+    nextPage?: number;
+    remaining?: number;
 };
 
 /**

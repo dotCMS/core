@@ -705,6 +705,7 @@ describe('Utility Functions', () => {
             expect(node).toEqual({
                 key: 'load-more:/main/',
                 label: 'content-drive.tree.load-more',
+                type: 'load-more',
                 data: {
                     type: 'load-more',
                     path: '/main/',
