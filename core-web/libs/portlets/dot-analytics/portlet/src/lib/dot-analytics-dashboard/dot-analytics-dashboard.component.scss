@@ -34,3 +34,17 @@
 .p-tabpanels {
     background-color: transparent;
 }
+
+// Same look as dot-edit-content-layout's reload overlay (semi-transparent white backdrop +
+// centered spinner), adapted from that component's CSS-grid positioning to a relatively
+// positioned block here since this layout isn't grid-based.
+.analytics-dashboard-body {
+    position: relative;
+}
+
+.analytics-dashboard-body__loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.6);
+}

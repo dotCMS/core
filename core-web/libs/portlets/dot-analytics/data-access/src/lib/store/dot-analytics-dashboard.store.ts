@@ -1,9 +1,10 @@
-import { patchState, signalStore, withHooks, withMethods } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods } from '@ngrx/signals';
 
-import { effect, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { withConversions } from './features/with-conversions.feature';
@@ -12,10 +13,14 @@ import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
 
 import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, TIME_RANGE_OPTIONS } from '../constants';
-import { TimeRangeInput } from '../types';
+import { RequestState, TimeRangeInput } from '../types';
 import { paramsToTimeRange } from '../utils/filters.utils';
 
 const TAB_CONFIG_MAP = new Map(DASHBOARD_TAB_LIST.map((tab) => [tab.id, tab]));
+
+/** A request is still settling if it hasn't reached a final LOADED/ERROR status yet. */
+const isUnsettled = (request: RequestState<unknown>): boolean =>
+    request.status === ComponentStatus.INIT || request.status === ComponentStatus.LOADING;
 
 /**
  * Analytics Dashboard Store
@@ -37,6 +42,46 @@ export const DotAnalyticsDashboardStore = signalStore(
     withPageview(),
     withConversions(),
     withEngagement(),
+    withComputed((store) => ({
+        /**
+         * Whether the active tab's data is still loading. `true` from the moment the tab's
+         * loads are kicked off until every one of its slices has reached a final LOADED/ERROR
+         * status — mirrors the edit-content layout's reload-overlay pattern (hold the overlay
+         * until everything has settled, not just the first response back), so the dashboard
+         * shell can show a full-report loading overlay instead of only the per-widget skeletons.
+         */
+        $isReportLoading: computed(() => {
+            switch (store.currentTab()) {
+                case DASHBOARD_TABS.pageview:
+                    return [
+                        store.totalPageViews(),
+                        store.uniqueVisitors(),
+                        store.topPagePerformance(),
+                        store.pageViewTimeLine(),
+                        store.pageViewDeviceBreakdown(),
+                        store.pageViewBrowserBreakdown(),
+                        store.topPagesTable()
+                    ].some(isUnsettled);
+                case DASHBOARD_TABS.conversions:
+                    return [
+                        store.totalConversions(),
+                        store.convertingVisitors(),
+                        store.conversionTrend(),
+                        store.trafficVsConversions(),
+                        store.contentConversions()
+                    ].some(isUnsettled);
+                case DASHBOARD_TABS.engagement:
+                    return [
+                        store.engagementKpis(),
+                        store.engagementSparkline(),
+                        store.engagementBreakdown(),
+                        store.engagementPlatforms()
+                    ].some(isUnsettled);
+                default:
+                    return false;
+            }
+        })
+    })),
     // Coordinator methods that work across features
     withMethods((store, route = inject(ActivatedRoute), router = inject(Router)) => ({
         /**

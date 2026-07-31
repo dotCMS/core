@@ -1,7 +1,12 @@
 import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Route, Router } from '@angular/router';
+import {
+    ActivatedRoute,
+    ActivatedRouteSnapshot,
+    Router,
+    RouterStateSnapshot
+} from '@angular/router';
 
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
 import { DotAnalyticsService } from '@dotcms/portlets/dot-analytics/data-access';
@@ -13,8 +18,8 @@ describe('analyticsHealthGuard', () => {
     let mockActivatedRoute: ActivatedRoute;
     let mockAnalyticsService: DotAnalyticsService;
 
-    const mockRoute = {} as Route;
-    const mockSegments = [];
+    const mockRouteSnapshot = {} as ActivatedRouteSnapshot;
+    const mockStateSnapshot = {} as RouterStateSnapshot;
 
     beforeEach(() => {
         mockRouter = {
@@ -46,7 +51,7 @@ describe('analyticsHealthGuard', () => {
         );
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
@@ -64,7 +69,7 @@ describe('analyticsHealthGuard', () => {
         );
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
@@ -88,7 +93,7 @@ describe('analyticsHealthGuard', () => {
         mockActivatedRoute.snapshot.data = {};
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
@@ -112,7 +117,7 @@ describe('analyticsHealthGuard', () => {
         mockActivatedRoute.snapshot.data = { isEnterprise: false };
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {

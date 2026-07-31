@@ -106,56 +106,6 @@ export interface ContentAttributionData {
     title: string;
 }
 
-/** Sort columns for GET `/api/v1/analytics/conversion`. */
-export type ConversionOverviewOrderBy = 'totalConversions' | 'conversionName' | 'conversionRate';
-
-/** Query params for GET `/api/v1/analytics/conversion`. */
-export type GetConversionsOverviewParams = ApiRangeParams & {
-    siteId?: string;
-    conversionName?: string;
-    orderBy?: ConversionOverviewOrderBy;
-    orderDir?: 'asc' | 'desc';
-    page?: number;
-    pageSize?: number;
-};
-
-/** One conversions overview row returned by `/api/v1/analytics/conversion`. */
-export interface ConversionOverviewData {
-    conversionName: string;
-    conversionRate: number;
-    topContent: ContentAttributionData[];
-    totalConversions: number;
-    totalEvents: number;
-}
-
-/** Pagination block returned inside `entity` for `/api/v1/analytics/conversion`. */
-export interface AnalyticsConversionPagination {
-    page: number;
-    pageSize: number;
-    totalItems: number;
-    totalPages: number;
-}
-
-/**
- * `entity` payload for GET `/api/v1/analytics/conversion/content/attribution`.
- * Optional `pagination` / `query` mirror the live upstream response (overview uses `params` and always returns pagination).
- */
-export interface ContentAttributionApiEntity {
-    data: ContentAttributionData[];
-    pagination?: AnalyticsConversionPagination;
-    query?: Record<string, string>;
-}
-
-/**
- * `entity` body for `/api/v1/analytics/conversion`.
- * `pagination` is required on this endpoint; shape differs from content attribution (see {@link ContentAttributionApiEntity}).
- */
-export interface ConversionsOverviewApiEntity {
-    data: ConversionOverviewData[];
-    pagination: AnalyticsConversionPagination;
-    params?: Record<string, string>;
-}
-
 /** Response wrapper from analytics event endpoints (entity.data field) */
 export interface AnalyticsEventResponse<T> {
     data: T;
