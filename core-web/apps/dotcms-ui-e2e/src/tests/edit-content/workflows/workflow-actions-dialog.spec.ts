@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import {
     ContentType,
     createFakeContentType,
@@ -31,14 +31,14 @@ function authHeaders() {
     return { Authorization: generateBase64Credentials(admin1.username, admin1.password) };
 }
 
-async function navigateToContent(page: import('@playwright/test').Page, inode: string) {
+async function navigateToContent(page: Page, inode: string) {
     await page.goto(`/dotAdmin/#/content/${inode}`);
     await page.waitForLoadState('domcontentloaded');
     await page.locator('dot-edit-content-sidebar').waitFor({ state: 'visible', timeout: 15000 });
     await page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
 }
 
-async function openWizardDialog(page: import('@playwright/test').Page, actionName: string) {
+async function openWizardDialog(page: Page, actionName: string) {
     // The sidebar Actions tab is selected by default, so the stacked workflow-action buttons
     // are visible without switching tabs. Each action renders as a full-width button labelled
     // with the action name (no overflow menu in stacked mode), so click it directly.
