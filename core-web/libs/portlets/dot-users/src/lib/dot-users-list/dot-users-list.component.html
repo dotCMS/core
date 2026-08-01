@@ -17,20 +17,23 @@
                 class="w-80" />
         </p-iconField>
 
-        <div class="ml-auto flex gap-2">
+        <dot-users-filter-by data-testid="users-filter-by" />
+
+        <div class="ml-auto flex items-center gap-4">
             @if (store.selectedUsers().length > 0) {
+                <span
+                    class="text-color-secondary text-sm"
+                    data-testid="users-selected-count">
+                    {{
+                        'users.selected.count'
+                            | dm: [store.selectedUsers().length.toString()]
+                    }}
+                </span>
                 <p-button
-                    severity="danger"
+                    [label]="'users.delete' | dm"
                     [outlined]="true"
                     (onClick)="confirmDelete()"
-                    data-testid="users-delete-btn">
-                    <span
-                        class="material-symbols-rounded text-xl! leading-none!"
-                        aria-hidden="true">
-                        delete
-                    </span>
-                    <span class="p-button-label">{{ 'users.delete' | dm }}</span>
-                </p-button>
+                    data-testid="users-delete-btn" />
             }
             <p-button
                 [label]="'users.new' | dm"

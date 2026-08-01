@@ -38,6 +38,14 @@ export interface DotUsersPaginatedParams {
     direction?: 'ASC' | 'DESC';
     includeAnonymous?: boolean;
     includeDefault?: boolean;
+    /**
+     * System role key to constrain the result set to users who hold that role
+     * (e.g. `DOTCMS_BACK_END_USER`, `DOTCMS_FRONT_END_USER`). The paginator
+     * already accepts a `roles` extra param at the Java layer; the REST wiring
+     * is delivered by dotCMS/core#36794. Sending it before that lands is
+     * harmless — the backend ignores unknown query params.
+     */
+    roleKey?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -69,6 +77,9 @@ export class DotUsersService {
         }
         if (params.includeDefault) {
             httpParams = httpParams.set('includeDefault', 'true');
+        }
+        if (params.roleKey) {
+            httpParams = httpParams.set('roleKey', params.roleKey);
         }
 
         return this.#http.get<DotCMSAPIResponse<DotUserListItem[]>>('/api/v1/users/filter', {

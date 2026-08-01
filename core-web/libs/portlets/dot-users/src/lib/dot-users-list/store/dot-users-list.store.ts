@@ -20,6 +20,11 @@ export interface DotUsersListState {
     page: number;
     rows: number;
     filter: string;
+    /**
+     * System role key that constrains the list to users holding that role.
+     * Empty string means "no role filter" (the `All access` UI option).
+     */
+    roleFilter: string;
     sortField: string;
     sortOrder: DotUsersListSortDirection;
     status: DotUsersListStatus;
@@ -32,6 +37,7 @@ const initialState: DotUsersListState = {
     page: 1,
     rows: 20,
     filter: '',
+    roleFilter: '',
     sortField: 'lastLoginDate',
     sortOrder: 'DESC',
     status: 'init'
@@ -48,6 +54,7 @@ export const DotUsersListStore = signalStore(
             usersService
                 .getUsersPaginated({
                     filter: store.filter() || undefined,
+                    roleKey: store.roleFilter() || undefined,
                     page: store.page(),
                     perPage: store.rows(),
                     orderBy: store.sortField(),
@@ -76,6 +83,10 @@ export const DotUsersListStore = signalStore(
 
             setFilter(filter: string) {
                 patchState(store, { filter, page: 1 });
+            },
+
+            setRoleFilter(roleFilter: string) {
+                patchState(store, { roleFilter, page: 1 });
             },
 
             setPagination(page: number, rows: number) {
@@ -128,6 +139,7 @@ export const DotUsersListStore = signalStore(
         onInit() {
             effect(() => {
                 store.filter();
+                store.roleFilter();
                 store.page();
                 store.rows();
                 store.sortField();

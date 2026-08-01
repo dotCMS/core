@@ -82,6 +82,7 @@ describe('DotUsersListStore', () => {
     it('should load users on init with default params', () => {
         expect(usersService.getUsersPaginated).toHaveBeenCalledWith({
             filter: undefined,
+            roleKey: undefined,
             page: 1,
             perPage: 20,
             orderBy: 'lastLoginDate',
@@ -90,6 +91,32 @@ describe('DotUsersListStore', () => {
         expect(store.users()).toEqual(MOCK_USERS);
         expect(store.totalRecords()).toBe(2);
         expect(store.status()).toBe('loaded');
+    });
+
+    it('setRoleFilter should reset page and trigger a reload with roleKey', () => {
+        usersService.getUsersPaginated.mockClear();
+
+        store.setRoleFilter('DOTCMS_BACK_END_USER');
+        spectator.flushEffects();
+
+        expect(store.roleFilter()).toBe('DOTCMS_BACK_END_USER');
+        expect(store.page()).toBe(1);
+        expect(usersService.getUsersPaginated).toHaveBeenCalledWith(
+            expect.objectContaining({ roleKey: 'DOTCMS_BACK_END_USER', page: 1 })
+        );
+    });
+
+    it('setRoleFilter with empty string should send roleKey undefined', () => {
+        store.setRoleFilter('DOTCMS_FRONT_END_USER');
+        spectator.flushEffects();
+        usersService.getUsersPaginated.mockClear();
+
+        store.setRoleFilter('');
+        spectator.flushEffects();
+
+        expect(usersService.getUsersPaginated).toHaveBeenCalledWith(
+            expect.objectContaining({ roleKey: undefined })
+        );
     });
 
     it('setFilter should reset page and trigger a reload', () => {

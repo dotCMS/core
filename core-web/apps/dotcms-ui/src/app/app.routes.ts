@@ -186,7 +186,7 @@ const PORTLETS_ANGULAR: Route[] = [
             )
     },
     {
-        path: 'users-beta',
+        path: 'users',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },

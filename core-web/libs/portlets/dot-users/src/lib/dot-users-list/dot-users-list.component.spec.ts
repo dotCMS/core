@@ -69,7 +69,10 @@ const MESSAGES = {
     'users.create.header': 'Create User',
     'users.edit.header': 'Edit User',
     'users.confirm.delete.header': 'Delete users',
-    'users.confirm.delete.message': 'Delete {0} users?'
+    'users.confirm.delete.message': 'Delete {0} users?',
+    'users.selected.count': '{0} selected',
+    'users.filter.by': 'Filter by',
+    'users.filter.all-access': 'All access'
 };
 
 describe('DotUsersListComponent', () => {
@@ -100,6 +103,7 @@ describe('DotUsersListComponent', () => {
                 users: jest.fn().mockReturnValue(MOCK_USERS),
                 selectedUsers: jest.fn().mockReturnValue([]),
                 filter: jest.fn().mockReturnValue(''),
+                roleFilter: jest.fn().mockReturnValue(''),
                 page: jest.fn().mockReturnValue(1),
                 rows: jest.fn().mockReturnValue(20),
                 totalRecords: jest.fn().mockReturnValue(2),
@@ -107,6 +111,7 @@ describe('DotUsersListComponent', () => {
                 sortOrder: jest.fn().mockReturnValue('DESC'),
                 status: jest.fn().mockReturnValue('loaded'),
                 setFilter: jest.fn(),
+                setRoleFilter: jest.fn(),
                 setPagination: jest.fn(),
                 setSort: jest.fn(),
                 setSelectedUsers: jest.fn(),
@@ -139,6 +144,22 @@ describe('DotUsersListComponent', () => {
 
     it('should render the New button', () => {
         expect(spectator.query(byTestId('users-new-btn'))).toBeTruthy();
+    });
+
+    it('should not render selected-count or Delete when nothing is selected', () => {
+        expect(spectator.query(byTestId('users-selected-count'))).toBeNull();
+        expect(spectator.query(byTestId('users-delete-btn'))).toBeNull();
+    });
+
+    it('should render "N selected" and the Delete button when there is a selection', () => {
+        const store = spectator.inject(DotUsersListStore, true);
+        (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0], MOCK_USERS[1]]);
+        spectator.detectChanges();
+
+        const countLabel = spectator.query(byTestId('users-selected-count'));
+
+        expect(countLabel?.textContent?.trim()).toBe('2 selected');
+        expect(spectator.query(byTestId('users-delete-btn'))).toBeTruthy();
     });
 
     it('should render an Inactive chip only for inactive users', () => {

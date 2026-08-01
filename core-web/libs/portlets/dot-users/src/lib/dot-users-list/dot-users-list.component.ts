@@ -22,6 +22,7 @@ import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotUsersFilterByComponent } from './components/dot-users-filter-by/dot-users-filter-by.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
 import { DotUsersCreateComponent } from '../dot-users-create/dot-users-create.component';
@@ -42,7 +43,8 @@ import { DotUserListItem } from '../services/dot-users.service';
         SkeletonModule,
         TagModule,
         ToolbarModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotUsersFilterByComponent
     ],
     templateUrl: './dot-users-list.component.html',
     providers: [DotUsersListStore, DialogService, ConfirmationService],

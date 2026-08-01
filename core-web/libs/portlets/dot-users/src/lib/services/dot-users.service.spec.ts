@@ -65,6 +65,16 @@ describe('DotUsersService', () => {
         req.flush({ entity: [], errors: [], messages: [], permissions: [], i18nMessagesMap: {} });
     });
 
+    it('should send roleKey when provided', () => {
+        spectator.service.getUsersPaginated({ roleKey: 'DOTCMS_BACK_END_USER' }).subscribe();
+
+        const req = spectator.expectOne(
+            '/api/v1/users/filter?roleKey=DOTCMS_BACK_END_USER',
+            HttpMethod.GET
+        );
+        req.flush({ entity: [], errors: [], messages: [], permissions: [], i18nMessagesMap: {} });
+    });
+
     it('should DELETE with replacementUserId when provided', () => {
         spectator.service.deleteUser('user-1', 'admin').subscribe();
 
