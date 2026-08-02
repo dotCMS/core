@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * Request body for {@code POST /api/v1/agent/a11y/stop}.
+ * Request body for {@code POST /api/v1/agents/a11y/stop}.
  *
  * <p>Carries the {@code runId} the client received from {@code /fix} (the report) or
  * {@code /fix/stream} (the {@code run} event). Stop is addressed by this id, NOT by the

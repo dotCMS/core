@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * Request body for {@code POST /api/v1/a11y-agent/fix} and {@code POST /api/v1/a11y-agent/fix/stream}.
+ * Request body for {@code POST /api/v1/agents/a11y/fix} and {@code POST /api/v1/agents/a11y/fix/stream}.
  *
  * <p>The proxy resolves the identifier to a live URL, URI, and hostId before forwarding to the
  * agent service — the agent receives a fully-resolved payload (plan §8.2) and never performs

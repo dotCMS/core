@@ -46,12 +46,12 @@ describe('DotA11yAgentService', () => {
 
     it('fixStream delegates to the generic run service with the a11y stream endpoint', () => {
         service.fixStream(REQUEST).subscribe();
-        expect(runService.run).toHaveBeenCalledWith('/api/v1/agent/a11y/fix/stream', REQUEST);
+        expect(runService.run).toHaveBeenCalledWith('/api/v1/agents/a11y/fix/stream', REQUEST);
     });
 
     it('stop delegates to the run service with the endpoint and the run id in the body', () => {
         service.stop('r_123').subscribe();
-        expect(runService.stop).toHaveBeenCalledWith('/api/v1/agent/a11y/stop', {
+        expect(runService.stop).toHaveBeenCalledWith('/api/v1/agents/a11y/stop', {
             runId: 'r_123'
         });
     });

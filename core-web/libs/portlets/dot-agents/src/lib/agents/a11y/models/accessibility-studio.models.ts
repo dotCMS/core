@@ -36,7 +36,7 @@ export interface FixReport {
 }
 
 /**
- * The Studio → proxy request body (POST /api/v1/a11y-agent/fix[/stream], plan §8.1).
+ * The Studio → proxy request body (POST /api/v1/agents/a11y/fix[/stream], plan §8.1).
  * Simpler than the full FixRequest — the Java proxy resolves the page and builds
  * the complete agent payload (FixRequest) before forwarding.
  */

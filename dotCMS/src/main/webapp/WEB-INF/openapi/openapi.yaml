@@ -2623,7 +2623,7 @@ paths:
       summary: Retrieves Accessibility Guidelines
       tags:
       - Accessibility Checker
-  /v1/agent/a11y/active-run:
+  /v1/agents/a11y/active-run:
     get:
       operationId: activeRun
       responses:
@@ -2633,7 +2633,7 @@ paths:
           description: default response
       tags:
       - Accessibility Agent
-  /v1/agent/a11y/fix:
+  /v1/agents/a11y/fix:
     post:
       operationId: fix
       requestBody:
@@ -2648,7 +2648,7 @@ paths:
           description: default response
       tags:
       - Accessibility Agent
-  /v1/agent/a11y/fix/stream:
+  /v1/agents/a11y/fix/stream:
     post:
       operationId: fixStream
       requestBody:
@@ -2665,7 +2665,7 @@ paths:
           description: default response
       tags:
       - Accessibility Agent
-  /v1/agent/a11y/stop:
+  /v1/agents/a11y/stop:
     post:
       operationId: stop
       requestBody:

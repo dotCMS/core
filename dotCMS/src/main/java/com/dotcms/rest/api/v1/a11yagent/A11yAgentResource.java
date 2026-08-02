@@ -64,7 +64,7 @@ import java.util.UUID;
  *
  * <p>GZIPFilter is not registered in {@code web.xml} so no buffering risk for the SSE path (§8.5).
  */
-@Path("/v1/agent/a11y")
+@Path("/v1/agents/a11y")
 @Tag(name = "Accessibility Agent", description = "Streaming a11y-fix agent proxy")
 public class A11yAgentResource {
 
@@ -555,7 +555,7 @@ public class A11yAgentResource {
     /**
      * Reads {@code apiUrl} and {@code apiAuthToken} from the Page Scanner App secrets
      * (same keys the scanner uses). The agent runs on the same host as the scanner,
-     * so {@code apiUrl} is the shared base — we append {@code /agent/a11y} to reach
+     * so {@code apiUrl} is the shared base — we append {@code /agents/a11y} to reach
      * the agent routes.
      *
      * @return array {@code [agentBaseUrl, apiAuthToken]}, or empty if not configured
@@ -590,7 +590,7 @@ public class A11yAgentResource {
         }
 
         final String base = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
-        return Optional.of(new String[]{ base + "/agent/a11y", apiAuthToken });
+        return Optional.of(new String[]{ base + "/agents/a11y", apiAuthToken });
     }
 
     private String mintShortLivedToken(final User user, final HttpServletRequest request) {
