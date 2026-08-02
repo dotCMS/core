@@ -1,0 +1,165 @@
+#
+# Notify Latest Promotion (Reusable Component)
+#
+# When the release pipeline moves the floating `latest` Docker tag
+# (promote-latest in cicd_6-release.yml), this tells the GitHub users whose
+# commits are newly included that their change is live on `latest` and when
+# the evergreen-tracks reconciler will roll it out to subscribed
+# environments.
+#
+
+name: Notify Latest Promotion
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: 'Release tag that was just promoted to latest (e.g. v26.07.30-01)'
+        required: true
+        type: string
+      dotusage_url:
+        description: 'Base URL for the dotUsage API (includes /api/v1)'
+        required: false
+        type: string
+        default: 'https://usage.dotcms.cloud/api/v1'
+    secrets:
+      CI_MACHINE_USER:
+        required: true
+      CI_MACHINE_TOKEN:
+        required: true
+      SLACK_BOT_TOKEN:
+        required: true
+      DOTUSAGE_TOKEN:
+        description: 'Viewer-role dotUsage API token, used read-only against GET /environments'
+        required: true
+
+jobs:
+  # Diff this release against the previous one and resolve each new commit's
+  # PR to its GitHub author. Uses the "list PRs associated with a commit" API
+  # directly, so no commit-message parsing is needed.
+  collect-authors:
+    name: Collect Release Authors
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      logins: ${{ steps.collect.outputs.logins }}
+    steps:
+      - name: Collect PR authors since previous release
+        id: collect
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          # Previous published, non-CLI/LTS release right before this one.
+          # Requires CURRENT_TAG to already be published as a GitHub Release
+          # (this job's caller depends on the `release` job for that reason).
+          PREV_TAG=$(gh api "repos/${REPO}/releases" --paginate \
+            --jq '[.[] | select(.draft==false and (.tag_name | test("dotcms-cli-|_lts_") | not))] | sort_by(.created_at) | reverse | .[].tag_name' \
+            | awk -v cur="$CURRENT_TAG" 'found{print; exit} $0==cur{found=1}')
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "::notice::No previous release found for ${CURRENT_TAG} — skipping author notification."
+            echo "logins=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Diffing ${PREV_TAG}...${CURRENT_TAG}"
+
+          # ponytail: compare API caps at 250 commits per response with no
+          # Link-header pagination; fine for a single release's diff.
+          LOGINS=$(gh api "repos/${REPO}/compare/${PREV_TAG}...${CURRENT_TAG}" --jq '.commits[].sha' \
+            | while read -r sha; do
+                gh api "repos/${REPO}/commits/${sha}/pulls" --jq '.[].user.login' || true
+              done \
+            | sort -u | paste -sd, -)
+
+          echo "Authors: ${LOGINS:-none}"
+          echo "logins=${LOGINS}" >> "$GITHUB_OUTPUT"
+
+  slack-channel-resolver:
+    name: Resolve Slack Channels
+    needs: collect-authors
+    if: needs.collect-authors.outputs.logins != ''
+    uses: ./.github/workflows/utility_slack-channel-resolver.yml
+    with:
+      github_users: ${{ needs.collect-authors.outputs.logins }}
+      default_channel: eng
+      default_channel_id: C028Z3R2D
+      continue_on_error: true
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  notify:
+    name: Notify Authors
+    needs: [ collect-authors, slack-channel-resolver ]
+    if: needs.collect-authors.outputs.logins != ''
+    # usage.dotcms.cloud sits behind a corporate-IP WAF allowlist that
+    # GitHub-hosted runners aren't on. Requires this runner's egress IP to
+    # already be allowlisted for dotUsage — if it isn't, the dotUsage lookup
+    # step below falls back to generic wording rather than failing the run.
+    runs-on: [ self-hosted, linux, x64, ubuntu-server ]
+    strategy:
+      fail-fast: false
+      matrix:
+        member: ${{ fromJSON(needs.slack-channel-resolver.outputs.channel_ids) }}
+    continue-on-error: true
+    steps:
+      - name: Look up latest-track environments
+        id: envs
+        env:
+          DOTUSAGE_URL: ${{ inputs.dotusage_url }}
+          DOTUSAGE_TOKEN: ${{ secrets.DOTUSAGE_TOKEN }}
+        run: |
+          BODY=$(curl -sf --max-time 10 \
+            -H "Authorization: Bearer ${DOTUSAGE_TOKEN}" \
+            "${DOTUSAGE_URL}/environments" || true)
+
+          if [ -z "$BODY" ]; then
+            echo "::warning::dotUsage lookup failed — falling back to generic wording."
+            echo 'envs=the `latest`-track environments' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          ENVS=$(echo "$BODY" | jq -r '[.data[] | select(.track=="latest") | "\(.tenant)/\(.environment)"] | join(", ")')
+          if [ -z "$ENVS" ]; then
+            ENVS="no environments (none currently subscribed to the \`latest\` track)"
+          fi
+          echo "envs=${ENVS}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute next weekday 10am ET
+        id: when
+        run: |
+          set -euo pipefail
+          NOW_ET=$(TZ=America/New_York date +%s)
+          TODAY_10AM_ET=$(TZ=America/New_York date -d "today 10:00" +%s)
+          DOW=$(TZ=America/New_York date +%u)
+          if [ "$DOW" -le 5 ] && [ "$NOW_ET" -lt "$TODAY_10AM_ET" ]; then
+            WHEN=$(TZ=America/New_York date +%F)
+          else
+            ADD=1
+            while [ "$(TZ=America/New_York date -d "+${ADD} day" +%u)" -gt 5 ]; do
+              ADD=$((ADD + 1))
+            done
+            WHEN=$(TZ=America/New_York date -d "+${ADD} day" +%F)
+          fi
+          echo "when=${WHEN} 10:00 AM ET" >> "$GITHUB_OUTPUT"
+
+      - name: Notify
+        env:
+          CHANNEL: ${{ matrix.member }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          ENVS: ${{ steps.envs.outputs.envs }}
+          WHEN: ${{ steps.when.outputs.when }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: |
+          MESSAGE=":rocket: Your change in dotCMS \`${RELEASE_TAG}\` is now on the \`latest\` track. It rolls out to ${ENVS} starting ${WHEN} (evergreen-tracks reconciler; other regions follow later the same day)."
+
+          curl -X POST \
+            -H "Content-type: application/json" \
+            -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+            -d "$(jq -n --arg channel "$CHANNEL" --arg text "$MESSAGE" '{channel: $channel, text: $text}')" \
+            -s \
+            https://slack.com/api/chat.postMessage

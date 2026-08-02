@@ -308,6 +308,32 @@ jobs:
             uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
           done
 
+  # Notify latest-track authors - tell devs their change is live on `latest`
+  # and when evergreen-tracks will roll it out to subscribed environments.
+  # Needs `release` (not just release-prepare/promote-latest) so the GitHub
+  # Release object for this tag is guaranteed published before we look up the
+  # previous release to diff against - `release` runs in parallel with
+  # promote-latest, not before it, so skipping this dependency would race it.
+  # Reuses the same notify_slack toggle and CLI/LTS/non-v exclusion as the
+  # Slack report step below.
+  notify-latest-authors:
+    name: Notify Latest Authors
+    needs: [ release-prepare, promote-latest, release ]
+    if: >-
+      needs.promote-latest.result == 'success'
+      && github.event.inputs.notify_slack == 'true'
+      && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+      && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+      && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+    uses: ./.github/workflows/cicd_comp_notify-latest-promotion.yml
+    with:
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DOTUSAGE_TOKEN: ${{ secrets.DOTUSAGE_TOKEN }}
+
   # Bump MinSdkVersion.java on main — only after a full green release, and only when the
   # operator explicitly flagged this release as SDK-compatibility-breaking (see #36698).
   # Never a direct push to main: opens a PR and asks a human to merge it (main has no
