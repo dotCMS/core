@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import {
     DotHttpErrorManagerService,
@@ -93,11 +93,11 @@ describe('DotUsersListStore', () => {
         jest.clearAllMocks();
         usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
         usersService.deleteUser.mockReturnValue(of({}));
-        // The onInit effect fires loadUsers automatically
-        spectator.flushEffects();
     });
 
-    it('should load users on init with default params', () => {
+    it('loadUsers passes the current state as query params', () => {
+        store.loadUsers();
+
         expect(usersService.getUsersPaginated).toHaveBeenCalledWith({
             filter: undefined,
             roleKey: undefined,
@@ -230,6 +230,19 @@ describe('DotUsersListStore', () => {
         usersService.deleteUser.mockClear();
 
         store.deleteSelectedUsers();
+
+        expect(usersService.deleteUser).not.toHaveBeenCalled();
+    });
+
+    it('deleteSelectedUsers should no-op on double-click while a delete is in flight', () => {
+        // NEVER keeps the first request in flight so the status stays 'loading'.
+        usersService.deleteUser.mockReturnValueOnce(NEVER);
+        store.setSelectedUsers([MOCK_USERS[0]]);
+
+        store.deleteSelectedUsers(); // first click — starts the delete, status becomes 'loading'
+        usersService.deleteUser.mockClear();
+
+        store.deleteSelectedUsers(); // second click — should be ignored
 
         expect(usersService.deleteUser).not.toHaveBeenCalled();
     });

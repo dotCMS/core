@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -35,6 +36,7 @@ import { DotUserListItem } from '../services/dot-users.service';
         DatePipe,
         FormsModule,
         TableModule,
+        AvatarModule,
         ButtonModule,
         InputTextModule,
         IconFieldModule,
@@ -133,10 +135,6 @@ export class DotUsersListComponent {
             position: 'center',
             accept: () => this.store.deleteSelectedUsers()
         });
-    }
-
-    gravatarUrl(user: DotUserListItem): string {
-        return `https://www.gravatar.com/avatar/${user.gravitar}?d=mp&s=64`;
     }
 
     initials(user: DotUserListItem): string {

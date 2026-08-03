@@ -1,9 +1,10 @@
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { EMPTY, forkJoin, of } from 'rxjs';
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
-import { effect, inject, untracked } from '@angular/core';
+import { inject } from '@angular/core';
 
-import { catchError, map, take } from 'rxjs/operators';
+import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -56,52 +57,64 @@ export const DotUsersListStore = signalStore(
         const messageDisplayService = inject(DotMessageDisplayService);
         const messageService = inject(DotMessageService);
 
-        function loadUsers() {
-            patchState(store, { status: 'loading' });
-            usersService
-                .getUsersPaginated({
-                    filter: store.filter() || undefined,
-                    roleKey: store.roleFilter() || undefined,
-                    page: store.page(),
-                    perPage: store.rows(),
-                    orderBy: store.sortField(),
-                    direction: store.sortOrder()
-                })
-                .pipe(
-                    take(1),
-                    catchError((error) => {
-                        httpErrorManager.handle(error);
-                        patchState(store, { status: 'error' });
+        /**
+         * `rxMethod` + `switchMap` cancels the previous in-flight request
+         * when a new one is dispatched, so rapid sort/filter/page changes
+         * cannot let a stale response overwrite a fresh page.
+         */
+        const loadUsers = rxMethod<void>(
+            pipe(
+                tap(() => patchState(store, { status: 'loading' })),
+                switchMap(() =>
+                    usersService
+                        .getUsersPaginated({
+                            filter: store.filter() || undefined,
+                            roleKey: store.roleFilter() || undefined,
+                            page: store.page(),
+                            perPage: store.rows(),
+                            orderBy: store.sortField(),
+                            direction: store.sortOrder()
+                        })
+                        .pipe(
+                            catchError((error) => {
+                                httpErrorManager.handle(error);
+                                patchState(store, { status: 'error' });
 
-                        return EMPTY;
-                    })
-                )
-                .subscribe((response) => {
+                                return EMPTY;
+                            })
+                        )
+                ),
+                tap((response) => {
                     patchState(store, {
                         users: response.entity,
                         totalRecords: response.pagination?.totalEntries ?? 0,
                         status: 'loaded'
                     });
-                });
-        }
+                })
+            )
+        );
 
         return {
             loadUsers,
 
             setFilter(filter: string) {
                 patchState(store, { filter, page: 1 });
+                loadUsers();
             },
 
             setRoleFilter(roleFilter: string) {
                 patchState(store, { roleFilter, page: 1 });
+                loadUsers();
             },
 
             setPagination(page: number, rows: number) {
                 patchState(store, { page, rows });
+                loadUsers();
             },
 
             setSort(field: string, order: DotUsersListSortDirection) {
                 patchState(store, { sortField: field, sortOrder: order });
+                loadUsers();
             },
 
             setSelectedUsers(users: DotUserListItem[]) {
@@ -110,7 +123,7 @@ export const DotUsersListStore = signalStore(
 
             deleteSelectedUsers() {
                 const selected = store.selectedUsers();
-                if (selected.length === 0) {
+                if (selected.length === 0 || store.status() === 'loading') {
                     return;
                 }
                 patchState(store, { status: 'loading' });
@@ -161,19 +174,5 @@ export const DotUsersListStore = signalStore(
                     });
             }
         };
-    }),
-    withHooks((store) => ({
-        onInit() {
-            effect(() => {
-                store.filter();
-                store.roleFilter();
-                store.page();
-                store.rows();
-                store.sortField();
-                store.sortOrder();
-
-                untracked(() => store.loadUsers());
-            });
-        }
-    }))
+    })
 );

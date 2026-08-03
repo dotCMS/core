@@ -51,6 +51,8 @@
         [rowHover]="true"
         [scrollable]="true"
         scrollHeight="flex"
+        [sortField]="store.sortField()"
+        [sortOrder]="store.sortOrder() === 'DESC' ? -1 : 1"
         [selection]="store.selectedUsers()"
         (selectionChange)="store.setSelectedUsers($event)"
         dataKey="userId"
@@ -94,13 +96,11 @@
                     </td>
                     <td data-testid="users-cell-user">
                         <div class="flex items-center gap-3">
-                            <img
-                                [src]="gravatarUrl(user)"
-                                [alt]="initials(user)"
-                                width="32"
-                                height="32"
-                                class="rounded-full"
-                                loading="lazy" />
+                            <p-avatar
+                                [label]="initials(user)"
+                                shape="circle"
+                                size="normal"
+                                data-testid="users-cell-avatar" />
                             <div class="flex flex-col">
                                 <span class="flex items-center gap-2 font-medium">
                                     {{ user.fullName || user.name }}
