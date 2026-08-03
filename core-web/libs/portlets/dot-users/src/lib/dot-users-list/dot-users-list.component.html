@@ -21,13 +21,8 @@
 
         <div class="ml-auto flex items-center gap-4">
             @if (store.selectedUsers().length > 0) {
-                <span
-                    class="text-color-secondary text-sm"
-                    data-testid="users-selected-count">
-                    {{
-                        'users.selected.count'
-                            | dm: [store.selectedUsers().length.toString()]
-                    }}
+                <span class="text-color-secondary text-sm" data-testid="users-selected-count">
+                    {{ 'users.selected.count' | dm: [store.selectedUsers().length.toString()] }}
                 </span>
                 <p-button
                     [label]="'users.delete' | dm"

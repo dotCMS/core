@@ -17,9 +17,7 @@
         optionValue="value"
         (onChange)="onChange()">
         <ng-template let-item pTemplate="item">
-            <dot-filter-list-item
-                [label]="item.label"
-                data-testid="users-filter-by-item" />
+            <dot-filter-list-item [label]="item.label" data-testid="users-filter-by-item" />
         </ng-template>
     </p-listbox>
 </p-popover>
