@@ -54,32 +54,21 @@ export class DotUsersService {
     getUsersPaginated(
         params: DotUsersPaginatedParams
     ): Observable<DotCMSAPIResponse<DotUserListItem[]>> {
-        let httpParams = new HttpParams();
+        const paramMap: Array<[string, string | undefined]> = [
+            ['query', params.filter],
+            ['page', params.page?.toString()],
+            ['per_page', params.perPage?.toString()],
+            ['orderby', params.orderBy],
+            ['direction', params.direction],
+            ['includeanonymous', params.includeAnonymous ? 'true' : undefined],
+            ['includedefault', params.includeDefault ? 'true' : undefined],
+            ['roleKey', params.roleKey]
+        ];
 
-        if (params.filter) {
-            httpParams = httpParams.set('query', params.filter);
-        }
-        if (params.page !== undefined) {
-            httpParams = httpParams.set('page', params.page.toString());
-        }
-        if (params.perPage !== undefined) {
-            httpParams = httpParams.set('per_page', params.perPage.toString());
-        }
-        if (params.orderBy) {
-            httpParams = httpParams.set('orderby', params.orderBy);
-        }
-        if (params.direction) {
-            httpParams = httpParams.set('direction', params.direction);
-        }
-        if (params.includeAnonymous) {
-            httpParams = httpParams.set('includeanonymous', 'true');
-        }
-        if (params.includeDefault) {
-            httpParams = httpParams.set('includedefault', 'true');
-        }
-        if (params.roleKey) {
-            httpParams = httpParams.set('roleKey', params.roleKey);
-        }
+        const httpParams = paramMap.reduce(
+            (acc, [key, value]) => (value ? acc.set(key, value) : acc),
+            new HttpParams()
+        );
 
         return this.#http.get<DotCMSAPIResponse<DotUserListItem[]>>('/api/v1/users/filter', {
             params: httpParams
