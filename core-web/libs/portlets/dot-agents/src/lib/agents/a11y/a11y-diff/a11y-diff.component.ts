@@ -86,9 +86,6 @@ export class DotA11yDiffComponent {
     readonly files = signal<PageDiffFile[]>([]);
     readonly status = signal<DiffStatus>('loading');
 
-    /** True once loaded with at least one changed file — the page can be published. */
-    readonly hasChanges = computed(() => this.status() === 'loaded' && this.files().length > 0);
-
     /** Identifier of the file being diffed in the right pane; null → preview. */
     readonly selectedId = computed(() => this.activeFileId());
 

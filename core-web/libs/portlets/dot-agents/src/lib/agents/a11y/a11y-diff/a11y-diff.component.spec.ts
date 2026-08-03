@@ -202,14 +202,21 @@ describe('DotA11yDiffComponent', () => {
         expect(spectator.query(byTestId('diff-file-list'))).toBeFalsy();
     });
 
-    it('exposes hasChanges so the run screen can gate Apply', () => {
-        render();
-        expect(spectator.component.hasChanges()).toBe(true);
-    });
+    it('reports zero changed files when the page has no working-vs-live delta', () => {
+        const counts: number[] = [];
+        spectator = createComponent({
+            providers: [
+                mockProvider(DotPageSourcesService, {
+                    getPageSources: jest.fn().mockReturnValue(of([])),
+                    getDiffFiles: jest.fn().mockReturnValue(of([]))
+                })
+            ]
+        });
+        spectator.component.changedCount.subscribe((n) => counts.push(n));
+        previewRevision.set(1);
+        spectator.detectChanges();
 
-    it('reports no changes when the page has no working-vs-live delta', () => {
-        render([]);
-        expect(spectator.component.hasChanges()).toBe(false);
+        expect(counts).toContain(0);
     });
 
     it('shows the error state when the diff load fails', () => {

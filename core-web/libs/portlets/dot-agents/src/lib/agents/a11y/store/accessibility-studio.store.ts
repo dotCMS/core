@@ -26,7 +26,7 @@ import { GlobalStore } from '@dotcms/store';
 import { A11yGroup, buildA11yGroups } from '../models/a11y-groups';
 import {
     impactToSeverity,
-    SEVERITY_ORDER,
+    SEVERITY_RANK,
     severityBreakdown,
     type SeverityCounts
 } from '../models/a11y-severity';
@@ -182,154 +182,149 @@ function toPageRow(content: DotCMSContentlet): StudioPageRow {
 
 export const AccessibilityStudioStore = signalStore(
     withState<AccessibilityStudioState>(initialState),
-    withComputed((store) => ({
-        inPicker: computed(() => store.phase() === 'picker'),
-        inStudio: computed(() => store.phase() !== 'picker'),
-        isReady: computed(() => store.phase() === 'ready'),
-        isScanning: computed(() => store.phase() === 'scanning'),
-        isScanned: computed(() => store.phase() === 'scanned'),
-        isFixing: computed(() => store.phase() === 'fixing'),
-        isDone: computed(() => store.phase() === 'done'),
-        isPublished: computed(() => store.phase() === 'published'),
-        isWorking: computed(() => store.phase() === 'scanning' || store.phase() === 'fixing'),
-        /** True once a scan has produced (or is producing) results. */
-        scanned: computed(() =>
-            ['scanned', 'fixing', 'done', 'published'].includes(store.phase())
-        ),
-        /** Real axe findings grouped per rule (violations → error, incomplete → warning). */
-        a11yGroups: computed<A11yGroup[]>(() => buildA11yGroups(store.scanResult())),
-        /**
-         * The LIVE (published) render's findings, grouped per rule — drives ONLY the
-         * live-frame marker layer for the side-by-side comparison. Empty until the
-         * live scan lands (it runs alongside the preview scan on Scan / Re-scan).
-         */
-        liveA11yGroups: computed<A11yGroup[]>(() => buildA11yGroups(store.liveScanResult())),
-        /** Real axe error-element count (confirmed violations). */
-        errorCount: computed(() =>
-            buildA11yGroups(store.scanResult())
-                .filter((g) => g.type === 'error')
-                .reduce((total, g) => total + g.count, 0)
-        ),
-        /** Real axe warning-element count (incomplete / needs review). */
-        warningCount: computed(() =>
-            buildA11yGroups(store.scanResult())
-                .filter((g) => g.type === 'warning')
-                .reduce((total, g) => total + g.count, 0)
-        ),
-        /**
-         * Axe `incomplete` groups (needs manual review) — one per rule, sorted by
-         * occurrence count. The agent doesn't fix these (axe couldn't confirm them),
-         * so the panel lists them separately with an explanation.
-         */
-        reviewGroups: computed<A11yGroup[]>(() =>
-            buildA11yGroups(store.scanResult())
-                .filter((g) => g.type === 'warning')
-                .sort((a, b) => b.count - a.count)
-        ),
-        /**
-         * The BASELINE violation count — the "before" side of the before→after
-         * comparison. It must stay pinned to the ORIGINAL scan even as the preview
-         * is re-scanned mid-fix (which mutates `scanResult` and would otherwise drag
-         * this down). Source order: the report's frozen `scan.before` once the run
-         * completes; the agent's `progress.baseline` while fixing; otherwise the
-         * pre-run scan's error count.
-         */
-        beforeCount: computed(() => {
-            const report = store.report();
-            if (report) {
-                return report.scan.before.violations;
-            }
-            const progress = store.progress();
-            if (store.phase() === 'fixing' && progress) {
-                return progress.baseline;
-            }
-            return buildA11yGroups(store.scanResult())
-                .filter((g) => g.type === 'error')
-                .reduce((total, g) => total + g.count, 0);
-        }),
-        /** Violations remaining after the fix pass. */
-        afterCount: computed(() => store.report()?.scan.after.violations ?? 0),
-        fixedResults: computed<FixResult[]>(
-            () => store.report()?.results.filter((r) => r.status === 'fixed-to-working') ?? []
-        ),
-        reportedResults: computed<FixResult[]>(
-            () =>
-                store
-                    .report()
-                    ?.results.filter((r) =>
-                        ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
-                    ) ?? []
-        ),
-        latestStep: computed<AgentRunStep | null>(() => {
-            const steps = store.steps();
-            return steps.length ? steps[steps.length - 1] : null;
-        }),
-        /**
-         * Confirmed-violation groups (axe `error`s), one per rule, sorted for the
-         * "BY ISSUE TYPE" list: highest severity first, then most occurrences.
-         */
-        issueTypeRows: computed<A11yGroup[]>(() => {
-            const rank = (g: A11yGroup) => SEVERITY_ORDER.indexOf(impactToSeverity(g.impact));
-            return buildA11yGroups(store.scanResult())
-                .filter((g) => g.type === 'error')
-                .sort((a, b) => rank(a) - rank(b) || b.count - a.count);
-        }),
-        /** Open issues broken down by severity (element counts) — drives the donut + legend. */
-        severityCounts: computed<SeverityCounts>(() =>
-            severityBreakdown(
-                buildA11yGroups(store.scanResult()).filter((g) => g.type === 'error')
-            )
-        ),
-        /**
-         * Live "open" count for the score widget. After the run finishes it's the
-         * report's authoritative after-count; while fixing it's the live count from
-         * the agent's `progress` stream (`current`) so the donut animates down as
-         * fixes land; before any run it's the scan's before-count.
-         */
-        openCount: computed<number>(() => {
-            const report = store.report();
-            if (report) {
-                return report.scan.after.violations;
-            }
-            if (store.phase() === 'fixing') {
-                // Authoritative live count straight from the agent's `progress`
-                // events. Before the first progress frame lands, fall back to the
-                // baseline (the scan's before-count).
-                const progress = store.progress();
-                if (progress) {
-                    return Math.max(0, progress.current);
+    withComputed((store) => {
+        // Hoisted so every derived count reads ONE memoized traversal of the axe
+        // payload. Sibling computeds in the returned literal can't reference each
+        // other, so the shared derivations live here.
+        const a11yGroups = computed<A11yGroup[]>(() => buildA11yGroups(store.scanResult()));
+        const errorGroups = computed<A11yGroup[]>(() =>
+            a11yGroups().filter((g) => g.type === 'error')
+        );
+        const warningGroups = computed<A11yGroup[]>(() =>
+            a11yGroups().filter((g) => g.type === 'warning')
+        );
+        /** Element count across groups (a group's `count` is its flagged-node total). */
+        const elementCount = (groups: A11yGroup[]) =>
+            groups.reduce((total, g) => total + g.count, 0);
+
+        return {
+            inPicker: computed(() => store.phase() === 'picker'),
+            inStudio: computed(() => store.phase() !== 'picker'),
+            isReady: computed(() => store.phase() === 'ready'),
+            isScanning: computed(() => store.phase() === 'scanning'),
+            isScanned: computed(() => store.phase() === 'scanned'),
+            isFixing: computed(() => store.phase() === 'fixing'),
+            isDone: computed(() => store.phase() === 'done'),
+            isPublished: computed(() => store.phase() === 'published'),
+            isWorking: computed(() => store.phase() === 'scanning' || store.phase() === 'fixing'),
+            /** True once a scan has produced (or is producing) results. */
+            scanned: computed(() =>
+                ['scanned', 'fixing', 'done', 'published'].includes(store.phase())
+            ),
+            /** Real axe findings grouped per rule (violations → error, incomplete → warning). */
+            a11yGroups,
+            /**
+             * The LIVE (published) render's findings, grouped per rule — drives ONLY the
+             * live-frame marker layer for the side-by-side comparison. Empty until the
+             * live scan lands (it runs alongside the preview scan on Scan / Re-scan).
+             */
+            liveA11yGroups: computed<A11yGroup[]>(() => buildA11yGroups(store.liveScanResult())),
+            /** Real axe error-element count (confirmed violations). */
+            errorCount: computed(() => elementCount(errorGroups())),
+            /** Real axe warning-element count (incomplete / needs review). */
+            warningCount: computed(() => elementCount(warningGroups())),
+            /**
+             * Axe `incomplete` groups (needs manual review) — one per rule, sorted by
+             * occurrence count. The agent doesn't fix these (axe couldn't confirm them),
+             * so the panel lists them separately with an explanation.
+             */
+            reviewGroups: computed<A11yGroup[]>(() =>
+                [...warningGroups()].sort((a, b) => b.count - a.count)
+            ),
+            /**
+             * The BASELINE violation count — the "before" side of the before→after
+             * comparison. It must stay pinned to the ORIGINAL scan even as the preview
+             * is re-scanned mid-fix (which mutates `scanResult` and would otherwise drag
+             * this down). Source order: the report's frozen `scan.before` once the run
+             * completes; the agent's `progress.baseline` while fixing; otherwise the
+             * pre-run scan's error count.
+             */
+            beforeCount: computed(() => {
+                const report = store.report();
+                if (report) {
+                    return report.scan.before.violations;
                 }
-            }
-            const errorGroups = buildA11yGroups(store.scanResult()).filter(
-                (g) => g.type === 'error'
-            );
-            return errorGroups.reduce((total, g) => total + g.count, 0);
-        }),
-        /**
-         * How many issues have been fixed so far. While fixing it's the agent's live
-         * `progress.cleared`; once the run completes it's the report's authoritative
-         * count of `fixed-to-working` results. Drives the "N fixed to working so far"
-         * footer, which now ticks up live during the run.
-         */
-        fixedCount: computed<number>(() => {
-            const report = store.report();
-            if (report) {
-                return report.results.filter((r) => r.status === 'fixed-to-working').length;
-            }
-            if (store.phase() === 'fixing') {
-                return Math.max(0, store.progress()?.cleared ?? 0);
-            }
-            return 0;
-        }),
-        reportedCount: computed<number>(
-            () =>
-                store
-                    .report()
-                    ?.results.filter((r) =>
-                        ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
-                    ).length ?? 0
-        )
-    })),
+                const progress = store.progress();
+                if (store.phase() === 'fixing' && progress) {
+                    return progress.baseline;
+                }
+                return elementCount(errorGroups());
+            }),
+            /** Violations remaining after the fix pass. */
+            afterCount: computed(() => store.report()?.scan.after.violations ?? 0),
+            fixedResults: computed<FixResult[]>(
+                () => store.report()?.results.filter((r) => r.status === 'fixed-to-working') ?? []
+            ),
+            reportedResults: computed<FixResult[]>(
+                () =>
+                    store
+                        .report()
+                        ?.results.filter((r) =>
+                            ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
+                        ) ?? []
+            ),
+            latestStep: computed<AgentRunStep | null>(() => {
+                const steps = store.steps();
+                return steps.length ? steps[steps.length - 1] : null;
+            }),
+            /**
+             * Confirmed-violation groups (axe `error`s), one per rule, sorted for the
+             * "BY ISSUE TYPE" list: highest severity first, then most occurrences.
+             */
+            issueTypeRows: computed<A11yGroup[]>(() => {
+                const rank = (g: A11yGroup) => SEVERITY_RANK[impactToSeverity(g.impact)];
+                return [...errorGroups()].sort((a, b) => rank(a) - rank(b) || b.count - a.count);
+            }),
+            /** Open issues broken down by severity (element counts) — drives the donut + legend. */
+            severityCounts: computed<SeverityCounts>(() => severityBreakdown(errorGroups())),
+            /**
+             * Live "open" count for the score widget. After the run finishes it's the
+             * report's authoritative after-count; while fixing it's the live count from
+             * the agent's `progress` stream (`current`) so the donut animates down as
+             * fixes land; before any run it's the scan's before-count.
+             */
+            openCount: computed<number>(() => {
+                const report = store.report();
+                if (report) {
+                    return report.scan.after.violations;
+                }
+                if (store.phase() === 'fixing') {
+                    // Authoritative live count straight from the agent's `progress`
+                    // events. Before the first progress frame lands, fall back to the
+                    // baseline (the scan's before-count).
+                    const progress = store.progress();
+                    if (progress) {
+                        return Math.max(0, progress.current);
+                    }
+                }
+                return elementCount(errorGroups());
+            }),
+            /**
+             * How many issues have been fixed so far. While fixing it's the agent's live
+             * `progress.cleared`; once the run completes it's the report's authoritative
+             * count of `fixed-to-working` results. Drives the "N fixed to working so far"
+             * footer, which now ticks up live during the run.
+             */
+            fixedCount: computed<number>(() => {
+                const report = store.report();
+                if (report) {
+                    return report.results.filter((r) => r.status === 'fixed-to-working').length;
+                }
+                if (store.phase() === 'fixing') {
+                    return Math.max(0, store.progress()?.cleared ?? 0);
+                }
+                return 0;
+            }),
+            reportedCount: computed<number>(
+                () =>
+                    store
+                        .report()
+                        ?.results.filter((r) =>
+                            ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
+                        ).length ?? 0
+            )
+        };
+    }),
     withMethods((store) => {
         const contentSearchService = inject(DotContentSearchService);
         const scannerService = inject(DotPageScannerService);
@@ -382,7 +377,10 @@ export const AccessibilityStudioStore = signalStore(
          *     passes through the scanner untouched.
          * Mirrors DotEmaShellComponent.handleScannerToolClick.
          */
-        function buildScanUrl(page: StudioPageRow, mode: 'EDIT_MODE' | 'LIVE' = 'EDIT_MODE'): string {
+        function buildScanUrl(
+            page: StudioPageRow,
+            mode: 'EDIT_MODE' | 'LIVE' = 'EDIT_MODE'
+        ): string {
             const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
             const url = new URL(path, backendOrigin());
             url.searchParams.set('host_id', page.hostId);
@@ -442,14 +440,12 @@ export const AccessibilityStudioStore = signalStore(
             const offset = (store.page() - 1) * store.rows();
 
             contentSearchService
-                .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] }; resultsSize: number }>(
-                    {
-                        query,
-                        limit: store.rows(),
-                        offset,
-                        sort: 'modDate desc'
-                    }
-                )
+                .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] }; resultsSize: number }>({
+                    query,
+                    limit: store.rows(),
+                    offset,
+                    sort: 'modDate desc'
+                })
                 .pipe(
                     take(1),
                     catchError((error) => {
@@ -773,7 +769,13 @@ export const AccessibilityStudioStore = signalStore(
                 if (store.phase() !== 'fixing' || !runId) {
                     return;
                 }
-                agentService.stop(runId).pipe(take(1), catchError(() => EMPTY)).subscribe();
+                agentService
+                    .stop(runId)
+                    .pipe(
+                        take(1),
+                        catchError(() => EMPTY)
+                    )
+                    .subscribe();
             },
 
             /**

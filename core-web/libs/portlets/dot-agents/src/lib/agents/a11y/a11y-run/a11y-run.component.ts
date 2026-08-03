@@ -25,7 +25,6 @@ import { map } from 'rxjs/operators';
 
 import { AgentMessage, DotAgentActivityLogComponent } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
-import { AxeImpact } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
@@ -437,6 +436,28 @@ export class DotA11yRunComponent {
         })).filter((row) => keepZeros || row.count > 0);
     });
 
+    /**
+     * BY ISSUE TYPE rows with their dot color resolved. Projected here rather than
+     * calling a method from the template: this component's change detection is driven
+     * by a live SSE stream plus a rAF count-up, so a template method would re-run for
+     * every row many times a second.
+     */
+    readonly issueTypeRows = computed(() =>
+        this.store.issueTypeRows().map((group) => ({
+            ...group,
+            color: SEVERITY_COLOR[impactToSeverity(group.impact)]
+        }))
+    );
+
+    /** Needs-review rows with their "why a human is needed" i18n key resolved. */
+    readonly reviewRows = computed(() =>
+        this.store.reviewGroups().map((group) => ({
+            ...group,
+            reasonKey:
+                REVIEW_REASON_KEYS[group.code] ?? 'accessibility.studio.review.reason.default'
+        }))
+    );
+
     /** PrimeNG doughnut data — one arc per severity, colored by SEVERITY_COLOR. */
     readonly donutData = computed(() => {
         const counts = this.store.severityCounts();
@@ -627,9 +648,9 @@ export class DotA11yRunComponent {
     }
 
     /**
-     * Whether a given side panel is expanded. The accordion renders its own panel
-     * bodies, so this is only for content that must react to the open state (the
-     * files panel's Publish bar).
+     * Whether a given side panel is expanded. `p-accordion` renders the panel bodies
+     * itself off the same two-way-bound `openPanels`, so nothing in the template needs
+     * this — it's the readable way to assert open state from tests.
      */
     isPanelOpen(panel: StudioPanel): boolean {
         return this.openPanels().includes(panel);
@@ -698,20 +719,6 @@ export class DotA11yRunComponent {
         this.store.setSkipCss(value);
     }
 
-    /** Dot color for an issue-type row, by axe impact (used by the BY ISSUE TYPE list). */
-    severityColorFor(impact: AxeImpact | null): string {
-        return SEVERITY_COLOR[impactToSeverity(impact)];
-    }
-
-    /**
-     * i18n key for WHY an axe `incomplete` rule needs a human — keyed by rule code,
-     * with a generic fallback. These are the common needs-review rules; axe couldn't
-     * confirm them automatically, so a person has to judge.
-     */
-    reviewReasonKey(code: string): string {
-        const known = REVIEW_REASON_KEYS[code];
-        return known ?? 'accessibility.studio.review.reason.default';
-    }
 }
 
 /** Per-rule "why it needs review" i18n keys for the common axe incomplete rules. */

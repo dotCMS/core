@@ -266,13 +266,13 @@
              over the skeleton — same footprint, so no jump. -->
         @if (store.isScanned()) {
             <div class="studio-fade-in flex flex-col gap-2" data-testid="studio-issue-type-list">
-                @for (group of store.issueTypeRows(); track group.code) {
+                @for (group of issueTypeRows(); track group.code) {
                     <div
                         class="flex items-start gap-3 rounded-xl border border-surface-200 px-4 py-3"
                         data-testid="studio-issue-type-row">
                         <span
                             class="mt-1.5 size-2.5 flex-none rounded-full"
-                            [style.background-color]="severityColorFor(group.impact)"
+                            [style.background-color]="group.color"
                             aria-hidden="true"></span>
                         <div class="min-w-0 flex-1">
                             <div class="font-mono text-[13px] font-bold text-gray-900">
@@ -334,7 +334,7 @@
                     {{ 'accessibility.studio.review.intro' | dm }}
                 </p>
                 <div class="flex flex-col gap-2">
-                    @for (group of store.reviewGroups(); track group.code) {
+                    @for (group of reviewRows(); track group.code) {
                         <div
                             class="rounded-xl border border-surface-200 px-4 py-3"
                             data-testid="studio-review-row">
@@ -353,7 +353,7 @@
                                 </span>
                             </div>
                             <div class="mt-1.5 text-xs leading-snug text-gray-500">
-                                {{ reviewReasonKey(group.code) | dm }}
+                                {{ group.reasonKey | dm }}
                             </div>
                         </div>
                     }

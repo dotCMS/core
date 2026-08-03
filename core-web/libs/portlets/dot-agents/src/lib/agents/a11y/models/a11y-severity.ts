@@ -13,6 +13,15 @@ export type Severity = 'critical' | 'serious' | 'moderate' | 'minor';
 /** Highest → lowest. Drives legend order, ring segment order, and list sort. */
 export const SEVERITY_ORDER: readonly Severity[] = ['critical', 'serious', 'moderate', 'minor'];
 
+/**
+ * `SEVERITY_ORDER` as a lookup, so sort comparators rank by O(1) index instead of a
+ * linear `indexOf` per comparison.
+ */
+export const SEVERITY_RANK: Record<Severity, number> = SEVERITY_ORDER.reduce(
+    (acc, severity, index) => ({ ...acc, [severity]: index }),
+    {} as Record<Severity, number>
+);
+
 export const SEVERITY_LABEL: Record<Severity, string> = {
     critical: 'Critical',
     serious: 'Serious',
