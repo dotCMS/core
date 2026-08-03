@@ -110,8 +110,8 @@ export function withPersistedQuery<Field extends string>(config: PersistedQueryC
                 // don't immediately write it back; `debounceTime` coalesces
                 // rapid typing; empty values route to `removeKey` to avoid
                 // resurrecting a `""` entry after `clearPersistedQuery`.
-                const source = computed(
-                    () => (store as unknown as Record<Field, () => string>)[field]()
+                const source = computed(() =>
+                    (store as unknown as Record<Field, () => string>)[field]()
                 );
                 rxMethod<string>(
                     pipe(
