@@ -60,10 +60,12 @@ import java.util.List;
  *   <li>{@code endpoint} – optional base URL override (proxies/gateways)</li>
  * </ul>
  *
- * <p>OpenRouter (chat only — OpenRouter has no embeddings or image endpoints):
+ * <p>OpenRouter (chat and embeddings; image not supported):
  * <ul>
  *   <li>{@code apiKey} – OpenRouter API key</li>
- *   <li>{@code model} – namespaced model ID, e.g. {@code openai/gpt-4o}, {@code anthropic/claude-sonnet-4}</li>
+ *   <li>{@code model} – namespaced model ID, e.g. {@code openai/gpt-4o}, {@code anthropic/claude-sonnet-4},
+ *       {@code openai/text-embedding-3-small}</li>
+ *   <li>{@code dimensions} – embedding vector size (embeddings only)</li>
  *   <li>{@code endpoint} – optional override of the default base URL ({@code https://openrouter.ai/api/v1})</li>
  * </ul>
  *
