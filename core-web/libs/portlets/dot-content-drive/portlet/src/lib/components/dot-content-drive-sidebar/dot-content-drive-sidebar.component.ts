@@ -79,16 +79,17 @@ export class DotContentDriveSidebarComponent {
      * @param {DotFolderTreeNodeItem} selectedNode - The selected node with fromTable flag
      */
     readonly handleSelectedNodeFromTable = signalMethod<DotFolderTreeNodeItem>((selectedNode) => {
-        if (!selectedNode?.data?.fromTable) {
+        const data = selectedNode?.data;
+        if (!data || data.type === LOAD_MORE_NODE_TYPE || !data.fromTable) {
             return;
         }
 
-        const segments = selectedNode.data.path.split('/').filter(Boolean).slice(0, -1);
+        const segments = data.path.split('/').filter(Boolean).slice(0, -1);
 
         this.recursiveExpandOneNode(segments);
 
         this.treeFolder()
-            ?.elementRef.nativeElement.querySelector(`[data-id="${selectedNode.data.id}"]`)
+            ?.elementRef.nativeElement.querySelector(`[data-id="${data.id}"]`)
             ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
@@ -154,7 +155,7 @@ export class DotContentDriveSidebarComponent {
 
                 // Keep the already-loaded folders, drop the old "Load more", append the new page.
                 const loaded = (parent.children ?? []).filter(
-                    (child) => child.data.type !== LOAD_MORE_NODE_TYPE
+                    (child) => child.data?.type !== LOAD_MORE_NODE_TYPE
                 );
                 const combined = [...loaded, ...folders];
 
@@ -208,7 +209,7 @@ export class DotContentDriveSidebarComponent {
         nodes: DotFolderTreeNodeItem[]
     ): DotFolderTreeNodeItem | undefined {
         for (const node of nodes) {
-            if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data?.path === path) {
+            if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data.path === path) {
                 return node;
             }
 
@@ -251,7 +252,11 @@ export class DotContentDriveSidebarComponent {
             return;
         }
 
-        const node = nodes.find((node) => node.data.path.includes(segments[0]));
+        const node = nodes.find(
+            (candidate) =>
+                candidate.data.type !== LOAD_MORE_NODE_TYPE &&
+                candidate.data.path.includes(segments[0])
+        );
 
         if (!node) {
             return;

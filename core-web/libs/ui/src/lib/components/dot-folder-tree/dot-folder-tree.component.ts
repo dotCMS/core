@@ -14,12 +14,14 @@ import {
 
 import type { TreeNode } from 'primeng/api';
 import { Tree, TreeModule } from 'primeng/tree';
-import type { TreeNodeCollapseEvent, TreeNodeExpandEvent } from 'primeng/types/tree';
+import type {
+    TreeNodeCollapseEvent,
+    TreeNodeExpandEvent,
+    TreeNodeSelectEvent
+} from 'primeng/types/tree';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-import { FolderNamePipe } from '../../pipes/dot-folder-name/dot-folder-name.pipe';
-
-export const DOT_FOLDER_TREE_LOAD_MORE_TYPE = 'load-more' as const;
+import { DotFolderNamePipe } from '../../pipes/dot-folder-name/dot-folder-name.pipe';
 
 /**
  * Presentational folder tree shell shared across Content Drive, Browser Selector,
@@ -28,7 +30,7 @@ export const DOT_FOLDER_TREE_LOAD_MORE_TYPE = 'load-more' as const;
  */
 @Component({
     selector: 'dot-folder-tree',
-    imports: [TreeModule, FolderNamePipe, DotMessagePipe, NgTemplateOutlet],
+    imports: [TreeModule, DotFolderNamePipe, DotMessagePipe, NgTemplateOutlet],
     templateUrl: './dot-folder-tree.component.html',
     styleUrls: ['./dot-folder-tree.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,10 +82,9 @@ export class DotFolderTreeComponent {
 
     /**
      * i18n key used for the load-more button when `node.label` is empty.
+     * Empty by default — consumers pass a key or set `node.label`.
      */
-    $loadMoreLabelKey = input('dot.file.field.host.folder.action.load.more', {
-        alias: 'loadMoreLabelKey'
-    });
+    $loadMoreLabelKey = input('', { alias: 'loadMoreLabelKey' });
 
     /**
      * When true, shows `(remaining)` beside the load-more label (Content Drive).
@@ -92,8 +93,9 @@ export class DotFolderTreeComponent {
 
     /**
      * When true, shows a plus-circle icon on the load-more button (Host Folder).
+     * Off by default — consumers opt in.
      */
-    $showLoadMorePlusIcon = input(true, { alias: 'showLoadMorePlusIcon' });
+    $showLoadMorePlusIcon = input(false, { alias: 'showLoadMorePlusIcon' });
 
     /**
      * `data-testid` applied to the underlying `p-tree`.
@@ -110,7 +112,7 @@ export class DotFolderTreeComponent {
      */
     $styleClass = input('w-full h-full', { alias: 'styleClass' });
 
-    onNodeSelect = output<TreeNodeExpandEvent>();
+    onNodeSelect = output<TreeNodeSelectEvent>();
     onNodeExpand = output<TreeNodeExpandEvent>();
     onNodeCollapse = output<TreeNodeCollapseEvent>();
     loadMore = output<TreeNode>();

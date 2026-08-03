@@ -8,7 +8,6 @@ export class ContentDrivePage {
     readonly toolbar: Locator;
     readonly treeSelector: Locator;
     readonly sidebar: Locator;
-    readonly treeToggler: Locator;
     readonly currentSiteHostname: Locator;
     readonly listTitles: Locator;
     readonly treeNodeLabels: Locator;
@@ -17,7 +16,6 @@ export class ContentDrivePage {
         this.toolbar = page.getByTestId('toolbar');
         this.treeSelector = page.getByTestId('tree-selector');
         this.sidebar = page.getByTestId('sidebar');
-        this.treeToggler = page.getByTestId('tree-toggler').first();
         this.currentSiteHostname = page.getByTestId('current-site-hostname');
         this.listTitles = page.getByTestId('item-title-text');
         this.treeNodeLabels = this.sidebar.getByTestId('tree-node-label');
@@ -40,7 +38,7 @@ export class ContentDrivePage {
         await expect(this.treeSelector).toBeVisible({ timeout: 20000 });
         await expect(this.currentSiteHostname).toBeVisible({ timeout: 20000 });
         await folderSearch;
-        // Prefer node labels — PrimeNG p-tree host may not expose treeTestId as a visible test id.
+        // Wait for tree nodes via projected labels (more specific than the p-tree host test id).
         await expect(this.treeNodeLabels.first()).toBeVisible({ timeout: 20000 });
     }
 

@@ -2,26 +2,103 @@ import type { TreeNode } from 'primeng/api';
 
 import { DotFolder } from './dot-folder.model';
 
+/** `node.type` / `node.data.type` value for the synthetic "Load more" sentinel. */
+export const LOAD_MORE_NODE_TYPE = 'load-more' as const;
+
 /**
- * Data payload for tree nodes in the browser selector and shared folder tree.
- * Represents a site (host), a folder, or a synthetic load-more sentinel.
- *
- * @type TreeNodeData
- * @property {'site' | 'folder' | 'load-more'} type - Node kind in the content tree
- * @property {string} path - The full path of the node in the content tree
- * @property {string} hostname - The hostname where the site/folder resides
- * @property {string} id - Unique identifier for the node
- * @property {number} [nextPage] - For load-more nodes: next 1-based page to request
- * @property {number} [remaining] - For load-more nodes: folders still remaining at the level
+ * Data payload for site or folder nodes in the browser selector and shared folder tree.
  */
-export type TreeNodeData = {
-    type: 'site' | 'folder' | 'load-more';
+export type TreeNodeContentData = {
+    type: 'site' | 'folder';
     path: string;
     hostname: string;
     id: string;
+};
+
+/**
+ * Data payload for synthetic load-more sentinel nodes.
+ * Pagination fields and parent context are optional (Content Drive uses them; Host Folder does not).
+ */
+export type TreeNodeLoadMoreData = {
+    type: typeof LOAD_MORE_NODE_TYPE;
+    id: string;
     nextPage?: number;
     remaining?: number;
+    /** Parent path for pagination (Content Drive). */
+    path?: string;
+    hostname?: string;
 };
+
+/**
+ * Discriminated data payload for tree nodes in the browser selector and shared folder tree.
+ */
+export type TreeNodeData = TreeNodeContentData | TreeNodeLoadMoreData;
+
+/**
+ * Options for {@link createLoadMoreTreeNode}.
+ * Always sets both `node.type` and `node.data.type` to {@link LOAD_MORE_NODE_TYPE}.
+ */
+export type CreateLoadMoreTreeNodeOptions = {
+    /** Suffix used in `load-more:{levelKey}` for `key` and `data.id`. */
+    levelKey: string;
+    label?: string;
+    nextPage?: number;
+    remaining?: number;
+    path?: string;
+    hostname?: string;
+};
+
+/**
+ * Creates a synthetic "Load more" tree node with dual-type enforcement:
+ * PrimeNG templates match `node.type`, consumers filter on `node.data.type`.
+ */
+export function createLoadMoreTreeNode(options: CreateLoadMoreTreeNodeOptions): TreeNodeItem {
+    const key = `${LOAD_MORE_NODE_TYPE}:${options.levelKey}`;
+
+    const data: TreeNodeLoadMoreData = {
+        type: LOAD_MORE_NODE_TYPE,
+        id: key
+    };
+
+    if (options.nextPage !== undefined) {
+        data.nextPage = options.nextPage;
+    }
+
+    if (options.remaining !== undefined) {
+        data.remaining = options.remaining;
+    }
+
+    if (options.path !== undefined) {
+        data.path = options.path;
+    }
+
+    if (options.hostname !== undefined) {
+        data.hostname = options.hostname;
+    }
+
+    return {
+        key,
+        label: options.label ?? '',
+        type: LOAD_MORE_NODE_TYPE,
+        selectable: false,
+        leaf: true,
+        data
+    };
+}
+
+/**
+ * Type guard for content (site/folder) tree node data.
+ */
+export function isTreeNodeContentData(data: TreeNodeData): data is TreeNodeContentData {
+    return data.type === 'site' || data.type === 'folder';
+}
+
+/**
+ * Type guard for load-more tree node data.
+ */
+export function isTreeNodeLoadMoreData(data: TreeNodeData): data is TreeNodeLoadMoreData {
+    return data.type === LOAD_MORE_NODE_TYPE;
+}
 
 /**
  * PrimeNG tree node wrapping TreeNodeData.

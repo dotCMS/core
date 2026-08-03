@@ -718,6 +718,14 @@ describe('Utility Functions', () => {
                 selectable: false
             });
         });
+
+        it('should set node.type and data.type to the same load-more value', () => {
+            const node = buildLoadMoreNode('/main/', 'test.com', 2, 75);
+
+            expect(node.type).toBe('load-more');
+            expect(node.data?.type).toBe('load-more');
+            expect(node.type).toBe(node.data?.type);
+        });
     });
 
     describe('isFolder', () => {

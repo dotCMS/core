@@ -266,8 +266,8 @@
                         [pt]="treePt()"
                         treeTestId="host-folder-tree"
                         loadMoreTestId="host-folder-load-more"
+                        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
                         [showLoadMorePlusIcon]="true"
-                        [showLoadMoreRemaining]="false"
                         (onNodeSelect)="onFolderSelect($event)"
                         (onNodeExpand)="onFolderExpand($event)"
                         (loadMore)="onLoadMoreNode($event)">
@@ -277,7 +277,7 @@
                                     class="block w-full min-w-0 truncate"
                                     [class.font-semibold]="isSearching"
                                     [class.leading-normal]="isSearching">
-                                    {{ node.label | folderName }}
+                                    {{ node.label | dotFolderName }}
                                 </span>
                                 @if (isSearching && node.data?.path) {
                                     <span

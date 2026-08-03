@@ -2,7 +2,11 @@ import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/j
 
 import type { TreeNode } from 'primeng/api';
 import { Tree } from 'primeng/tree';
-import type { TreeNodeCollapseEvent, TreeNodeExpandEvent } from 'primeng/types/tree';
+import type {
+    TreeNodeCollapseEvent,
+    TreeNodeExpandEvent,
+    TreeNodeSelectEvent
+} from 'primeng/types/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -129,7 +133,7 @@ describe('DotFolderTreeComponent', () => {
             const expandSpy = jest.spyOn(component.onNodeExpand, 'emit');
             const collapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
 
-            const selectEvent: TreeNodeExpandEvent = {
+            const selectEvent: TreeNodeSelectEvent = {
                 originalEvent: new Event('select'),
                 node: mockFolders[0]
             };
@@ -196,8 +200,8 @@ describe('DotFolderTreeComponent', () => {
             };
 
             spectator.setInput('folders', [hfNode]);
+            spectator.setInput('loadMoreLabelKey', 'dot.file.field.host.folder.action.load.more');
             spectator.setInput('showLoadMorePlusIcon', true);
-            spectator.setInput('showLoadMoreRemaining', false);
             spectator.setInput('loadMoreTestId', 'host-folder-load-more');
             spectator.detectChanges();
 

@@ -27,7 +27,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotFolderTreeComponent, DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 
 import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
 
@@ -56,7 +56,7 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         InputIconModule,
         InputTextModule,
         DotMessagePipe,
-        FolderNamePipe
+        DotFolderNamePipe
     ],
     templateUrl: './host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

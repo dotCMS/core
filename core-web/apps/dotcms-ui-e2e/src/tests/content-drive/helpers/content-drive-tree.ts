@@ -4,7 +4,8 @@ import { expect, type Locator, type Page } from '@playwright/test';
  * Locator wrapper for the Content Drive sidebar folder tree
  * (`dot-tree-folder` → shared `dot-folder-tree`).
  *
- * Scoped to `sidebar` so we do not depend on PrimeNG host `data-testid` forwarding.
+ * Scoped to `sidebar` so locators stay within the Content Drive panel
+ * (the shared tree also exposes `data-testid` on the `p-tree` host).
  */
 export class ContentDriveTree {
     readonly root: Locator;

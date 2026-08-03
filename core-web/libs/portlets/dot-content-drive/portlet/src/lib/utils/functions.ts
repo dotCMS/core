@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
+    createLoadMoreTreeNode,
     DotCMSContentTypeField,
     DotContentDriveDateRange,
     DotContentDriveFolder,
@@ -16,11 +17,7 @@ import {
     FolderSearchView
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
-import {
-    DotFolderTreeNodeItem,
-    LOAD_MORE_LABEL_KEY,
-    LOAD_MORE_NODE_TYPE
-} from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem, LOAD_MORE_LABEL_KEY } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
@@ -380,23 +377,14 @@ export function buildLoadMoreNode(
     nextPage: number,
     remaining: number
 ): DotFolderTreeNodeItem {
-    const key = `${LOAD_MORE_NODE_TYPE}:${parentPath}`;
-
-    return {
-        key,
+    return createLoadMoreTreeNode({
+        levelKey: parentPath,
         label: LOAD_MORE_LABEL_KEY,
-        type: LOAD_MORE_NODE_TYPE,
-        data: {
-            type: LOAD_MORE_NODE_TYPE,
-            path: parentPath,
-            hostname: hostName,
-            id: key,
-            nextPage,
-            remaining
-        },
-        leaf: true,
-        selectable: false
-    };
+        nextPage,
+        remaining,
+        path: parentPath,
+        hostname: hostName
+    }) as DotFolderTreeNodeItem;
 }
 
 /**

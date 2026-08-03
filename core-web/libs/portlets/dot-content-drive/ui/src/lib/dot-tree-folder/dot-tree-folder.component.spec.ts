@@ -5,7 +5,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { Tree, TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFolderTreeComponent, FolderNamePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotFolderNamePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTreeFolderComponent } from './dot-tree-folder.component';
@@ -96,7 +96,7 @@ describe('DotTreeFolderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotTreeFolderComponent,
-        imports: [TreeModule, SkeletonModule, FolderNamePipe, DotFolderTreeComponent],
+        imports: [TreeModule, SkeletonModule, DotFolderNamePipe, DotFolderTreeComponent],
         providers: [
             {
                 provide: DotMessageService,

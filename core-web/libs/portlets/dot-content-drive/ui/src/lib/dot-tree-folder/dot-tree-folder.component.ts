@@ -14,7 +14,7 @@ import {
 import { TreeNode } from 'primeng/api';
 import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
-import { DotFolderTreeComponent, DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 
 import { ALL_FOLDER } from '../shared/constants';
 import {
@@ -30,7 +30,7 @@ import {
  */
 @Component({
     selector: 'dot-tree-folder',
-    imports: [DotFolderTreeComponent, FolderNamePipe, DotMessagePipe, JsonPipe],
+    imports: [DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe, JsonPipe],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

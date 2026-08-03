@@ -334,9 +334,14 @@ export class DotContentDriveShellComponent {
 
         // Read current path without tracking it to avoid circular dependencies
         const currentPath = untracked(() => this.#store.path()) ?? '';
+        const data = selectedNode.data;
 
-        if (selectedNode.data.path != currentPath) {
-            this.#store.setPath(selectedNode.data.path);
+        if (!data || data.type === 'load-more') {
+            return;
+        }
+
+        if (data.path != currentPath) {
+            this.#store.setPath(data.path);
         }
     });
 

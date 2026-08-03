@@ -18,7 +18,7 @@
             <ng-container *ngTemplateOutlet="labelTpl; context: { $implicit: node }" />
         } @else {
             <span data-testid="tree-node-label" class="font-normal">
-                {{ node.label | folderName }}
+                {{ node.label | dotFolderName }}
             </span>
         }
     </ng-template>
@@ -43,7 +43,7 @@
         </button>
     </ng-template>
 
-    <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
+    <!-- LOADING WON'T WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
     <ng-template pTemplate="togglericon" let-expanded let-loading="loading">
         @if (loading) {
             <i

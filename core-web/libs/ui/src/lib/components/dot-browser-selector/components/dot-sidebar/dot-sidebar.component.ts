@@ -1,16 +1,10 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    input,
-    output,
-    signal
-} from '@angular/core';
+import { signalMethod } from '@ngrx/signals';
+
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
-import type { TreeNodeExpandEvent } from 'primeng/tree';
+import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
 import { DotFolderTreeComponent } from '../../../dot-folder-tree/dot-folder-tree.component';
 import { SYSTEM_HOST_ID } from '../../store/browser.store';
@@ -58,9 +52,9 @@ export class DotSideBarComponent {
      * Event emitter for when a node is selected in the tree.
      *
      * @event onNodeSelect
-     * @type {TreeNodeExpandEvent}
+     * @type {TreeNodeSelectEvent}
      */
-    onNodeSelect = output<TreeNodeExpandEvent>();
+    onNodeSelect = output<TreeNodeSelectEvent>();
 
     readonly #userSelected = signal<TreeNode | null>(null);
 
@@ -76,28 +70,32 @@ export class DotSideBarComponent {
         );
     });
 
+    /**
+     * When folders reload, clear a stale user selection that is no longer in the tree.
+     * `signalMethod` only tracks its input (`$folders`), so `#userSelected` reads/writes
+     * inside the processor stay untracked — no manual `untracked()` needed.
+     * @see https://ngrx.io/guide/signals/signal-method
+     */
+    readonly #clearStaleSelection = signalMethod<TreeNode[]>((folders) => {
+        const selected = this.#userSelected();
+
+        if (!selected) {
+            return;
+        }
+
+        if (!this.#nodeExists(folders, selected.key)) {
+            this.#userSelected.set(null);
+        }
+    });
+
     constructor() {
-        // When folders reload, clear a stale user selection that is no longer in the tree.
-        effect(() => {
-            const folders = this.$folders();
-            const selected = this.#userSelected();
-
-            if (!selected) {
-                return;
-            }
-
-            const stillPresent = this.#nodeExists(folders, selected.key);
-
-            if (!stillPresent) {
-                this.#userSelected.set(null);
-            }
-        });
+        this.#clearStaleSelection(this.$folders);
     }
 
     /**
      * Forwards selection to the parent and tracks it for tree highlight.
      */
-    handleNodeSelect(event: TreeNodeExpandEvent): void {
+    handleNodeSelect(event: TreeNodeSelectEvent): void {
         this.#userSelected.set(event.node);
         this.onNodeSelect.emit(event);
     }
