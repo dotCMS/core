@@ -15,6 +15,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -65,7 +68,7 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
 @Component({
     selector: 'dot-a11y-diff',
     standalone: true,
-    imports: [DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './a11y-diff.component.html',
     providers: [DotPageSourcesService],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -104,27 +107,57 @@ export class DotA11yDiffComponent {
     /** True once loaded and there are no changed files to show. */
     readonly empty = computed(() => this.status() === 'loaded' && this.files().length === 0);
 
+    /**
+     * Whether the run is awaiting review (done phase) — drives the toolbar's
+     * Discard/Publish actions. Before then there's nothing to publish.
+     */
+    readonly awaitingReview = computed(() => this.store.isDone());
+
+    /**
+     * True once the user has opened at least one file's diff. Publishing is gated
+     * on this so the user can't promote to live without actually reviewing a change.
+     */
+    readonly reviewed = signal(false);
+
+    /**
+     * Publish is allowed only while awaiting review, once there is at least one
+     * changed file AND the user has viewed one. Promotes the whole working version
+     * (all diffs shown — this run's fixes plus any prior-run / manual edits).
+     */
+    readonly canPublish = computed(
+        () => this.awaitingReview() && this.files().length > 0 && this.reviewed()
+    );
+
     /** The live Monaco diff editor, disposed on destroy. */
     private editor: MonacoDiffEditor | null = null;
     /** True once the monaco global has loaded. */
     private readonly monacoReady = signal(false);
-    /** The page identifier the current file list was loaded for (avoids reloads). */
-    private loadedForIdentifier: string | null = null;
+    /**
+     * Cache key of the last-loaded diff: page identifier + a revision that bumps
+     * whenever the working render changes (each run, re-scan, publish). Reloading
+     * on the revision — not just the page — means a new run's fixes (and any prior
+     * or manual working edits) show up when the user re-opens the Code tab.
+     */
+    private loadedKey: string | null = null;
 
     constructor() {
-        // Lazily (re)load the diff the first time the Code tab is opened for a page.
-        // The run screen keeps this component mounted across tab switches, so we key
-        // off `active` + the selected page rather than a lifecycle hook, and reload
-        // only when the page changed — so re-opening the tab is instant.
+        // Lazily (re)load the diff when the Code tab is open. The run screen keeps
+        // this component mounted across tab switches, so we key off `active` + the
+        // selected page + the working-render revision rather than a lifecycle hook,
+        // and skip the reload when nothing changed — so re-opening the tab is instant.
         effect(() => {
             const isActive = this.active();
             const page = this.store.selected();
+            const revision = this.store.previewRevision();
             if (!isActive || !page) {
                 return;
             }
+            const key = `${page.identifier}#${revision}`;
             untracked(() => {
-                if (this.loadedForIdentifier !== page.identifier) {
-                    this.loadedForIdentifier = page.identifier;
+                if (this.loadedKey !== key) {
+                    this.loadedKey = key;
+                    // A fresh diff means the prior review no longer applies.
+                    this.reviewed.set(false);
                     this.loadDiff(page.path, page.hostId, page.languageId);
                 }
             });
@@ -170,18 +203,42 @@ export class DotA11yDiffComponent {
             .subscribe({
                 next: (files) => {
                     this.files.set(files);
-                    // Keep the current selection if it's still present, else pick the first.
-                    const keep = files.some((f) => f.identifier === this.selectedId());
-                    this.selectedId.set(keep ? this.selectedId() : (files[0]?.identifier ?? null));
+                    // Drop a stale selection, but DON'T auto-select the first file:
+                    // publishing is gated on the user opening a file themselves, so
+                    // landing on the tab must not count as a review.
+                    if (!files.some((f) => f.identifier === this.selectedId())) {
+                        this.selectedId.set(null);
+                    }
                     this.status.set('loaded');
                 },
                 error: () => this.status.set('error')
             });
     }
 
-    /** Select a file to show in the diff editor. */
+    /** Select a file to show in the diff editor — and mark the diff as reviewed. */
     selectFile(identifier: string): void {
         this.selectedId.set(identifier);
+        this.reviewed.set(true);
+    }
+
+    /**
+     * Promote the reviewed working version to live. Guarded by {@link canPublish}
+     * (done phase + at least one file reviewed), so this can't run blind. The store
+     * transition drives the rest of the UI (phase → published).
+     */
+    publish(): void {
+        if (!this.canPublish()) {
+            return;
+        }
+        this.store.publish();
+    }
+
+    /** Discard the working fixes → back to the scanned state (drops this run's edits). */
+    discard(): void {
+        if (!this.awaitingReview()) {
+            return;
+        }
+        this.store.discard();
     }
 
     /** Monaco language id for a file, from its extension. */

@@ -453,9 +453,10 @@ describe('DotA11yRunComponent', () => {
     describe('done phase', () => {
         beforeEach(() => render('done', MOCK_FIX_REPORT));
 
-        it('shows publish + discard buttons', () => {
-            expect(spectator.query(byTestId('studio-publish-btn'))).toBeTruthy();
-            expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+        it('shows a Review changes button (no inline publish/discard)', () => {
+            expect(spectator.query(byTestId('studio-review-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-publish-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('studio-discard-btn'))).toBeFalsy();
         });
 
         it('shows the after-count in the ring', () => {
@@ -471,20 +472,15 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.queryAll(byTestId('agent-message')).length).toBe(15);
         });
 
-        it('triggers publish on click', () => {
+        it('Review changes switches to the Code tab and activates the diff', () => {
             const btn = spectator
-                .query(byTestId('studio-publish-btn'))
+                .query(byTestId('studio-review-btn'))
                 ?.querySelector('button');
             spectator.click(btn as HTMLElement);
-            expect(publish).toHaveBeenCalled();
-        });
+            spectator.detectChanges();
 
-        it('triggers discard on click', () => {
-            const btn = spectator
-                .query(byTestId('studio-discard-btn'))
-                ?.querySelector('button');
-            spectator.click(btn as HTMLElement);
-            expect(discard).toHaveBeenCalled();
+            expect(spectator.component.previewTab()).toBe('code');
+            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
         });
 
         it('switches to the Code tab and activates the diff panel', () => {

@@ -184,6 +184,20 @@ export class DotA11yRunComponent {
             }
         });
 
+        // Publishing / discarding happens in the Code (review) tab and moves the
+        // run out of `done`. Once that resolves, drop back to the Preview tab so the
+        // user sees the published render (or the re-scannable page) rather than
+        // staying parked on the now-stale diff.
+        effect(() => {
+            const published = this.store.isPublished();
+            const scanned = this.store.isScanned();
+            untracked(() => {
+                if ((published || scanned) && this.previewTab() === 'code') {
+                    this.previewTab.set('preview');
+                }
+            });
+        });
+
         // Redraw both frames' marker layers whenever their scans (or the phase)
         // change. Each frame gets its OWN scan's findings: the preview frame from
         // the primary/working scan (a11yGroups), the live frame from the
@@ -607,6 +621,15 @@ export class DotA11yRunComponent {
         this.previewTab.set(tab);
     }
 
+    /**
+     * "Review changes" (done phase): send the user to the Code tab to inspect the
+     * working-vs-live diff. Publishing is only possible from there — this enforces
+     * a review before anything reaches the live site.
+     */
+    reviewChanges(): void {
+        this.setPreviewTab('code');
+    }
+
     runScan(): void {
         this.store.runScan();
     }
@@ -621,14 +644,6 @@ export class DotA11yRunComponent {
 
     stopAgent(): void {
         this.store.stopAgent();
-    }
-
-    publish(): void {
-        this.store.publish();
-    }
-
-    discard(): void {
-        this.store.discard();
     }
 
     onSkipCssChange(value: boolean): void {

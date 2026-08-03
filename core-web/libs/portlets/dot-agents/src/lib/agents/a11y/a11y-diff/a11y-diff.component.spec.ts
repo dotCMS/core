@@ -82,10 +82,19 @@ describe('DotA11yDiffComponent', () => {
     let spectator: Spectator<DotA11yDiffComponent>;
 
     let selectedPage: typeof MOCK_PAGE | null = MOCK_PAGE;
+    let phase = 'done';
+    let previewRevision = 0;
     let monacoMock: ReturnType<typeof installMonacoMock>;
 
+    const publish = jest.fn();
+    const discard = jest.fn();
+
     const storeMock = {
-        selected: () => selectedPage
+        selected: () => selectedPage,
+        previewRevision: () => previewRevision,
+        isDone: () => phase === 'done',
+        publish,
+        discard
     };
 
     const createComponent = createComponentFactory({
@@ -98,7 +107,10 @@ describe('DotA11yDiffComponent', () => {
                     'accessibility.studio.diff.fileschanged': 'Files changed',
                     'accessibility.studio.diff.empty.title': 'No file changes',
                     'accessibility.studio.diff.loading': 'Loading…',
-                    'accessibility.studio.diff.select': 'Select a file'
+                    'accessibility.studio.diff.select': 'Select a file',
+                    'accessibility.studio.diff.publish': 'Publish to live',
+                    'accessibility.studio.diff.review.hint': 'Open a file to review',
+                    'accessibility.studio.action.discard': 'Discard'
                 })
             }
         ]
@@ -107,6 +119,8 @@ describe('DotA11yDiffComponent', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         selectedPage = MOCK_PAGE;
+        phase = 'done';
+        previewRevision = 0;
         monacoMock = installMonacoMock();
     });
 
@@ -160,8 +174,17 @@ describe('DotA11yDiffComponent', () => {
         expect(rows[1].textContent).not.toContain('//demo/application/themes/');
     });
 
-    it('renders the Monaco diff editor for the first file', async () => {
+    it('renders no diff until the user opens a file (no auto-select)', async () => {
         render();
+        await flushMicrotasks(spectator);
+        // Landing on the tab must NOT render a diff — the user has to open a file.
+        expect(monacoMock.createDiffEditor).not.toHaveBeenCalled();
+        expect(spectator.query(byTestId('diff-editor-placeholder'))).toBeTruthy();
+    });
+
+    it('renders the Monaco diff editor when a file is opened', async () => {
+        render();
+        spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
         await flushMicrotasks(spectator);
         // createDiffEditor is created once; models built from live (original) + working (modified).
         expect(monacoMock.createDiffEditor).toHaveBeenCalledTimes(1);
@@ -172,6 +195,7 @@ describe('DotA11yDiffComponent', () => {
 
     it('re-renders the diff models when a different file is selected', async () => {
         render();
+        spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
         await flushMicrotasks(spectator);
         monacoMock.createModel.mockClear();
 
@@ -190,6 +214,65 @@ describe('DotA11yDiffComponent', () => {
         render(true, []);
         expect(spectator.query(byTestId('diff-empty'))).toBeTruthy();
         expect(spectator.query(byTestId('diff-file-list'))).toBeFalsy();
+    });
+
+    describe('review + publish gate (done phase)', () => {
+        it('shows the review bar with Publish disabled until a file is opened', () => {
+            render();
+            expect(spectator.query(byTestId('diff-review-bar'))).toBeTruthy();
+
+            const publishBtn = spectator
+                .query(byTestId('diff-publish-btn'))
+                ?.querySelector('button') as HTMLButtonElement;
+            expect(publishBtn.disabled).toBe(true);
+        });
+
+        it('enables Publish once the user opens a file', () => {
+            render();
+            spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
+            spectator.detectChanges();
+
+            const publishBtn = spectator
+                .query(byTestId('diff-publish-btn'))
+                ?.querySelector('button') as HTMLButtonElement;
+            expect(publishBtn.disabled).toBe(false);
+        });
+
+        it('publishes via the store after a file has been reviewed', () => {
+            render();
+            spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
+            spectator.detectChanges();
+
+            spectator.click(
+                spectator.query(byTestId('diff-publish-btn'))?.querySelector('button') as HTMLElement
+            );
+            expect(publish).toHaveBeenCalled();
+        });
+
+        it('does not publish while unreviewed even if called directly', () => {
+            render();
+            spectator.component.publish();
+            expect(publish).not.toHaveBeenCalled();
+        });
+
+        it('discards via the store', () => {
+            render();
+            spectator.click(
+                spectator.query(byTestId('diff-discard-btn'))?.querySelector('button') as HTMLElement
+            );
+            expect(discard).toHaveBeenCalled();
+        });
+
+        it('hides the review bar when not in the done phase', () => {
+            phase = 'scanned';
+            render();
+            expect(spectator.query(byTestId('diff-review-bar'))).toBeFalsy();
+        });
+
+        it('hides the review bar when there are no changed files', () => {
+            render(true, []);
+            expect(spectator.query(byTestId('diff-review-bar'))).toBeFalsy();
+        });
     });
 
     it('shows the error state when the diff load fails', () => {

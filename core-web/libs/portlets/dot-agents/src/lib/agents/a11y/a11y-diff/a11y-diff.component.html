@@ -106,6 +106,39 @@
             }
         }
     </div>
+
+    <!-- Review action bar — only while a run is awaiting review and there are
+         changes to publish. Publish stays disabled until the user has opened a
+         file's diff (see canPublish), enforcing a real review before going live. -->
+    @if (awaitingReview() && files().length > 0) {
+        <div
+            class="flex flex-none flex-col gap-2 border-t border-surface-200 bg-surface-50 px-4 py-3.5"
+            data-testid="diff-review-bar">
+            @if (!reviewed()) {
+                <p class="m-0 text-center text-xs leading-snug text-gray-400">
+                    {{ 'accessibility.studio.diff.review.hint' | dm }}
+                </p>
+            }
+            <div class="flex gap-2.5">
+                <p-button
+                    [label]="'accessibility.studio.action.discard' | dm"
+                    severity="secondary"
+                    [outlined]="true"
+                    [rounded]="true"
+                    (onClick)="discard()"
+                    data-testid="diff-discard-btn" />
+                <p-button
+                    [label]="'accessibility.studio.diff.publish' | dm"
+                    icon="pi pi-upload"
+                    severity="success"
+                    styleClass="flex-1"
+                    [rounded]="true"
+                    [disabled]="!canPublish()"
+                    (onClick)="publish()"
+                    data-testid="diff-publish-btn" />
+            </div>
+        </div>
+    }
 </aside>
 
 <!-- ---------- DIFF EDITOR ---------- -->

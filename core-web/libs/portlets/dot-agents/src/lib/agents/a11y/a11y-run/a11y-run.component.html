@@ -419,26 +419,15 @@
                     data-testid="studio-stopagent-btn" />
             }
             @case ('done') {
-                <div class="flex gap-2.5">
-                    <p-button
-                        [label]="'accessibility.studio.action.discard' | dm"
-                        severity="secondary"
-                        [outlined]="true"
-                        [rounded]="true"
-                        (onClick)="discard()"
-                        data-testid="studio-discard-btn" />
-                    <p-button
-                        [label]="
-                            'accessibility.studio.action.publish'
-                                | dm: [store.fixedCount().toString()]
-                        "
-                        icon="pi pi-upload"
-                        severity="success"
-                        styleClass="flex-1"
-                        [rounded]="true"
-                        (onClick)="publish()"
-                        data-testid="studio-publish-btn" />
-                </div>
+                <!-- No inline Publish here — the user must review the code changes
+                     first. This opens the Code tab, where Discard/Publish live. -->
+                <p-button
+                    [label]="'accessibility.studio.action.review' | dm"
+                    icon="pi pi-code"
+                    styleClass="w-full"
+                    [rounded]="true"
+                    (onClick)="reviewChanges()"
+                    data-testid="studio-review-btn" />
             }
             @case ('published') {
                 <div class="flex gap-2.5">
