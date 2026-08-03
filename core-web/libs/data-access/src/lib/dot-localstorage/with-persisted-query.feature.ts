@@ -1,6 +1,10 @@
 import { patchState, signalStoreFeature, type, withHooks, withMethods } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
 
-import { effect } from '@angular/core';
+import { computed } from '@angular/core';
+
+import { debounceTime, skip, tap } from 'rxjs/operators';
 
 import {
     buildPersistedQueryKey,
@@ -41,11 +45,15 @@ export interface PersistedQueryConfig<Field extends string> {
  * Behavior:
  * - On init, reads `dotcms.devtools.{portletKey}.lastQuery` and patches
  *   `state[field]` if a non-empty stored value exists.
- * - Watches `state[field]` and writes changes to localStorage, debounced by
- *   `debounceMs` (default 300ms). The first tick after hydration is skipped
- *   to avoid a redundant write of the freshly-hydrated value.
+ * - Watches `state[field]` via `rxMethod` and writes changes to localStorage,
+ *   debounced by `debounceMs` (default 300 ms). The first emission after
+ *   hydration is skipped so we don't rewrite the value we just read.
+ * - Empty values are treated as "clear" — after the debounce we call
+ *   `removeKey` rather than `writeJson('""')`, so a `clearPersistedQuery`
+ *   call followed by no typing leaves storage empty (previously a race
+ *   re-created the entry as `""` once the debounce elapsed).
  * - Adds a `clearPersistedQuery()` method that resets `state[field]` to an
- *   empty string and removes the stored entry.
+ *   empty string and removes the stored entry synchronously.
  *
  * Composition:
  * ```ts
@@ -81,8 +89,9 @@ export function withPersistedQuery<Field extends string>(config: PersistedQueryC
         withMethods((store) => ({
             /**
              * Reset the persisted query to an empty string and delete the
-             * localStorage entry. The debounced-write effect will observe the
-             * empty value but the removeKey call has already cleared storage.
+             * storage entry synchronously. The rxMethod pipeline handles
+             * the follow-up emission by calling `removeKey` again after the
+             * debounce (no-op — key is already gone).
              */
             clearPersistedQuery(): void {
                 patchField(store, '');
@@ -96,22 +105,27 @@ export function withPersistedQuery<Field extends string>(config: PersistedQueryC
                     patchField(store, stored);
                 }
 
-                // Skip the first effect tick (post-hydration): the value we'd
-                // write is the value we just read.
-                let hydrated = false;
-                const readField = () => (store as unknown as Record<Field, () => string>)[field]();
-
-                effect((onCleanup) => {
-                    const value = readField();
-                    if (!hydrated) {
-                        hydrated = true;
-
-                        return;
-                    }
-
-                    const timer = setTimeout(() => writeJson(storageKey, value), debounceMs);
-                    onCleanup(() => clearTimeout(timer));
-                });
+                // Bind the debounced persistence pipeline to the tracked
+                // field signal. `skip(1)` drops the hydrated value so we
+                // don't immediately write it back; `debounceTime` coalesces
+                // rapid typing; empty values route to `removeKey` to avoid
+                // resurrecting a `""` entry after `clearPersistedQuery`.
+                const source = computed(
+                    () => (store as unknown as Record<Field, () => string>)[field]()
+                );
+                rxMethod<string>(
+                    pipe(
+                        skip(1),
+                        debounceTime(debounceMs),
+                        tap((value) => {
+                            if (value.length === 0) {
+                                removeKey(storageKey);
+                            } else {
+                                writeJson(storageKey, value);
+                            }
+                        })
+                    )
+                )(source);
             }
         })
     );

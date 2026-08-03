@@ -115,5 +115,38 @@ describe('withPersistedQuery', () => {
             expect(spectator.service.query()).toBe('');
             expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
         });
+
+        it('does not resurrect the storage entry when the debounce fires after clear', () => {
+            // Regression: the state change to '' re-enters the debounced write
+            // pipeline. Without the empty-value guard, the timer would fire
+            // debounceMs later and write '""' back to storage, silently undoing
+            // removeKey.
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify('stored'));
+
+            spectator = createStore();
+            spectator.flushEffects();
+
+            spectator.service.clearPersistedQuery();
+            spectator.flushEffects();
+            jest.advanceTimersByTime(300);
+
+            expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+        });
+
+        it('clears storage when the user empties the query by typing (setQuery to "")', () => {
+            spectator = createStore();
+            spectator.flushEffects();
+
+            spectator.service.setQuery('draft');
+            spectator.flushEffects();
+            jest.advanceTimersByTime(300);
+            expect(window.localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify('draft'));
+
+            spectator.service.setQuery('');
+            spectator.flushEffects();
+            jest.advanceTimersByTime(300);
+
+            expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+        });
     });
 });
