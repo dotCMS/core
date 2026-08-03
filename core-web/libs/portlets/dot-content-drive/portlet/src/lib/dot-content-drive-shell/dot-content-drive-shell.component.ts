@@ -60,6 +60,8 @@ import { DotContentDriveSidebarComponent } from '../components/dot-content-drive
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
+    ACTION_CENTER_DIALOG_CONTENT_STYLE,
+    ACTION_CENTER_DIALOG_STYLE,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -195,36 +197,20 @@ export class DotContentDriveShellComponent {
     });
 
     /**
-     * Fixed height for the Action Center so its content box has something to flex against —
-     * without it the column would size to content and the body would never scroll.
+     * @see ACTION_CENTER_DIALOG_STYLE
      */
     readonly $dialogStyle = computed(() =>
         this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
-            ? { width: '42rem', maxWidth: '92vw', height: '80vh' }
+            ? ACTION_CENTER_DIALOG_STYLE
             : undefined
     );
 
     /**
-     * Turns the Action Center's content box into the dialog's only scroll container.
-     *
-     * Applied as inline styles via `[contentStyle]` rather than utility classes: the theme sets
-     * `overflow-y: auto` on `.p-dialog-content` and its runtime-injected CSS outranks a Tailwind
-     * `overflow-hidden`, which is why the whole box scrolled — footer included — instead of just the
-     * body. Inline styles win without needing `!` overrides.
-     *
-     * `min-height: 0` is what lets the box shrink inside the flex column; without it a flex item
-     * refuses to go below its content height and nothing scrolls.
+     * @see ACTION_CENTER_DIALOG_CONTENT_STYLE
      */
     readonly $dialogContentStyle = computed(() =>
         this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
-            ? {
-                  display: 'flex',
-                  'flex-direction': 'column',
-                  flex: '1',
-                  'min-height': '0',
-                  overflow: 'hidden',
-                  padding: '0'
-              }
+            ? ACTION_CENTER_DIALOG_CONTENT_STYLE
             : undefined
     );
 
@@ -346,7 +332,8 @@ export class DotContentDriveShellComponent {
         const path = this.#store.path();
         const filters = this.#store.filters();
 
-        const queryParams: Record<string, string> = {};
+        // `null` removes the param when queryParamsHandling is 'merge'
+        const queryParams: Record<string, string | null> = {};
 
         queryParams['isTreeExpanded'] = isTreeExpanded.toString();
 
@@ -384,7 +371,8 @@ export class DotContentDriveShellComponent {
         // syncing from it would clear the restored path back to root and the deep-linked folder
         // would never open. Once `loadFolders` resolves, it sets `selectedNode` to the matching
         // node (and flips `sidebarLoading` off), so this effect re-runs and stays in sync.
-        if (sidebarLoading || !selectedNode) {
+        // TreeNode.data is optional in PrimeNG's type, so guard it before reading path.
+        if (sidebarLoading || !selectedNode?.data) {
             return;
         }
 
@@ -846,7 +834,8 @@ export class DotContentDriveShellComponent {
                 fails.forEach(({ errorMessage, inode }) => {
                     const item = dragItems.contentlets.find((item) => item.inode === inode);
 
-                    const title = item?.title ?? inode;
+                    // DotBulkFailItem.inode is optional; fall back so message args stay strings
+                    const title = item?.title ?? inode ?? '';
 
                     this.#messageService.add({
                         severity: 'error',
@@ -887,7 +876,7 @@ export class DotContentDriveShellComponent {
 
         const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
 
-        const folderName = cleanPath?.length > 0 ? cleanPath : pathToMove;
+        const folderName = cleanPath && cleanPath.length > 0 ? cleanPath : pathToMove;
 
         return {
             pathToMove: pathToMove,

@@ -53,6 +53,8 @@ import { DotContentDriveShellComponent } from './dot-content-drive-shell.compone
 
 import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import {
+    ACTION_CENTER_DIALOG_CONTENT_STYLE,
+    ACTION_CENTER_DIALOG_STYLE,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
@@ -200,9 +202,19 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
-                        (_commands: unknown[], opts: { queryParams?: Record<string, string> }) => ({
-                            toString: () =>
-                                '?' + new URLSearchParams(opts?.queryParams ?? {}).toString()
+                        (
+                            _commands: unknown[],
+                            opts: { queryParams?: Record<string, string | null> }
+                        ) => ({
+                            toString: () => {
+                                const params = Object.fromEntries(
+                                    Object.entries(opts?.queryParams ?? {}).filter(
+                                        ([, value]) => value != null
+                                    )
+                                ) as Record<string, string>;
+
+                                return '?' + new URLSearchParams(params).toString();
+                            }
                         })
                     )
                 }),
@@ -436,21 +448,10 @@ describe('DotContentDriveShellComponent', () => {
             spectator.flushEffects();
             spectator.detectChanges();
 
-            // Inline styles, not classes: the theme's `overflow-y: auto` on `.p-dialog-content`
-            // outranks a Tailwind utility, which let the whole box scroll (footer included).
-            // `min-height: 0` is what allows the box to shrink and its body to scroll instead.
             expect(spectator.component.$dialogContentStyle()).toEqual(
-                expect.objectContaining({
-                    display: 'flex',
-                    'flex-direction': 'column',
-                    'min-height': '0',
-                    overflow: 'hidden'
-                })
+                ACTION_CENTER_DIALOG_CONTENT_STYLE
             );
-            // Without a fixed height the column sizes to content and nothing scrolls.
-            expect(spectator.component.$dialogStyle()).toEqual(
-                expect.objectContaining({ height: '80vh' })
-            );
+            expect(spectator.component.$dialogStyle()).toEqual(ACTION_CENTER_DIALOG_STYLE);
         });
 
         it('should render a sub-header with the selected contentlet count', () => {

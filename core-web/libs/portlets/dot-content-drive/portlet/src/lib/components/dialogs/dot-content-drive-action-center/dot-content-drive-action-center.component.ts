@@ -86,7 +86,12 @@ import {
     ],
     providers: [DotWorkflowsActionsService, DotWorkflowActionsFireService, ConfirmationService],
     templateUrl: './dot-content-drive-action-center.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    // Sit in the shell's flex content box: without this the host ignores `flex-1`/`min-h-0` and
+    // the inner column grows with its content, pushing the footer out of view.
+    host: {
+        class: 'flex min-h-0 flex-1 flex-col'
+    }
 })
 export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
