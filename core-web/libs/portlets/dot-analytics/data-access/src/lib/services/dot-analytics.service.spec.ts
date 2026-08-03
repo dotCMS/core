@@ -7,88 +7,49 @@ import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
 import { DotAnalyticsService } from './dot-analytics.service';
 
-import {
-    ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
-    ANALYTICS_CONVERSION_URL
-} from '../constants';
-import { CubeJSQuery, Granularity, HealthEntity } from '../types';
+import { ANALYTICS_CONTENT_URL, ANALYTICS_EVENTS_URL, ANALYTICS_SESSIONS_URL } from '../constants';
+import { AnalyticsPagination, CubeJSQuery, Granularity, HealthEntity } from '../types';
 
 const ANALYTICS_API_ENDPOINT = '/api/v1/analytics/content/_query/cube';
-const ANALYTICS_EVENT_TOTAL_EVENTS = '/api/v1/analytics/event/total-events';
-const ANALYTICS_EVENT_UNIQUE_VISITORS = '/api/v1/analytics/event/unique-visitors';
-const ANALYTICS_EVENT_TOP_CONTENT = '/api/v1/analytics/event/top-content';
-const ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER =
-    '/api/v1/analytics/event/pageviews-by-device-browser';
-const ANALYTICS_SESSION_ENGAGEMENT = '/api/v1/analytics/session/engagement';
 const ANALYTICS_HEALTH_URL = '/api/v1/analytics/health';
 
 /** SpectatorHttp.expectOne always wraps URL in an object, so function matchers break; use the real backend matcher. */
-function expectTotalEventsReq(httpMock: HttpTestingController) {
+
+/** Matches the domain-driven query endpoints (dotCMS/core#36628): events/sessions/content. */
+function expectAnalyticsEventsReq(httpMock: HttpTestingController) {
     return httpMock.expectOne(
         (req) =>
             req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_EVENT_TOTAL_EVENTS ||
-                req.urlWithParams.startsWith(`${ANALYTICS_EVENT_TOTAL_EVENTS}?`))
+            (req.urlWithParams === ANALYTICS_EVENTS_URL ||
+                req.urlWithParams.startsWith(`${ANALYTICS_EVENTS_URL}?`))
     );
 }
 
-function expectUniqueVisitorsReq(httpMock: HttpTestingController) {
+function expectAnalyticsSessionsReq(httpMock: HttpTestingController) {
     return httpMock.expectOne(
         (req) =>
             req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_EVENT_UNIQUE_VISITORS ||
-                req.urlWithParams.startsWith(`${ANALYTICS_EVENT_UNIQUE_VISITORS}?`))
+            (req.urlWithParams === ANALYTICS_SESSIONS_URL ||
+                req.urlWithParams.startsWith(`${ANALYTICS_SESSIONS_URL}?`))
     );
 }
 
-function expectTopContentReq(httpMock: HttpTestingController) {
+function expectAnalyticsContentReq(httpMock: HttpTestingController) {
     return httpMock.expectOne(
         (req) =>
             req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_EVENT_TOP_CONTENT ||
-                req.urlWithParams.startsWith(`${ANALYTICS_EVENT_TOP_CONTENT}?`))
+            (req.urlWithParams === ANALYTICS_CONTENT_URL ||
+                req.urlWithParams.startsWith(`${ANALYTICS_CONTENT_URL}?`))
     );
 }
 
-function expectPageviewsByDeviceBrowserReq(httpMock: HttpTestingController) {
-    return httpMock.expectOne(
-        (req) =>
-            req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER ||
-                req.urlWithParams.startsWith(`${ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER}?`))
-    );
-}
-
-function expectSessionEngagementReq(httpMock: HttpTestingController) {
-    return httpMock.expectOne(
-        (req) =>
-            req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_SESSION_ENGAGEMENT ||
-                req.urlWithParams.startsWith(`${ANALYTICS_SESSION_ENGAGEMENT}?`))
-    );
-}
-
-function expectContentAttributionReq(httpMock: HttpTestingController) {
-    const base = ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL;
-    return httpMock.expectOne(
-        (req) =>
-            req.method === 'GET' &&
-            (req.urlWithParams === base || req.urlWithParams.startsWith(`${base}?`))
-    );
-}
-
-function expectConversionsOverviewReq(httpMock: HttpTestingController) {
-    return httpMock.expectOne(
-        (req) =>
-            req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_CONVERSION_URL ||
-                req.urlWithParams.startsWith(`${ANALYTICS_CONVERSION_URL}?`))
-    );
-}
-
-function dotCMSWrap<T>(data: T) {
+/** Wraps rows in the unified tabular envelope (dotCMS/core#36628) for the domain-driven endpoints. */
+function dotCMSWrapAnalytics<T extends Record<string, string | number>>(
+    rows: T[],
+    opts?: { totals?: Record<string, number>; pagination?: AnalyticsPagination }
+) {
     return {
-        entity: { data },
+        entity: { params: {}, columns: [], rows, ...opts },
         errors: [],
         i18nMessagesMap: {},
         messages: [],
@@ -224,43 +185,36 @@ describe('DotAnalyticsService', () => {
     });
 
     describe('getTotalEvents', () => {
-        it('should GET total-events with range only and omit optional query keys', () => {
-            spectator.service.getTotalEvents({ range: 'last_7_days' }).subscribe();
+        it('should GET /analytics/events with metrics=totalEvents, range only, and omit optional query keys', () => {
+            let result!: unknown;
+            spectator.service
+                .getTotalEvents({ range: 'last_7_days' })
+                .subscribe((data) => (result = data));
 
-            const req = expectTotalEventsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_7_days');
-            expect(req.request.params.get('granularity')).toBeNull();
+            expect(req.request.params.get('metrics')).toBe('totalEvents');
+            expect(req.request.params.get('dimensions')).toBeNull();
             expect(req.request.params.get('eventType')).toBeNull();
             expect(req.request.params.get('siteId')).toBeNull();
 
-            req.flush({
-                entity: { data: { totalEvents: 42 } },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                pagination: null,
-                permissions: []
-            });
+            req.flush(dotCMSWrapAnalytics([{ totalEvents: 42 }]));
+
+            expect(result).toEqual({ totalEvents: 42 });
         });
 
-        it('should GET total-events with from and to', () => {
+        it('should GET /analytics/events with from and to', () => {
             spectator.service.getTotalEvents({ from: '2026-01-01', to: '2026-01-31' }).subscribe();
 
-            const req = expectTotalEventsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('from')).toBe('2026-01-01');
             expect(req.request.params.get('to')).toBe('2026-01-31');
+            expect(req.request.params.get('metrics')).toBe('totalEvents');
 
-            req.flush({
-                entity: { data: { totalEvents: 10 } },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                pagination: null,
-                permissions: []
-            });
+            req.flush(dotCMSWrapAnalytics([{ totalEvents: 10 }]));
         });
 
-        it('should append eventType, siteId, and granularity when provided in options', () => {
+        it('should append eventType, siteId, and dimensions=day when granularity=day is provided', () => {
             let result!: unknown;
             spectator.service
                 .getTotalEvents({
@@ -273,25 +227,19 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectTotalEventsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_7_days');
-            expect(req.request.params.get('granularity')).toBe('day');
+            expect(req.request.params.get('dimensions')).toBe('day');
+            expect(req.request.params.get('metrics')).toBe('totalEvents');
             expect(req.request.params.get('eventType')).toBe('pageview');
             expect(req.request.params.get('siteId')).toBe('site-abc');
 
-            req.flush({
-                entity: {
-                    data: [
-                        { day: '2026-05-01', totalEvents: 3 },
-                        { day: '2026-05-02', totalEvents: 5 }
-                    ]
-                },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                pagination: null,
-                permissions: []
-            });
+            req.flush(
+                dotCMSWrapAnalytics([
+                    { day: '2026-05-01', totalEvents: 3 },
+                    { day: '2026-05-02', totalEvents: 5 }
+                ])
+            );
 
             expect(result).toEqual([
                 { day: '2026-05-01', totalEvents: 3 },
@@ -299,17 +247,17 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should append conversion eventType without granularity', () => {
+        it('should append conversion eventType without a dimensions param', () => {
             spectator.service
                 .getTotalEvents({ range: 'last_30_days', eventType: 'conversion' })
                 .subscribe();
 
-            const req = expectTotalEventsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_30_days');
             expect(req.request.params.get('eventType')).toBe('conversion');
-            expect(req.request.params.get('granularity')).toBeNull();
+            expect(req.request.params.get('dimensions')).toBeNull();
 
-            req.flush(dotCMSWrap({ totalEvents: 99 }));
+            req.flush(dotCMSWrapAnalytics([{ totalEvents: 99 }]));
         });
 
         it('should propagate HTTP errors for total-events', (done) => {
@@ -320,24 +268,30 @@ describe('DotAnalyticsService', () => {
                 }
             });
 
-            const req = expectTotalEventsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
 
     describe('getUniqueVisitors', () => {
-        it('should GET unique-visitors with range only and omit optional query keys', () => {
-            spectator.service.getUniqueVisitors({ range: 'last_7_days' }).subscribe();
+        it('should GET /analytics/events with metrics=uniqueVisitors, range only, and omit optional query keys', () => {
+            let result!: unknown;
+            spectator.service
+                .getUniqueVisitors({ range: 'last_7_days' })
+                .subscribe((data) => (result = data));
 
-            const req = expectUniqueVisitorsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_7_days');
-            expect(req.request.params.get('granularity')).toBeNull();
+            expect(req.request.params.get('metrics')).toBe('uniqueVisitors');
+            expect(req.request.params.get('dimensions')).toBeNull();
             expect(req.request.params.get('siteId')).toBeNull();
 
-            req.flush(dotCMSWrap({ uniqueVisitors: 100 }));
+            req.flush(dotCMSWrapAnalytics([{ uniqueVisitors: 100 }]));
+
+            expect(result).toEqual({ uniqueVisitors: 100 });
         });
 
-        it('should GET unique-visitors with from, to, granularity, and siteId', () => {
+        it('should GET /analytics/events with from, to, dimensions=day, and siteId', () => {
             let result!: unknown;
             spectator.service
                 .getUniqueVisitors({
@@ -350,14 +304,15 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectUniqueVisitorsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('from')).toBe('2026-01-01');
             expect(req.request.params.get('to')).toBe('2026-01-31');
-            expect(req.request.params.get('granularity')).toBe('day');
+            expect(req.request.params.get('dimensions')).toBe('day');
+            expect(req.request.params.get('metrics')).toBe('uniqueVisitors');
             expect(req.request.params.get('siteId')).toBe('site-x');
 
             req.flush(
-                dotCMSWrap([
+                dotCMSWrapAnalytics([
                     { day: '2026-01-01', uniqueVisitors: 1 },
                     { day: '2026-01-02', uniqueVisitors: 2 }
                 ])
@@ -369,7 +324,7 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should GET unique-visitors with eventType when provided', () => {
+        it('should GET /analytics/events with eventType when provided', () => {
             spectator.service
                 .getUniqueVisitors({
                     range: 'last_7_days',
@@ -378,11 +333,12 @@ describe('DotAnalyticsService', () => {
                 })
                 .subscribe();
 
-            const req = expectUniqueVisitorsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('eventType')).toBe('conversion');
             expect(req.request.params.get('siteId')).toBe('site-1');
+            expect(req.request.params.get('metrics')).toBe('uniqueVisitors');
 
-            req.flush(dotCMSWrap({ uniqueVisitors: 3 }));
+            req.flush(dotCMSWrapAnalytics([{ uniqueVisitors: 3 }]));
         });
 
         it('should propagate HTTP errors for unique-visitors', (done) => {
@@ -393,13 +349,13 @@ describe('DotAnalyticsService', () => {
                 }
             });
 
-            const req = expectUniqueVisitorsReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
 
     describe('getContentAttribution', () => {
-        it('should GET conversion content attribution with range and siteId', () => {
+        it('should GET /analytics/content (attribution mode) with range and siteId, renaming totalEvents to events', () => {
             let result!: unknown;
             spectator.service
                 .getContentAttribution({
@@ -410,17 +366,20 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectContentAttributionReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_7_days');
             expect(req.request.params.get('siteId')).toBe('s1');
 
+            // New envelope names the metric column 'totalEvents' — the mapping must rename it
+            // back to 'events', which ContentAttributionData (and transformContentConversionsData)
+            // expect.
             req.flush(
-                dotCMSWrap([
+                dotCMSWrapAnalytics([
                     {
                         eventType: 'pageview',
                         identifier: '/home',
                         title: 'Home',
-                        events: 10,
+                        totalEvents: 10,
                         attributionCount: 2,
                         attributionRate: 20
                     }
@@ -438,65 +397,42 @@ describe('DotAnalyticsService', () => {
                 }
             ]);
         });
-    });
 
-    describe('getConversionsOverview', () => {
-        it('should GET conversions overview and return data array', () => {
-            let result!: unknown;
+        it('should pass through orderBy, orderDir, page, and pageSize unchanged', () => {
             spectator.service
-                .getConversionsOverview({
-                    from: '2026-05-01',
-                    to: '2026-05-07',
-                    siteId: 's1',
+                .getContentAttribution({
+                    range: 'last_7_days',
+                    orderBy: 'attributionCount',
+                    orderDir: 'desc',
                     page: 1,
                     pageSize: 20
                 })
-                .subscribe((data) => {
-                    result = data;
-                });
+                .subscribe();
 
-            const req = expectConversionsOverviewReq(TestBed.inject(HttpTestingController));
-            expect(req.request.params.get('from')).toBe('2026-05-01');
-            expect(req.request.params.get('to')).toBe('2026-05-07');
-            expect(req.request.params.get('siteId')).toBe('s1');
+            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('orderBy')).toBe('attributionCount');
+            expect(req.request.params.get('orderDir')).toBe('desc');
             expect(req.request.params.get('page')).toBe('1');
             expect(req.request.params.get('pageSize')).toBe('20');
 
-            req.flush({
-                entity: {
-                    data: [
-                        {
-                            conversionName: 'purchase',
-                            conversionRate: 10,
-                            totalConversions: 5,
-                            totalEvents: 50,
-                            topContent: []
-                        }
-                    ],
-                    pagination: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
-                    params: {}
-                },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                pagination: null,
-                permissions: []
+            req.flush(dotCMSWrapAnalytics([]));
+        });
+
+        it('should propagate HTTP errors for content attribution', (done) => {
+            spectator.service.getContentAttribution({ range: 'last_7_days' }).subscribe({
+                error: (e) => {
+                    expect(e.status).toBe(500);
+                    done();
+                }
             });
 
-            expect(result).toEqual([
-                {
-                    conversionName: 'purchase',
-                    conversionRate: 10,
-                    totalConversions: 5,
-                    totalEvents: 50,
-                    topContent: []
-                }
-            ]);
+            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
+            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
 
     describe('getTopContent', () => {
-        it('should GET top-content with range and optional filters', () => {
+        it('should GET /analytics/content (top-content mode) with range, eventType filter, metrics, and explicit ordering', () => {
             let result!: unknown;
             spectator.service
                 .getTopContent({
@@ -508,13 +444,18 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectTopContentReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_7_days');
+            // eventType is a plain filter here, not a dimension — it must NOT flip the endpoint
+            // into attribution mode.
             expect(req.request.params.get('eventType')).toBe('pageview');
             expect(req.request.params.get('siteId')).toBe('s1');
+            expect(req.request.params.get('metrics')).toBe('totalEvents');
+            expect(req.request.params.get('orderBy')).toBe('totalEvents');
+            expect(req.request.params.get('orderDir')).toBe('desc');
 
             req.flush(
-                dotCMSWrap([
+                dotCMSWrapAnalytics([
                     { identifier: '1', title: 'A', totalEvents: 5 },
                     { identifier: '2', title: 'B', totalEvents: 3 }
                 ])
@@ -526,15 +467,16 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should GET top-content with from and to omitting optional keys', () => {
+        it('should GET /analytics/content with from and to omitting optional keys', () => {
             spectator.service.getTopContent({ from: '2026-05-01', to: '2026-05-07' }).subscribe();
 
-            const req = expectTopContentReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('from')).toBe('2026-05-01');
             expect(req.request.params.get('to')).toBe('2026-05-07');
             expect(req.request.params.get('eventType')).toBeNull();
+            expect(req.request.params.get('metrics')).toBe('totalEvents');
 
-            req.flush(dotCMSWrap([]));
+            req.flush(dotCMSWrapAnalytics([]));
         });
 
         it('should propagate HTTP errors for top-content', (done) => {
@@ -545,13 +487,13 @@ describe('DotAnalyticsService', () => {
                 }
             });
 
-            const req = expectTopContentReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
 
     describe('getPageviewsByDeviceBrowser', () => {
-        it('should GET pageviews-by-device-browser with groupBy=device and params', () => {
+        it('should GET /analytics/events with metrics=pageviews, dimensions=device, and params', () => {
             let result!: unknown;
             spectator.service
                 .getPageviewsByDeviceBrowser({
@@ -564,18 +506,21 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_30_days');
-            expect(req.request.params.get('groupBy')).toBe('device');
+            expect(req.request.params.get('metrics')).toBe('pageviews');
+            expect(req.request.params.get('dimensions')).toBe('device');
             expect(req.request.params.get('eventType')).toBe('pageview');
             expect(req.request.params.get('siteId')).toBe('host1');
 
-            req.flush(dotCMSWrap([{ device: 'Desktop', total: 22 }]));
+            // New envelope names the metric column 'pageviews' — the mapping must rename it back
+            // to 'total', which DeviceBreakdownData and the pie-chart transform utils expect.
+            req.flush(dotCMSWrapAnalytics([{ device: 'Desktop', pageviews: 22 }]));
 
             expect(result).toEqual([{ device: 'Desktop', total: 22 }]);
         });
 
-        it('should GET pageviews-by-device-browser with groupBy=browser and params', () => {
+        it('should GET /analytics/events with metrics=pageviews, dimensions=browser, and params', () => {
             let result!: unknown;
             spectator.service
                 .getPageviewsByDeviceBrowser({
@@ -589,15 +534,16 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('from')).toBe('2026-04-20');
             expect(req.request.params.get('to')).toBe('2026-05-28');
-            expect(req.request.params.get('groupBy')).toBe('browser');
+            expect(req.request.params.get('dimensions')).toBe('browser');
+            expect(req.request.params.get('metrics')).toBe('pageviews');
 
             req.flush(
-                dotCMSWrap([
-                    { browser: 'Firefox', total: 8 },
-                    { browser: 'Safari', total: 8 }
+                dotCMSWrapAnalytics([
+                    { browser: 'Firefox', pageviews: 8 },
+                    { browser: 'Safari', pageviews: 8 }
                 ])
             );
 
@@ -620,7 +566,7 @@ describe('DotAnalyticsService', () => {
                     }
                 });
 
-            const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
@@ -637,7 +583,7 @@ describe('DotAnalyticsService', () => {
             totalSessions: 350
         };
 
-        it('should GET session engagement aggregate without granularity', () => {
+        it('should GET /analytics/sessions aggregate without a dimensions param', () => {
             let result!: unknown;
             spectator.service
                 .getSessionEngagement({ range: 'last_7_days', siteId: 'site-1' })
@@ -645,18 +591,17 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_7_days');
             expect(req.request.params.get('siteId')).toBe('site-1');
-            expect(req.request.params.get('granularity')).toBeNull();
-            expect(req.request.params.get('groupBy')).toBeNull();
+            expect(req.request.params.get('dimensions')).toBeNull();
 
-            req.flush(dotCMSWrap(mockAggregate));
+            req.flush(dotCMSWrapAnalytics([mockAggregate]));
 
             expect(result).toEqual(mockAggregate);
         });
 
-        it('should GET session engagement time series with granularity=day', () => {
+        it('should GET /analytics/sessions time series with dimensions=day', () => {
             let result!: unknown;
             const byDay = [
                 { ...mockAggregate, day: '2026-05-01' },
@@ -673,12 +618,12 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('from')).toBe('2026-05-01');
             expect(req.request.params.get('to')).toBe('2026-05-07');
-            expect(req.request.params.get('granularity')).toBe('day');
+            expect(req.request.params.get('dimensions')).toBe('day');
 
-            req.flush(dotCMSWrap(byDay));
+            req.flush(dotCMSWrapAnalytics(byDay));
 
             expect(result).toEqual(byDay);
         });
@@ -691,13 +636,13 @@ describe('DotAnalyticsService', () => {
                 }
             });
 
-            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
             req.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
         });
     });
 
     describe('getSessionEngagementGroupBy', () => {
-        it('should GET session engagement with groupBy=device and normalize device to name', () => {
+        it('should GET /analytics/sessions with dimensions=device, the 4 basic metrics only, and normalize device to name', () => {
             let result!: unknown;
             spectator.service
                 .getSessionEngagementGroupBy({
@@ -709,14 +654,18 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
-            expect(req.request.params.get('groupBy')).toBe('device');
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('dimensions')).toBe('device');
             expect(req.request.params.get('range')).toBe('last_30_days');
             expect(req.request.params.get('siteId')).toBe('host1');
-            expect(req.request.params.get('granularity')).toBeNull();
+            // The extended metrics (conversionRate, avgSessionTimeSeconds, etc.) are invalid on a
+            // grouped dimension and 400 — metrics MUST be explicitly restricted to these 4.
+            expect(req.request.params.get('metrics')).toBe(
+                'totalSessions,engagedSessions,engagementRate,avgEngagedSessionTimeSeconds'
+            );
 
             req.flush(
-                dotCMSWrap([
+                dotCMSWrapAnalytics([
                     {
                         device: 'desktop',
                         avgEngagedSessionTimeSeconds: 90,
@@ -746,10 +695,10 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
-            expect(req.request.params.get('groupBy')).toBe('browser');
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('dimensions')).toBe('browser');
             req.flush(
-                dotCMSWrap([
+                dotCMSWrapAnalytics([
                     {
                         browser: 'Chrome',
                         avgEngagedSessionTimeSeconds: 1,
@@ -779,10 +728,10 @@ describe('DotAnalyticsService', () => {
                     result = data;
                 });
 
-            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
-            expect(req.request.params.get('groupBy')).toBe('language');
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('dimensions')).toBe('language');
             req.flush(
-                dotCMSWrap([
+                dotCMSWrapAnalytics([
                     {
                         language: 'en-US',
                         avgEngagedSessionTimeSeconds: 5,
@@ -804,6 +753,40 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
+        it('should pass through "n/a" language unchanged, not remap it to Other', () => {
+            // "n/a" (sessions with no recorded locale) is a real, expected bucket — it must not
+            // be treated the same as a blank/empty value.
+            let result!: unknown;
+            spectator.service
+                .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+            req.flush(
+                dotCMSWrapAnalytics([
+                    {
+                        language: 'n/a',
+                        avgEngagedSessionTimeSeconds: 0,
+                        engagedSessions: 1,
+                        engagementRate: 10,
+                        totalSessions: 2
+                    }
+                ])
+            );
+
+            expect(result).toEqual([
+                {
+                    name: 'n/a',
+                    avgEngagedSessionTimeSeconds: 0,
+                    engagedSessions: 1,
+                    engagementRate: 10,
+                    totalSessions: 2
+                }
+            ]);
+        });
+
         it('should propagate HTTP errors for session engagement groupBy', (done) => {
             spectator.service
                 .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
@@ -814,7 +797,7 @@ describe('DotAnalyticsService', () => {
                     }
                 });
 
-            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
