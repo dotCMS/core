@@ -21,6 +21,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import {
+    applyLoadMoreToHierarchy,
     buildLoadMoreNode,
     buildUserSearchablePayload,
     decodeByFilterKey,
@@ -41,8 +42,9 @@ import {
     toLocalIsoString,
     workflowEntryToToken
 } from './functions';
+import { createTreeNode } from './tree-folder.utils';
 
-import { FOLDER_TREE_PAGE_SIZE } from '../shared/constants';
+import { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
@@ -400,7 +402,7 @@ describe('Utility Functions', () => {
             } as unknown as jest.Mocked<DotFolderService>;
         });
 
-        it('should search the root and every parent path with an uncapped page size', (done) => {
+        it('should search the root and every parent path with the hierarchy page size', (done) => {
             const folderPath = '/main/sub-folder/inner-folder';
 
             getFolderHierarchyByPath(folderPath, SITE, mockDotFolderService).subscribe({
@@ -420,7 +422,7 @@ describe('Utility Functions', () => {
                                 path,
                                 recursive: false,
                                 page: 1,
-                                per_page: FOLDER_TREE_PAGE_SIZE
+                                per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
                             })
                         );
                     });
@@ -487,7 +489,7 @@ describe('Utility Functions', () => {
             });
         });
 
-        it('should request the shared folder-tree page size', (done) => {
+        it('should request the large hierarchy page size (not the interactive 40)', (done) => {
             const many = Array.from({ length: 45 }, (_, i) =>
                 createFakeFolderSearchView({ id: `f${i}`, name: `folder-${i}`, path: '/' })
             );
@@ -497,7 +499,58 @@ describe('Utility Functions', () => {
                 next: (levels) => {
                     expect(levels[0].folders).toHaveLength(45);
                     expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
-                        expect.objectContaining({ per_page: FOLDER_TREE_PAGE_SIZE })
+                        expect.objectContaining({ per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE })
+                    );
+                    expect(FOLDER_TREE_HIERARCHY_PAGE_SIZE).toBeGreaterThan(FOLDER_TREE_PAGE_SIZE);
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should include folders past interactive page position 40 for deep-link restore', (done) => {
+            // Simulates a level where the deep-linked name sorts after the first 40 siblings.
+            const siblings = Array.from({ length: 45 }, (_, i) =>
+                createFakeFolderSearchView({
+                    id: `f${i}`,
+                    name: `qa36151-child-${i}`,
+                    path: '/qa36151-many-parent/'
+                })
+            );
+            mockDotFolderService.searchFolders.mockReturnValue(
+                of({
+                    folders: siblings,
+                    pagination: {
+                        currentPage: 1,
+                        perPage: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+                        totalEntries: siblings.length
+                    }
+                })
+            );
+
+            getFolderHierarchyByPath(
+                '/qa36151-many-parent/qa36151-child-9/',
+                SITE,
+                mockDotFolderService
+            ).subscribe({
+                next: (levels) => {
+                    // Hierarchy returns every sibling in one large page so a late-sorted
+                    // name (string-sort: child-9 is past position 40) is still present.
+                    const parentLevel = levels.find(
+                        (level) => level.path === '/qa36151-many-parent/'
+                    );
+                    expect(parentLevel).toBeDefined();
+                    expect(parentLevel!.folders.length).toBeGreaterThan(FOLDER_TREE_PAGE_SIZE);
+                    expect(
+                        parentLevel!.folders.some(
+                            (folder) => folder.path === '/qa36151-many-parent/qa36151-child-9/'
+                        )
+                    ).toBe(true);
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            path: '/qa36151-many-parent/',
+                            per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
+                        })
                     );
                     done();
                 },
@@ -511,15 +564,15 @@ describe('Utility Functions', () => {
                     folders: [createFakeFolderSearchView({ path: '/' })],
                     pagination: {
                         currentPage: 1,
-                        perPage: FOLDER_TREE_PAGE_SIZE,
-                        totalEntries: FOLDER_TREE_PAGE_SIZE + 10
+                        perPage: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+                        totalEntries: FOLDER_TREE_HIERARCHY_PAGE_SIZE + 10
                     }
                 })
             );
 
             getFolderHierarchyByPath('/', SITE, mockDotFolderService).subscribe({
                 next: (levels) => {
-                    expect(levels[0].totalEntries).toBe(FOLDER_TREE_PAGE_SIZE + 10);
+                    expect(levels[0].totalEntries).toBe(FOLDER_TREE_HIERARCHY_PAGE_SIZE + 10);
                     expect(levels[0].path).toBe('/');
                     done();
                 },
@@ -737,6 +790,81 @@ describe('Utility Functions', () => {
             expect(node.type).toBe('load-more');
             expect(node.data?.type).toBe('load-more');
             expect(node.type).toBe(node.data?.type);
+        });
+    });
+
+    describe('applyLoadMoreToHierarchy', () => {
+        it('should append a load-more sentinel with nextPage 2 when more entries remain', () => {
+            const rootFolder = createTreeNode({
+                id: 'root-1',
+                inode: 'inode-1',
+                hostName: 'test.com',
+                path: '/main/',
+                addChildrenAllowed: true
+            });
+
+            const roots = applyLoadMoreToHierarchy(
+                [rootFolder],
+                [
+                    {
+                        path: '/',
+                        folders: [
+                            {
+                                id: 'root-1',
+                                inode: 'inode-1',
+                                hostName: 'test.com',
+                                path: '/main/',
+                                addChildrenAllowed: true
+                            }
+                        ],
+                        totalEntries: 50
+                    }
+                ],
+                'test.com'
+            );
+
+            const loadMore = roots[roots.length - 1];
+            expect(loadMore.type).toBe('load-more');
+            expect(loadMore.data).toEqual(
+                expect.objectContaining({
+                    type: 'load-more',
+                    nextPage: 2,
+                    remaining: 49
+                })
+            );
+        });
+
+        it('should not append load-more when the hierarchy page already has all entries', () => {
+            const rootFolder = createTreeNode({
+                id: 'root-1',
+                inode: 'inode-1',
+                hostName: 'test.com',
+                path: '/main/',
+                addChildrenAllowed: true
+            });
+
+            const roots = applyLoadMoreToHierarchy(
+                [rootFolder],
+                [
+                    {
+                        path: '/',
+                        folders: [
+                            {
+                                id: 'root-1',
+                                inode: 'inode-1',
+                                hostName: 'test.com',
+                                path: '/main/',
+                                addChildrenAllowed: true
+                            }
+                        ],
+                        totalEntries: 1
+                    }
+                ],
+                'test.com'
+            );
+
+            expect(roots).toHaveLength(1);
+            expect(roots[0].type).not.toBe('load-more');
         });
     });
 

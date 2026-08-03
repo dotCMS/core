@@ -26,6 +26,7 @@ import {
     FIELD_FILTER_DATE_TYPES,
     FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTI_VALUE_TYPES,
+    FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
@@ -281,12 +282,14 @@ export type FolderTreeHierarchyLevel = {
 
 /**
  * Fetches the folders for every level of a target path using parallel search calls, so the sidebar
- * tree can be rendered expanded down to that path.
+ * tree can be rendered expanded down to that path (deep-link restore).
  *
- * One paginated `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the
- * site root (`'/'`) and descending through each parent path. Uses {@link FOLDER_TREE_PAGE_SIZE}
- * (same limit as Host Folder Field); callers should append load-more via
- * {@link applyLoadMoreToHierarchy} when `totalEntries` exceeds the returned page.
+ * One `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the site root
+ * (`'/'`) and descending through each parent path. Uses {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}
+ * (large, page 1 only) so ancestors past the interactive page of 40 still resolve without a
+ * sequential page-until-found waterfall. Interactive expand/load-more use
+ * {@link getFolderNodesByPath} with {@link FOLDER_TREE_PAGE_SIZE}. Callers should append load-more
+ * via {@link applyLoadMoreToHierarchy} when `totalEntries` exceeds the returned page.
  *
  * @param {string} folderPath - The folder path (without hostname) to expand to, e.g. `/a/b/`
  * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
@@ -310,7 +313,7 @@ export function getFolderHierarchyByPath(
                 orderby: 'name',
                 direction: 'ASC',
                 page: 1,
-                per_page: FOLDER_TREE_PAGE_SIZE
+                per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
             })
             .pipe(
                 map(({ folders, pagination }) => ({
@@ -415,6 +418,9 @@ export function appendLoadMoreNodes(
 /**
  * Applies load-more sentinels to each level of a freshly built hierarchy.
  * Root-level sentinels sit as siblings of root folders; nested ones go under the parent node.
+ *
+ * Hierarchy always fetches page 1 (with {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}), so the next
+ * interactive page is always `2` when `totalEntries` exceeds the returned folders.
  */
 export function applyLoadMoreToHierarchy(
     rootNodes: DotFolderTreeNodeItem[],
@@ -425,12 +431,14 @@ export function applyLoadMoreToHierarchy(
         return rootNodes;
     }
 
+    const nextPageAfterHierarchy = 2;
+
     const roots = appendLoadMoreNodes(
         rootNodes,
         levels[0].totalEntries,
         levels[0].path,
         hostname,
-        2
+        nextPageAfterHierarchy
     );
 
     for (let i = 1; i < levels.length; i++) {
@@ -446,7 +454,7 @@ export function applyLoadMoreToHierarchy(
             level.totalEntries,
             level.path,
             hostname,
-            2
+            nextPageAfterHierarchy
         );
     }
 
