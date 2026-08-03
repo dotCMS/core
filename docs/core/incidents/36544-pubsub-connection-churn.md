@@ -20,7 +20,7 @@ Two nested loops, each individually survivable, combined into a startup that cou
 |---|---|---|---|
 | **Outer** | `InitServlet.init()` retried by Tomcat | `DELETE FROM import_audit` ×3,512 | full init battery + a cluster rewire |
 | **Inner** | `PGListener` rebuilt by `listener()` | `LISTEN cluster_actions` ×3,687 | one pooled-connection borrow + re-`LISTEN` of every topic |
-| **Accelerant** | Hikari `connectionTestQuery` | `select count(*) as test from inode` ×3,571, 528s | ~148ms on **every** validated borrow |
+| **Accelerant** | Run-always task battery re-running | `select count(*) as test from inode` ×3,571, 528s | ~148ms × 2 per `MainServlet.init()` pass |
 
 The pool (default 60 connections, 30s borrow timeout for this customer) could not sustain ~6
 listener borrows/second each paying 148ms of validation. Once it saturated, every DB consumer
@@ -160,11 +160,53 @@ re-enters `init()`. `addMeToCacheIfNeeded()` then swallows the exception
 
 ---
 
-## The accelerant: `DOT_DB_VALIDATION_QUERY` (secondary question — answered)
+## The accelerant: the run-always startup tasks (secondary question — answered)
 
-**Yes, the `DOT_`-prefixed variable works, and it is the emitter.**
+**The emitter is application code — the run-always startup task battery re-running — not
+HikariCP connection validation.**
 
-`SystemEnvironmentProperties.getVariable()`
+> **Correction.** An earlier revision of this document attributed the 3,571 executions to Hikari's
+> `connectionTestQuery` via `DOT_DB_VALIDATION_QUERY`, on the reasoning that the application call
+> sites "run once per startup". That reasoning was wrong: it held the startup count fixed while the
+> whole incident consists of startup *repeating*. The corrected analysis follows. The `DOT_` prefix
+> mechanism described below is still real and still worth fixing — it was the *attribution* that was
+> incorrect.
+
+`MainServlet.init()` calls `StartupTasksExecutor.executeStartUpTasks()`
+(`MainServlet.java:129`), which iterates all nine run-always tasks and invokes `forceRun()` on
+**every one, every time**. There is no "already ran" guard
+(`StartupTasksExecutor.java:185-191`). Two of those `forceRun()` implementations run this query
+unconditionally:
+
+| Call site | What it does |
+|---|---|
+| `Task00001LoadSchema.java:102-104` (`forceRun`) | `select count(*) as test from inode` on a **direct pool borrow**, deliberately bypassing the ThreadLocal connection so a failure cannot poison the outer transaction |
+| `Task00004LoadStarter.java:21-23` (`forceRun`) | `select count(*) as test from inode` via `DotConnect`; returns `test < 1` |
+
+On a **populated** database both return false, so `Task00004`'s `executeUpgrade()` — and therefore
+`DotCMSInitDb.isConfigured()` (`DotCMSInitDb.java:44`) — never fires. That gives exactly
+**2 executions per `MainServlet.init()` pass**.
+
+```
+3,571 ÷ 2  ≈  1,786 MainServlet.init() attempts
+```
+
+`MainServlet.init()` throws `DotRuntimeException` on failure, so Tomcat retries it on the next
+request exactly as it does `InitServlet` — the same outer loop, on a second servlet.
+`InitServlet.init()` ran ~3,512 times, roughly a 2:1 ratio; plausible for two independent servlets
+with different retry dynamics, though it cannot be pinned down from 29–40% sampled logs.
+
+At ~148ms each on a large `inode` table, those 3,571 executions are **528s ≈ 88% of the 600s
+window**. `Task00001LoadSchema.forceRun()` additionally takes its own dedicated pool borrow every
+pass, adding to pool pressure.
+
+(`InodeFactory.java:230` is a different query — `inode, tree` with a parent predicate — and is
+unrelated.)
+
+### The `DOT_` prefix mechanism — real, but not what happened here
+
+The spike's secondary question was whether `DOT_DB_VALIDATION_QUERY` could be the emitter. The
+mechanism does exist. `SystemEnvironmentProperties.getVariable()`
 ([`com/liferay/util/SystemEnvironmentProperties.java`]) resolves in four steps:
 
 ```java
@@ -174,29 +216,27 @@ System.getenv(name)                 // 3
 System.getenv("DOT_" + name)        // 4
 ```
 
-So `DOT_DB_VALIDATION_QUERY` — as either a `-D` property or an env var — lands in
-`config.setConnectionTestQuery(...)` at [`SystemEnvDataSourceStrategy.java:87-88`]. There is
-**no default**, so unset means `null`, and HikariCP falls back to the JDBC4 `isValid()` check.
-This is exactly why the customer reports plain `DB_VALIDATION_QUERY` as empty while the query
-still runs. `DockerSecretDataSourceStrategy.java:89` has the same shape.
+So `DOT_DB_VALIDATION_QUERY` — as a `-D` property or an env var — does land in
+`config.setConnectionTestQuery(...)` at [`SystemEnvDataSourceStrategy.java:87-88`], which has
+**no default**, so unset means `null` and HikariCP falls back to the JDBC4 `isValid()` check.
+`DockerSecretDataSourceStrategy.java:89` has the same shape. This remains a genuine hazard — a
+`count(*)` validation query is a plausible-looking value with a catastrophic cost profile, and
+nothing prevents an operator setting it (tracked in #34840).
 
-The three application call sites cannot account for the volume — each runs **once per startup**:
+But attributing the 3,571 to it required assuming the customer had actually set it, which was
+never confirmed. The run-always explanation needs no unverified configuration and matches the
+observed count to within one execution, so it is the primary conclusion.
 
-| Call site | Context |
-|---|---|
-| `DotCMSInitDb.java:44` (`isConfigured`) | one caller, `InitializeDb()` |
-| `Task00004LoadStarter.java:22` (`forceRun`) | one run-always task |
-| `Task00001LoadSchema.java:104` (`forceRun`) | one run-always task |
+**Cheap discriminator, if support can still obtain it:** whether `DOT_DB_VALIDATION_QUERY` was set
+in that environment, and whether `StartupTasksExecutor`'s `"Running Startup Tasks"` log line also
+repeats ~1,786 times in the sampled logs.
 
-That is ~3 executions per startup, not 3,571. (`InodeFactory.java:230` is a different query —
-`inode, tree` with a parent predicate — and is unrelated.) The 3,571 executions at ~148ms each
-are HikariCP validating connections on borrow. **528s of the 600s window was connection
-validation.**
+### Consequence: converting these to `EXISTS` is high-value, not negligible
 
-Because it runs on every borrow whose connection has been idle past Hikari's
-`aliveBypassWindow`, this converts a 60-connection pool into something closer to a 148ms-per-
-borrow serial resource — which is what turned a recoverable rewire storm into a hard
-saturation.
+Because these two `forceRun()` methods only need to know whether *any* row exists, and `count(*)`
+on a large `inode` table is a full scan, converting them to `EXISTS` / `SELECT 1 … LIMIT 1` would
+reduce the 528s to a few seconds. This reverses the initial go/no-go on the conditional follow-up
+in the issue's AC #7 — see [Candidate fixes](#candidate-fixes).
 
 ---
 
@@ -393,8 +433,13 @@ production.
    "Startup completed" (`:135`) never being logged.
 6. **A failed `PubSubCacheTransport.init()` guarantees re-entry**, because `initialized` is set
    last (`:52`) and the exception is swallowed upstream (`ClusterFactory.java:381-383`).
-7. **`DOT_DB_VALIDATION_QUERY` reaches `connectionTestQuery`**, with no default
-   (`SystemEnvDataSourceStrategy.java:87-88`); app code contributes ~3 executions per startup.
+7. **The run-always task battery emits 2 `count(*) as test from inode` per `MainServlet.init()`
+   pass** (`Task00001LoadSchema.java:102-104`, `Task00004LoadStarter.java:21-23`), with no
+   "already ran" guard in `StartupTasksExecutor` (`:185-191`) — accounting for all 3,571
+   executions across ~1,786 init attempts.
+7b. **`DOT_DB_VALIDATION_QUERY` reaches `connectionTestQuery`**, with no default
+   (`SystemEnvDataSourceStrategy.java:87-88`). A real hazard, but not the emitter in this
+   incident.
 8. **`DB_MAX_WAIT` maps to `setMaxLifetime()`**, defaulting to 60000ms
    (`SystemEnvDataSourceStrategy.java:82-85`) — #34921 confirmed as a naming bug.
 
@@ -556,13 +601,22 @@ bug issue is filed.
 | **c** | `stop()` must never construct a listener | `JDBCPubSubImpl.java:102` | Removes borrows from the shutdown path |
 | **d** | Do not hold the static `PGListener.class` monitor across a connection borrow | `JDBCPubSubImpl.java:59, 121` | Removes the 30s convoy |
 | **e** | Base the idempotency guard on the connection, not `runstate` | `JDBCPubSubImpl.java:56-62, 163-174` | Gap 3 |
-| **f** | Default `connectionTestQuery` to `SELECT 1`/`isValid()`; reject a `count(*)` validation query | `SystemEnvDataSourceStrategy.java:87-88` (#34840) | Removes 88% of startup time |
+| **f** | **Convert the run-always existence checks from `count(*)` to `EXISTS` / `SELECT 1 … LIMIT 1`** — they only need existence, and `count(*)` is a full scan on a large `inode` table | `Task00001LoadSchema.java:102-104`; `Task00004LoadStarter.java:21-23`; `DotCMSInitDb.java:44` | **Removes ~88% of startup time** (528s → seconds). Cheapest high-leverage fix in the set |
+| **f2** | Default `connectionTestQuery` to `SELECT 1`/`isValid()`; reject or warn on an aggregate validation query | `SystemEnvDataSourceStrategy.java:87-88` (#34840) | Closes a real hazard, though not the emitter in this incident |
 | **g** | Surface degraded cluster messaging: stop dropping invalidations silently, stop swallowing the rewire failure, add a health check | `PubSubCacheTransport.java:58-60`; `ClusterFactory.java:381-383` | Gap 5 — makes the next occurrence visible |
 | **h** | Set `initialized` optimistically or make re-init idempotent | `PubSubCacheTransport.java:46-54` | Breaks the outer loop |
 | **i** | Rename `DB_MAX_WAIT` → `DB_MAX_LIFETIME` with a sane default | `SystemEnvDataSourceStrategy.java:82-85` (#34921) | Reduces validation volume |
 | **j** | Reap stale `cluster_server` rows; ensure deregistration on SIGKILL | `ClusterFactory`, `ServerAPIImpl` | Reduces rewire triggers |
 
 **Recommended: go** on (a) through (h). (i) and (j) are already tracked.
+
+**Reversal on AC #7.** This document originally recommended **no-go** on converting
+`select count(*) as test from inode … >0/<1` to `EXISTS` / `SELECT 1 … LIMIT 1`, on the grounds
+that those sites "run once per startup, so impact is negligible". That followed from the
+mis-attribution corrected above. Because the run-always battery re-ran ~1,786 times and emitted
+2 of these queries per pass at ~148ms, those call sites account for essentially the entire 528s.
+It is now fix **(f)** and among the highest-value items in the set — see
+[the accelerant](#the-accelerant-the-run-always-startup-tasks-secondary-question--answered).
 
 **Immediate mitigation available without a code change.** Because the alternatives are still
 wired and `pgjdbc-ng` is still a declared dependency, an affected install can be moved off the
@@ -666,7 +720,7 @@ Default implementation swap for a pluggable subsystem?  → 🟠 HIGH     (H-9)
 | Local 2-node cluster repro | **Delivered** — [`pubsub-connection-churn/`](../../../docker/docker-compose-examples/pubsub-connection-churn/), plus a CI reproducer |
 | Confirm/refute `JDBCPubSubImpl` leak on listener death | **Refuted as stated.** `run()`'s `finally` covers the death paths; the real window is pre-`Thread.start()`. Churn, not leak, is dominant |
 | What drives repeated `rewireClusterIfNeeded()` | **Partly confirmed** — init-retry re-entry confirmed; heartbeat alone insufficient (~10/600s); `isEnterprise()` TOCTOU needs measurement |
-| True emitter of `count(*) as test from inode` | **Confirmed** — Hikari `connectionTestQuery` via the `DOT_` prefix; app code contributes ~3/startup |
+| True emitter of `count(*) as test from inode` | **Answered** — the run-always task battery re-running: 2 executions per `MainServlet.init()` pass × ~1,786 passes ≈ 3,571. The `DOT_` prefix mechanism is real but was not the emitter here (initial attribution corrected) |
 | How `maxLifetime=60s` amplifies pub/sub churn | **Premise refuted** — Hikari never retires in-use connections. Amplifies validation cost, not listener churn |
 | Minimal reproducible case | **Delivered** — deterministic via `pg_terminate_backend` on the LISTEN backend |
 | Validate candidate fixes independently | **Pending** — harness supports A/B; see table above |
