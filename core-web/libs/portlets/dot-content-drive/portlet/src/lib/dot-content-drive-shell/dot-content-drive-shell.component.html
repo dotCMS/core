@@ -86,9 +86,41 @@
     [closeOnEscape]="true"
     appendTo="body"
     data-testId="dialog"
-    [pt]="{ content: { class: $dialogContentClass() } }"
+    [style]="$dialogStyle()"
+    [contentStyle]="$dialogContentStyle()"
+    [pt]="{
+        content: { class: $dialogContentClass() },
+        header: { class: $dialogHeaderClass() }
+    }"
     (visibleChange)="onVisibleChange($event)"
     (onHide)="onDialogHidden()">
+    <!--
+        A single header template, switched by dialog type. PrimeNG finds `#header` with a
+        `descendants: false` ContentChild query, so it has to be a direct child of `p-dialog` and
+        cannot live inside the @switch below. Providing it also suppresses PrimeNG's own title span,
+        which is why the default branch renders the title itself.
+    -->
+    <ng-template #header>
+        @switch ($activeDialog()?.type) {
+            @case (DIALOG_TYPE.ACTION_CENTER) {
+                <div class="flex flex-col gap-1">
+                    <span class="p-dialog-title">{{ $activeDialog()?.header }}</span>
+                    <span
+                        class="text-sm font-medium text-surface-500"
+                        data-testId="dialog-subheader">
+                        {{
+                            'content-drive.action-center.items-selected'
+                                | dm: [$actionCenterSelectionCount().toString()]
+                        }}
+                    </span>
+                </div>
+            }
+            @default {
+                <span class="p-dialog-title">{{ $activeDialog()?.header }}</span>
+            }
+        }
+    </ng-template>
+
     @switch ($activeDialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <dot-content-drive-dialog-folder
@@ -101,6 +133,9 @@
                     data-testId="dialog-content-type-selector"
                     [listType]="listType" />
             }
+        }
+        @case (DIALOG_TYPE.ACTION_CENTER) {
+            <dot-content-drive-action-center data-testId="dialog-action-center" />
         }
     }
 </p-dialog>
