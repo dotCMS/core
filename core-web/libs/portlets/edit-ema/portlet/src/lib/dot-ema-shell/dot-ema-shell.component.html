@@ -1,37 +1,35 @@
-@if ($showLockBanner() && $showBanner()) {
+@if ($canRead() && $showLockBanner() && $showBanner()) {
     <p-message severity="warn" data-testid="message">
-        <ng-template pTemplate="container">
-            <div class="flex w-full items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <i class="pi pi-info-circle"></i>
-                    <span class="inline leading-6" data-testid="message-content">
-                        {{ 'uve.shell.page.locked.locked.by' | dm: [$lockedByDisplay()] }}
-                        @if ($lockOptions()?.canLock) {
-                            <button
-                                class="inline-flex items-center text-primary-600 underline hover:text-primary-700"
-                                type="button"
-                                [disabled]="$workflowLockIsLoading()"
-                                (click)="toggleLock()">
-                                {{ 'uve.shell.page.locked.unlock.to.start.editing' | dm }}
-                            </button>
-                            {{ 'uve.shell.page.locked.unlock.to.start.editing.description' | dm }}
-                        } @else {
-                            {{
-                                'uve.shell.page.locked.you.dont.have.permissions.to.unlock.this.content'
-                                    | dm
-                            }}
-                        }
-                    </span>
-                </div>
-                <p-button
-                    [text]="true"
-                    size="small"
-                    type="button"
-                    icon="pi pi-times"
-                    data-testid="close-message"
-                    (click)="onCloseMessage()" />
+        <div class="flex w-full items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <i class="pi pi-info-circle"></i>
+                <span class="inline leading-6" data-testid="message-content">
+                    {{ 'uve.shell.page.locked.locked.by' | dm: [$lockedByDisplay()] }}
+                    @if ($lockOptions()?.canLock) {
+                        <button
+                            class="inline-flex items-center text-primary-600 underline hover:text-primary-700"
+                            type="button"
+                            [disabled]="$workflowLockIsLoading()"
+                            (click)="toggleLock()">
+                            {{ 'uve.shell.page.locked.unlock.to.start.editing' | dm }}
+                        </button>
+                        {{ 'uve.shell.page.locked.unlock.to.start.editing.description' | dm }}
+                    } @else {
+                        {{
+                            'uve.shell.page.locked.you.dont.have.permissions.to.unlock.this.content'
+                                | dm
+                        }}
+                    }
+                </span>
             </div>
-        </ng-template>
+            <p-button
+                [text]="true"
+                size="small"
+                type="button"
+                icon="pi pi-times"
+                data-testid="close-message"
+                (click)="onCloseMessage()" />
+        </div>
     </p-message>
 }
 
