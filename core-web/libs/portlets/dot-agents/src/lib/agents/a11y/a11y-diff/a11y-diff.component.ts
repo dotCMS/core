@@ -86,18 +86,14 @@ export class DotA11yDiffComponent {
     private readonly monacoLoader = inject(MonacoEditorLoaderService);
     private readonly destroyRef = inject(DestroyRef);
 
-    /** Whether the panel should be open. Drives the drawer + the (lazy) data load. */
+    /**
+     * Whether the panel should be open. The template gates the whole `p-drawer` on
+     * this (`@if (open())`) so there's zero drawer DOM — and no lingering mask —
+     * when closed. Also drives the lazy data load.
+     */
     readonly open = input<boolean>(false);
     /** Emitted when the drawer is dismissed (X button / backdrop / Esc). */
     readonly close = output<void>();
-
-    /**
-     * Local drawer visibility, two-way bound to `p-drawer`'s `[(visible)]`. Kept in
-     * sync with the `open` input via an effect so the parent controls it, while the
-     * drawer's own dismiss paths (X / backdrop / Esc) can still flip it — those fire
-     * `onHide`, which emits {@link close} so the parent updates its own flag.
-     */
-    readonly visible = signal(false);
 
     /** The Monaco diff editor host element. */
     private readonly diffHost = viewChild<ElementRef<HTMLDivElement>>('diffHost');
@@ -132,11 +128,6 @@ export class DotA11yDiffComponent {
     private loadedForIdentifier: string | null = null;
 
     constructor() {
-        // Mirror the `open` input onto the drawer's local `visible` signal so the
-        // parent opens/closes it; the drawer's own dismiss paths write `visible`
-        // back and emit `close` (see onDrawerHide).
-        effect(() => this.visible.set(this.open()));
-
         // Lazily (re)load the diff whenever the panel is opened for a page — the
         // run screen keeps this component mounted, so we key off open + the
         // selected page rather than a lifecycle hook. Reload only when the page
@@ -191,7 +182,11 @@ export class DotA11yDiffComponent {
         }
     }
 
-    /** Drawer closed (X / backdrop / Esc): tear the editor down + tell the host. */
+    /**
+     * Drawer's own dismiss paths (backdrop / Esc) fire PrimeNG's `onHide`: tear the
+     * editor down and tell the host to close (the host clears `open`, unmounting the
+     * `@if`). The explicit X button goes through {@link requestClose}.
+     */
     onDrawerHide(): void {
         this.drawerShown.set(false);
         this.disposeEditor();
@@ -225,9 +220,9 @@ export class DotA11yDiffComponent {
         this.selectedId.set(identifier);
     }
 
-    /** X button — dismiss the drawer; the drawer's `onHide` then emits `close`. */
+    /** X button — ask the host to close (clears `open`, which unmounts the drawer). */
     requestClose(): void {
-        this.visible.set(false);
+        this.close.emit();
     }
 
     /** Monaco language id for a file, from its extension. */

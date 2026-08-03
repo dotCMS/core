@@ -4,17 +4,21 @@
      UI state underneath. A headless template owns the whole two-column layout
      (file list + Monaco diff); the drawer provides the mask, slide animation,
      focus trap, and Esc/backdrop dismissal. -->
-<p-drawer
-    [(visible)]="visible"
-    position="right"
-    styleClass="!w-[min(92%,1100px)]"
-    [modal]="true"
-    [dismissible]="true"
-    [closeOnEscape]="true"
-    (onShow)="onDrawerShow()"
-    (onHide)="onDrawerHide()"
-    [ariaCloseLabel]="'accessibility.studio.diff.close' | dm">
-    <ng-template #headless>
+<!-- Only mount the drawer while open. Keeping it in the DOM when closed leaves
+     PrimeNG's fixed-position mask latched on top of the run screen; gating the
+     whole `p-drawer` on `open()` guarantees zero drawer DOM when closed. -->
+@if (open()) {
+    <p-drawer
+        [visible]="true"
+        position="right"
+        styleClass="!w-[min(92%,1100px)]"
+        [modal]="true"
+        [dismissible]="true"
+        [closeOnEscape]="true"
+        (onShow)="onDrawerShow()"
+        (onHide)="onDrawerHide()"
+        [ariaCloseLabel]="'accessibility.studio.diff.close' | dm">
+        <ng-template #headless>
         <div class="grid h-full min-h-0 grid-cols-[300px_1fr] bg-surface-100" data-testid="diff-panel">
             <!-- ---------- FILE LIST ---------- -->
             <aside class="flex min-h-0 flex-col border-r border-surface-200 bg-white">
@@ -224,4 +228,5 @@
             </main>
         </div>
     </ng-template>
-</p-drawer>
+    </p-drawer>
+}

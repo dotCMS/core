@@ -7,8 +7,6 @@ import {
 } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { Drawer } from 'primeng/drawer';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -210,13 +208,16 @@ describe('DotA11yDiffComponent', () => {
         expect(closeSpy).toHaveBeenCalled();
     });
 
-    it('closes the drawer when the X button is clicked', () => {
+    it('emits close when the X button is clicked', () => {
         render();
-        const drawer = spectator.query(Drawer);
+        const closeSpy = jest.fn();
+        spectator.output('close').subscribe(closeSpy);
+
         const btn = spectator.query(byTestId('diff-close-btn'))?.querySelector('button');
         spectator.click(btn as HTMLElement);
-        // requestClose() flips the drawer's visible input to false.
-        expect(drawer.visible).toBe(false);
+
+        // The host clears `open` in response, which unmounts the drawer.
+        expect(closeSpy).toHaveBeenCalled();
     });
 
     it('shows the error state when the diff load fails', () => {
