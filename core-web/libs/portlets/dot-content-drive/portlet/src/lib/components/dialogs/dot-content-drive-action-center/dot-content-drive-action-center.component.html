@@ -2,13 +2,13 @@
     Renders inside the shell's shared content-drive dialog — no second `p-dialog` here, so there is
     one dialog and one open/close path.
 
-    The shell gives this type a fixed-height content box that is a flex column
-    (`$dialogContentClass` / `$dialogStyle`). This template supplies the three rows of that column:
-    a pinned selection summary, a `flex-1 overflow-y-auto` body — the only scroll container — and a
-    pinned footer. That reproduces the prototype's pinned-chrome layout without needing PrimeNG's
-    `#header` / `#footer` slots, which cannot be used from the shell's `@switch` (they are
-    `ContentChild` queries with `descendants: false`) and would render an empty footer for the other
-    dialog types.
+    The shell makes this type's content box a fixed-height flex column (`$dialogStyle` /
+    `$dialogContentStyle`) and supplies the header, including the "N items selected" sub-line. This
+    template fills the column with two rows: a `flex-1 overflow-y-auto` body — the dialog's only
+    scroll container — and a footer pinned as its sibling.
+
+    The footer is a flex sibling rather than PrimeNG's `#footer` slot so that the Done button can stay
+    disabled while an action is in flight; that state lives here, not in the shell.
 
     Styled against the design prototype (remix_-content-drive/components/ActionCenterDialog.tsx).
     The prototype's raw `slate-*` / `#1D1B4B` / `#1D4ED8` values are mapped onto the theme tokens
@@ -16,15 +16,12 @@
     instead of pinning one palette.
 -->
 <div class="flex min-h-0 flex-1 flex-col" data-testid="action-center-dialog">
-    <span
-        class="shrink-0 px-6 pb-4 text-sm font-medium text-surface-500"
-        data-testid="selection-summary">
-        {{ 'content-drive.action-center.items-selected' | dm: [$contentletCount().toString()] }}
-    </span>
-
-    <!-- The only scrollable region. -->
+    <!--
+        The only scrollable region. `min-h-0` matters: without it this flex item refuses to shrink
+        below its content height, so it never scrolls and the footer below gets pushed out of view.
+    -->
     <div
-        class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 pb-6"
+        class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
         data-testid="action-center">
         @if ($ignoredFolderCount() > 0) {
             <p-message severity="info" data-testid="folders-ignored-message">

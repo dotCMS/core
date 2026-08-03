@@ -78,6 +78,7 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { excludeFolders } from '../utils/action-center';
 import { encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
@@ -185,11 +186,9 @@ export class DotContentDriveShellComponent {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
-            // Action Center: the content box becomes a flex column so the body is the only scroll
-            // container and the dialog's own subtitle/footer bars stay pinned. Padding is owned by
-            // those bars, not the content box.
+            // Action Center sizes itself through `$dialogStyle` / `$dialogContentStyle` instead.
             case DIALOG_TYPE.ACTION_CENTER:
-                return 'flex flex-col overflow-hidden p-0!';
+                return '';
             default:
                 return 'w-175 pt-0 p-4';
         }
@@ -206,11 +205,43 @@ export class DotContentDriveShellComponent {
     );
 
     /**
-     * Drops the header's bottom rule for the Action Center, so its title and the "N items selected"
-     * line at the top of the content read as one block rather than being split by a divider.
+     * Turns the Action Center's content box into the dialog's only scroll container.
+     *
+     * Applied as inline styles via `[contentStyle]` rather than utility classes: the theme sets
+     * `overflow-y: auto` on `.p-dialog-content` and its runtime-injected CSS outranks a Tailwind
+     * `overflow-hidden`, which is why the whole box scrolled — footer included — instead of just the
+     * body. Inline styles win without needing `!` overrides.
+     *
+     * `min-height: 0` is what lets the box shrink inside the flex column; without it a flex item
+     * refuses to go below its content height and nothing scrolls.
+     */
+    readonly $dialogContentStyle = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+            ? {
+                  display: 'flex',
+                  'flex-direction': 'column',
+                  flex: '1',
+                  'min-height': '0',
+                  overflow: 'hidden',
+                  padding: '0'
+              }
+            : undefined
+    );
+
+    /**
+     * Drops the header's bottom rule for the Action Center so its title and the "N items selected"
+     * sub-line read as one block rather than being split by a divider.
      */
     readonly $dialogHeaderClass = computed(() =>
         this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 pb-2' : ''
+    );
+
+    /**
+     * Contentlets in the current selection, for the Action Center's header sub-line. Folders are
+     * excluded because every bulk endpoint ignores them.
+     */
+    readonly $actionCenterSelectionCount = computed(
+        () => excludeFolders(this.#store.selectedItems()).length
     );
 
     /**

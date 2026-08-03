@@ -223,7 +223,11 @@ describe('DotContentDriveShellComponent', () => {
                         })
                     )
                 }),
-                mockProvider(DotWorkflowsActionsService),
+                // The Action Center child looks up bulk actions on init, which happens as soon as a
+                // selection is present in these tests.
+                mockProvider(DotWorkflowsActionsService, {
+                    getBulkActions: jest.fn().mockReturnValue(of({ schemes: [] }))
+                }),
                 mockProvider(DotWorkflowActionsFireService, {
                     bulkFire: jest
                         .fn()
@@ -427,16 +431,60 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.query('[data-testId="dialog-action-center"]')).toBeTruthy();
         });
 
-        it('should give the Action Center a flex-column content box so only its body scrolls', () => {
+        it('should make the Action Center content box the only scroll container', () => {
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.flushEffects();
             spectator.detectChanges();
 
-            // Without the fixed height the column sizes to content and the body never scrolls.
-            expect(spectator.component.$dialogContentClass()).toContain('flex flex-col');
+            // Inline styles, not classes: the theme's `overflow-y: auto` on `.p-dialog-content`
+            // outranks a Tailwind utility, which let the whole box scroll (footer included).
+            // `min-height: 0` is what allows the box to shrink and its body to scroll instead.
+            expect(spectator.component.$dialogContentStyle()).toEqual(
+                expect.objectContaining({
+                    display: 'flex',
+                    'flex-direction': 'column',
+                    'min-height': '0',
+                    overflow: 'hidden'
+                })
+            );
+            // Without a fixed height the column sizes to content and nothing scrolls.
             expect(spectator.component.$dialogStyle()).toEqual(
                 expect.objectContaining({ height: '80vh' })
             );
+        });
+
+        it('should render a sub-header with the selected contentlet count', () => {
+            // `selectedItems` is mocked as a plain jest.fn here, so it must be set before the
+            // computed is first read — it has no signal dependency to invalidate its cache.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeTruthy();
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
+        });
+
+        it('should exclude folders from the sub-header count', () => {
+            store.selectedItems.mockReturnValue([
+                MOCK_ITEMS[0],
+                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+        });
+
+        it('should not render the sub-header for other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            // The header template is shared, so the default branch must still render the plain title.
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeNull();
+            expect(spectator.query('.p-dialog-title')?.textContent?.trim()).toBe('Folder');
         });
 
         it('should not apply the Action Center sizing to other dialog types', () => {
@@ -446,6 +494,7 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
             expect(spectator.component.$dialogStyle()).toBeUndefined();
+            expect(spectator.component.$dialogContentStyle()).toBeUndefined();
             expect(spectator.component.$dialogHeaderClass()).toBe('');
         });
 
