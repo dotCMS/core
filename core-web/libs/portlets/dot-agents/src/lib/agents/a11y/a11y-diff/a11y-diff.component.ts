@@ -72,7 +72,10 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
     imports: [ButtonModule, DrawerModule, TooltipModule, DotMessagePipe],
     templateUrl: './a11y-diff.component.html',
     providers: [DotPageSourcesService],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    // `display: contents` collapses this host so it takes NO grid track in the run
+    // screen's grid — only the (fixed-positioned) p-drawer it renders is visible.
+    host: { class: 'contents' }
 })
 export class DotA11yDiffComponent {
     readonly store = inject(AccessibilityStudioStore);
