@@ -172,11 +172,11 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
             return acc;
         }
 
-        const decodeFunction = decodeByFilterKey[key];
-
-        if (decodeFunction) {
-            // Use decode function for known keys
-            acc[key] = decodeFunction(value);
+        if (isKnownFilterKey(key)) {
+            // Decode with the typed known-key map, then assign via the open string index
+            // on DotContentDriveFilters — assigning to `acc[key]` after narrowing to
+            // `keyof DotKnownContentDriveFilters` intersects Partial value types (`string[] & string`).
+            (acc as Record<string, string | string[]>)[key] = decodeByFilterKey[key](value);
         } else {
             // Use default functions for unknown keys
             acc[key] = value.includes(',') ? multiSelector(value) : singleSelector(value);
@@ -184,6 +184,10 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
 
         return acc;
     }, {} as DotContentDriveFilters);
+}
+
+function isKnownFilterKey(key: string): key is keyof DotKnownContentDriveFilters {
+    return Object.prototype.hasOwnProperty.call(decodeByFilterKey, key);
 }
 
 /**
