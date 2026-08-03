@@ -323,6 +323,7 @@ jobs:
       prompt: ${{ needs.prep.outputs.eval_context }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      autodoc_dotcms_site_folder: ${{ vars.AUTODOC_DOTCMS_SITE_FOLDER }}
 
   finalize:
     name: Post report and apply to dotCMS
@@ -339,7 +340,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       AUTODOC_DOTCMS_API_TOKEN_DRAFTING: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
       AUTODOC_DOTCMS_BASE_URL: ${{ secrets.AUTODOC_DOTCMS_BASE_URL }}
-      AUTODOC_DOTCMS_SITE_FOLDER: ${{ secrets.AUTODOC_DOTCMS_SITE_FOLDER }}
+      AUTODOC_DOTCMS_SITE_FOLDER: ${{ vars.AUTODOC_DOTCMS_SITE_FOLDER }}
 
     steps:
       - name: Download report artifact
@@ -417,6 +418,26 @@ jobs:
           # Verify the identifier is UUID-shaped before placing it in a URL.
           if ! echo "$IDENTIFIER" | grep -qE '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'; then
             echo "No valid contentlet found for urlTitle '${URL_TITLE}' — skipping."
+            exit 0
+          fi
+
+          # modUser guardrail: fetch the working inode and check whether it is safe
+          # to overwrite. GET /api/v1/content/{id} always returns the working inode.
+          #
+          # live==true  → working IS the live version; no pending draft → safe.
+          # live==false → a draft exists on top of the published version.
+          #   modUser == service account → automation owns the draft → safe.
+          #   modUser == anyone else     → human has an outstanding draft → skip.
+          CONTENT_CHECK=$(curl -s \
+            "$AUTODOC_DOTCMS_BASE_URL/api/v1/content/$IDENTIFIER" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING")
+          IS_LIVE=$(echo "$CONTENT_CHECK" | jq -r '.entity.live // true')
+          MOD_USER=$(echo "$CONTENT_CHECK" | jq -r '.entity.modUser // ""')
+          SERVICE_ACCOUNT='user-3244a6be-d28b-4d80-a3fc-9f66a1d832ae'
+
+          if [ "$IS_LIVE" = "false" ] && [ "$MOD_USER" != "$SERVICE_ACCOUNT" ]; then
+            echo "SKIP: outstanding draft last saved by '${MOD_USER}' (not the CI Autodoc service account)."
+            echo "The automation will not overwrite a human edit. Please review the draft in dotCMS and apply the proposed changes manually if appropriate."
             exit 0
           fi
 
