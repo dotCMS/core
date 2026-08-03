@@ -605,7 +605,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             query.append(" order by t.tree_order, cvi.version_ts");
         }
 
-        final DotConnect dc = new DotConnect(query.toString());
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(query.toString());
         dc.addParam(parentIdentifier);
         dc.addParam(relationType);
 
