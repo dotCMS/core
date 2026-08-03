@@ -45,3 +45,4 @@ Release-25.07.10 LTS
 39. https://github.com/dotCMS/core/issues/33645 : [DEFECT] NPE when fetching content via content api with depth 3 and high limit #33645
 40. https://github.com/dotCMS/core/issues/35896 : fix(security): upgrade Bouncy Castle 1.70 → 1.84 (CVE-2025-14813) #35896
 41. https://github.com/dotCMS/core/issues/36739 : Remove repackaged dot.commons-io dependency (CVE-2024-47554 follow-up to #35235) #36739
+42. https://github.com/dotCMS/core/issues/36592 : security: upgrade Apache Tomcat 9.0.118 → 9.0.120 on main #36592
