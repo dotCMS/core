@@ -28,6 +28,7 @@ import { AxeImpact } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
+import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11yAgentPresenter } from '../models/a11y-agent.presenter';
 import {
@@ -37,6 +38,7 @@ import {
     SEVERITY_ORDER,
     type Severity
 } from '../models/a11y-severity';
+import { PageDiffFile } from '../models/page-render-sources.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
@@ -68,7 +70,8 @@ interface SeverityRow {
         DotMessagePipe,
         SafeUrlPipe,
         DotAgentActivityLogComponent,
-        DotA11yDiffComponent
+        DotA11yDiffComponent,
+        DotA11yDiffViewerComponent
     ],
     templateUrl: './a11y-run.component.html',
     styles: [
@@ -118,20 +121,11 @@ export class DotA11yRunComponent {
     readonly displayCount = signal(0);
 
     /**
-     * Which tab the right column shows: the visual `preview` (before/after
-     * iframes) or the source-`code` diff. The two share the same space via a pill
-     * toolbar so the user can line up the visual change with the code change.
+     * The source file whose diff the right pane is showing, or null for the preview.
+     * Set from the changed-files accordion in the left panel; the preview stays
+     * mounted underneath so returning to it doesn't reload the iframes.
      */
-    readonly previewTab = signal<'preview' | 'code'>('preview');
-
-    /**
-     * True once the Code tab has been opened at least once. The diff component is
-     * only mounted after that (then kept alive), so its data + Monaco aren't built
-     * until the user actually asks for the code view. The diff itself resolves the
-     * working-vs-live delta and owns its empty state, so the tab is always available
-     * (not gated on a completed run).
-     */
-    readonly codeTabVisited = signal(false);
+    readonly diffFile = signal<PageDiffFile | null>(null);
 
     /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
     private countRaf: number | null = null;
@@ -182,20 +176,6 @@ export class DotA11yRunComponent {
             if (this.store.rehydrateStatus() === 'not-found') {
                 untracked(() => this.toPicker());
             }
-        });
-
-        // Publishing / discarding happens in the Code (review) tab and moves the
-        // run out of `done`. Once that resolves, drop back to the Preview tab so the
-        // user sees the published render (or the re-scannable page) rather than
-        // staying parked on the now-stale diff.
-        effect(() => {
-            const published = this.store.isPublished();
-            const scanned = this.store.isScanned();
-            untracked(() => {
-                if ((published || scanned) && this.previewTab() === 'code') {
-                    this.previewTab.set('preview');
-                }
-            });
         });
 
         // Redraw both frames' marker layers whenever their scans (or the phase)
@@ -610,24 +590,32 @@ export class DotA11yRunComponent {
         this.toPicker();
     }
 
-    /**
-     * Switch the right-column tab. Selecting `code` marks it visited so its diff
-     * component mounts the first time (then stays alive).
-     */
-    setPreviewTab(tab: 'preview' | 'code'): void {
-        if (tab === 'code') {
-            this.codeTabVisited.set(true);
-        }
-        this.previewTab.set(tab);
+    /** A file was picked in (or cleared from) the changed-files accordion. */
+    onDiffFileSelected(file: PageDiffFile | null): void {
+        this.diffFile.set(file);
     }
 
     /**
-     * "Review changes" (done phase): send the user to the Code tab to inspect the
-     * working-vs-live diff. Publishing is only possible from there — this enforces
-     * a review before anything reaches the live site.
+     * Leave the diff view from the right pane's own control. The accordion's
+     * highlighted row follows via its `activeFileId` input, so the two stay in sync.
      */
-    reviewChanges(): void {
-        this.setPreviewTab('code');
+    closeDiff(): void {
+        this.diffFile.set(null);
+    }
+
+    /**
+     * "Apply these changes" (done phase): publish the page. That promotes the whole
+     * working version — the page and its changed source files together — since there
+     * is no per-file publishing. The changed-files accordion above lists exactly
+     * what goes live.
+     */
+    applyChanges(): void {
+        this.store.publish();
+    }
+
+    /** Drop this run's working fixes → back to the scanned state. */
+    discardChanges(): void {
+        this.store.discard();
     }
 
     runScan(): void {

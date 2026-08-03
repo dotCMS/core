@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -11,18 +11,42 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotA11yRunComponent } from './a11y-run.component';
 
+import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11yGroup } from '../models/a11y-groups';
 import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+import { PageDiffFile } from '../models/page-render-sources.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
-/** Stub for the diff panel so the run spec doesn't pull in Monaco / HTTP. */
+/**
+ * Stubs for the diff pieces so the run spec doesn't pull in Monaco / HTTP. The list
+ * emits the picked file; the viewer just records what it was handed.
+ */
 @Component({ selector: 'dot-a11y-diff', standalone: true, template: '' })
 class DotA11yDiffStubComponent {
-    readonly active = input<boolean>(false);
+    readonly activeFileId = input<string | null>(null);
+    readonly fileSelected = output<PageDiffFile | null>();
 }
+
+@Component({ selector: 'dot-a11y-diff-viewer', standalone: true, template: '' })
+class DotA11yDiffViewerStubComponent {
+    readonly file = input<PageDiffFile | null>(null);
+    readonly closed = output<void>();
+}
+
+const DIFF_FILE: PageDiffFile = {
+    identifier: 'vtl-1',
+    path: '//demo/application/containers/awazon/a.vtl',
+    name: 'a.vtl',
+    extension: 'vtl',
+    origin: 'container',
+    working: 'new',
+    live: 'old',
+    added: 1,
+    removed: 1
+};
 
 const MOCK_PAGE: StudioPageRow = {
     identifier: 'id-1',
@@ -169,8 +193,12 @@ describe('DotA11yRunComponent', () => {
             [
                 DotA11yRunComponent,
                 {
-                    remove: { imports: [DotA11yDiffComponent] },
-                    add: { imports: [DotA11yDiffStubComponent] }
+                    remove: {
+                        imports: [DotA11yDiffComponent, DotA11yDiffViewerComponent]
+                    },
+                    add: {
+                        imports: [DotA11yDiffStubComponent, DotA11yDiffViewerStubComponent]
+                    }
                 }
             ]
         ],
@@ -265,14 +293,15 @@ describe('DotA11yRunComponent', () => {
             expect(runScan).toHaveBeenCalled();
         });
 
-        it('lets you open the Code tab before a run completes', () => {
-            const codeTab = spectator.query(byTestId('studio-tab-code')) as HTMLButtonElement;
-            expect(codeTab.disabled).toBe(false);
+        it('shows the changed-files list before a run completes', () => {
+            // The list resolves the working-vs-live delta itself, so it's present
+            // (and loading) from the moment the page opens — no scan required.
+            expect(spectator.query(DotA11yDiffStubComponent)).toBeTruthy();
+        });
 
-            spectator.click(codeTab);
-            spectator.detectChanges();
-            expect(spectator.component.previewTab()).toBe('code');
-            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
+        it('shows the preview, not a diff, until a file is picked', () => {
+            expect(spectator.component.diffFile()).toBeNull();
+            expect(spectator.query(DotA11yDiffViewerStubComponent)).toBeFalsy();
         });
     });
 
@@ -453,10 +482,21 @@ describe('DotA11yRunComponent', () => {
     describe('done phase', () => {
         beforeEach(() => render('done', MOCK_FIX_REPORT));
 
-        it('shows a Review changes button (no inline publish/discard)', () => {
-            expect(spectator.query(byTestId('studio-review-btn'))).toBeTruthy();
-            expect(spectator.query(byTestId('studio-publish-btn'))).toBeFalsy();
-            expect(spectator.query(byTestId('studio-discard-btn'))).toBeFalsy();
+        it('shows Apply these changes + Discard', () => {
+            expect(spectator.query(byTestId('studio-apply-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+        });
+
+        it('Apply publishes the page (which publishes its changed files)', () => {
+            const btn = spectator.query(byTestId('studio-apply-btn'))?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            expect(publish).toHaveBeenCalled();
+        });
+
+        it('Discard drops the working fixes', () => {
+            const btn = spectator.query(byTestId('studio-discard-btn'))?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            expect(discard).toHaveBeenCalled();
         });
 
         it('shows the after-count in the ring', () => {
@@ -472,41 +512,44 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.queryAll(byTestId('agent-message')).length).toBe(15);
         });
 
-        it('Review changes switches to the Code tab and activates the diff', () => {
-            const btn = spectator
-                .query(byTestId('studio-review-btn'))
-                ?.querySelector('button');
-            spectator.click(btn as HTMLElement);
+        it('picking a file in the list opens its diff in the right pane', () => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.fileSelected.emit(DIFF_FILE);
             spectator.detectChanges();
 
-            expect(spectator.component.previewTab()).toBe('code');
-            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
-        });
-
-        it('switches to the Code tab and activates the diff panel', () => {
-            // Not mounted / not active until the Code tab is opened.
-            expect(spectator.query(DotA11yDiffStubComponent)).toBeFalsy();
-
-            spectator.click(spectator.query(byTestId('studio-tab-code')) as HTMLElement);
-            spectator.detectChanges();
-
-            expect(spectator.component.previewTab()).toBe('code');
-            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
-            // Switching tabs, not navigating (run state preserved).
+            expect(spectator.component.diffFile()).toEqual(DIFF_FILE);
+            expect(spectator.query(DotA11yDiffViewerStubComponent)?.file()).toEqual(DIFF_FILE);
+            // Opening a diff is a view swap, not a navigation — run state is kept.
             expect(navigate).not.toHaveBeenCalled();
         });
 
-        it('switches back to Preview and deactivates the diff panel', () => {
-            spectator.component.setPreviewTab('code');
+        it("the viewer's close action returns to the preview and clears the list", () => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.fileSelected.emit(DIFF_FILE);
             spectator.detectChanges();
-            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
+            // The list's highlighted row tracks the pane via activeFileId.
+            expect(list.activeFileId()).toBe(DIFF_FILE.identifier);
 
-            spectator.click(spectator.query(byTestId('studio-tab-preview')) as HTMLElement);
+            const viewer = spectator.query(
+                DotA11yDiffViewerStubComponent
+            ) as DotA11yDiffViewerStubComponent;
+            viewer.closed.emit();
             spectator.detectChanges();
 
-            expect(spectator.component.previewTab()).toBe('preview');
-            // The panel stays mounted (visited) but is deactivated.
-            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(false);
+            expect(spectator.component.diffFile()).toBeNull();
+            expect(spectator.query(DotA11yDiffViewerStubComponent)).toBeFalsy();
+            expect(list.activeFileId()).toBeNull();
+        });
+
+        it('the list can also clear the selection itself (back to preview)', () => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.fileSelected.emit(DIFF_FILE);
+            spectator.detectChanges();
+            expect(spectator.component.diffFile()).toEqual(DIFF_FILE);
+
+            list.fileSelected.emit(null);
+            spectator.detectChanges();
+            expect(spectator.component.diffFile()).toBeNull();
         });
     });
 

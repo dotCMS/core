@@ -1,4 +1,3 @@
-import { MonacoEditorLoaderService } from '@materia-ui/ngx-monaco-editor';
 import {
     byTestId,
     createComponentFactory,
@@ -6,6 +5,8 @@ import {
     Spectator
 } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
+
+import { signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -54,47 +55,16 @@ const DIFF_FILES: PageDiffFile[] = [
     }
 ];
 
-/** A minimal monaco diff-editor mock installed on the window global. */
-function installMonacoMock() {
-    const setModel = jest.fn();
-    const dispose = jest.fn();
-    const editor = {
-        getModel: jest.fn().mockReturnValue(null),
-        setModel,
-        dispose
-    };
-    const createDiffEditor = jest.fn().mockReturnValue(editor);
-    const createModel = jest.fn((value: string) => ({ value, dispose: jest.fn() }));
-    (window as unknown as { monaco: unknown }).monaco = {
-        editor: { createDiffEditor, createModel }
-    };
-
-    return { createDiffEditor, createModel, setModel };
-}
-
-/** Flush the queueMicrotask() the component uses to defer the Monaco render. */
-async function flushMicrotasks(spectator: Spectator<DotA11yDiffComponent>) {
-    await Promise.resolve();
-    spectator.detectChanges();
-}
-
 describe('DotA11yDiffComponent', () => {
     let spectator: Spectator<DotA11yDiffComponent>;
 
     let selectedPage: typeof MOCK_PAGE | null = MOCK_PAGE;
-    let phase = 'done';
-    let previewRevision = 0;
-    let monacoMock: ReturnType<typeof installMonacoMock>;
-
-    const publish = jest.fn();
-    const discard = jest.fn();
+    /** Signal-backed so bumping it re-runs the component's reload effect. */
+    const previewRevision = signal(0);
 
     const storeMock = {
         selected: () => selectedPage,
-        previewRevision: () => previewRevision,
-        isDone: () => phase === 'done',
-        publish,
-        discard
+        previewRevision: () => previewRevision()
     };
 
     const createComponent = createComponentFactory({
@@ -105,12 +75,10 @@ describe('DotA11yDiffComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'accessibility.studio.diff.fileschanged': 'Files changed',
-                    'accessibility.studio.diff.empty.title': 'No file changes',
+                    'accessibility.studio.diff.empty.title': 'No files changed',
                     'accessibility.studio.diff.loading': 'Loading…',
-                    'accessibility.studio.diff.select': 'Select a file',
-                    'accessibility.studio.diff.publish': 'Publish to live',
-                    'accessibility.studio.diff.review.hint': 'Open a file to review',
-                    'accessibility.studio.action.discard': 'Discard'
+                    'accessibility.studio.diff.working': 'Working',
+                    'accessibility.studio.diff.live': 'Live'
                 })
             }
         ]
@@ -119,37 +87,26 @@ describe('DotA11yDiffComponent', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         selectedPage = MOCK_PAGE;
-        phase = 'done';
-        previewRevision = 0;
-        monacoMock = installMonacoMock();
+        previewRevision.set(0);
     });
 
-    /** Render the panel with the Code tab active (or not) and the given diff files. */
-    function render(active = true, diffFiles: PageDiffFile[] = DIFF_FILES) {
+    /** Render the accordion with the given diff files. */
+    function render(diffFiles: PageDiffFile[] = DIFF_FILES) {
         spectator = createComponent({
-            props: { active },
             providers: [
                 mockProvider(DotPageSourcesService, {
                     getPageSources: jest
                         .fn()
                         .mockReturnValue(of(diffFiles.map((f) => f as PageSourceFile))),
                     getDiffFiles: jest.fn().mockReturnValue(of(diffFiles))
-                }),
-                mockProvider(MonacoEditorLoaderService, {
-                    isMonacoLoaded$: of(true)
                 })
             ]
         });
         spectator.detectChanges();
     }
 
-    it('loads nothing while inactive', () => {
-        render(false);
-        expect(spectator.inject(DotPageSourcesService).getPageSources).not.toHaveBeenCalled();
-    });
-
-    it('loads the diff for the selected page once active', () => {
-        render(true);
+    it('loads the diff for the selected page on init — no scan required', () => {
+        render();
         expect(spectator.inject(DotPageSourcesService).getPageSources).toHaveBeenCalledWith(
             '/about-us',
             'host-1',
@@ -174,116 +131,85 @@ describe('DotA11yDiffComponent', () => {
         expect(rows[1].textContent).not.toContain('//demo/application/themes/');
     });
 
-    it('renders no diff until the user opens a file (no auto-select)', async () => {
+    it('emits the picked file so the run screen can diff it in the right pane', () => {
         render();
-        await flushMicrotasks(spectator);
-        // Landing on the tab must NOT render a diff — the user has to open a file.
-        expect(monacoMock.createDiffEditor).not.toHaveBeenCalled();
-        expect(spectator.query(byTestId('diff-editor-placeholder'))).toBeTruthy();
+        const emitted: (PageDiffFile | null)[] = [];
+        spectator.component.fileSelected.subscribe((f) => emitted.push(f));
+
+        spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
+        expect(emitted).toEqual([DIFF_FILES[0]]);
     });
 
-    it('renders the Monaco diff editor when a file is opened', async () => {
+    it('offers a way back to the preview once a file is open, and emits null', () => {
         render();
-        spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
-        await flushMicrotasks(spectator);
-        // createDiffEditor is created once; models built from live (original) + working (modified).
-        expect(monacoMock.createDiffEditor).toHaveBeenCalledTimes(1);
-        expect(monacoMock.createModel).toHaveBeenCalledWith('old\ncode', 'html');
-        expect(monacoMock.createModel).toHaveBeenCalledWith('new\ncode', 'html');
-        expect(monacoMock.setModel).toHaveBeenCalled();
+        const emitted: (PageDiffFile | null)[] = [];
+        spectator.component.fileSelected.subscribe((f) => emitted.push(f));
+
+        // No back control until a file is actually being diffed.
+        expect(spectator.query(byTestId('diff-back-to-preview-btn'))).toBeFalsy();
+
+        // The run screen owns the selection and feeds it back in.
+        spectator.setInput('activeFileId', DIFF_FILES[0].identifier);
+        spectator.detectChanges();
+
+        spectator.click(spectator.query(byTestId('diff-back-to-preview-btn')) as HTMLElement);
+        expect(emitted).toEqual([null]);
     });
 
-    it('re-renders the diff models when a different file is selected', async () => {
+    it('closes the right pane when a reload drops the file it was showing', () => {
         render();
-        spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
-        await flushMicrotasks(spectator);
-        monacoMock.createModel.mockClear();
+        spectator.setInput('activeFileId', DIFF_FILES[0].identifier);
+        spectator.detectChanges();
 
-        const cssRow = spectator
-            .queryAll(byTestId('diff-file-row'))
-            .find((el) => el.textContent?.includes('style.css'));
-        spectator.click(cssRow as HTMLElement);
-        await flushMicrotasks(spectator);
+        const emitted: (PageDiffFile | null)[] = [];
+        spectator.component.fileSelected.subscribe((f) => emitted.push(f));
 
-        // CSS file → css language; live is empty string.
-        expect(monacoMock.createModel).toHaveBeenCalledWith('', 'css');
-        expect(monacoMock.createModel).toHaveBeenCalledWith('.a{color:red}', 'css');
+        // A publish makes working == live, so the file leaves the list.
+        spectator
+            .inject(DotPageSourcesService)
+            .getDiffFiles.mockReturnValue(of([DIFF_FILES[1]]));
+        previewRevision.set(1);
+        spectator.detectChanges();
+
+        expect(emitted).toEqual([null]);
+    });
+
+    it('collapses and re-expands the whole section from the accordion header', () => {
+        render();
+        expect(spectator.query(byTestId('diff-accordion-body'))).toBeTruthy();
+
+        spectator.click(spectator.query(byTestId('diff-accordion-header')) as HTMLElement);
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('diff-accordion-body'))).toBeFalsy();
+
+        spectator.click(spectator.query(byTestId('diff-accordion-header')) as HTMLElement);
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('diff-accordion-body'))).toBeTruthy();
     });
 
     it('shows the empty state when nothing changed', () => {
-        render(true, []);
+        render([]);
         expect(spectator.query(byTestId('diff-empty'))).toBeTruthy();
         expect(spectator.query(byTestId('diff-file-list'))).toBeFalsy();
     });
 
-    describe('review + publish gate (done phase)', () => {
-        it('shows the review bar with Publish disabled until a file is opened', () => {
-            render();
-            expect(spectator.query(byTestId('diff-review-bar'))).toBeTruthy();
+    it('exposes hasChanges so the run screen can gate Apply', () => {
+        render();
+        expect(spectator.component.hasChanges()).toBe(true);
+    });
 
-            const publishBtn = spectator
-                .query(byTestId('diff-publish-btn'))
-                ?.querySelector('button') as HTMLButtonElement;
-            expect(publishBtn.disabled).toBe(true);
-        });
-
-        it('enables Publish once the user opens a file', () => {
-            render();
-            spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
-            spectator.detectChanges();
-
-            const publishBtn = spectator
-                .query(byTestId('diff-publish-btn'))
-                ?.querySelector('button') as HTMLButtonElement;
-            expect(publishBtn.disabled).toBe(false);
-        });
-
-        it('publishes via the store after a file has been reviewed', () => {
-            render();
-            spectator.click(spectator.queryAll(byTestId('diff-file-row'))[0]);
-            spectator.detectChanges();
-
-            spectator.click(
-                spectator.query(byTestId('diff-publish-btn'))?.querySelector('button') as HTMLElement
-            );
-            expect(publish).toHaveBeenCalled();
-        });
-
-        it('does not publish while unreviewed even if called directly', () => {
-            render();
-            spectator.component.publish();
-            expect(publish).not.toHaveBeenCalled();
-        });
-
-        it('discards via the store', () => {
-            render();
-            spectator.click(
-                spectator.query(byTestId('diff-discard-btn'))?.querySelector('button') as HTMLElement
-            );
-            expect(discard).toHaveBeenCalled();
-        });
-
-        it('hides the review bar when not in the done phase', () => {
-            phase = 'scanned';
-            render();
-            expect(spectator.query(byTestId('diff-review-bar'))).toBeFalsy();
-        });
-
-        it('hides the review bar when there are no changed files', () => {
-            render(true, []);
-            expect(spectator.query(byTestId('diff-review-bar'))).toBeFalsy();
-        });
+    it('reports no changes when the page has no working-vs-live delta', () => {
+        render([]);
+        expect(spectator.component.hasChanges()).toBe(false);
     });
 
     it('shows the error state when the diff load fails', () => {
         spectator = createComponent({
-            props: { active: true },
             providers: [
                 mockProvider(DotPageSourcesService, {
                     getPageSources: jest.fn().mockReturnValue(of([])),
                     getDiffFiles: jest.fn().mockReturnValue(throwError(() => new Error('boom')))
-                }),
-                mockProvider(MonacoEditorLoaderService, { isMonacoLoaded$: of(true) })
+                })
             ]
         });
         spectator.detectChanges();

@@ -1,201 +1,149 @@
-<!-- ============ WORKING-VS-LIVE FILE DIFF (Code tab) ============ -->
-<!-- Inline panel filling the run screen's "Code" tab: a changed-file list beside
-     a read-only Monaco side-by-side diff (live → working). The Preview/Code pill
-     toolbar that toggles this vs the visual preview lives in the run screen. -->
+<!-- ============ CHANGED FILES (accordion section) ============ -->
+<!-- Sits in the run screen's left panel, below the scan actions/results. The
+     accordion header separates this file list from the scanner output above it;
+     clicking a file opens its diff in the RIGHT pane (where the preview lives),
+     so the narrow panel stays a list and the diff gets the full width. -->
 
-<!-- ---------- FILE LIST ---------- -->
-<aside class="flex min-h-0 flex-col border-r border-surface-200 bg-white">
-    <!-- Section label -->
-    <div class="flex flex-none items-center gap-2 px-4 pt-4 pb-2">
-        <span class="text-xs font-bold tracking-wider text-gray-400 uppercase">
+<div
+    class="overflow-hidden rounded-2xl border border-surface-200"
+    data-testid="diff-accordion">
+    <!-- Accordion header — collapses the whole file-list section. -->
+    <button
+        type="button"
+        class="flex w-full items-center gap-2.5 bg-surface-50 px-4 py-3 text-left transition-colors hover:bg-surface-100"
+        (click)="toggleExpanded()"
+        [attr.aria-expanded]="expanded()"
+        data-testid="diff-accordion-header">
+        <i
+            class="pi flex-none text-xs! text-gray-400"
+            [class.pi-chevron-down]="expanded()"
+            [class.pi-chevron-right]="!expanded()"
+            aria-hidden="true"></i>
+        <span class="flex-1 text-xs font-bold tracking-wider text-gray-500 uppercase">
             {{ 'accessibility.studio.diff.fileschanged' | dm }}
         </span>
         @if (status() === 'loaded' && files().length > 0) {
             <span
-                class="inline-flex h-5 items-center rounded-full bg-surface-100 px-2 text-[10px] font-bold text-gray-600"
+                class="inline-flex h-5 flex-none items-center rounded-full bg-surface-200 px-2 text-[10px] font-bold text-gray-600"
                 data-testid="diff-file-count">
                 {{ files().length }}
             </span>
         }
-    </div>
+    </button>
 
-    <!-- File list body -->
-    <div class="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
-        @switch (status()) {
-            @case ('loading') {
-                <!-- Skeleton rows, same footprint as the real list. -->
-                <div class="flex animate-pulse flex-col gap-1.5" aria-hidden="true">
-                    @for (i of [1, 2, 3]; track i) {
-                        <div class="flex items-center gap-2.5 rounded-lg px-3 py-2.5">
-                            <span class="size-4 flex-none rounded-sm bg-surface-200"></span>
-                            <span class="h-3.5 w-32 rounded-sm bg-surface-200"></span>
-                        </div>
-                    }
-                </div>
-            }
-            @case ('error') {
-                <div
-                    class="mt-2 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3.5 text-sm text-red-700"
-                    role="alert"
-                    data-testid="diff-error">
-                    <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
-                    <div class="min-w-0">
-                        <div class="font-semibold">
-                            {{ 'accessibility.studio.diff.error.title' | dm }}
-                        </div>
-                        <div class="mt-0.5 text-xs text-red-600">
-                            {{ 'accessibility.studio.diff.error.sub' | dm }}
-                        </div>
-                    </div>
-                </div>
-            }
-            @case ('loaded') {
-                @if (empty()) {
-                    <div
-                        class="mt-6 flex flex-col items-center px-4 text-center"
-                        data-testid="diff-empty">
-                        <i
-                            class="pi pi-check-circle mb-2 text-2xl! text-green-500"
-                            aria-hidden="true"></i>
-                        <div class="text-sm font-bold text-gray-900">
-                            {{ 'accessibility.studio.diff.empty.title' | dm }}
-                        </div>
-                        <p class="m-0 mt-1 text-xs leading-relaxed text-gray-500">
-                            {{ 'accessibility.studio.diff.empty.sub' | dm }}
-                        </p>
-                    </div>
-                } @else {
-                    <ul class="m-0 flex list-none flex-col gap-1 p-0" data-testid="diff-file-list">
-                        @for (file of files(); track file.identifier) {
-                            <li>
-                                <button
-                                    type="button"
-                                    class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors"
-                                    [class.bg-primary-50]="file.identifier === selectedId()"
-                                    [class.hover:bg-surface-50]="
-                                        file.identifier !== selectedId()
-                                    "
-                                    (click)="selectFile(file.identifier)"
-                                    [attr.aria-current]="file.identifier === selectedId()"
-                                    data-testid="diff-file-row">
-                                    <i
-                                        class="pi pi-file flex-none text-sm!"
-                                        [class.text-primary]="file.identifier === selectedId()"
-                                        [class.text-gray-400]="file.identifier !== selectedId()"
-                                        aria-hidden="true"></i>
-                                    <div class="min-w-0 flex-1">
-                                        <div
-                                            class="truncate text-[13px] font-semibold text-gray-900">
-                                            {{ file.name }}
-                                        </div>
-                                    </div>
-                                    <span
-                                        class="flex flex-none items-center gap-1.5 font-mono text-[11px] font-bold tabular-nums">
-                                        @if (file.added > 0) {
-                                            <span class="text-green-600">+{{ file.added }}</span>
-                                        }
-                                        @if (file.removed > 0) {
-                                            <span class="text-red-600">−{{ file.removed }}</span>
-                                        }
-                                    </span>
-                                </button>
-                            </li>
+    @if (expanded()) {
+        <div class="border-t border-surface-200 p-2" data-testid="diff-accordion-body">
+            @switch (status()) {
+                @case ('loading') {
+                    <!-- Skeleton rows, same footprint as the real list. -->
+                    <div class="flex animate-pulse flex-col gap-1" aria-hidden="true">
+                        @for (i of [1, 2, 3]; track i) {
+                            <div class="flex items-center gap-2.5 rounded-lg p-2">
+                                <span class="size-4 flex-none rounded-sm bg-surface-200"></span>
+                                <span class="h-3.5 w-32 rounded-sm bg-surface-200"></span>
+                            </div>
                         }
-                    </ul>
+                    </div>
+                }
+                @case ('error') {
+                    <div
+                        class="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700"
+                        role="alert"
+                        data-testid="diff-error">
+                        <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
+                        <div class="min-w-0">
+                            <div class="font-semibold">
+                                {{ 'accessibility.studio.diff.error.title' | dm }}
+                            </div>
+                            <div class="mt-0.5 text-xs text-red-600">
+                                {{ 'accessibility.studio.diff.error.sub' | dm }}
+                            </div>
+                        </div>
+                    </div>
+                }
+                @case ('loaded') {
+                    @if (empty()) {
+                        <!-- No working-vs-live delta for this page. -->
+                        <div
+                            class="flex items-center gap-2.5 p-2"
+                            data-testid="diff-empty">
+                            <i
+                                class="pi pi-check-circle flex-none text-green-500"
+                                aria-hidden="true"></i>
+                            <div class="min-w-0">
+                                <div class="text-[13px] font-bold text-gray-900">
+                                    {{ 'accessibility.studio.diff.empty.title' | dm }}
+                                </div>
+                                <p class="m-0 mt-0.5 text-xs leading-snug text-gray-500">
+                                    {{ 'accessibility.studio.diff.empty.sub' | dm }}
+                                </p>
+                            </div>
+                        </div>
+                    } @else {
+                        <ul
+                            class="m-0 flex list-none flex-col gap-0.5 p-0"
+                            data-testid="diff-file-list">
+                            @for (file of files(); track file.identifier) {
+                                <li>
+                                    <button
+                                        type="button"
+                                        class="flex w-full items-center gap-2.5 rounded-lg p-2 text-left transition-colors"
+                                        [class.bg-primary-50]="file.identifier === selectedId()"
+                                        [class.hover:bg-surface-50]="
+                                            file.identifier !== selectedId()
+                                        "
+                                        (click)="selectFile(file.identifier)"
+                                        [attr.aria-current]="file.identifier === selectedId()"
+                                        data-testid="diff-file-row">
+                                        <i
+                                            class="pi pi-file flex-none text-sm!"
+                                            [class.text-primary]="
+                                                file.identifier === selectedId()
+                                            "
+                                            [class.text-gray-400]="
+                                                file.identifier !== selectedId()
+                                            "
+                                            aria-hidden="true"></i>
+                                        <div class="min-w-0 flex-1">
+                                            <div
+                                                class="truncate text-[13px] font-semibold text-gray-900">
+                                                {{ file.name }}
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="flex flex-none items-center gap-1.5 font-mono text-[11px] font-bold tabular-nums">
+                                            @if (file.added > 0) {
+                                                <span class="text-green-600">
+                                                    +{{ file.added }}
+                                                </span>
+                                            }
+                                            @if (file.removed > 0) {
+                                                <span class="text-red-600">
+                                                    −{{ file.removed }}
+                                                </span>
+                                            }
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+
+                        <!-- Back to preview — the way out of the diff view from the
+                             side panel, without hunting for a control in the right
+                             pane. Only shown while a file's diff is open. -->
+                        @if (selectedId()) {
+                            <button
+                                type="button"
+                                class="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-surface-200 bg-white p-2 text-[12px] font-semibold text-gray-600 transition-colors hover:bg-surface-50"
+                                (click)="clearSelection()"
+                                data-testid="diff-back-to-preview-btn">
+                                <i class="pi pi-arrow-left text-[11px]!" aria-hidden="true"></i>
+                                {{ 'accessibility.studio.diff.backtopreview' | dm }}
+                            </button>
+                        }
+                    }
                 }
             }
-        }
-    </div>
-
-    <!-- Review action bar — only while a run is awaiting review and there are
-         changes to publish. Publish stays disabled until the user has opened a
-         file's diff (see canPublish), enforcing a real review before going live. -->
-    @if (awaitingReview() && files().length > 0) {
-        <div
-            class="flex flex-none flex-col gap-2 border-t border-surface-200 bg-surface-50 px-4 py-3.5"
-            data-testid="diff-review-bar">
-            @if (!reviewed()) {
-                <p class="m-0 text-center text-xs leading-snug text-gray-400">
-                    {{ 'accessibility.studio.diff.review.hint' | dm }}
-                </p>
-            }
-            <div class="flex gap-2.5">
-                <p-button
-                    [label]="'accessibility.studio.action.discard' | dm"
-                    severity="secondary"
-                    [outlined]="true"
-                    [rounded]="true"
-                    (onClick)="discard()"
-                    data-testid="diff-discard-btn" />
-                <p-button
-                    [label]="'accessibility.studio.diff.publish' | dm"
-                    icon="pi pi-upload"
-                    severity="success"
-                    styleClass="flex-1"
-                    [rounded]="true"
-                    [disabled]="!canPublish()"
-                    (onClick)="publish()"
-                    data-testid="diff-publish-btn" />
-            </div>
         </div>
     }
-</aside>
-
-<!-- ---------- DIFF EDITOR ---------- -->
-<main class="flex min-h-0 flex-col bg-surface-100">
-    <!-- Diff header: file name + live ⇄ working labels -->
-    <div
-        class="flex h-11 flex-none items-center justify-between border-b border-surface-200 bg-white px-5">
-        <div class="min-w-0">
-            <div class="truncate text-sm font-bold text-gray-900">
-                {{ selected()?.name }}
-            </div>
-            <div class="truncate text-xs text-gray-400">{{ selected()?.path }}</div>
-        </div>
-        <div class="flex flex-none items-center gap-2 text-[11px] font-semibold">
-            <span
-                class="inline-flex items-center gap-1 rounded-full bg-surface-100 px-2.5 py-1 text-gray-600">
-                <i class="pi pi-globe text-[11px]!" aria-hidden="true"></i>
-                {{ 'accessibility.studio.diff.live' | dm }}
-            </span>
-            <i class="pi pi-arrow-right text-surface-300" aria-hidden="true"></i>
-            <span
-                class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1 text-primary">
-                <i class="pi pi-sparkles text-[11px]!" aria-hidden="true"></i>
-                {{ 'accessibility.studio.diff.working' | dm }}
-            </span>
-        </div>
-    </div>
-
-    <!-- Diff body -->
-    <div class="relative min-h-0 flex-1">
-        <!-- Monaco diff editor host. Hidden (but mounted) when there's nothing to
-             show, so the host div exists whenever a file is selected. -->
-        <div
-            #diffHost
-            class="size-full"
-            [class.invisible]="!selected()"
-            data-testid="diff-editor-host"></div>
-
-        <!-- Placeholder shown when no file is selected (empty / loading). -->
-        @if (!selected()) {
-            <div
-                class="absolute inset-0 flex flex-col items-center justify-center text-center"
-                data-testid="diff-editor-placeholder">
-                @if (status() === 'loading') {
-                    <i
-                        class="pi pi-spin pi-spinner mb-2 text-2xl! text-gray-300"
-                        aria-hidden="true"></i>
-                    <span class="text-sm text-gray-400">
-                        {{ 'accessibility.studio.diff.loading' | dm }}
-                    </span>
-                } @else {
-                    <i class="pi pi-file mb-2 text-2xl! text-surface-300" aria-hidden="true"></i>
-                    <span class="text-sm text-gray-400">
-                        {{ 'accessibility.studio.diff.select' | dm }}
-                    </span>
-                }
-            </div>
-        }
-    </div>
-</main>
+</div>

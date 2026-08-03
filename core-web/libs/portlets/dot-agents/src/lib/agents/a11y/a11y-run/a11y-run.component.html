@@ -285,6 +285,17 @@
             workingFallbackKey="accessibility.studio.fixing"
             data-testid="studio-activity-log" />
 
+        <!-- Working-vs-live changed files, in a collapsible section that separates
+             them from the scanner output above. Loads as soon as the page opens, so
+             pre-existing working edits show before the first scan; reloads after each
+             run. Picking a file opens its diff in the right pane. -->
+        <div class="mt-4">
+            <dot-a11y-diff
+                [activeFileId]="diffFile()?.identifier ?? null"
+                (fileSelected)="onDiffFileSelected($event)"
+                data-testid="studio-diff-accordion" />
+        </div>
+
         <!-- Needs your review: axe `incomplete` items. axe flagged these but
              couldn't be sure, so the agent doesn't touch them — a human decides.
              Shown after a scan (scanned) and in the final report (done/published). -->
@@ -419,15 +430,26 @@
                     data-testid="studio-stopagent-btn" />
             }
             @case ('done') {
-                <!-- No inline Publish here — the user must review the code changes
-                     first. This opens the Code tab, where Discard/Publish live. -->
-                <p-button
-                    [label]="'accessibility.studio.action.review' | dm"
-                    icon="pi pi-code"
-                    styleClass="w-full"
-                    [rounded]="true"
-                    (onClick)="reviewChanges()"
-                    data-testid="studio-review-btn" />
+                <!-- Apply = publish the page, which publishes its changed source
+                     files together. There's no per-file publishing, so this is a
+                     single action over the whole working version. -->
+                <div class="flex gap-2.5">
+                    <p-button
+                        [label]="'accessibility.studio.action.discard' | dm"
+                        severity="secondary"
+                        [outlined]="true"
+                        [rounded]="true"
+                        (onClick)="discardChanges()"
+                        data-testid="studio-discard-btn" />
+                    <p-button
+                        [label]="'accessibility.studio.action.apply' | dm"
+                        icon="pi pi-upload"
+                        severity="success"
+                        styleClass="flex-1"
+                        [rounded]="true"
+                        (onClick)="applyChanges()"
+                        data-testid="studio-apply-btn" />
+                </div>
             }
             @case ('published') {
                 <div class="flex gap-2.5">
@@ -446,55 +468,18 @@
     </div>
 </aside>
 
-<!-- ============ RIGHT COLUMN — Preview / Code tabs ============ -->
-<!-- A pill toolbar toggles between the visual before/after (Preview) and the
-     source-file diff (Code), so the two ways of reading the agent's changes
-     share the same space. -->
+<!-- ============ RIGHT COLUMN — Preview / file diff ============ -->
+<!-- Shows the visual before/after, or the selected file's source diff when the user
+     picks one from the left panel's changed-files list. The preview stays mounted
+     (just hidden) so its iframes don't reload when returning from a diff. -->
 <div class="flex min-h-0 flex-col bg-surface-100">
-    <!-- Pill toolbar. Code is disabled until a run has completed (nothing to diff
-         before then). -->
-    <div
-        class="flex h-12 flex-none items-center justify-center border-b border-surface-200 bg-white">
-        <div
-            class="inline-flex items-center gap-1 rounded-full bg-surface-100 p-1"
-            role="tablist"
-            [attr.aria-label]="'accessibility.studio.preview.tabs' | dm">
-            <button
-                type="button"
-                role="tab"
-                class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors"
-                [class.bg-white]="previewTab() === 'preview'"
-                [class.text-primary]="previewTab() === 'preview'"
-                [class.shadow-sm]="previewTab() === 'preview'"
-                [class.text-gray-500]="previewTab() !== 'preview'"
-                [attr.aria-selected]="previewTab() === 'preview'"
-                (click)="setPreviewTab('preview')"
-                data-testid="studio-tab-preview">
-                <i class="pi pi-desktop text-[13px]!" aria-hidden="true"></i>
-                {{ 'accessibility.studio.preview.tab.preview' | dm }}
-            </button>
-            <button
-                type="button"
-                role="tab"
-                class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors"
-                [class.bg-white]="previewTab() === 'code'"
-                [class.text-primary]="previewTab() === 'code'"
-                [class.shadow-sm]="previewTab() === 'code'"
-                [class.text-gray-500]="previewTab() !== 'code'"
-                [attr.aria-selected]="previewTab() === 'code'"
-                (click)="setPreviewTab('code')"
-                data-testid="studio-tab-code">
-                <i class="pi pi-code text-[13px]!" aria-hidden="true"></i>
-                {{ 'accessibility.studio.preview.tab.code' | dm }}
-            </button>
-        </div>
-    </div>
-
-    <!-- PREVIEW tab: the two side-by-side render frames. Kept mounted (hidden)
-         while Code is showing so the iframes don't reload on every toggle. -->
+    <!-- The iframes stay mounted while a diff is open so returning to the preview
+         doesn't reload them. `display` is set inline rather than via a `hidden`
+         class: Tailwind's `hidden` and the `grid` class here have equal specificity,
+         so the class toggle wouldn't reliably win. -->
     <main
         class="grid min-h-0 flex-1 grid-cols-2 gap-4 p-5"
-        [class.hidden]="previewTab() !== 'preview'">
+        [style.display]="diffFile() ? 'none' : null">
     <!-- AFTER — the working render carrying the agent's fixes -->
     <section
         class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
@@ -566,13 +551,13 @@
     </section>
     </main>
 
-    <!-- CODE tab: the working-vs-live source-file diff. Only mounted once the Code
-         tab has been opened, then kept mounted (hidden) so re-toggling is instant.
-         `active` tells it to load + lay out Monaco (it has no size while hidden). -->
-    @if (codeTabVisited()) {
-        <dot-a11y-diff
+    <!-- File diff — replaces the preview while a file is selected. Mounted only
+         then, so Monaco isn't built until the user asks for a diff. -->
+    @if (diffFile(); as file) {
+        <dot-a11y-diff-viewer
             class="min-h-0 flex-1"
-            [class.hidden]="previewTab() !== 'code'"
-            [active]="previewTab() === 'code'" />
+            [file]="file"
+            (closed)="closeDiff()"
+            data-testid="studio-diff-viewer" />
     }
 </div>
