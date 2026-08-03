@@ -181,11 +181,14 @@ describe('Utility Functions', () => {
         });
 
         it('should handle filters with null or undefined values', () => {
-            const result = encodeFilters({
+            // Runtime may still see null/undefined bag values; cast past the index signature.
+            const dirtyFilters = {
                 contentType: ['Blog'],
                 status: undefined,
-                title: null as unknown as string
-            });
+                title: null
+            } as unknown as DotContentDriveFilters;
+
+            const result = encodeFilters(dirtyFilters);
             expect(result).toBe('contentType:Blog');
         });
 
@@ -641,7 +644,7 @@ describe('Utility Functions', () => {
             getFolderNodesByPath('/main/', SITE, mockDotFolderService).subscribe({
                 next: (result) => {
                     // '/main' (no trailing slash) + 'sub' must yield '/main/sub/', not '/mainsub/'
-                    expect(result.folders[0].data.path).toBe('/main/sub/');
+                    expect(result.folders[0].data?.path).toBe('/main/sub/');
                     expect(result.folders[0].label).toBe('/main/sub/');
                     done();
                 },
