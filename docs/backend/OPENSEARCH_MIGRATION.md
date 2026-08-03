@@ -246,6 +246,55 @@ contradiction of the rule above — the strip is applied to a throwaway local us
 number; the name that is returned or stored keeps its tag. Rule of thumb: **strip to parse a
 value out of a name, never to hand a name back.**
 
+#### Exception: Site Search uses a vendor-neutral logical handle
+
+The rule above ("the tag is part of the identity") describes the **content-index** model, where the
+ES working/live index and its OS counterpart are tracked as *distinct* indices (separate slots in
+the `indicies` table) and the tag is their only discriminator. **Site Search deliberately uses the
+opposite model** and is the one sanctioned exception.
+
+A Site Search index is conceptually **one logical index mirrored across both engines**, not two
+independent indices. The crawl produces a single bundle that is replicated; a single `putToIndex` /
+`deleteFromIndex` / `search` call fans out to every write provider through the phase router. To make
+that fan-out possible, the `SiteSearchAPI` surface is expressed in **logical (untagged) names** — a
+vendor-neutral *handle* — and each engine adapter translates that handle to its own physical name at
+the boundary:
+
+- `ESSiteSearchAPI` uses the handle as-is (ES indices carry no `.os`).
+- `OSSiteSearchAPI` applies `.os` internally via `physicalName()`
+  (`getNameWithClusterIDPrefix(IndexTag.OS.tag(name))`) for **every** physical operation — create,
+  mapping, put, get, delete, search, alias.
+
+Consequences:
+
+- `SiteSearchAPI.listIndices()` **strips** `.os` and **deduplicates** the ES/OS twin into a single
+  logical row (issue #36672). This is why it — unlike the content-index provider methods described
+  above — does *not* return tagged names. A caller cannot tell ES from OS from this list, and does
+  not need to: it hands the logical name back to the API and the router/adapter re-targets per
+  engine.
+- If the handle carried the tag, the same operation could not fan out to ES (which has no `.os`);
+  the OS adapters apply `.os` unconditionally and therefore **expect an untagged handle as input**.
+
+**Load-bearing discipline (the recurring bug class).** Because `.os` is applied only at the OS
+adapter, every Site Search index/alias operation MUST go through `SiteSearchAPI`, never through the
+content-index router (`APILocator.getESIndexAPI()`) with a logical Site Search name. The content
+router builds the OS physical name **without** `.os`, so in Phases 2/3 (OS reads) it queries a name
+that does not exist and silently misses (lenient `ignoreUnavailable` → empty result, no error). This
+exact leak broke alias resolution (`$sitesearch.search(alias,…)`, the portlet Alias column, the
+crawl's incremental/full decision, deactivate-by-alias) and the index-stats join
+(`getIndicesStats()` / `getClusterHealth()` key OS entries by `.os`, so a logical-name lookup found
+nothing → blank Count/Shards/Replicas/Size/Health). Both were fixed by routing the callers through
+`SiteSearchAPI.getAliasToIndexMap()` and by an `.os`-fallback lookup in the portlet (issue #36360).
+The abstraction is correct but **enforced by convention** — a call site that reaches for the content
+router with an untagged Site Search name reintroduces the bug.
+
+**Display visibility.** The logical-name surface means the Site Search portlet shows untagged names
+in every phase, whereas the content-index maintenance page reveals `.os` to the migration QA role
+via `MigrationIndexVisibility`. Aligning Site Search's display with that role-gated policy — so QA
+can preview `.os` (and the ES/OS twin as distinct rows) while normal users keep the clean logical
+view — is the one place the two UIs should converge; it does **not** require changing the internal
+handle model, only the display sink.
+
 #### Tag manipulation is the sole responsibility of `IndexTag`
 
 All read/write of the vendor marker on an index name MUST go through the `IndexTag` enum.

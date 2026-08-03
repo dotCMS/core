@@ -78,24 +78,25 @@ interface EmptyStateConfig {
 }
 
 /** Map asset `type` string (lowercase, comes from `PusheableAsset.getType()`)
- * to a PrimeIcon. Unknown types fall back to a generic file icon. */
+ * to a Material Symbols Rounded ligature name. Unknown types fall back to a
+ * generic file icon. Rendered via `<span class="material-symbols-rounded">`. */
 const TYPE_ICONS: Record<string, string> = {
-    contentlet: 'pi pi-file',
-    contenttype: 'pi pi-box',
-    template: 'pi pi-window-maximize',
-    containers: 'pi pi-th-large',
-    folder: 'pi pi-folder',
-    host: 'pi pi-globe',
-    category: 'pi pi-tag',
-    links: 'pi pi-link',
-    workflow: 'pi pi-cog',
-    language: 'pi pi-language',
-    rule: 'pi pi-shield',
-    user: 'pi pi-user',
-    osgi: 'pi pi-box',
-    relationship: 'pi pi-share-alt',
-    experiment: 'pi pi-chart-bar',
-    variant: 'pi pi-clone'
+    contentlet: 'description',
+    contenttype: 'inventory_2',
+    template: 'open_in_new',
+    containers: 'grid_view',
+    folder: 'folder',
+    host: 'public',
+    category: 'sell',
+    links: 'link',
+    workflow: 'settings',
+    language: 'translate',
+    rule: 'shield',
+    user: 'person',
+    osgi: 'inventory_2',
+    relationship: 'share',
+    experiment: 'bar_chart',
+    variant: 'file_copy'
 };
 
 const BUNDLES_PER_PAGE = 6;
@@ -277,11 +278,11 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         const hasSearch = this.$bundleSearch().trim().length > 0;
         return hasSearch
             ? {
-                  icon: 'pi-search-minus',
+                  icon: 'search_off',
                   messageKey: 'publishing-queue.select-bundle.empty.search'
               }
             : {
-                  icon: 'pi-inbox',
+                  icon: 'inbox',
                   messageKey: 'publishing-queue.select-bundle.empty'
               };
     });
@@ -292,11 +293,11 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         const hasActive = this.$activeBundleId() !== null;
         return hasActive
             ? {
-                  icon: 'pi-box',
+                  icon: 'inventory_2',
                   messageKey: 'publishing-queue.select-bundle.asset-empty'
               }
             : {
-                  icon: 'pi-search-minus',
+                  icon: 'search_off',
                   messageKey: 'publishing-queue.select-bundle.no-active'
               };
     });
@@ -387,7 +388,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     typeIcon(type: string): string {
-        return TYPE_ICONS[(type ?? '').toLowerCase()] ?? 'pi pi-file';
+        return TYPE_ICONS[(type ?? '').toLowerCase()] ?? 'description';
     }
 
     onRemoveAsset(asset: BundleAssetView): void {

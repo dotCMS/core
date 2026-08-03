@@ -2988,9 +2988,9 @@ public class ImportUtil {
                         .append(field.isUnique() ? ESUtils.sha256(contentType.getVelocityVarName()
                                         + StringPool.PERIOD + field.getVelocityVarName(), processedValue,
                                 language)
-                                : escapeLuceneSpecialCharacter(processedValue).contains(" ") ? "\""
-                                        + escapeLuceneSpecialCharacter(processedValue) + "\""
-                                        : escapeLuceneSpecialCharacter(processedValue));
+                                : escapeLuceneSpecialCharacter(processedValue.toLowerCase()).contains(" ") ? "\""
+                                        + escapeLuceneSpecialCharacter(processedValue.toLowerCase()) + "\""
+                                        : escapeLuceneSpecialCharacter(processedValue.toLowerCase()));
             }
 
             conditionValues.append(processedValue).append("-");

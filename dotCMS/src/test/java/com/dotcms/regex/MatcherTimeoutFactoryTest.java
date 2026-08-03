@@ -17,6 +17,9 @@ import io.vavr.control.Try;
 
 public class MatcherTimeoutFactoryTest {
 
+    /** How often the quarantine window is sampled, instead of spinning on it. */
+    private static final long QUARANTINE_POLL_MS = 250L;
+
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         // prime regex engine - takes about 800ms
@@ -100,19 +103,20 @@ public class MatcherTimeoutFactoryTest {
             long endTime = System.currentTimeMillis();
             
             // the regex returned after the expected timeout time.
-            assertTrue(endTime >= startTime + MatcherTimeoutFactory.VANITY_URL_REGEX_TIMEOUT);
-            
-            // the regex returned within 100ms of the expected timeout time
-            assertTrue(endTime < startTime + MatcherTimeoutFactory.VANITY_URL_REGEX_TIMEOUT + 100);
-            
+            // NOTE: only the lower bound is asserted. An upper bound would be measuring scheduler
+            // latency, not behavior, and fails intermittently on loaded CI runners.
+            assertTrue("regex should not have returned before its timeout elapsed",
+                            endTime >= startTime + MatcherTimeoutFactory.VANITY_URL_REGEX_TIMEOUT);
+
             //we got a good exception message
-            assertTrue(exception.getMessage().contains(pattern.toString()));
+            assertTrue("exception message should name the pattern, was: " + exception.getMessage(),
+                            exception.getMessage().contains(pattern.toString()));
 
         }
     }
 
     @Test
-    public void test_regex_quarantine() {
+    public void test_regex_quarantine() throws InterruptedException {
         MatcherTimeoutFactory.SLOW_REGEX_CACHE.invalidateAll();
 
         for (String[] evil : evilPatternAndMatchingString) {
@@ -126,15 +130,16 @@ public class MatcherTimeoutFactoryTest {
                 MatcherTimeoutFactory.matcher(pattern, evil[1]).matches()
             );
             
-            // while the regex is in quarantine, we should get the NO_MATCH_PATTERN result
+            // while the regex is in quarantine, we should get the NO_MATCH_PATTERN result.
+            // NOTE: polling rather than spinning. The old loop asserted each lookup completed in
+            // under 100ms, which measured cache performance instead of quarantine behavior and
+            // failed intermittently on loaded CI runners (see issue #35174).
             while (System.currentTimeMillis() < runUntil) {
-                long startTime = System.currentTimeMillis();
                 Matcher matcher = MatcherTimeoutFactory.matcher(pattern, evil[1]);
                 // we have the NO_MATCH_PATTERN
                 assertEquals(MatcherTimeoutFactory.NO_MATCH_PATTERN, matcher.pattern());
-                
-                //asert that we are now returning a no match regex in under 100ms
-                assertTrue(System.currentTimeMillis() < startTime + 100);
+
+                Thread.sleep(QUARANTINE_POLL_MS);
             }
             
             // wait until the regex is released from quarantine

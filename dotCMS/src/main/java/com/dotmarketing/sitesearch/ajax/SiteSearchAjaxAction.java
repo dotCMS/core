@@ -227,9 +227,9 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         String indexAlias = map.get("indexAlias");
         String indexName = "";
         if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
-            String indexName1=APILocator.getESIndexAPI()
-                    .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
-                    .get(indexAlias);
+            // Site-search .os-aware alias resolution (issue #36360): the content-index router misses
+            // site-search aliases in Phases 2/3 because it queries OpenSearch without the .os tag.
+            String indexName1=APILocator.getSiteSearchAPI().getAliasToIndexMap().get(indexAlias);
             if(UtilMethods.isSet(indexName1))
                 indexName=indexName1;
         }
