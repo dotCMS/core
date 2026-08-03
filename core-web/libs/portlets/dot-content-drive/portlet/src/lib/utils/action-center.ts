@@ -26,6 +26,13 @@ export interface DotActionCenterQuickAction {
     /** Material Symbols glyph name, rendered inside the row's icon chip. */
     icon: string;
     /**
+     * The contentlet inodes the action applies to — exactly the set that gets fired.
+     *
+     * Derived alongside {@link count} from one filter pass so the number shown on the row and the
+     * items actually acted on cannot drift apart.
+     */
+    eligibleInodes: string[];
+    /**
      * Number of selected contentlets the action applies to. `0` means it does not apply to this
      * selection at all; the row is still rendered, but not selectable.
      */
@@ -165,15 +172,24 @@ export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQu
         return [];
     }
 
-    return QUICK_ACTIONS.map((quickAction) => ({
-        id: quickAction.id,
-        name: quickAction.nameKey,
-        icon: quickAction.icon,
-        danger: quickAction.danger,
-        count: contentlets.filter(quickAction.eligibleWhen).length,
-        confirmMessage: quickAction.confirmMessage,
-        pendingHint: quickAction.pendingHint
-    }));
+    return QUICK_ACTIONS.map((quickAction) => {
+        // One filter pass feeds both the count and the inodes that get fired, so the row can never
+        // advertise a different number of items than the action actually touches.
+        const eligibleInodes = contentlets
+            .filter(quickAction.eligibleWhen)
+            .map((item) => item.inode);
+
+        return {
+            id: quickAction.id,
+            name: quickAction.nameKey,
+            icon: quickAction.icon,
+            danger: quickAction.danger,
+            eligibleInodes,
+            count: eligibleInodes.length,
+            confirmMessage: quickAction.confirmMessage,
+            pendingHint: quickAction.pendingHint
+        };
+    });
 };
 
 /**

@@ -206,6 +206,33 @@ describe('action-center utils', () => {
             expect(publish?.count).toBe(0);
         });
 
+        it('should expose the eligible inodes, matching the count', () => {
+            const items = [
+                contentlet({ inode: 'not-live', live: false }),
+                contentlet({ inode: 'is-live', live: true }),
+                folder('f1')
+            ];
+
+            const publish = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
+            );
+
+            expect(publish?.eligibleInodes).toEqual(['not-live']);
+            expect(publish?.count).toBe(publish?.eligibleInodes.length);
+        });
+
+        it('should keep count and eligibleInodes in step for every action', () => {
+            const items = [
+                contentlet({ inode: 'a', archived: true }),
+                contentlet({ inode: 'b', live: true }),
+                contentlet({ inode: 'c' })
+            ];
+
+            for (const action of getQuickActions(items)) {
+                expect(action.count).toBe(action.eligibleInodes.length);
+            }
+        });
+
         it('should mark destructive actions as danger', () => {
             const items = [contentlet({ inode: 'a', archived: true })];
 

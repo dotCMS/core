@@ -414,6 +414,36 @@ describe('DotContentDriveShellComponent', () => {
             expect(dialogComponent.visible).toBe(false);
         });
 
+        it('should mount the Action Center outside the shared dialog', () => {
+            // The Action Center owns its own p-dialog (custom header/footer, body-only scroll), so it
+            // is a sibling of the shared one rather than a case in its content switch.
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeTruthy();
+        });
+
+        it('should keep the shared dialog hidden while the Action Center is active', () => {
+            // Otherwise both would render, and the shared one would show an empty body.
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+
+            expect(dialogComponent.visible).toBe(false);
+        });
+
+        it('should not mount the Action Center for other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
+        });
+
         it('should configure the dialog as closable and closeOnEscape', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
             spectator.flushEffects();

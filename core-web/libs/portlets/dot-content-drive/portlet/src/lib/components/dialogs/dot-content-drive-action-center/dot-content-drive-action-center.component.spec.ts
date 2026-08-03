@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
@@ -82,6 +83,7 @@ describe('DotContentDriveActionCenterComponent', () => {
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     let fireService: SpyObject<DotWorkflowActionsFireService>;
     let confirmationService: SpyObject<ConfirmationService>;
+    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
 
@@ -99,6 +101,9 @@ describe('DotContentDriveActionCenterComponent', () => {
             mockProvider(MessageService, { add: jest.fn() }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
+            }),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn()
             })
         ],
         detectChanges: false
@@ -117,6 +122,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
         fireService = spectator.inject(DotWorkflowActionsFireService, true);
         confirmationService = spectator.inject(ConfirmationService, true);
+        httpErrorManager = spectator.inject(DotHttpErrorManagerService);
 
         jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
@@ -305,14 +311,52 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
         });
 
-        it('should fire the system action over the selection', () => {
+        it('should fire only the inodes the action applies to, not the whole selection', () => {
+            // Selection is inode-1 (not live) and inode-2 (live). Publish applies to inode-1 only.
             spectator.detectChanges();
 
             spectator.click('[data-testid="quick-action-PUBLISH"]');
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
                 action: 'PUBLISH',
-                inodes: ['inode-1', 'inode-2']
+                inodes: ['inode-1']
+            });
+        });
+
+        it('should fire exactly as many inodes as the row advertises', () => {
+            // Guards the count/payload pair against drifting apart again: whatever number the row
+            // shows must equal the number of inodes sent.
+            spectator.detectChanges();
+
+            const row = spectator.query('[data-testid="quick-action-PUBLISH"]');
+            const advertised = Number(row?.textContent?.match(/\((\d+)\)/)?.[1]);
+
+            spectator.click('[data-testid="quick-action-PUBLISH"]');
+
+            const fired = (fireService.fireDefaultAction as unknown as jest.Mock).mock
+                .calls[0][0] as { inodes: string[] };
+
+            expect(advertised).toBe(1);
+            expect(fired.inodes).toHaveLength(advertised);
+        });
+
+        it('should fire only archived items for Delete', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'archived-1', archived: true }),
+                contentlet({ inode: 'live-1', live: true })
+            ]);
+            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
+                config.accept?.();
+
+                return confirmationService;
+            });
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-DELETE"]');
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'DELETE',
+                inodes: ['archived-1']
             });
         });
 
@@ -325,17 +369,14 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
-        it('should report an error without closing the dialog', () => {
-            jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(
-                throwError(() => new Error('boom'))
-            );
+        it('should hand errors to the http error manager without closing the dialog', () => {
+            const error = new HttpErrorResponse({ status: 403 });
+            jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(throwError(() => error));
 
             spectator.detectChanges();
             spectator.click('[data-testid="quick-action-PUBLISH"]');
 
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({ severity: 'error' })
-            );
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.closeDialog).not.toHaveBeenCalled();
         });
     });

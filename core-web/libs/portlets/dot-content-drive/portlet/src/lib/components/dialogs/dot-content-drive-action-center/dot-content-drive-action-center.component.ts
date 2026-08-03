@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -22,6 +23,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { finalize, take } from 'rxjs/operators';
 
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
@@ -91,6 +93,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #confirmationService = inject(ConfirmationService);
+    readonly #httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -182,7 +185,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         () => this.$selectedItems().length - this.$contentletCount()
     );
     protected readonly $quickActions = computed<DotActionCenterQuickAction[]>(() =>
-        getQuickActions(this.$selectedItems())
+        // Fed the already-filtered contentlets rather than the raw selection, so folder exclusion is
+        // derived once here instead of again inside the util.
+        getQuickActions(this.$contentlets())
     );
 
     ngOnInit(): void {
@@ -214,16 +219,20 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Fires a system action over every eligible contentlet in one request.
+     * Fires a system action over the contentlets it applies to, in one request.
+     *
+     * Only `eligibleInodes` are sent — the same set the row's count is derived from. Firing over the
+     * whole selection instead would act on items the row never claimed: a Publish showing "(1)"
+     * would publish two, and Delete would be attempted on contentlets that are not archived.
      *
      * @param quickAction - The quick action chosen by the user
      */
     protected onExecuteQuickAction(quickAction: DotActionCenterQuickAction): void {
-        const inodes = toContentletInodes(this.$selectedItems());
+        const inodes = quickAction.eligibleInodes;
 
         // `pendingHint` marks an action with no working implementation yet (Add to Bundle needs a
         // bundle picker). The row is disabled, but guard here too so it can never fire.
-        if (!inodes.length || quickAction.pendingHint || quickAction.count === 0) {
+        if (!inodes.length || quickAction.pendingHint) {
             return;
         }
 
@@ -434,13 +443,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.closeDialog();
     }
 
-    private onExecuteError(error: unknown): void {
-        this.#messageService.add({
-            severity: 'error',
-            summary: this.#dotMessageService.get('content-drive.action-center.toast.error'),
-            detail: this.#dotMessageService.get('content-drive.action-center.toast.error-detail')
-        });
-
-        console.error('Action Center: failed to execute action', error);
+    /**
+     * Routes execution failures through the shared error manager rather than a bespoke toast.
+     *
+     * This matters beyond convention here: per-item permission failures are an expected outcome of
+     * these endpoints (the bulk-actions lookup filters by role permission only, not per contentlet),
+     * and the error manager distinguishes 401/403 from a generic failure instead of flattening
+     * everything into one message.
+     */
+    private onExecuteError(error: HttpErrorResponse): void {
+        this.#httpErrorManagerService.handle(error);
     }
 }
