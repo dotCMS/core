@@ -28,6 +28,7 @@ import { AxeImpact } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
+import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11yAgentPresenter } from '../models/a11y-agent.presenter';
 import {
     impactToSeverity,
@@ -66,7 +67,8 @@ interface SeverityRow {
         TooltipModule,
         DotMessagePipe,
         SafeUrlPipe,
-        DotAgentActivityLogComponent
+        DotAgentActivityLogComponent,
+        DotA11yDiffComponent
     ],
     templateUrl: './a11y-run.component.html',
     styles: [
@@ -114,6 +116,13 @@ export class DotA11yRunComponent {
      * snapping. See {@link animateCountTo}.
      */
     readonly displayCount = signal(0);
+
+    /**
+     * Whether the working-vs-live file diff slide-over is open. It overlays the
+     * preview area so the user can inspect the agent's changes without losing any
+     * scan/run UI state underneath.
+     */
+    readonly diffOpen = signal(false);
 
     /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
     private countRaf: number | null = null;
@@ -578,17 +587,14 @@ export class DotA11yRunComponent {
         this.toPicker();
     }
 
-    /**
-     * Open the working-vs-live file diff for this page (`<path>/diff`). Built from
-     * the current page path so the diff is deep-linkable, matching the run route.
-     */
-    viewDiff(): void {
-        const page = this.store.selected();
-        if (!page) {
-            return;
-        }
-        const segments = page.path.split('/').filter(Boolean);
-        this.router.navigate(['/agents/a11y', ...segments, 'diff']);
+    /** Open the working-vs-live file diff slide-over over the preview area. */
+    openDiff(): void {
+        this.diffOpen.set(true);
+    }
+
+    /** Close the diff slide-over — the run screen underneath is untouched. */
+    closeDiff(): void {
+        this.diffOpen.set(false);
     }
 
     runScan(): void {

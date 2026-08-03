@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -11,11 +11,19 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotA11yRunComponent } from './a11y-run.component';
 
+import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11yGroup } from '../models/a11y-groups';
 import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+
+/** Stub for the diff drawer so the run spec doesn't pull in Monaco / HTTP. */
+@Component({ selector: 'dot-a11y-diff', standalone: true, template: '' })
+class DotA11yDiffStubComponent {
+    readonly open = input<boolean>(false);
+    readonly close = output<void>();
+}
 
 const MOCK_PAGE: StudioPageRow = {
     identifier: 'id-1',
@@ -158,6 +166,15 @@ describe('DotA11yRunComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotA11yRunComponent,
+        overrideComponents: [
+            [
+                DotA11yRunComponent,
+                {
+                    remove: { imports: [DotA11yDiffComponent] },
+                    add: { imports: [DotA11yDiffStubComponent] }
+                }
+            ]
+        ],
         componentProviders: [
             { provide: AccessibilityStudioStore, useValue: storeMock },
             mockProvider(A11yMarkerService)
@@ -465,9 +482,12 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.query(byTestId('studio-viewdiff-btn'))).toBeFalsy();
         });
 
-        it('shows the view-file-changes button and navigates to the diff route', () => {
+        it('shows the view-file-changes button and opens the diff drawer', () => {
             changedFiles = [{ path: '//demo/a.vtl', identifier: 'id-a' }];
             render('done', MOCK_FIX_REPORT);
+
+            // Drawer starts closed.
+            expect(spectator.query(DotA11yDiffStubComponent)?.open()).toBe(false);
 
             const btn = spectator
                 .query(byTestId('studio-viewdiff-btn'))
@@ -475,8 +495,24 @@ describe('DotA11yRunComponent', () => {
             expect(btn).toBeTruthy();
 
             spectator.click(btn as HTMLElement);
-            // /about-us → segments ['about-us'] + 'diff'.
-            expect(navigate).toHaveBeenCalledWith(['/agents/a11y', 'about-us', 'diff']);
+            spectator.detectChanges();
+
+            // The button opens the drawer without navigating (run state preserved).
+            expect(spectator.component.diffOpen()).toBe(true);
+            expect(spectator.query(DotA11yDiffStubComponent)?.open()).toBe(true);
+            expect(navigate).not.toHaveBeenCalled();
+        });
+
+        it('closes the diff drawer on the child close output', () => {
+            changedFiles = [{ path: '//demo/a.vtl', identifier: 'id-a' }];
+            render('done', MOCK_FIX_REPORT);
+            spectator.component.openDiff();
+            spectator.detectChanges();
+
+            spectator.query(DotA11yDiffStubComponent)?.close.emit();
+            spectator.detectChanges();
+
+            expect(spectator.component.diffOpen()).toBe(false);
         });
     });
 

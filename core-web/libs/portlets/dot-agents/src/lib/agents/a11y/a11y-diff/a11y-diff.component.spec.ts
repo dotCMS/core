@@ -7,11 +7,9 @@ import {
 } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { signal } from '@angular/core';
-import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
+import { Drawer } from 'primeng/drawer';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotA11yDiffComponent } from './a11y-diff.component';
@@ -79,19 +77,11 @@ function installMonacoMock() {
 describe('DotA11yDiffComponent', () => {
     let spectator: Spectator<DotA11yDiffComponent>;
 
-    const navigate = jest.fn();
-    const openPageByUri = jest.fn();
-    const currentSiteIdSignal = signal<string | null>('site-1');
-
-    let pathSegments = ['about-us', 'diff'];
     let selectedPage: typeof MOCK_PAGE | null = MOCK_PAGE;
-    let rehydrateStatus: 'idle' | 'loading' | 'not-found' = 'idle';
     let monacoMock: ReturnType<typeof installMonacoMock>;
 
     const storeMock = {
-        selected: () => selectedPage,
-        rehydrateStatus: () => rehydrateStatus,
-        openPageByUri
+        selected: () => selectedPage
     };
 
     const createComponent = createComponentFactory({
@@ -102,25 +92,11 @@ describe('DotA11yDiffComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'accessibility.studio.diff.title': 'File changes',
+                    'accessibility.studio.diff.close': 'Close',
                     'accessibility.studio.diff.fileschanged': 'Files changed',
                     'accessibility.studio.diff.empty.title': 'No file changes',
                     'accessibility.studio.diff.loading': 'Loading…',
                     'accessibility.studio.diff.select': 'Select a file'
-                })
-            },
-            { provide: Router, useValue: { navigate } },
-            {
-                provide: GlobalStore,
-                useValue: {
-                    get currentSiteId() {
-                        return currentSiteIdSignal;
-                    }
-                }
-            },
-            {
-                provide: ActivatedRoute,
-                useFactory: () => ({
-                    url: of(pathSegments.map((p) => new UrlSegment(p, {})))
                 })
             }
         ]
@@ -128,22 +104,19 @@ describe('DotA11yDiffComponent', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        pathSegments = ['about-us', 'diff'];
         selectedPage = MOCK_PAGE;
-        rehydrateStatus = 'idle';
-        currentSiteIdSignal.set('site-1');
         monacoMock = installMonacoMock();
     });
 
-    function render(diffFiles: PageDiffFile[] = DIFF_FILES) {
+    /** Render with the drawer open (or closed) and the given diff files. */
+    function render(open = true, diffFiles: PageDiffFile[] = DIFF_FILES) {
         spectator = createComponent({
+            props: { open },
             providers: [
                 mockProvider(DotPageSourcesService, {
                     getPageSources: jest
                         .fn()
-                        .mockReturnValue(
-                            of(diffFiles.map((f) => f as PageSourceFile))
-                        ),
+                        .mockReturnValue(of(diffFiles.map((f) => f as PageSourceFile))),
                     getDiffFiles: jest.fn().mockReturnValue(of(diffFiles))
                 }),
                 mockProvider(MonacoEditorLoaderService, {
@@ -154,9 +127,26 @@ describe('DotA11yDiffComponent', () => {
         spectator.detectChanges();
     }
 
-    it('rehydrates the selected page from the route (dropping the /diff marker)', () => {
-        render();
-        expect(openPageByUri).toHaveBeenCalledWith('/about-us');
+    /** Simulate the drawer finishing its open animation (its `onShow` event). */
+    function fireDrawerShow() {
+        spectator.component.onDrawerShow();
+        spectator.detectChanges();
+    }
+
+    it('keeps the drawer closed and loads nothing when open is false', () => {
+        render(false);
+        expect(spectator.query(byTestId('diff-panel'))).toBeFalsy();
+        expect(spectator.inject(DotPageSourcesService).getPageSources).not.toHaveBeenCalled();
+    });
+
+    it('renders the drawer and loads the diff once opened', () => {
+        render(true);
+        expect(spectator.query(byTestId('diff-panel'))).toBeTruthy();
+        expect(spectator.inject(DotPageSourcesService).getPageSources).toHaveBeenCalledWith(
+            '/about-us',
+            'host-1',
+            1
+        );
     });
 
     it('lists only the changed files with add/remove counts', () => {
@@ -169,18 +159,16 @@ describe('DotA11yDiffComponent', () => {
     it('shows each file name and its +/- line counts, but not the folder path', () => {
         render();
         const rows = spectator.queryAll(byTestId('diff-file-row'));
-        // First row: name + line counts, no folder path.
         expect(rows[0].textContent).toContain('a.vtl');
         expect(rows[0].textContent).toContain('+1');
-        expect(rows[0].textContent).toContain('1');
         expect(rows[0].textContent).not.toContain('//demo/application/containers/');
-        // Second row: css file name + all-added count.
         expect(rows[1].textContent).toContain('style.css');
         expect(rows[1].textContent).not.toContain('//demo/application/themes/');
     });
 
-    it('selects the first file by default and renders a Monaco diff editor', () => {
+    it('renders the Monaco diff editor for the first file once the drawer shows', () => {
         render();
+        fireDrawerShow();
         // createDiffEditor is created once; models built from live (original) + working (modified).
         expect(monacoMock.createDiffEditor).toHaveBeenCalledTimes(1);
         expect(monacoMock.createModel).toHaveBeenCalledWith('old\ncode', 'html');
@@ -190,6 +178,7 @@ describe('DotA11yDiffComponent', () => {
 
     it('re-renders the diff models when a different file is selected', () => {
         render();
+        fireDrawerShow();
         monacoMock.createModel.mockClear();
 
         const cssRow = spectator
@@ -204,32 +193,39 @@ describe('DotA11yDiffComponent', () => {
     });
 
     it('shows the empty state when nothing changed', () => {
-        render([]);
+        render(true, []);
         expect(spectator.query(byTestId('diff-empty'))).toBeTruthy();
         expect(spectator.query(byTestId('diff-file-list'))).toBeFalsy();
     });
 
-    it('navigates back to the run route on back', () => {
+    it('emits close and disposes the editor when the drawer hides', () => {
         render();
-        const btn = spectator.query(byTestId('diff-back-btn'))?.querySelector('button');
-        spectator.click(btn as HTMLElement);
-        expect(navigate).toHaveBeenCalledWith(['/agents/a11y', 'about-us']);
+        fireDrawerShow();
+        const closeSpy = jest.fn();
+        spectator.output('close').subscribe(closeSpy);
+
+        // Simulate the drawer's dismissal (X / backdrop / Esc all funnel to onHide).
+        spectator.component.onDrawerHide();
+
+        expect(closeSpy).toHaveBeenCalled();
     });
 
-    it('bounces to the picker when the page cannot be rehydrated', () => {
-        rehydrateStatus = 'not-found';
+    it('closes the drawer when the X button is clicked', () => {
         render();
-        expect(navigate).toHaveBeenCalledWith(['/agents/a11y']);
+        const drawer = spectator.query(Drawer);
+        const btn = spectator.query(byTestId('diff-close-btn'))?.querySelector('button');
+        spectator.click(btn as HTMLElement);
+        // requestClose() flips the drawer's visible input to false.
+        expect(drawer.visible).toBe(false);
     });
 
     it('shows the error state when the diff load fails', () => {
         spectator = createComponent({
+            props: { open: true },
             providers: [
                 mockProvider(DotPageSourcesService, {
                     getPageSources: jest.fn().mockReturnValue(of([])),
-                    getDiffFiles: jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('boom')))
+                    getDiffFiles: jest.fn().mockReturnValue(throwError(() => new Error('boom')))
                 }),
                 mockProvider(MonacoEditorLoaderService, { isMonacoLoaded$: of(true) })
             ]

@@ -368,7 +368,7 @@
                 severity="secondary"
                 [text]="true"
                 styleClass="w-full mb-3"
-                (onClick)="viewDiff()"
+                (onClick)="openDiff()"
                 data-testid="studio-viewdiff-btn" />
         }
 
@@ -550,3 +550,7 @@
         </div>
     </section>
 </main>
+
+<!-- Working-vs-live file diff drawer. A PrimeNG drawer slides in over the run
+     screen so opening it preserves all scan/run state underneath. -->
+<dot-a11y-diff [open]="diffOpen()" (close)="closeDiff()" />

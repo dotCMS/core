@@ -1,7 +1,6 @@
 import { MonacoEditorLoaderService } from '@materia-ui/ngx-monaco-editor';
 
 import {
-    afterNextRender,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -9,26 +8,27 @@ import {
     effect,
     ElementRef,
     inject,
+    input,
+    output,
     signal,
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { filter, map, switchMap, take } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { DotPageSourcesService } from '../services/dot-page-sources.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
-/** Load status of the diff screen. */
+/** Load status of the diff panel. */
 type DiffStatus = 'loading' | 'loaded' | 'error';
 
 /** Monaco language id per source extension — everything else falls back to plaintext. */
@@ -44,11 +44,18 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
 };
 
 /**
- * The "working vs live" file diff screen (`agents/a11y/<path>/diff`).
+ * The "working vs live" file diff **side panel** — a slide-over that overlays the
+ * run screen's preview area so the user can inspect what the agent changed
+ * WITHOUT navigating away (the scan/run UI state stays fully intact underneath).
  *
- * Lists the page's source files that DIFFER between the working (unpublished)
- * and live (published) versions — i.e. exactly what the agent changed but hasn't
- * published — beside a read-only Monaco side-by-side diff of the selected file.
+ * Lists the page's source files that DIFFER between the working (unpublished) and
+ * live (published) versions beside a read-only Monaco side-by-side diff of the
+ * selected file.
+ *
+ * It's a presentational child of {@link DotA11yRunComponent}: the page context
+ * comes from the shared {@link AccessibilityStudioStore} (already hydrated by the
+ * run screen), so there's no routing/rehydration here. Visibility is driven by
+ * the {@link open} input; {@link close} asks the host to hide it.
  *
  * Data path (see {@link DotPageSourcesService}):
  *   `_render-sources` → flatten to file assets → per file, fetch working + live
@@ -62,21 +69,30 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
 @Component({
     selector: 'dot-a11y-diff',
     standalone: true,
-    imports: [ButtonModule, TooltipModule, DotMessagePipe],
+    imports: [ButtonModule, DrawerModule, TooltipModule, DotMessagePipe],
     templateUrl: './a11y-diff.component.html',
     providers: [DotPageSourcesService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'grid h-full min-h-0 grid-cols-[300px_1fr] bg-surface-100' }
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotA11yDiffComponent {
     readonly store = inject(AccessibilityStudioStore);
 
-    private readonly router = inject(Router);
-    private readonly route = inject(ActivatedRoute);
-    private readonly globalStore = inject(GlobalStore);
     private readonly sourcesService = inject(DotPageSourcesService);
     private readonly monacoLoader = inject(MonacoEditorLoaderService);
     private readonly destroyRef = inject(DestroyRef);
+
+    /** Whether the panel should be open. Drives the drawer + the (lazy) data load. */
+    readonly open = input<boolean>(false);
+    /** Emitted when the drawer is dismissed (X button / backdrop / Esc). */
+    readonly close = output<void>();
+
+    /**
+     * Local drawer visibility, two-way bound to `p-drawer`'s `[(visible)]`. Kept in
+     * sync with the `open` input via an effect so the parent controls it, while the
+     * drawer's own dismiss paths (X / backdrop / Esc) can still flip it — those fire
+     * `onHide`, which emits {@link close} so the parent updates its own flag.
+     */
+    readonly visible = signal(false);
 
     /** The Monaco diff editor host element. */
     private readonly diffHost = viewChild<ElementRef<HTMLDivElement>>('diffHost');
@@ -97,55 +113,41 @@ export class DotA11yDiffComponent {
     /** True once loaded and there are no changed files to show. */
     readonly empty = computed(() => this.status() === 'loaded' && this.files().length === 0);
 
-    /**
-     * The page path this diff is opened against — reconstructed from the route
-     * segments, dropping the trailing `diff` marker (e.g.
-     * `['blog','post','hello','diff']` → `/blog/post/hello`). Mirrors the run
-     * screen's URI reconstruction.
-     */
-    private readonly pageUri = toSignal(
-        this.route.url.pipe(
-            map((segments) => {
-                const parts = segments.map((s) => s.path);
-                if (parts[parts.length - 1] === 'diff') {
-                    parts.pop();
-                }
-
-                return parts.length ? `/${parts.join('/')}` : null;
-            })
-        )
-    );
-
     /** The live Monaco diff editor, disposed on destroy. */
     private editor: MonacoDiffEditor | null = null;
-    /** True once the monaco global has loaded and the host is available. */
+    /** True once the monaco global has loaded. */
     private readonly monacoReady = signal(false);
+    /**
+     * True while the drawer's content is actually mounted (between `onShow` and
+     * `onHide`). The Monaco host lives inside the drawer's headless template, so it
+     * only exists in this window — the render effect gates on it.
+     */
+    private readonly drawerShown = signal(false);
+    /** The page identifier the current file list was loaded for (avoids reloads). */
+    private loadedForIdentifier: string | null = null;
 
     constructor() {
-        // Rehydrate the selected page from the URL so a cold load / shared link
-        // lands here with the page in context (no-op when already selected). The
-        // lookup is host-scoped, so wait for the site to resolve.
-        effect(() => {
-            const uri = this.pageUri();
-            const siteId = this.globalStore.currentSiteId();
-            if (uri && siteId) {
-                untracked(() => this.store.openPageByUri(uri));
-            }
-        });
+        // Mirror the `open` input onto the drawer's local `visible` signal so the
+        // parent opens/closes it; the drawer's own dismiss paths write `visible`
+        // back and emit `close` (see onDrawerHide).
+        effect(() => this.visible.set(this.open()));
 
-        // A deep link to a page that no longer resolves → back to the picker.
+        // Lazily (re)load the diff whenever the panel is opened for a page — the
+        // run screen keeps this component mounted, so we key off open + the
+        // selected page rather than a lifecycle hook. Reload only when the page
+        // changed since the last load, so re-opening the panel is instant.
         effect(() => {
-            if (this.store.rehydrateStatus() === 'not-found') {
-                untracked(() => this.toPicker());
-            }
-        });
-
-        // Load the diff once the selected page is known.
-        effect(() => {
+            const isOpen = this.open();
             const page = this.store.selected();
-            if (page) {
-                untracked(() => this.loadDiff(page.path, page.hostId, page.languageId));
+            if (!isOpen || !page) {
+                return;
             }
+            untracked(() => {
+                if (this.loadedForIdentifier !== page.identifier) {
+                    this.loadedForIdentifier = page.identifier;
+                    this.loadDiff(page.path, page.hostId, page.languageId);
+                }
+            });
         });
 
         // Wait for the AMD-loaded monaco global before creating the editor.
@@ -157,26 +159,38 @@ export class DotA11yDiffComponent {
             )
             .subscribe(() => this.monacoReady.set(true));
 
-        // (Re)build the editor's model whenever the ready flag, the selection, or
-        // the file set changes. afterNextRender guarantees the host <div> exists.
+        // (Re)build the editor's model when the selection changes WHILE the drawer
+        // is already shown. The very first render (when the drawer opens) is driven
+        // by the drawer's `onShow` — its content, incl. the #diffHost, only mounts
+        // then. Gate on `drawerShown` so this doesn't fire before the host exists.
         effect(() => {
             const ready = this.monacoReady();
+            const shown = this.drawerShown();
             const file = this.selected();
             untracked(() => {
-                if (ready && file) {
+                if (ready && shown && file) {
                     this.renderDiff(file);
                 }
             });
         });
 
-        afterNextRender(() => {
-            // If monaco was already loaded before the view rendered, kick a render.
-            if (this.monacoReady() && this.selected()) {
-                this.renderDiff(this.selected() as PageDiffFile);
-            }
-        });
-
         this.destroyRef.onDestroy(() => this.disposeEditor());
+    }
+
+    /** Drawer finished opening — its content (incl. #diffHost) is now in the DOM. */
+    onDrawerShow(): void {
+        this.drawerShown.set(true);
+        const file = this.selected();
+        if (this.monacoReady() && file) {
+            this.renderDiff(file);
+        }
+    }
+
+    /** Drawer closed (X / backdrop / Esc): tear the editor down + tell the host. */
+    onDrawerHide(): void {
+        this.drawerShown.set(false);
+        this.disposeEditor();
+        this.close.emit();
     }
 
     /** Fetch the page's source files, resolve their working-vs-live diffs. */
@@ -204,6 +218,11 @@ export class DotA11yDiffComponent {
     /** Select a file to show in the diff editor. */
     selectFile(identifier: string): void {
         this.selectedId.set(identifier);
+    }
+
+    /** X button — dismiss the drawer; the drawer's `onHide` then emits `close`. */
+    requestClose(): void {
+        this.visible.set(false);
     }
 
     /** Monaco language id for a file, from its extension. */
@@ -252,20 +271,6 @@ export class DotA11yDiffComponent {
         model?.modified?.dispose();
         this.editor?.dispose();
         this.editor = null;
-    }
-
-    /** Back to the run screen for this page (drops the trailing `/diff` segment). */
-    backToRun(): void {
-        const uri = this.pageUri();
-        if (uri) {
-            this.router.navigate(['/agents/a11y', ...uri.split('/').filter(Boolean)]);
-        } else {
-            this.toPicker();
-        }
-    }
-
-    private toPicker(): void {
-        this.router.navigate(['/agents/a11y']);
     }
 }
 
