@@ -21,6 +21,43 @@
         </div>
     </div>
 
+    <!-- ============ SIDE PANEL ACCORDION ============ -->
+    <!-- Two panels: the scanner (score, issues, activity log + scan/fix actions) and
+         the changed files (list + publish). They open and close independently, so a
+         run can be watched while reviewing the files it touched. The scanner starts
+         open (it's the entry point); files start collapsed. -->
+    <!-- The column scrolls as a whole: with both panels open the combined content
+         can exceed the viewport, and each panel sizes to its content. -->
+    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <!-- ---------- PANEL 1: SCANNER ---------- -->
+        <section class="flex flex-none flex-col border-b border-surface-200">
+            <button
+                type="button"
+                class="flex flex-none items-center gap-2.5 bg-white px-4 py-3 text-left transition-colors hover:bg-surface-50"
+                (click)="togglePanel('scanner')"
+                [attr.aria-expanded]="isPanelOpen('scanner')"
+                data-testid="studio-panel-scanner-header">
+                <i
+                    class="pi flex-none text-xs! text-gray-400"
+                    [class.pi-chevron-down]="isPanelOpen('scanner')"
+                    [class.pi-chevron-right]="!isPanelOpen('scanner')"
+                    aria-hidden="true"></i>
+                <i class="pi pi-search flex-none text-sm! text-primary" aria-hidden="true"></i>
+                <span class="flex-1 text-xs font-bold tracking-wider text-gray-500 uppercase">
+                    {{ 'accessibility.studio.panel.scanner' | dm }}
+                </span>
+                <!-- Open-issue count, once a scan has produced results. -->
+                @if (store.scanned()) {
+                    <span
+                        class="inline-flex h-5 flex-none items-center rounded-full bg-surface-200 px-2 text-[10px] font-bold text-gray-600"
+                        data-testid="studio-panel-scanner-count">
+                        {{ store.openCount() }}
+                    </span>
+                }
+            </button>
+
+            @if (isPanelOpen('scanner')) {
+                <div class="flex min-h-0 flex-col" data-testid="studio-panel-scanner-body">
     <!-- Score widget SKELETON — shown while scanning, with the SAME footprint as
          the real widget so the swap to results is a crossfade with no layout shift. -->
     @if (store.isScanning()) {
@@ -163,12 +200,10 @@
         </div>
     }
 
-    <!-- Recipe log: sizes to content (flex 0 1 auto), scrolls only when it
-         overflows — so the action footer sits right under the content rather
-         than being pushed to the very bottom of the column. -->
-    <div
-        class="min-h-0 flex-[0_1_auto] overflow-y-auto px-6 pt-1 pb-4"
-        data-testid="studio-recipe-log">
+    <!-- Recipe log: sizes to content. The accordion column owns the scrolling, so
+         this must NOT scroll on its own — a nested scroll area would trap the
+         wheel and make the second panel hard to reach with both open. -->
+    <div class="px-6 pt-1 pb-4" data-testid="studio-recipe-log">
         @if (store.isReady()) {
             <!-- Ready: what to expect -->
             <div class="mt-2 rounded-2xl border border-surface-100 bg-surface-50 p-5">
@@ -285,17 +320,6 @@
             workingFallbackKey="accessibility.studio.fixing"
             data-testid="studio-activity-log" />
 
-        <!-- Working-vs-live changed files, in a collapsible section that separates
-             them from the scanner output above. Loads as soon as the page opens, so
-             pre-existing working edits show before the first scan; reloads after each
-             run. Picking a file opens its diff in the right pane. -->
-        <div class="mt-4">
-            <dot-a11y-diff
-                [activeFileId]="diffFile()?.identifier ?? null"
-                (fileSelected)="onDiffFileSelected($event)"
-                data-testid="studio-diff-accordion" />
-        </div>
-
         <!-- Needs your review: axe `incomplete` items. axe flagged these but
              couldn't be sure, so the agent doesn't touch them — a human decides.
              Shown after a scan (scanned) and in the final report (done/published). -->
@@ -342,8 +366,9 @@
         }
     </div>
 
-    <!-- Action footer -->
-    <div class="flex-none border-t border-surface-200 bg-surface-50 px-6 pt-4 pb-4.5">
+    <!-- Scanner actions — phase-driven, inside the scanner panel so the controls
+         sit with the results they act on. -->
+    <div class="flex-none border-t border-surface-100 bg-surface-50 px-6 pt-4 pb-4.5">
         <!-- Footer copy — hidden in the ready + scanning states. -->
         @if (!store.isReady() && !store.isScanning()) {
             <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
@@ -430,9 +455,8 @@
                     data-testid="studio-stopagent-btn" />
             }
             @case ('done') {
-                <!-- Apply = publish the page, which publishes its changed source
-                     files together. There's no per-file publishing, so this is a
-                     single action over the whole working version. -->
+                <!-- Publishing lives in the Files panel (it's the changed files that
+                     go live). Here we offer a re-scan and a way to drop the run. -->
                 <div class="flex gap-2.5">
                     <p-button
                         [label]="'accessibility.studio.action.discard' | dm"
@@ -442,13 +466,12 @@
                         (onClick)="discardChanges()"
                         data-testid="studio-discard-btn" />
                     <p-button
-                        [label]="'accessibility.studio.action.apply' | dm"
-                        icon="pi pi-upload"
-                        severity="success"
+                        [label]="'accessibility.studio.action.reviewfiles' | dm"
+                        icon="pi pi-file-edit"
                         styleClass="flex-1"
                         [rounded]="true"
-                        (onClick)="applyChanges()"
-                        data-testid="studio-apply-btn" />
+                        (onClick)="openPanel('files')"
+                        data-testid="studio-reviewfiles-btn" />
                 </div>
             }
             @case ('published') {
@@ -465,6 +488,69 @@
                 </div>
             }
         }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <!-- ---------- PANEL 2: CHANGED FILES ---------- -->
+        <section class="flex flex-none flex-col border-b border-surface-200">
+            <button
+                type="button"
+                class="flex flex-none items-center gap-2.5 bg-white px-4 py-3 text-left transition-colors hover:bg-surface-50"
+                (click)="togglePanel('files')"
+                [attr.aria-expanded]="isPanelOpen('files')"
+                data-testid="studio-panel-files-header">
+                <i
+                    class="pi flex-none text-xs! text-gray-400"
+                    [class.pi-chevron-down]="isPanelOpen('files')"
+                    [class.pi-chevron-right]="!isPanelOpen('files')"
+                    aria-hidden="true"></i>
+                <i class="pi pi-file-edit flex-none text-sm! text-primary" aria-hidden="true"></i>
+                <span class="flex-1 text-xs font-bold tracking-wider text-gray-500 uppercase">
+                    {{ 'accessibility.studio.panel.files' | dm }}
+                </span>
+                @if (hasChangedFiles()) {
+                    <span
+                        class="inline-flex h-5 flex-none items-center rounded-full bg-primary-50 px-2 text-[10px] font-bold text-primary"
+                        data-testid="studio-panel-files-count">
+                        {{ changedFileCount() }}
+                    </span>
+                }
+            </button>
+
+            <!-- The list stays mounted while collapsed so it keeps resolving the
+                 working-vs-live delta (and the header's count) without the user
+                 having to open the panel. -->
+            <div
+                class="px-3 pb-3"
+                [style.display]="isPanelOpen('files') ? null : 'none'"
+                data-testid="studio-panel-files-body">
+                <dot-a11y-diff
+                    [activeFileId]="diffFile()?.identifier ?? null"
+                    (fileSelected)="onDiffFileSelected($event)"
+                    (changedCount)="onChangedFilesCount($event)"
+                    data-testid="studio-diff-list" />
+            </div>
+
+            <!-- Publish — the changed files are what goes live, so the action sits
+                 with them. Publishing the page publishes its source files together;
+                 there is no per-file publishing. -->
+            @if (isPanelOpen('files') && hasChangedFiles()) {
+                <div
+                    class="flex-none border-t border-surface-100 bg-surface-50 px-4 pt-3.5 pb-4"
+                    data-testid="studio-publish-bar">
+                    <p-button
+                        [label]="'accessibility.studio.action.apply' | dm"
+                        icon="pi pi-upload"
+                        severity="success"
+                        styleClass="w-full"
+                        [rounded]="true"
+                        (onClick)="applyChanges()"
+                        data-testid="studio-apply-btn" />
+                </div>
+            }
+        </section>
     </div>
 </aside>
 

@@ -24,15 +24,16 @@ import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 type DiffStatus = 'loading' | 'loaded' | 'error';
 
 /**
- * The "working vs live" changed-file list — a collapsible accordion section in the
- * run screen's left panel, below the scan actions and results.
+ * The "working vs live" changed-file list — the body of the side panel's "Files"
+ * accordion panel. The run screen owns the panel chrome (header, count badge,
+ * Publish action); this is just the list.
  *
  * One row per source file that DIFFERS between the working (unpublished) and live
  * (published) versions. Selecting a file emits it upward: the run screen swaps its
  * RIGHT pane from the preview to that file's diff, so the narrow side panel stays a
- * list and the diff gets the full width. A "Back to preview" control in this panel
- * clears the selection, so the user can leave the diff view without reaching into
- * the right pane. When nothing differs it says so rather than hiding.
+ * list and the diff gets the full width. A "Back to preview" control here clears the
+ * selection, so the user can leave the diff view without reaching into the right
+ * pane. When nothing differs it says so rather than hiding.
  *
  * It's a presentational child of {@link DotA11yRunComponent}: the page context
  * comes from the shared {@link AccessibilityStudioStore} (already hydrated by the
@@ -74,11 +75,16 @@ export class DotA11yDiffComponent {
      */
     readonly activeFileId = input<string | null>(null);
 
+    /**
+     * How many files differ, emitted on every (re)load. The run screen owns the
+     * panel header's count badge and the Publish action, so it needs this rather
+     * than reaching into the child.
+     */
+    readonly changedCount = output<number>();
+
     /** Changed files (working ≠ live); empty until the first load resolves. */
     readonly files = signal<PageDiffFile[]>([]);
     readonly status = signal<DiffStatus>('loading');
-    /** Whether the accordion section is open. Open by default. */
-    readonly expanded = signal(true);
 
     /** True once loaded with at least one changed file — the page can be published. */
     readonly hasChanges = computed(() => this.status() === 'loaded' && this.files().length > 0);
@@ -145,8 +151,12 @@ export class DotA11yDiffComponent {
                         this.fileSelected.emit(null);
                     }
                     this.status.set('loaded');
+                    this.changedCount.emit(files.length);
                 },
-                error: () => this.status.set('error')
+                error: () => {
+                    this.status.set('error');
+                    this.changedCount.emit(0);
+                }
             });
     }
 
@@ -158,10 +168,5 @@ export class DotA11yDiffComponent {
     /** Leave the diff view — the right pane goes back to the preview. */
     clearSelection(): void {
         this.fileSelected.emit(null);
-    }
-
-    /** Collapse / expand the whole changed-files section. */
-    toggleExpanded(): void {
-        this.expanded.update((open) => !open);
     }
 }

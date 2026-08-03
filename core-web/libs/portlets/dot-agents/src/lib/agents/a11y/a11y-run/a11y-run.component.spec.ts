@@ -28,6 +28,7 @@ import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 class DotA11yDiffStubComponent {
     readonly activeFileId = input<string | null>(null);
     readonly fileSelected = output<PageDiffFile | null>();
+    readonly changedCount = output<number>();
 }
 
 @Component({ selector: 'dot-a11y-diff-viewer', standalone: true, template: '' })
@@ -271,6 +272,88 @@ describe('DotA11yRunComponent', () => {
         window.matchMedia = jest.fn().mockReturnValue({ matches: true }) as unknown as typeof matchMedia;
     });
 
+    describe('side panel accordion', () => {
+        beforeEach(() => render('ready'));
+
+        /** Is the files panel body visible (it stays mounted while collapsed)? */
+        const filesVisible = () =>
+            (spectator.query(byTestId('studio-panel-files-body')) as HTMLElement).style.display !==
+            'none';
+
+        it('opens with the scanner panel expanded and files collapsed', () => {
+            expect(spectator.component.isPanelOpen('scanner')).toBe(true);
+            expect(spectator.component.isPanelOpen('files')).toBe(false);
+            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeTruthy();
+            // The list stays mounted while collapsed so it keeps resolving the delta.
+            expect(spectator.query(byTestId('studio-panel-files-body'))).toBeTruthy();
+            expect(filesVisible()).toBe(false);
+        });
+
+        it('both panels can be open at once', () => {
+            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
+            spectator.detectChanges();
+
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
+            // Opening files must NOT collapse the scanner.
+            expect(spectator.component.isPanelOpen('scanner')).toBe(true);
+            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeTruthy();
+            expect(filesVisible()).toBe(true);
+        });
+
+        it('each panel collapses independently', () => {
+            // Open both, then close the scanner — files stays open.
+            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
+            spectator.click(
+                spectator.query(byTestId('studio-panel-scanner-header')) as HTMLElement
+            );
+            spectator.detectChanges();
+
+            expect(spectator.component.isPanelOpen('scanner')).toBe(false);
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
+            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeFalsy();
+            expect(filesVisible()).toBe(true);
+        });
+
+        it('both panels can be closed at once', () => {
+            spectator.click(
+                spectator.query(byTestId('studio-panel-scanner-header')) as HTMLElement
+            );
+            spectator.detectChanges();
+
+            expect(spectator.component.isPanelOpen('scanner')).toBe(false);
+            expect(spectator.component.isPanelOpen('files')).toBe(false);
+            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeFalsy();
+            expect(filesVisible()).toBe(false);
+        });
+
+        it('badges the files panel and shows Publish only when files changed', () => {
+            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
+            spectator.detectChanges();
+            // No files reported yet → no badge, no publish bar.
+            expect(spectator.query(byTestId('studio-panel-files-count'))).toBeFalsy();
+            expect(spectator.query(byTestId('studio-publish-bar'))).toBeFalsy();
+
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.changedCount.emit(2);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('studio-panel-files-count'))).toHaveText('2');
+            expect(spectator.query(byTestId('studio-publish-bar'))).toBeTruthy();
+        });
+
+        it('Publish in the files panel publishes the page', () => {
+            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.changedCount.emit(1);
+            spectator.detectChanges();
+
+            spectator.click(
+                spectator.query(byTestId('studio-apply-btn'))?.querySelector('button') as HTMLElement
+            );
+            expect(publish).toHaveBeenCalled();
+        });
+    });
+
     describe('ready phase', () => {
         beforeEach(() => render('ready'));
 
@@ -482,15 +565,34 @@ describe('DotA11yRunComponent', () => {
     describe('done phase', () => {
         beforeEach(() => render('done', MOCK_FIX_REPORT));
 
-        it('shows Apply these changes + Discard', () => {
-            expect(spectator.query(byTestId('studio-apply-btn'))).toBeTruthy();
+        it('offers Discard + a jump to the files panel (publish lives there)', () => {
             expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-reviewfiles-btn'))).toBeTruthy();
+            // Publishing is in the Files panel, which is collapsed by default.
+            expect(spectator.query(byTestId('studio-apply-btn'))).toBeFalsy();
         });
 
-        it('Apply publishes the page (which publishes its changed files)', () => {
-            const btn = spectator.query(byTestId('studio-apply-btn'))?.querySelector('button');
+        it('Review files opens the files panel, leaving the scanner open', () => {
+            const btn = spectator
+                .query(byTestId('studio-reviewfiles-btn'))
+                ?.querySelector('button');
             spectator.click(btn as HTMLElement);
-            expect(publish).toHaveBeenCalled();
+            spectator.detectChanges();
+
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
+            expect(spectator.component.isPanelOpen('scanner')).toBe(true);
+        });
+
+        it('Review files is idempotent — it opens rather than toggles', () => {
+            const btn = () =>
+                spectator.query(byTestId('studio-reviewfiles-btn'))?.querySelector('button');
+            spectator.click(btn() as HTMLElement);
+            spectator.detectChanges();
+            spectator.click(btn() as HTMLElement);
+            spectator.detectChanges();
+
+            // A second press must not close the panel it just opened.
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
         });
 
         it('Discard drops the working fixes', () => {

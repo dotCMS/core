@@ -118,7 +118,8 @@ describe('DotA11yDiffComponent', () => {
         render();
         const rows = spectator.queryAll(byTestId('diff-file-row'));
         expect(rows.length).toBe(2);
-        expect(spectator.query(byTestId('diff-file-count'))).toHaveText('2');
+        // The count badge itself lives on the run screen's panel header now.
+        expect(rows[0].textContent).toContain('+1');
     });
 
     it('shows each file name and its +/- line counts, but not the folder path', () => {
@@ -174,17 +175,25 @@ describe('DotA11yDiffComponent', () => {
         expect(emitted).toEqual([null]);
     });
 
-    it('collapses and re-expands the whole section from the accordion header', () => {
-        render();
-        expect(spectator.query(byTestId('diff-accordion-body'))).toBeTruthy();
-
-        spectator.click(spectator.query(byTestId('diff-accordion-header')) as HTMLElement);
+    it('reports the changed-file count so the panel header can badge it', () => {
+        const counts: number[] = [];
+        spectator = createComponent({
+            providers: [
+                mockProvider(DotPageSourcesService, {
+                    getPageSources: jest
+                        .fn()
+                        .mockReturnValue(of(DIFF_FILES as PageSourceFile[])),
+                    getDiffFiles: jest.fn().mockReturnValue(of(DIFF_FILES))
+                })
+            ]
+        });
+        spectator.component.changedCount.subscribe((n) => counts.push(n));
         spectator.detectChanges();
-        expect(spectator.query(byTestId('diff-accordion-body'))).toBeFalsy();
 
-        spectator.click(spectator.query(byTestId('diff-accordion-header')) as HTMLElement);
+        // Re-resolve on a revision bump so the count is re-reported.
+        previewRevision.set(1);
         spectator.detectChanges();
-        expect(spectator.query(byTestId('diff-accordion-body'))).toBeTruthy();
+        expect(counts).toContain(2);
     });
 
     it('shows the empty state when nothing changed', () => {

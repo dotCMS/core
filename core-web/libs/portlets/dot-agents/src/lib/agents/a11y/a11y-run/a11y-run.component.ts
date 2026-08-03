@@ -42,6 +42,9 @@ import { PageDiffFile } from '../models/page-render-sources.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
+/** The side panel's two accordion panels. */
+type StudioPanel = 'scanner' | 'files';
+
 /** A severity legend / breakdown row beside the donut. */
 interface SeverityRow {
     severity: Severity;
@@ -126,6 +129,20 @@ export class DotA11yRunComponent {
      * mounted underneath so returning to it doesn't reload the iframes.
      */
     readonly diffFile = signal<PageDiffFile | null>(null);
+
+    /**
+     * Which of the side panel's accordion panels are open — the `scanner` (score,
+     * issues, activity log + scan/fix actions) and `files` (changed files + publish)
+     * open and close independently, so the user can watch a run and review the files
+     * it touched side by side. The scanner starts open, files collapsed.
+     */
+    private readonly openPanels = signal<ReadonlySet<StudioPanel>>(new Set(['scanner']));
+
+    /** How many source files differ between working and live, for the count badge. */
+    readonly changedFileCount = signal(0);
+
+    /** True when there's something to publish — drives the Publish bar. */
+    readonly hasChangedFiles = computed(() => this.changedFileCount() > 0);
 
     /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
     private countRaf: number | null = null;
@@ -590,9 +607,40 @@ export class DotA11yRunComponent {
         this.toPicker();
     }
 
-    /** A file was picked in (or cleared from) the changed-files accordion. */
+    /** Whether a given side panel is expanded. */
+    isPanelOpen(panel: StudioPanel): boolean {
+        return this.openPanels().has(panel);
+    }
+
+    /**
+     * Expand or collapse one side panel, leaving the others as they are — both can
+     * be open at once, and both can be closed (the page context bar still names the
+     * page, so all-collapsed is a valid compact state rather than a dead end).
+     */
+    togglePanel(panel: StudioPanel): void {
+        this.openPanels.update((current) => {
+            const next = new Set(current);
+            if (!next.delete(panel)) {
+                next.add(panel);
+            }
+
+            return next;
+        });
+    }
+
+    /** Ensure a panel is open (used to jump the user to the files list). */
+    openPanel(panel: StudioPanel): void {
+        this.openPanels.update((current) => new Set(current).add(panel));
+    }
+
+    /** A file was picked in (or cleared from) the changed-files list. */
     onDiffFileSelected(file: PageDiffFile | null): void {
         this.diffFile.set(file);
+    }
+
+    /** The changed-files list reports how many files differ, for the Publish gate. */
+    onChangedFilesCount(count: number): void {
+        this.changedFileCount.set(count);
     }
 
     /**
