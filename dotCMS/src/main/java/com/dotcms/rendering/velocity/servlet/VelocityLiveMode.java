@@ -5,7 +5,7 @@ import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.io.output.TeeOutputStream;
 import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.visitor.domain.Visitor;
