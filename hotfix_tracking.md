@@ -47,3 +47,4 @@ Release-25.07.10 LTS
 41. https://github.com/dotCMS/core/issues/36739 : Remove repackaged dot.commons-io dependency (CVE-2024-47554 follow-up to #35235) #36739
 42. https://github.com/dotCMS/core/issues/36592 : security: upgrade Apache Tomcat 9.0.118 → 9.0.120 on main #36592
 43. https://github.com/dotCMS/core/issues/34454 : [TASK] Optimize heavy SQL queries #34454
+44. https://github.com/dotCMS/private-issues/issues/651 : Stored XSS → RCE: low-priv backend user name bypasses Xss filter, runs in admin session, deploys OSGi bundle #651

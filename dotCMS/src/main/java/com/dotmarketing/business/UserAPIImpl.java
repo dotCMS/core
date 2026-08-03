@@ -44,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
+import static com.dotmarketing.business.UserHelper.validateName;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User
@@ -438,6 +439,7 @@ public class UserAPIImpl implements UserAPI {
             throw new DotSecurityException(
                     "User doesn't have permission to save the user which is trying to be saved");
         }
+        validateName(userToSave.getFirstName(), userToSave.getLastName());
         validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
         userFactory.save(userToSave);
         PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
