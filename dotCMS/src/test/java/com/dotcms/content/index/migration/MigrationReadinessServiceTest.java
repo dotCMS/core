@@ -38,7 +38,9 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         previousPhase = Config.getStringProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, null);
         siteSearch = mock(SiteSearchMirrorReconciler.class);
         content = mock(ContentIndexMirrorReconciler.class);
-        when(content.statuses()).thenReturn(List.of());
+        // Default to a healthy WORKING/LIVE pair so the mandatory-content precondition is satisfied;
+        // tests that exercise missing content override this explicitly.
+        when(content.statuses()).thenReturn(healthyContentPair());
         service = new MigrationReadinessService(siteSearch, content, () -> "cluster_x");
     }
 
@@ -69,7 +71,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         final MigrationReadiness r = service.evaluate();
 
         assertEquals("cluster_x", r.clusterId());
-        assertTrue(r.phase().evaluable());
+        assertTrue(r.phase().dualWrite());
         assertEquals("Elasticsearch", r.phase().readEngine());
         assertTrue(r.verdict().safeToAdvance());
         assertEquals(0, r.verdict().outOfSyncCount());
@@ -127,28 +129,28 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertTrue(r.verdict().safeToRollback());
     }
 
-    /** Phase 0: not evaluable for a forward comparison, but advancing to dual-write is safe. */
+    /** Phase 0: not a dual-write phase, but advancing to dual-write is safe. */
     @Test
-    public void phase0_notEvaluable_safeToAdvance() {
+    public void phase0_notDualWrite_safeToAdvance() {
         setPhase(PHASE_0);
         when(siteSearch.statuses()).thenReturn(List.of());
 
         final MigrationReadiness r = service.evaluate();
 
-        assertFalse(r.phase().evaluable());
+        assertFalse(r.phase().dualWrite());
         assertEquals(List.of("Elasticsearch"), r.phase().writeEngines());
         assertTrue(r.verdict().safeToAdvance());
     }
 
-    /** Phase 3: not evaluable; write engine is OpenSearch only. */
+    /** Phase 3: not a dual-write phase; write engine is OpenSearch only. */
     @Test
-    public void phase3_notEvaluable_openSearchOnly() {
+    public void phase3_notDualWrite_openSearchOnly() {
         setPhase(PHASE_3);
         when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, 100, true, 100)));
 
         final MigrationReadiness r = service.evaluate();
 
-        assertFalse(r.phase().evaluable());
+        assertFalse(r.phase().dualWrite());
         assertEquals("OpenSearch", r.phase().readEngine());
         assertEquals(List.of("OpenSearch"), r.phase().writeEngines());
     }
@@ -171,10 +173,78 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertEquals("sitesearch_a", r.siteSearch().get(0).indexName());
     }
 
+    /** No active content indices at all → must NOT pass vacuously; both mandatory slots are blockers. */
+    @Test
+    public void dualWrite_noContentIndices_blocksAdvance() {
+        setPhase(PHASE_1);
+        when(content.statuses()).thenReturn(List.of());
+        when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, 100, true, 100)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertEquals(2, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().stream().anyMatch(b -> b.contains("WORKING")));
+        assertTrue(r.verdict().blockers().stream().anyMatch(b -> b.contains("LIVE")));
+    }
+
+    /** Phase 0 with no source content indices → cannot even start the migration. */
+    @Test
+    public void phase0_noContentIndices_blocksAdvance() {
+        setPhase(PHASE_0);
+        when(content.statuses()).thenReturn(List.of());
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertEquals(2, r.verdict().blockers().size());
+    }
+
+    /** One content slot present, the other missing → single blocker for the missing slot. */
+    @Test
+    public void dualWrite_oneContentSlotMissing_blocksAdvance() {
+        setPhase(PHASE_2);
+        when(content.statuses()).thenReturn(List.of(cc(IndexKind.CONTENT_WORKING, "working_1", 10)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertEquals(1, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().get(0).contains("LIVE"));
+    }
+
+    /** A content slot whose ES copy is gone is one blocker, not double-reported as MISSING_COUNTERPART. */
+    @Test
+    public void dualWrite_contentEsCopyMissing_singleBlockerNoDuplicate() {
+        setPhase(PHASE_2);
+        when(content.statuses()).thenReturn(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 10, true, 10),
+                cc(IndexKind.CONTENT_LIVE, "live_1", false, 0, true, 5))); // ES copy gone
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertEquals(1, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().get(0).contains("no Elasticsearch copy"));
+    }
+
+    private static List<MirrorStatus> healthyContentPair() {
+        return List.of(cc(IndexKind.CONTENT_WORKING, "working_1", 10),
+                cc(IndexKind.CONTENT_LIVE, "live_1", 5));
+    }
+
     private static MirrorStatus cc(final IndexKind kind, final String name, final long count) {
+        return cc(kind, name, true, count, true, count);
+    }
+
+    private static MirrorStatus cc(final IndexKind kind, final String name, final boolean esExists,
+            final long esCount, final boolean osExists, final long osCount) {
         return new MirrorStatus(name, kind,
-                new MirrorStatus.EngineCopy(true, count, "cluster_x." + name),
-                new MirrorStatus.EngineCopy(true, count, "cluster_x." + name + ".os"),
-                Verdict.IN_SYNC, "advice");
+                new MirrorStatus.EngineCopy(esExists, esCount, "cluster_x." + name),
+                new MirrorStatus.EngineCopy(osExists, osCount, "cluster_x." + name + ".os"),
+                MirrorStatus.verdictFor(esExists, osExists, esCount, osCount), "advice");
     }
 }

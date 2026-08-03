@@ -68,15 +68,18 @@ public class MigrationReadinessService {
         final boolean esBehindAnywhere = all.stream()
                 .anyMatch(s -> !s.es().exists() || s.es().docCount() < s.os().docCount());
 
+        // Content WORKING/LIVE are mandatory in every pre-OpenSearch-only phase: they are the source
+        // that gets mirrored to OpenSearch, so a missing slot (pointer unset, or its Elasticsearch copy
+        // gone) means there is nothing to migrate — a hard no-go, independent of the sync check, which
+        // would otherwise pass vacuously when there are no active indices at all. Site Search is an open
+        // set that may legitimately be empty, so it is not required here.
+        final List<String> missingContent = requiredContentBlockers(content);
+
         final boolean safeToAdvance;
         final String summary;
         final List<String> blockers = new ArrayList<>();
 
-        if (phase.isMigrationNotStarted()) {
-            safeToAdvance = true;
-            summary = "Phase 0 (Elasticsearch only). OpenSearch counterparts are built during the dual-write "
-                    + "phases, so there is nothing to reconcile yet. Safe to advance to Phase 1.";
-        } else if (phase.isMigrationComplete()) {
+        if (phase.isMigrationComplete()) {
             safeToAdvance = true; // no phase beyond 3
             summary = "Phase 3 (OpenSearch only) — the final phase, nothing to advance to. "
                     + (esBehindAnywhere
@@ -84,16 +87,33 @@ public class MigrationReadinessService {
                                 + "hide it until a full reindex."
                         : "No index shows Elasticsearch behind OpenSearch; still verify before any "
                                 + "downgrade.");
+        } else if (phase.isMigrationNotStarted()) {
+            // Phase 0: OpenSearch counterparts are built later (during dual-write), so their absence is
+            // expected and NOT a blocker; only the mandatory Elasticsearch content pair is required.
+            blockers.addAll(missingContent);
+            safeToAdvance = blockers.isEmpty();
+            summary = safeToAdvance
+                    ? "Phase 0 (Elasticsearch only). OpenSearch counterparts are built during the "
+                            + "dual-write phases, so there is nothing to reconcile yet. Safe to advance "
+                            + "to Phase 1."
+                    : String.format("Not safe to advance from Phase 0: %s to resolve first (see the "
+                            + "blockers list). Dual-write needs an active Elasticsearch content index "
+                            + "to mirror from.", plural(blockers.size(), "blocker"));
         } else {
-            safeToAdvance = outOfSync.isEmpty();
-            for (final MirrorStatus s : outOfSync) {
-                blockers.add(String.format("%s '%s': %s", s.kind(), s.indexName(), s.recommendation()));
-            }
+            // Phases 1/2 (dual-write): require the mandatory content pair AND every mirror in sync. Drop
+            // out-of-sync rows already reported as missing content (an ES-missing content slot surfaces
+            // both as a missing-source blocker and as MISSING_COUNTERPART) so it is not reported twice.
+            blockers.addAll(missingContent);
+            outOfSync.stream()
+                    .filter(s -> !(isContent(s.kind()) && !s.es().exists()))
+                    .forEach(s -> blockers.add(String.format("%s '%s': %s", s.kind(), s.indexName(),
+                            s.recommendation())));
+            safeToAdvance = blockers.isEmpty();
             summary = safeToAdvance
                     ? "All mirrors are in sync. Safe to advance toward the OpenSearch-only phase."
-                    : String.format("%d index(es) out of sync. Re-crawl/reindex them before promoting "
-                            + "the phase — Phase 3 reads OpenSearch with no Elasticsearch fallback.",
-                            outOfSync.size());
+                    : String.format("Not safe to advance: %s to resolve first (see the blockers list). "
+                            + "Phase 3 serves reads from OpenSearch only, so every index must be present "
+                            + "and in sync before promoting.", plural(blockers.size(), "blocker"));
         }
 
         final MigrationReadiness.PhaseInfo phaseInfo = new MigrationReadiness.PhaseInfo(
@@ -115,6 +135,39 @@ public class MigrationReadinessService {
 
     private static String contentSlot(final IndexKind kind) {
         return kind == IndexKind.CONTENT_WORKING ? "WORKING" : "LIVE";
+    }
+
+    /**
+     * Blockers for the mandatory content pair: WORKING and LIVE must each have a set pointer and an
+     * existing Elasticsearch copy (the migration source). Returns one message per missing/empty slot;
+     * an empty list means both are present. This is what stops a "no active content indices" state from
+     * passing the readiness check vacuously (an empty status list would otherwise leave nothing to flag).
+     */
+    private static List<String> requiredContentBlockers(final List<MirrorStatus> content) {
+        final List<String> out = new ArrayList<>(2);
+        for (final IndexKind kind : List.of(IndexKind.CONTENT_WORKING, IndexKind.CONTENT_LIVE)) {
+            final String slot = contentSlot(kind);
+            final MirrorStatus status = content.stream()
+                    .filter(s -> s.kind() == kind).findFirst().orElse(null);
+            if (status == null) {
+                out.add(String.format("No active %s content index — Elasticsearch has no %s index to "
+                        + "migrate. Reindex to (re)create it before changing the phase.",
+                        slot, slot.toLowerCase()));
+            } else if (!status.es().exists()) {
+                out.add(String.format("The active %s content index '%s' has no Elasticsearch copy — "
+                        + "reindex to rebuild it before changing the phase.", slot, status.indexName()));
+            }
+        }
+        return out;
+    }
+
+    private static boolean isContent(final IndexKind kind) {
+        return kind == IndexKind.CONTENT_WORKING || kind == IndexKind.CONTENT_LIVE;
+    }
+
+    /** {@code "1 blocker"} / {@code "2 blockers"} — count with a correctly pluralized noun. */
+    private static String plural(final int count, final String noun) {
+        return count + " " + noun + (count == 1 ? "" : "s");
     }
 
     private static String readEngine(final MigrationPhase phase) {

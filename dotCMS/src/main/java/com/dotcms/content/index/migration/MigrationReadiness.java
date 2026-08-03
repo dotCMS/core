@@ -31,16 +31,16 @@ public record MigrationReadiness(
      * @param name         the phase enum name (e.g. {@code PHASE_2_DUAL_WRITE_OS_READS})
      * @param readEngine   which engine currently serves reads ("Elasticsearch" or "OpenSearch")
      * @param writeEngines which engines currently receive writes
-     * @param evaluable    whether a cross-engine comparison is meaningful for a forward phase change
-     *                     (only the dual-write phases 1/2); when false the mirror lists are advisory
-     *                     context, not a forward go/no-go
+     * @param dualWrite    whether this is a dual-write phase (1/2), where both engines are populated so a
+     *                     cross-engine mirror comparison is meaningful as a forward go/no-go; when false
+     *                     (phases 0 and 3) the mirror lists are advisory context, not a forward go/no-go
      */
     public record PhaseInfo(
             int current,
             String name,
             String readEngine,
             List<String> writeEngines,
-            boolean evaluable) {}
+            boolean dualWrite) {}
 
     /**
      * @param safeToAdvance  whether it is safe to promote toward the OpenSearch-only phase
