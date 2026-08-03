@@ -7,7 +7,8 @@ import {
     DotContentDriveFolder,
     DotContentDriveItem,
     DotPagination,
-    FolderSearchView
+    FolderSearchView,
+    isTreeNodeContentData
 } from '@dotcms/dotcms-models';
 import {
     createFakeCheckboxField,
@@ -643,9 +644,19 @@ describe('Utility Functions', () => {
 
             getFolderNodesByPath('/main/', SITE, mockDotFolderService).subscribe({
                 next: (result) => {
+                    const folder = result.folders[0];
+                    const data = folder?.data;
+
+                    // Guard before isTreeNodeContentData — `data` is optional on TreeNode.
+                    if (!data || !isTreeNodeContentData(data)) {
+                        done(new Error('Expected a content folder node with path data'));
+
+                        return;
+                    }
+
                     // '/main' (no trailing slash) + 'sub' must yield '/main/sub/', not '/mainsub/'
-                    expect(result.folders[0].data?.path).toBe('/main/sub/');
-                    expect(result.folders[0].label).toBe('/main/sub/');
+                    expect(data.path).toBe('/main/sub/');
+                    expect(folder.label).toBe('/main/sub/');
                     done();
                 },
                 error: done
