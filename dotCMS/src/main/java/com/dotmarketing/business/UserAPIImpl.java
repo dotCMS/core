@@ -162,6 +162,13 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
+    public long getCountUsersByName(final String filter, final List<Role> roles,
+                                    final FilteringParams filteringParams) {
+        return userFactory.getCountUsersByName(filter, roles, filteringParams);
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
         return getUsersByName(filter, null, start, limit);
     }
