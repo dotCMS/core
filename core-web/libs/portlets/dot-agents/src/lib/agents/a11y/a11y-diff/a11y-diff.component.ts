@@ -73,9 +73,11 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
     templateUrl: './a11y-diff.component.html',
     providers: [DotPageSourcesService],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // `display: contents` collapses this host so it takes NO grid track in the run
-    // screen's grid — only the (fixed-positioned) p-drawer it renders is visible.
-    host: { class: 'contents' }
+    // This component is mounted inside the run screen's grid. `position: fixed`
+    // takes the host — and the p-drawer it renders — OUT of grid flow, so it never
+    // claims a grid track and skews the two-column preview layout. (`display:
+    // contents` doesn't work here: it promotes the p-drawer child to a grid item.)
+    host: { class: 'fixed' }
 })
 export class DotA11yDiffComponent {
     readonly store = inject(AccessibilityStudioStore);
