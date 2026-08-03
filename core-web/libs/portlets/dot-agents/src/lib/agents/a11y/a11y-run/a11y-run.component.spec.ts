@@ -265,15 +265,14 @@ describe('DotA11yRunComponent', () => {
             expect(runScan).toHaveBeenCalled();
         });
 
-        it('disables the Code tab before a run completes', () => {
+        it('lets you open the Code tab before a run completes', () => {
             const codeTab = spectator.query(byTestId('studio-tab-code')) as HTMLButtonElement;
-            expect(codeTab.disabled).toBe(true);
-        });
+            expect(codeTab.disabled).toBe(false);
 
-        it('ignores a click on the disabled Code tab', () => {
-            spectator.component.setPreviewTab('code');
+            spectator.click(codeTab);
             spectator.detectChanges();
-            expect(spectator.component.previewTab()).toBe('preview');
+            expect(spectator.component.previewTab()).toBe('code');
+            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
         });
     });
 
@@ -486,11 +485,6 @@ describe('DotA11yRunComponent', () => {
                 ?.querySelector('button');
             spectator.click(btn as HTMLElement);
             expect(discard).toHaveBeenCalled();
-        });
-
-        it('enables the Code tab once the run has completed', () => {
-            const codeTab = spectator.query(byTestId('studio-tab-code')) as HTMLButtonElement;
-            expect(codeTab.disabled).toBe(false);
         });
 
         it('switches to the Code tab and activates the diff panel', () => {

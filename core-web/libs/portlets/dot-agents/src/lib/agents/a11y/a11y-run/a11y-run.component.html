@@ -487,16 +487,12 @@
             <button
                 type="button"
                 role="tab"
-                class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors"
                 [class.bg-white]="previewTab() === 'code'"
                 [class.text-primary]="previewTab() === 'code'"
                 [class.shadow-sm]="previewTab() === 'code'"
                 [class.text-gray-500]="previewTab() !== 'code'"
-                [disabled]="!codeTabEnabled()"
                 [attr.aria-selected]="previewTab() === 'code'"
-                [pTooltip]="
-                    codeTabEnabled() ? null : ('accessibility.studio.preview.tab.code.hint' | dm)
-                "
                 (click)="setPreviewTab('code')"
                 data-testid="studio-tab-code">
                 <i class="pi pi-code text-[13px]!" aria-hidden="true"></i>

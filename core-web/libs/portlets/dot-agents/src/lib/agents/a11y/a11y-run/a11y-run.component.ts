@@ -125,16 +125,11 @@ export class DotA11yRunComponent {
     readonly previewTab = signal<'preview' | 'code'>('preview');
 
     /**
-     * The Code tab is only meaningful once a run has completed — before then the
-     * working version equals live and there's nothing to diff. It stays disabled
-     * (with a hint) until done/published.
-     */
-    readonly codeTabEnabled = computed(() => this.store.isDone() || this.store.isPublished());
-
-    /**
      * True once the Code tab has been opened at least once. The diff component is
      * only mounted after that (then kept alive), so its data + Monaco aren't built
-     * until the user actually asks for the code view.
+     * until the user actually asks for the code view. The diff itself resolves the
+     * working-vs-live delta and owns its empty state, so the tab is always available
+     * (not gated on a completed run).
      */
     readonly codeTabVisited = signal(false);
 
@@ -168,15 +163,6 @@ export class DotA11yRunComponent {
     );
 
     constructor() {
-        // If the Code tab becomes unavailable while it's selected (e.g. Discard /
-        // Re-scan drops the run back before done), fall back to the Preview tab so
-        // we never show a disabled tab's content.
-        effect(() => {
-            if (this.previewTab() === 'code' && !this.codeTabEnabled()) {
-                untracked(() => this.previewTab.set('preview'));
-            }
-        });
-
         // The URL is the source of truth for which page is open. Drive the store
         // from the page path: rehydrate it (a no-op when that page is already the
         // selection, e.g. arriving from the picker), so a cold load / shared link
@@ -611,15 +597,11 @@ export class DotA11yRunComponent {
     }
 
     /**
-     * Switch the right-column tab. Selecting `code` is a no-op while it's disabled
-     * (no completed run yet) and marks the Code tab visited so its diff component
-     * mounts the first time.
+     * Switch the right-column tab. Selecting `code` marks it visited so its diff
+     * component mounts the first time (then stays alive).
      */
     setPreviewTab(tab: 'preview' | 'code'): void {
         if (tab === 'code') {
-            if (!this.codeTabEnabled()) {
-                return;
-            }
             this.codeTabVisited.set(true);
         }
         this.previewTab.set(tab);
