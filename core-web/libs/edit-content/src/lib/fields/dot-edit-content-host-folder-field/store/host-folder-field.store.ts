@@ -23,6 +23,7 @@ import {
     ComponentStatus,
     createLoadMoreTreeNode,
     CustomTreeNode,
+    DOT_FOLDER_TREE_PAGE_SIZE,
     isTreeNodeContentData,
     LOAD_MORE_NODE_TYPE,
     TreeNodeItem,
@@ -31,7 +32,8 @@ import {
 import { DotBrowsingService, normalizeHostFolderBrowsePath, TREE_ROOT_NODE_KEY } from '@dotcms/ui';
 
 export const SITE_PAGE_LIMIT = 40;
-export const FOLDER_PAGE_LIMIT = 40;
+/** Re-export of the shared folder-tree page size (same limit as Content Drive). */
+export const FOLDER_PAGE_LIMIT = DOT_FOLDER_TREE_PAGE_SIZE;
 export const MIN_SEARCH_LENGTH = 2;
 export const SITE_SEARCH_THRESHOLD = 5;
 /** Re-export of TREE_ROOT_NODE_KEY for existing store consumers/tests. */

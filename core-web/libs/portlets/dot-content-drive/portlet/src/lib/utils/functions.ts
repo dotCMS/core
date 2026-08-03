@@ -12,12 +12,12 @@ import {
     DotContentDriveItem,
     DotContentDriveUserSearchableValue,
     DotFolder,
-    DotPagination,
     DotSite,
-    FolderSearchView
+    FolderSearchView,
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
-import { DotFolderTreeNodeItem, LOAD_MORE_LABEL_KEY } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
@@ -27,7 +27,6 @@ import {
     FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTI_VALUE_TYPES,
     FOLDER_TREE_PAGE_SIZE,
-    FOLDER_TREE_SEARCH_PAGE_SIZE,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
 } from '../shared/constants';
@@ -164,30 +163,34 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
-        // Field-filter (user-searchable) values are stored raw: the field type — not comma
-        // sniffing — decides their shape downstream, so never split/trim them here.
-        if (key.startsWith(USER_SEARCHABLE_PREFIX)) {
-            acc[key] = singleSelector(value);
-
-            return acc;
-        }
-
-        if (isKnownFilterKey(key)) {
-            // Decode with the typed known-key map, then assign via the open string index
-            // on DotContentDriveFilters — assigning to `acc[key]` after narrowing to
-            // `keyof DotKnownContentDriveFilters` intersects Partial value types (`string[] & string`).
-            (acc as Record<string, string | string[]>)[key] = decodeByFilterKey[key](value);
-        } else {
-            // Use default functions for unknown keys
-            acc[key] = value.includes(',') ? multiSelector(value) : singleSelector(value);
-        }
+        // key stays `string` for assignment so the open index signature applies;
+        // narrowing happens only inside decodeFilterValue for the known-key lookup.
+        acc[key] = decodeFilterValue(key, value);
 
         return acc;
     }, {} as DotContentDriveFilters);
 }
 
 function isKnownFilterKey(key: string): key is keyof DotKnownContentDriveFilters {
-    return Object.prototype.hasOwnProperty.call(decodeByFilterKey, key);
+    return Object.hasOwn(decodeByFilterKey, key);
+}
+
+/**
+ * Decodes a single filter value. Known keys use {@link decodeByFilterKey};
+ * user-searchable field filters stay raw; unknown keys sniff for commas.
+ */
+function decodeFilterValue(key: string, value: string): string | string[] {
+    // Field-filter (user-searchable) values are stored raw: the field type — not comma
+    // sniffing — decides their shape downstream, so never split/trim them here.
+    if (key.startsWith(USER_SEARCHABLE_PREFIX)) {
+        return singleSelector(value);
+    }
+
+    if (isKnownFilterKey(key)) {
+        return decodeByFilterKey[key](value);
+    }
+
+    return value.includes(',') ? multiSelector(value) : singleSelector(value);
 }
 
 /**
@@ -267,40 +270,34 @@ export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: st
 }
 
 /**
- * Warns when a folder level has more folders than the single page we request, so the truncation is
- * not silent. The tree renders a whole level at once; if a level ever exceeds
- * {@link FOLDER_TREE_SEARCH_PAGE_SIZE}, pagination/infinite-scroll would be needed.
- *
- * @param {string} path - The folder level path being loaded
- * @param {DotPagination} pagination - Pagination metadata returned by the search endpoint
+ * One level of the folder hierarchy returned by {@link getFolderHierarchyByPath}.
+ * `path` is the parent path that was queried; `folders` are its direct children (first page).
  */
-function warnIfFolderLevelTruncated(path: string, pagination?: DotPagination): void {
-    if (pagination && pagination.totalEntries > FOLDER_TREE_SEARCH_PAGE_SIZE) {
-        console.warn(
-            `Folder tree: level "${path}" has ${pagination.totalEntries} folders but only ` +
-                `${FOLDER_TREE_SEARCH_PAGE_SIZE} are shown.`
-        );
-    }
-}
+export type FolderTreeHierarchyLevel = {
+    path: string;
+    folders: DotFolder[];
+    totalEntries: number;
+};
 
 /**
  * Fetches the folders for every level of a target path using parallel search calls, so the sidebar
  * tree can be rendered expanded down to that path.
  *
- * One `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the site root
- * (`'/'`) and descending through each parent path. Each call returns the direct children of that
- * level. Results are ordered to mirror the levels of the target path.
+ * One paginated `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the
+ * site root (`'/'`) and descending through each parent path. Uses {@link FOLDER_TREE_PAGE_SIZE}
+ * (same limit as Host Folder Field); callers should append load-more via
+ * {@link applyLoadMoreToHierarchy} when `totalEntries` exceeds the returned page.
  *
  * @param {string} folderPath - The folder path (without hostname) to expand to, e.g. `/a/b/`
  * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<DotFolder[][]>} Observable that emits one folder array per path level
+ * @returns {Observable<FolderTreeHierarchyLevel[]>} one level descriptor per path
  */
 export function getFolderHierarchyByPath(
     folderPath: string,
     site: DotSite,
     dotFolderService: DotFolderService
-): Observable<DotFolder[][]> {
+): Observable<FolderTreeHierarchyLevel[]> {
     // The root level (`'/'`) is always fetched first; deeper levels come from the target path.
     const paths = ['/', ...generateAllParentPaths(folderPath)];
 
@@ -312,14 +309,17 @@ export function getFolderHierarchyByPath(
                 recursive: false,
                 orderby: 'name',
                 direction: 'ASC',
-                per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+                page: 1,
+                per_page: FOLDER_TREE_PAGE_SIZE
             })
             .pipe(
-                map(({ folders, pagination }) => {
-                    warnIfFolderLevelTruncated(path, pagination);
-
-                    return folders.map((view) => folderSearchViewToDotFolder(view, site.hostname));
-                })
+                map(({ folders, pagination }) => ({
+                    path,
+                    folders: folders.map((view) =>
+                        folderSearchViewToDotFolder(view, site.hostname)
+                    ),
+                    totalEntries: pagination?.totalEntries ?? folders.length
+                }))
             )
     );
 
@@ -381,14 +381,97 @@ export function buildLoadMoreNode(
     nextPage: number,
     remaining: number
 ): DotFolderTreeNodeItem {
+    // Leave `label` empty so DotFolderTree uses the shared loadMoreLabelKey
+    // (same (+) Load more chrome as Host Folder Field / Browser Selector).
     return createLoadMoreTreeNode({
         levelKey: parentPath,
-        label: LOAD_MORE_LABEL_KEY,
         nextPage,
         remaining,
         path: parentPath,
         hostname: hostName
     }) as DotFolderTreeNodeItem;
+}
+
+/**
+ * Appends a "Load more" sentinel when more folders remain beyond the loaded page.
+ */
+export function appendLoadMoreNodes(
+    children: DotFolderTreeNodeItem[],
+    totalEntries: number,
+    path: string,
+    hostname: string,
+    nextPage: number
+): DotFolderTreeNodeItem[] {
+    if (children.length >= totalEntries) {
+        return [...children];
+    }
+
+    return [
+        ...children,
+        buildLoadMoreNode(path, hostname, nextPage, totalEntries - children.length)
+    ];
+}
+
+/**
+ * Applies load-more sentinels to each level of a freshly built hierarchy.
+ * Root-level sentinels sit as siblings of root folders; nested ones go under the parent node.
+ */
+export function applyLoadMoreToHierarchy(
+    rootNodes: DotFolderTreeNodeItem[],
+    levels: FolderTreeHierarchyLevel[],
+    hostname: string
+): DotFolderTreeNodeItem[] {
+    if (!levels.length) {
+        return rootNodes;
+    }
+
+    const roots = appendLoadMoreNodes(
+        rootNodes,
+        levels[0].totalEntries,
+        levels[0].path,
+        hostname,
+        2
+    );
+
+    for (let i = 1; i < levels.length; i++) {
+        const level = levels[i];
+        const parent = findFolderNodeByPath(level.path, roots);
+
+        if (!parent) {
+            continue;
+        }
+
+        parent.children = appendLoadMoreNodes(
+            (parent.children as DotFolderTreeNodeItem[] | undefined) ?? [],
+            level.totalEntries,
+            level.path,
+            hostname,
+            2
+        );
+    }
+
+    return roots;
+}
+
+function findFolderNodeByPath(
+    path: string,
+    nodes: DotFolderTreeNodeItem[]
+): DotFolderTreeNodeItem | undefined {
+    for (const node of nodes) {
+        if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data?.path === path) {
+            return node;
+        }
+
+        const found = node.children
+            ? findFolderNodeByPath(path, node.children as DotFolderTreeNodeItem[])
+            : undefined;
+
+        if (found) {
+            return found;
+        }
+    }
+
+    return undefined;
 }
 
 /**

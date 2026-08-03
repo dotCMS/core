@@ -56,6 +56,11 @@ export class DotSideBarComponent {
      */
     onNodeSelect = output<TreeNodeSelectEvent>();
 
+    /**
+     * Emitted when the synthetic "Load more" node is clicked.
+     */
+    loadMore = output<TreeNode>();
+
     readonly #userSelected = signal<TreeNode | null>(null);
 
     /**

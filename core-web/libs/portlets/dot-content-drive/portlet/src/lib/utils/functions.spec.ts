@@ -1,11 +1,11 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { of, throwError } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
+    DotCMSContentlet,
     DotContentDriveFolder,
     DotContentDriveItem,
-    DotCMSContentlet,
     DotPagination,
     FolderSearchView
 } from '@dotcms/dotcms-models';
@@ -21,27 +21,27 @@ import {
 
 import {
     buildLoadMoreNode,
+    buildUserSearchablePayload,
+    decodeByFilterKey,
     decodeFilters,
     encodeFilters,
-    decodeByFilterKey,
     folderSearchViewToDotFolder,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
-    isFolder,
-    parseWorkflowToken,
-    workflowEntryToToken,
-    parseWorkflowFilter,
-    isDateFieldFilterType,
-    isMultiValueFieldFilterType,
-    isBinaryCheckboxField,
-    parseUserSearchableValue,
-    serializeUserSearchableValue,
-    buildUserSearchablePayload,
     getUserSearchableActive,
-    toLocalIsoString
+    isBinaryCheckboxField,
+    isDateFieldFilterType,
+    isFolder,
+    isMultiValueFieldFilterType,
+    parseUserSearchableValue,
+    parseWorkflowFilter,
+    parseWorkflowToken,
+    serializeUserSearchableValue,
+    toLocalIsoString,
+    workflowEntryToToken
 } from './functions';
 
-import { FOLDER_TREE_PAGE_SIZE, FOLDER_TREE_SEARCH_PAGE_SIZE } from '../shared/constants';
+import { FOLDER_TREE_PAGE_SIZE } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
@@ -415,7 +415,8 @@ describe('Utility Functions', () => {
                                 siteId: SITE_ID,
                                 path,
                                 recursive: false,
-                                per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+                                page: 1,
+                                per_page: FOLDER_TREE_PAGE_SIZE
                             })
                         );
                     });
@@ -441,7 +442,7 @@ describe('Utility Functions', () => {
 
             getFolderHierarchyByPath('/main', SITE, mockDotFolderService).subscribe({
                 next: (levels) => {
-                    expect(levels[0][0]).toEqual({
+                    expect(levels[0].folders[0]).toEqual({
                         id: 'm',
                         inode: 'im',
                         hostName: HOSTNAME,
@@ -482,7 +483,7 @@ describe('Utility Functions', () => {
             });
         });
 
-        it('should return every folder in a level without a 40-item cap', (done) => {
+        it('should request the shared folder-tree page size', (done) => {
             const many = Array.from({ length: 45 }, (_, i) =>
                 createFakeFolderSearchView({ id: `f${i}`, name: `folder-${i}`, path: '/' })
             );
@@ -490,9 +491,9 @@ describe('Utility Functions', () => {
 
             getFolderHierarchyByPath('/', SITE, mockDotFolderService).subscribe({
                 next: (levels) => {
-                    expect(levels[0]).toHaveLength(45);
+                    expect(levels[0].folders).toHaveLength(45);
                     expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
-                        expect.objectContaining({ per_page: FOLDER_TREE_SEARCH_PAGE_SIZE })
+                        expect.objectContaining({ per_page: FOLDER_TREE_PAGE_SIZE })
                     );
                     done();
                 },
@@ -500,25 +501,22 @@ describe('Utility Functions', () => {
             });
         });
 
-        it('should warn (not silently truncate) when a level exceeds the page size', (done) => {
-            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        it('should expose totalEntries so callers can append load-more', (done) => {
             mockDotFolderService.searchFolders.mockReturnValue(
                 of({
                     folders: [createFakeFolderSearchView({ path: '/' })],
                     pagination: {
                         currentPage: 1,
-                        perPage: FOLDER_TREE_SEARCH_PAGE_SIZE,
-                        totalEntries: FOLDER_TREE_SEARCH_PAGE_SIZE + 1
+                        perPage: FOLDER_TREE_PAGE_SIZE,
+                        totalEntries: FOLDER_TREE_PAGE_SIZE + 10
                     }
                 })
             );
 
             getFolderHierarchyByPath('/', SITE, mockDotFolderService).subscribe({
-                next: () => {
-                    expect(warnSpy).toHaveBeenCalledWith(
-                        expect.stringContaining(String(FOLDER_TREE_SEARCH_PAGE_SIZE + 1))
-                    );
-                    warnSpy.mockRestore();
+                next: (levels) => {
+                    expect(levels[0].totalEntries).toBe(FOLDER_TREE_PAGE_SIZE + 10);
+                    expect(levels[0].path).toBe('/');
                     done();
                 },
                 error: done
@@ -704,7 +702,7 @@ describe('Utility Functions', () => {
 
             expect(node).toEqual({
                 key: 'load-more:/main/',
-                label: 'content-drive.tree.load-more',
+                label: '',
                 type: 'load-more',
                 data: {
                     type: 'load-more',

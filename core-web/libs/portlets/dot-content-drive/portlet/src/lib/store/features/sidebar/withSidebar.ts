@@ -13,12 +13,16 @@ import { inject } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { DotFolder } from '@dotcms/dotcms-models';
 import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
-import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
+import {
+    applyLoadMoreToHierarchy,
+    FolderTreeHierarchyLevel,
+    getFolderHierarchyByPath,
+    getFolderNodesByPath
+} from '../../../utils/functions';
 import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
@@ -70,19 +74,25 @@ export function withSidebar() {
                                 console.error('Error loading folders:', response);
                             }
 
-                            return of([] as DotFolder[][]);
+                            return of([] as FolderTreeHierarchyLevel[]);
                         })
                     )
-                    .subscribe((folders) => {
+                    .subscribe((levels) => {
                         const { rootNodes, selectedNode } = buildTreeFolderNodes({
-                            folderHierarchyLevels: folders,
+                            folderHierarchyLevels: levels.map((level) => level.folders),
                             targetPath: urlFolderPath || '/',
                             rootNode: realAllFolder
                         });
 
+                        const rootsWithLoadMore = applyLoadMoreToHierarchy(
+                            rootNodes,
+                            levels,
+                            currentSite.hostname
+                        );
+
                         patchState(store, {
                             sidebarLoading: false,
-                            folders: [realAllFolder, ...rootNodes],
+                            folders: [realAllFolder, ...rootsWithLoadMore],
                             selectedNode: selectedNode
                         });
                     });

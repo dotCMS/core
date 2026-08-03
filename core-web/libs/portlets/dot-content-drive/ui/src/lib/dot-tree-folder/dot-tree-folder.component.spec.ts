@@ -103,6 +103,7 @@ describe('DotTreeFolderComponent', () => {
                 useValue: new MockDotMessageService({
                     'content.drive.loading.folders.title': 'Loading folders...',
                     'content-drive.tree.load-more': 'Load more',
+                    'dot.file.field.host.folder.action.load.more': 'Load more',
                     'content-drive.all-folder.label': 'All folders'
                 })
             }
@@ -298,13 +299,13 @@ describe('DotTreeFolderComponent', () => {
             expect(onNodeCollapseSpy).toHaveBeenCalledWith(mockCollapseEvent);
         });
 
-        it('should render a "Load more" button for a load-more node and emit loadMore on click without selecting', () => {
+        it('should render a "Load more" button with plus icon and emit loadMore on click without selecting', () => {
             const loadMoreSpy = jest.spyOn(component.loadMore, 'emit');
             const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
 
             const loadMoreNode: TreeNode = {
                 key: 'load-more:/application/',
-                label: 'content-drive.tree.load-more',
+                label: '',
                 type: 'load-more',
                 data: {
                     type: 'load-more',
@@ -323,6 +324,8 @@ describe('DotTreeFolderComponent', () => {
 
             const button = spectator.query('[data-testid="tree-load-more"]');
             expect(button).toBeTruthy();
+            expect(button?.querySelector('.pi-plus-circle')).toBeTruthy();
+            expect(button?.textContent).not.toContain('(40)');
 
             spectator.click(button as HTMLElement);
 

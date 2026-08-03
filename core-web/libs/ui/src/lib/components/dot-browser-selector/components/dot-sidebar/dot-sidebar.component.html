@@ -8,8 +8,12 @@
         selectionMode="single"
         styleClass="size-full w-full h-full"
         treeTestId="browser-selector-folder-tree"
+        loadMoreTestId="browser-selector-load-more"
+        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+        [showLoadMorePlusIcon]="true"
         (onNodeSelect)="handleNodeSelect($event)"
-        (onNodeExpand)="onNodeExpand.emit($event)" />
+        (onNodeExpand)="onNodeExpand.emit($event)"
+        (loadMore)="loadMore.emit($event)" />
 } @else {
     <div class="flex size-full flex-col p-2">
         @for (col of $fakeColumns(); track $index) {

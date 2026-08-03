@@ -6,6 +6,12 @@ import { DotFolder } from './dot-folder.model';
 export const LOAD_MORE_NODE_TYPE = 'load-more' as const;
 
 /**
+ * Shared page size for folder-tree levels (Content Drive sidebar, Host Folder Field, etc.).
+ * Keep consumers on this single limit so load-more behavior stays consistent.
+ */
+export const DOT_FOLDER_TREE_PAGE_SIZE = 40;
+
+/**
  * Data payload for site or folder nodes in the browser selector and shared folder tree.
  */
 export type TreeNodeContentData = {

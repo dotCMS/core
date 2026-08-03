@@ -24,6 +24,7 @@ const createMockStore = () => ({
     loadContent: jest.fn(),
     loadFolders: jest.fn(),
     loadChildren: jest.fn(),
+    loadMore: jest.fn(),
     setSelectedContent: jest.fn(),
     uploadFile: jest.fn()
 });

@@ -16,6 +16,7 @@ import type {
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
 
+import { TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
     ALL_FOLDER,
     DotContentDriveMoveItems,
@@ -24,10 +25,9 @@ import {
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
-import { TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { buildLoadMoreNode } from '../../utils/functions';
+import { appendLoadMoreNodes } from '../../utils/functions';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
@@ -116,9 +116,15 @@ export class DotContentDriveSidebarComponent {
      */
     protected onNodeExpand(event: TreeNodeExpandEvent): void {
         const { node } = event;
-        const { hostname, path } = node.data;
+        const data = node.data;
 
-        if (node.children?.length > 0 || node.leaf) {
+        if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+            return;
+        }
+
+        const { hostname, path } = data;
+
+        if ((node.children?.length ?? 0) > 0 || node.leaf) {
             node.expanded = true;
             return;
         }
@@ -129,7 +135,7 @@ export class DotContentDriveSidebarComponent {
             node.expanded = true;
             node.leaf = folders.length === 0;
             // First page; append a "Load more" node if the level has more children than this page.
-            node.children = this.#appendLoadMore(folders, totalEntries, path, hostname, 2);
+            node.children = appendLoadMoreNodes(folders, totalEntries, path, hostname, 2);
             this.#store.updateFolders([...this.$folders()]);
         });
     }
@@ -138,18 +144,49 @@ export class DotContentDriveSidebarComponent {
      * Loads the next page of children for a folder level when its "Load more" node is clicked,
      * appending them and refreshing (or removing) the "Load more" node.
      *
+     * Root-level sentinels are siblings of root folders (not children of ALL_FOLDER), so they
+     * update the top-level folders array. Nested sentinels update `parent.children`.
+     *
      * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
      */
     protected onLoadMore(node: DotFolderTreeNodeItem): void {
         const { path, hostname, nextPage } = node.data as TreeNodeLoadMoreData;
+        const parentPath = path ?? '/';
 
         node.loading = true;
         this.#store.updateFolders([...this.$folders()]);
 
         this.#store
-            .loadChildFolders(path, hostname, nextPage)
+            .loadChildFolders(parentPath, hostname, nextPage)
             .subscribe(({ folders, totalEntries }) => {
-                const parent = this.#findNodeByPath(path, this.$folders());
+                const isRootLevel = parentPath === '/' || parentPath === '';
+
+                if (isRootLevel) {
+                    const current = this.$folders();
+                    const allFolder =
+                        current.find((folder) => folder.key === ALL_FOLDER.key) ?? ALL_FOLDER;
+                    const loaded = current.filter(
+                        (folder) =>
+                            folder.key !== ALL_FOLDER.key &&
+                            folder.data?.type !== LOAD_MORE_NODE_TYPE
+                    );
+                    const combined = [...loaded, ...folders];
+
+                    this.#store.updateFolders([
+                        allFolder,
+                        ...appendLoadMoreNodes(
+                            combined,
+                            totalEntries,
+                            parentPath || '/',
+                            hostname ?? '',
+                            (nextPage ?? 1) + 1
+                        )
+                    ]);
+
+                    return;
+                }
+
+                const parent = this.#findNodeByPath(parentPath, this.$folders());
                 if (!parent) {
                     return;
                 }
@@ -160,42 +197,15 @@ export class DotContentDriveSidebarComponent {
                 );
                 const combined = [...loaded, ...folders];
 
-                parent.children = this.#appendLoadMore(
+                parent.children = appendLoadMoreNodes(
                     combined,
                     totalEntries,
-                    path,
-                    hostname,
+                    parentPath,
+                    hostname ?? '',
                     (nextPage ?? 1) + 1
                 );
                 this.#store.updateFolders([...this.$folders()]);
             });
-    }
-
-    /**
-     * Appends a "Load more" node to a level's children when more folders remain to be loaded.
-     *
-     * @param {DotFolderTreeNodeItem[]} children - The child folder nodes loaded so far
-     * @param {number} totalEntries - Total number of folders in the level
-     * @param {string} path - Full path of the parent folder
-     * @param {string} hostname - Hostname of the site
-     * @param {number} nextPage - The next 1-based page to request
-     * @returns {DotFolderTreeNodeItem[]} children, plus a "Load more" node when more remain
-     */
-    #appendLoadMore(
-        children: DotFolderTreeNodeItem[],
-        totalEntries: number,
-        path: string,
-        hostname: string,
-        nextPage: number
-    ): DotFolderTreeNodeItem[] {
-        if (children.length >= totalEntries) {
-            return [...children];
-        }
-
-        return [
-            ...children,
-            buildLoadMoreNode(path, hostname, nextPage, totalEntries - children.length)
-        ];
     }
 
     /**
