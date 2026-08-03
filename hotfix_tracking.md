@@ -48,3 +48,4 @@ Release-25.07.10 LTS
 42. https://github.com/dotCMS/core/issues/36592 : security: upgrade Apache Tomcat 9.0.118 → 9.0.120 on main #36592
 43. https://github.com/dotCMS/core/issues/34454 : [TASK] Optimize heavy SQL queries #34454
 44. https://github.com/dotCMS/private-issues/issues/651 : Stored XSS → RCE: low-priv backend user name bypasses Xss filter, runs in admin session, deploys OSGi bundle #651
+45. https://github.com/dotCMS/private-issues/issues/642 : sec: Privilege Escalation + RCE via OSGi bundle upload (low-priv backend user → CMS Administrator) #642
