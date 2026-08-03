@@ -24,6 +24,7 @@ import {
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
+import { TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { buildLoadMoreNode } from '../../utils/functions';
@@ -140,7 +141,7 @@ export class DotContentDriveSidebarComponent {
      * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
      */
     protected onLoadMore(node: DotFolderTreeNodeItem): void {
-        const { path, hostname, nextPage } = node.data;
+        const { path, hostname, nextPage } = node.data as TreeNodeLoadMoreData;
 
         node.loading = true;
         this.#store.updateFolders([...this.$folders()]);

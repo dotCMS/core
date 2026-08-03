@@ -46,7 +46,9 @@ import {
     DotContentDriveUploadFiles,
     DotFolderListViewColumn,
     DotFolderTreeNodeData,
-    DotContentDriveMoveItems
+    DotFolderTreeNodeContentData,
+    DotContentDriveMoveItems,
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
@@ -439,7 +441,10 @@ export class DotContentDriveShellComponent {
      */
     protected onUpload(event: MouseEvent) {
         const targetFolder = this.#store.selectedNode()?.data;
-        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+        const contentData = (targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE)
+            ? (targetFolder as DotFolderTreeNodeContentData)
+            : undefined;
+        const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {
             this.$activeSelection.set({ targetFolder, baseType });
@@ -457,7 +462,10 @@ export class DotContentDriveShellComponent {
      * and carry the files into the payload to upload right after the user picks.
      */
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
-        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+        const contentData = (targetFolder.type !== LOAD_MORE_NODE_TYPE)
+            ? (targetFolder as DotFolderTreeNodeContentData)
+            : undefined;
+        const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {
             this.resolveFilesUpload({ files, targetFolder, baseType });
