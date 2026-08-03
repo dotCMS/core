@@ -133,13 +133,15 @@ describe('DotA11yDiffComponent', () => {
 
     it('keeps the drawer closed and loads nothing when open is false', () => {
         render(false);
-        expect(spectator.query(byTestId('diff-panel'))).toBeFalsy();
+        // Drawer content is teleported to document.body (appendTo="body"), so
+        // content queries use { root: true } to search the whole document.
+        expect(spectator.query(byTestId('diff-panel'), { root: true })).toBeFalsy();
         expect(spectator.inject(DotPageSourcesService).getPageSources).not.toHaveBeenCalled();
     });
 
     it('renders the drawer and loads the diff once opened', () => {
         render(true);
-        expect(spectator.query(byTestId('diff-panel'))).toBeTruthy();
+        expect(spectator.query(byTestId('diff-panel'), { root: true })).toBeTruthy();
         expect(spectator.inject(DotPageSourcesService).getPageSources).toHaveBeenCalledWith(
             '/about-us',
             'host-1',
@@ -149,14 +151,14 @@ describe('DotA11yDiffComponent', () => {
 
     it('lists only the changed files with add/remove counts', () => {
         render();
-        const rows = spectator.queryAll(byTestId('diff-file-row'));
+        const rows = spectator.queryAll(byTestId('diff-file-row'), { root: true });
         expect(rows.length).toBe(2);
-        expect(spectator.query(byTestId('diff-file-count'))).toHaveText('2');
+        expect(spectator.query(byTestId('diff-file-count'), { root: true })).toHaveText('2');
     });
 
     it('shows each file name and its +/- line counts, but not the folder path', () => {
         render();
-        const rows = spectator.queryAll(byTestId('diff-file-row'));
+        const rows = spectator.queryAll(byTestId('diff-file-row'), { root: true });
         expect(rows[0].textContent).toContain('a.vtl');
         expect(rows[0].textContent).toContain('+1');
         expect(rows[0].textContent).not.toContain('//demo/application/containers/');
@@ -180,7 +182,7 @@ describe('DotA11yDiffComponent', () => {
         monacoMock.createModel.mockClear();
 
         const cssRow = spectator
-            .queryAll(byTestId('diff-file-row'))
+            .queryAll(byTestId('diff-file-row'), { root: true })
             .find((el) => el.textContent?.includes('style.css'));
         spectator.click(cssRow as HTMLElement);
         spectator.detectChanges();
@@ -192,8 +194,8 @@ describe('DotA11yDiffComponent', () => {
 
     it('shows the empty state when nothing changed', () => {
         render(true, []);
-        expect(spectator.query(byTestId('diff-empty'))).toBeTruthy();
-        expect(spectator.query(byTestId('diff-file-list'))).toBeFalsy();
+        expect(spectator.query(byTestId('diff-empty'), { root: true })).toBeTruthy();
+        expect(spectator.query(byTestId('diff-file-list'), { root: true })).toBeFalsy();
     });
 
     it('emits close and disposes the editor when the drawer hides', () => {
@@ -213,7 +215,9 @@ describe('DotA11yDiffComponent', () => {
         const closeSpy = jest.fn();
         spectator.output('close').subscribe(closeSpy);
 
-        const btn = spectator.query(byTestId('diff-close-btn'))?.querySelector('button');
+        const btn = spectator
+            .query(byTestId('diff-close-btn'), { root: true })
+            ?.querySelector('button');
         spectator.click(btn as HTMLElement);
 
         // The host clears `open` in response, which unmounts the drawer.
@@ -232,6 +236,6 @@ describe('DotA11yDiffComponent', () => {
             ]
         });
         spectator.detectChanges();
-        expect(spectator.query(byTestId('diff-error'))).toBeTruthy();
+        expect(spectator.query(byTestId('diff-error'), { root: true })).toBeTruthy();
     });
 });
