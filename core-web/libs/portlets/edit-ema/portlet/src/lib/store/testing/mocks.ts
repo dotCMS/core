@@ -8,6 +8,7 @@ import { IframeAccessMode, Orientation, PageType, UVEState } from '../models';
 export const BASE_UVE_STATE: UVEState = {
     uveStatus: UVE_STATUS.LOADED,
     uveCurrentUser: null,
+    flags: {},
     pageParams: null,
     pageLanguages: [],
     pageType: PageType.HEADLESS,

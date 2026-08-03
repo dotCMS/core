@@ -24,6 +24,9 @@ const initialState: UVEState = {
     // UVE system state (managed by withUve)
     uveStatus: UVE_STATUS.LOADING,
     uveCurrentUser: null,
+    // Flags — withFlags populates this on init; see the note on UVEState.flags for why the slice
+    // is also declared here rather than left entirely to the feature.
+    flags: {},
     // Page state (managed by withPage)
     pageParams: null,
     pageLanguages: [],
