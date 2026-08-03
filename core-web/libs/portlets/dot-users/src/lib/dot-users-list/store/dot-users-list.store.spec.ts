@@ -1,11 +1,22 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersListStore } from './dot-users-list.store';
 
 import { DotUserListItem, DotUsersService } from '../../services/dot-users.service';
+
+const MESSAGES = {
+    'users.delete.success': 'Deleted {0} user(s).',
+    'users.delete.partial-success': 'Deleted {0} of {1} users. {2} failed.'
+};
 
 const MOCK_USERS: DotUserListItem[] = [
     {
@@ -67,7 +78,9 @@ describe('DotUsersListStore', () => {
                 getUsersPaginated: jest.fn().mockReturnValue(of(MOCK_RESPONSE)),
                 deleteUser: jest.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }
         ]
     });
 
@@ -75,6 +88,11 @@ describe('DotUsersListStore', () => {
         spectator = createService();
         store = spectator.service;
         usersService = spectator.inject(DotUsersService) as jest.Mocked<DotUsersService>;
+        // Clear call history from other tests (mockProvider's jest.fn() is shared).
+        // Implementations set via mockReturnValue are preserved.
+        jest.clearAllMocks();
+        usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
+        usersService.deleteUser.mockReturnValue(of({}));
         // The onInit effect fires loadUsers automatically
         spectator.flushEffects();
     });
@@ -158,7 +176,8 @@ describe('DotUsersListStore', () => {
         expect(store.selectedUsers()).toEqual([MOCK_USERS[0]]);
     });
 
-    it('deleteSelectedUsers should delete each selected user and reload', () => {
+    it('deleteSelectedUsers should delete each selected user, reload, and push a success toast', () => {
+        const messageDisplay = spectator.inject(DotMessageDisplayService);
         store.setSelectedUsers([MOCK_USERS[0], MOCK_USERS[1]]);
         usersService.getUsersPaginated.mockClear();
 
@@ -168,6 +187,43 @@ describe('DotUsersListStore', () => {
         expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.2');
         expect(store.selectedUsers()).toEqual([]);
         expect(usersService.getUsersPaginated).toHaveBeenCalled();
+        expect(messageDisplay.push).toHaveBeenCalledWith(
+            expect.objectContaining({
+                severity: DotMessageSeverity.SUCCESS,
+                type: DotMessageType.SIMPLE_MESSAGE,
+                message: 'Deleted 2 user(s).'
+            })
+        );
+    });
+
+    it('deleteSelectedUsers should push a WARNING partial-success toast when some deletes fail', () => {
+        const messageDisplay = spectator.inject(DotMessageDisplayService);
+        const errorManager = spectator.inject(DotHttpErrorManagerService);
+        usersService.deleteUser
+            .mockReturnValueOnce(of({}))
+            .mockReturnValueOnce(throwError(() => new Error('boom')));
+        store.setSelectedUsers([MOCK_USERS[0], MOCK_USERS[1]]);
+
+        store.deleteSelectedUsers();
+
+        expect(errorManager.handle).toHaveBeenCalled();
+        expect(messageDisplay.push).toHaveBeenCalledWith(
+            expect.objectContaining({
+                severity: DotMessageSeverity.WARNING,
+                message: 'Deleted 1 of 2 users. 1 failed.'
+            })
+        );
+        expect(store.selectedUsers()).toEqual([]);
+    });
+
+    it('deleteSelectedUsers should not push a toast when every delete fails', () => {
+        const messageDisplay = spectator.inject(DotMessageDisplayService);
+        usersService.deleteUser.mockReturnValue(throwError(() => new Error('boom')));
+        store.setSelectedUsers([MOCK_USERS[0], MOCK_USERS[1]]);
+
+        store.deleteSelectedUsers();
+
+        expect(messageDisplay.push).not.toHaveBeenCalled();
     });
 
     it('deleteSelectedUsers should no-op when nothing selected', () => {

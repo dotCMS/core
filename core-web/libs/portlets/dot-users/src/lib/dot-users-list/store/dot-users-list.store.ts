@@ -1,11 +1,16 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, forkJoin, of } from 'rxjs';
 
 import { effect, inject, untracked } from '@angular/core';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import { DotUserListItem, DotUsersService } from '../../services/dot-users.service';
 
@@ -48,6 +53,8 @@ export const DotUsersListStore = signalStore(
     withMethods((store) => {
         const usersService = inject(DotUsersService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const messageDisplayService = inject(DotMessageDisplayService);
+        const messageService = inject(DotMessageService);
 
         function loadUsers() {
             patchState(store, { status: 'loading' });
@@ -111,27 +118,47 @@ export const DotUsersListStore = signalStore(
                 const deletions = selected.map((user) =>
                     usersService.deleteUser(user.userId).pipe(
                         take(1),
+                        map(() => true),
                         catchError((error) => {
                             httpErrorManager.handle(error);
 
-                            return EMPTY;
+                            return of(false);
                         })
                     )
                 );
 
-                // Fire and reload once all resolve (or error out individually)
-                let remaining = deletions.length;
-                deletions.forEach((deletion$) => {
-                    deletion$.subscribe({
-                        complete: () => {
-                            remaining -= 1;
-                            if (remaining === 0) {
-                                patchState(store, { selectedUsers: [] });
-                                loadUsers();
-                            }
+                forkJoin(deletions)
+                    .pipe(take(1))
+                    .subscribe((results) => {
+                        const total = results.length;
+                        const successCount = results.filter(Boolean).length;
+                        const failureCount = total - successCount;
+
+                        if (successCount > 0) {
+                            const message =
+                                failureCount === 0
+                                    ? messageService.get('users.delete.success', `${successCount}`)
+                                    : messageService.get(
+                                          'users.delete.partial-success',
+                                          `${successCount}`,
+                                          `${total}`,
+                                          `${failureCount}`
+                                      );
+
+                            messageDisplayService.push({
+                                life: 5000,
+                                severity:
+                                    failureCount === 0
+                                        ? DotMessageSeverity.SUCCESS
+                                        : DotMessageSeverity.WARNING,
+                                message,
+                                type: DotMessageType.SIMPLE_MESSAGE
+                            });
                         }
+
+                        patchState(store, { selectedUsers: [] });
+                        loadUsers();
                     });
-                });
             }
         };
     }),
