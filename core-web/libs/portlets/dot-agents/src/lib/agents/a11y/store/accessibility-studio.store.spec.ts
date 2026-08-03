@@ -631,10 +631,20 @@ describe('AccessibilityStudioStore', () => {
             expect(store.isPublished()).toBe(true);
         });
 
-        it('publish is a no-op unless done', () => {
+        it('publish works from scanned — working changes can predate a fix run', () => {
             store.runScan();
             store.publish();
-            expect(store.phase()).toBe('scanned');
+            expect(store.phase()).toBe('published');
+        });
+
+        it('publish is a no-op while a scan is in flight', () => {
+            // A never-completing scan leaves the phase at 'scanning'.
+            scannerService.checkA11y.mockReturnValueOnce(NEVER);
+            store.runScan();
+            expect(store.phase()).toBe('scanning');
+
+            store.publish();
+            expect(store.phase()).toBe('scanning');
         });
 
         it('discard returns from done to scanned', () => {

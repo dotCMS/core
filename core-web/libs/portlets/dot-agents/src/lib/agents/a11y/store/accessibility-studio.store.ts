@@ -776,17 +776,32 @@ export const AccessibilityStudioStore = signalStore(
                 agentService.stop(runId).pipe(take(1), catchError(() => EMPTY)).subscribe();
             },
 
-            /** Promote the working fixes to live (the only publish; human-triggered). */
+            /**
+             * Promote the working version to live (the only publish; human-triggered).
+             *
+             * Not gated on the `done` phase: the changed files a user publishes may
+             * predate this run (an earlier run, a manual edit), so the files panel
+             * offers Publish whenever a working-vs-live delta exists — including
+             * before any scan. Blocked only while a run is in flight, where the
+             * working copy is still being written.
+             */
             publish() {
-                if (store.phase() !== 'done') {
+                if (store.isWorking()) {
                     return;
                 }
                 patchState(store, { phase: 'published' });
             },
 
-            /** Discard the working fixes → back to the scanned (all-detected) state. */
+            /**
+             * Discard the working fixes. Returns to `scanned` when a scan's results
+             * are still on screen, otherwise to `ready` — going to `scanned` from
+             * `ready` would show a results view for a scan that never ran.
+             */
             discard() {
-                patchState(store, { phase: 'scanned' });
+                if (store.isWorking()) {
+                    return;
+                }
+                patchState(store, { phase: store.scanResult() ? 'scanned' : 'ready' });
             }
         };
     }),

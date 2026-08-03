@@ -199,10 +199,10 @@
     <!-- Recipe log: sizes to content. The accordion column owns the scrolling, so
          this must NOT scroll on its own — a nested scroll area would trap the
          wheel and make the second panel hard to reach with both open. -->
-    <div class="px-6 pt-1 pb-4" data-testid="studio-recipe-log">
+    <div data-testid="studio-recipe-log" class="mb-8">
         @if (store.isReady()) {
             <!-- Ready: what to expect -->
-            <div class="mt-2 rounded-2xl border border-surface-100 bg-surface-50 p-5">
+            <div class="rounded-2xl border border-surface-200 bg-surface-50 p-5">
                 <div class="mb-1.5 text-sm font-bold text-gray-900">
                     {{ 'accessibility.studio.ready.title' | dm }}
                 </div>
@@ -364,7 +364,7 @@
 
     <!-- Scanner actions — phase-driven, inside the scanner panel so the controls
          sit with the results they act on. -->
-    <div class="flex-none border-t border-surface-100 bg-surface-50 px-6 pt-4 pb-4.5">
+    <div class="flex-none px-4">
         <!-- Footer copy — hidden in the ready + scanning states. -->
         @if (!store.isReady() && !store.isScanning()) {
             <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
@@ -388,7 +388,7 @@
 
         @switch (store.phase()) {
             @case ('ready') {
-                <div class="mb-3 flex items-center justify-between">
+                <div class="mb-4 flex items-center justify-between">
                     <label
                         for="studio-skip-css"
                         class="text-[13px] font-medium text-gray-600">
@@ -494,9 +494,11 @@
 
                     <!-- Discard + Publish sit together with the files they act on.
                          Publishing the page publishes its changed source files as a
-                         unit; there is no per-file publishing. Shown once a run is
-                         awaiting review and there is something to publish. -->
-                    @if (store.isDone() && hasChangedFiles()) {
+                         unit; there is no per-file publishing. Shown whenever there
+                         are changed files, regardless of phase — working changes can
+                         predate this run (an earlier run, a manual edit), so they
+                         must be publishable without scanning first. -->
+                    @if (hasChangedFiles()) {
                         <div
                             class="mt-3 flex gap-2.5 border-t border-surface-100 pt-3.5"
                             data-testid="studio-publish-bar">

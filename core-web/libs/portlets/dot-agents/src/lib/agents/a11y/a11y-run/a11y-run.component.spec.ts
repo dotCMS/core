@@ -328,7 +328,7 @@ describe('DotA11yRunComponent', () => {
         });
     });
 
-    describe('files panel actions (done phase)', () => {
+    describe('files panel actions', () => {
         beforeEach(() => render('done', MOCK_FIX_REPORT));
 
         /** Report N changed files from the stubbed list. */
@@ -367,6 +367,19 @@ describe('DotA11yRunComponent', () => {
             );
             expect(discard).toHaveBeenCalled();
         });
+
+        // The changed files may predate this run (an earlier run, a manual edit), so
+        // the actions are gated on the files existing — not on the run's phase.
+        it.each(['ready', 'scanned', 'published'] as StudioPhase[])(
+            'shows both actions in the %s phase when files changed',
+            (studioPhase) => {
+                render(studioPhase, studioPhase === 'ready' ? null : MOCK_FIX_REPORT);
+                reportFiles(2);
+
+                expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+                expect(spectator.query(byTestId('studio-apply-btn'))).toBeTruthy();
+            }
+        );
     });
 
     describe('ready phase', () => {
