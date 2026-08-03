@@ -323,13 +323,10 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         if(UtilMethods.isNotSet(name)){
             name = field.variable();
         }
-        //amplify the dispersion of the seed by adding the field type and, when present, the data
-        //type, so a field re-created with the same variable but a different data type gets a
+        //amplify the dispersion of the seed by adding the field type and data type,
+        //so a field re-created with the same variable but a different data type gets a
         //different deterministic id
-        final DataTypes dataType = field.dataType();
-        return null != dataType
-                ? String.format(S_S_S, name, field.typeName(), dataType.value)
-                : String.format(S_S, name, field.typeName());
+        return String.format(S_S_S, name, field.typeName(), field.dataType().value);
     }
 
     /**
