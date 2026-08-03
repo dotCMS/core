@@ -1,6 +1,6 @@
 import { patchState, signalStoreFeature, type, withHooks, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { computed } from '@angular/core';
 
@@ -113,11 +113,11 @@ export function withPersistedQuery<Field extends string>(config: PersistedQueryC
                 const source = computed(() =>
                     (store as unknown as Record<Field, () => string>)[field]()
                 );
-                rxMethod<string>(
-                    pipe(
+                rxMethod<string>((source$: Observable<string>) =>
+                    source$.pipe(
                         skip(1),
                         debounceTime(debounceMs),
-                        tap((value) => {
+                        tap((value: string) => {
                             if (value.length === 0) {
                                 removeKey(storageKey);
                             } else {
