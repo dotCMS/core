@@ -46,8 +46,7 @@ import {
 } from '../dot-velocity-playground.utils';
 import {
     ensureVelocityLanguageRegistered,
-    VELOCITY_LANGUAGE_ID,
-    VELOCITY_THEME_ID
+    VELOCITY_LANGUAGE_ID
 } from '../monaco/register-velocity';
 
 @Component({
@@ -93,14 +92,12 @@ export class DotVelocityPlaygroundPageComponent {
     // 3. Computed signals — $ prefix
     readonly $editorOptions = computed(() => ({
         ...DOT_MONACO_BASE_OPTIONS,
-        theme: VELOCITY_THEME_ID,
         language: VELOCITY_LANGUAGE_ID,
         wordWrap: this.store.wrapCode() ? 'on' : 'off'
     }));
 
     readonly $outputOptions = computed(() => ({
         ...DOT_MONACO_RAW_OPTIONS,
-        theme: VELOCITY_THEME_ID,
         language: this.store.outputContentType(),
         wordWrap: this.store.wrapCode() ? 'on' : 'off',
         readOnly: true
