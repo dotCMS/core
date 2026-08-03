@@ -14,7 +14,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -62,6 +61,10 @@ import {
  * - **Actions needing extra input are disabled** (`requiresInput`): push-publish settings, a move
  *   target path, or an assign/comment prompt. Wiring those means reusing
  *   `DotWorkflowEventHandlerService`, which is out of scope here.
+ * Renders inside the shell's shared dialog rather than owning one, so there is a single dialog and a
+ * single open/close path. The shell sizes this type's content box as a flex column; this component
+ * fills it with a pinned summary, a scrolling body and a pinned footer.
+ *
  * - **Fires synchronously** via `bulkFire`. The legacy dialog uses the SSE endpoint
  *   (`_bulkfire`) to stream live progress counters; that is the better long-term path for large
  *   batches but needs an SSE shim, since native `EventSource` cannot POST a body.
@@ -74,7 +77,6 @@ import {
         BadgeModule,
         ButtonModule,
         ConfirmDialogModule,
-        DialogModule,
         DotMessagePipe,
         FormsModule,
         MessageModule,
@@ -326,19 +328,13 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         }
     }
 
-    /** Closes the dialog without firing anything. */
+    /**
+     * Closes the dialog without firing anything.
+     *
+     * X / ESC / mask closes are handled by the shell, which owns the shared dialog.
+     */
     protected onDone(): void {
         this.#store.closeDialog();
-    }
-
-    /**
-     * Propagates a user-driven close (X / ESC / mask) to the store, which is what actually unmounts
-     * this component.
-     */
-    protected onVisibleChange(visible: boolean): void {
-        if (!visible) {
-            this.#store.closeDialog();
-        }
     }
 
     /**

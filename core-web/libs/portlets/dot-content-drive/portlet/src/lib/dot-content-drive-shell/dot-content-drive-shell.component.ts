@@ -185,26 +185,33 @@ export class DotContentDriveShellComponent {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
+            // Action Center: the content box becomes a flex column so the body is the only scroll
+            // container and the dialog's own subtitle/footer bars stay pinned. Padding is owned by
+            // those bars, not the content box.
+            case DIALOG_TYPE.ACTION_CENTER:
+                return 'flex flex-col overflow-hidden p-0!';
             default:
                 return 'w-175 pt-0 p-4';
         }
     });
 
     /**
-     * The Action Center renders its own `p-dialog` (custom header + footer, body-only scrolling),
-     * so it is routed out of the shared dialog rather than into its content switch.
+     * Fixed height for the Action Center so its content box has something to flex against —
+     * without it the column would size to content and the body would never scroll.
      */
-    readonly $isActionCenter = computed(
-        () => this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+    readonly $dialogStyle = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+            ? { width: '42rem', maxWidth: '92vw', height: '80vh' }
+            : undefined
     );
 
-    /** Shared dialog: every type except the ones owning their own dialog. */
-    readonly $sharedDialogVisible = computed(
-        () => this.$dialogVisible() && !this.$isActionCenter()
+    /**
+     * Drops the header's bottom rule for the Action Center, so its title and the "N items selected"
+     * line at the top of the content read as one block rather than being split by a divider.
+     */
+    readonly $dialogHeaderClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 pb-2' : ''
     );
-
-    /** Mounts the Action Center, which then shows itself. */
-    readonly $actionCenterVisible = computed(() => this.$dialogVisible() && this.$isActionCenter());
 
     /**
      * Syncs the dialog open/close state from the store. Opening sets the body and visibility
@@ -433,9 +440,7 @@ export class DotContentDriveShellComponent {
      * mask) emits `false`; propagate it to the store so the dialog state stays consistent.
      */
     protected onVisibleChange(visible: boolean) {
-        // Ignore the shared dialog reporting itself hidden while the Action Center is the active
-        // dialog — that is this component switching which dialog renders, not the user closing one.
-        if (!visible && !this.$isActionCenter()) {
+        if (!visible) {
             this.#store.closeDialog();
         }
     }

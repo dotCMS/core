@@ -414,18 +414,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(dialogComponent.visible).toBe(false);
         });
 
-        it('should mount the Action Center outside the shared dialog', () => {
-            // The Action Center owns its own p-dialog (custom header/footer, body-only scroll), so it
-            // is a sibling of the shared one rather than a case in its content switch.
-            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
-            spectator.flushEffects();
-            spectator.detectChanges();
-
-            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeTruthy();
-        });
-
-        it('should keep the shared dialog hidden while the Action Center is active', () => {
-            // Otherwise both would render, and the shared one would show an empty body.
+        it('should render the Action Center inside the shared dialog', () => {
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.flushEffects();
             spectator.detectChanges();
@@ -433,15 +422,31 @@ describe('DotContentDriveShellComponent', () => {
             const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
                 ?.componentInstance as Dialog;
 
-            expect(dialogComponent.visible).toBe(false);
+            // One dialog, one visibility path — the Action Center is a case in its content switch.
+            expect(dialogComponent.visible).toBe(true);
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeTruthy();
         });
 
-        it('should not mount the Action Center for other dialog types', () => {
+        it('should give the Action Center a flex-column content box so only its body scrolls', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            // Without the fixed height the column sizes to content and the body never scrolls.
+            expect(spectator.component.$dialogContentClass()).toContain('flex flex-col');
+            expect(spectator.component.$dialogStyle()).toEqual(
+                expect.objectContaining({ height: '80vh' })
+            );
+        });
+
+        it('should not apply the Action Center sizing to other dialog types', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
             spectator.flushEffects();
             spectator.detectChanges();
 
             expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
+            expect(spectator.component.$dialogStyle()).toBeUndefined();
+            expect(spectator.component.$dialogHeaderClass()).toBe('');
         });
 
         it('should configure the dialog as closable and closeOnEscape', () => {

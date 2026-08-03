@@ -1,42 +1,31 @@
 <!--
+    Renders inside the shell's shared content-drive dialog — no second `p-dialog` here, so there is
+    one dialog and one open/close path.
+
+    The shell gives this type a fixed-height content box that is a flex column
+    (`$dialogContentClass` / `$dialogStyle`). This template supplies the three rows of that column:
+    a pinned selection summary, a `flex-1 overflow-y-auto` body — the only scroll container — and a
+    pinned footer. That reproduces the prototype's pinned-chrome layout without needing PrimeNG's
+    `#header` / `#footer` slots, which cannot be used from the shell's `@switch` (they are
+    `ContentChild` queries with `descendants: false`) and would render an empty footer for the other
+    dialog types.
+
     Styled against the design prototype (remix_-content-drive/components/ActionCenterDialog.tsx).
     The prototype's raw `slate-*` / `#1D1B4B` / `#1D4ED8` values are mapped onto the theme tokens
-    `tailwindcss-primeui` exposes (`surface-*`, `primary-*`, `border-surface`) so the dialog follows
-    the active PrimeNG theme instead of pinning one palette.
-
-    Layout follows the prototype: the dialog is a fixed-height flex column, so the content area is
-    the only thing that scrolls and the header/footer stay pinned.
+    `tailwindcss-primeui` exposes (`surface-*`, `primary-*`), so it follows the active PrimeNG theme
+    instead of pinning one palette.
 -->
-<p-dialog
-    [visible]="true"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [closable]="true"
-    [closeOnEscape]="true"
-    appendTo="body"
-    data-testid="action-center-dialog"
-    [style]="{ width: '42rem', maxWidth: '92vw', height: '80vh' }"
-    [pt]="{
-        root: { class: 'flex flex-col' },
-        content: { class: 'flex-1 overflow-y-auto p-0!' }
-    }"
-    (visibleChange)="onVisibleChange($event)">
-    <ng-template #header>
-        <div class="flex flex-col gap-1">
-            <span class="text-xl font-bold text-surface-800">
-                {{ 'content-drive.action-center.header' | dm }}
-            </span>
-            <span class="text-sm font-medium text-surface-500" data-testid="selection-summary">
-                {{
-                    'content-drive.action-center.items-selected'
-                        | dm: [$contentletCount().toString()]
-                }}
-            </span>
-        </div>
-    </ng-template>
+<div class="flex min-h-0 flex-1 flex-col" data-testid="action-center-dialog">
+    <span
+        class="shrink-0 px-6 pb-4 text-sm font-medium text-surface-500"
+        data-testid="selection-summary">
+        {{ 'content-drive.action-center.items-selected' | dm: [$contentletCount().toString()] }}
+    </span>
 
-    <div class="flex flex-col gap-8 p-6" data-testid="action-center">
+    <!-- The only scrollable region. -->
+    <div
+        class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 pb-6"
+        data-testid="action-center">
         @if ($ignoredFolderCount() > 0) {
             <p-message severity="info" data-testid="folders-ignored-message">
                 {{
@@ -233,19 +222,20 @@
         </section>
     </div>
 
-    <!-- Guards the destructive quick actions. Appended to body so it layers above this dialog. -->
-    <p-confirmDialog appendTo="body" [draggable]="false" [style]="{ width: '500px' }" />
+    <!-- Pinned footer: a sibling of the scroll container, so it stays put as the body scrolls. -->
+    <div
+        class="flex shrink-0 items-center justify-between border-t border-surface-100 px-6 py-4"
+        data-testid="action-center-footer">
+        <span class="text-xs font-medium text-surface-400 italic">
+            {{ 'content-drive.action-center.one-at-a-time' | dm }}
+        </span>
+        <p-button
+            [label]="'content-drive.action-center.done' | dm"
+            [disabled]="$executing()"
+            data-testid="action-center-done"
+            (click)="onDone()" />
+    </div>
 
-    <ng-template #footer>
-        <div class="flex w-full items-center justify-between">
-            <span class="text-xs font-medium text-surface-400 italic">
-                {{ 'content-drive.action-center.one-at-a-time' | dm }}
-            </span>
-            <p-button
-                [label]="'content-drive.action-center.done' | dm"
-                [disabled]="$executing()"
-                data-testid="action-center-done"
-                (click)="onDone()" />
-        </div>
-    </ng-template>
-</p-dialog>
+    <!-- Guards the destructive quick actions. Appended to body so it layers above the dialog. -->
+    <p-confirmDialog appendTo="body" [draggable]="false" [style]="{ width: '500px' }" />
+</div>
