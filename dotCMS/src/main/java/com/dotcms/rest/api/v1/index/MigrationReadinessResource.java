@@ -32,11 +32,12 @@ import org.glassfish.jersey.server.JSONP;
  * overall safe-to-advance / safe-to-rollback verdict. Read-only; it never mutates any index.
  *
  * <p><strong>Not public.</strong> The class is {@link Hidden} so it never appears in the OpenAPI /
- * API-playground schema, and every method requires a backend user who is a CMS administrator or a
- * member of the migration support role
+ * API-playground schema, and every method requires a backend user who is a CMS administrator
+ * <strong>and</strong> a member of the migration support role
  * ({@value com.dotcms.content.index.MigrationIndexVisibility#VISIBILITY_ROLE_KEY}, default
- * {@value com.dotcms.content.index.MigrationIndexVisibility#DEFAULT_VISIBILITY_ROLE_KEY}); anyone
- * else gets a 403.</p>
+ * {@value com.dotcms.content.index.MigrationIndexVisibility#DEFAULT_VISIBILITY_ROLE_KEY}) — a plain
+ * admin without the role is not enough. Anyone else gets a 403, so regular users never learn a
+ * migration is running.</p>
  */
 @Path("/v1/index/migration")
 @Hidden
@@ -54,8 +55,8 @@ public class MigrationReadinessResource {
     }
 
     /**
-     * Returns the migration-readiness report for the current phase. Requires a CMS administrator or a
-     * member of the configured migration support role.
+     * Returns the migration-readiness report for the current phase. Requires a CMS administrator who
+     * also holds the configured migration support role.
      */
     @GET
     @JSONP
@@ -73,8 +74,8 @@ public class MigrationReadinessResource {
         final User user = initData.getUser();
         if (!isMigrationSupportUser(user)) {
             throw new ForbiddenException(
-                    "Migration readiness is restricted to CMS administrators and the migration "
-                            + "support role.");
+                    "Migration readiness is restricted to CMS administrators who also hold the "
+                            + "migration support role.");
         }
 
         // Return the readiness model directly (no ResponseEntityView envelope) — this internal endpoint
@@ -83,10 +84,12 @@ public class MigrationReadinessResource {
     }
 
     /**
-     * Whether {@code user} may read the migration-readiness report: a CMS administrator, or a member
-     * of the configured support role ({@link MigrationIndexVisibility#VISIBILITY_ROLE_KEY}, default
-     * {@link MigrationIndexVisibility#DEFAULT_VISIBILITY_ROLE_KEY}). This is an internal support tool
-     * in every phase — it never opens up to everyone, unlike the phase-based index portlet display.
+     * Whether {@code user} may read the migration-readiness report: a CMS administrator who
+     * <strong>also</strong> holds the configured support role
+     * ({@link MigrationIndexVisibility#VISIBILITY_ROLE_KEY}, default
+     * {@link MigrationIndexVisibility#DEFAULT_VISIBILITY_ROLE_KEY}) — both are required. This is an
+     * internal support tool in every phase; it never opens up to everyone (a plain admin is not
+     * enough), unlike the phase-based index portlet display.
      */
     @VisibleForTesting
     static boolean isMigrationSupportUser(final User user) {
@@ -94,8 +97,11 @@ public class MigrationReadinessResource {
             return false;
         }
         return Try.of(() -> {
-            if (APILocator.getUserAPI().isCMSAdmin(user)) {
-                return true;
+            // Must be BOTH a CMS administrator AND a member of the migration support role — a plain
+            // admin without the role is not enough, and the role without admin is not enough, so a
+            // regular user never accesses or learns of the migration (issue #36360).
+            if (!APILocator.getUserAPI().isCMSAdmin(user)) {
+                return false;
             }
             final String roleKey = Config.getStringProperty(
                     MigrationIndexVisibility.VISIBILITY_ROLE_KEY,

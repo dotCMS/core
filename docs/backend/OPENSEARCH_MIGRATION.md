@@ -365,9 +365,10 @@ mutates anything — the fix is always the operator re-running the crawl / reind
 through the write-path gate above.
 
 - **Not public.** The resource is `@Hidden` (absent from the OpenAPI / API-playground schema) and
-  gated to CMS administrators or members of the migration support role
-  (`OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY`, default `os_migration_qa`); anyone else gets a 403.
-- **What it reports.** The current phase with its read/write engines and an `evaluable` flag; an
+  gated to CMS administrators who **also** hold the migration support role
+  (`OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY`, default `os_migration_qa`) — a plain admin without the
+  role is not enough. Anyone else gets a 403, so regular users never learn a migration is running.
+- **What it reports.** The current phase with its read/write engines and a `dualWrite` flag; an
   overall verdict — `safeToAdvance` (toward OpenSearch-only) and `safeToRollback` (downgrade) with an
   `outOfSyncCount`, a human `summary`, and per-index `blockers`; and the per-index ES↔OS mirror diff
   for **both** mirrored families — the versioned content indices (`working`/`live`) and the Site

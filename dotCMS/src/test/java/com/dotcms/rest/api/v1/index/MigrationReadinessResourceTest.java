@@ -18,8 +18,10 @@ import org.mockito.Mockito;
 
 /**
  * Unit tests for the role gate of {@link MigrationReadinessResource#isMigrationSupportUser(User)} —
- * the readiness endpoint is restricted to CMS administrators and members of the migration support
- * role, and fails closed otherwise (issue #36360). All access APIs are mocked; no container needed.
+ * the readiness endpoint is restricted to users who are BOTH a CMS administrator AND a member of the
+ * migration support role, and fails closed otherwise (issue #36360). A plain admin without the role,
+ * and the role without admin, are both denied — so regular users never learn a migration is running.
+ * All access APIs are mocked; no container needed.
  */
 public class MigrationReadinessResourceTest {
 
@@ -29,25 +31,12 @@ public class MigrationReadinessResourceTest {
         assertFalse(MigrationReadinessResource.isMigrationSupportUser(null));
     }
 
-    /** A CMS administrator is allowed without any role lookup. */
+    /** A CMS administrator who also holds the support role → allowed. */
     @Test
-    public void cmsAdmin_allowed() throws DotDataException {
+    public void cmsAdminWithRole_allowed() throws DotDataException {
         final User user = mock(User.class);
         final UserAPI userAPI = mock(UserAPI.class);
         when(userAPI.isCMSAdmin(user)).thenReturn(true);
-
-        try (MockedStatic<APILocator> api = Mockito.mockStatic(APILocator.class)) {
-            api.when(APILocator::getUserAPI).thenReturn(userAPI);
-            assertTrue(MigrationReadinessResource.isMigrationSupportUser(user));
-        }
-    }
-
-    /** A non-admin who holds the configured support role is allowed. */
-    @Test
-    public void roleMember_allowed() throws DotDataException {
-        final User user = mock(User.class);
-        final UserAPI userAPI = mock(UserAPI.class);
-        when(userAPI.isCMSAdmin(user)).thenReturn(false);
         final Role role = mock(Role.class);
         final RoleAPI roleAPI = mock(RoleAPI.class);
         when(roleAPI.loadRoleByKey(MigrationIndexVisibility.DEFAULT_VISIBILITY_ROLE_KEY))
@@ -61,12 +50,12 @@ public class MigrationReadinessResourceTest {
         }
     }
 
-    /** A non-admin without the role is denied. */
+    /** A CMS administrator WITHOUT the support role → denied (admin alone is not enough). */
     @Test
-    public void nonAdminWithoutRole_denied() throws DotDataException {
+    public void cmsAdminWithoutRole_denied() throws DotDataException {
         final User user = mock(User.class);
         final UserAPI userAPI = mock(UserAPI.class);
-        when(userAPI.isCMSAdmin(user)).thenReturn(false);
+        when(userAPI.isCMSAdmin(user)).thenReturn(true);
         final RoleAPI roleAPI = mock(RoleAPI.class);
         when(roleAPI.loadRoleByKey(MigrationIndexVisibility.DEFAULT_VISIBILITY_ROLE_KEY))
                 .thenReturn(mock(Role.class));
@@ -75,6 +64,19 @@ public class MigrationReadinessResourceTest {
         try (MockedStatic<APILocator> api = Mockito.mockStatic(APILocator.class)) {
             api.when(APILocator::getUserAPI).thenReturn(userAPI);
             api.when(APILocator::getRoleAPI).thenReturn(roleAPI);
+            assertFalse(MigrationReadinessResource.isMigrationSupportUser(user));
+        }
+    }
+
+    /** A support-role member who is NOT a CMS administrator → denied (role alone is not enough). */
+    @Test
+    public void roleWithoutAdmin_denied() throws DotDataException {
+        final User user = mock(User.class);
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.isCMSAdmin(user)).thenReturn(false);
+
+        try (MockedStatic<APILocator> api = Mockito.mockStatic(APILocator.class)) {
+            api.when(APILocator::getUserAPI).thenReturn(userAPI);
             assertFalse(MigrationReadinessResource.isMigrationSupportUser(user));
         }
     }
