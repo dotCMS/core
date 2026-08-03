@@ -354,16 +354,14 @@
             </div>
         }
 
-        <!-- View file changes: opens the working-vs-live source diff. Shown once
-             the agent has changed files (done / published). -->
-        @if (
-            (store.isDone() || store.isPublished()) && store.changedFiles().length > 0
-        ) {
+        <!-- View file changes: opens the working-vs-live source diff. Available once
+             a run has completed (done / published). The diff panel resolves the
+             working-vs-live delta itself, so this doesn't depend on the report's
+             fixed-count — a run that fixed 0 can still have working edits to show,
+             and the panel handles the "no changes" case with its own empty state. -->
+        @if (store.isDone() || store.isPublished()) {
             <p-button
-                [label]="
-                    'accessibility.studio.diff.view'
-                        | dm: [store.changedFiles().length.toString()]
-                "
+                [label]="'accessibility.studio.diff.view' | dm"
                 icon="pi pi-code"
                 severity="secondary"
                 [text]="true"

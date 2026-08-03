@@ -478,14 +478,13 @@ describe('DotA11yRunComponent', () => {
             expect(discard).toHaveBeenCalled();
         });
 
-        it('hides the view-file-changes button when no files changed', () => {
-            expect(spectator.query(byTestId('studio-viewdiff-btn'))).toBeFalsy();
+        it('shows the view-file-changes button even when the report fixed 0 files', () => {
+            // done + no changedFiles: the button must still show — the diff panel
+            // resolves the working-vs-live delta itself and owns the empty state.
+            expect(spectator.query(byTestId('studio-viewdiff-btn'))).toBeTruthy();
         });
 
-        it('shows the view-file-changes button and opens the diff drawer', () => {
-            changedFiles = [{ path: '//demo/a.vtl', identifier: 'id-a' }];
-            render('done', MOCK_FIX_REPORT);
-
+        it('opens the diff drawer when the button is clicked', () => {
             // Drawer starts closed.
             expect(spectator.query(DotA11yDiffStubComponent)?.open()).toBe(false);
 
@@ -504,8 +503,6 @@ describe('DotA11yRunComponent', () => {
         });
 
         it('closes the diff drawer on the child close output', () => {
-            changedFiles = [{ path: '//demo/a.vtl', identifier: 'id-a' }];
-            render('done', MOCK_FIX_REPORT);
             spectator.component.openDiff();
             spectator.detectChanges();
 
