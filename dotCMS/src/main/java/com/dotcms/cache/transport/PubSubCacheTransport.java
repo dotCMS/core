@@ -3,6 +3,7 @@ package com.dotcms.cache.transport;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import com.dotcms.cache.transport.CacheTransportTopic.CacheEventType;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.dotpubsub.DotPubSubEvent;
@@ -14,7 +15,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 
 /**
@@ -31,19 +34,36 @@ public class PubSubCacheTransport implements CacheTransport {
 
     final AtomicBoolean initialized = new AtomicBoolean(false);
 
+    final AtomicLong droppedMessages = new AtomicLong(0);
+
+    private final AtomicLong lastDropWarnAt = new AtomicLong(0);
+
+    private static final long DROP_WARN_INTERVAL_MILLIS =
+            Config.getLongProperty("CACHE_TRANSPORT_DROP_WARN_INTERVAL_MILLIS", 30000);
+
     @Override
     public boolean requiresAutowiring() {
         return false;
     }
 
     public PubSubCacheTransport() {
-        this.pubsub = DotPubSubProviderLocator.provider.get();
-        this.topic = new CacheTransportTopic();
+        this(DotPubSubProviderLocator.provider.get(), new CacheTransportTopic());
+    }
+
+    @VisibleForTesting
+    PubSubCacheTransport(final DotPubSubProvider pubsub, final CacheTransportTopic topic) {
+        this.pubsub = pubsub;
+        this.topic = topic;
         Logger.debug(this.getClass(), "PubSubCacheTransport");
     }
 
     @Override
     public void init(final Server localServer) throws CacheTransportException {
+
+        if (this.initialized.get()) {
+            Logger.debug(this.getClass(), "PubSubCacheTransport already initialized, skipping re-init");
+            return;
+        }
 
         Logger.info(this.getClass(), "initing PubSubCacheTransport");
         this.pubsub.start();
@@ -56,6 +76,15 @@ public class PubSubCacheTransport implements CacheTransport {
     @Override
     public void send(final String message) throws CacheTransportException {
         if (!this.initialized.get()) {
+            final long dropped = this.droppedMessages.incrementAndGet();
+            final long now = System.currentTimeMillis();
+            final long lastWarn = this.lastDropWarnAt.get();
+            if (now - lastWarn > DROP_WARN_INTERVAL_MILLIS
+                    && this.lastDropWarnAt.compareAndSet(lastWarn, now)) {
+                Logger.warn(this.getClass(),
+                        "Cache transport is not initialized - dropping cluster cache invalidations. "
+                                + "Other nodes may serve stale content. Total dropped: " + dropped);
+            }
             return;
         }
 
@@ -123,6 +152,11 @@ public class PubSubCacheTransport implements CacheTransport {
     public boolean shouldReinit() {
 
         return !initialized.get();
+    }
+
+    @Override
+    public long getDroppedMessages() {
+        return droppedMessages.get();
     }
 
     @Override

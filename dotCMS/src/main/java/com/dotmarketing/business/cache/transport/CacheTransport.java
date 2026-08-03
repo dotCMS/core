@@ -56,6 +56,15 @@ public interface CacheTransport {
     default boolean requiresAutowiring() {
         return true;
     }
+
+    /**
+     * Number of cache invalidation messages this transport has dropped, e.g. because it was
+     * asked to send before it was initialized. Used by health checks and metrics to surface
+     * silent invalidation loss in a cluster.
+     */
+    default long getDroppedMessages() {
+        return 0;
+    }
     
 
     public interface CacheTransportInfo extends Serializable {
