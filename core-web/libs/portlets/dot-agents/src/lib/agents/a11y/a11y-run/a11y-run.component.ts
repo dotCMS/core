@@ -118,11 +118,25 @@ export class DotA11yRunComponent {
     readonly displayCount = signal(0);
 
     /**
-     * Whether the working-vs-live file diff slide-over is open. It overlays the
-     * preview area so the user can inspect the agent's changes without losing any
-     * scan/run UI state underneath.
+     * Which tab the right column shows: the visual `preview` (before/after
+     * iframes) or the source-`code` diff. The two share the same space via a pill
+     * toolbar so the user can line up the visual change with the code change.
      */
-    readonly diffOpen = signal(false);
+    readonly previewTab = signal<'preview' | 'code'>('preview');
+
+    /**
+     * The Code tab is only meaningful once a run has completed — before then the
+     * working version equals live and there's nothing to diff. It stays disabled
+     * (with a hint) until done/published.
+     */
+    readonly codeTabEnabled = computed(() => this.store.isDone() || this.store.isPublished());
+
+    /**
+     * True once the Code tab has been opened at least once. The diff component is
+     * only mounted after that (then kept alive), so its data + Monaco aren't built
+     * until the user actually asks for the code view.
+     */
+    readonly codeTabVisited = signal(false);
 
     /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
     private countRaf: number | null = null;
@@ -154,6 +168,15 @@ export class DotA11yRunComponent {
     );
 
     constructor() {
+        // If the Code tab becomes unavailable while it's selected (e.g. Discard /
+        // Re-scan drops the run back before done), fall back to the Preview tab so
+        // we never show a disabled tab's content.
+        effect(() => {
+            if (this.previewTab() === 'code' && !this.codeTabEnabled()) {
+                untracked(() => this.previewTab.set('preview'));
+            }
+        });
+
         // The URL is the source of truth for which page is open. Drive the store
         // from the page path: rehydrate it (a no-op when that page is already the
         // selection, e.g. arriving from the picker), so a cold load / shared link
@@ -587,14 +610,19 @@ export class DotA11yRunComponent {
         this.toPicker();
     }
 
-    /** Open the working-vs-live file diff slide-over over the preview area. */
-    openDiff(): void {
-        this.diffOpen.set(true);
-    }
-
-    /** Close the diff slide-over — the run screen underneath is untouched. */
-    closeDiff(): void {
-        this.diffOpen.set(false);
+    /**
+     * Switch the right-column tab. Selecting `code` is a no-op while it's disabled
+     * (no completed run yet) and marks the Code tab visited so its diff component
+     * mounts the first time.
+     */
+    setPreviewTab(tab: 'preview' | 'code'): void {
+        if (tab === 'code') {
+            if (!this.codeTabEnabled()) {
+                return;
+            }
+            this.codeTabVisited.set(true);
+        }
+        this.previewTab.set(tab);
     }
 
     runScan(): void {

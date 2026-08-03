@@ -72,6 +72,12 @@ function installMonacoMock() {
     return { createDiffEditor, createModel, setModel };
 }
 
+/** Flush the queueMicrotask() the component uses to defer the Monaco render. */
+async function flushMicrotasks(spectator: Spectator<DotA11yDiffComponent>) {
+    await Promise.resolve();
+    spectator.detectChanges();
+}
+
 describe('DotA11yDiffComponent', () => {
     let spectator: Spectator<DotA11yDiffComponent>;
 
@@ -89,8 +95,6 @@ describe('DotA11yDiffComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'accessibility.studio.diff.title': 'File changes',
-                    'accessibility.studio.diff.close': 'Close',
                     'accessibility.studio.diff.fileschanged': 'Files changed',
                     'accessibility.studio.diff.empty.title': 'No file changes',
                     'accessibility.studio.diff.loading': 'Loading…',
@@ -106,10 +110,10 @@ describe('DotA11yDiffComponent', () => {
         monacoMock = installMonacoMock();
     });
 
-    /** Render with the drawer open (or closed) and the given diff files. */
-    function render(open = true, diffFiles: PageDiffFile[] = DIFF_FILES) {
+    /** Render the panel with the Code tab active (or not) and the given diff files. */
+    function render(active = true, diffFiles: PageDiffFile[] = DIFF_FILES) {
         spectator = createComponent({
-            props: { open },
+            props: { active },
             providers: [
                 mockProvider(DotPageSourcesService, {
                     getPageSources: jest
@@ -125,23 +129,13 @@ describe('DotA11yDiffComponent', () => {
         spectator.detectChanges();
     }
 
-    /** Simulate the drawer finishing its open animation (its `onShow` event). */
-    function fireDrawerShow() {
-        spectator.component.onDrawerShow();
-        spectator.detectChanges();
-    }
-
-    it('keeps the drawer closed and loads nothing when open is false', () => {
+    it('loads nothing while inactive', () => {
         render(false);
-        // Drawer content is teleported to document.body (appendTo="body"), so
-        // content queries use { root: true } to search the whole document.
-        expect(spectator.query(byTestId('diff-panel'), { root: true })).toBeFalsy();
         expect(spectator.inject(DotPageSourcesService).getPageSources).not.toHaveBeenCalled();
     });
 
-    it('renders the drawer and loads the diff once opened', () => {
+    it('loads the diff for the selected page once active', () => {
         render(true);
-        expect(spectator.query(byTestId('diff-panel'), { root: true })).toBeTruthy();
         expect(spectator.inject(DotPageSourcesService).getPageSources).toHaveBeenCalledWith(
             '/about-us',
             'host-1',
@@ -151,14 +145,14 @@ describe('DotA11yDiffComponent', () => {
 
     it('lists only the changed files with add/remove counts', () => {
         render();
-        const rows = spectator.queryAll(byTestId('diff-file-row'), { root: true });
+        const rows = spectator.queryAll(byTestId('diff-file-row'));
         expect(rows.length).toBe(2);
-        expect(spectator.query(byTestId('diff-file-count'), { root: true })).toHaveText('2');
+        expect(spectator.query(byTestId('diff-file-count'))).toHaveText('2');
     });
 
     it('shows each file name and its +/- line counts, but not the folder path', () => {
         render();
-        const rows = spectator.queryAll(byTestId('diff-file-row'), { root: true });
+        const rows = spectator.queryAll(byTestId('diff-file-row'));
         expect(rows[0].textContent).toContain('a.vtl');
         expect(rows[0].textContent).toContain('+1');
         expect(rows[0].textContent).not.toContain('//demo/application/containers/');
@@ -166,9 +160,9 @@ describe('DotA11yDiffComponent', () => {
         expect(rows[1].textContent).not.toContain('//demo/application/themes/');
     });
 
-    it('renders the Monaco diff editor for the first file once the drawer shows', () => {
+    it('renders the Monaco diff editor for the first file', async () => {
         render();
-        fireDrawerShow();
+        await flushMicrotasks(spectator);
         // createDiffEditor is created once; models built from live (original) + working (modified).
         expect(monacoMock.createDiffEditor).toHaveBeenCalledTimes(1);
         expect(monacoMock.createModel).toHaveBeenCalledWith('old\ncode', 'html');
@@ -176,16 +170,16 @@ describe('DotA11yDiffComponent', () => {
         expect(monacoMock.setModel).toHaveBeenCalled();
     });
 
-    it('re-renders the diff models when a different file is selected', () => {
+    it('re-renders the diff models when a different file is selected', async () => {
         render();
-        fireDrawerShow();
+        await flushMicrotasks(spectator);
         monacoMock.createModel.mockClear();
 
         const cssRow = spectator
-            .queryAll(byTestId('diff-file-row'), { root: true })
+            .queryAll(byTestId('diff-file-row'))
             .find((el) => el.textContent?.includes('style.css'));
         spectator.click(cssRow as HTMLElement);
-        spectator.detectChanges();
+        await flushMicrotasks(spectator);
 
         // CSS file → css language; live is empty string.
         expect(monacoMock.createModel).toHaveBeenCalledWith('', 'css');
@@ -194,39 +188,13 @@ describe('DotA11yDiffComponent', () => {
 
     it('shows the empty state when nothing changed', () => {
         render(true, []);
-        expect(spectator.query(byTestId('diff-empty'), { root: true })).toBeTruthy();
-        expect(spectator.query(byTestId('diff-file-list'), { root: true })).toBeFalsy();
-    });
-
-    it('emits close and disposes the editor when the drawer hides', () => {
-        render();
-        fireDrawerShow();
-        const closeSpy = jest.fn();
-        spectator.output('close').subscribe(closeSpy);
-
-        // Simulate the drawer's dismissal (X / backdrop / Esc all funnel to onHide).
-        spectator.component.onDrawerHide();
-
-        expect(closeSpy).toHaveBeenCalled();
-    });
-
-    it('emits close when the X button is clicked', () => {
-        render();
-        const closeSpy = jest.fn();
-        spectator.output('close').subscribe(closeSpy);
-
-        const btn = spectator
-            .query(byTestId('diff-close-btn'), { root: true })
-            ?.querySelector('button');
-        spectator.click(btn as HTMLElement);
-
-        // The host clears `open` in response, which unmounts the drawer.
-        expect(closeSpy).toHaveBeenCalled();
+        expect(spectator.query(byTestId('diff-empty'))).toBeTruthy();
+        expect(spectator.query(byTestId('diff-file-list'))).toBeFalsy();
     });
 
     it('shows the error state when the diff load fails', () => {
         spectator = createComponent({
-            props: { open: true },
+            props: { active: true },
             providers: [
                 mockProvider(DotPageSourcesService, {
                     getPageSources: jest.fn().mockReturnValue(of([])),
@@ -236,6 +204,6 @@ describe('DotA11yDiffComponent', () => {
             ]
         });
         spectator.detectChanges();
-        expect(spectator.query(byTestId('diff-error'), { root: true })).toBeTruthy();
+        expect(spectator.query(byTestId('diff-error'))).toBeTruthy();
     });
 });

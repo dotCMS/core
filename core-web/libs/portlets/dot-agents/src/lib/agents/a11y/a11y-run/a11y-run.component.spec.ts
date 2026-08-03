@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -18,11 +18,10 @@ import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
-/** Stub for the diff drawer so the run spec doesn't pull in Monaco / HTTP. */
+/** Stub for the diff panel so the run spec doesn't pull in Monaco / HTTP. */
 @Component({ selector: 'dot-a11y-diff', standalone: true, template: '' })
 class DotA11yDiffStubComponent {
-    readonly open = input<boolean>(false);
-    readonly close = output<void>();
+    readonly active = input<boolean>(false);
 }
 
 const MOCK_PAGE: StudioPageRow = {
@@ -265,6 +264,17 @@ describe('DotA11yRunComponent', () => {
             spectator.click(btn as HTMLElement);
             expect(runScan).toHaveBeenCalled();
         });
+
+        it('disables the Code tab before a run completes', () => {
+            const codeTab = spectator.query(byTestId('studio-tab-code')) as HTMLButtonElement;
+            expect(codeTab.disabled).toBe(true);
+        });
+
+        it('ignores a click on the disabled Code tab', () => {
+            spectator.component.setPreviewTab('code');
+            spectator.detectChanges();
+            expect(spectator.component.previewTab()).toBe('preview');
+        });
     });
 
     describe('scanned phase', () => {
@@ -478,38 +488,35 @@ describe('DotA11yRunComponent', () => {
             expect(discard).toHaveBeenCalled();
         });
 
-        it('shows the view-file-changes button even when the report fixed 0 files', () => {
-            // done + no changedFiles: the button must still show — the diff panel
-            // resolves the working-vs-live delta itself and owns the empty state.
-            expect(spectator.query(byTestId('studio-viewdiff-btn'))).toBeTruthy();
+        it('enables the Code tab once the run has completed', () => {
+            const codeTab = spectator.query(byTestId('studio-tab-code')) as HTMLButtonElement;
+            expect(codeTab.disabled).toBe(false);
         });
 
-        it('opens the diff drawer when the button is clicked', () => {
-            // Drawer starts closed.
-            expect(spectator.query(DotA11yDiffStubComponent)?.open()).toBe(false);
+        it('switches to the Code tab and activates the diff panel', () => {
+            // Not mounted / not active until the Code tab is opened.
+            expect(spectator.query(DotA11yDiffStubComponent)).toBeFalsy();
 
-            const btn = spectator
-                .query(byTestId('studio-viewdiff-btn'))
-                ?.querySelector('button');
-            expect(btn).toBeTruthy();
-
-            spectator.click(btn as HTMLElement);
+            spectator.click(spectator.query(byTestId('studio-tab-code')) as HTMLElement);
             spectator.detectChanges();
 
-            // The button opens the drawer without navigating (run state preserved).
-            expect(spectator.component.diffOpen()).toBe(true);
-            expect(spectator.query(DotA11yDiffStubComponent)?.open()).toBe(true);
+            expect(spectator.component.previewTab()).toBe('code');
+            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
+            // Switching tabs, not navigating (run state preserved).
             expect(navigate).not.toHaveBeenCalled();
         });
 
-        it('closes the diff drawer on the child close output', () => {
-            spectator.component.openDiff();
+        it('switches back to Preview and deactivates the diff panel', () => {
+            spectator.component.setPreviewTab('code');
+            spectator.detectChanges();
+            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(true);
+
+            spectator.click(spectator.query(byTestId('studio-tab-preview')) as HTMLElement);
             spectator.detectChanges();
 
-            spectator.query(DotA11yDiffStubComponent)?.close.emit();
-            spectator.detectChanges();
-
-            expect(spectator.component.diffOpen()).toBe(false);
+            expect(spectator.component.previewTab()).toBe('preview');
+            // The panel stays mounted (visited) but is deactivated.
+            expect(spectator.query(DotA11yDiffStubComponent)?.active()).toBe(false);
         });
     });
 

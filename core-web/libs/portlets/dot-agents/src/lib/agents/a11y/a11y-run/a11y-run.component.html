@@ -354,22 +354,6 @@
             </div>
         }
 
-        <!-- View file changes: opens the working-vs-live source diff. Available once
-             a run has completed (done / published). The diff panel resolves the
-             working-vs-live delta itself, so this doesn't depend on the report's
-             fixed-count — a run that fixed 0 can still have working edits to show,
-             and the panel handles the "no changes" case with its own empty state. -->
-        @if (store.isDone() || store.isPublished()) {
-            <p-button
-                [label]="'accessibility.studio.diff.view' | dm"
-                icon="pi pi-code"
-                severity="secondary"
-                [text]="true"
-                styleClass="w-full mb-3"
-                (onClick)="openDiff()"
-                data-testid="studio-viewdiff-btn" />
-        }
-
         @switch (store.phase()) {
             @case ('ready') {
                 <div class="mb-3 flex items-center justify-between">
@@ -473,11 +457,59 @@
     </div>
 </aside>
 
-<!-- ============ PREVIEW PANE — side-by-side diff ============ -->
-<!-- Two frames at once so the before/after reads at a glance: PREVIEW (the
-     agent's working fixes) on the left, LIVE (published, what visitors see
-     today, with the violation markers) on the right. -->
-<main class="grid min-h-0 grid-cols-2 gap-4 bg-surface-100 p-5">
+<!-- ============ RIGHT COLUMN — Preview / Code tabs ============ -->
+<!-- A pill toolbar toggles between the visual before/after (Preview) and the
+     source-file diff (Code), so the two ways of reading the agent's changes
+     share the same space. -->
+<div class="flex min-h-0 flex-col bg-surface-100">
+    <!-- Pill toolbar. Code is disabled until a run has completed (nothing to diff
+         before then). -->
+    <div
+        class="flex h-12 flex-none items-center justify-center border-b border-surface-200 bg-white">
+        <div
+            class="inline-flex items-center gap-1 rounded-full bg-surface-100 p-1"
+            role="tablist"
+            [attr.aria-label]="'accessibility.studio.preview.tabs' | dm">
+            <button
+                type="button"
+                role="tab"
+                class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors"
+                [class.bg-white]="previewTab() === 'preview'"
+                [class.text-primary]="previewTab() === 'preview'"
+                [class.shadow-sm]="previewTab() === 'preview'"
+                [class.text-gray-500]="previewTab() !== 'preview'"
+                [attr.aria-selected]="previewTab() === 'preview'"
+                (click)="setPreviewTab('preview')"
+                data-testid="studio-tab-preview">
+                <i class="pi pi-desktop text-[13px]!" aria-hidden="true"></i>
+                {{ 'accessibility.studio.preview.tab.preview' | dm }}
+            </button>
+            <button
+                type="button"
+                role="tab"
+                class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                [class.bg-white]="previewTab() === 'code'"
+                [class.text-primary]="previewTab() === 'code'"
+                [class.shadow-sm]="previewTab() === 'code'"
+                [class.text-gray-500]="previewTab() !== 'code'"
+                [disabled]="!codeTabEnabled()"
+                [attr.aria-selected]="previewTab() === 'code'"
+                [pTooltip]="
+                    codeTabEnabled() ? null : ('accessibility.studio.preview.tab.code.hint' | dm)
+                "
+                (click)="setPreviewTab('code')"
+                data-testid="studio-tab-code">
+                <i class="pi pi-code text-[13px]!" aria-hidden="true"></i>
+                {{ 'accessibility.studio.preview.tab.code' | dm }}
+            </button>
+        </div>
+    </div>
+
+    <!-- PREVIEW tab: the two side-by-side render frames. Kept mounted (hidden)
+         while Code is showing so the iframes don't reload on every toggle. -->
+    <main
+        class="grid min-h-0 flex-1 grid-cols-2 gap-4 p-5"
+        [class.hidden]="previewTab() !== 'preview'">
     <!-- AFTER — the working render carrying the agent's fixes -->
     <section
         class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
@@ -547,8 +579,15 @@
             }
         </div>
     </section>
-</main>
+    </main>
 
-<!-- Working-vs-live file diff drawer. A PrimeNG drawer slides in over the run
-     screen so opening it preserves all scan/run state underneath. -->
-<dot-a11y-diff [open]="diffOpen()" (close)="closeDiff()" />
+    <!-- CODE tab: the working-vs-live source-file diff. Only mounted once the Code
+         tab has been opened, then kept mounted (hidden) so re-toggling is instant.
+         `active` tells it to load + lay out Monaco (it has no size while hidden). -->
+    @if (codeTabVisited()) {
+        <dot-a11y-diff
+            class="min-h-0 flex-1"
+            [class.hidden]="previewTab() !== 'code'"
+            [active]="previewTab() === 'code'" />
+    }
+</div>

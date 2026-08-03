@@ -9,16 +9,11 @@ import {
     ElementRef,
     inject,
     input,
-    output,
     signal,
     untracked,
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
-import { ButtonModule } from 'primeng/button';
-import { DrawerModule } from 'primeng/drawer';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, switchMap, take } from 'rxjs/operators';
 
@@ -44,9 +39,9 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
 };
 
 /**
- * The "working vs live" file diff **side panel** — a slide-over that overlays the
- * run screen's preview area so the user can inspect what the agent changed
- * WITHOUT navigating away (the scan/run UI state stays fully intact underneath).
+ * The "working vs live" file diff — an inline panel that fills the run screen's
+ * "Code" tab (beside the "Preview" tab), so the visual before/after and the
+ * source-code before/after share the same space.
  *
  * Lists the page's source files that DIFFER between the working (unpublished) and
  * live (published) versions beside a read-only Monaco side-by-side diff of the
@@ -54,8 +49,9 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
  *
  * It's a presentational child of {@link DotA11yRunComponent}: the page context
  * comes from the shared {@link AccessibilityStudioStore} (already hydrated by the
- * run screen), so there's no routing/rehydration here. Visibility is driven by
- * the {@link open} input; {@link close} asks the host to hide it.
+ * run screen), so there's no routing/rehydration here. The {@link active} input
+ * tells it the Code tab is selected — it lazy-loads the diff and (re)lays out the
+ * Monaco editor only then (the host has no size while the Preview tab is showing).
  *
  * Data path (see {@link DotPageSourcesService}):
  *   `_render-sources` → flatten to file assets → per file, fetch working + live
@@ -69,15 +65,11 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
 @Component({
     selector: 'dot-a11y-diff',
     standalone: true,
-    imports: [ButtonModule, DrawerModule, TooltipModule, DotMessagePipe],
+    imports: [DotMessagePipe],
     templateUrl: './a11y-diff.component.html',
     providers: [DotPageSourcesService],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // This component is mounted inside the run screen's grid. `position: fixed`
-    // takes the host — and the p-drawer it renders — OUT of grid flow, so it never
-    // claims a grid track and skews the two-column preview layout. (`display:
-    // contents` doesn't work here: it promotes the p-drawer child to a grid item.)
-    host: { class: 'fixed' }
+    host: { class: 'grid h-full min-h-0 grid-cols-[300px_1fr] bg-surface-100' }
 })
 export class DotA11yDiffComponent {
     readonly store = inject(AccessibilityStudioStore);
@@ -87,13 +79,11 @@ export class DotA11yDiffComponent {
     private readonly destroyRef = inject(DestroyRef);
 
     /**
-     * Whether the panel should be open. The template gates the whole `p-drawer` on
-     * this (`@if (open())`) so there's zero drawer DOM — and no lingering mask —
-     * when closed. Also drives the lazy data load.
+     * Whether the Code tab is currently selected. Drives the lazy data load and
+     * the Monaco (re)layout — while the Preview tab is showing, this panel is
+     * hidden (zero-size), so the editor mustn't try to size itself.
      */
-    readonly open = input<boolean>(false);
-    /** Emitted when the drawer is dismissed (X button / backdrop / Esc). */
-    readonly close = output<void>();
+    readonly active = input<boolean>(false);
 
     /** The Monaco diff editor host element. */
     private readonly diffHost = viewChild<ElementRef<HTMLDivElement>>('diffHost');
@@ -118,24 +108,18 @@ export class DotA11yDiffComponent {
     private editor: MonacoDiffEditor | null = null;
     /** True once the monaco global has loaded. */
     private readonly monacoReady = signal(false);
-    /**
-     * True while the drawer's content is actually mounted (between `onShow` and
-     * `onHide`). The Monaco host lives inside the drawer's headless template, so it
-     * only exists in this window — the render effect gates on it.
-     */
-    private readonly drawerShown = signal(false);
     /** The page identifier the current file list was loaded for (avoids reloads). */
     private loadedForIdentifier: string | null = null;
 
     constructor() {
-        // Lazily (re)load the diff whenever the panel is opened for a page — the
-        // run screen keeps this component mounted, so we key off open + the
-        // selected page rather than a lifecycle hook. Reload only when the page
-        // changed since the last load, so re-opening the panel is instant.
+        // Lazily (re)load the diff the first time the Code tab is opened for a page.
+        // The run screen keeps this component mounted across tab switches, so we key
+        // off `active` + the selected page rather than a lifecycle hook, and reload
+        // only when the page changed — so re-opening the tab is instant.
         effect(() => {
-            const isOpen = this.open();
+            const isActive = this.active();
             const page = this.store.selected();
-            if (!isOpen || !page) {
+            if (!isActive || !page) {
                 return;
             }
             untracked(() => {
@@ -155,42 +139,22 @@ export class DotA11yDiffComponent {
             )
             .subscribe(() => this.monacoReady.set(true));
 
-        // (Re)build the editor's model when the selection changes WHILE the drawer
-        // is already shown. The very first render (when the drawer opens) is driven
-        // by the drawer's `onShow` — its content, incl. the #diffHost, only mounts
-        // then. Gate on `drawerShown` so this doesn't fire before the host exists.
+        // (Re)build the editor's model whenever the Code tab is active, monaco is
+        // ready, and a file is selected. Gating on `active()` ensures the host has a
+        // real size (it's display:none / zero under the Preview tab); a microtask
+        // lets the just-shown host commit its dimensions before Monaco measures.
         effect(() => {
             const ready = this.monacoReady();
-            const shown = this.drawerShown();
+            const isActive = this.active();
             const file = this.selected();
             untracked(() => {
-                if (ready && shown && file) {
-                    this.renderDiff(file);
+                if (ready && isActive && file) {
+                    queueMicrotask(() => this.renderDiff(file));
                 }
             });
         });
 
         this.destroyRef.onDestroy(() => this.disposeEditor());
-    }
-
-    /** Drawer finished opening — its content (incl. #diffHost) is now in the DOM. */
-    onDrawerShow(): void {
-        this.drawerShown.set(true);
-        const file = this.selected();
-        if (this.monacoReady() && file) {
-            this.renderDiff(file);
-        }
-    }
-
-    /**
-     * Drawer's own dismiss paths (backdrop / Esc) fire PrimeNG's `onHide`: tear the
-     * editor down and tell the host to close (the host clears `open`, unmounting the
-     * `@if`). The explicit X button goes through {@link requestClose}.
-     */
-    onDrawerHide(): void {
-        this.drawerShown.set(false);
-        this.disposeEditor();
-        this.close.emit();
     }
 
     /** Fetch the page's source files, resolve their working-vs-live diffs. */
@@ -218,11 +182,6 @@ export class DotA11yDiffComponent {
     /** Select a file to show in the diff editor. */
     selectFile(identifier: string): void {
         this.selectedId.set(identifier);
-    }
-
-    /** X button — ask the host to close (clears `open`, which unmounts the drawer). */
-    requestClose(): void {
-        this.close.emit();
     }
 
     /** Monaco language id for a file, from its extension. */
