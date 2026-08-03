@@ -15,6 +15,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -66,6 +67,7 @@ interface SeverityRow {
     standalone: true,
     imports: [
         FormsModule,
+        AccordionModule,
         ButtonModule,
         ChartModule,
         ToggleSwitchModule,
@@ -132,11 +134,28 @@ export class DotA11yRunComponent {
 
     /**
      * Which of the side panel's accordion panels are open — the `scanner` (score,
-     * issues, activity log + scan/fix actions) and `files` (changed files + publish)
-     * open and close independently, so the user can watch a run and review the files
-     * it touched side by side. The scanner starts open, files collapsed.
+     * issues, activity log + scan/fix actions) and `files` (changed files + publish).
+     * `p-accordion` is in `multiple` mode, so this is the array it two-way binds:
+     * the panels open and close independently and the user can watch a run while
+     * reviewing the files it touched. The scanner starts open, files collapsed.
      */
-    private readonly openPanels = signal<ReadonlySet<StudioPanel>>(new Set(['scanner']));
+    readonly openPanels = signal<StudioPanel[]>(['scanner']);
+
+    /**
+     * Accordion design tokens, scoped to this accordion via `[dt]` — the component's
+     * own styling contract, not a `::ng-deep` override.
+     *
+     * The app-wide CustomLaraPreset flattens accordions with `panel.borderWidth: '0'`
+     * and leaves per-feature dividers to the consuming component (see theme.config.ts).
+     * So the bottom rule that separates the scanner and files panels is added back
+     * here, in gray-200.
+     */
+    readonly panelTokens = {
+        panel: {
+            borderWidth: '0 0 1px 0',
+            borderColor: '{gray.200}'
+        }
+    };
 
     /** How many source files differ between working and live, for the count badge. */
     readonly changedFileCount = signal(0);
@@ -607,30 +626,23 @@ export class DotA11yRunComponent {
         this.toPicker();
     }
 
-    /** Whether a given side panel is expanded. */
+    /**
+     * Whether a given side panel is expanded. The accordion renders its own panel
+     * bodies, so this is only for content that must react to the open state (the
+     * files panel's Publish bar).
+     */
     isPanelOpen(panel: StudioPanel): boolean {
-        return this.openPanels().has(panel);
+        return this.openPanels().includes(panel);
     }
 
     /**
-     * Expand or collapse one side panel, leaving the others as they are — both can
-     * be open at once, and both can be closed (the page context bar still names the
-     * page, so all-collapsed is a valid compact state rather than a dead end).
+     * Ensure a panel is open — used to jump the user to the files list. Not a toggle:
+     * pressing "Review files" twice must not close the panel it just opened.
      */
-    togglePanel(panel: StudioPanel): void {
-        this.openPanels.update((current) => {
-            const next = new Set(current);
-            if (!next.delete(panel)) {
-                next.add(panel);
-            }
-
-            return next;
-        });
-    }
-
-    /** Ensure a panel is open (used to jump the user to the files list). */
     openPanel(panel: StudioPanel): void {
-        this.openPanels.update((current) => new Set(current).add(panel));
+        this.openPanels.update((current) =>
+            current.includes(panel) ? current : [...current, panel]
+        );
     }
 
     /** A file was picked in (or cleared from) the changed-files list. */

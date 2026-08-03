@@ -23,41 +23,37 @@
 
     <!-- ============ SIDE PANEL ACCORDION ============ -->
     <!-- Two panels: the scanner (score, issues, activity log + scan/fix actions) and
-         the changed files (list + publish). They open and close independently, so a
-         run can be watched while reviewing the files it touched. The scanner starts
-         open (it's the entry point); files start collapsed. -->
-    <!-- The column scrolls as a whole: with both panels open the combined content
-         can exceed the viewport, and each panel sizes to its content. -->
-    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
+         the changed files (list + discard/publish). `multiple` so they open and close
+         independently — a run can be watched while reviewing the files it touched.
+         The scanner starts open (it's the entry point); files start collapsed. -->
+    <p-accordion
+        [multiple]="true"
+        [(value)]="openPanels"
+        [dt]="panelTokens"
+        styleClass="min-h-0 flex-1 overflow-y-auto"
+        data-testid="studio-panels">
         <!-- ---------- PANEL 1: SCANNER ---------- -->
-        <section class="flex flex-none flex-col border-b border-surface-200">
-            <button
-                type="button"
-                class="flex flex-none items-center gap-2.5 bg-white px-4 py-3 text-left transition-colors hover:bg-surface-50"
-                (click)="togglePanel('scanner')"
-                [attr.aria-expanded]="isPanelOpen('scanner')"
-                data-testid="studio-panel-scanner-header">
-                <i
-                    class="pi flex-none text-xs! text-gray-400"
-                    [class.pi-chevron-down]="isPanelOpen('scanner')"
-                    [class.pi-chevron-right]="!isPanelOpen('scanner')"
-                    aria-hidden="true"></i>
-                <i class="pi pi-search flex-none text-sm! text-primary" aria-hidden="true"></i>
-                <span class="flex-1 text-xs font-bold tracking-wider text-gray-500 uppercase">
-                    {{ 'accessibility.studio.panel.scanner' | dm }}
-                </span>
-                <!-- Open-issue count, once a scan has produced results. -->
-                @if (store.scanned()) {
+        <p-accordion-panel
+            value="scanner"
+            data-testid="studio-panel-scanner">
+            <p-accordion-header>
+                <span class="flex flex-1 items-center gap-2.5">
                     <span
-                        class="inline-flex h-5 flex-none items-center rounded-full bg-surface-200 px-2 text-[10px] font-bold text-gray-600"
-                        data-testid="studio-panel-scanner-count">
-                        {{ store.openCount() }}
+                        class="flex-1 text-xs font-bold tracking-wider text-gray-500 uppercase">
+                        {{ 'accessibility.studio.panel.scanner' | dm }}
                     </span>
-                }
-            </button>
-
-            @if (isPanelOpen('scanner')) {
-                <div class="flex min-h-0 flex-col" data-testid="studio-panel-scanner-body">
+                    <!-- Open-issue count, once a scan has produced results. -->
+                    @if (store.scanned()) {
+                        <span
+                            class="inline-flex h-5 flex-none items-center rounded-full bg-surface-200 px-2 text-[10px] font-bold text-gray-600"
+                            data-testid="studio-panel-scanner-count">
+                            {{ store.openCount() }}
+                        </span>
+                    }
+                </span>
+            </p-accordion-header>
+            <p-accordion-content>
+                <div class="flex flex-col" data-testid="studio-panel-scanner-body">
     <!-- Score widget SKELETON — shown while scanning, with the SAME footprint as
          the real widget so the swap to results is a crossfade with no layout shift. -->
     @if (store.isScanning()) {
@@ -406,152 +402,122 @@
                 </div>
                 <p-button
                     [label]="'accessibility.studio.action.scan' | dm"
-                    icon="pi pi-search"
                     styleClass="w-full"
-                    [rounded]="true"
                     (onClick)="runScan()"
                     data-testid="studio-scan-btn" />
             }
             @case ('scanning') {
                 <p-button
                     [label]="'accessibility.studio.action.stopscan' | dm"
-                    icon="pi pi-stop"
                     severity="secondary"
                     [outlined]="true"
                     styleClass="w-full"
-                    [rounded]="true"
                     (onClick)="stopScan()"
                     data-testid="studio-stopscan-btn" />
             }
             @case ('scanned') {
                 <div class="flex gap-2.5">
                     <p-button
-                        icon="pi pi-refresh"
+                        [label]="'accessibility.studio.action.rescan' | dm"
                         severity="secondary"
                         [outlined]="true"
-                        [rounded]="true"
                         (onClick)="runScan()"
-                        [attr.aria-label]="'accessibility.studio.action.rescan' | dm"
-                        [pTooltip]="'accessibility.studio.action.rescan' | dm"
                         data-testid="studio-rescan-btn" />
                     <p-button
                         [label]="'accessibility.studio.action.fix' | dm"
-                        icon="pi pi-sparkles"
                         styleClass="flex-1"
-                        [rounded]="true"
-                        (onClick)="startFix()"
+                            (onClick)="startFix()"
                         data-testid="studio-fix-btn" />
                 </div>
             }
             @case ('fixing') {
                 <p-button
                     [label]="'accessibility.studio.action.stopagent' | dm"
-                    icon="pi pi-stop"
                     severity="danger"
                     [outlined]="true"
                     styleClass="w-full"
-                    [rounded]="true"
                     (onClick)="stopAgent()"
                     data-testid="studio-stopagent-btn" />
             }
             @case ('done') {
-                <!-- Publishing lives in the Files panel (it's the changed files that
-                     go live). Here we offer a re-scan and a way to drop the run. -->
-                <div class="flex gap-2.5">
-                    <p-button
-                        [label]="'accessibility.studio.action.discard' | dm"
-                        severity="secondary"
-                        [outlined]="true"
-                        [rounded]="true"
-                        (onClick)="discardChanges()"
-                        data-testid="studio-discard-btn" />
-                    <p-button
-                        [label]="'accessibility.studio.action.reviewfiles' | dm"
-                        icon="pi pi-file-edit"
-                        styleClass="flex-1"
-                        [rounded]="true"
-                        (onClick)="openPanel('files')"
-                        data-testid="studio-reviewfiles-btn" />
-                </div>
+                <!-- Discard + Publish live in the Files panel, with the files they
+                     act on. Here we just send the user there. -->
+                <p-button
+                    [label]="'accessibility.studio.action.reviewfiles' | dm"
+                    styleClass="w-full"
+                    (onClick)="openPanel('files')"
+                    data-testid="studio-reviewfiles-btn" />
             }
             @case ('published') {
                 <div class="flex gap-2.5">
                     <p-button
                         [label]="'accessibility.studio.action.allpages' | dm"
-                        icon="pi pi-list"
                         severity="secondary"
                         [outlined]="true"
                         styleClass="flex-1"
-                        [rounded]="true"
-                        (onClick)="backToPicker()"
+                            (onClick)="backToPicker()"
                         data-testid="studio-allpages-btn" />
                 </div>
             }
         }
                     </div>
                 </div>
-            }
-        </section>
+            </p-accordion-content>
+        </p-accordion-panel>
 
         <!-- ---------- PANEL 2: CHANGED FILES ---------- -->
-        <section class="flex flex-none flex-col border-b border-surface-200">
-            <button
-                type="button"
-                class="flex flex-none items-center gap-2.5 bg-white px-4 py-3 text-left transition-colors hover:bg-surface-50"
-                (click)="togglePanel('files')"
-                [attr.aria-expanded]="isPanelOpen('files')"
-                data-testid="studio-panel-files-header">
-                <i
-                    class="pi flex-none text-xs! text-gray-400"
-                    [class.pi-chevron-down]="isPanelOpen('files')"
-                    [class.pi-chevron-right]="!isPanelOpen('files')"
-                    aria-hidden="true"></i>
-                <i class="pi pi-file-edit flex-none text-sm! text-primary" aria-hidden="true"></i>
-                <span class="flex-1 text-xs font-bold tracking-wider text-gray-500 uppercase">
-                    {{ 'accessibility.studio.panel.files' | dm }}
-                </span>
-                @if (hasChangedFiles()) {
+        <p-accordion-panel
+            value="files"
+            data-testid="studio-panel-files">
+            <p-accordion-header>
+                <span class="flex flex-1 items-center gap-2.5">
                     <span
-                        class="inline-flex h-5 flex-none items-center rounded-full bg-primary-50 px-2 text-[10px] font-bold text-primary"
-                        data-testid="studio-panel-files-count">
-                        {{ changedFileCount() }}
+                        class="flex-1 text-xs font-bold tracking-wider text-gray-500 uppercase">
+                        {{ 'accessibility.studio.panel.files' | dm }}
                     </span>
-                }
-            </button>
+                    @if (hasChangedFiles()) {
+                        <span
+                            class="inline-flex h-5 flex-none items-center rounded-full bg-primary-50 px-2 text-[10px] font-bold text-primary"
+                            data-testid="studio-panel-files-count">
+                            {{ changedFileCount() }}
+                        </span>
+                    }
+                </span>
+            </p-accordion-header>
+            <p-accordion-content>
+                <div data-testid="studio-panel-files-body">
+                    <dot-a11y-diff
+                        [activeFileId]="diffFile()?.identifier ?? null"
+                        (fileSelected)="onDiffFileSelected($event)"
+                        (changedCount)="onChangedFilesCount($event)"
+                        data-testid="studio-diff-list" />
 
-            <!-- The list stays mounted while collapsed so it keeps resolving the
-                 working-vs-live delta (and the header's count) without the user
-                 having to open the panel. -->
-            <div
-                class="px-3 pb-3"
-                [style.display]="isPanelOpen('files') ? null : 'none'"
-                data-testid="studio-panel-files-body">
-                <dot-a11y-diff
-                    [activeFileId]="diffFile()?.identifier ?? null"
-                    (fileSelected)="onDiffFileSelected($event)"
-                    (changedCount)="onChangedFilesCount($event)"
-                    data-testid="studio-diff-list" />
-            </div>
-
-            <!-- Publish — the changed files are what goes live, so the action sits
-                 with them. Publishing the page publishes its source files together;
-                 there is no per-file publishing. -->
-            @if (isPanelOpen('files') && hasChangedFiles()) {
-                <div
-                    class="flex-none border-t border-surface-100 bg-surface-50 px-4 pt-3.5 pb-4"
-                    data-testid="studio-publish-bar">
-                    <p-button
-                        [label]="'accessibility.studio.action.apply' | dm"
-                        icon="pi pi-upload"
-                        severity="success"
-                        styleClass="w-full"
-                        [rounded]="true"
-                        (onClick)="applyChanges()"
-                        data-testid="studio-apply-btn" />
+                    <!-- Discard + Publish sit together with the files they act on.
+                         Publishing the page publishes its changed source files as a
+                         unit; there is no per-file publishing. Shown once a run is
+                         awaiting review and there is something to publish. -->
+                    @if (store.isDone() && hasChangedFiles()) {
+                        <div
+                            class="mt-3 flex gap-2.5 border-t border-surface-100 pt-3.5"
+                            data-testid="studio-publish-bar">
+                            <p-button
+                                [label]="'accessibility.studio.action.discard' | dm"
+                                severity="secondary"
+                                [outlined]="true"
+                                (onClick)="discardChanges()"
+                                data-testid="studio-discard-btn" />
+                            <p-button
+                                [label]="'accessibility.studio.action.apply' | dm"
+                                severity="success"
+                                styleClass="flex-1"
+                                (onClick)="applyChanges()"
+                                data-testid="studio-apply-btn" />
+                        </div>
+                    }
                 </div>
-            }
-        </section>
-    </div>
+            </p-accordion-content>
+        </p-accordion-panel>
+    </p-accordion>
 </aside>
 
 <!-- ============ RIGHT COLUMN — Preview / file diff ============ -->

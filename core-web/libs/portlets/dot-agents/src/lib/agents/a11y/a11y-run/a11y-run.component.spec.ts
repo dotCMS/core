@@ -275,82 +275,97 @@ describe('DotA11yRunComponent', () => {
     describe('side panel accordion', () => {
         beforeEach(() => render('ready'));
 
-        /** Is the files panel body visible (it stays mounted while collapsed)? */
-        const filesVisible = () =>
-            (spectator.query(byTestId('studio-panel-files-body')) as HTMLElement).style.display !==
-            'none';
+        /** Click a panel's PrimeNG accordion header. */
+        const clickHeader = (panel: 'scanner' | 'files') => {
+            const header = spectator
+                .query(byTestId(`studio-panel-${panel}`))
+                ?.querySelector('p-accordion-header') as HTMLElement;
+            spectator.click(header);
+            spectator.detectChanges();
+        };
 
         it('opens with the scanner panel expanded and files collapsed', () => {
             expect(spectator.component.isPanelOpen('scanner')).toBe(true);
             expect(spectator.component.isPanelOpen('files')).toBe(false);
-            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeTruthy();
-            // The list stays mounted while collapsed so it keeps resolving the delta.
+            // p-accordion-content keeps content mounted (hideStrategy="visibility"),
+            // so the files list keeps resolving the delta while collapsed.
             expect(spectator.query(byTestId('studio-panel-files-body'))).toBeTruthy();
-            expect(filesVisible()).toBe(false);
         });
 
         it('both panels can be open at once', () => {
-            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
-            spectator.detectChanges();
+            clickHeader('files');
 
             expect(spectator.component.isPanelOpen('files')).toBe(true);
             // Opening files must NOT collapse the scanner.
             expect(spectator.component.isPanelOpen('scanner')).toBe(true);
-            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeTruthy();
-            expect(filesVisible()).toBe(true);
+            expect(spectator.component.openPanels()).toEqual(['scanner', 'files']);
         });
 
         it('each panel collapses independently', () => {
-            // Open both, then close the scanner — files stays open.
-            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
-            spectator.click(
-                spectator.query(byTestId('studio-panel-scanner-header')) as HTMLElement
-            );
-            spectator.detectChanges();
+            clickHeader('files');
+            clickHeader('scanner');
 
             expect(spectator.component.isPanelOpen('scanner')).toBe(false);
             expect(spectator.component.isPanelOpen('files')).toBe(true);
-            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeFalsy();
-            expect(filesVisible()).toBe(true);
         });
 
         it('both panels can be closed at once', () => {
-            spectator.click(
-                spectator.query(byTestId('studio-panel-scanner-header')) as HTMLElement
-            );
-            spectator.detectChanges();
+            clickHeader('scanner');
 
             expect(spectator.component.isPanelOpen('scanner')).toBe(false);
             expect(spectator.component.isPanelOpen('files')).toBe(false);
-            expect(spectator.query(byTestId('studio-panel-scanner-body'))).toBeFalsy();
-            expect(filesVisible()).toBe(false);
+            expect(spectator.component.openPanels()).toEqual([]);
         });
 
-        it('badges the files panel and shows Publish only when files changed', () => {
-            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
-            spectator.detectChanges();
-            // No files reported yet → no badge, no publish bar.
+        it('badges the files panel once files are reported', () => {
             expect(spectator.query(byTestId('studio-panel-files-count'))).toBeFalsy();
-            expect(spectator.query(byTestId('studio-publish-bar'))).toBeFalsy();
 
             const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
             list.changedCount.emit(2);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('studio-panel-files-count'))).toHaveText('2');
-            expect(spectator.query(byTestId('studio-publish-bar'))).toBeTruthy();
+        });
+    });
+
+    describe('files panel actions (done phase)', () => {
+        beforeEach(() => render('done', MOCK_FIX_REPORT));
+
+        /** Report N changed files from the stubbed list. */
+        const reportFiles = (n: number) => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.changedCount.emit(n);
+            spectator.detectChanges();
+        };
+
+        it('shows no action bar until there are files to publish', () => {
+            expect(spectator.query(byTestId('studio-publish-bar'))).toBeFalsy();
         });
 
-        it('Publish in the files panel publishes the page', () => {
-            spectator.click(spectator.query(byTestId('studio-panel-files-header')) as HTMLElement);
-            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
-            list.changedCount.emit(1);
-            spectator.detectChanges();
+        it('shows Discard next to Publish once files changed', () => {
+            reportFiles(2);
 
+            expect(spectator.query(byTestId('studio-publish-bar'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-apply-btn'))).toBeTruthy();
+        });
+
+        it('Publish publishes the page', () => {
+            reportFiles(1);
             spectator.click(
                 spectator.query(byTestId('studio-apply-btn'))?.querySelector('button') as HTMLElement
             );
             expect(publish).toHaveBeenCalled();
+        });
+
+        it('Discard drops the working fixes', () => {
+            reportFiles(1);
+            spectator.click(
+                spectator
+                    .query(byTestId('studio-discard-btn'))
+                    ?.querySelector('button') as HTMLElement
+            );
+            expect(discard).toHaveBeenCalled();
         });
     });
 
@@ -565,10 +580,10 @@ describe('DotA11yRunComponent', () => {
     describe('done phase', () => {
         beforeEach(() => render('done', MOCK_FIX_REPORT));
 
-        it('offers Discard + a jump to the files panel (publish lives there)', () => {
-            expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+        it('offers a jump to the files panel — discard/publish live there', () => {
             expect(spectator.query(byTestId('studio-reviewfiles-btn'))).toBeTruthy();
-            // Publishing is in the Files panel, which is collapsed by default.
+            // Both actions belong to the files panel, and it has no files yet.
+            expect(spectator.query(byTestId('studio-discard-btn'))).toBeFalsy();
             expect(spectator.query(byTestId('studio-apply-btn'))).toBeFalsy();
         });
 
@@ -595,10 +610,9 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.component.isPanelOpen('files')).toBe(true);
         });
 
-        it('Discard drops the working fixes', () => {
-            const btn = spectator.query(byTestId('studio-discard-btn'))?.querySelector('button');
-            spectator.click(btn as HTMLElement);
-            expect(discard).toHaveBeenCalled();
+        it('renders an activity step per result plus scan/locate/rescan framing', () => {
+            // 7 fixed + 5 reported + 3 framing steps (scan, locate, rescan)
+            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(15);
         });
 
         it('shows the after-count in the ring', () => {
@@ -607,11 +621,6 @@ describe('DotA11yRunComponent', () => {
 
         it('still shows the needs-review section in the report', () => {
             expect(spectator.query(byTestId('studio-review-section'))).toBeTruthy();
-        });
-
-        it('renders an activity step per result plus scan/locate/rescan framing', () => {
-            // 7 fixed + 5 reported + 3 framing steps (scan, locate, rescan)
-            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(15);
         });
 
         it('picking a file in the list opens its diff in the right pane', () => {
