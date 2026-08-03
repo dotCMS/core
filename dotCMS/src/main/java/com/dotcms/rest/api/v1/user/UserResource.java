@@ -382,6 +382,7 @@ public class UserResource implements Serializable {
 	 * 		<li>{@code per_page}</li>
 	 * 		<li>{@code includeAnonymous}</li>
 	 * 		<li>{@code includeDefault}</li>
+	 * 		<li>{@code roleKey}</li>
 	 * </ul>
 	 * <p>
 	 * Example #1:
@@ -396,7 +397,8 @@ public class UserResource implements Serializable {
 	 *
 	 * @param request          The current instance of the {@link HttpServletRequest}.
 	 * @param response         The current instance of the {@link HttpServletResponse}.
-	 * @param filter           Allows you to filter Users by their full name or parts of it.
+	 * @param filter           Allows you to filter Users by their user ID, first name, last name, email address, or
+	 *                         full name -- or parts of any of them, case-insensitively.
 	 * @param page             The results page or offset, for pagination purposes.
 	 * @param perPage          The size of the results page, for pagination purposes.
 	 * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
@@ -407,6 +409,8 @@ public class UserResource implements Serializable {
 	 * @param assetInode       The Inode of a specific asset, if you're querying Users that have a specific permission
 	 *                         on it.
 	 * @param permission       The permission type that Users may have on the previous asset.
+	 * @param roleKeys         Optional Role keys -- repeatable and/or comma-separated -- that restrict the results to
+	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}.
 	 *
 	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
 	 */
@@ -420,6 +424,9 @@ public class UserResource implements Serializable {
 					description = "Users retrieved successfully",
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = ResponseEntityListUserView.class))),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - a provided roleKey does not match any existing Role",
+					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "401",
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -433,7 +440,7 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-						   @Parameter(description = "Filter users by full name or parts of it") @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
+						   @Parameter(description = "Filter users by user ID, first name, last name, email address, or full name -- or parts of any of them") @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
 						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
 						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
 						   @Parameter(description = "Column name for sorting results") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
@@ -441,7 +448,8 @@ public class UserResource implements Serializable {
 						   @Parameter(description = "Include anonymous user in results") @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
 						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
 						   @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
-						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission) {
+						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission,
+						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys) {
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
@@ -456,9 +464,42 @@ public class UserResource implements Serializable {
 		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
 		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
 
+		final List<Role> roles = this.resolveRoleKeys(roleKeys);
+		if (UtilMethods.isSet(roles)) {
+			extraParams.put(UserPaginator.ROLES_PARAM, roles);
+		}
+
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		final User user = initData.getUser();
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
+	}
+
+	/**
+	 * Resolves the {@code roleKey} query parameter values -- each entry may itself be a comma-separated list -- into
+	 * the {@link Role} objects expected by the {@link UserPaginator#ROLES_PARAM} parameter.
+	 *
+	 * @param roleKeys The Role key values provided by the caller, potentially empty.
+	 *
+	 * @return The list of resolved {@link Role} objects, or an empty list if no keys were provided.
+	 *
+	 * @throws BadRequestException If any of the provided keys does not match an existing Role.
+	 */
+	private List<Role> resolveRoleKeys(final List<String> roleKeys) {
+		if (!UtilMethods.isSet(roleKeys)) {
+			return List.of();
+		}
+		return roleKeys.stream()
+				.flatMap(value -> Arrays.stream(value.split(",")))
+				.map(String::trim)
+				.filter(UtilMethods::isSet)
+				.map(roleKey -> {
+					final Role role = Try.of(() -> this.roleAPI.loadRoleByKey(roleKey))
+							.getOrElseThrow(DotRuntimeException::new);
+					if (null == role || !UtilMethods.isSet(role.getId())) {
+						throw new BadRequestException(String.format("Role with key '%s' was not found", roleKey));
+					}
+					return role;
+				}).collect(Collectors.toList());
 	}
 
     /**
