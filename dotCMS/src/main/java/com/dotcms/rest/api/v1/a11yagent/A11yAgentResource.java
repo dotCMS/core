@@ -352,12 +352,11 @@ public class A11yAgentResource {
             if (status == 401 || status == 403) {
                 Logger.warn(A11yAgentResource.class,
                         "A11y agent returned " + status + " — check apiAuthToken in App config");
-                return Response.status(Response.Status.BAD_GATEWAY)
-                        .entity(new ResponseEntityView<>(new ErrorEntity(
-                                "A11Y_AGENT_AUTH_FAILED", "Agent service authentication failed.")))
-                        .build();
             }
 
+            // Relay the upstream status and body verbatim — the agent owns its error
+            // shape and the Studio surfaces it directly. Only failures that never
+            // reached the agent (below) are synthesized here.
             return Response.status(status).entity(upstream.body())
                     .type(MediaType.APPLICATION_JSON).build();
 
@@ -413,13 +412,13 @@ public class A11yAgentResource {
             final int status = upstream.statusCode();
             Logger.info(A11yAgentResource.class, "SSE relay upstream status: " + status);
             if (status == 401 || status == 403) {
-                writeErrorEvent(output, status,
-                        "Agent service authentication failed — check apiAuthToken");
-                return;
+                Logger.warn(A11yAgentResource.class,
+                        "A11y agent returned " + status + " — check apiAuthToken in App config");
             }
             if (status >= 400) {
-                writeErrorEvent(output, status,
-                        "Agent returned " + status);
+                // Relay the agent's own error body verbatim rather than synthesizing
+                // one — the agent owns its error shape.
+                writeUpstreamErrorEvent(output, upstream.body());
                 return;
             }
             Logger.info(A11yAgentResource.class, "SSE relay: reading frames from upstream");
@@ -485,6 +484,52 @@ public class A11yAgentResource {
             } catch (IOException e) {
                 Logger.warn(A11yAgentResource.class,
                         "Error closing EventOutput: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Relays the agent's own error body as the terminal {@code error} SSE frame, byte for
+     * byte, so the Studio sees exactly what the agent sent. Falls back to a synthesized
+     * frame only when the upstream body is empty or unreadable — i.e. when there is no
+     * agent error to pass through.
+     */
+    private static void writeUpstreamErrorEvent(final EventOutput output,
+            final InputStream upstreamBody) {
+        String body = null;
+        try (final InputStream in = upstreamBody) {
+            body = new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+        } catch (Exception e) {
+            Logger.warn(A11yAgentResource.class,
+                    "Could not read a11y agent error body: " + e.getMessage());
+        }
+
+        if (!UtilMethods.isSet(body)) {
+            writeErrorEvent(output, 502, "Agent returned an error with no body.");
+            return;
+        }
+
+        // A JSON body is relayed byte for byte. A non-JSON body (an HTML error page from
+        // an intermediary, say) is wrapped into {"message": "..."} so the text still
+        // reaches the client instead of failing JSON.parse into a generic message.
+        final String data = body.startsWith("{") || body.startsWith("[")
+                ? body
+                : "{\"message\":" + jsonString(body) + "}";
+
+        try {
+            output.write(new OutboundEvent.Builder()
+                    .name("error")
+                    .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                    .data(String.class, data)
+                    .build());
+        } catch (IOException e) {
+            Logger.warn(A11yAgentResource.class,
+                    "Error writing SSE error event: " + e.getMessage());
+        } finally {
+            try {
+                output.close();
+            } catch (IOException e) {
+                Logger.warn(A11yAgentResource.class, "Error closing EventOutput: " + e.getMessage());
             }
         }
     }
@@ -624,9 +669,12 @@ public class A11yAgentResource {
 
         // The minted token goes in Authorization: Bearer (plan §8.2), not the body.
         // The body carries only the resolved page fields (FixRequestSchema contract).
+        // hostId is required at the top level by the agent; it is also kept inside
+        // `page` since the agent's page object still carries it.
         return "{"
                 + "\"runId\":" + jsonString(runId) + ","
                 + "\"dotcmsBaseUrl\":" + jsonString(dotcmsBaseUrl) + ","
+                + "\"hostId\":" + jsonString(p.hostId) + ","
                 + "\"page\":{"
                 + "\"identifier\":" + jsonString(p.identifier) + ","
                 + "\"uri\":" + jsonString(p.uri) + ","
