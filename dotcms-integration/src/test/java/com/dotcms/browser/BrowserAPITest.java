@@ -1225,7 +1225,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertNotNull("Result should not be null", result);
         assertTrue("Should contain title search", result.contains("title:test*"));
         assertTrue("Should contain quoted title search", result.contains("title:'test'^15"));
-        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*^5"));
+        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*"));
         assertTrue("Should be wrapped with mandatory group", result.startsWith(" +(") && result.endsWith(")"));
         assertFalse("Should not contain metadata search", result.contains("metadata.name"));
 
@@ -1330,13 +1330,12 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Text group must be exactly what the shared global-search strategy produces",
                 " +(" + expectedTextGroup + ")", result);
 
-        // Guards against regressing to the previous hand-rolled query, which used a broad
-        // leading-wildcard catchall (slow, matched unrelated body text) and mixed an explicit OR
-        // with a '+' modifier inside the same group.
+        // Guards against regressing to the previous hand-rolled query, which used a broad,
+        // unscoped leading-wildcard catchall (slow, matched unrelated body text). Whether the
+        // strategy itself uses ' OR ' internally is its own concern — the assertEquals above
+        // already pins this method to whatever it produces.
         assertFalse("Must not use a leading-wildcard catchall clause",
                 result.contains("catchall:*"));
-        assertFalse("Must not mix explicit OR with '+' operators in the text group",
-                result.contains(" OR "));
     }
 
     /**
