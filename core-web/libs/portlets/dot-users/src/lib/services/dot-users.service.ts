@@ -40,10 +40,9 @@ export interface DotUsersPaginatedParams {
     includeDefault?: boolean;
     /**
      * System role key to constrain the result set to users who hold that role
-     * (e.g. `DOTCMS_BACK_END_USER`, `DOTCMS_FRONT_END_USER`). The paginator
-     * already accepts a `roles` extra param at the Java layer; the REST wiring
-     * is delivered by dotCMS/core#36794. Sending it before that lands is
-     * harmless — the backend ignores unknown query params.
+     * (e.g. `DOTCMS_BACK_END_USER`, `DOTCMS_FRONT_END_USER`). The backend
+     * accepts it repeatably or as a comma-separated list; the FE currently
+     * uses a single value from the "Filter by" chip.
      */
     roleKey?: string;
 }
@@ -58,25 +57,25 @@ export class DotUsersService {
         let httpParams = new HttpParams();
 
         if (params.filter) {
-            httpParams = httpParams.set('filter', params.filter);
+            httpParams = httpParams.set('query', params.filter);
         }
         if (params.page !== undefined) {
             httpParams = httpParams.set('page', params.page.toString());
         }
         if (params.perPage !== undefined) {
-            httpParams = httpParams.set('perPage', params.perPage.toString());
+            httpParams = httpParams.set('per_page', params.perPage.toString());
         }
         if (params.orderBy) {
-            httpParams = httpParams.set('orderBy', params.orderBy);
+            httpParams = httpParams.set('orderby', params.orderBy);
         }
         if (params.direction) {
             httpParams = httpParams.set('direction', params.direction);
         }
         if (params.includeAnonymous) {
-            httpParams = httpParams.set('includeAnonymous', 'true');
+            httpParams = httpParams.set('includeanonymous', 'true');
         }
         if (params.includeDefault) {
-            httpParams = httpParams.set('includeDefault', 'true');
+            httpParams = httpParams.set('includedefault', 'true');
         }
         if (params.roleKey) {
             httpParams = httpParams.set('roleKey', params.roleKey);

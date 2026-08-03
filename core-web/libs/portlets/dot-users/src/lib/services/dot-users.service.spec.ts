@@ -45,7 +45,7 @@ describe('DotUsersService', () => {
             .subscribe();
 
         const req = spectator.expectOne(
-            '/api/v1/users/filter?filter=jane&page=2&perPage=40&orderBy=firstName&direction=ASC&includeAnonymous=true',
+            '/api/v1/users/filter?query=jane&page=2&per_page=40&orderby=firstName&direction=ASC&includeanonymous=true',
             HttpMethod.GET
         );
         req.flush({
