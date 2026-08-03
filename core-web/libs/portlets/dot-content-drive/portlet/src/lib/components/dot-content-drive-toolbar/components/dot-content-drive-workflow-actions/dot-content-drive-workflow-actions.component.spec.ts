@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
 
-import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
 import { DotContentDriveWorkflowActionsComponent } from './dot-content-drive-workflow-actions.component';
@@ -23,11 +22,8 @@ import {
 
 describe('DotContentDriveWorkflowActionsComponent', () => {
     let spectator: Spectator<DotContentDriveWorkflowActionsComponent>;
-    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let messageService: SpyObject<MessageService>;
-    let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
-    let confirmationService: SpyObject<ConfirmationService>;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
 
@@ -36,10 +32,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
         providers: [
             provideHttpClient(),
             mockProvider(DotContentDriveStore, {
-                selectedItems: mockSelectedItems,
-                loadItems: jest.fn(),
-                setStatus: jest.fn(),
-                setSelectedItems: jest.fn()
+                selectedItems: mockSelectedItems
             }),
             mockProvider(MessageService, {
                 add: jest.fn()
@@ -47,15 +40,9 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
             }),
-            mockProvider(DotWorkflowActionsFireService, {
-                fireDefaultAction: jest.fn().mockReturnValue(of([]))
-            }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn(),
                 editPage: jest.fn()
-            }),
-            mockProvider(ConfirmationService, {
-                confirm: jest.fn()
             })
         ],
         detectChanges: false
@@ -63,21 +50,11 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        store = spectator.inject(DotContentDriveStore, true);
         messageService = spectator.inject(MessageService, true);
-        dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
         navigationService = spectator.inject(DotContentDriveNavigationService, true);
-        confirmationService = spectator.inject(ConfirmationService, true);
 
-        // Setup spies
-        jest.spyOn(dotWorkflowActionsFireService, 'fireDefaultAction').mockReturnValue(of([]));
-        jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
-        jest.spyOn(store, 'loadItems');
-        jest.spyOn(store, 'setStatus');
-        jest.spyOn(store, 'setSelectedItems');
         jest.spyOn(messageService, 'add');
 
-        // Reset selected items signal before each test
         mockSelectedItems.set([]);
 
         spectator.detectChanges();
@@ -102,11 +79,6 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 const button = spectator.query(`[data-testid="workflow-action-${action.id}"]`);
                 expect(button).toBeTruthy();
             });
-        });
-
-        it('should render confirmation dialog component', () => {
-            const confirmDialog = spectator.query('p-confirmdialog');
-            expect(confirmDialog).toBeTruthy();
         });
 
         it('should render button labels with message keys', () => {
@@ -169,25 +141,6 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             ) as HTMLElement;
 
             expect(editPageButton?.style.display).not.toBe('none');
-        });
-
-        it('should show "Save as Draft" button for non-archived items', () => {
-            mockSelectedItems.set([
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ]);
-            spectator.detectChanges();
-
-            const draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
-            ) as HTMLElement;
-
-            expect(draftButton?.style.display).not.toBe('none');
         });
 
         it('should show "Download" button for all assets', () => {
@@ -256,193 +209,11 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
         });
     });
 
-    describe('Workflow Actions without Confirmation', () => {
-        it('should execute "Save as Draft" action directly without confirmation', () => {
-            const mockItems = [
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            const draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
-            );
-
-            spectator.click(draftButton);
-
-            expect(dotWorkflowActionsFireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
-                inodes: ['test-inode-1']
-            });
-
-            expect(confirmationService.confirm).not.toHaveBeenCalled();
-        });
-
-        // Archive's toolbar button was removed — the Workflow Center owns it now, where its
-        // execution (and Delete's confirmation) is covered by the Action Center spec.
-
-        it('should pass multiple inodes when multiple items are selected', () => {
-            const mockItems = [
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem,
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-2'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            const draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
-            );
-
-            spectator.click(draftButton);
-
-            expect(dotWorkflowActionsFireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
-                inodes: ['test-inode-1', 'test-inode-2']
-            });
-        });
-    });
-
-    describe('Workflow Action Success', () => {
-        it('should reload items after successful workflow action', () => {
-            const mockItems = [
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            const draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
-            );
-
-            spectator.click(draftButton);
-
-            expect(store.loadItems).toHaveBeenCalled();
-        });
-
-        it('should display success message after successful workflow action', () => {
-            const mockItems = [
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            const draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
-            );
-
-            spectator.click(draftButton);
-
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'content-drive.toast.workflow-executed',
-                detail: 'content-drive.toast.workflow-executed-detail'
-            });
-        });
-    });
-
-    describe('Workflow Action Error', () => {
-        it('should display error message when workflow action fails', () => {
-            const mockError = new Error('Something went wrong');
-
-            jest.spyOn(dotWorkflowActionsFireService, 'fireDefaultAction').mockReturnValue(
-                throwError(() => mockError)
-            );
-
-            const mockItems = [
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            const draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
-            );
-
-            spectator.click(draftButton);
-
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: 'content-drive.toast.workflow-error',
-                detail: 'Something went wrong'
-            });
-        });
-
-        it('should not reload items when workflow action fails', () => {
-            const mockError = new Error('Something went wrong');
-
-            jest.spyOn(dotWorkflowActionsFireService, 'fireDefaultAction').mockReturnValue(
-                throwError(() => mockError)
-            );
-
-            const mockItems = [
-                {
-                    archived: false,
-                    live: false,
-                    working: true,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            const draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
-            );
-
-            spectator.click(draftButton);
-
-            expect(store.loadItems).not.toHaveBeenCalled();
-        });
-    });
-
     describe('shouldShowAction method', () => {
         it('should return true when action has no showWhen conditions', () => {
             const action: ContentDriveWorkflowAction = {
                 name: 'Test Action',
-                id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT
+                id: WORKFLOW_ACTION_ID.DOWNLOAD
             };
 
             const result = spectator.component['shouldShowAction'](action);
@@ -463,8 +234,8 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             spectator.detectChanges();
 
             const action: ContentDriveWorkflowAction = {
-                name: 'Publish',
-                id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
+                name: 'Rename',
+                id: WORKFLOW_ACTION_ID.RENAME,
                 showWhen: {
                     noneArchived: true,
                     noneLive: true
@@ -489,8 +260,8 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             spectator.detectChanges();
 
             const action: ContentDriveWorkflowAction = {
-                name: 'Publish',
-                id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
+                name: 'Rename',
+                id: WORKFLOW_ACTION_ID.RENAME,
                 showWhen: {
                     noneArchived: true,
                     noneLive: true
@@ -604,7 +375,6 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
 
             spectator.click(downloadButton);
 
-            // Should use assetVersion if available
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining(mockAsset['assetVersion'] as string),
                 '_self'
@@ -636,7 +406,6 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
 
             spectator.click(downloadButton);
 
-            // Should use fileAssetVersion if available
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining(mockAsset['fileAssetVersion'] as string),
                 '_self'
@@ -647,19 +416,14 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
     });
 
     describe('Integration Tests', () => {
-        // Delete's confirm-then-fire flow moved to the Workflow Center along with the action; it is
-        // covered in the Action Center spec. No action left in this toolbar carries a
-        // `confirmationMessage`, so the confirm branch here is currently unexercised — it is kept
-        // because it is the mechanism any future confirmable toolbar action would use.
-
         it('should handle selection changes and update button visibility', () => {
             mockSelectedItems.set([]);
             spectator.detectChanges();
 
-            let draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
+            let editButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.GOT_TO_EDIT_CONTENTLET}"]`
             ) as HTMLElement;
-            expect(draftButton?.style.display).toBe('none');
+            expect(editButton?.style.display).toBe('none');
 
             mockSelectedItems.set([
                 {
@@ -672,10 +436,10 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             ]);
             spectator.detectChanges();
 
-            draftButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.SAVE_AS_DRAFT}"]`
+            editButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.GOT_TO_EDIT_CONTENTLET}"]`
             ) as HTMLElement;
-            expect(draftButton?.style.display).not.toBe('none');
+            expect(editButton?.style.display).not.toBe('none');
         });
     });
 });

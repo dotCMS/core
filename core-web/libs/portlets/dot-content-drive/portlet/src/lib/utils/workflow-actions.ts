@@ -4,7 +4,6 @@ import { isFolder } from './functions';
 
 export const WORKFLOW_ACTION_ID = {
     NEW: 'NEW',
-    SAVE_AS_DRAFT: 'EDIT',
     GOT_TO_EDIT_CONTENTLET: 'GOT_TO_EDIT_CONTENTLET',
     GOT_TO_EDIT_PAGE: 'GOT_TO_EDIT_PAGE',
     PUBLISH: 'PUBLISH',
@@ -56,12 +55,6 @@ export interface ContentDriveWorkflowAction {
     name: string;
     id: WORKFLOW_ACTION_ID;
     showWhen?: ActionShowConditions;
-    /**
-     * Optional confirmation message key to display before executing the action.
-     * When present, the user will be prompted to confirm before the action is executed.
-     * The value should be a message key that will be translated via DotMessageService.
-     */
-    confirmationMessage?: string;
 }
 
 const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
@@ -86,23 +79,13 @@ const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
-const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
-    name: 'content.drive.worflow.action.save-draft',
-    id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
-    showWhen: {
-        noneArchived: true,
-        noneFolder: true
-    }
-};
-
 /*
  * Publish, Unpublish, Archive, Unarchive and Delete deliberately no longer live here. They are
  * offered by the Workflow Center dialog's Quick Actions, which shows how many of the selected items
  * each one applies to — something a flat toolbar button cannot express. Keeping them in both places
  * meant the same action appeared twice, reached by two different code paths.
  *
- * The toolbar keeps the actions the dialog does not cover: the two Edit entries, Rename, Save as
- * Draft and Download.
+ * The toolbar keeps the actions the dialog does not cover: the two Edit entries, Rename and Download.
  */
 
 const RENAME_ACTION: ContentDriveWorkflowAction = {
@@ -136,8 +119,6 @@ export const DEFAULT_WORKFLOW_ACTIONS = [
     GOT_TO_EDIT_CONTENTLET_ACTION,
     GOT_TO_EDIT_PAGE_ACTION,
     RENAME_ACTION,
-    // Content state
-    SAVE_AS_DRAFT_ACTION,
     // Asset operations
     DOWNLOAD_ACTION
 ];
