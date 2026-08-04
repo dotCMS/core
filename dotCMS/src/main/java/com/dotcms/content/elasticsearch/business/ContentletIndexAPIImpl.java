@@ -3301,16 +3301,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final boolean osExists = Try.of(
                     () -> operationsOS.indexAPI().indexExists(osCounterpart)).getOrElse(false);
             if (!osExists) {
-                // Full diagnostic goes to the operator log (physical counterpart name + override);
-                // the exception message that reaches the UI stays friendly and migration-neutral, so a
-                // regular admin is not exposed to the migration (issue #36360).
+                // Full ops diagnostic (physical counterpart name + override key) goes to the log; the
+                // exception message that reaches the UI is honest and actionable for support without
+                // dumping the physical name or the config key (issue #36360).
                 Logger.warn(this, String.format(
                         "Blocked activation of '%s': its OpenSearch counterpart '%s' does not exist. "
-                        + "Rebuild it, or set %s=true to override.",
+                        + "Suspend the migration (phase 0), reindex, or set %s=true to override.",
                         indexName, osCounterpart, ALLOW_ACTIVATE_INDEX_WITHOUT_OS_MIRROR));
                 throw new DotStateException(String.format(
-                        "'%s' can't be set as the active index right now because its search data isn't "
-                        + "ready yet. Run a full reindex and try again.", indexName));
+                        "'%s' can't be activated because it has no OpenSearch counterpart. To activate "
+                        + "it, suspend the migration first, or run a full reindex to rebuild the "
+                        + "indexes.", indexName));
             }
         }
 
