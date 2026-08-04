@@ -177,9 +177,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             borderWidth: '1px',
             borderColor: '{surface.200}'
         },
-        // Matches the Quick Actions list: the row sits on `surface-50` and lifts to white on hover,
-        // and an expanded scheme stays white so it reads as the active card.
         header: {
+            padding: '1rem',
             background: '{surface.50}',
             hoverBackground: '{surface.0}',
             activeBackground: '{surface.0}',

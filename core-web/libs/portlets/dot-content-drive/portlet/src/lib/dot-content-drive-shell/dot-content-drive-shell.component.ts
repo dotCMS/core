@@ -215,11 +215,13 @@ export class DotContentDriveShellComponent {
     );
 
     /**
-     * Drops the header's bottom rule for the Action Center so its title and the "N items selected"
-     * sub-line read as one block rather than being split by a divider.
+     * Drops the header's bottom rule and locks horizontal padding to `px-6` so the title lines up
+     * with the Action Center body/footer (PrimeNG's dialog header padding token may not match).
      */
     readonly $dialogHeaderClass = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 pb-2' : ''
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+            ? 'border-b-0 px-6! pb-2'
+            : ''
     );
 
     /**

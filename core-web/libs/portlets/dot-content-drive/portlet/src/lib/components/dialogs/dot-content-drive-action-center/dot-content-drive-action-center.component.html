@@ -41,8 +41,7 @@
 
             <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->
             <section data-testid="quick-actions-section">
-                <h3
-                    class="mb-3 px-2 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
+                <h3 class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
                     {{ 'content-drive.action-center.quick-actions' | dm }}
                 </h3>
 
@@ -106,8 +105,7 @@
 
             <!-- Workflow Actions: one panel per scheme, counts from the backend aggregation. -->
             <section data-testid="workflow-actions-section">
-                <h3
-                    class="mb-3 px-2 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
+                <h3 class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
                     {{ 'content-drive.action-center.workflow-actions' | dm }}
                 </h3>
 
@@ -153,7 +151,7 @@
                                         </span>
                                         @if (schemeOwnsSelection(scheme)) {
                                             <span
-                                                class="mr-2 ml-auto rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                                class="ml-auto rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary">
                                                 {{
                                                     'content-drive.action-center.one-selected' | dm
                                                 }}
@@ -166,7 +164,7 @@
                                     <div class="divide-y divide-surface-100">
                                         @for (action of scheme.actions; track action.id) {
                                             <label
-                                                class="flex cursor-pointer items-center gap-4 px-6 py-3.5 transition-colors hover:bg-surface-50"
+                                                class="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-surface-50"
                                                 [class.opacity-60]="action.requiresInput"
                                                 [attr.for]="action.id">
                                                 <p-radiobutton
@@ -221,7 +219,7 @@
                                     <!-- Opens the preview rather than firing: labelled Continue so it
                                          does not read as a second Execute alongside the preview's. -->
                                     <div
-                                        class="flex justify-end border-t border-surface-100 bg-surface-50 px-6 py-4">
+                                        class="flex justify-end border-t border-surface-100 bg-surface-50 p-4">
                                         <p-button
                                             size="small"
                                             icon="pi pi-arrow-right"
@@ -264,7 +262,7 @@
             lives in the body, where it can be disabled while an action is in flight.
         -->
         <div
-            class="flex shrink-0 items-center border-b border-surface-100 p-2"
+            class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
             data-testid="action-preview-bar">
             <p-button
                 icon="pi pi-arrow-left"
