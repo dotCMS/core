@@ -10,10 +10,11 @@ public class AsciiArt {
 	private static final AtomicBoolean artDone = new AtomicBoolean(false);
 
 	/**
-	 * Banners printed once at startup. Backslashes are escaped (\\) because text blocks still
-	 * process escape sequences; \s marks a trailing space that would otherwise be stripped.
+	 * Banners printed once at startup, then dropped — see {@link #doArt()}. Backslashes are
+	 * escaped (\\) because text blocks still process escape sequences; \s marks a trailing space
+	 * that would otherwise be stripped.
 	 */
-	static final String[] asciiArt = {
+	private static String[] asciiArt = {
 """
             dddddddd
             d::::::d                          tttt                 CCCCCCCCCCCCCMMMMMMMM               MMMMMMMM   SSSSSSSSSSSSSSS
@@ -121,6 +122,9 @@ d::::::ddddd::::::ddo:::::ooooo:::::o      t::::::tttt:::::t C:::::CCCCCCCC::::C
 		} else {
 			print(asciiArt[(int) (System.currentTimeMillis() % asciiArt.length)]);
 		}
+
+		// art is printed exactly once — drop the array so it isn't held for the life of the JVM
+		asciiArt = new String[0];
 	}
 
 	/**
@@ -129,8 +133,6 @@ d::::::ddddd::::::ddo:::::ooooo:::::o      t::::::tttt:::::t C:::::CCCCCCCC::::C
 	 */
 	private static void print(final String art) {
 		Logger.info(AsciiArt.class, "\n\n" + art + "\n");
-
-
 	}
 
 }
