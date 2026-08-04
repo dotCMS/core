@@ -12,17 +12,18 @@ export const dotAnalyticsRoutes: Route[] = [
     {
         path: 'search',
         title: 'analytics.search.title',
-        canMatch: [analyticsHealthGuard],
+        canActivate: [analyticsHealthGuard],
         loadComponent: () => import('./dot-analytics-search/dot-analytics-search.component')
     },
     {
         path: 'dashboard',
-        canMatch: [analyticsHealthGuard],
+        canActivate: [analyticsHealthGuard],
         component: DotAnalyticsDashboardComponent,
         children: [
             {
+                // Default landing tab — Engagement, per product decision (was Pageview).
                 path: '',
-                redirectTo: 'pageview',
+                redirectTo: 'engagement',
                 pathMatch: 'full'
             },
             {

@@ -37,9 +37,9 @@ export const DEFAULT_SORT = {
 };
 
 // Sort order from PrimeNG to dotCMS
-export const SORT_ORDER = {
+export const SORT_ORDER: Record<number, DotContentDriveSortOrder> = {
     1: DotContentDriveSortOrder.ASC,
-    '-1': DotContentDriveSortOrder.DESC
+    [-1]: DotContentDriveSortOrder.DESC
 };
 
 // Default tree expanded
@@ -186,7 +186,43 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
     CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
-    UPLOAD_SELECTOR: 'UPLOAD_SELECTOR'
+    ACTION_CENTER: 'ACTION_CENTER'
+} as const;
+
+/**
+ * Root styles for the Action Center dialog.
+ *
+ * Fixed height so the content box has something to flex against — without it the column sizes to
+ * content and the body never scrolls. `display: flex` / `flex-direction: column` / `overflow: hidden`
+ * are required: the theme gives `.p-dialog-content` `flex-grow: 1` and the header/footer
+ * `flex-shrink: 0`, but `.p-dialog` itself is not a flex container — without that, `height: 80vh`
+ * does not constrain the content and the whole dialog (footer included) grows past the viewport.
+ */
+export const ACTION_CENTER_DIALOG_STYLE = {
+    width: '42rem',
+    maxWidth: '92vw',
+    height: '80vh',
+    maxHeight: '80vh',
+    display: 'flex',
+    'flex-direction': 'column',
+    overflow: 'hidden'
+} as const;
+
+/**
+ * Content-box styles for the Action Center dialog — the dialog's only scroll container.
+ *
+ * Applied as inline styles via `[contentStyle]` rather than utility classes: the theme sets
+ * `overflow-y: auto` on `.p-dialog-content` and its runtime-injected CSS outranks a Tailwind
+ * `overflow-hidden`. Inline styles win without needing `!` overrides. `min-height: 0` lets the box
+ * shrink inside the flex column; without it a flex item refuses to go below its content height.
+ */
+export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
+    display: 'flex',
+    'flex-direction': 'column',
+    flex: '1',
+    'min-height': '0',
+    overflow: 'hidden',
+    padding: '0'
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
@@ -212,6 +248,34 @@ export const UPLOAD_SELECTOR_OPTIONS = [
         recommended: false
     }
 ] as const;
+
+/**
+ * Options for the folder settings "Upload Behavior" radio group. `value` is persisted to the
+ * folder's `defaultBaseType`: `null` means "ask each time" (the upload menu is shown on every
+ * upload), `DOTASSET`/`FILEASSET` force every upload to that base type. The backend routes the
+ * concrete content type by file type.
+ */
+export const FOLDER_UPLOAD_BEHAVIOR_OPTIONS: {
+    value: DotCMSBaseTypesContentTypes | null;
+    labelKey: string;
+    descriptionKey: string;
+}[] = [
+    {
+        value: null,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.DOTASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-assets',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-assets.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.FILEASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-files',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-files.description'
+    }
+];
 
 export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
     '*.jpg',

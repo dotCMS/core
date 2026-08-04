@@ -121,6 +121,46 @@ def test_apply_issues_fire_call(tmp_path, monkeypatch):
     assert len(put_calls) == 1
 
 
+# ---------------------------------------------------------------------------
+# Default eolDate derivation — the branch the release workflow actually runs
+# (it never passes --eol-date), so the computed VALUE must be pinned.
+# ---------------------------------------------------------------------------
+
+def _fired_eol_date() -> str:
+    put_calls = [c for c in responses_lib.calls if c.request.method == "PUT"]
+    assert len(put_calls) == 1
+    return json.loads(put_calls[0].request.body)["contentlet"]["eolDate"]
+
+
+@responses_lib.activate
+def test_default_eol_date_is_released_plus_one_year(tmp_path, monkeypatch):
+    """No --eol-date -> fired payload carries releasedDate + 1 year (site convention)."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
+    responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_empty.json"), status=200)
+    responses_lib.add(responses_lib.PUT, _FIRE_URL, json={"entity": {}}, status=200)
+
+    rc = main(_argv(tmp_path, "26.07.10-01", "--apply"))  # _argv sets released 2026-07-16
+
+    assert rc == 0
+    assert _fired_eol_date() == "2027-07-16"
+
+
+@responses_lib.activate
+def test_default_eol_date_handles_feb_29(tmp_path, monkeypatch):
+    """Feb 29 release -> EOL falls back to Feb 28 of the (non-leap) next year."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
+    responses_lib.add(responses_lib.POST, _SEARCH_URL, json=_fixture("search_empty.json"), status=200)
+    responses_lib.add(responses_lib.PUT, _FIRE_URL, json={"entity": {}}, status=200)
+
+    argv = [a for a in _argv(tmp_path, "28.02.29-01", "--apply")]
+    argv[argv.index("2026-07-16")] = "2028-02-29"
+
+    rc = main(argv)
+
+    assert rc == 0
+    assert _fired_eol_date() == "2029-02-28"
+
+
 # ===========================================================================
 # User Story 3 — failure exit contract + skip-vs-failure stdout distinction
 # ===========================================================================
@@ -187,6 +227,38 @@ def test_protective_skip_exits_zero_with_marker(tmp_path, monkeypatch, capsys):
     assert rc == 0
     out, _ = capsys.readouterr()
     assert "::changelog-skip::26.07.10-01" in out
+
+
+@responses_lib.activate
+def test_malformed_released_date_exits_two_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
+    """A malformed --released-date is a usage error: rc 2, clean one-line error, no
+    traceback, zero network calls (review finding on #36759)."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
+
+    with caplog.at_level("ERROR"):
+        rc = main(_argv(tmp_path, "26.07.10-01", "--released-date", "garbage", "--apply"))
+
+    assert rc == 2
+    out, err = capsys.readouterr()
+    assert "Traceback" not in out and "Traceback" not in err
+    assert any("released-date" in r.message for r in caplog.records)
+    assert len(responses_lib.calls) == 0
+
+
+@responses_lib.activate
+def test_malformed_eol_date_exits_two_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
+    """--eol-date gets the same up-front validation as --released-date: rc 2, clean
+    error, no traceback, zero network calls (contract symmetry)."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
+
+    with caplog.at_level("ERROR"):
+        rc = main(_argv(tmp_path, "26.07.10-01", "--eol-date", "garbage", "--apply"))
+
+    assert rc == 2
+    out, err = capsys.readouterr()
+    assert "Traceback" not in out and "Traceback" not in err
+    assert any("eol-date" in r.message for r in caplog.records)
+    assert len(responses_lib.calls) == 0
 
 
 @responses_lib.activate

@@ -157,6 +157,11 @@ describe('Sidebar Utils', () => {
             expect(result.key).toBe(mockFolder.id);
         });
 
+        it('should carry the folder defaultBaseType onto the node data', () => {
+            const result = createTreeNode({ ...mockFolder, defaultBaseType: 'FILEASSET' });
+            expect(result.data.defaultBaseType).toBe('FILEASSET');
+        });
+
         it('should use folder path as label', () => {
             const result = createTreeNode(mockFolder);
             expect(result.label).toBe(mockFolder.path);

@@ -1,23 +1,25 @@
 <div class="px-3 pt-3 pb-2" [attr.data-testid]="containerTestId()">
-    <p-timeline
-        [value]="$items()"
-        layout="vertical"
-        [pt]="{
-            eventOpposite: {
-                class: 'p-0! flex-none!'
-            }
-        }"
-        [attr.data-testid]="timelineTestId()">
-        <ng-template #marker let-item>
-            <ng-container
-                [ngTemplateOutlet]="markerTemplate()"
-                [ngTemplateOutletContext]="{ $implicit: item }" />
-        </ng-template>
-        <ng-template #content let-item>
-            <ng-container
-                [ngTemplateOutlet]="contentTemplate()"
-                [ngTemplateOutletContext]="{ $implicit: item }" />
-        </ng-template>
-    </p-timeline>
+    @for (timelineKey of [$timelineKey()]; track timelineKey) {
+        <p-timeline
+            [value]="$timelineValue()"
+            layout="vertical"
+            [pt]="{
+                eventOpposite: {
+                    class: 'p-0! flex-none!'
+                }
+            }"
+            [attr.data-testid]="timelineTestId()">
+            <ng-template #marker let-item>
+                <ng-container
+                    [ngTemplateOutlet]="markerTemplate()"
+                    [ngTemplateOutletContext]="{ $implicit: item }" />
+            </ng-template>
+            <ng-template #content let-item>
+                <ng-container
+                    [ngTemplateOutlet]="contentTemplate()"
+                    [ngTemplateOutletContext]="{ $implicit: item }" />
+            </ng-template>
+        </p-timeline>
+    }
     <div #sentinel class="h-px w-full" aria-hidden="true" data-testid="timeline-sentinel"></div>
 </div>

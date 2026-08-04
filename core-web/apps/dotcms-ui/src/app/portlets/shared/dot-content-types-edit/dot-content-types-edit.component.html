@@ -22,6 +22,7 @@
     [header]="templateInfo.header"
     [modal]="false"
     [closable]="dialogCloseable"
+    [focusOnShow]="dialogFocusOnShow"
     [style]="{ width: '50rem' }"
     (visibleChange)="show.set($event)"
     (onHide)="onDialogHide()">

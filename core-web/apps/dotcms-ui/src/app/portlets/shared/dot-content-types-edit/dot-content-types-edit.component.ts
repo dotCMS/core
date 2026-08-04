@@ -57,6 +57,13 @@ export class DotContentTypesEditComponent implements OnInit {
 
     contentTypeActions: MenuItem[];
     dialogCloseable = false;
+    /**
+     * Turns off PrimeNG's `p-dialog` `focusOnShow`. PrimeNG focuses the first focusable element in
+     * DOM order once the open transition ends (~150ms), which lands on the new-content-editor
+     * banner checkbox and overrode the form's own focus on the Name input. With this off, the form
+     * decides what gets focused: the Name input when creating, nothing when editing.
+     */
+    readonly dialogFocusOnShow = false;
     data: DotCMSContentType;
     dialogActions: DotDialogActions;
     layout: DotCMSContentTypeLayoutRow[];

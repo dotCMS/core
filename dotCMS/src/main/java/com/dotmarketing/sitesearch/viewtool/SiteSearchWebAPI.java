@@ -1,6 +1,5 @@
 package com.dotmarketing.sitesearch.viewtool;
 
-import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
@@ -107,8 +106,10 @@ public class SiteSearchWebAPI implements ViewTool {
         
         String indexName=null;
         if(indexAlias!=null) {
-            IndexAPI iapi=APILocator.getESIndexAPI();
-            indexName=iapi.getAliasToIndexMap(siteSearchAPI.listIndices()).get(indexAlias);
+            // Resolve through the site-search API so the alias is looked up with the correct
+            // per-phase, .os-aware physical names (issue #36360). The content-index router
+            // (getESIndexAPI) is not site-search .os-aware and misses in Phases 2/3.
+            indexName=siteSearchAPI.getAliasToIndexMap().get(indexAlias);
             if(indexName==null) {
                 results.setError("Index Alias not found: "+indexAlias);
                 return results;

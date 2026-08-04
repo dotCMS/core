@@ -21,7 +21,7 @@ canonical reference for build commands, project structure, and coding patterns.
 
 ```bash
 sdk env install   # Java 25 via SDKMAN, pinned in .sdkmanrc
-nvm use           # Node 22.15+ via nvm, pinned in .nvmrc
+nvm use           # Node 22.22.3+ via nvm, pinned in .nvmrc
 ```
 
 - **Java:** core modules compile to and run on Java 25. A wrong JDK gives cryptic

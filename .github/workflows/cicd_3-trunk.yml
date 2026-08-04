@@ -137,12 +137,17 @@ jobs:
   publish-sdk-next:
     name: Publish SDK (next)
     needs: [ initialize, test ]
-    # Explicit success check on `test` (not the always()/!failure() idiom used by
-    # sibling jobs) — this job publishes to a real, public npm registry, so it should
-    # require `test` to have actually run and passed, not merely "didn't fail/wasn't
-    # cancelled" (which also admits a skipped test job).
+    # Same always()/!failure()/!cancelled() idiom as sibling jobs (build-cli, deployment).
+    # A prior version of this gate required needs.test.result == 'success', but on an
+    # ordinary push cicd_3-trunk.yml never wires any per-suite flag (jvm_unit_test, cli,
+    # frontend, postman, karate) into the reusable test phase — only run-all-tests, which
+    # is only ever true on a manual workflow_dispatch. So the test matrix is always empty
+    # (0 configurations) on a regular push, `test` always resolves to "skipped", and that
+    # stricter gate meant this job silently never ran on ordinary merges — defeating its
+    # whole purpose (any SDK-touching merge must publish a `next` version). This still
+    # blocks if `test` genuinely ran and failed (e.g. a manual run-all-tests dispatch).
     if: >-
-      needs.test.result == 'success' &&
+      always() && !failure() && !cancelled() &&
       fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' &&
       github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}

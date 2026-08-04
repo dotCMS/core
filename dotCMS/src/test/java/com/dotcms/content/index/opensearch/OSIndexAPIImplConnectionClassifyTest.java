@@ -1,8 +1,11 @@
 package com.dotcms.content.index.opensearch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.json.JSONException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
@@ -67,6 +70,34 @@ public class OSIndexAPIImplConnectionClassifyTest {
     public void unauthorized401_isAuthForbidden() {
         assertEquals(ConnectionFailureKind.AUTH_FORBIDDEN,
                 classify(new RuntimeException("401 Unauthorized")));
+    }
+
+    @Test
+    public void securityExceptionStatus403_isAuthForbidden() {
+        // The shape OpenSearch returns when a role does not cover the requested index names — the
+        // operation-failure case this classifier is also used for (issue #36222).
+        assertEquals(ConnectionFailureKind.AUTH_FORBIDDEN,
+                classify(new DotStateException(
+                        "Failed to create index: cluster_acme.working_20260101000000.os",
+                        new RuntimeException("OpenSearch exception [type=security_exception,"
+                                + " reason=no permissions for [indices:admin/create]] status: 403"))));
+    }
+
+    /**
+     * A dotCMS wrapper message embeds the physical index name, and a {@code _yyyyMMddHHmmss}
+     * timestamp regularly contains the digits 403 or 401 (here 12:04:03). Matching the status code
+     * as a bare substring reported such a failure as a permission problem and told the operator to
+     * change {@code DOT_DOTCMS_CLUSTER_ID} for something that has nothing to do with permissions.
+     */
+    @Test
+    public void statusCodeDigitsInsideIndexTimestamp_isNotAuthForbidden() {
+        assertNotEquals(ConnectionFailureKind.AUTH_FORBIDDEN,
+                classify(new DotStateException(
+                        "Failed to parse index settings for: cluster_acme.working_20260728120403.os",
+                        new JSONException("Unexpected character in settings JSON"))));
+        assertNotEquals(ConnectionFailureKind.AUTH_FORBIDDEN,
+                classify(new IOException("Empty orphaned OS index"
+                        + " cluster_acme.working_20260728120401.os could not be deleted")));
     }
 
     // ---- Unreachable ----------------------------------------------------------------------------

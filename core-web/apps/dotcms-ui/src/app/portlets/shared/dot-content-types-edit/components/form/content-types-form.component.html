@@ -6,7 +6,7 @@
     novalidate>
     @if (newContentEditorEnabled) {
         <div
-            class="absolute top-22 -ml-5 z-40 left-5 w-full flex items-center align-middle gap-1 py-2 px-4 text-sm bg-primary-200 text-primary-900"
+            class="absolute top-22 left-5 z-40 -ml-5 flex w-full items-center gap-1 bg-primary-200 px-4 py-2 text-sm text-primary-900"
             data-test-id="content-type__new-content-banner">
             <p-checkbox
                 class="p-checkbox-sm"
@@ -31,7 +31,7 @@
             type="text"
             name="name"
             formControlName="name"
-            dotAutofocus />
+            data-testid="content-type-form-name" />
         <dot-field-validation-message
             [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
             [field]="form.get('name')" />
@@ -147,7 +147,7 @@
                     class="w-full"
                     formControlName="urlMapPattern" />
                 <dot-field-helper
-                    class="absolute top-1/2 -translate-y-1/2 right-1"
+                    class="absolute top-1/2 right-1 -translate-y-1/2"
                     [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm" />
             </div>
         </div>
