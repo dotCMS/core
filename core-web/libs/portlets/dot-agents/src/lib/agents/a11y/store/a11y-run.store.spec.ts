@@ -166,7 +166,9 @@ describe('A11yRunStore', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        currentSiteIdSignal = signal<string | null>('site-1');
+        // The current site matches the pages' host — the picker query is
+        // host-scoped, so a selected page's host always equals the current site.
+        currentSiteIdSignal = signal<string | null>('host-id-1');
         spectator = createService();
         store = spectator.service;
         searchService = spectator.inject(
@@ -200,18 +202,39 @@ describe('A11yRunStore', () => {
             expect(query).toContain('urlmap:"/blog/post/hello"');
             expect(query).toContain('+working:true');
             expect(query).toContain('+deleted:false');
-            expect(query).toContain('+conhost:site-1'); // host-scoped
+            expect(query).toContain('+conhost:host-id-1'); // host-scoped
             expect(store.selected()?.path).toBe('/blog/post/hello');
             expect(store.phase()).toBe('ready');
             expect(store.rehydrateStatus()).toBe('idle');
         });
 
-        it('is a no-op when the requested page path is already selected', () => {
+        it('is a no-op when the same page under the same site is already selected', () => {
             openDefaultPage();
             searchService.get.mockClear();
             store.openPageByUri('/about-us');
             expect(searchService.get).not.toHaveBeenCalled();
             expect(store.rehydrateStatus()).toBe('idle');
+        });
+
+        it('re-resolves the same path when the site changes', () => {
+            openDefaultPage(); // selected under host-id-1
+            searchService.get.mockClear();
+
+            // Switch sites: the same path now points at the other site's page.
+            currentSiteIdSignal.set('host-id-2');
+            searchService.get.mockReturnValueOnce(
+                of({
+                    jsonObjectView: {
+                        contentlets: [{ ...MOCK_CONTENTLETS[0], host: 'host-id-2' }]
+                    }
+                })
+            );
+            store.openPageByUri('/about-us'); // same path, different site
+
+            expect(searchService.get).toHaveBeenCalledTimes(1);
+            const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
+            expect(query).toContain('+conhost:host-id-2'); // scoped to the NEW site
+            expect(store.selected()?.hostId).toBe('host-id-2');
         });
 
         it('stays loading (no fetch) until the current site is known', () => {

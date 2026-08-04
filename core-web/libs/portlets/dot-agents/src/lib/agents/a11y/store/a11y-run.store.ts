@@ -424,19 +424,21 @@ export const A11yRunStore = signalStore(
              * `openPage` it → run screen "ready". If the path resolves to no page,
              * flag `not-found` so the run screen can bounce back to the picker.
              *
-             * A no-op when the requested page is already selected (in-session
-             * navigation into the run route), so re-entering the URL doesn't refetch
-             * or reset an in-progress run.
+             * A no-op only when the SAME page under the SAME site is already
+             * selected, so in-session navigation into the run route doesn't refetch
+             * or reset an in-progress run. But a site change with the same path must
+             * re-resolve (the path points at a different page per site) — the caller
+             * re-runs this on `currentSiteId` changes, so the host check reloads it.
              *
              * Paths are unique per-site, so the lookup is host-scoped — matching the
              * picker query. Until the current site is known the lookup would be
              * ambiguous, so we wait (the run effect re-runs when the site resolves).
              */
             openPageByUri(uri: string) {
-                if (store.selected()?.path === uri) {
+                const siteId = globalStore.currentSiteId();
+                if (store.selected()?.path === uri && store.selected()?.hostId === siteId) {
                     return;
                 }
-                const siteId = globalStore.currentSiteId();
                 if (!siteId) {
                     // Site not resolved yet — stay in loading; the caller re-runs.
                     patchState(store, { rehydrateStatus: 'loading' });

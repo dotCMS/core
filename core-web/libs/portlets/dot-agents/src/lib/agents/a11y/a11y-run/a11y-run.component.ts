@@ -198,11 +198,13 @@ export class DotA11yRunComponent {
 
     constructor() {
         // The URL is the source of truth for which page is open. Drive the store
-        // from the page path: rehydrate it (a no-op when that page is already the
-        // selection, e.g. arriving from the picker), so a cold load / shared link
-        // / refresh lands on the run screen for that page. Also track the current
-        // site: the lookup is host-scoped, so on a cold load the effect must re-run
-        // once the site resolves (it loads async after the component mounts).
+        // from the page path: rehydrate it (a no-op when that same page under the
+        // same site is already selected, e.g. arriving from the picker), so a cold
+        // load / shared link / refresh lands on the run screen for that page. Also
+        // track the current site: the lookup is host-scoped, so this re-runs when
+        // the site resolves on a cold load AND when the user switches sites — a
+        // switch re-resolves the same path against the new site (or bounces to the
+        // picker if it doesn't exist there).
         effect(() => {
             const uri = this.pageUri();
             const siteId = this.globalStore.currentSiteId();
