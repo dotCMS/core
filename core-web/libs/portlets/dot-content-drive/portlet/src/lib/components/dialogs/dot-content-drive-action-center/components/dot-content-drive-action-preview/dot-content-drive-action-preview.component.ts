@@ -38,7 +38,10 @@ export const PREVIEW_ROWS_PER_PAGE = 20;
     ],
     templateUrl: './dot-content-drive-action-preview.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'block' }
+    // A shrinkable flex column so `scrollHeight="flex"` has a bounded height to resolve against:
+    // the table fills the dialog and scrolls its own body, keeping the column headers pinned and the
+    // paginator out of the scroll region. Without `min-h-0` this grows to fit every row instead.
+    host: { class: 'flex min-h-0 flex-1 flex-col' }
 })
 export class DotContentDriveActionPreviewComponent {
     /** Every contentlet in the selection — including the ones the user has unchecked. */

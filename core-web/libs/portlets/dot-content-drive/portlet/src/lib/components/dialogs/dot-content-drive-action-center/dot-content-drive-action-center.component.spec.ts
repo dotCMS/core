@@ -480,6 +480,15 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="action-preview-title"]')).toBeNull();
         });
 
+        it('should label Execute without repeating the action name', () => {
+            // The dialog header already says "Send for Review", so naming it on the button too was
+            // redundant and made the button grow with the action name.
+            const execute = spectator.query('[data-testid="action-preview-execute"]');
+
+            expect(execute.textContent).toContain('Execute');
+            expect(execute.textContent).not.toContain('Send for Review');
+        });
+
         it('should keep the published header count in step with the checked rows', () => {
             uncheckFirstRow();
 

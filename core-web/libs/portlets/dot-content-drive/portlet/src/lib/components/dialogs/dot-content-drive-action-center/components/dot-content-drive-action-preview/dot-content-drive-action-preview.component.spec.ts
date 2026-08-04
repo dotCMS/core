@@ -100,6 +100,13 @@ describe('DotContentDriveActionPreviewComponent', () => {
             expect(table.style.tableLayout).toBe('fixed');
         });
 
+        it('should scroll inside the table so the column headers stay pinned', () => {
+            // The table owns the scrolling rather than the dialog body, which keeps the header row
+            // and the paginator visible while the rows scroll.
+            expect(spectator.query('.p-datatable-scrollable')).toBeTruthy();
+            expect(spectator.query('.p-datatable-table-container')).toBeTruthy();
+        });
+
         it('should render nothing but the header for an empty list', () => {
             spectator.setInput('items', []);
             spectator.detectChanges();
