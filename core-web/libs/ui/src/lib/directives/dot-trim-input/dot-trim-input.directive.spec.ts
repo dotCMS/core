@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
-import { FormsModule, NgControl } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { DotTrimInputDirective } from './dot-trim-input.directive';
 
@@ -21,8 +21,7 @@ describe('DotTrimInputDirective', () => {
     let spectator: Spectator<DotTrimInputHostMockComponent>;
     const createComponent = createComponentFactory({
         component: DotTrimInputHostMockComponent,
-        imports: [FormsModule, DotTrimInputDirective],
-        providers: [NgControl]
+        imports: [FormsModule, DotTrimInputDirective]
     });
 
     beforeEach(() => {
