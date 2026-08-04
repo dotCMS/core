@@ -76,6 +76,17 @@ export const DotUsersListStore = signalStore(
                             direction: store.sortOrder()
                         })
                         .pipe(
+                            // Consume the response inside the inner `.pipe()` where the
+                            // Observable is strongly typed. The standalone `pipe(...)`
+                            // outside can't propagate the response type through the
+                            // switchMap chain under Angular's strict production build.
+                            tap((response) => {
+                                patchState(store, {
+                                    users: response.entity,
+                                    totalRecords: response.pagination?.totalEntries ?? 0,
+                                    status: 'loaded'
+                                });
+                            }),
                             catchError((error) => {
                                 httpErrorManager.handle(error);
                                 patchState(store, { status: 'error' });
@@ -83,14 +94,7 @@ export const DotUsersListStore = signalStore(
                                 return EMPTY;
                             })
                         )
-                ),
-                tap((response) => {
-                    patchState(store, {
-                        users: response.entity,
-                        totalRecords: response.pagination?.totalEntries ?? 0,
-                        status: 'loaded'
-                    });
-                })
+                )
             )
         );
 
@@ -107,13 +111,24 @@ export const DotUsersListStore = signalStore(
                 loadUsers();
             },
 
-            setPagination(page: number, rows: number) {
-                patchState(store, { page, rows });
-                loadUsers();
-            },
-
-            setSort(field: string, order: DotUsersListSortDirection) {
-                patchState(store, { sortField: field, sortOrder: order });
+            /**
+             * Atomically applies a PrimeNG `onLazyLoad` payload (page + rows +
+             * sort). Batching in a single patchState + one `loadUsers()` call
+             * prevents the redundant HTTP round-trip that would occur if page
+             * and sort were dispatched through separate setters.
+             */
+            applyLazyLoad({
+                page,
+                rows,
+                sortField,
+                sortOrder
+            }: {
+                page: number;
+                rows: number;
+                sortField: string;
+                sortOrder: DotUsersListSortDirection;
+            }) {
+                patchState(store, { page, rows, sortField, sortOrder });
                 loadUsers();
             },
 

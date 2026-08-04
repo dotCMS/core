@@ -150,24 +150,29 @@ describe('DotUsersListStore', () => {
         );
     });
 
-    it('setSort should update sort state and trigger a reload', () => {
+    it('applyLazyLoad should batch page + sort into a single reload', () => {
         usersService.getUsersPaginated.mockClear();
 
-        store.setSort('emailAddress', 'ASC');
-        spectator.flushEffects();
-
-        expect(store.sortField()).toBe('emailAddress');
-        expect(store.sortOrder()).toBe('ASC');
-        expect(usersService.getUsersPaginated).toHaveBeenCalledWith(
-            expect.objectContaining({ orderBy: 'emailAddress', direction: 'ASC' })
-        );
-    });
-
-    it('setPagination should update page/rows', () => {
-        store.setPagination(3, 40);
+        store.applyLazyLoad({
+            page: 3,
+            rows: 40,
+            sortField: 'emailAddress',
+            sortOrder: 'ASC'
+        });
 
         expect(store.page()).toBe(3);
         expect(store.rows()).toBe(40);
+        expect(store.sortField()).toBe('emailAddress');
+        expect(store.sortOrder()).toBe('ASC');
+        expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
+        expect(usersService.getUsersPaginated).toHaveBeenCalledWith(
+            expect.objectContaining({
+                page: 3,
+                perPage: 40,
+                orderBy: 'emailAddress',
+                direction: 'ASC'
+            })
+        );
     });
 
     it('setSelectedUsers should update selection', () => {

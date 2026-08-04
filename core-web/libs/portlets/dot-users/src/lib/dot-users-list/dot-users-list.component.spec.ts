@@ -112,8 +112,7 @@ describe('DotUsersListComponent', () => {
                 status: jest.fn().mockReturnValue('loaded'),
                 setFilter: jest.fn(),
                 setRoleFilter: jest.fn(),
-                setPagination: jest.fn(),
-                setSort: jest.fn(),
+                applyLazyLoad: jest.fn(),
                 setSelectedUsers: jest.fn(),
                 deleteSelectedUsers: jest.fn(),
                 loadUsers: jest.fn()

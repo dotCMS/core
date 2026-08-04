@@ -78,13 +78,14 @@ export class DotUsersListComponent {
         const first = (event.first as number) ?? 0;
         const page = Math.floor(first / rows) + 1;
 
-        this.store.setPagination(page, rows);
-
+        let sortField = this.store.sortField();
+        let sortOrder: 'ASC' | 'DESC' = this.store.sortOrder();
         if (event.sortField) {
-            const field = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
-            const order = event.sortOrder === -1 ? 'DESC' : 'ASC';
-            this.store.setSort(field, order);
+            sortField = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
+            sortOrder = event.sortOrder === -1 ? 'DESC' : 'ASC';
         }
+
+        this.store.applyLazyLoad({ page, rows, sortField, sortOrder });
     }
 
     openCreateDialog(): void {
