@@ -27,8 +27,15 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotActionCenterScheme, DotActionBulkRequestOptions } from '@dotcms/dotcms-models';
+import {
+    DotActionCenterScheme,
+    DotActionCenterWorkflowAction,
+    DotActionBulkRequestOptions,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
 import { SUCCESS_MESSAGE_LIFE } from '../../../shared/constants';
 import { DotContentDriveStatus } from '../../../shared/models';
@@ -41,6 +48,9 @@ import {
     toContentletInodes
 } from '../../../utils/action-center';
 
+/** The two screens the dialog switches between. */
+type DotActionCenterView = 'actions' | 'preview';
+
 /**
  * Bulk action dialog for the current Content Drive selection, offered from one contentlet upward.
  *
@@ -52,6 +62,13 @@ import {
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
  *    `POST /api/v1/workflow/contentlet/actions/bulk`. Counts come from the backend's Elasticsearch
  *    aggregation on `wfstep` and are real per-action eligibility counts.
+ *
+ * The two sections differ in how they commit. A quick action fires on click, over exactly the
+ * contentlets its count was derived from. A workflow action goes through a **preview** screen first
+ * (`$view`), listing the contentlets with a checkbox each, so the payload can be trimmed before it is
+ * sent. Only workflow actions need this: their counts come from the backend and can be lower than the
+ * selection, so "which items is this about to touch?" is a real question there and not for quick
+ * actions.
  *
  * Deliberate v1 scope limits:
  *
@@ -77,6 +94,7 @@ import {
         BadgeModule,
         ButtonModule,
         ConfirmDialogModule,
+        DotContentDriveActionPreviewComponent,
         DotMessagePipe,
         FormsModule,
         MessageModule,
@@ -183,6 +201,18 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $openSchemeId = signal<string | undefined>(undefined);
     /** True while an action is being fired; disables the whole dialog. */
     protected readonly $executing = signal<boolean>(false);
+    /**
+     * Which screen is showing. Quick actions never leave `'actions'`; picking a workflow action and
+     * continuing swaps to `'preview'`.
+     */
+    protected readonly $view = signal<DotActionCenterView>('actions');
+    /**
+     * The contentlets still checked in the preview — exactly what gets fired.
+     *
+     * Separate from the grid selection on purpose: unchecking a row here must not deselect it in the
+     * grid behind the dialog.
+     */
+    protected readonly $includedItems = signal<DotCMSContentlet[]>([]);
 
     /** Contentlets in the selection — folders are ignored by every bulk endpoint. */
     protected readonly $contentlets = computed(() => excludeFolders(this.$selectedItems()));
@@ -196,6 +226,26 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // derived once here instead of again inside the util.
         getQuickActions(this.$contentlets())
     );
+
+    /** Number of contentlets still checked in the preview. */
+    protected readonly $includedCount = computed(() => this.$includedItems().length);
+
+    /**
+     * The single armed workflow action, resolved across every scheme.
+     *
+     * Used by the preview header, the Execute label and the result toast, so the lookup happens once.
+     */
+    protected readonly $selectedAction = computed<DotActionCenterWorkflowAction | undefined>(() => {
+        const selectedId = this.$selectedActionId();
+
+        if (!selectedId) {
+            return undefined;
+        }
+
+        return this.$schemes()
+            .flatMap((scheme) => scheme.actions)
+            .find((action) => action.id === selectedId);
+    });
 
     ngOnInit(): void {
         this.loadWorkflowActions();
@@ -282,21 +332,61 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Fires the selected workflow action over the selection.
+     * Opens the preview for the armed workflow action.
      *
-     * Contentlets whose scheme does not own the action are skipped server-side and reported back in
-     * `skippedCount`, which the result toast surfaces — a mixed-type selection will partially skip
-     * by design.
+     * Every contentlet starts included. There is nothing to pre-uncheck: the bulk-actions endpoint
+     * returns per-action *counts*, never which contentlets each action matches, so the dialog cannot
+     * tell which rows the server will skip. {@link $selectedAction}'s `count` is the honest signal
+     * there, and the preview surfaces it when it falls short of the selection.
+     */
+    protected onContinueToPreview(): void {
+        const contentlets = this.$contentlets();
+
+        if (!this.$selectedActionId() || !contentlets.length) {
+            return;
+        }
+
+        this.$includedItems.set(contentlets);
+        this.$view.set('preview');
+    }
+
+    /**
+     * Returns to the action list.
+     *
+     * `$selectedActionId` is deliberately kept, so the radio is still armed on return and re-opening
+     * the preview does not mean re-picking the action.
+     */
+    protected onBackToActions(): void {
+        if (this.$executing()) {
+            return;
+        }
+
+        this.$view.set('actions');
+        this.$includedItems.set([]);
+    }
+
+    /** Tracks the preview's checked rows. */
+    protected onIncludedItemsChange(items: DotCMSContentlet[]): void {
+        this.$includedItems.set(items);
+    }
+
+    /**
+     * Fires the selected workflow action over the contentlets left checked in the preview.
+     *
+     * Sends `$includedItems` rather than the whole selection, so the user's unchecking is honoured
+     * and the payload matches what the preview showed. Contentlets whose scheme does not own the
+     * action are still skipped server-side and reported back in `skippedCount`, which the result
+     * toast surfaces — a mixed-type selection will partially skip by design.
      */
     protected onExecuteWorkflowAction(): void {
         const workflowActionId = this.$selectedActionId();
-        const contentletIds = toContentletInodes(this.$selectedItems());
+        const contentletIds = this.$includedItems().map((item) => item.inode);
 
         if (!workflowActionId || !contentletIds.length) {
             return;
         }
 
-        const actionName = this.selectedActionName() ?? workflowActionId;
+        const actionName = this.$selectedAction()?.name ?? workflowActionId;
 
         this.$executing.set(true);
 
@@ -362,15 +452,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 additionalParamsMap: { _path_to_move: '' }
             }
         };
-    }
-
-    /** Label of the selected action, for the result message. */
-    private selectedActionName(): string | undefined {
-        const selectedId = this.$selectedActionId();
-
-        return this.$schemes()
-            .flatMap((scheme) => scheme.actions)
-            .find((action) => action.id === selectedId)?.name;
     }
 
     /**

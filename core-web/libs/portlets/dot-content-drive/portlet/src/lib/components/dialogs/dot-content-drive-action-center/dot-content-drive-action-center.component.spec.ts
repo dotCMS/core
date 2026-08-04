@@ -144,6 +144,30 @@ describe('DotContentDriveActionCenterComponent', () => {
         jest.clearAllMocks();
     });
 
+    /** Renders the dialog and arms the plain (no extra input) workflow action. */
+    const armAction = (): void => {
+        spectator.detectChanges();
+        spectator.component['$selectedActionId'].set('action-review');
+        spectator.detectChanges();
+    };
+
+    /** Arms the action and drills into its preview. */
+    const goToPreview = (): void => {
+        armAction();
+        spectator.click('[data-testid="continue-workflow-editorial"]');
+        spectator.detectChanges();
+    };
+
+    /** Clicks the real checkbox of the first preview row, dropping it from the included set. */
+    const uncheckFirstRow = (): void => {
+        const checkbox = spectator
+            .queryAll('[data-testid="preview-row"]')[0]
+            .querySelector('[data-testid="preview-row-checkbox"] input');
+
+        spectator.click(checkbox);
+        spectator.detectChanges();
+    };
+
     describe('loading the available actions', () => {
         it('should request bulk actions with the selected inodes', () => {
             spectator.detectChanges();
@@ -382,24 +406,75 @@ describe('DotContentDriveActionCenterComponent', () => {
     });
 
     describe('workflow actions', () => {
-        it('should keep Execute disabled until an action is selected', () => {
+        it('should keep Continue disabled until an action is selected', () => {
             spectator.detectChanges();
 
             // PrimeNG puts `disabled` on the inner <button>, not on the p-button host.
-            const execute = spectator.query(
-                '[data-testid="execute-workflow-editorial"] button'
+            const continueButton = spectator.query(
+                '[data-testid="continue-workflow-editorial"] button'
             ) as HTMLButtonElement;
 
-            expect(execute.disabled).toBe(true);
+            expect(continueButton.disabled).toBe(true);
         });
 
-        it('should fire the selected action with the selection inodes', () => {
+        it('should open the preview instead of firing when Continue is clicked', () => {
+            armAction();
+
+            spectator.click('[data-testid="continue-workflow-editorial"]');
             spectator.detectChanges();
 
-            spectator.component['$selectedActionId'].set('action-review');
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-center"]')).toBeNull();
+            expect(fireService.bulkFire).not.toHaveBeenCalled();
+        });
+
+        it('should not fire when no action is selected', () => {
             spectator.detectChanges();
 
-            spectator.click('[data-testid="execute-workflow-editorial"]');
+            spectator.component['onExecuteWorkflowAction']();
+
+            expect(fireService.bulkFire).not.toHaveBeenCalled();
+        });
+
+        it('should not open the preview when no action is selected', () => {
+            spectator.detectChanges();
+
+            spectator.component['onContinueToPreview']();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+        });
+
+        it('should disable actions that need extra input', () => {
+            spectator.detectChanges();
+
+            const pushPublish = spectator.query(
+                '[data-testid="workflow-action-action-pp"] input'
+            ) as HTMLInputElement;
+
+            expect(pushPublish.disabled).toBe(true);
+        });
+    });
+
+    describe('workflow action preview', () => {
+        beforeEach(() => goToPreview());
+
+        it('should list every selected contentlet, all included', () => {
+            expect(spectator.queryAll('[data-testid="preview-row"]').length).toBe(2);
+            expect(spectator.component['$includedCount']()).toBe(2);
+        });
+
+        it('should title the preview with the action name and show the included count', () => {
+            expect(spectator.query('[data-testid="action-preview-title"]').textContent).toContain(
+                'Send for Review'
+            );
+            expect(spectator.query('[data-testid="action-preview-count"]').textContent).toContain(
+                'content-drive.action-center.items-selected'
+            );
+        });
+
+        it('should fire every included contentlet', () => {
+            spectator.click('[data-testid="action-preview-execute"]');
 
             expect(fireService.bulkFire).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -409,7 +484,44 @@ describe('DotContentDriveActionCenterComponent', () => {
             );
         });
 
-        it('should not fire when no action is selected', () => {
+        it('should fire only the contentlets still checked', () => {
+            // The whole point of the preview: unchecking a row must remove exactly that inode from
+            // the payload. Before this screen existed the fire always sent the full selection.
+            uncheckFirstRow();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(fireService.bulkFire).toHaveBeenCalledWith(
+                expect.objectContaining({ contentletIds: ['inode-2'] })
+            );
+        });
+
+        it('should keep the fired payload in step with the count shown on the button', () => {
+            uncheckFirstRow();
+
+            const badge = spectator.query('[data-testid="action-preview-execute"] .p-badge');
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            const [request] = (fireService.bulkFire as jest.Mock).mock.calls[0] as [
+                { contentletIds: string[] }
+            ];
+
+            expect(request.contentletIds.length).toBe(Number(badge.textContent.trim()));
+        });
+
+        it('should disable Execute once nothing is included', () => {
+            spectator.component['onIncludedItemsChange']([]);
+            spectator.detectChanges();
+
+            const execute = spectator.query(
+                '[data-testid="action-preview-execute"] button'
+            ) as HTMLButtonElement;
+
+            expect(execute.disabled).toBe(true);
+        });
+
+        it('should not fire when nothing is included', () => {
+            spectator.component['onIncludedItemsChange']([]);
             spectator.detectChanges();
 
             spectator.component['onExecuteWorkflowAction']();
@@ -422,11 +534,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 of({ successCount: 1, skippedCount: 1, fails: [] })
             );
 
-            spectator.detectChanges();
-            spectator.component['$selectedActionId'].set('action-review');
-            spectator.detectChanges();
-
-            spectator.click('[data-testid="execute-workflow-editorial"]');
+            spectator.click('[data-testid="action-preview-execute"]');
 
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -435,14 +543,68 @@ describe('DotContentDriveActionCenterComponent', () => {
             );
         });
 
-        it('should disable actions that need extra input', () => {
-            spectator.detectChanges();
+        it('should refresh the grid and close the dialog on success', () => {
+            spectator.click('[data-testid="action-preview-execute"]');
 
-            const pushPublish = spectator.query(
-                '[data-testid="workflow-action-action-pp"] input'
-            ) as HTMLInputElement;
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
 
-            expect(pushPublish.disabled).toBe(true);
+        it('should keep the dialog open and report the error on failure', () => {
+            jest.spyOn(fireService, 'bulkFire').mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+
+        describe('back', () => {
+            it('should return to the actions view with the action still armed', () => {
+                spectator.click('[data-testid="action-preview-back"]');
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="action-center"]')).toBeTruthy();
+                expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+                // Kept on purpose: re-entering the preview must not mean re-picking the action.
+                expect(spectator.component['$selectedActionId']()).toBe('action-review');
+                expect(fireService.bulkFire).not.toHaveBeenCalled();
+            });
+
+            it('should be inert while an action is in flight', () => {
+                spectator.component['$executing'].set(true);
+                spectator.detectChanges();
+
+                spectator.component['onBackToActions']();
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+            });
+        });
+    });
+
+    describe('partial match warning', () => {
+        it('should stay hidden when the action covers the whole selection', () => {
+            // The fixture's `action-review` has a count of 2 against a 2-contentlet selection.
+            goToPreview();
+
+            expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
+        });
+
+        it('should warn when the action covers fewer items than are selected', () => {
+            // Three contentlets selected, but the action's backend count is still 2 — one of them
+            // sits on a step this action does not belong to and will be skipped server-side.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', live: true }),
+                contentlet({ inode: 'inode-3' })
+            ]);
+
+            goToPreview();
+
+            expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeTruthy();
         });
     });
 
