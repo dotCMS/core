@@ -24,6 +24,10 @@ const contentlet = (
 ): DotContentDriveItem =>
     ({
         baseType: 'CONTENT',
+        // A real content type matters here: the bulk lookup is grouped by it, and actions carry the
+        // content types that can run them.
+        contentType: 'Blog',
+        title: `Title ${overrides.inode}`,
         live: false,
         working: true,
         archived: false,
@@ -96,7 +100,9 @@ describe('DotContentDriveActionCenterComponent', () => {
                 loadItems: jest.fn(),
                 setStatus: jest.fn(),
                 setSelectedItems: jest.fn(),
-                closeDialog: jest.fn()
+                closeDialog: jest.fn(),
+                setDialogDrillDown: jest.fn(),
+                clearDialogDrillDown: jest.fn()
             }),
             mockProvider(MessageService, { add: jest.fn() }),
             mockProvider(DotMessageService, {
@@ -464,13 +470,30 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.component['$includedCount']()).toBe(2);
         });
 
-        it('should title the preview with the action name and show the included count', () => {
-            expect(spectator.query('[data-testid="action-preview-title"]').textContent).toContain(
-                'Send for Review'
-            );
-            expect(spectator.query('[data-testid="action-preview-count"]').textContent).toContain(
-                'content-drive.action-center.items-selected'
-            );
+        it('should retitle the dialog header rather than render its own', () => {
+            // The dialog header belongs to the shell; publishing it through the store keeps one
+            // header instead of the dialog's title and a second one in this body.
+            expect(store.setDialogDrillDown).toHaveBeenCalledWith({
+                header: 'Send for Review',
+                itemCount: 2
+            });
+            expect(spectator.query('[data-testid="action-preview-title"]')).toBeNull();
+        });
+
+        it('should keep the published header count in step with the checked rows', () => {
+            uncheckFirstRow();
+
+            expect(store.setDialogDrillDown).toHaveBeenLastCalledWith({
+                header: 'Send for Review',
+                itemCount: 1
+            });
+        });
+
+        it('should restore the dialog header when going back', () => {
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(store.clearDialogDrillDown).toHaveBeenCalled();
         });
 
         it('should fire every included contentlet', () => {
@@ -582,6 +605,143 @@ describe('DotContentDriveActionCenterComponent', () => {
 
                 expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
             });
+        });
+    });
+
+    describe('mixed content types', () => {
+        /** A scheme whose actions only apply to the given content type's contentlets. */
+        const schemeFor = (schemeId: string, actionId: string, actionName: string) =>
+            ({
+                schemes: [
+                    {
+                        scheme: { id: schemeId, name: schemeId },
+                        steps: [
+                            {
+                                step: {
+                                    count: 1,
+                                    workflowStep: {
+                                        id: 'step-1',
+                                        name: 'Draft',
+                                        schemeId
+                                    }
+                                },
+                                actions: [
+                                    {
+                                        count: 1,
+                                        pushPublish: false,
+                                        moveable: false,
+                                        conditionPresent: false,
+                                        workflowAction: {
+                                            id: actionId,
+                                            name: actionName,
+                                            assignable: false,
+                                            commentable: false
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }) as DotBulkActionView;
+
+        beforeEach(() => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'blog-1', contentType: 'Blog' }),
+                contentlet({ inode: 'vtl-1', contentType: 'VtlInclude' })
+            ]);
+
+            // Schemes are assigned per content type, so each group gets a different response.
+            jest.spyOn(workflowsActionsService, 'getBulkActions').mockImplementation((request) =>
+                of(
+                    request.contentletIds?.includes('blog-1')
+                        ? schemeFor('Blogs', 'copy-blog', 'Copy Blog')
+                        : schemeFor('Vtl', 'reset-vtl', 'Reset Workflow')
+                )
+            );
+        });
+
+        it('should ask the endpoint once per content type', () => {
+            spectator.detectChanges();
+
+            expect(workflowsActionsService.getBulkActions).toHaveBeenCalledTimes(2);
+            expect(workflowsActionsService.getBulkActions).toHaveBeenCalledWith({
+                contentletIds: ['blog-1']
+            });
+            expect(workflowsActionsService.getBulkActions).toHaveBeenCalledWith({
+                contentletIds: ['vtl-1']
+            });
+        });
+
+        it('should offer the actions of every content type in the selection', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="workflow-action-copy-blog"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="workflow-action-reset-vtl"]')).toBeTruthy();
+        });
+
+        it('should preview only the contentlets the action can run on', () => {
+            // The bug this fixes: a Blog-only action used to list every selected contentlet,
+            // including types its scheme is not assigned to, which the server was always going to
+            // skip.
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('copy-blog');
+            spectator.detectChanges();
+            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.detectChanges();
+
+            const rows = spectator.queryAll('[data-testid="preview-row"]');
+
+            expect(rows.length).toBe(1);
+            expect(rows[0].getAttribute('data-inode')).toBe('blog-1');
+        });
+
+        it('should fire only the eligible contentlet', () => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('copy-blog');
+            spectator.detectChanges();
+            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(fireService.bulkFire).toHaveBeenCalledWith(
+                expect.objectContaining({ contentletIds: ['blog-1'] })
+            );
+        });
+
+        it('should count the header against the eligible contentlets only', () => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('copy-blog');
+            spectator.detectChanges();
+            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.detectChanges();
+
+            expect(store.setDialogDrillDown).toHaveBeenCalledWith({
+                header: 'Copy Blog',
+                itemCount: 1
+            });
+        });
+
+        it('should not warn about a partial match when every previewed row is eligible', () => {
+            // Count is 1 and exactly 1 row is previewed, so nothing gets skipped.
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('copy-blog');
+            spectator.detectChanges();
+            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
+        });
+
+        it('should surface the lookup failure when any content type request fails', () => {
+            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="workflow-actions-error"]')).toBeTruthy();
         });
     });
 

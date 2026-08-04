@@ -1,3 +1,5 @@
+import { forkJoin } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -19,7 +21,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { finalize, take } from 'rxjs/operators';
+import { finalize, map, take } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -42,10 +44,11 @@ import { DotContentDriveStatus } from '../../../shared/models';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     DotActionCenterQuickAction,
+    eligibleContentlets,
     excludeFolders,
     getQuickActions,
-    toActionCenterSchemes,
-    toContentletInodes
+    groupByContentType,
+    mergeActionCenterSchemes
 } from '../../../utils/action-center';
 
 /** The two screens the dialog switches between. */
@@ -60,7 +63,8 @@ type DotActionCenterView = 'actions' | 'preview';
  *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`. Counts are derived client-side
  *    from row state (see `getQuickActions`).
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
- *    `POST /api/v1/workflow/contentlet/actions/bulk`. Counts come from the backend's Elasticsearch
+ *    `POST /api/v1/workflow/contentlet/actions/bulk`, queried **once per content type** in the
+ *    selection (see {@link loadWorkflowActions}). Counts come from the backend's Elasticsearch
  *    aggregation on `wfstep` and are real per-action eligibility counts.
  *
  * The two sections differ in how they commit. A quick action fires on click, over exactly the
@@ -69,6 +73,9 @@ type DotActionCenterView = 'actions' | 'preview';
  * sent. Only workflow actions need this: their counts come from the backend and can be lower than the
  * selection, so "which items is this about to touch?" is a real question there and not for quick
  * actions.
+ *
+ * The preview retitles the shell's dialog header to the action name through the store's drill-down
+ * state, rather than rendering a second header of its own.
  *
  * Deliberate v1 scope limits:
  *
@@ -247,6 +254,19 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             .find((action) => action.id === selectedId);
     });
 
+    /**
+     * The contentlets the selected action can run on — the preview's rows.
+     *
+     * Narrowed by content type so an action from one scheme never lists contentlets of a type that
+     * scheme is not assigned to.
+     */
+    protected readonly $previewItems = computed(() =>
+        eligibleContentlets(this.$selectedAction(), this.$contentlets())
+    );
+
+    /** Number of rows the preview lists for the selected action. */
+    protected readonly $previewCount = computed(() => this.$previewItems().length);
+
     ngOnInit(): void {
         this.loadWorkflowActions();
     }
@@ -340,14 +360,16 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * there, and the preview surfaces it when it falls short of the selection.
      */
     protected onContinueToPreview(): void {
-        const contentlets = this.$contentlets();
+        const action = this.$selectedAction();
+        const previewItems = this.$previewItems();
 
-        if (!this.$selectedActionId() || !contentlets.length) {
+        if (!action || !previewItems.length) {
             return;
         }
 
-        this.$includedItems.set(contentlets);
+        this.$includedItems.set(previewItems);
         this.$view.set('preview');
+        this.publishDrillDownHeader(action.name, previewItems.length);
     }
 
     /**
@@ -363,11 +385,18 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
         this.$view.set('actions');
         this.$includedItems.set([]);
+        this.#store.clearDialogDrillDown();
     }
 
-    /** Tracks the preview's checked rows. */
+    /** Tracks the preview's checked rows, keeping the dialog header's count in step. */
     protected onIncludedItemsChange(items: DotCMSContentlet[]): void {
         this.$includedItems.set(items);
+
+        const action = this.$selectedAction();
+
+        if (action) {
+            this.publishDrillDownHeader(action.name, items.length);
+        }
     }
 
     /**
@@ -455,15 +484,34 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Loads the available workflow actions for the current selection.
+     * Hands the shell the header for the drilled-into preview, so the dialog shows the action name
+     * and the number of items it will run on instead of repeating the Workflow Center title.
+     */
+    private publishDrillDownHeader(header: string, itemCount: number): void {
+        this.#store.setDialogDrillDown({ header, itemCount });
+    }
+
+    /**
+     * Loads the available workflow actions for the current selection, **one request per content
+     * type**.
+     *
+     * Grouping is what makes per-action eligibility knowable. A single lookup over a mixed selection
+     * returns counts with no indication of which contentlets each action matches, so the preview
+     * would list every selected item — a Blog action showing a VtlInclude row that the server was
+     * always going to skip. Since schemes are assigned per content type, asking per type maps each
+     * action back to the types that can run it.
+     *
+     * Cost is bounded by the number of distinct content types in the selection (typically one or
+     * two), not by the number of contentlets. Requests run in parallel and a single failure fails the
+     * lot, which is the same all-or-nothing behaviour as the previous one-request version.
      *
      * Sends inodes rather than a Lucene query. If Content Drive later supports selecting beyond the
      * current page, this is where the `{ query }` variant goes — the endpoint accepts either.
      */
     private loadWorkflowActions(): void {
-        const contentletIds = toContentletInodes(this.$selectedItems());
+        const groups = groupByContentType(this.$contentlets());
 
-        if (!contentletIds.length) {
+        if (!groups.length) {
             this.$loadingSchemes.set(false);
 
             return;
@@ -472,14 +520,21 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.$loadingSchemes.set(true);
         this.$schemesError.set(false);
 
-        this.#workflowsActionsService
-            .getBulkActions({ contentletIds })
+        forkJoin(
+            groups.map((group) =>
+                this.#workflowsActionsService
+                    .getBulkActions({
+                        contentletIds: group.contentlets.map((item) => item.inode)
+                    })
+                    .pipe(map((view) => ({ contentType: group.contentType, view })))
+            )
+        )
             .pipe(
                 take(1),
                 finalize(() => this.$loadingSchemes.set(false))
             )
             .subscribe({
-                next: (view) => this.$schemes.set(toActionCenterSchemes(view)),
+                next: (results) => this.$schemes.set(mergeActionCenterSchemes(results)),
                 error: () => {
                     this.$schemes.set([]);
                     this.$schemesError.set(true);

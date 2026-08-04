@@ -15,10 +15,10 @@
     `tailwindcss-primeui` exposes (`surface-*`, `primary-*`), so it follows the active PrimeNG theme
     instead of pinning one palette.
 
-    Two screens live here, switched by `$view()`. The prototype swaps the dialog *title* when drilling
-    into the preview; that title belongs to the shell's shared `p-dialog`, so instead the preview adds
-    its own bar below it. The dialog keeps saying "Workflow Center" — which is still true — and the bar
-    carries the back affordance and the action name.
+    Two screens live here, switched by `$view()`. Drilling into an action's preview retitles the
+    shell's one header to the action name via the store's drill-down state — this body never renders a
+    title or an item count of its own, or the dialog would appear to have two headers. Only the back
+    control lives here, where it can be disabled while an action is in flight.
 -->
 <div class="flex min-h-0 flex-1 flex-col" data-testid="action-center-dialog">
     @if ($view() === 'actions') {
@@ -256,54 +256,48 @@
                 (click)="onDone()" />
         </div>
     } @else {
-        <!-- Preview: what the armed action is about to run on, with a checkbox per row. -->
+        <!--
+            Preview: what the armed action is about to run on, with a checkbox per row.
+
+            No title or count here — the shell's dialog header carries both (via the store's
+            drill-down state), so repeating them would render the header twice. Only the back control
+            lives in the body, where it can be disabled while an action is in flight.
+        -->
         <div
-            class="flex shrink-0 items-center gap-2 border-b border-surface-100 px-4 py-3"
+            class="flex shrink-0 items-center border-b border-surface-100 p-2"
             data-testid="action-preview-bar">
             <p-button
                 icon="pi pi-arrow-left"
                 severity="secondary"
+                size="small"
                 [text]="true"
-                [rounded]="true"
+                [label]="'content-drive.action-center.back' | dm"
                 [disabled]="$executing()"
-                [attr.aria-label]="'content-drive.action-center.back' | dm"
                 data-testid="action-preview-back"
                 (click)="onBackToActions()" />
-
-            <span class="flex flex-col">
-                <span class="text-sm font-bold text-surface-800" data-testid="action-preview-title">
-                    {{ $selectedAction()?.name }}
-                </span>
-                <span
-                    class="text-xs font-medium text-surface-400"
-                    data-testid="action-preview-count">
-                    {{
-                        'content-drive.action-center.items-selected'
-                            | dm: [$includedCount().toString()]
-                    }}
-                </span>
-            </span>
         </div>
 
         <div
             class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4"
             data-testid="action-preview-body">
             @if ($selectedAction(); as action) {
-                <!-- The action's own count comes from the backend aggregation over the whole
-                     selection. When it falls short, some rows will be skipped server-side — and the
+                <!-- The rows are already narrowed to content types this action's scheme covers, but
+                     eligibility is also per workflow step: two contentlets of one type can sit on
+                     different steps and only one may expose the action. `count` is the backend's true
+                     total, so when it falls short of the rows shown, the rest get skipped — and the
                      endpoint never says which, so this warning is all the dialog can honestly show. -->
-                @if ($contentletCount() > action.count) {
+                @if ($previewCount() > action.count) {
                     <p-message severity="warn" data-testid="action-preview-partial-match">
                         {{
                             'content-drive.action-center.preview.partial-match'
-                                | dm: [action.count.toString(), $contentletCount().toString()]
+                                | dm: [action.count.toString(), $previewCount().toString()]
                         }}
                     </p-message>
                 }
             }
 
             <dot-content-drive-action-preview
-                [items]="$contentlets()"
+                [items]="$previewItems()"
                 [selection]="$includedItems()"
                 [disabled]="$executing()"
                 data-testid="action-preview"

@@ -72,6 +72,7 @@ import {
 } from '../shared/mocks';
 import {
     DotContentDriveDialog,
+    DotContentDriveDialogDrillDown,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -90,6 +91,8 @@ describe('DotContentDriveShellComponent', () => {
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
     // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
+    // Header override published by a dialog body that has drilled into a sub-screen.
+    let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
     // Reactive so the shell's $extraColumns computed recomputes when the fields change.
     let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
 
@@ -144,6 +147,7 @@ describe('DotContentDriveShellComponent', () => {
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
+        dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
 
         spectator = createComponent({
@@ -175,7 +179,10 @@ describe('DotContentDriveShellComponent', () => {
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
+                    dialogDrillDown: dialogDrillDownSignal,
                     setDialog: jest.fn(),
+                    setDialogDrillDown: jest.fn(),
+                    clearDialogDrillDown: jest.fn(),
                     loadFolders: jest.fn(),
                     loadChildFolders: jest.fn(),
                     updateFolders: jest.fn(),

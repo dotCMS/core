@@ -231,6 +231,22 @@ export class DotContentDriveShellComponent {
     );
 
     /**
+     * Action Center title. Swaps to the drilled-into screen's title (the selected workflow action)
+     * when its body publishes one, so there is one header rather than the dialog's and the body's.
+     */
+    readonly $actionCenterHeader = computed(
+        () => this.#store.dialogDrillDown()?.header ?? this.$activeDialog()?.header
+    );
+
+    /**
+     * Item count for the Action Center's header sub-line: the items the drilled-into action will run
+     * on, falling back to the whole contentlet selection at the top level.
+     */
+    readonly $actionCenterCount = computed(
+        () => this.#store.dialogDrillDown()?.itemCount ?? this.$actionCenterSelectionCount()
+    );
+
+    /**
      * Syncs the dialog open/close state from the store. Opening sets the body and visibility
      * together (no blank-frame flash); closing flips visibility off but leaves the body mounted
      * so PrimeNG can animate it out — the body is cleared later in {@link onDialogHidden}.

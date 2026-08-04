@@ -70,6 +70,36 @@ describe('DotContentDriveActionPreviewComponent', () => {
             expect(firstRow.querySelector('[data-testid="preview-row-status"] p-tag')).toBeTruthy();
         });
 
+        it('should truncate a long title rather than widen the table', () => {
+            // A long title used to stretch the table past the dialog and push the Type column behind
+            // a horizontal scrollbar. Both pieces are needed: `min-w-0` lets the flex item shrink,
+            // `truncate` ellipses it.
+            spectator.setInput('items', [
+                contentlet({
+                    inode: 'long',
+                    title: 'Easy Snowboard Tricks You can Start Using Right Away'
+                })
+            ]);
+            spectator.detectChanges();
+
+            const title = spectator
+                .query(byTestId('preview-row-title'))
+                .querySelector('span[title]');
+
+            expect(title.classList.contains('truncate')).toBe(true);
+            expect(title.classList.contains('min-w-0')).toBe(true);
+            // The full title stays reachable on hover once it is visually clipped.
+            expect(title.getAttribute('title')).toBe(
+                'Easy Snowboard Tricks You can Start Using Right Away'
+            );
+        });
+
+        it('should lay the table out with fixed columns so widths are honoured', () => {
+            const table = spectator.query('table');
+
+            expect(table.style.tableLayout).toBe('fixed');
+        });
+
         it('should render nothing but the header for an empty list', () => {
             spectator.setInput('items', []);
             spectator.detectChanges();

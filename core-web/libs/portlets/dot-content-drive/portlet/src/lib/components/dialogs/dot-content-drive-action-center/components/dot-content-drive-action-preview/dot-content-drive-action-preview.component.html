@@ -18,8 +18,13 @@
     [showPageLinks]="false"
     [showCurrentPageReport]="true"
     currentPageReportTemplate="{first} - {last} of {totalRecords}"
-    [tableStyle]="{ width: '100%' }"
+    [tableStyle]="{ width: '100%', 'table-layout': 'fixed' }"
     data-testId="action-preview-table">
+    <!--
+        `table-layout: fixed` is load-bearing: with the default `auto` layout a long title widens the
+        table past the dialog, pushing the Type column out of view behind a horizontal scrollbar.
+        Fixed layout makes the columns honour these widths and lets the title cell truncate instead.
+    -->
     <ng-template #header>
         <tr data-testId="preview-header-row">
             <th [style.width]="'3rem'">
@@ -28,8 +33,8 @@
                     data-testId="preview-header-checkbox" />
             </th>
             <th>{{ 'Title' | dm }}</th>
-            <th [style.width]="'8rem'">{{ 'status' | dm }}</th>
-            <th [style.width]="'10rem'">{{ 'type' | dm }}</th>
+            <th [style.width]="'7rem'">{{ 'status' | dm }}</th>
+            <th [style.width]="'9rem'">{{ 'type' | dm }}</th>
         </tr>
     </ng-template>
 
@@ -49,8 +54,11 @@
                         class="size-9 shrink-0 overflow-hidden rounded-md bg-(--color-palette-primary-100) p-1">
                         <dot-content-thumbnail [contentlet]="item" iconSize="20px" />
                     </div>
+                    <!-- `min-w-0` is what makes `truncate` work here: a flex item refuses to shrink
+                         below its content width without it, so the title would push the row wide
+                         instead of ellipsing. The full text stays available as the hover title. -->
                     <span
-                        class="truncate text-sm font-semibold text-surface-700"
+                        class="min-w-0 truncate text-sm font-semibold text-surface-700"
                         [title]="item.title">
                         {{ item.title }}
                     </span>
