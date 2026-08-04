@@ -2,6 +2,7 @@ package com.dotcms.content.index.migration;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Per-index ES↔OS mirror status for the migration-readiness report (issue #36360): how one logical
@@ -69,6 +70,13 @@ public record MirrorStatus(
      * decimals.
      */
     @JsonProperty("driftPercent")
+    @Schema(description = "How far the OpenSearch mirror deviates from the Elasticsearch original, as a "
+            + "signed percentage of the original count: (OS − ES) / ES × 100, rounded to 2 decimals. "
+            + "Read it as: 0.0 = in sync; negative = mirror is BEHIND (missing that % of docs, e.g. "
+            + "-10.0 means the mirror lacks 10% of the original); positive = mirror is AHEAD (has that "
+            + "% extra); -100.0 = mirror empty or absent; +100.0 = original empty but mirror has data; "
+            + "null = a count could not be measured. Negative drift is the risk before advancing to "
+            + "Phase 3; positive drift is the risk before a downgrade.")
     public Double driftPercent() {
         final long esCount = es.docCount();
         final long osCount = os.docCount();

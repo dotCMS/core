@@ -12,6 +12,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -62,6 +63,26 @@ public class MigrationReadinessResource {
     @JSONP
     @NoCache
     @Hidden
+    @Operation(
+        summary = "ES→OS migration readiness (internal, role-gated)",
+        description =
+            "Read-only, pre-phase-change report. Restricted to CMS admins holding the migration "
+            + "support role (403 otherwise). Returns: `clusterId`; `phase` "
+            + "(current/name/readEngine/writeEngines/dualWrite); `content` keyed by slot "
+            + "(WORKING/LIVE); `siteSearch` as a list; and an overall `verdict`.\n\n"
+            + "Per index: `es`/`os` = {exists, docCount (exact; -1 = count failed), physicalName "
+            + "(full name as stored: cluster-prefixed, .os-tagged on OpenSearch)}; `verdict` = "
+            + "IN_SYNC | MISSING_COUNTERPART | COUNT_DRIFT; `recommendation` = what to run to fix it.\n\n"
+            + "`driftPercent` = how far the OpenSearch mirror deviates from the Elasticsearch original, "
+            + "as a signed % of the original: (OS − ES) / ES × 100. 0.0 = in sync; NEGATIVE = mirror "
+            + "BEHIND (missing that % of docs); POSITIVE = mirror AHEAD (extra docs); -100.0 = mirror "
+            + "empty/absent; +100.0 = original empty but mirror has data; null = a count could not be "
+            + "measured.\n\n"
+            + "Verdict: `safeToAdvance` = safe to promote toward OpenSearch-only (false lists per-index "
+            + "`blockers`); `safeToRollback` = safe to downgrade (false when any mirror is AHEAD of the "
+            + "original — that delta would be lost on a downgrade until a reindex). Negative drift is "
+            + "the risk before Phase 3; positive drift is the risk before a downgrade.",
+        tags = {"Internal APIs"})
     @Path("/readiness")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response readiness(@Context final HttpServletRequest request,
