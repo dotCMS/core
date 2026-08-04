@@ -314,6 +314,9 @@ public final class TiptapHtml {
                 st.takePendingAttrs();
                 sink.add(node);
             } else {
+                // The decoration targeted this element; it dies with it instead of leaking
+                // onto the next block.
+                st.takePendingAttrs();
                 Logger.debug(TiptapHtml.class, () -> "dotcms element <" + tag
                         + "> failed validation, dropped (its attributes carry no text to keep)");
             }

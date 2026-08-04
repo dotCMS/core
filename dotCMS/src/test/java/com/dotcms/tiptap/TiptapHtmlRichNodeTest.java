@@ -389,6 +389,18 @@ public class TiptapHtmlRichNodeTest extends UnitTestBase {
     }
 
     @Test
+    public void decoration_before_invalid_rich_element_is_consumed_not_leaked() {
+        // The element fails validation (no identifier) and is dropped -- the decoration aimed
+        // at it must be consumed with it, not leak onto the next unrelated block.
+        final JsonNode doc = convert("<!-- dotcms:attrs {\"textAlign\":\"center\"} -->"
+                + "<dotcms-content language-id=\"1\"></dotcms-content><p>after</p>");
+        final JsonNode after = doc.path("content").path(0);
+        assertEquals("paragraph", after.path("type").asText());
+        assertTrue("consumed: must not leak onto the following block",
+                after.path("attrs").path("textAlign").isMissingNode());
+    }
+
+    @Test
     public void decoration_mid_paragraph_is_ignored() {
         final JsonNode doc = convert(
                 "text <!-- dotcms:attrs {\"textAlign\":\"center\"} --> more");
