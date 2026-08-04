@@ -627,7 +627,16 @@ public class ContentletIndexAPIImplPhaseTest {
 
         @Override
         public IndexAPI indexAPI() {
-            throw new UnsupportedOperationException("indexAPI() not used by tests");
+            // The activateIndex migration guard probes the OpenSearch counterpart's existence through
+            // this API (issue #36360); report "exists" so the default fake drives the activation path.
+            // Tests that need to control existence (e.g. the guard's missing-counterpart case) override
+            // this with a set-backed fake instead.
+            return new FakeIndexAPI(List.of()) {
+                @Override
+                public boolean indexExists(final String indexName) {
+                    return true;
+                }
+            };
         }
 
         // ── unneeded methods ─────────────────────────────────────────────────

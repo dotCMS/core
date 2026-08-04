@@ -1927,6 +1927,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public static final String ALLOW_ACTIVE_INDEX_DELETE = "ALLOW_ACTIVE_INDEX_DELETE";
 
     /**
+     * Config override to bypass the migration guard that refuses to activate an index whose
+     * OpenSearch counterpart does not exist (issue #36360). Default {@code false}. Set {@code true}
+     * only to force a rollback to a pre-migration index, accepting that OpenSearch is left pointing
+     * at a missing index until it is rebuilt.
+     */
+    public static final String ALLOW_ACTIVATE_INDEX_WITHOUT_OS_MIRROR =
+            "ALLOW_ACTIVATE_INDEX_WITHOUT_OS_MIRROR";
+
+    /**
      * Rejects a destructive operation ({@code operation}, e.g. {@code "deleted"} / {@code "cleared"})
      * on an index that is currently active (working/live) or being rebuilt (a reindex slot). The
      * protected set is collected phase-aware and, in the dual-write phases, from <strong>both</strong>
@@ -3278,6 +3287,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else {
             Logger.info(this, "Index activation (" + indexName
                     + ") performed by system user at " + new Date());
+        }
+
+        // Guard (issue #36360): during the OpenSearch migration, refuse to activate an index whose
+        // OpenSearch counterpart does not exist. activateIndex only repoints both stores by name (no
+        // create/reconcile), so pointing at a missing .os index silently diverges ES from OS and
+        // breaks reads at Phase 3, where there is no ES fallback. A rollback to a migration-era index
+        // that DOES have its .os copy still works. Override with ALLOW_ACTIVATE_INDEX_WITHOUT_OS_MIRROR
+        // =true to force it (OS left pointing at a missing index until rebuilt).
+        if (isMigrationStarted()
+                && !Config.getBooleanProperty(ALLOW_ACTIVATE_INDEX_WITHOUT_OS_MIRROR, false)) {
+            final String osCounterpart = operationsOS.toPhysicalName(indexName);
+            final boolean osExists = Try.of(
+                    () -> operationsOS.indexAPI().indexExists(osCounterpart)).getOrElse(false);
+            if (!osExists) {
+                throw new DotStateException(String.format(
+                        "Cannot activate index '%s' during the OpenSearch migration: its OpenSearch "
+                        + "copy '%s' does not exist, so activating it would leave OpenSearch pointing "
+                        + "at a missing index and break search at Phase 3. Rebuild it (run a full "
+                        + "reindex) before activating, or set %s=true to override.",
+                        indexName, osCounterpart, ALLOW_ACTIVATE_INDEX_WITHOUT_OS_MIRROR));
+            }
         }
 
         if (isMigrationComplete()) {
