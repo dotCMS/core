@@ -93,6 +93,17 @@ public class ContentletIndexAPIImplActivateGuardTest {
         apiWith(Set.of()).activateIndex(BARE); // must not throw
     }
 
+    /**
+     * No migration phase configured (flag removed/absent) → {@code MigrationPhase.current()} defaults
+     * to Phase 0 → the guard does not apply, so a rollback works once migration is turned off. This is
+     * the intended escape: set the phase to 0 (or remove the flag) to re-enable unrestricted rollback.
+     */
+    @Test
+    public void noPhaseConfigured_notGuarded() throws Exception {
+        // deliberately do NOT set FLAG_KEY — it is cleared by @After, so it is absent here
+        apiWith(Set.of()).activateIndex(BARE); // must not throw
+    }
+
     /** The override flag forces the activation even when the OS counterpart is missing. */
     @Test
     public void overrideFlag_bypassesGuard() throws Exception {
