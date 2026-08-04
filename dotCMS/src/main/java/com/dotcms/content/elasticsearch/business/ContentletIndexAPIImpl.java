@@ -1264,7 +1264,26 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else {
             existingOpt.flatMap(VersionedIndices::reindexLive).ifPresent(builder::reindexLive);
         }
+        preserveSiteSearch(builder, existingOpt);
         versionedIndicesAPI.saveIndices(builder.build());
+    }
+
+    /**
+     * Carries the site-search pointer from the existing OpenSearch store into a rebuilt
+     * {@link VersionedIndices}.
+     *
+     * <p>The site-search slot lives in the same version row as the content pointers but is owned by
+     * {@code SiteSearchAPI}, so every content-side rebuild here has to hand it back untouched.
+     * {@code saveIndices()} is a delete-by-version followed by a re-insert: a builder that omits the
+     * slot does not leave it alone, it <em>erases</em> it — silently deactivating the site-search
+     * index on a reindex, switchover, abort, activate or deactivate (issue #36360).</p>
+     *
+     * @param builder  the rebuilt content pointers, about to be saved
+     * @param existing the store as it stands, or empty on a first bootstrap
+     */
+    private static void preserveSiteSearch(final VersionedIndicesImpl.Builder builder,
+            final Optional<VersionedIndices> existing) {
+        existing.flatMap(VersionedIndices::siteSearch).ifPresent(builder::siteSearch);
     }
 
 
@@ -1578,6 +1597,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     // from the builder clears them to Optional.empty() in the store.
                     osWorking.ifPresent(osBuilder::working);
                     osLive.ifPresent(osBuilder::live);
+                    preserveSiteSearch(osBuilder, osExisting);
                     versionedIndicesAPI.saveIndices(osBuilder.build());
                     // Capture the promoted OS names (.os-tagged, from the OS store) so they can be
                     // optimized on the OS provider directly — see optimizeNewActiveIndicesAsync.
@@ -1665,6 +1685,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
         existing.reindexWorking().ifPresent(osBuilder::working);
         existing.reindexLive().ifPresent(osBuilder::live);
+        preserveSiteSearch(osBuilder, Optional.of(existing));
         versionedIndicesAPI.saveIndices(osBuilder.build());
 
         // Purge leftover legacy ES content-index rows (NULL version) from the indicies table:
@@ -3180,6 +3201,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
                 osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
                 osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+                preserveSiteSearch(osBuilder, osExisting);
                 versionedIndicesAPI.saveIndices(osBuilder.build());
                 return;
             }
@@ -3206,6 +3228,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
                     osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
                     // reindexWorking / reindexLive intentionally omitted → cleared
+                    preserveSiteSearch(osBuilder, osExisting);
                     versionedIndicesAPI.saveIndices(osBuilder.build());
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not clear OS reindex slots during abort", osEx);
@@ -3322,6 +3345,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         .filter(rl -> !rl.equals(osPhysical))
                         .ifPresent(osBuilder::reindexLive);
             }
+            preserveSiteSearch(osBuilder, osExisting);
             versionedIndicesAPI.saveIndices(osBuilder.build());
             return;
         }
@@ -3366,6 +3390,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                             .filter(rl -> !rl.equals(osPhysical))
                             .ifPresent(osBuilder::reindexLive);
                 }
+                preserveSiteSearch(osBuilder, osExisting);
                 versionedIndicesAPI.saveIndices(osBuilder.build());
             } catch (Exception e) {
                 Logger.warn(this, "Could not mirror index activation to OS store for index: "
@@ -3452,6 +3477,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (!IndexType.REINDEX_LIVE.is(indexName)) {
             osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
         }
+        // Deactivating a CONTENT index must not take the site-search pointer with it.
+        preserveSiteSearch(osBuilder, osExisting);
         final VersionedIndices osRebuilt = osBuilder.build();
         if (osRebuilt.hasAnyIndex()) {
             versionedIndicesAPI.saveIndices(osRebuilt);
