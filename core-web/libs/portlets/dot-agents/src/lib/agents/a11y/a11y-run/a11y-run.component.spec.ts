@@ -381,8 +381,8 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.query(byTestId('studio-scan-btn'))).toBeTruthy();
         });
 
-        it('shows the skip-css toggle', () => {
-            expect(spectator.query(byTestId('studio-skipcss-toggle'))).toBeTruthy();
+        it('does not show the skip-css toggle yet (it is a fix option)', () => {
+            expect(spectator.query(byTestId('studio-skipcss-toggle'))).toBeFalsy();
         });
 
         it('hides the score widget in the ready state (before scanning)', () => {
@@ -413,6 +413,10 @@ describe('DotA11yRunComponent', () => {
 
         it('shows the fix button', () => {
             expect(spectator.query(byTestId('studio-fix-btn'))).toBeTruthy();
+        });
+
+        it('shows the skip-css toggle (a fix option, offered before Fix)', () => {
+            expect(spectator.query(byTestId('studio-skipcss-toggle'))).toBeTruthy();
         });
 
         it('shows the real open-count in the ring', () => {

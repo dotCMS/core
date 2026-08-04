@@ -14,10 +14,10 @@
             data-testid="studio-back-btn" />
         <i class="pi pi-file text-primary" aria-hidden="true"></i>
         <div class="min-w-0">
-            <div class="truncate text-sm font-bold text-gray-900">
+            <div class="truncate font-bold text-gray-900">
                 {{ store.selected()?.title }}
             </div>
-            <div class="truncate text-xs text-gray-400">{{ store.selected()?.path }}</div>
+            <div class="truncate text-gray-400">{{ store.selected()?.path }}</div>
         </div>
     </div>
 
@@ -92,7 +92,7 @@
                         {{ displayCount() }}
                     </span>
                     <span
-                        class="mt-1 text-[10px] font-bold tracking-wider text-gray-400 uppercase">
+                        class="mt-1 font-bold tracking-wider text-gray-400 uppercase">
                         {{ 'accessibility.studio.score.open' | dm }}
                     </span>
                 </div>
@@ -101,7 +101,7 @@
             <div class="min-w-0">
                 <!-- Headline: "Issues found" (scanned) / "Fixing issues…" / "Issues remaining".
                      Uses the same section-label style as the other column headers. -->
-                <div class="mb-2 text-xs font-bold tracking-wider text-gray-400 uppercase">
+                <div class="mb-2 font-bold tracking-wider text-gray-400 uppercase">
                     {{ scoreHeadlineKey() | dm }}
                 </div>
 
@@ -112,7 +112,7 @@
                             <span class="text-2xl leading-none font-extrabold text-gray-400">
                                 {{ store.beforeCount() }}
                             </span>
-                            <span class="mt-0.5 text-xs text-gray-400">
+                            <span class="mt-0.5 text-gray-400">
                                 {{ 'accessibility.studio.score.before' | dm }}
                             </span>
                         </div>
@@ -121,7 +121,7 @@
                             <span class="text-2xl leading-none font-extrabold text-gray-900">
                                 {{ store.openCount() }}
                             </span>
-                            <span class="mt-0.5 text-xs text-gray-400">
+                            <span class="mt-0.5 text-gray-400">
                                 {{
                                     store.phase() === 'fixing'
                                         ? ('accessibility.studio.score.open' | dm)
@@ -135,7 +135,7 @@
                 <!-- Severity legend: N Critical / Serious / Moderate / Minor. -->
                 <div class="flex flex-col gap-1.5" data-testid="studio-severity-legend">
                     @for (row of severityRows(); track row.severity) {
-                        <div class="flex items-center gap-2 text-sm">
+                        <div class="flex items-center gap-2">
                             <span
                                 class="size-2.5 flex-none rounded-full"
                                 [style.background-color]="row.color"
@@ -152,9 +152,9 @@
                      knows they exist and need a human eye. -->
                 @if (store.warningCount() > 0) {
                     <div
-                        class="mt-2 flex items-center gap-1.5 text-xs text-gray-400"
+                        class="mt-2 flex items-center gap-1.5 text-gray-400"
                         data-testid="studio-needsreview-note">
-                        <i class="pi pi-eye text-xs!" aria-hidden="true"></i>
+                        <i class="pi pi-eye" aria-hidden="true"></i>
                         <span>
                             {{
                                 'accessibility.studio.score.needsreview'
@@ -170,12 +170,12 @@
     <!-- Section header — label + working badge, both phase-aware. Hidden when ready. -->
     @if (store.phase() !== 'ready') {
         <div class="flex flex-none items-center gap-2 px-6 pt-4 pb-2">
-            <span class="text-xs font-bold tracking-wider text-gray-400 uppercase">
+            <span class="font-bold tracking-wider text-gray-400 uppercase">
                 {{ logHeaderKey() | dm }}
             </span>
             @if (logBadgeKey(); as badge) {
                 <span
-                    class="inline-flex h-5 items-center gap-1.5 rounded-full bg-primary-50 px-2 text-[10px] font-bold text-primary"
+                    class="inline-flex h-5 items-center gap-1.5 rounded-full bg-primary-50 px-2 font-bold text-primary"
                     data-testid="studio-working-badge">
                     <span class="size-1.5 animate-pulse rounded-full bg-primary"></span>
                     {{ badge | dm }}
@@ -187,43 +187,43 @@
     <!-- Recipe log: sizes to content. The accordion column owns the scrolling, so
          this must NOT scroll on its own — a nested scroll area would trap the
          wheel and make the second panel hard to reach with both open. -->
-    <div data-testid="studio-recipe-log" class="mb-8">
+    <div data-testid="studio-recipe-log" class="mx-4 mb-8">
         @if (store.phase() === 'ready') {
             <!-- Ready: what to expect -->
             <div
                 class="rounded-2xl border border-surface-200 bg-surface-50 p-5"
                 data-testid="studio-ready-card">
-                <div class="mb-1.5 text-sm font-bold text-gray-900">
+                <div class="mb-1.5 font-bold text-gray-900">
                     {{ 'accessibility.studio.ready.title' | dm }}
                 </div>
-                <p class="m-0 mb-4 text-[13px] leading-relaxed text-gray-500">
+                <p class="m-0 mb-4 leading-relaxed text-gray-500">
                     {{ 'accessibility.studio.ready.description' | dm }}
                 </p>
                 <div class="flex flex-col gap-2.5">
                     <div class="flex items-center gap-3">
                         <span
                             class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
-                            <i class="pi pi-search text-sm!" aria-hidden="true"></i>
+                            <i class="pi pi-search" aria-hidden="true"></i>
                         </span>
-                        <span class="text-[13px] text-gray-600">
+                        <span class="text-gray-600">
                             {{ 'accessibility.studio.ready.step1' | dm }}
                         </span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
                             class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
-                            <i class="pi pi-sitemap text-sm!" aria-hidden="true"></i>
+                            <i class="pi pi-sitemap" aria-hidden="true"></i>
                         </span>
-                        <span class="text-[13px] text-gray-600">
+                        <span class="text-gray-600">
                             {{ 'accessibility.studio.ready.step2' | dm }}
                         </span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
                             class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
-                            <i class="pi pi-pencil text-sm!" aria-hidden="true"></i>
+                            <i class="pi pi-pencil" aria-hidden="true"></i>
                         </span>
-                        <span class="text-[13px] text-gray-600">
+                        <span class="text-gray-600">
                             {{ 'accessibility.studio.ready.step3' | dm }}
                         </span>
                     </div>
@@ -265,15 +265,15 @@
                             [style.background-color]="group.color"
                             aria-hidden="true"></span>
                         <div class="min-w-0 flex-1">
-                            <div class="font-mono text-[13px] font-bold text-gray-900">
+                            <div class="font-mono font-bold text-gray-900">
                                 {{ group.code }}
                             </div>
-                            <div class="mt-0.5 text-xs leading-snug text-gray-500">
+                            <div class="mt-0.5 leading-snug text-gray-500">
                                 {{ group.message }}
                             </div>
                         </div>
                         <span
-                            class="flex size-7 flex-none items-center justify-center rounded-lg bg-surface-100 text-xs font-bold text-gray-600">
+                            class="flex size-7 flex-none items-center justify-center rounded-lg bg-surface-100 font-bold text-gray-600">
                             {{ group.count }}
                         </span>
                     </div>
@@ -283,7 +283,7 @@
 
         @if (store.fixError(); as error) {
             <div
-                class="mt-2 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3.5 text-sm text-red-700"
+                class="mt-2 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3.5 text-red-700"
                 data-testid="studio-fix-error"
                 role="alert">
                 <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
@@ -291,7 +291,7 @@
                     <div class="font-semibold">
                         {{ 'accessibility.studio.error.title' | dm }}
                     </div>
-                    <div class="mt-0.5 wrap-break-word text-xs text-red-600">{{ error }}</div>
+                    <div class="mt-0.5 wrap-break-word text-red-600">{{ error }}</div>
                 </div>
             </div>
         }
@@ -314,12 +314,12 @@
         ) {
             <div class="mt-4" data-testid="studio-review-section">
                 <div class="mb-1 flex items-center gap-1.5">
-                    <i class="pi pi-eye text-sm! text-gray-400" aria-hidden="true"></i>
-                    <span class="text-xs font-bold tracking-wider text-gray-400 uppercase">
+                    <i class="pi pi-eye text-gray-400" aria-hidden="true"></i>
+                    <span class="font-bold tracking-wider text-gray-400 uppercase">
                         {{ 'accessibility.studio.review.title' | dm }}
                     </span>
                 </div>
-                <p class="m-0 mb-2.5 text-[13px] leading-relaxed text-gray-500">
+                <p class="m-0 mb-2.5 leading-relaxed text-gray-500">
                     {{ 'accessibility.studio.review.intro' | dm }}
                 </p>
                 <div class="flex flex-col gap-2">
@@ -329,19 +329,19 @@
                             data-testid="studio-review-row">
                             <div class="flex items-center gap-3">
                                 <div class="min-w-0 flex-1">
-                                    <div class="text-[13px] font-bold wrap-break-word text-gray-900">
+                                    <div class="font-bold wrap-break-word text-gray-900">
                                         {{ group.message }}
                                     </div>
-                                    <div class="font-mono text-xs wrap-break-word text-gray-400">
+                                    <div class="font-mono wrap-break-word text-gray-400">
                                         {{ group.code }}
                                     </div>
                                 </div>
                                 <span
-                                    class="flex size-7 flex-none items-center justify-center rounded-lg bg-surface-100 text-xs font-bold text-gray-600">
+                                    class="flex size-7 flex-none items-center justify-center rounded-lg bg-surface-100 font-bold text-gray-600">
                                     {{ group.count }}
                                 </span>
                             </div>
-                            <div class="mt-1.5 text-xs leading-snug text-gray-500">
+                            <div class="mt-1.5 leading-snug text-gray-500">
                                 {{ group.reasonKey | dm }}
                             </div>
                         </div>
@@ -365,10 +365,10 @@
                     </span>
                 }
                 <div class="min-w-0">
-                    <div class="text-sm leading-snug font-bold text-gray-900">
+                    <div class="leading-snug font-bold text-gray-900">
                         {{ footerKeys().titleKey | dm: footerArgs() }}
                     </div>
-                    <div class="mt-px text-xs leading-snug text-gray-400">
+                    <div class="mt-px leading-snug text-gray-400">
                         {{ footerKeys().subKey | dm: [store.selected()?.path ?? ''] }}
                     </div>
                 </div>
@@ -377,18 +377,6 @@
 
         @switch (store.phase()) {
             @case ('ready') {
-                <div class="mb-4 flex items-center justify-between">
-                    <label
-                        for="studio-skip-css"
-                        class="text-[13px] font-medium text-gray-600">
-                        {{ 'accessibility.studio.skipcss.label' | dm }}
-                    </label>
-                    <p-toggleswitch
-                        inputId="studio-skip-css"
-                        [ngModel]="store.skipCss()"
-                        (ngModelChange)="onSkipCssChange($event)"
-                        data-testid="studio-skipcss-toggle" />
-                </div>
                 <p-button
                     [label]="'accessibility.studio.action.scan' | dm"
                     styleClass="w-full"
@@ -405,6 +393,18 @@
                     data-testid="studio-stopscan-btn" />
             }
             @case ('scanned') {
+                <!-- Skip-CSS is a fix option (the agent reports CSS contrast instead
+                     of fixing it), so it sits with the Fix action, not the scan. -->
+                <div class="mb-4 flex items-center justify-between">
+                    <label for="studio-skip-css" class="text-gray-600">
+                        {{ 'accessibility.studio.skipcss.label' | dm }}
+                    </label>
+                    <p-toggleswitch
+                        inputId="studio-skip-css"
+                        [ngModel]="store.skipCss()"
+                        (ngModelChange)="onSkipCssChange($event)"
+                        data-testid="studio-skipcss-toggle" />
+                </div>
                 <div class="flex gap-2.5">
                     <p-button
                         [label]="'accessibility.studio.action.rescan' | dm"
@@ -415,7 +415,7 @@
                     <p-button
                         [label]="'accessibility.studio.action.fix' | dm"
                         styleClass="flex-1"
-                            (onClick)="startFix()"
+                        (onClick)="startFix()"
                         data-testid="studio-fix-btn" />
                 </div>
             }
