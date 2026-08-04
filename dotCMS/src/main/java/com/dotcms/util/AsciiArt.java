@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,23 +15,23 @@ public class AsciiArt {
 	 */
 	static final String[] asciiArt = {
 """
-				dddddddd
-				d::::::d                          tttt                 CCCCCCCCCCCCCMMMMMMMM               MMMMMMMM   SSSSSSSSSSSSSSS
-				d::::::d                       ttt:::t              CCC::::::::::::CM:::::::M             M:::::::M SS:::::::::::::::S
-				d::::::d                       t:::::t            CC:::::::::::::::CM::::::::M           M::::::::MS:::::SSSSSS::::::S
-				d:::::d                        t:::::t           C:::::CCCCCCCC::::CM:::::::::M         M:::::::::MS:::::S     SSSSSSS
-		ddddddddd:::::d    ooooooooooo   ttttttt:::::ttttttt    C:::::C       CCCCCCM::::::::::M       M::::::::::MS:::::S
-	  dd::::::::::::::d  oo:::::::::::oo t:::::::::::::::::t   C:::::C              M:::::::::::M     M:::::::::::MS:::::S
-	 d::::::::::::::::d o:::::::::::::::ot:::::::::::::::::t   C:::::C              M:::::::M::::M   M::::M:::::::M S::::SSSS
-	d:::::::ddddd:::::d o:::::ooooo:::::otttttt:::::::tttttt   C:::::C              M::::::M M::::M M::::M M::::::M  SS::::::SSSSS
-	d::::::d    d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M  M::::M::::M  M::::::M    SSS::::::::SS
-	d:::::d     d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M   M:::::::M   M::::::M       SSSSSS::::S
-	d:::::d     d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M    M:::::M    M::::::M            S:::::S
-	d:::::d     d:::::d o::::o     o::::o      t:::::t    ttttttC:::::C       CCCCCCM::::::M     MMMMM     M::::::M            S:::::S
-	d::::::ddddd::::::ddo:::::ooooo:::::o      t::::::tttt:::::t C:::::CCCCCCCC::::CM::::::M               M::::::MSSSSSSS     S:::::S
-	 d:::::::::::::::::do:::::::::::::::o      tt::::::::::::::t  CC:::::::::::::::CM::::::M               M::::::MS::::::SSSSSS:::::S
-	  d:::::::::ddd::::d oo:::::::::::oo         tt:::::::::::tt    CCC::::::::::::CM::::::M               M::::::MS:::::::::::::::SS
-	   ddddddddd   ddddd   ooooooooooo             ttttttttttt         CCCCCCCCCCCCCMMMMMMMM               MMMMMMMM SSSSSSSSSSSSSSS
+            dddddddd
+            d::::::d                          tttt                 CCCCCCCCCCCCCMMMMMMMM               MMMMMMMM   SSSSSSSSSSSSSSS
+            d::::::d                       ttt:::t              CCC::::::::::::CM:::::::M             M:::::::M SS:::::::::::::::S
+            d::::::d                       t:::::t            CC:::::::::::::::CM::::::::M           M::::::::MS:::::SSSSSS::::::S
+            d:::::d                        t:::::t           C:::::CCCCCCCC::::CM:::::::::M         M:::::::::MS:::::S     SSSSSSS
+    ddddddddd:::::d    ooooooooooo   ttttttt:::::ttttttt    C:::::C       CCCCCCM::::::::::M       M::::::::::MS:::::S
+  dd::::::::::::::d  oo:::::::::::oo t:::::::::::::::::t   C:::::C              M:::::::::::M     M:::::::::::MS:::::S
+ d::::::::::::::::d o:::::::::::::::ot:::::::::::::::::t   C:::::C              M:::::::M::::M   M::::M:::::::M S::::SSSS
+d:::::::ddddd:::::d o:::::ooooo:::::otttttt:::::::tttttt   C:::::C              M::::::M M::::M M::::M M::::::M  SS::::::SSSSS
+d::::::d    d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M  M::::M::::M  M::::::M    SSS::::::::SS
+d:::::d     d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M   M:::::::M   M::::::M       SSSSSS::::S
+d:::::d     d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M    M:::::M    M::::::M            S:::::S
+d:::::d     d:::::d o::::o     o::::o      t:::::t    ttttttC:::::C       CCCCCCM::::::M     MMMMM     M::::::M            S:::::S
+d::::::ddddd::::::ddo:::::ooooo:::::o      t::::::tttt:::::t C:::::CCCCCCCC::::CM::::::M               M::::::MSSSSSSS     S:::::S
+ d:::::::::::::::::do:::::::::::::::o      tt::::::::::::::t  CC:::::::::::::::CM::::::M               M::::::MS::::::SSSSSS:::::S
+  d:::::::::ddd::::d oo:::::::::::oo         tt:::::::::::tt    CCC::::::::::::CM::::::M               M::::::MS:::::::::::::::SS
+   ddddddddd   ddddd   ooooooooooo             ttttttttttt         CCCCCCCCCCCCCMMMMMMMM               MMMMMMMM SSSSSSSSSSSSSSS
 """,
 """
  _ .-') _                .-') _            _   .-')      .-')
@@ -89,7 +90,6 @@ public class AsciiArt {
 :: :  :    : :  :      :      :: :: :   :      :    :: : :
 """,
 """
-
                                                      ____
                          ___      ,----..          ,'  , `.  .--.--.
       ,---,            ,--.'|_   /   /   \\      ,-+-,.' _ | /  /    '.
@@ -109,13 +109,28 @@ public class AsciiArt {
 
 	public static void doArt() {
 
-		if (artDone.compareAndSet(false, true)) {
-
-			final String myArt = asciiArt[(int) (System.currentTimeMillis() % asciiArt.length)];
-
-			Logger.info(AsciiArt.class, "");
-			Logger.info(AsciiArt.class, myArt);
+		if (!artDone.compareAndSet(false, true)) {
+			return;
 		}
+
+		if (Config.getBooleanProperty("SHOW_ALL_ASCII_ART", false)) {
+			for (final String art : asciiArt) {
+				print(art);
+				Logger.info(AsciiArt.class, "------------------------------------");
+			}
+		} else {
+			print(asciiArt[(int) (System.currentTimeMillis() % asciiArt.length)]);
+		}
+	}
+
+	/**
+	 * Leading newlines so the art starts in column 0 — otherwise the logger prefix shifts the
+	 * first row right and the banner looks broken.
+	 */
+	private static void print(final String art) {
+		Logger.info(AsciiArt.class, "\n\n" + art + "\n");
+
+
 	}
 
 }
