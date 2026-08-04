@@ -43,12 +43,6 @@ export class DotBinaryUploadButtonComponent {
     @Event()
     fileChange: EventEmitter<DotBinaryFileEvent>;
 
-    private fileInput: HTMLInputElement;
-
-    componentDidLoad(): void {
-        this.fileInput = this.el.querySelector('dot-label input');
-    }
-
     render() {
         return (
             <Host>
@@ -64,7 +58,7 @@ export class DotBinaryUploadButtonComponent {
                     type="button"
                     disabled={this.disabled}
                     onClick={() => {
-                        this.fileInput.click();
+                        this.getFileInput()?.click();
                     }}>
                     {this.buttonLabel}
                 </button>
@@ -72,8 +66,16 @@ export class DotBinaryUploadButtonComponent {
         );
     }
 
+    private getFileInput(): HTMLInputElement | null {
+        return this.el.querySelector('input[type="file"]');
+    }
+
     private fileChangeHandler(event: Event): void {
-        const file = this.fileInput.files[0];
+        const file = this.getFileInput()?.files[0];
+        if (!file) {
+            return;
+        }
+
         if (!isFileAllowed(file.name, file.type, this.accept)) {
             event.preventDefault();
             this.emitFile(null, DotBinaryMessageError.INVALID);
