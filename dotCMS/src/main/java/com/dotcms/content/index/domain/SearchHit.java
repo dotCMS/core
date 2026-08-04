@@ -2,6 +2,7 @@ package com.dotcms.content.index.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,6 +42,10 @@ import java.util.stream.Collectors;
  * @param getSortValues  the per-hit sort values the engine returns when the query sorts by a field
  *                       (e.g. the computed distance for a {@code _geo_distance} sort), in the order the
  *                       {@code sort} clause declared; empty for relevance-only (unsorted) queries
+ * @param getHighlights  the per-field highlight fragments the engine returns when the query asks for
+ *                       highlighting, keyed by field name (e.g. {@code content} for Site Search), each
+ *                       value holding that field's fragments in engine order; empty when the query did
+ *                       not request highlighting or the field produced no match fragment
  * @author Fabrizio Araya
  * @see SearchHits
  * @see com.dotcms.content.index.ContentFactoryIndexOperations
@@ -51,7 +56,8 @@ public record SearchHit(
         @JsonProperty("sourceAsMap") Map<String, Object> getSourceAsMap,
         @JsonProperty("score") float getScore,
         @JsonProperty("fields") Map<String, Object> getFields,
-        @JsonProperty("sortValues") List<Object> getSortValues) {
+        @JsonProperty("sortValues") List<Object> getSortValues,
+        @JsonProperty("highlights") Map<String, List<String>> getHighlights) {
 
     /**
      * Canonical constructor. Collection components default to an empty map/list when {@code null} so
@@ -61,6 +67,19 @@ public record SearchHit(
         getSourceAsMap = getSourceAsMap == null ? Map.of() : getSourceAsMap;
         getFields = getFields == null ? Map.of() : getFields;
         getSortValues = getSortValues == null ? List.of() : getSortValues;
+        getHighlights = getHighlights == null ? Map.of() : getHighlights;
+    }
+
+    /**
+     * The highlight fragments for a single field, in engine order, or an empty list when the field
+     * carries none. Saves every caller the {@code getOrDefault} dance — Site Search only ever asks
+     * for one field ({@code content}), and Velocity can reach it as {@code $hit.highlights.content}.
+     *
+     * @param fieldName the field the highlight was requested for
+     * @return that field's fragments, never {@code null}
+     */
+    public List<String> highlightsFor(final String fieldName) {
+        return getHighlights.getOrDefault(fieldName, List.of());
     }
 
     /**
@@ -87,7 +106,33 @@ public record SearchHit(
                 .score(esSearchHit.getScore())
                 .index(esSearchHit.getIndex())
                 .sortValues(esSortValues == null ? null : Arrays.asList(esSortValues))
+                .highlights(fromEsHighlightFields(esSearchHit.getHighlightFields()))
                 .build();
+    }
+
+    /**
+     * Flattens Elasticsearch's {@code Map<String, HighlightField>} into the neutral
+     * {@code Map<String, List<String>>}: each {@code HighlightField} carries its fragments as
+     * {@code Text[]}, an ES-specific type that must not leak past this adapter.
+     *
+     * @param highlightFields the ES highlight fields, possibly {@code null} or empty
+     * @return field name to fragments, empty when the hit carries no highlight
+     */
+    private static Map<String, List<String>> fromEsHighlightFields(
+            final Map<String, org.elasticsearch.search.fetch.subphase.highlight.HighlightField> highlightFields) {
+        if (highlightFields == null || highlightFields.isEmpty()) {
+            return Map.of();
+        }
+        final Map<String, List<String>> highlights = new HashMap<>();
+        highlightFields.forEach((fieldName, highlightField) -> {
+            final org.elasticsearch.common.text.Text[] fragments = highlightField.fragments();
+            if (fragments != null && fragments.length > 0) {
+                highlights.put(fieldName, Arrays.stream(fragments)
+                        .map(Object::toString)
+                        .collect(Collectors.toList()));
+            }
+        });
+        return highlights;
     }
 
     /**
@@ -138,6 +183,9 @@ public record SearchHit(
                 // instead serialized a spurious 0.0 for field-sorted OS queries.
                 .score(osHit.score() != null ? osHit.score().floatValue() : Float.NaN)
                 .sortValues(sortValues)
+                // OpenSearch already models highlights as field -> fragments, so no unwrapping is
+                // needed here (unlike ES's Text[]-bearing HighlightField).
+                .highlights(osHit.highlight())
                 .build();
     }
 
@@ -154,6 +202,7 @@ public record SearchHit(
         private float score;
         private Map<String, Object> fields = Map.of();
         private List<Object> sortValues = List.of();
+        private Map<String, List<String>> highlights = Map.of();
 
         public Builder id(final String id) {
             this.id = id;
@@ -187,8 +236,13 @@ public record SearchHit(
             return this;
         }
 
+        public Builder highlights(final Map<String, List<String>> highlights) {
+            this.highlights = highlights == null ? Map.of() : highlights;
+            return this;
+        }
+
         public SearchHit build() {
-            return new SearchHit(id, index, sourceAsMap, score, fields, sortValues);
+            return new SearchHit(id, index, sourceAsMap, score, fields, sortValues, highlights);
         }
     }
 }

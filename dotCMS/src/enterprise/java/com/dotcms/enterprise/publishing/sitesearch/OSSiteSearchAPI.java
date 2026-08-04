@@ -124,6 +124,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     private static final JsonpDeserializer<SearchResponse<Object>> SEARCH_RESPONSE_DESERIALIZER =
             SearchResponse.createSearchResponseDeserializer(JsonpDeserializer.of(Object.class));
 
+    /**
+     * The single field Site Search highlights. Both the highlight request and the per-hit fragment
+     * lookup must name the same field, so it lives here instead of being spelled out twice.
+     */
+    private static final String HIGHLIGHTED_FIELD = "content";
+
+    /** Max characters per highlight fragment, matching the Elasticsearch Site Search path. */
+    private static final int HIGHLIGHT_FRAGMENT_SIZE = 255;
+
     private final OSClientProvider clientProvider;
     private final IndexAPI indexApi;
 
@@ -333,7 +342,8 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                     body.put("from", offset);
                 }
                 body.put("highlight", new JSONObject().put("fields",
-                        new JSONObject().put("content", new JSONObject().put("fragment_size", 255))));
+                        new JSONObject().put(HIGHLIGHTED_FIELD,
+                                new JSONObject().put("fragment_size", HIGHLIGHT_FRAGMENT_SIZE))));
             } else {
                 body = new JSONObject(query);
             }
@@ -352,10 +362,11 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                 final SiteSearchResult ssr = new SiteSearchResult(new HashMap<>(hit.getSourceAsMap()));
                 ssr.setScore(hit.getScore());
                 maxScore = Math.max(maxScore, hit.getScore());
-                // TODO OS: the neutral SearchHit DTO does not carry per-field highlights yet.
-                // Site-search highlights are a best-effort extra (the ES path also swallows
-                // highlight failures); set empty until the neutral hit exposes highlight fragments.
-                ssr.setHighLight(new String[0]);
+                // The search body above asks OpenSearch to highlight the `content` field; the neutral
+                // hit carries those fragments so the result snippets keep their <em> emphasis in the
+                // phases where OpenSearch serves reads (issue #36360).
+                final List<String> highlights = hit.highlightsFor(HIGHLIGHTED_FIELD);
+                ssr.setHighLight(highlights.toArray(new String[0]));
                 results.getResults().add(ssr);
             }
             results.setMaxScore(maxScore);

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch.core.search.Hit;
@@ -73,5 +74,48 @@ public class SearchHitTest {
         assertEquals(2, sortValues.size());
         assertEquals(1.0d, ((Number) sortValues.get(0)).doubleValue(), 0.0001d);
         assertTrue("a null FieldValue element must map to null, not throw", sortValues.get(1) == null);
+    }
+
+    /**
+     * Method to test: {@link SearchHit#from(Hit)}
+     * Given scenario: an OpenSearch hit carrying highlight fragments for the {@code content} field,
+     *          as Site Search requests them.
+     * Expected result: the fragments survive the conversion, so search-result snippets keep their
+     *          emphasis in the phases where OpenSearch serves reads (issue #36360).
+     */
+    @Test
+    public void from_openSearchHit_carriesHighlightFragments() {
+        final Hit<Object> osHit = Hit.of(builder -> builder
+                .index("idx")
+                .id("1")
+                .highlight(Map.of("content",
+                        Arrays.asList("an <em>argue</em>ment", "and <em>argues</em> again"))));
+
+        final SearchHit hit = SearchHit.from(osHit);
+
+        final List<String> fragments = hit.highlightsFor("content");
+        assertEquals("both fragments must survive the conversion", 2, fragments.size());
+        assertTrue(fragments.get(0).contains("<em>argue</em>"));
+        assertTrue(fragments.get(1).contains("<em>argues</em>"));
+    }
+
+    /**
+     * Method to test: {@link SearchHit#highlightsFor(String)}
+     * Given scenario: a hit with no highlighting at all, and a field that was never highlighted.
+     * Expected result: an empty list either way — callers turn this straight into an array, so a
+     *          null would NPE.
+     */
+    @Test
+    public void highlightsFor_absentField_yieldsEmptyList() {
+        final Hit<Object> osHit = Hit.of(builder -> builder.index("idx").id("1"));
+
+        final SearchHit hit = SearchHit.from(osHit);
+
+        assertTrue("a hit without highlighting must expose an empty map",
+                hit.getHighlights().isEmpty());
+        assertTrue("an un-highlighted field must yield an empty list, not null",
+                hit.highlightsFor("content").isEmpty());
+        assertTrue("the builder default must behave the same",
+                SearchHit.builder().id("1").build().highlightsFor("content").isEmpty());
     }
 }
