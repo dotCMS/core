@@ -20,12 +20,16 @@ const gridStyle = computed<CSSProperties>(() => ({
 </script>
 
 <template>
-    <div data-dot="column" :style="gridStyle">
-        <div :class="column.styleClass">
-            <Container
-                v-for="container in column.containers"
-                :key="`${container.identifier}-${container.uuid}`"
-                :container="container" />
-        </div>
+  <div
+    data-dot="column"
+    :style="gridStyle"
+  >
+    <div :class="column.styleClass">
+      <Container
+        v-for="container in column.containers"
+        :key="`${container.identifier}-${container.uuid}`"
+        :container="container"
+      />
     </div>
+  </div>
 </template>
