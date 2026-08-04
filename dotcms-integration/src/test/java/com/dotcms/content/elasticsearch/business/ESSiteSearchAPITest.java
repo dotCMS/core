@@ -11,9 +11,13 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.io.IOException;
+import io.vavr.control.Try;
+import com.dotmarketing.util.Logger;
+import java.util.ArrayList;
 import java.util.Date;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,17 +68,30 @@ public class ESSiteSearchAPITest {
         String lastCreatedIndex = "";
 
         final int indicesAmount = 115;
-        for (int i = 0; i < indicesAmount; i++) {
-            timeStamp = String.valueOf(new Date().getTime());
-            indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
-            aliasName = "indexAlias" + "_" + timeStamp;
+        final List<String> created = new ArrayList<>(indicesAmount);
+        try {
+            for (int i = 0; i < indicesAmount; i++) {
+                timeStamp = String.valueOf(new Date().getTime());
+                indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
+                aliasName = "indexAlias" + "_" + timeStamp;
 
-            siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+                siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+                created.add(indexName);
 
-            lastCreatedIndex = indexName;
+                lastCreatedIndex = indexName;
+            }
+
+            assertTrue(siteSearchAPI.listIndices().contains(lastCreatedIndex));
+        } finally {
+            // Clean up all 115: leaving them behind pollutes every later site-search assertion in
+            // this JVM (the alias map then spans 100+ indices and takes 3 batched round-trips) and
+            // is what made the reindex tests below miss their own alias.
+            for (final String leftover : created) {
+                Try.run(() -> siteSearchAPI.deleteIndex(leftover))
+                        .onFailure(e -> Logger.warn(ESSiteSearchAPITest.class,
+                                "Could not clean up site-search index " + leftover, e));
+            }
         }
-
-        assertTrue(siteSearchAPI.listIndices().contains(lastCreatedIndex));
     }
 
     @Test
@@ -95,7 +112,9 @@ public class ESSiteSearchAPITest {
         try {
             CacheLocator.getIndiciesCache().clearCache();
             assertTrue(siteSearchAPI.isDefaultIndex(indexName));
-            assertEquals(indexName, siteSearchAPI.getAliasToIndexMap().get(aliasName));
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            assertEquals("alias '" + aliasName + "' must resolve to '" + indexName
+                    + "'; alias->index map was " + aliasMap, indexName, aliasMap.get(aliasName));
         } finally {
             siteSearchAPI.deactivateIndex(indexName);
             indexAPI.delete(indexName);
@@ -108,7 +127,9 @@ public class ESSiteSearchAPITest {
             throws IOException, DotDataException, DotIndexException {
 
         final String timeStamp = String.valueOf(new Date().getTime());
-        final String indexName = ES_SITE_SEARCH_NAME + timeStamp;
+        // Use the "<prefix>_<timestamp>" convention every other test (and production) follows:
+        // the separator is what the index-name timestamp parsing keys off.
+        final String indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
         final String aliasName = "indexAlias" + timeStamp;
 
         String indexTimestamp = null;
@@ -121,7 +142,9 @@ public class ESSiteSearchAPITest {
             indexTimestamp = contentletIndexAPI.fullReindexStart().indexSuffixES();
             CacheLocator.getIndiciesCache().clearCache();
             assertTrue(siteSearchAPI.isDefaultIndex(indexName));
-            assertEquals(indexName, siteSearchAPI.getAliasToIndexMap().get(aliasName));
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            assertEquals("alias '" + aliasName + "' must resolve to '" + indexName
+                    + "'; alias->index map was " + aliasMap, indexName, aliasMap.get(aliasName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
@@ -140,7 +163,9 @@ public class ESSiteSearchAPITest {
             throws IOException, DotDataException, DotIndexException {
 
         final String timeStamp = String.valueOf(new Date().getTime());
-        final String indexName = ES_SITE_SEARCH_NAME + timeStamp;
+        // Use the "<prefix>_<timestamp>" convention every other test (and production) follows:
+        // the separator is what the index-name timestamp parsing keys off.
+        final String indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
         final String aliasName = "indexAlias" + timeStamp;
 
         String indexTimestamp = null;
@@ -154,7 +179,9 @@ public class ESSiteSearchAPITest {
             contentletIndexAPI.fullReindexAbort();
             CacheLocator.getIndiciesCache().clearCache();
             assertTrue(siteSearchAPI.isDefaultIndex(indexName));
-            assertEquals(indexName, siteSearchAPI.getAliasToIndexMap().get(aliasName));
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            assertEquals("alias '" + aliasName + "' must resolve to '" + indexName
+                    + "'; alias->index map was " + aliasMap, indexName, aliasMap.get(aliasName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
