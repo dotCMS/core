@@ -28,7 +28,10 @@ import {
     TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
 
-import { DotBrowsingService, SITE_PAGE_LIMIT } from '../../../services/dot-browsing/dot-browsing.service';
+import {
+    DotBrowsingService,
+    SITE_PAGE_LIMIT
+} from '../../../services/dot-browsing/dot-browsing.service';
 
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 

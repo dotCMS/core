@@ -441,9 +441,10 @@ export class DotContentDriveShellComponent {
      */
     protected onUpload(event: MouseEvent) {
         const targetFolder = this.#store.selectedNode()?.data;
-        const contentData = (targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE)
-            ? (targetFolder as DotFolderTreeNodeContentData)
-            : undefined;
+        const contentData =
+            targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
+                ? (targetFolder as DotFolderTreeNodeContentData)
+                : undefined;
         const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {
@@ -462,9 +463,10 @@ export class DotContentDriveShellComponent {
      * and carry the files into the payload to upload right after the user picks.
      */
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
-        const contentData = (targetFolder.type !== LOAD_MORE_NODE_TYPE)
-            ? (targetFolder as DotFolderTreeNodeContentData)
-            : undefined;
+        const contentData =
+            targetFolder.type !== LOAD_MORE_NODE_TYPE
+                ? (targetFolder as DotFolderTreeNodeContentData)
+                : undefined;
         const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {

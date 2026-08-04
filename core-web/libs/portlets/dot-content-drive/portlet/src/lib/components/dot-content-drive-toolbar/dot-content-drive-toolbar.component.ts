@@ -17,7 +17,10 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeContentData, LOAD_MORE_NODE_TYPE } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotFolderTreeNodeContentData,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -185,9 +188,10 @@ export class DotContentDriveToolbarComponent {
      */
     protected readonly $uploadLabelKey = computed(() => {
         const data = this.#store.selectedNode()?.data;
-        const defaultBaseType = (data && data.type !== LOAD_MORE_NODE_TYPE)
-            ? (data as DotFolderTreeNodeContentData).defaultBaseType
-            : undefined;
+        const defaultBaseType =
+            data && data.type !== LOAD_MORE_NODE_TYPE
+                ? (data as DotFolderTreeNodeContentData).defaultBaseType
+                : undefined;
         switch (defaultBaseType?.toUpperCase()) {
             case DotCMSBaseTypesContentTypes.DOTASSET:
                 return 'content-drive.upload-asset';

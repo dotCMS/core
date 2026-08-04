@@ -73,9 +73,10 @@ export class DotContentDriveDialogContentTypeSelectorComponent {
         const hostname = this.#store.currentSite()?.hostname;
         const path = this.#store.path();
         const data = this.#store.selectedNode()?.data;
-        const inode = (data?.type === 'folder' || data?.type === 'site')
-            ? (data as DotFolderTreeNodeContentData).inode
-            : undefined;
+        const inode =
+            data?.type === 'folder' || data?.type === 'site'
+                ? (data as DotFolderTreeNodeContentData).inode
+                : undefined;
 
         return {
             folderPath: hostname ? `${hostname}${path ?? ''}` : undefined,
