@@ -53,6 +53,7 @@ import {
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
+import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
@@ -61,6 +62,8 @@ import { DotContentDriveSidebarComponent } from '../components/dot-content-drive
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
+    ACTION_CENTER_DIALOG_CONTENT_STYLE,
+    ACTION_CENTER_DIALOG_STYLE,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -79,6 +82,7 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { excludeFolders } from '../utils/action-center';
 import { encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
@@ -99,7 +103,8 @@ import { encodeFilters, isFolder } from '../utils/functions';
         MessageModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
-        DotSeverityIconComponent
+        DotSeverityIconComponent,
+        DotContentDriveActionCenterComponent
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -185,10 +190,47 @@ export class DotContentDriveShellComponent {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
+            // Action Center sizes itself through `$dialogStyle` / `$dialogContentStyle` instead.
+            case DIALOG_TYPE.ACTION_CENTER:
+                return '';
             default:
                 return 'w-175 pt-0 p-4';
         }
     });
+
+    /**
+     * @see ACTION_CENTER_DIALOG_STYLE
+     */
+    readonly $dialogStyle = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+            ? ACTION_CENTER_DIALOG_STYLE
+            : undefined
+    );
+
+    /**
+     * @see ACTION_CENTER_DIALOG_CONTENT_STYLE
+     */
+    readonly $dialogContentStyle = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+            ? ACTION_CENTER_DIALOG_CONTENT_STYLE
+            : undefined
+    );
+
+    /**
+     * Drops the header's bottom rule for the Action Center so its title and the "N items selected"
+     * sub-line read as one block rather than being split by a divider.
+     */
+    readonly $dialogHeaderClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 pb-2' : ''
+    );
+
+    /**
+     * Contentlets in the current selection, for the Action Center's header sub-line. Folders are
+     * excluded because every bulk endpoint ignores them.
+     */
+    readonly $actionCenterSelectionCount = computed(
+        () => excludeFolders(this.#store.selectedItems()).length
+    );
 
     /**
      * Syncs the dialog open/close state from the store. Opening sets the body and visibility
@@ -292,7 +334,8 @@ export class DotContentDriveShellComponent {
         const path = this.#store.path();
         const filters = this.#store.filters();
 
-        const queryParams: Record<string, string> = {};
+        // `null` removes the param when queryParamsHandling is 'merge'
+        const queryParams: Record<string, string | null> = {};
 
         queryParams['isTreeExpanded'] = isTreeExpanded.toString();
 
@@ -330,7 +373,8 @@ export class DotContentDriveShellComponent {
         // syncing from it would clear the restored path back to root and the deep-linked folder
         // would never open. Once `loadFolders` resolves, it sets `selectedNode` to the matching
         // node (and flips `sidebarLoading` off), so this effect re-runs and stays in sync.
-        if (sidebarLoading || !selectedNode) {
+        // TreeNode.data is optional in PrimeNG's type, so guard it before reading path.
+        if (sidebarLoading || !selectedNode?.data) {
             return;
         }
 
@@ -805,7 +849,8 @@ export class DotContentDriveShellComponent {
                 fails.forEach(({ errorMessage, inode }) => {
                     const item = dragItems.contentlets.find((item) => item.inode === inode);
 
-                    const title = item?.title ?? inode;
+                    // DotBulkFailItem.inode is optional; fall back so message args stay strings
+                    const title = item?.title ?? inode ?? '';
 
                     this.#messageService.add({
                         severity: 'error',
@@ -846,7 +891,7 @@ export class DotContentDriveShellComponent {
 
         const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
 
-        const folderName = cleanPath?.length > 0 ? cleanPath : pathToMove;
+        const folderName = cleanPath && cleanPath.length > 0 ? cleanPath : pathToMove;
 
         return {
             pathToMove: pathToMove,
