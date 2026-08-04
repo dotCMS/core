@@ -39,11 +39,7 @@ const imgStyle = computed<CSSProperties | undefined>(() =>
 </script>
 
 <template>
-  <figure :style="wrapperStyle">
-    <img
-      :alt="attrs.alt"
-      :src="attrs.src"
-      :style="imgStyle"
-    >
-  </figure>
+    <figure :style="wrapperStyle">
+        <img :alt="attrs.alt" :src="attrs.src" :style="imgStyle" />
+    </figure>
 </template>
