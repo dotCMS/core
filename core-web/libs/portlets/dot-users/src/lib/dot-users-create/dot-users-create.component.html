@@ -1,0 +1,13 @@
+<div class="flex flex-col gap-6 p-2" data-testid="users-create-stub">
+    <p class="text-color-secondary m-0">
+        {{ 'users.dialog.stub.message' | dm }}
+    </p>
+    <div class="flex justify-end">
+        <p-button
+            [label]="'users.close' | dm"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="close()"
+            data-testid="users-create-stub-close-btn" />
+    </div>
+</div>
