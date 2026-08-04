@@ -19,13 +19,26 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
+ * <p><strong>Phase-neutral assertions.</strong> This suite runs under every ES→OpenSearch migration
+ * phase (see the scheduled phase sweep), so it must assert through the <em>site-search</em> API,
+ * whose surface is purely logical, and never through the content-index {@link IndexAPI} or the
+ * legacy {@link IndiciesAPI}:</p>
+ * <ul>
+ *   <li>{@code IndexAPI.getIndexAlias} / {@code listIndices} key OpenSearch entries by their
+ *       {@code .os}-tagged physical name, so a logical name misses in the phases where OpenSearch
+ *       serves reads. Use {@link SiteSearchAPI#getAliasToIndexMap()} and
+ *       {@link SiteSearchAPI#listIndices()} instead.</li>
+ *   <li>{@code IndiciesAPI.loadIndicies()} only ever reads the legacy (non-versioned) rows, so its
+ *       site-search pointer is empty once activation writes the versioned store. Use
+ *       {@link SiteSearchAPI#isDefaultIndex(String)} instead.</li>
+ * </ul>
+ *
  * @author nollymar
  */
 public class ESSiteSearchAPITest {
 
     private static SiteSearchAPI siteSearchAPI;
     private static IndexAPI indexAPI;
-    private static IndiciesAPI indiciesAPI;
     private static ContentletIndexAPI contentletIndexAPI;
 
     @BeforeClass
@@ -36,7 +49,6 @@ public class ESSiteSearchAPITest {
 
         siteSearchAPI = APILocator.getSiteSearchAPI();
         indexAPI = APILocator.getESIndexAPI();
-        indiciesAPI = APILocator.getIndiciesAPI();
         contentletIndexAPI = APILocator.getContentletIndexAPI();
     }
 
@@ -62,7 +74,7 @@ public class ESSiteSearchAPITest {
             lastCreatedIndex = indexName;
         }
 
-        assertTrue(indexAPI.listIndices().contains(lastCreatedIndex));
+        assertTrue(siteSearchAPI.listIndices().contains(lastCreatedIndex));
     }
 
     @Test
@@ -74,18 +86,16 @@ public class ESSiteSearchAPITest {
 
         siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
 
-        assertTrue(indexAPI.listIndices().contains(indexName));
+        assertTrue(siteSearchAPI.listIndices().contains(indexName));
 
         //verifies that there is no a default site search index
-        assertTrue(indiciesAPI.loadIndicies().getSiteSearch() == null || !indiciesAPI
-                .loadIndicies().getSiteSearch().equals(indexName));
+        assertFalse(siteSearchAPI.isDefaultIndex(indexName));
         siteSearchAPI.activateIndex(indexName);
 
         try {
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
-            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
-            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
+            assertTrue(siteSearchAPI.isDefaultIndex(indexName));
+            assertEquals(indexName, siteSearchAPI.getAliasToIndexMap().get(aliasName));
         } finally {
             siteSearchAPI.deactivateIndex(indexName);
             indexAPI.delete(indexName);
@@ -110,9 +120,8 @@ public class ESSiteSearchAPITest {
         try {
             indexTimestamp = contentletIndexAPI.fullReindexStart().indexSuffixES();
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
-            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
-            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
+            assertTrue(siteSearchAPI.isDefaultIndex(indexName));
+            assertEquals(indexName, siteSearchAPI.getAliasToIndexMap().get(aliasName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
@@ -144,9 +153,8 @@ public class ESSiteSearchAPITest {
             indexTimestamp = contentletIndexAPI.fullReindexStart().indexSuffixES();
             contentletIndexAPI.fullReindexAbort();
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
-            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
-            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
+            assertTrue(siteSearchAPI.isDefaultIndex(indexName));
+            assertEquals(indexName, siteSearchAPI.getAliasToIndexMap().get(aliasName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
@@ -188,7 +196,7 @@ public class ESSiteSearchAPITest {
         //get the list of indices
         final List<String> indices =siteSearchAPI.listIndices();
         //validate if the new default index is the first in list
-        assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(defIndex));
+        assertTrue(siteSearchAPI.isDefaultIndex(defIndex));
         assertEquals(defIndex, indices.get(0));
     }
 

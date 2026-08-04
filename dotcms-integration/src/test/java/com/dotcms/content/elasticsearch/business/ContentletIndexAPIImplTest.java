@@ -69,12 +69,14 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
@@ -145,6 +147,35 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 "root word... On the other hand, argue, argued, argues, arguing, " +
                 "and argus reduce to the stem ... (illustrating the case where the stem is " +
                 "not itself a word or root) but arguments reduce to the stem .....";
+    }
+
+    /**
+     * True when {@code indices} holds the given logical index name, whatever vendor tag the listing
+     * carries. From Phase 3 the listings return the {@code .os}-tagged physical name while the tests
+     * build logical names, so a plain {@code contains} would miss the very index it just created
+     * (issue #36360).
+     *
+     * @param indices     an index listing, logical or physical
+     * @param logicalName the untagged name to look for
+     * @return whether the listing holds that index
+     */
+    private static boolean containsLogicalIndex(final List<String> indices, final String logicalName) {
+        return indices.stream().map(IndexTag::strip).anyMatch(logicalName::equals);
+    }
+
+    /**
+     * Resolves logical index names to the physical names the current engine actually holds, by
+     * matching them against the live index listing. Needed by the tag-dispatched operations
+     * ({@code optimize}, {@code flushCaches}), which route each name by the vendor tag it carries.
+     *
+     * @param logicalNames the untagged names to resolve
+     * @return the matching physical names, in listing order
+     */
+    private static List<String> physicalNamesOf(final String... logicalNames) {
+        final List<String> wanted = Arrays.asList(logicalNames);
+        return esIndexAPI.getIndices(true, true).stream()
+                .filter(physical -> wanted.contains(IndexTag.strip(physical)))
+                .collect(Collectors.toList());
     }
 
     @Test
@@ -415,9 +446,10 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Get the current indices
         String liveActiveIndex = indexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
 
-        //Validate
+        //Validate — compare logical identity: from Phase 3 the active pointer is reported with the
+        //.os vendor tag, which is the intended display contract, not a different index.
         assertNotNull(liveActiveIndex);
-        assertEquals(liveActiveIndex, liveIndex);
+        assertEquals(liveIndex, IndexTag.strip(liveActiveIndex));
 
         //***************************************************
         //Now lets deactivate the indices
@@ -426,9 +458,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Deactivate this live index
         indexAPI.deactivateIndex(liveIndex);
 
-        // restore old active index
-        indexAPI.activateIndex(oldActiveWorking);
-        indexAPI.activateIndex(oldActiveLive);
+        // restore old active index — skip when the environment had none, since activateIndex now
+        // rejects a name that maps to no content slot instead of silently doing nothing.
+        if (UtilMethods.isSet(oldActiveWorking)) {
+            indexAPI.activateIndex(oldActiveWorking);
+        }
+        if (UtilMethods.isSet(oldActiveLive)) {
+            indexAPI.activateIndex(oldActiveLive);
+        }
     }
 
     /**
@@ -456,20 +493,20 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             // the index must survive.
             assertThrows(DotStateException.class, () -> indexAPI.delete(workingIndex));
             assertTrue("Active index must survive a rejected delete",
-                    indexAPI.listDotCMSIndices().contains(workingIndex));
+                    containsLogicalIndex(indexAPI.listDotCMSIndices(), workingIndex));
 
             // Feature-flag bypass: the same delete now goes through.
             Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
             try {
                 assertTrue(indexAPI.delete(workingIndex));
-                assertFalse(indexAPI.listDotCMSIndices().contains(workingIndex));
+                assertFalse(containsLogicalIndex(indexAPI.listDotCMSIndices(), workingIndex));
             } finally {
                 Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
             }
         } finally {
             // Restore the prior active working pointer (best effort).
             try {
-                if (oldActiveWorking != null) {
+                if (UtilMethods.isSet(oldActiveWorking)) {
                     indexAPI.activateIndex(oldActiveWorking);
                 }
             } catch (final Exception e) {
@@ -496,10 +533,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         assertTrue(indexAPI.createContentIndex(workingIndex));
         indexAPI.activateIndex(workingIndex);
 
-        // Sanity: the working pointer now references the new index.
-        final IndiciesInfo before = APILocator.getIndiciesAPI().loadIndicies();
+        // Sanity: the working pointer now references the new index. Read it through the phase-aware
+        // getter — loadIndicies() only ever returns the legacy (non-versioned) rows, so from Phase 3
+        // the pointer it reports is empty even though activateIndex did write the active store.
+        final String pointerBefore = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
         assertTrue("Pre: working pointer must reference the new index",
-                before.getWorking() != null && before.getWorking().endsWith(workingIndex));
+                pointerBefore != null && IndexTag.strip(pointerBefore).endsWith(workingIndex));
 
         // Delete it, bypassing the active-index guard — the DB pointer must be cleared too.
         Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
@@ -509,15 +548,15 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
         }
 
-        final IndiciesInfo after = APILocator.getIndiciesAPI().loadIndicies();
+        final String pointerAfter = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
         assertTrue("Working pointer must no longer reference the deleted index",
-                after.getWorking() == null || !after.getWorking().endsWith(workingIndex));
+                pointerAfter == null || !IndexTag.strip(pointerAfter).endsWith(workingIndex));
         assertFalse("Deleted index must be gone from the cluster",
-                indexAPI.listDotCMSIndices().contains(workingIndex));
+                containsLogicalIndex(indexAPI.listDotCMSIndices(), workingIndex));
 
         // Restore the prior active working pointer (best effort).
         try {
-            if (oldActiveWorking != null) {
+            if (UtilMethods.isSet(oldActiveWorking)) {
                 indexAPI.activateIndex(oldActiveWorking);
             }
         } catch (final Exception e) {
@@ -573,10 +612,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Validate
         assertTrue(result);
 
-        //Test the optimize method
-        List<String> indices = new ArrayList<>();
-        indices.add(workingIndex);
-        indices.add(liveIndex);
+        //Test the optimize method. optimize() dispatches by the vendor tag each name carries, the way
+        //production callers do (they feed it names straight from getIndices()), so hand it the physical
+        //names the engine actually holds — a logical name would be routed to Elasticsearch even in the
+        //phases where the index only exists in OpenSearch.
+        final List<String> indices = physicalNamesOf(workingIndex, liveIndex);
         boolean optimized = indexAPI.optimize(indices);
         //Validate
         assertTrue(optimized);
