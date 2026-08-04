@@ -50,6 +50,7 @@ def _publish(client, **overrides):
         release_notes="### Fixes {#Fixes-26.07.10-01}\n- Something ([#1](https://x/pull/1))\n",
         docker_image="dotcms/dotcms:26.07.10-01_abc1234",
         released_date="2026-07-16",
+        eol_date="2027-07-16",
         service_account=SERVICE_ACCOUNT,
         apply=True,
     )
@@ -72,6 +73,7 @@ def test_create_path_fires_publish_with_expected_fields():
     assert c["minor"] == "26.07.10-01"
     assert c["dockerImage"] == "dotcms/dotcms:26.07.10-01_abc1234"
     assert c["releasedDate"] == "2026-07-16"
+    assert c["eolDate"] == "2027-07-16"
     assert "### Fixes" in c["releaseNotes"]
     # Verified current-track stored values (T004, data-model.md).
     assert c["showInChangeLog"] is True

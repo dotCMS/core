@@ -24,6 +24,7 @@ import {
     decodeFilters,
     encodeFilters,
     decodeByFilterKey,
+    folderSearchViewToDotFolder,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
     isFolder,
@@ -36,13 +37,35 @@ import {
     parseUserSearchableValue,
     serializeUserSearchableValue,
     buildUserSearchablePayload,
-    getUserSearchableActive
+    getUserSearchableActive,
+    toLocalIsoString
 } from './functions';
 
 import { FOLDER_TREE_PAGE_SIZE, FOLDER_TREE_SEARCH_PAGE_SIZE } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
+    describe('toLocalIsoString', () => {
+        it('formats a Date as a no-offset local wall-clock ISO string (what the user sees)', () => {
+            // Built from LOCAL components, so the assertion is timezone-independent.
+            const date = new Date(2026, 6, 28, 9, 5, 3); // 2026-07-28 09:05:03 local
+
+            expect(toLocalIsoString(date)).toBe('2026-07-28T09:05:03');
+        });
+
+        it('zero-pads and never appends a Z/offset (so the backend keeps the wall-clock)', () => {
+            const result = toLocalIsoString(new Date(2026, 0, 1, 0, 0, 0));
+
+            expect(result).toBe('2026-01-01T00:00:00');
+            expect(result).not.toContain('Z');
+        });
+
+        it('returns an empty string for an Invalid Date (typeable picker can emit one)', () => {
+            // Guards the RangeError date-fns `format` would throw on an invalid instant.
+            expect(toLocalIsoString(new Date('not-a-date'))).toBe('');
+        });
+    });
+
     describe('decodeFilters', () => {
         it('should return an empty object when input is empty string', () => {
             const result = decodeFilters('');
@@ -899,6 +922,46 @@ describe('User-searchable field helpers', () => {
                 to: '2024-12-31'
             });
         });
+
+        describe('Key-Value translation', () => {
+            it('should join a key:value shorthand into a key_value term (exact pair)', () => {
+                expect(parseUserSearchableValue('color:red', 'Key-Value')).toBe('color_red');
+            });
+
+            it('should trim around the colon', () => {
+                expect(parseUserSearchableValue(' color : red ', 'Key-Value')).toBe('color_red');
+            });
+
+            it('should pass a bare term through (loose match on a key or value)', () => {
+                expect(parseUserSearchableValue('red', 'Key-Value')).toBe('red');
+            });
+
+            it('should fall back to the filled side when only one is given', () => {
+                expect(parseUserSearchableValue('color:', 'Key-Value')).toBe('color');
+                expect(parseUserSearchableValue(':red', 'Key-Value')).toBe('red');
+            });
+
+            it('should split on the first colon only, keeping colons in the value', () => {
+                // A keyed colon-bearing value (URL / time) is preserved after the first colon.
+                expect(parseUserSearchableValue('link:https://x', 'Key-Value')).toBe(
+                    'link_https://x'
+                );
+                expect(parseUserSearchableValue('start:12:30', 'Key-Value')).toBe('start_12:30');
+            });
+
+            it('should lowercase the term to match the lowercased .key_value index', () => {
+                // The index stores (key + "_" + value).toLowerCase(); the FE-typed case must not
+                // cause a miss.
+                expect(parseUserSearchableValue('Color:Red', 'Key-Value')).toBe('color_red');
+                expect(parseUserSearchableValue('COLOR_RED', 'Key-Value')).toBe('color_red');
+                expect(parseUserSearchableValue('Blue', 'Key-Value')).toBe('blue');
+            });
+
+            it('should return undefined for an empty value', () => {
+                expect(parseUserSearchableValue('', 'Key-Value')).toBeUndefined();
+                expect(parseUserSearchableValue('   ', 'Key-Value')).toBeUndefined();
+            });
+        });
     });
 
     describe('serializeUserSearchableValue', () => {
@@ -983,5 +1046,28 @@ describe('User-searchable field helpers', () => {
 
             expect(payload).toBeUndefined();
         });
+    });
+});
+
+describe('folderSearchViewToDotFolder', () => {
+    it('should carry defaultBaseType through to the DotFolder', () => {
+        const view = createFakeFolderSearchView({
+            id: 'f1',
+            name: 'app',
+            path: '/',
+            defaultBaseType: 'DOTASSET'
+        });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.defaultBaseType).toBe('DOTASSET');
+    });
+
+    it('should leave defaultBaseType undefined when the view has no preference', () => {
+        const view = createFakeFolderSearchView({ id: 'f2', name: 'docs', path: '/' });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.defaultBaseType).toBeUndefined();
     });
 });

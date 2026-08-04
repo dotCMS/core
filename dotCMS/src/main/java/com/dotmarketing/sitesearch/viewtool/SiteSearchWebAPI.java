@@ -1,6 +1,5 @@
 package com.dotmarketing.sitesearch.viewtool;
 
-import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
@@ -42,12 +41,10 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * <pre>
      * {@code
 	 * #set($searchresults = $sitesearch.search("dotcms",0,10))
-     * #set($hitsdetail = $searchresults.getDetails())
-     * #set($summaries = $searchresults.getSummaries())
-     * #foreach ($i in [0..$math.sub($searchresults.getEnd(),1)])
-     *    $hitsdetail.get($i).getValue("title")
-     *    $hitsdetail.get($i).getValue("url")
-     *    $summaries.get($i).toHtml(true)
+     * #foreach($result in $searchresults.getResults())
+     *    $result.getTitle()
+     *    $result.getUrl()
+     *    $result.getDescription()
      * #end
      * }
      * </pre>
@@ -68,12 +65,10 @@ public class SiteSearchWebAPI implements ViewTool {
      * <pre>
      * {@code
      * #set($searchresults = $sitesearch.search("indexAlias","dotcms",0,10))
-     * #set($hitsdetail = $searchresults.getDetails())
-     * #set($summaries = $searchresults.getSummaries())
-     * #foreach ($i in [0..$math.sub($searchresults.getEnd(),1)])
-     *    $hitsdetail.get($i).getValue("title")
-     *    $hitsdetail.get($i).getValue("url")
-     *    $summaries.get($i).toHtml(true)
+     * #foreach($result in $searchresults.getResults())
+     *    $result.getTitle()
+     *    $result.getUrl()
+     *    $result.getDescription()
      * #end
      * }
      * </pre>
@@ -111,8 +106,10 @@ public class SiteSearchWebAPI implements ViewTool {
         
         String indexName=null;
         if(indexAlias!=null) {
-            IndexAPI iapi=APILocator.getESIndexAPI();
-            indexName=iapi.getAliasToIndexMap(siteSearchAPI.listIndices()).get(indexAlias);
+            // Resolve through the site-search API so the alias is looked up with the correct
+            // per-phase, .os-aware physical names (issue #36360). The content-index router
+            // (getESIndexAPI) is not site-search .os-aware and misses in Phases 2/3.
+            indexName=siteSearchAPI.getAliasToIndexMap().get(indexAlias);
             if(indexName==null) {
                 results.setError("Index Alias not found: "+indexAlias);
                 return results;

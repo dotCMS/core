@@ -10,9 +10,11 @@ import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.DotRestInstanceProvider;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.UserUtilTest;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
@@ -31,6 +33,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.servlet.ServletContext;
@@ -542,5 +545,118 @@ public class UserResourceTest extends UnitTestBase {
                 new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         Response response = resource.loginAsData(request, httpServletResponse, filter, page, perPage);
+    }
+
+    /**
+     * Utility method that creates a {@link UserResource} pointed at the provided mocks, ready to exercise the
+     * {@code /filter} endpoint.
+     */
+    private UserResource getFilterTestResource(final WebResource webResource, final RoleAPI roleAPI,
+                                               final PaginationUtil paginationUtil) {
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(mock(UserAPI.class))
+                                                                 .setHostAPI(mock(HostAPI.class))
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(mock(ErrorResponseHelper.class));
+        return new UserResource(webResource, mock(UserResourceHelper.class), paginationUtil, instanceProvider);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#filter(HttpServletRequest, HttpServletResponse, String, int,
+     *     int, String, String, boolean, boolean, String, int, List)}</li>
+     *     <li><b>Given Scenario:</b> Call the {@code /filter} endpoint passing {@code roleKey} values, both repeated
+     *     and comma-separated.</li>
+     *     <li><b>Expected Result:</b> Every key is resolved through the {@link RoleAPI} and the resulting Role list
+     *     is handed to the paginator under {@link UserPaginator#ROLES_PARAM}.</li>
+     * </ul>
+     */
+    @Test
+    public void testFilterWithRoleKeysAddsRolesToExtraParams() throws DotDataException {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        final User user = new User();
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        final Role backendRole = new Role();
+        backendRole.setId("backend-role-id");
+        final Role frontendRole = new Role();
+        frontendRole.setId("frontend-role-id");
+        when(roleAPI.loadRoleByKey("DOTCMS_BACK_END_USER")).thenReturn(backendRole);
+        when(roleAPI.loadRoleByKey("DOTCMS_FRONT_END_USER")).thenReturn(frontendRole);
+
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        final UserResource resource = getFilterTestResource(webResource, roleAPI, paginationUtil);
+
+        resource.filter(request, response, "jane", 0, 40, null, "ASC", false, false, null, 0,
+                List.of("DOTCMS_BACK_END_USER,DOTCMS_FRONT_END_USER"));
+
+        final ArgumentCaptor<Map<String, Object>> extraParamsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(paginationUtil).getPage(Mockito.eq(request), Mockito.eq(user), Mockito.eq("jane"), Mockito.eq(0),
+                Mockito.eq(40), Mockito.isNull(), Mockito.eq(OrderDirection.ASC), extraParamsCaptor.capture());
+        assertEquals(List.of(backendRole, frontendRole),
+                extraParamsCaptor.getValue().get(UserPaginator.ROLES_PARAM));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#filter(HttpServletRequest, HttpServletResponse, String, int,
+     *     int, String, String, boolean, boolean, String, int, List)}</li>
+     *     <li><b>Given Scenario:</b> Call the {@code /filter} endpoint without any {@code roleKey} value.</li>
+     *     <li><b>Expected Result:</b> The paginator extra params do NOT include {@link UserPaginator#ROLES_PARAM},
+     *     preserving the endpoint's previous behavior.</li>
+     * </ul>
+     */
+    @Test
+    public void testFilterWithoutRoleKeysLeavesRolesParamOut() throws DotDataException {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        final User user = new User();
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        final UserResource resource = getFilterTestResource(webResource, mock(RoleAPI.class), paginationUtil);
+
+        resource.filter(request, response, "jane", 0, 40, null, "ASC", false, false, null, 0, null);
+
+        final ArgumentCaptor<Map<String, Object>> extraParamsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(paginationUtil).getPage(Mockito.eq(request), Mockito.eq(user), Mockito.eq("jane"), Mockito.eq(0),
+                Mockito.eq(40), Mockito.isNull(), Mockito.eq(OrderDirection.ASC), extraParamsCaptor.capture());
+        Assert.assertFalse(extraParamsCaptor.getValue().containsKey(UserPaginator.ROLES_PARAM));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#filter(HttpServletRequest, HttpServletResponse, String, int,
+     *     int, String, String, boolean, boolean, String, int, List)}</li>
+     *     <li><b>Given Scenario:</b> Call the {@code /filter} endpoint with a {@code roleKey} that does not match any
+     *     existing Role.</li>
+     *     <li><b>Expected Result:</b> A {@link BadRequestException} is thrown instead of silently returning an empty
+     *     or unfiltered result set.</li>
+     * </ul>
+     */
+    @Test(expected = BadRequestException.class)
+    public void testFilterWithUnknownRoleKeyThrowsBadRequest() throws DotDataException {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        when(initDataObject.getUser()).thenReturn(new User());
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        when(roleAPI.loadRoleByKey("NOT_A_ROLE")).thenReturn(null);
+
+        final UserResource resource = getFilterTestResource(webResource, roleAPI, mock(PaginationUtil.class));
+
+        resource.filter(request, response, "jane", 0, 40, null, "ASC", false, false, null, 0,
+                List.of("NOT_A_ROLE"));
     }
 }
