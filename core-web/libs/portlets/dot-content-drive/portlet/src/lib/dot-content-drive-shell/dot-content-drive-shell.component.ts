@@ -219,9 +219,7 @@ export class DotContentDriveShellComponent {
      * with the Action Center body/footer (PrimeNG's dialog header padding token may not match).
      */
     readonly $dialogHeaderClass = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
-            ? 'border-b-0 px-6! pb-2'
-            : ''
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 px-6! pb-2' : ''
     );
 
     /**
