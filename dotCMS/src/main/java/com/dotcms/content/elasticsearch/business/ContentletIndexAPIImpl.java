@@ -3262,10 +3262,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *       does not roll back the ES update.</li>
      *   <li><strong>Phase 0</strong> — Only ES store is updated.</li>
      * </ul>
+     *
+     * @param indexName a content index name (a {@code working_*} or {@code live_*} name, with or
+     *                  without the cluster prefix)
+     * @throws DotStateException if {@code indexName} is not a content index name — including the
+     *                           blank name that an absent store pointer degrades into
      */
     public void activateIndex(final String indexName) throws DotDataException {
         if (indexName == null) {
             throw new DotRuntimeException("Index cannot be null");
+        }
+        // A name that matches no content slot used to fall through every branch below, leaving the
+        // store untouched: in phases 0/1/2 that was a silent no-op, and in Phase 3 it saved an EMPTY
+        // VersionedIndices, so the caller got "At least one index must be specified" from deep inside
+        // the store — an error naming neither the input nor the real problem (issue #36360). The
+        // blank case is easy to hit because removeClusterIdFromName(null) yields "", so an absent
+        // pointer read from the store turns into an index literally named the empty string.
+        if (!IndexType.WORKING.is(indexName) && !IndexType.LIVE.is(indexName)) {
+            throw new DotStateException(String.format(
+                    "Cannot activate '%s': a content index name must start with '%s' or '%s'"
+                            + " (site-search indices are activated through SiteSearchAPI).",
+                    indexName, IndexType.WORKING.getPrefix(), IndexType.LIVE.getPrefix()));
         }
 
         // Audit log: runs regardless of phase so the activation is always traceable.
