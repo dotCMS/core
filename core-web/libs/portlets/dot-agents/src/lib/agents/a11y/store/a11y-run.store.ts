@@ -2,13 +2,12 @@ import {
     patchState,
     signalStore,
     withComputed,
-    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
 import { EMPTY, Subscription } from 'rxjs';
 
-import { computed, effect, inject, untracked } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -38,29 +37,20 @@ import {
 } from '../models/accessibility-studio.models';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
-type PickerStatus = 'init' | 'loading' | 'loaded' | 'error';
-
 /**
- * Status of rehydrating the selected page from a deep link (`/agents/a11y/:id`
+ * Status of rehydrating the selected page from a deep link (`/agents/a11y/<path>`
  * opened cold): `loading` while the single-page fetch is in flight, `not-found`
- * when the id resolves to no page (so the run screen can bounce back to the
+ * when the path resolves to no page (so the run screen can bounce back to the
  * picker), `idle` otherwise.
  */
 type RehydrateStatus = 'idle' | 'loading' | 'not-found';
 
-interface AccessibilityStudioState {
-    /** Studio state machine (§7). */
+interface A11yRunState {
+    /** Studio state machine (§7). Starts at `ready` (a page is being opened). */
     phase: StudioPhase;
-    /** Picker data + query state. */
-    pages: StudioPageRow[];
-    totalRecords: number;
-    page: number;
-    rows: number;
-    filter: string;
-    pickerStatus: PickerStatus;
-    /** The page selected to run against. */
+    /** The page this run is against. */
     selected: StudioPageRow | null;
-    /** Deep-link rehydration status for {@link openPageById}. */
+    /** Deep-link rehydration status for {@link A11yRunStore.openPageByUri}. */
     rehydrateStatus: RehydrateStatus;
     /** Per-run opt-out: when true, the agent reports CSS contrast instead of fixing it (§3). */
     skipCss: boolean;
@@ -109,14 +99,8 @@ interface AccessibilityStudioState {
     previewRevision: number;
 }
 
-const initialState: AccessibilityStudioState = {
-    phase: 'picker',
-    pages: [],
-    totalRecords: 0,
-    page: 1,
-    rows: 25,
-    filter: '',
-    pickerStatus: 'init',
+const initialState: A11yRunState = {
+    phase: 'ready',
     selected: null,
     rehydrateStatus: 'idle',
     skipCss: false,
@@ -131,36 +115,26 @@ const initialState: AccessibilityStudioState = {
     previewRevision: 0
 };
 
-/**
- * Builds the Lucene query for the picker — pages (`basetype:5`) plus URL-mapped
- * content, working + not deleted, scoped to the current host. Search adds a
- * title / path / urlmap prefix clause. Mirrors the §7 picker query.
- */
-function buildPagesQuery(filter: string, siteId: string | null): string {
-    const clauses = ['+working:true', '+(urlmap:* OR basetype:5)', '+deleted:false'];
+/** The run-state reset shared by opening a page and starting a fresh scan. */
+const runReset = (): Partial<A11yRunState> => ({
+    scanResult: null,
+    liveScanResult: null,
+    steps: [],
+    progress: null,
+    runId: null,
+    heartbeat: null,
+    fixError: null,
+    report: null,
+    previewRevision: 0
+});
 
-    if (siteId) {
-        clauses.push(`+conhost:${siteId}`);
-    }
-
-    const q = filter.trim();
-    if (q) {
-        // Escape Lucene special characters that would break the query.
-        const safe = q.replace(/[+\-&|!(){}[\]^"~*?:\\/]/g, '\\$&');
-        clauses.push(`+(title:${safe}* OR path:*${safe}* OR urlmap:*${safe}*)`);
-    }
-
-    return clauses.join(' ');
-}
-
-/** Projects a search contentlet into the picker row shape. */
+/** Projects a search contentlet into the run's page shape. */
 function toPageRow(content: DotCMSContentlet): StudioPageRow {
     return {
         identifier: content.identifier,
         title: content.title || content.url || content.identifier,
         // Prefer the urlMap for URL-mapped content (e.g. Blog): it's the real
-        // navigable path visitors use, whereas `url` may point at the detail
-        // template. Fall back to `url` for plain pages (no urlMap).
+        // navigable path visitors use. Fall back to `url` for plain pages.
         path: content['urlMap'] || content.url || '',
         type: content.contentType,
         languageId: content.languageId,
@@ -172,8 +146,18 @@ function toPageRow(content: DotCMSContentlet): StudioPageRow {
     };
 }
 
-export const AccessibilityStudioStore = signalStore(
-    withState<AccessibilityStudioState>(initialState),
+/**
+ * The Accessibility Studio **run** store — owns a single page's scan / fix /
+ * review / publish lifecycle for the run route (`agents/a11y/<page-path>`). It's
+ * provided at {@link DotA11yRunComponent}, so navigating to a different page
+ * destroys and recreates it → fresh state per page, no manual reset needed.
+ *
+ * The page it runs against comes from the URL: {@link openPageByUri} rehydrates
+ * the selection from the path on cold load / refresh. The picker never hands
+ * state to this store — the URL is the single source of truth (see [[A11yPickerStore]]).
+ */
+export const A11yRunStore = signalStore(
+    withState<A11yRunState>(initialState),
     withComputed((store) => {
         // Hoisted so every derived count reads ONE memoized traversal of the axe
         // payload. Sibling computeds in the returned literal can't reference each
@@ -419,76 +403,17 @@ export const AccessibilityStudioStore = signalStore(
                 });
         }
 
-        function loadPages() {
-            const siteId = globalStore.currentSiteId();
-            // The current site loads asynchronously (GlobalStore → auth → HTTP). Until
-            // it's known, a fetch would be unscoped (`+conhost` omitted) and return
-            // pages from every site. Skip; the picker effect re-runs once the site
-            // resolves (it tracks currentSiteId), so this fires exactly once, scoped.
-            if (!siteId) {
-                return;
-            }
-            patchState(store, { pickerStatus: 'loading' });
-
-            const query = buildPagesQuery(store.filter(), siteId);
-            const offset = (store.page() - 1) * store.rows();
-
-            contentSearchService
-                .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] }; resultsSize: number }>({
-                    query,
-                    limit: store.rows(),
-                    offset,
-                    sort: 'modDate desc'
-                })
-                .pipe(
-                    take(1),
-                    catchError((error) => {
-                        httpErrorManager.handle(error);
-                        patchState(store, { pickerStatus: 'error' });
-
-                        return EMPTY;
-                    })
-                )
-                .subscribe((entity) => {
-                    const contentlets = entity?.jsonObjectView?.contentlets ?? [];
-                    patchState(store, {
-                        pages: contentlets.map(toPageRow),
-                        totalRecords: entity?.resultsSize ?? 0,
-                        pickerStatus: 'loaded'
-                    });
-                });
-        }
-
         /** Open a page → studio "ready" (waits for the user to scan). */
         function openPage(selected: StudioPageRow) {
             patchState(store, {
                 selected,
                 phase: 'ready',
                 rehydrateStatus: 'idle',
-                scanResult: null,
-                liveScanResult: null,
-                steps: [],
-                progress: null,
-                runId: null,
-                heartbeat: null,
-                fixError: null,
-                report: null,
-                previewRevision: 0
+                ...runReset()
             });
         }
 
         return {
-            loadPages,
-            openPage,
-
-            setFilter(filter: string) {
-                patchState(store, { filter, page: 1 });
-            },
-
-            setPagination(page: number, rows: number) {
-                patchState(store, { page, rows });
-            },
-
             setSkipCss(skipCss: boolean) {
                 patchState(store, { skipCss });
             },
@@ -555,27 +480,9 @@ export const AccessibilityStudioStore = signalStore(
                     });
             },
 
-            backToPicker() {
-                patchState(store, {
-                    phase: 'picker',
-                    selected: null,
-                    rehydrateStatus: 'idle',
-                    scanResult: null,
-                    liveScanResult: null,
-                    steps: [],
-                    progress: null,
-                    runId: null,
-                    heartbeat: null,
-                    fixError: null,
-                    report: null,
-                    previewRevision: 0
-                });
-            },
-
             /**
              * Run the REAL axe scan via DotPageScannerService against the page's
-             * EDIT_MODE render, then store the result and move to "scanned". The
-             * fix pass (startFix) is still mocked until the agent proxy lands (S4).
+             * EDIT_MODE render, then store the result and move to "scanned".
              */
             runScan() {
                 const page = store.selected();
@@ -642,11 +549,10 @@ export const AccessibilityStudioStore = signalStore(
             /**
              * Run the real fix pass: POST the page to the agent and stream its
              * progress over SSE. Each `phase` event appends to the live activity
-             * log; `progress` updates the live violation count; `workingChanged`
-             * tracks the files touched so far; `done` sets the §6 report and moves
-             * to "done"; `error` returns to "scanned" so the user can retry. The
-             * browser holds no token — the dev/prod proxy injects the bearer (see
-             * DotA11yAgentService).
+             * log; `progress` updates the live violation count; `done` sets the §6
+             * report and moves to "done"; `error` returns to "scanned" so the user
+             * can retry. The browser holds no token — the dev/prod proxy injects the
+             * bearer (see DotA11yAgentService).
              */
             startFix() {
                 const page = store.selected();
@@ -788,34 +694,6 @@ export const AccessibilityStudioStore = signalStore(
                     return;
                 }
                 patchState(store, { phase: store.scanResult() ? 'scanned' : 'ready' });
-            }
-        };
-    }),
-    withHooks((store) => {
-        return {
-            onInit() {
-                const globalStore = inject(GlobalStore);
-
-                // Reset pagination when the site changes; pages are per-site.
-                effect(() => {
-                    globalStore.currentSiteId();
-                    untracked(() => patchState(store, { page: 1, selected: null }));
-                });
-
-                // Reload the picker list on query/pagination/site changes — only while
-                // the picker is the active screen (don't refetch during a studio run).
-                effect(() => {
-                    store.filter();
-                    store.page();
-                    store.rows();
-                    globalStore.currentSiteId();
-
-                    untracked(() => {
-                        if (store.phase() === 'picker') {
-                            store.loadPages();
-                        }
-                    });
-                });
             }
         };
     })

@@ -50,11 +50,13 @@ export interface AgentFixRequest {
 }
 
 /**
- * The Studio state machine. Drives which screen + action block renders.
- * picker → ready → scanning → scanned → fixing → done → published
+ * The run screen's state machine. Drives which action block renders.
+ * ready → scanning → scanned → fixing → done → published
+ *
+ * (The picker is a separate route with its own store — see A11yPickerStore — so
+ * there is no `picker` phase here.)
  */
 export type StudioPhase =
-    | 'picker'
     | 'ready'
     | 'scanning'
     | 'scanned'

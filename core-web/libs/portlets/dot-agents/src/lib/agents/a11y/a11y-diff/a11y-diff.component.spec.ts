@@ -15,7 +15,7 @@ import { DotA11yDiffComponent } from './a11y-diff.component';
 
 import { PageDiffFile, PageSourceFile } from '../models/page-render-sources.models';
 import { DotPageSourcesService } from '../services/dot-page-sources.service';
-import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+import { A11yRunStore } from '../store/a11y-run.store';
 
 const MOCK_PAGE = {
     identifier: 'id-1',
@@ -69,7 +69,7 @@ describe('DotA11yDiffComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotA11yDiffComponent,
-        componentProviders: [{ provide: AccessibilityStudioStore, useValue: storeMock }],
+        componentProviders: [{ provide: A11yRunStore, useValue: storeMock }],
         providers: [
             {
                 provide: DotMessageService,

@@ -22,7 +22,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
-import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+import { A11yPickerStore } from '../store/a11y-picker.store';
 
 /**
  * The Studio entry screen (§7): lists/searches the site's pages and selects one
@@ -42,11 +42,12 @@ import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
         DotMessagePipe
     ],
     templateUrl: './a11y-picker.component.html',
+    providers: [A11yPickerStore],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block h-full min-h-0 overflow-y-auto' }
 })
 export class DotA11yPickerComponent {
-    readonly store = inject(AccessibilityStudioStore);
+    readonly store = inject(A11yPickerStore);
 
     /** Skeleton rows to render while a page of results loads. */
     readonly skeletonRows = Array.from({ length: 8 });
@@ -60,14 +61,6 @@ export class DotA11yPickerComponent {
     private readonly searchSubject = new Subject<string>();
 
     constructor() {
-        // Landing on the picker route (fresh, our Back button, or the browser back
-        // button) must reset the studio to the picker phase — otherwise a run left
-        // it in a non-picker phase and the page-load effect (gated on `picker`)
-        // wouldn't refetch. Idempotent: a no-op when already in the picker.
-        if (this.store.phase() !== 'picker') {
-            this.store.backToPicker();
-        }
-
         this.searchSubject
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
             .subscribe((value) => this.store.setFilter(value));

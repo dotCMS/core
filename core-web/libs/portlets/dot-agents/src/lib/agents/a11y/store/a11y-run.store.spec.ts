@@ -8,7 +8,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 
-import { AccessibilityStudioStore } from './accessibility-studio.store';
+import { A11yRunStore } from './a11y-run.store';
 
 import { A11yAgentStreamEvent, StudioPageRow } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
@@ -116,11 +116,6 @@ const MOCK_CONTENTLETS = [
     }
 ] as unknown as DotCMSContentlet[];
 
-const MOCK_SEARCH_ENTITY = {
-    jsonObjectView: { contentlets: MOCK_CONTENTLETS },
-    resultsSize: 42
-};
-
 const MOCK_ROW: StudioPageRow = {
     identifier: 'id-1',
     title: 'About Us',
@@ -134,19 +129,22 @@ const MOCK_ROW: StudioPageRow = {
     live: true
 };
 
-describe('AccessibilityStudioStore', () => {
-    let spectator: SpectatorService<InstanceType<typeof AccessibilityStudioStore>>;
-    let store: InstanceType<typeof AccessibilityStudioStore>;
+describe('A11yRunStore', () => {
+    let spectator: SpectatorService<InstanceType<typeof A11yRunStore>>;
+    let store: InstanceType<typeof A11yRunStore>;
     let searchService: jest.Mocked<DotContentSearchService>;
     let scannerService: jest.Mocked<DotPageScannerService>;
     let agentService: jest.Mocked<DotA11yAgentService>;
     let currentSiteIdSignal: ReturnType<typeof signal<string | null>>;
 
     const createService = createServiceFactory({
-        service: AccessibilityStudioStore,
+        service: A11yRunStore,
         providers: [
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_ENTITY))
+                // Default: the rehydration fetch resolves the selected page (id-1).
+                get: jest
+                    .fn()
+                    .mockReturnValue(of({ jsonObjectView: { contentlets: [MOCK_CONTENTLETS[0]] } }))
             }),
             mockProvider(DotPageScannerService, {
                 checkA11y: jest.fn().mockReturnValue(of(MOCK_SCAN_RESPONSE))
@@ -178,182 +176,78 @@ describe('AccessibilityStudioStore', () => {
             DotPageScannerService
         ) as jest.Mocked<DotPageScannerService>;
         agentService = spectator.inject(DotA11yAgentService) as jest.Mocked<DotA11yAgentService>;
-        // The onInit effect triggers loadPages while in the picker phase.
-        spectator.flushEffects();
     });
 
-    describe('Picker', () => {
-        it('starts in the picker phase', () => {
-            expect(store.phase()).toBe('picker');
-        });
+    /** Open the default page (id-1, /about-us) via the URL rehydration path. */
+    function openDefaultPage() {
+        store.openPageByUri('/about-us');
+    }
 
-        it('loads + projects pages into rows on init', () => {
-            expect(searchService.get).toHaveBeenCalled();
-            expect(store.pages().length).toBe(2);
-            expect(store.pages()[0]).toEqual(MOCK_ROW);
-            expect(store.totalRecords()).toBe(42);
-            expect(store.pickerStatus()).toBe('loaded');
-        });
+    it('starts in the ready phase with no page', () => {
+        expect(store.phase()).toBe('ready');
+        expect(store.selected()).toBeNull();
+    });
 
-        it('prefers the urlMap over url for the row path (URL-mapped content)', () => {
-            searchService.get.mockClear();
+    describe('openPageByUri (deep-link rehydration)', () => {
+        it('fetches a page by its URI (host-scoped) and opens it to ready', () => {
             searchService.get.mockReturnValueOnce(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            {
-                                ...MOCK_CONTENTLETS[1],
-                                url: '/blog-detail-template', // detail template URL
-                                urlMap: '/blog/post/hello' // the real navigable path
-                            }
-                        ]
-                    },
-                    resultsSize: 1
-                })
+                of({ jsonObjectView: { contentlets: [MOCK_CONTENTLETS[1]] } })
             );
-            // Re-trigger a load with the urlMapped contentlet.
-            store.setFilter('hello');
-            spectator.flushEffects();
+            store.openPageByUri('/blog/post/hello');
 
-            expect(store.pages()[0].path).toBe('/blog/post/hello');
-        });
-
-        it('builds a host-scoped pages query', () => {
             const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
+            expect(query).toContain('path:"/blog/post/hello"');
+            expect(query).toContain('urlmap:"/blog/post/hello"');
             expect(query).toContain('+working:true');
-            expect(query).toContain('+(urlmap:* OR basetype:5)');
             expect(query).toContain('+deleted:false');
-            expect(query).toContain('+conhost:site-1');
-            expect(query).not.toContain('title:');
+            expect(query).toContain('+conhost:site-1'); // host-scoped
+            expect(store.selected()?.path).toBe('/blog/post/hello');
+            expect(store.phase()).toBe('ready');
+            expect(store.rehydrateStatus()).toBe('idle');
         });
 
-        it('does not fetch until the current site is known, then fetches scoped', () => {
-            // Simulate the real boot order: site resolves AFTER init.
+        it('is a no-op when the requested page path is already selected', () => {
+            openDefaultPage();
             searchService.get.mockClear();
+            store.openPageByUri('/about-us');
+            expect(searchService.get).not.toHaveBeenCalled();
+            expect(store.rehydrateStatus()).toBe('idle');
+        });
+
+        it('stays loading (no fetch) until the current site is known', () => {
             currentSiteIdSignal.set(null);
-            spectator.flushEffects();
-            expect(searchService.get).not.toHaveBeenCalled(); // no unscoped all-sites query
-
-            currentSiteIdSignal.set('site-2');
-            spectator.flushEffects();
-            expect(searchService.get).toHaveBeenCalledTimes(1);
-            const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
-            expect(query).toContain('+conhost:site-2');
+            store.openPageByUri('/blog/post/hello');
+            expect(searchService.get).not.toHaveBeenCalled();
+            expect(store.rehydrateStatus()).toBe('loading');
         });
 
-        it('adds a title/path/urlmap clause when filtering', () => {
-            searchService.get.mockClear();
-            store.setFilter('contact');
-            spectator.flushEffects();
-
-            const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
-            expect(query).toContain('+(title:contact* OR path:*contact* OR urlmap:*contact*)');
-            expect(store.page()).toBe(1);
+        it('flags not-found when the path resolves to no page', () => {
+            searchService.get.mockReturnValueOnce(of({ jsonObjectView: { contentlets: [] } }));
+            store.openPageByUri('/missing');
+            expect(store.rehydrateStatus()).toBe('not-found');
         });
 
-        it('escapes Lucene special characters in the filter', () => {
-            searchService.get.mockClear();
-            store.setFilter('a:b(c)');
-            spectator.flushEffects();
-
-            const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
-            expect(query).toContain('a\\:b\\(c\\)');
-        });
-
-        it('translates pagination into limit/offset', () => {
-            searchService.get.mockClear();
-            store.setPagination(3, 10);
-            spectator.flushEffects();
-
-            const params = searchService.get.mock.calls[0][0] as {
-                limit: number;
-                offset: number;
-            };
-            expect(params.limit).toBe(10);
-            expect(params.offset).toBe(20);
-        });
-
-        it('handles a search error without throwing', () => {
-            const errorManager = spectator.inject(DotHttpErrorManagerService);
+        it('flags not-found and does not throw when the fetch errors', () => {
             searchService.get.mockReturnValueOnce(throwError(() => new Error('boom')));
-            store.setFilter('err');
-            spectator.flushEffects();
-
-            expect(errorManager.handle).toHaveBeenCalled();
-            expect(store.pickerStatus()).toBe('error');
+            store.openPageByUri('/blog/post/hello');
+            expect(store.rehydrateStatus()).toBe('not-found');
         });
     });
 
-    describe('Studio state machine', () => {
+    describe('scan + fix state machine', () => {
         beforeEach(() => {
-            store.openPage(MOCK_ROW);
+            openDefaultPage();
         });
 
-        it('openPage moves to the ready phase with the selected page', () => {
-            expect(store.phase()).toBe('ready');
+        it('opens the page to ready with the selection', () => {
             expect(store.phase()).toBe('ready');
             expect(store.selected()).toEqual(MOCK_ROW);
             expect(store.scanResult()).toBeNull();
             expect(store.report()).toBeNull();
         });
 
-        describe('openPageByUri (deep-link rehydration)', () => {
-            it('is a no-op when the requested page path is already selected', () => {
-                // MOCK_ROW (/about-us) is already selected by the outer beforeEach.
-                searchService.get.mockClear();
-                store.openPageByUri('/about-us');
-                expect(searchService.get).not.toHaveBeenCalled();
-                expect(store.rehydrateStatus()).toBe('idle');
-            });
-
-            it('fetches a page by its URI (host-scoped) and opens it to ready', () => {
-                // Ignore the init loadPages call; assert on the openPageByUri fetch.
-                searchService.get.mockClear();
-                searchService.get.mockReturnValueOnce(
-                    of({ jsonObjectView: { contentlets: [MOCK_CONTENTLETS[1]] } })
-                );
-                store.openPageByUri('/blog/post/hello');
-
-                const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
-                expect(query).toContain('path:"/blog/post/hello"');
-                expect(query).toContain('urlmap:"/blog/post/hello"');
-                expect(query).toContain('+working:true');
-                expect(query).toContain('+deleted:false');
-                expect(query).toContain('+conhost:site-1'); // host-scoped
-                expect(store.selected()?.path).toBe('/blog/post/hello');
-                expect(store.phase()).toBe('ready');
-                expect(store.rehydrateStatus()).toBe('idle');
-            });
-
-            it('stays loading (no fetch) until the current site is known', () => {
-                searchService.get.mockClear();
-                currentSiteIdSignal.set(null);
-                store.openPageByUri('/blog/post/hello');
-                expect(searchService.get).not.toHaveBeenCalled();
-                expect(store.rehydrateStatus()).toBe('loading');
-            });
-
-            it('flags not-found when the path resolves to no page', () => {
-                searchService.get.mockClear();
-                searchService.get.mockReturnValueOnce(
-                    of({ jsonObjectView: { contentlets: [] } })
-                );
-                store.openPageByUri('/missing');
-                expect(store.rehydrateStatus()).toBe('not-found');
-            });
-
-            it('flags not-found and does not throw when the fetch errors', () => {
-                searchService.get.mockClear();
-                searchService.get.mockReturnValueOnce(throwError(() => new Error('boom')));
-                store.openPageByUri('/blog/post/hello');
-                expect(store.rehydrateStatus()).toBe('not-found');
-            });
-        });
-
         it('runScan fires two scans: the primary EDIT_MODE (working) scan and the comparison LIVE scan', () => {
             store.runScan();
-            // One scan for the UI-driving preview render, one comparison scan for
-            // the live-frame markers.
             expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
 
             const previewUrl = scannerService.checkA11y.mock.calls[0][0];
@@ -377,12 +271,10 @@ describe('AccessibilityStudioStore', () => {
 
         it('a failing LIVE scan does not derail the UI (comparison-only, error swallowed)', () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            // First call = preview (succeeds), second = live (fails).
             scannerService.checkA11y
                 .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE))
                 .mockReturnValueOnce(throwError(() => new Error('live boom')));
             store.runScan();
-            // Preview scan drove the UI to scanned; the live failure is silent.
             expect(store.phase()).toBe('scanned');
             expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
             expect(store.liveScanResult()).toBeNull();
@@ -403,14 +295,12 @@ describe('AccessibilityStudioStore', () => {
         it('runScan re-scans from the scanned phase (the re-scan button)', () => {
             store.runScan(); // ready → scanned  (preview + live scan)
             store.runScan(); // scanned → scanning → scanned again (re-scan)
-            // Two scans per run (preview + comparison live) × two runs = 4.
             expect(scannerService.checkA11y).toHaveBeenCalledTimes(4);
             expect(store.phase()).toBe('scanned');
         });
 
         it('re-scanning drops the prior scan result before the new one lands', () => {
             store.runScan(); // ready → scanned, result populated
-            // Hold the second scan open so we can observe the cleared state.
             scannerService.checkA11y.mockReturnValueOnce(NEVER);
             store.runScan();
             expect(store.phase()).toBe('scanning');
@@ -429,15 +319,12 @@ describe('AccessibilityStudioStore', () => {
         it('startFix streams phase steps then moves scanned → done with the full report', () => {
             store.runScan();
             store.startFix();
-            // Each SSE `phase` event was appended to the live activity log…
             expect(agentService.fixStream).toHaveBeenCalledTimes(1);
             expect(store.steps()).toHaveLength(2);
             expect(store.steps()[0]).toEqual({
                 message: 'Scanning live + working baseline',
                 meta: { phase: 'scan' }
             });
-            // …and the terminal `done` event set the report + phase.
-            expect(store.phase()).toBe('done');
             expect(store.phase()).toBe('done');
             expect(store.fixedCount()).toBe(7);
             expect(store.reportedCount()).toBe(5);
@@ -445,8 +332,6 @@ describe('AccessibilityStudioStore', () => {
         });
 
         it('progress events drive the live openCount down while fixing', () => {
-            // Hold the stream open right after a progress frame (no done yet) so we
-            // observe the live count rather than the terminal report's after-count.
             agentService.fixStream.mockReturnValueOnce(
                 of<A11yAgentStreamEvent>(
                     { type: 'run', runId: 'r_test_123' },
@@ -456,12 +341,10 @@ describe('AccessibilityStudioStore', () => {
             store.runScan();
             store.startFix();
             expect(store.phase()).toBe('fixing'); // no terminal event → still fixing
-            // openCount reflects the live `current`, not the scan's before-count (5).
             expect(store.openCount()).toBe(2);
         });
 
         it('re-scans the preview on each progress frame so the legend/ring track fixes', () => {
-            scannerService.checkA11y.mockClear();
             agentService.fixStream.mockReturnValueOnce(
                 of<A11yAgentStreamEvent>(
                     { type: 'run', runId: 'r_test_123' },
@@ -472,10 +355,8 @@ describe('AccessibilityStudioStore', () => {
             store.runScan(); // (preview + live comparison scans)
             scannerService.checkA11y.mockClear();
             store.startFix();
-            // One EDIT_MODE re-scan per progress frame (2), all against the preview.
             expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
             expect(scannerService.checkA11y.mock.calls[0][0]).toContain('mode=EDIT_MODE');
-            // Each applied re-scan bumps previewRevision so the iframe reloads.
             expect(store.previewRevision()).toBe(2);
         });
 
@@ -489,12 +370,10 @@ describe('AccessibilityStudioStore', () => {
             store.runScan();
             store.startFix();
             expect(store.phase()).toBe('fixing');
-            // "N fixed to working so far" ticks up live from progress.cleared.
             expect(store.fixedCount()).toBe(3);
         });
 
         it('keeps beforeCount pinned to the baseline while the preview re-scan shrinks', () => {
-            // A smaller re-scan result the mid-fix rescan returns (only 1 error left).
             const REDUCED_SCAN = {
                 ok: true,
                 standard: 'WCAG2AA',
@@ -521,7 +400,6 @@ describe('AccessibilityStudioStore', () => {
                 }
             } as unknown as PageScannerA11yResponse;
 
-            // Initial scan → 5 errors; the mid-fix re-scan → 1 error.
             scannerService.checkA11y
                 .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // preview scan
                 .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // live comparison scan
@@ -535,14 +413,11 @@ describe('AccessibilityStudioStore', () => {
             store.runScan();
             store.startFix();
 
-            // The re-scan shrank the live scan → error count follows down…
             expect(store.errorCount()).toBe(1);
-            // …but "before" stays pinned to the baseline for the comparison.
             expect(store.beforeCount()).toBe(5);
         });
 
         it('captures the run id from the stream and targets stop at it', () => {
-            // Hold the stream open (after the run event) so we can stop mid-run.
             agentService.fixStream.mockReturnValueOnce(
                 of<A11yAgentStreamEvent>(
                     { type: 'run', runId: 'r_test_123' },
@@ -575,8 +450,6 @@ describe('AccessibilityStudioStore', () => {
             store.runScan();
             store.startFix();
             const request = agentService.fixStream.mock.calls[0][0];
-            // The proxy-request shape (plan §8.1): identifier + languageId + skipCss only.
-            // The Java proxy resolves the page and builds the full FixRequest.
             expect(request.identifier).toBe('id-1');
             expect(request.languageId).toBe(1);
             expect(request.skipCss).toBe(true);
@@ -606,11 +479,9 @@ describe('AccessibilityStudioStore', () => {
             store.startFix();
             store.publish();
             expect(store.phase()).toBe('published');
-            expect(store.phase()).toBe('published');
         });
 
         it('finished + runStarted track their phase sets', () => {
-            // Named phase sets; single-phase questions compare `phase()` directly.
             expect(store.runStarted()).toBe(false);
             expect(store.finished()).toBe(false);
 
@@ -619,7 +490,6 @@ describe('AccessibilityStudioStore', () => {
             expect(store.finished()).toBe(false);
 
             store.startFix();
-            // The mocked stream resolves synchronously → terminal 'done'.
             expect(store.phase()).toBe('done');
             expect(store.runStarted()).toBe(true);
             expect(store.finished()).toBe(true);
@@ -636,7 +506,6 @@ describe('AccessibilityStudioStore', () => {
         });
 
         it('publish is a no-op while a scan is in flight', () => {
-            // A never-completing scan leaves the phase at 'scanning'.
             scannerService.checkA11y.mockReturnValueOnce(NEVER);
             store.runScan();
             expect(store.phase()).toBe('scanning');
@@ -652,23 +521,11 @@ describe('AccessibilityStudioStore', () => {
             expect(store.phase()).toBe('scanned');
         });
 
-        it('backToPicker resets selection, scan result + report', () => {
-            store.runScan();
-            store.startFix();
-            store.backToPicker();
-            expect(store.phase()).toBe('picker');
-            expect(store.selected()).toBeNull();
-            expect(store.scanResult()).toBeNull();
-            expect(store.report()).toBeNull();
-        });
-
         it('splits results into fixed vs reported buckets', () => {
             store.runScan();
             store.startFix();
             expect(store.fixedResults().every((r) => r.status === 'fixed-to-working')).toBe(true);
-            expect(store.reportedResults().every((r) => r.status !== 'fixed-to-working')).toBe(
-                true
-            );
+            expect(store.reportedResults().every((r) => r.status !== 'fixed-to-working')).toBe(true);
         });
     });
 

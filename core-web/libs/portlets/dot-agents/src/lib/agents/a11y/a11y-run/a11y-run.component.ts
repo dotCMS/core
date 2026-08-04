@@ -25,6 +25,7 @@ import { map } from 'rxjs/operators';
 
 import { AgentMessage, DotAgentActivityLogComponent } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPageScannerService } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
@@ -40,7 +41,8 @@ import {
 } from '../models/a11y-severity';
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
-import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
+import { A11yRunStore } from '../store/a11y-run.store';
 
 /** The side panel's two accordion panels. */
 type StudioPanel = 'scanner' | 'files';
@@ -103,12 +105,15 @@ interface SeverityRow {
             }
         `
     ],
-    providers: [A11yMarkerService],
+    // The run store + the services it drives are provided HERE (not at the root),
+    // so each run route gets a fresh instance — navigating to a different page
+    // recreates the store with clean scan/fix state.
+    providers: [A11yRunStore, A11yMarkerService, DotPageScannerService, DotA11yAgentService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'grid h-full min-h-0 grid-cols-[412px_1fr]' }
 })
 export class DotA11yRunComponent {
-    readonly store = inject(AccessibilityStudioStore);
+    readonly store = inject(A11yRunStore);
 
     private readonly markerService = inject(A11yMarkerService);
     private readonly router = inject(Router);
@@ -642,8 +647,12 @@ export class DotA11yRunComponent {
     readonly liveUrl = computed(() => this.urlFor('LIVE'));
     readonly previewUrl = computed(() => this.urlFor('PREVIEW_MODE', this.store.previewRevision()));
 
+    /**
+     * Back button / "All pages" — return to the picker. No store reset needed: the
+     * run store is provided at this component, so navigating away destroys it and
+     * the next run starts fresh.
+     */
     backToPicker(): void {
-        this.store.backToPicker();
         this.toPicker();
     }
 

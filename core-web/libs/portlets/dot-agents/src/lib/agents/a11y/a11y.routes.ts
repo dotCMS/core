@@ -5,18 +5,10 @@ import { DotA11yRootComponent } from './a11y-root/a11y-root.component';
 import { DotA11yRunComponent } from './a11y-run/a11y-run.component';
 
 /**
- * Accessibility Studio routes. The root component provides the store (so state
- * survives the picker↔run switch) and hosts a `router-outlet`; the child routes
- * pick the screen — and, crucially, put the selected page's URI in the URL:
+ * Accessibility Studio routes. The root is a thin outlet host; each child route
+ * provides its OWN store (picker vs run) so the two screens are fully independent:
  *   - `''`   → the page picker
- *   - `**`   → the run screen; the wildcard captures the page path verbatim
- *             (e.g. `/agents/a11y/blog/post/hello`) so runs are deep-linkable and
- *             shareable with a human-readable URL. Must come after `''` — the
- *             wildcard would otherwise swallow the picker route too.
- *
- * The working-vs-live file diff is NOT a route: it's a slide-over panel rendered
- * inside the run screen ({@link DotA11yRunComponent}), so opening it keeps the
- * scan/run UI state intact rather than navigating away.
+ *   - `**`   → the run screen for one page
  */
 export const dotAccessibilityStudioRoutes: Route[] = [
     {
@@ -24,6 +16,10 @@ export const dotAccessibilityStudioRoutes: Route[] = [
         component: DotA11yRootComponent,
         children: [
             { path: '', component: DotA11yPickerComponent },
+            // Wildcard, not `:id`: the run URL carries the page's human-readable
+            // path (e.g. `blog/post/hello`), which is multi-segment and so can't be
+            // a single Angular route param. `**` captures the whole path; the run
+            // screen reads it back and rehydrates the page. Must come after `''`.
             { path: '**', component: DotA11yRunComponent }
         ]
     }

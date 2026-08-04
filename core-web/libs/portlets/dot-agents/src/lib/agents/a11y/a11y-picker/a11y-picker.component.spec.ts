@@ -8,7 +8,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotA11yPickerComponent } from './a11y-picker.component';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
-import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+import { A11yPickerStore } from '../store/a11y-picker.store';
 
 const MOCK_ROWS: StudioPageRow[] = [
     {
@@ -40,10 +40,8 @@ const MOCK_ROWS: StudioPageRow[] = [
 describe('DotA11yPickerComponent', () => {
     let spectator: Spectator<DotA11yPickerComponent>;
 
-    const openPage = jest.fn();
     const setFilter = jest.fn();
     const setPagination = jest.fn();
-    const backToPicker = jest.fn();
     const navigate = jest.fn();
 
     const storeMock = {
@@ -53,19 +51,13 @@ describe('DotA11yPickerComponent', () => {
         rows: () => 25,
         filter: () => '',
         pickerStatus: () => 'loaded',
-        // Already in the picker → the constructor's reset is a no-op.
-        phase: () => 'picker',
-        openPage,
         setFilter,
-        setPagination,
-        backToPicker
+        setPagination
     };
 
     const createComponent = createComponentFactory({
         component: DotA11yPickerComponent,
-        componentProviders: [
-            { provide: AccessibilityStudioStore, useValue: storeMock }
-        ],
+        componentProviders: [{ provide: A11yPickerStore, useValue: storeMock }],
         providers: [
             { provide: Router, useValue: { navigate } },
             { provide: ActivatedRoute, useValue: {} },
@@ -105,7 +97,6 @@ describe('DotA11yPickerComponent', () => {
             ['about-us'],
             expect.objectContaining({ relativeTo: expect.anything() })
         );
-        expect(openPage).not.toHaveBeenCalled();
     });
 
     it('debounces search input before calling setFilter', () => {

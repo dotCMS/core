@@ -18,7 +18,7 @@ import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-s
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
-import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+import { A11yRunStore } from '../store/a11y-run.store';
 
 /**
  * Stubs for the diff pieces so the run spec doesn't pull in Monaco / HTTP. The list
@@ -71,7 +71,6 @@ describe('DotA11yRunComponent', () => {
     const stopAgent = jest.fn();
     const publish = jest.fn();
     const discard = jest.fn();
-    const backToPicker = jest.fn();
     const setSkipCss = jest.fn();
     const openPageByUri = jest.fn();
     const navigate = jest.fn();
@@ -176,7 +175,6 @@ describe('DotA11yRunComponent', () => {
         stopAgent,
         publish,
         discard,
-        backToPicker,
         setSkipCss,
         openPageByUri
     };
@@ -197,7 +195,7 @@ describe('DotA11yRunComponent', () => {
             ]
         ],
         componentProviders: [
-            { provide: AccessibilityStudioStore, useValue: storeMock },
+            { provide: A11yRunStore, useValue: storeMock },
             mockProvider(A11yMarkerService)
         ],
         providers: [
@@ -788,11 +786,11 @@ describe('DotA11yRunComponent', () => {
         });
     });
 
-    it('triggers backToPicker + navigates up from the back button', () => {
+    it('navigates up to the picker from the back button', () => {
         render('ready');
         const btn = spectator.query(byTestId('studio-back-btn'))?.querySelector('button');
         spectator.click(btn as HTMLElement);
-        expect(backToPicker).toHaveBeenCalled();
+        // No store reset — the per-route run store is destroyed on navigation.
         expect(navigate).toHaveBeenCalledWith(
             ['..'],
             expect.objectContaining({ relativeTo: expect.anything() })

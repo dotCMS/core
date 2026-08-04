@@ -18,7 +18,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { DotPageSourcesService } from '../services/dot-page-sources.service';
-import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+import { A11yRunStore } from '../store/a11y-run.store';
 
 /** Load status of the file list. */
 type DiffStatus = 'loading' | 'loaded' | 'error';
@@ -36,8 +36,8 @@ type DiffStatus = 'loading' | 'loaded' | 'error';
  * pane. When nothing differs it says so rather than hiding.
  *
  * It's a presentational child of {@link DotA11yRunComponent}: the page context
- * comes from the shared {@link AccessibilityStudioStore} (already hydrated by the
- * run screen), so there's no routing/rehydration here. The list loads as soon as
+ * comes from the run screen's {@link A11yRunStore} (which this injects up the DI
+ * tree), so there's no routing/rehydration here. The list loads as soon as
  * the page is known — before any scan — so pre-existing working edits (an earlier
  * run, a manual change) are visible immediately, and reloads whenever the working
  * render changes (each run, re-scan, publish).
@@ -56,7 +56,7 @@ type DiffStatus = 'loading' | 'loaded' | 'error';
     host: { class: 'block' }
 })
 export class DotA11yDiffComponent {
-    readonly store = inject(AccessibilityStudioStore);
+    readonly store = inject(A11yRunStore);
 
     private readonly sourcesService = inject(DotPageSourcesService);
     private readonly destroyRef = inject(DestroyRef);
