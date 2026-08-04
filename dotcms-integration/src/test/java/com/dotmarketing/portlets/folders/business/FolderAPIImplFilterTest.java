@@ -24,6 +24,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -144,7 +145,9 @@ public class FolderAPIImplFilterTest {
     public void test_searchFolders_withPathScope_returnsOnlyDescendants()
             throws DotDataException, DotSecurityException {
         final Host freshSite = new SiteDataGen().nextPersisted();
-        final Folder assets = new FolderDataGen().site(freshSite).name("assets").nextPersisted();
+        // Not "assets": that is in the default RESERVEDFOLDERNAMES (FolderAPIImpl:110) and cannot be
+        // created directly under a site, so saving it throws InvalidFolderNameException.
+        final Folder assets = new FolderDataGen().site(freshSite).name("site-assets").nextPersisted();
         new FolderDataGen().site(freshSite).parent(assets).name("images").nextPersisted(); // inside scope
         new FolderDataGen().site(freshSite).name("images-root").nextPersisted();           // outside scope
 
@@ -300,5 +303,222 @@ public class FolderAPIImplFilterTest {
         assertEquals(1, result.size());
         assertFalse("hasChildren should be false when user cannot read any child",
                 result.get(0).hasChildren());
+    }
+
+    // ── Folder-detail fields ──────────────────────────────────────────────────
+
+    /**
+     * Method to test: {@link FolderAPIImpl#searchFolders} <br>
+     * Given Scenario: A folder with title, sortOrder, filesMasks, defaultFileType and showOnMenu
+     * set; the admin searches for it without asking for permissions. <br>
+     * Expected Result: All five detail fields are present on the view and match the stored folder —
+     * they are not gated by {@code includePermissions}.
+     */
+    @Test
+    public void test_searchFolders_detailFields_alwaysPresent()
+            throws DotDataException, DotSecurityException {
+        final long ts    = System.currentTimeMillis();
+        final Host fresh = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(fresh)
+                .name("detail-" + ts)
+                .title("Detail " + ts)
+                .sortOrder(7)
+                .fileMasks("*.jpg,*.png")
+                .showOnMenu(true)
+                .nextPersisted();
+
+        final var result = folderAPI.searchFolders(FolderSearchParams.builder()
+                .name("detail-" + ts)
+                .siteId(fresh.getIdentifier())
+                .user(adminUser)
+                .build());
+
+        assertEquals(1, result.size());
+        final FolderSearchView view = result.get(0);
+        assertEquals(folder.getTitle(), view.title());
+        assertEquals(folder.getSortOrder(), view.sortOrder());
+        assertEquals(folder.getFilesMasks(), view.filesMasks());
+        assertEquals(folder.getDefaultFileType(), view.defaultFileType());
+        assertEquals(folder.isShowOnMenu(), view.showOnMenu());
+        assertNull("permissions must be null when not requested", view.permissions());
+    }
+
+    // ── permissions field (includePermissions) ────────────────────────────────
+
+    /**
+     * Method to test: {@link FolderAPIImpl#searchFolders} <br>
+     * Given Scenario: A limited user with every permission type on the folder asks for
+     * permissions. <br>
+     * Expected Result: The view carries exactly the five type names, in a stable order and spelled
+     * the way the Content Drive table spells them — in particular {@code EDIT}, never {@code WRITE}.
+     */
+    @Test
+    public void test_searchFolders_includePermissions_allTypesGranted()
+            throws DotDataException, DotSecurityException {
+        final long ts    = System.currentTimeMillis();
+        final Host fresh = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(fresh).name("perm-all-" + ts).nextPersisted();
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        grantOnFolder(folder, limitedUser,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS
+                        | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+        final var result = searchAsLimitedUser("perm-all-" + ts, fresh, limitedUser);
+
+        assertEquals(1, result.size());
+        assertEquals(List.of("READ", "EDIT", "PUBLISH", "EDIT_PERMISSIONS", "CAN_ADD_CHILDREN"),
+                result.get(0).permissions());
+        assertTrue("addChildrenAllowed must stay consistent with the permissions array",
+                result.get(0).addChildrenAllowed());
+    }
+
+    /**
+     * Method to test: {@link FolderAPIImpl#searchFolders} <br>
+     * Given Scenario: A limited user holds only READ and EDIT on the folder. <br>
+     * Expected Result: Exactly {@code [READ, EDIT]} — {@code PUBLISH}, {@code EDIT_PERMISSIONS} and
+     * {@code CAN_ADD_CHILDREN} are absent. This is the case the sidebar context menu's gating
+     * depends on, so the absences are asserted explicitly.
+     */
+    @Test
+    public void test_searchFolders_includePermissions_readAndEditOnly()
+            throws DotDataException, DotSecurityException {
+        final long ts    = System.currentTimeMillis();
+        final Host fresh = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(fresh).name("perm-re-" + ts).nextPersisted();
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        grantOnFolder(folder, limitedUser,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT);
+
+        final var result = searchAsLimitedUser("perm-re-" + ts, fresh, limitedUser);
+
+        assertEquals(1, result.size());
+        final List<String> permissions = result.get(0).permissions();
+        assertEquals(List.of("READ", "EDIT"), permissions);
+        assertFalse("PUBLISH must not be granted", permissions.contains("PUBLISH"));
+        assertFalse("EDIT_PERMISSIONS must not be granted", permissions.contains("EDIT_PERMISSIONS"));
+        assertFalse("CAN_ADD_CHILDREN must not be granted", permissions.contains("CAN_ADD_CHILDREN"));
+        assertFalse("WRITE is an alias and must never be emitted", permissions.contains("WRITE"));
+    }
+
+    /**
+     * Method to test: {@link FolderAPIImpl#searchFolders} <br>
+     * Given Scenario: A limited user holds only READ on the folder. <br>
+     * Expected Result: The folder is still returned, with exactly {@code [READ]}.
+     */
+    @Test
+    public void test_searchFolders_includePermissions_readOnly()
+            throws DotDataException, DotSecurityException {
+        final long ts    = System.currentTimeMillis();
+        final Host fresh = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(fresh).name("perm-ro-" + ts).nextPersisted();
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        grantOnFolder(folder, limitedUser, PermissionAPI.PERMISSION_READ);
+
+        final var result = searchAsLimitedUser("perm-ro-" + ts, fresh, limitedUser);
+
+        assertEquals(1, result.size());
+        assertEquals(List.of("READ"), result.get(0).permissions());
+        assertFalse("a READ-only folder is not add-children-able", result.get(0).addChildrenAllowed());
+    }
+
+    /**
+     * Method to test: {@link FolderAPIImpl#searchFolders} <br>
+     * Given Scenario: Three readable folders, only the second (by name) is editable; the limited
+     * user requests page 2 of a 1-per-page result with permissions. <br>
+     * Expected Result: The permissions describe the folder actually returned, not the first page's.
+     */
+    @Test
+    public void test_searchFolders_includePermissions_scopedToRequestedPage()
+            throws DotDataException, DotSecurityException {
+        final long ts    = System.currentTimeMillis();
+        final Host fresh = new SiteDataGen().nextPersisted();
+        final String prefix = "perm-page-" + ts + "-";
+        final Folder first  = new FolderDataGen().site(fresh).name(prefix + "00").nextPersisted();
+        final Folder second = new FolderDataGen().site(fresh).name(prefix + "01").nextPersisted();
+        final Folder third  = new FolderDataGen().site(fresh).name(prefix + "02").nextPersisted();
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        grantOnFolder(first,  limitedUser, PermissionAPI.PERMISSION_READ);
+        grantOnFolder(second, limitedUser, PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT);
+        grantOnFolder(third,  limitedUser, PermissionAPI.PERMISSION_READ);
+
+        final var page1 = folderAPI.searchFolders(FolderSearchParams.builder()
+                .name(prefix).siteId(fresh.getIdentifier()).user(limitedUser)
+                .includePermissions(true).limit(1).offset(0).build());
+        final var page2 = folderAPI.searchFolders(FolderSearchParams.builder()
+                .name(prefix).siteId(fresh.getIdentifier()).user(limitedUser)
+                .includePermissions(true).limit(1).offset(1).build());
+
+        assertEquals(3, page1.getTotalResults());
+        assertEquals(1, page1.size());
+        assertEquals(first.getName(), page1.get(0).name());
+        assertEquals(List.of("READ"), page1.get(0).permissions());
+
+        assertEquals(3, page2.getTotalResults());
+        assertEquals(1, page2.size());
+        assertEquals(second.getName(), page2.get(0).name());
+        assertEquals(List.of("READ", "EDIT"), page2.get(0).permissions());
+    }
+
+    /**
+     * Method to test: {@link FolderAPIImpl#searchFolders} <br>
+     * Given Scenario: A limited user starts with READ only; EDIT is granted and the endpoint is
+     * queried immediately afterwards. <br>
+     * Expected Result: {@code EDIT} shows up with no reindex in between — permissions are resolved
+     * from the database, as ADR-0018 routes them.
+     */
+    @Test
+    public void test_searchFolders_includePermissions_readYourWrites()
+            throws DotDataException, DotSecurityException {
+        final long ts    = System.currentTimeMillis();
+        final Host fresh = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(fresh).name("perm-ryw-" + ts).nextPersisted();
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        grantOnFolder(folder, limitedUser, PermissionAPI.PERMISSION_READ);
+
+        assertEquals(List.of("READ"),
+                searchAsLimitedUser("perm-ryw-" + ts, fresh, limitedUser).get(0).permissions());
+
+        grantOnFolder(folder, limitedUser,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT);
+
+        assertEquals("EDIT must be visible immediately after the grant, without a reindex",
+                List.of("READ", "EDIT"),
+                searchAsLimitedUser("perm-ryw-" + ts, fresh, limitedUser).get(0).permissions());
+    }
+
+    /**
+     * Replaces the individual permissions a role holds on {@code folder} with {@code bits}. Setting
+     * individual permissions breaks inheritance, so the user ends up with exactly these grants.
+     */
+    private static void grantOnFolder(final Folder folder, final User user, final int bits)
+            throws DotDataException, DotSecurityException {
+        final String roleId = APILocator.getRoleAPI().loadRoleByKey(user.getUserId()).getId();
+        APILocator.getPermissionAPI().save(
+                new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        folder.getPermissionId(), roleId, bits, true),
+                folder, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Runs a name-scoped search with {@code includePermissions=true} as {@code limitedUser}.
+     *
+     * <p>Every permission-gating assertion goes through a limited user on purpose:
+     * {@code filterCollection} short-circuits for CMS Admin and the system user, so the same
+     * assertions run as an admin would pass against an implementation that computes nothing.
+     */
+    private static PaginatedArrayList<FolderSearchView> searchAsLimitedUser(final String name,
+            final Host site, final User limitedUser) throws DotDataException, DotSecurityException {
+        return folderAPI.searchFolders(FolderSearchParams.builder()
+                .name(name)
+                .siteId(site.getIdentifier())
+                .user(limitedUser)
+                .includePermissions(true)
+                .build());
     }
 }

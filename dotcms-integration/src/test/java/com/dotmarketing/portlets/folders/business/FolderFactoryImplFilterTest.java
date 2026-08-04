@@ -5,8 +5,10 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.folders.business.FolderSearchParams;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -24,6 +26,7 @@ public class FolderFactoryImplFilterTest {
     private static FolderFactoryImpl folderFactory;
     private static Host site1;
     private static Host site2;
+    private static User user;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -31,6 +34,10 @@ public class FolderFactoryImplFilterTest {
         folderFactory = new FolderFactoryImpl();
         site1 = new SiteDataGen().nextPersisted();
         site2 = new SiteDataGen().nextPersisted();
+        // The factory resolves folders in SQL and never reads the user — permission filtering
+        // happens a layer up, in FolderAPIImpl. The user is only here because
+        // FolderSearchParams.Builder.build() requires one.
+        user = APILocator.systemUser();
     }
 
     /**
@@ -48,6 +55,7 @@ public class FolderFactoryImplFilterTest {
         final List<Folder> results = folderFactory.searchFolders(FolderSearchParams.builder()
                 .name("images-" + ts)
                 .siteId(site1.getIdentifier())
+                .user(user)
                 .build());
 
         assertEquals(2, results.size());
@@ -68,10 +76,12 @@ public class FolderFactoryImplFilterTest {
         final List<Folder> lower = folderFactory.searchFolders(FolderSearchParams.builder()
                 .name("assets-" + ts)
                 .siteId(site1.getIdentifier())
+                .user(user)
                 .build());
         final List<Folder> upper = folderFactory.searchFolders(FolderSearchParams.builder()
                 .name("ASSETS-" + ts)
                 .siteId(site1.getIdentifier())
+                .user(user)
                 .build());
 
         assertEquals(1, lower.size());
@@ -94,6 +104,7 @@ public class FolderFactoryImplFilterTest {
         final List<Folder> results = folderFactory.searchFolders(FolderSearchParams.builder()
                 .name(sharedName)
                 .siteId(site1.getIdentifier())
+                .user(user)
                 .build());
 
         assertEquals(1, results.size());
@@ -114,6 +125,7 @@ public class FolderFactoryImplFilterTest {
 
         final List<Folder> results = folderFactory.searchFolders(FolderSearchParams.builder()
                 .siteId(freshSite.getIdentifier())
+                .user(user)
                 .build());
 
         assertTrue(results.size() >= 2);
@@ -137,6 +149,7 @@ public class FolderFactoryImplFilterTest {
                 .path("/" + parent.getName() + "/")
                 .recursive(true)
                 .siteId(freshSite.getIdentifier())
+                .user(user)
                 .build());
 
         assertEquals(1, results.size());
@@ -159,6 +172,7 @@ public class FolderFactoryImplFilterTest {
                 .path("/" + parent.getName() + "/")
                 .recursive(false)
                 .siteId(site1.getIdentifier())
+                .user(user)
                 .build());
 
         assertEquals(1, results.size());
@@ -175,6 +189,7 @@ public class FolderFactoryImplFilterTest {
         final List<Folder> results = folderFactory.searchFolders(FolderSearchParams.builder()
                 .name("zzz-no-match-xyz-" + System.currentTimeMillis())
                 .siteId(site1.getIdentifier())
+                .user(user)
                 .build());
 
         assertTrue(results.isEmpty());

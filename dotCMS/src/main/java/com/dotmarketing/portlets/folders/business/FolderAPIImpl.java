@@ -830,20 +830,33 @@ public class FolderAPIImpl implements FolderAPI  {
 				page, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, params.user(), params.respectFrontendRoles())
 				.stream().map(Permissionable::getPermissionId).collect(Collectors.toSet());
 
-		// 5. Determine which folders have permission-visible children.
+		// 5. Opt-in permission types, each a batch call scoped to the page. READ needs no call (the
+		//    folder is here because it passed the READ filter in step 2) and CAN_ADD_CHILDREN reuses
+		//    step 4, so the full 5-type set costs 3 extra calls.
+		final Set<String> editableIds        = filterIdsByPermission(page, PermissionAPI.PERMISSION_EDIT, params);
+		final Set<String> publishableIds     = filterIdsByPermission(page, PermissionAPI.PERMISSION_PUBLISH, params);
+		final Set<String> editPermissionsIds = filterIdsByPermission(page, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, params);
+
+		// 6. Determine which folders have permission-visible children.
 		final Set<String> parentPathsWithVisibleChildren =
 				findParentPathsWithVisibleChildren(page, params);
 
-		// 6. Map to views.
+		// 7. Map to views.
 		final var views = page.stream()
 				.map(folder -> {
 					final var fullPath   = folder.getPath();
 					final var parentPath = fullPath.substring(0, fullPath.length() - folder.getName().length() - 1);
+					final List<String> permissions = params.includePermissions()
+							? permissionNames(folder, canAddIds, editableIds, publishableIds, editPermissionsIds)
+							: null;
 					return new FolderSearchView(
 							folder.getIdentifier(), folder.getInode(), folder.getName(),
 							parentPath, canAddIds.contains(folder.getPermissionId()),
 							parentPathsWithVisibleChildren.contains(folder.getPath()),
-							folder.getDefaultBaseType());
+							folder.getDefaultBaseType(),
+							folder.getTitle(), folder.getSortOrder(), folder.getFilesMasks(),
+							folder.getDefaultFileType(), folder.isShowOnMenu(),
+							permissions);
 				})
 				.toList();
 
@@ -851,6 +864,56 @@ public class FolderAPIImpl implements FolderAPI  {
 		result.setTotalResults(total);
 		result.addAll(views);
 		return result;
+	}
+
+	/**
+	 * Batch-resolves which folders in {@code page} the requesting user holds {@code permission} on,
+	 * returning their permission ids. Returns an empty set — issuing no query at all — when
+	 * {@link FolderSearchParams#includePermissions()} is {@code false}.
+	 *
+	 * @param page       the already-paginated slice; never the pre-pagination collection
+	 * @param permission one of the {@code PermissionAPI.PERMISSION_*} constants
+	 */
+	private Set<String> filterIdsByPermission(final List<Folder> page, final int permission,
+			final FolderSearchParams params) throws DotDataException, DotSecurityException {
+
+		if (!params.includePermissions()) {
+			return Set.of();
+		}
+		return permissionAPI.filterCollection(
+				page, permission, params.user(), params.respectFrontendRoles())
+				.stream().map(Permissionable::getPermissionId).collect(Collectors.toSet());
+	}
+
+	/**
+	 * Builds the permission-type names granted on {@code folder}, matching the set and the spelling
+	 * the Content Drive table's folder view emits so both views gate the context menu identically.
+	 *
+	 * <p>Names come from {@link PermissionAPI.Type} constants rather than
+	 * {@link PermissionAPI.Type#getCanonicalTypes()}, which carries the {@code WRITE} alias instead
+	 * of {@code EDIT} and would emit a name no consumer checks for.
+	 */
+	private static List<String> permissionNames(final Folder folder, final Set<String> canAddIds,
+			final Set<String> editableIds, final Set<String> publishableIds,
+			final Set<String> editPermissionsIds) {
+
+		final String permissionId = folder.getPermissionId();
+		final List<String> names = new ArrayList<>(5);
+		// READ is implicit: the folder only reaches this point by passing the READ filter.
+		names.add(PermissionAPI.Type.READ.name());
+		if (editableIds.contains(permissionId)) {
+			names.add(PermissionAPI.Type.EDIT.name());
+		}
+		if (publishableIds.contains(permissionId)) {
+			names.add(PermissionAPI.Type.PUBLISH.name());
+		}
+		if (editPermissionsIds.contains(permissionId)) {
+			names.add(PermissionAPI.Type.EDIT_PERMISSIONS.name());
+		}
+		if (canAddIds.contains(permissionId)) {
+			names.add(PermissionAPI.Type.CAN_ADD_CHILDREN.name());
+		}
+		return names;
 	}
 
 	/**

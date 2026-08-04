@@ -16,7 +16,8 @@ import java.util.Map;
  * path scoping, and recursive depth control.
  *
  * <p>Extra params expected in the map (keyed by the query param names defined in
- * the calling resource): {@code "siteId"}, {@code "path"}, {@code "recursive"}.
+ * the calling resource): {@code "siteId"}, {@code "path"}, {@code "recursive"},
+ * {@code "includePermissions"}.
  */
 public class FolderSearchPaginator implements PaginatorOrdered<FolderSearchView> {
 
@@ -43,6 +44,7 @@ public class FolderSearchPaginator implements PaginatorOrdered<FolderSearchView>
         final String siteId   = (String) ep.get("siteId");
         final String path     = (String) ep.getOrDefault("path", "/");
         final boolean recursive = Boolean.TRUE.equals(ep.get("recursive"));
+        final boolean includePermissions = Boolean.TRUE.equals(ep.get("includePermissions"));
 
         final String orderByColumn = switch (orderBy) {
             case "mod_date" -> "folder.mod_date";
@@ -61,6 +63,7 @@ public class FolderSearchPaginator implements PaginatorOrdered<FolderSearchView>
                     .offset(offset)
                     .orderBy(orderByColumn)
                     .orderDirection(orderDirection)
+                    .includePermissions(includePermissions)
                     .build();
             return folderAPI.searchFolders(params);
         } catch (final Exception e) {
