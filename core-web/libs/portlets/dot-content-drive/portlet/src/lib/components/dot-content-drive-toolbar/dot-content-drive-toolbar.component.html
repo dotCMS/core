@@ -32,10 +32,22 @@
                 }
 
                 @if ($displayActions()) {
+                    <!-- Workflow actions stay first in the row and remain visible for any
+                         selection; the Action Center is offered alongside them, not instead, from
+                         the first selected contentlet. -->
                     <dot-content-drive-workflow-actions
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
                         data-testid="workflow-actions" />
+
+                    @if ($displayActionCenter()) {
+                        <p-button
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            [label]="'content-drive.action-center.header' | dm"
+                            data-testid="action-center-button"
+                            (click)="onOpenActionCenter()" />
+                    }
                 }
             </div>
         </div>

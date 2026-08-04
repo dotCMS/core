@@ -2,6 +2,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { EMPTY, of, throwError } from 'rxjs';
 
 import {
+    buildPersistedQueryKey,
     DotCurrentUserService,
     DotHttpErrorManagerService,
     DotMessageService
@@ -48,11 +49,16 @@ describe('DotQueryToolStore', () => {
     });
 
     beforeEach(() => {
+        window.localStorage.clear();
         spectator = createService();
         spectator.flushEffects();
         searchSpy = spectator.inject(DotQueryToolService).search as jest.Mock;
         searchSpy.mockClear();
         searchSpy.mockReturnValue(of(MOCK_RESPONSE));
+    });
+
+    afterEach(() => {
+        window.localStorage.clear();
     });
 
     it('initialises with INIT status and default pagination', () => {
@@ -205,5 +211,53 @@ describe('DotQueryToolStore', () => {
         it('hasLoadedResults reflects loaded state plus non-empty contentlets', () => {
             expect(spectator.service.hasLoadedResults()).toBe(true);
         });
+    });
+});
+
+describe('DotQueryToolStore persistedQuery', () => {
+    const persistedKey = buildPersistedQueryKey('query-tool');
+
+    const createService = createServiceFactory({
+        service: DotQueryToolStore,
+        providers: [
+            mockProvider(DotQueryToolService, {
+                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+            }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: true }))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        window.localStorage.clear();
+    });
+
+    it('hydrates query from the persisted-query storage key', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify('+live:true'));
+
+        const spectator = createService();
+        spectator.flushEffects();
+
+        expect(spectator.service.query()).toBe('+live:true');
+    });
+
+    it('clearPersistedQuery empties the query and removes the stored entry', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify('+live:true'));
+
+        const spectator = createService();
+        spectator.flushEffects();
+        expect(spectator.service.query()).toBe('+live:true');
+
+        spectator.service.clearPersistedQuery();
+
+        expect(spectator.service.query()).toBe('');
+        expect(window.localStorage.getItem(persistedKey)).toBeNull();
     });
 });

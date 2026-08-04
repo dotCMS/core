@@ -1,4 +1,4 @@
-<div class="flex gap-2 justify-end">
+<div class="flex justify-end gap-2">
     @for (action of DEFAULT_WORKFLOW_ACTIONS; track action.id) {
         <p-button
             styleClass="p-button-outlined bg-white"
@@ -8,5 +8,3 @@
             (click)="onExecuteAction(action)" />
     }
 </div>
-
-<p-confirmDialog />
