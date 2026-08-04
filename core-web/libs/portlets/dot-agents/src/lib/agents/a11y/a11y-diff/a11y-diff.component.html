@@ -18,7 +18,7 @@
     }
     @case ('error') {
         <div
-            class="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700"
+            class="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3 text-red-700"
             role="alert"
             data-testid="diff-error">
             <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
@@ -26,7 +26,7 @@
                 <div class="font-semibold">
                     {{ 'accessibility.studio.diff.error.title' | dm }}
                 </div>
-                <div class="mt-0.5 text-xs text-red-600">
+                <div class="mt-0.5 text-red-600">
                     {{ 'accessibility.studio.diff.error.sub' | dm }}
                 </div>
             </div>
@@ -38,10 +38,10 @@
             <div class="flex items-center gap-2.5 p-2" data-testid="diff-empty">
                 <i class="pi pi-check-circle flex-none text-green-500" aria-hidden="true"></i>
                 <div class="min-w-0">
-                    <div class="text-[13px] font-bold text-gray-900">
+                    <div class="font-bold text-gray-900">
                         {{ 'accessibility.studio.diff.empty.title' | dm }}
                     </div>
-                    <p class="m-0 mt-0.5 text-xs leading-snug text-gray-500">
+                    <p class="m-0 mt-0.5 leading-snug text-gray-500">
                         {{ 'accessibility.studio.diff.empty.sub' | dm }}
                     </p>
                 </div>
@@ -59,17 +59,17 @@
                             [attr.aria-current]="file.identifier === selectedId()"
                             data-testid="diff-file-row">
                             <i
-                                class="pi pi-file flex-none text-sm!"
+                                class="pi pi-file flex-none"
                                 [class.text-primary]="file.identifier === selectedId()"
                                 [class.text-gray-400]="file.identifier !== selectedId()"
                                 aria-hidden="true"></i>
                             <div class="min-w-0 flex-1">
-                                <div class="truncate text-[13px] font-semibold text-gray-900">
+                                <div class="truncate font-semibold text-gray-900">
                                     {{ file.name }}
                                 </div>
                             </div>
                             <span
-                                class="flex flex-none items-center gap-1.5 font-mono text-[11px] font-bold tabular-nums">
+                                class="flex flex-none items-center gap-1.5 font-mono font-bold tabular-nums">
                                 @if (file.added > 0) {
                                     <span class="text-green-600">+{{ file.added }}</span>
                                 }
@@ -88,10 +88,10 @@
             @if (selectedId()) {
                 <button
                     type="button"
-                    class="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-surface-200 bg-white p-2 text-[12px] font-semibold text-gray-600 transition-colors hover:bg-surface-50"
+                    class="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-surface-200 bg-white p-2 font-semibold text-gray-600 transition-colors hover:bg-surface-50"
                     (click)="clearSelection()"
                     data-testid="diff-back-to-preview-btn">
-                    <i class="pi pi-arrow-left text-[11px]!" aria-hidden="true"></i>
+                    <i class="pi pi-arrow-left" aria-hidden="true"></i>
                     {{ 'accessibility.studio.diff.backtopreview' | dm }}
                 </button>
             }
