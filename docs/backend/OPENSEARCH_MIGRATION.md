@@ -353,10 +353,54 @@ closed when a crawl actually runs in a dual-write phase (1 or 2). In the window 
   twin that was never rebuilt, and never crawling, is a hard gap.
 
 **Operational rule (pairs with the code):** before promoting the phase — especially into Phase 3 —
-ensure every Site Search index has been crawled at least once so its OS twin exists and is in sync. A
-targeted verify/repair job (detect twins that are missing **or** whose counts diverge → rebuild full)
-that closes the no-crawl window without depending on a crawl is deferred as a follow-up under the same
-issue.
+ensure every Site Search index has been crawled at least once so its OS counterpart exists and is in
+sync. The migration-readiness endpoint below is what tells the operator *which* indices still need
+that crawl, before they change the phase.
+
+#### Migration-readiness endpoint (pre-phase-change advisory)
+
+`GET /api/v1/index/migration/readiness` is an internal, read-only report a support technician runs
+**before changing the migration phase** to see whether it is safe and, if not, what to do. It never
+mutates anything — the fix is always the operator re-running the crawl / reindex, which self-heals
+through the write-path gate above.
+
+- **Not public.** The resource is `@Hidden` (absent from the OpenAPI / API-playground schema) and
+  gated to CMS administrators who **also** hold the migration support role
+  (`OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY`, default `os_migration_qa`) — a plain admin without the
+  role is not enough. Anyone else gets a 403, so regular users never learn a migration is running.
+- **What it reports.** The current phase with its read/write engines and a `dualWrite` flag; an
+  overall verdict — `safeToAdvance` (toward OpenSearch-only) and `safeToRollback` (downgrade) with an
+  `outOfSyncCount`, a human `summary`, and per-index `blockers`; and the per-index ES↔OS mirror diff
+  for **both** mirrored families — the versioned content indices (`working`/`live`) and the Site
+  Search indices. `content` is a keyed object by slot (`WORKING` / `LIVE` — a fixed pair);
+  `siteSearch` is a list (an open set). Each entry carries `{indexName, es:{exists,docCount,physicalName},
+  os:{exists,docCount,physicalName}, driftPercent, verdict, recommendation}` — `physicalName` is the
+  full name as stored on each server (cluster-prefixed; `.os`-tagged on OpenSearch), and
+  `driftPercent` is the signed % the OpenSearch (mirror) count deviates from the Elasticsearch
+  (original) — negative = behind, positive = ahead, `null` when a count is unknown — with verdict `IN_SYNC` /
+  `MISSING_COUNTERPART` / `COUNT_DRIFT`. The top level also carries the `clusterId` embedded in every
+  physical name. The response is the model itself (no `ResponseEntityView` envelope).
+- **Stateless, from live counts.** Every field is derived at request time. Counts are **exact** — the
+  Site Search half uses `SiteSearchAPI.documentCount` and the content half reads each engine leaf's
+  `getIndicesStats()` (index `_stats` `primaries.docs.count`), never a search total (which the ES/OS
+  clients cap at 10,000 and would hide drift on large indices). Both reconcilers query the two engine
+  leaves directly, not the phase-aware router, so the report shows both sides in every phase.
+- **`safeToRollback` needs no history.** A downgrade routes reads back to Elasticsearch, so it is
+  unsafe when any index's ES copy is behind its OpenSearch counterpart (`esDocCount < osDocCount`, or
+  the ES copy missing) — that delta, typically content written while OpenSearch served reads, would be
+  silently absent after the downgrade until a full reindex. That is derivable from the same snapshot,
+  so no per-phase state is persisted. An **unmeasurable** count on either engine (reported as `-1`)
+  also makes it unsafe: it is never compared numerically, because `100 < -1` would otherwise read as
+  a green while OpenSearch may hold more documents.
+- **`outOfSyncCount` is phase-aware.** In Phase 0 the OpenSearch counterparts have not been built yet
+  — they are created during dual-write — so a missing OpenSearch copy is the expected state and is not
+  counted; otherwise the count would contradict the "nothing to reconcile yet" summary next to it. Any
+  *other* mismatch (an OpenSearch index with no ES source, a drift between two existing copies) is
+  still unexpected in Phase 0 and stays counted and named in the summary.
+
+Because this endpoint is the source of truth for migration/QA, the index portlets no longer reveal
+`.os` indices by role: `MigrationIndexVisibility` is now purely phase-based (hidden in Phases 0/1/2,
+shown in Phase 3, for everyone). The role key is retained only to gate this endpoint.
 
 #### Tag manipulation is the sole responsibility of `IndexTag`
 
