@@ -460,6 +460,77 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(pushPublish.disabled).toBe(true);
         });
+
+        it('should not open the preview when the action applies to nothing', () => {
+            // `eligibleContentlets` can come back empty if the selection changed between the lookup
+            // and the click, which would otherwise open a preview with no rows to fire.
+            armAction();
+            mockSelectedItems.set([contentlet({ inode: 'other', contentType: 'Unrelated' })]);
+            spectator.detectChanges();
+
+            spectator.component['onContinueToPreview']();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            expect(store.setDialogDrillDown).not.toHaveBeenCalled();
+        });
+
+        describe('switching scheme panels', () => {
+            it('should disarm the action when a different scheme is opened', () => {
+                // Execution is one action at a time, so a panel the user has navigated away from
+                // must not leave its action armed.
+                armAction();
+
+                spectator.component['onOpenSchemeChange']('another-scheme');
+                spectator.detectChanges();
+
+                expect(spectator.component['$selectedActionId']()).toBeNull();
+            });
+
+            it('should disable Continue once the action is disarmed', () => {
+                armAction();
+                spectator.component['onOpenSchemeChange']('another-scheme');
+                spectator.detectChanges();
+
+                const continueButton = spectator.query(
+                    '[data-testid="continue-workflow-editorial"] button'
+                ) as HTMLButtonElement;
+
+                expect(continueButton.disabled).toBe(true);
+            });
+
+            it('should disarm the action when every panel is collapsed', () => {
+                armAction();
+
+                spectator.component['onOpenSchemeChange'](undefined);
+                spectator.detectChanges();
+
+                expect(spectator.component['$selectedActionId']()).toBeNull();
+            });
+
+            it('should keep the action armed when its own scheme is reopened', () => {
+                armAction();
+
+                spectator.component['onOpenSchemeChange']('editorial');
+                spectator.detectChanges();
+
+                expect(spectator.component['$selectedActionId']()).toBe('action-review');
+            });
+
+            it('should take the first value when the accordion emits an array', () => {
+                // PrimeNG's accordion `valueChange` can emit either a single value or an array, and
+                // JSDOM clicking never produces the array shape. Two entries on purpose: a
+                // single-entry array stringifies to the same thing as the bare value, so it would
+                // pass even if the array handling were dropped.
+                armAction();
+
+                spectator.component['onOpenSchemeChange'](['editorial', 'another-scheme']);
+                spectator.detectChanges();
+
+                expect(spectator.component['$openSchemeId']()).toBe('editorial');
+                expect(spectator.component['$selectedActionId']()).toBe('action-review');
+            });
+        });
     });
 
     describe('workflow action preview', () => {
@@ -741,6 +812,19 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
+        });
+
+        it('should disarm an action when the user opens the other content type scheme', () => {
+            // Two real schemes here, so this exercises the deselection against actual response data
+            // rather than a made-up scheme id.
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('copy-blog');
+            spectator.detectChanges();
+
+            spectator.component['onOpenSchemeChange']('Vtl');
+            spectator.detectChanges();
+
+            expect(spectator.component['$selectedActionId']()).toBeNull();
         });
 
         it('should surface the lookup failure when any content type request fails', () => {
