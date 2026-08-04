@@ -1,5 +1,6 @@
-set positional-arguments := true
 import? 'justfile.local'
+
+set positional-arguments := true
 home_dir := env_var('HOME')
 # Introduction and Setup
 # If homebrew is not installed, run the following command:
@@ -106,6 +107,18 @@ dev-run-fixed:
         -Dtomcat.ssl.port=8443 \
         -Dmanagement.port=8090
 
+# Same as dev-run-fixed, plus OAUTH_ALLOW_INSECURE_URLS (for localhost callback URLs)
+# and SecurityLogger at DEBUG so id_token validation failures are visible in the
+# container logs.
+dev-run-headless:
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
+
 # Polls /dotmgt/readyz until dotCMS is ready or 20 retries (100s) expire
 dev-wait-ready:
     curl --retry 20 --retry-delay 5 --retry-connrefused \
@@ -126,6 +139,49 @@ dev-stop:
 # Cleans up Docker volumes associated with the development environment
 dev-clean-volumes:
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes
+
+# Stops the headless-context containers started by dev-run-headless. Needed because
+# those containers are named with context.name=dev, which the default dev-stop doesn't
+# match, so plain dev-stop silently finds nothing.
+dev-stop-headless:
+    ./mvnw -pl :dotcms-core -Pdocker-stop \
+        -Dext.default.context.name=dev
+
+# Cleans up the headless-context Docker volumes. Required before a fresh
+# dev-run-headless if you want a new starter.zip to actually import — dotCMS only
+# loads the starter on a fresh DB.
+dev-clean-volumes-headless:
+    ./mvnw -pl :dotcms-core -Pdocker-clean-volumes \
+        -Dext.default.context.name=dev
+
+# Build frontend + backend delta, then replace just the dotCMS app container.
+# DB + ES containers stay running so startup is fast and data is preserved.
+reload-headless:
+    ./mvnw install -pl :dotcms-core-web,:dotcms-core -am -DskipTests
+    docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
+
+# Nuke all caches and rebuild everything from scratch, then replace the dotCMS container.
+# DB + ES stay running. Use when incremental builds can't be trusted.
+full-reload-headless: build-no-cache
+    docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
+
+# Full reset for the headless stack: stop containers, wipe volumes, start fresh with
+# whatever starter.zip is currently staged in dotCMS/target/starter/.
+dev-reset-headless: dev-stop-headless dev-clean-volumes-headless dev-run-headless
 
 # Starts the dotCMS application in a Tomcat container on port 8087, running in the foreground
 dev-tomcat-run port="8087":

@@ -17,6 +17,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -470,6 +471,17 @@ public class SAMLHelper {
         UserHelper.getInstance().addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
         Logger.debug(this, ()->"Default SAML User role has been assigned");
 
+        // System access roles based on enableBackend/enableFrontend config flags.
+        // addRole dedupes against DOTCMS_SAML_OPTIONAL_USER_ROLE entries.
+        final boolean enableBackend = isBackEndEnabled(identityProviderConfiguration);
+        final boolean enableFrontend = isFrontEndEnabled(identityProviderConfiguration);
+        if (enableBackend) {
+            UserHelper.getInstance().addRole(user, Role.DOTCMS_BACK_END_USER, false, false);
+        }
+        if (enableFrontend) {
+            UserHelper.getInstance().addRole(user, Role.DOTCMS_FRONT_END_USER, false, false);
+        }
+
         // the only strategy that does not include the saml user role is the "idp"
         if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
             // Add DOTCMS_SAML_OPTIONAL_USER_ROLE
@@ -491,6 +503,25 @@ public class SAMLHelper {
 
             Logger.info(this, "The build roles strategy is 'idp'. No saml_user_role has been added");
         }
+    }
+
+    /**
+     * Whether back-end (dotAdmin) SSO is enabled for this IdP configuration.
+     * Defaults to {@code true} when the flag is absent — historical SAML behavior
+     * was back-end SSO, so pre-existing configs keep working after upgrade.
+     */
+    public static boolean isBackEndEnabled(final IdentityProviderConfiguration identityProviderConfiguration) {
+        return !identityProviderConfiguration.containsOptionalProperty("enableBackend")
+                || BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableBackend")));
+    }
+
+    /**
+     * Whether front-end (site visitor) SSO is enabled for this IdP configuration.
+     * Defaults to {@code false} when the flag is absent.
+     */
+    public static boolean isFrontEndEnabled(final IdentityProviderConfiguration identityProviderConfiguration) {
+        return identityProviderConfiguration.containsOptionalProperty("enableFrontend")
+                && BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableFrontend")));
     }
 
     private boolean isValidRole(final String role, final String... rolePatterns) {
