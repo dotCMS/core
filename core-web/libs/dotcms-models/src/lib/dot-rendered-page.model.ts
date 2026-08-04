@@ -48,14 +48,13 @@ export class DotPageRender {
 
     get containerMap(): DotContainerMap {
         const containers = this.containers ?? {};
+        const containerMap: DotContainerMap = {};
 
-        return Object.keys(containers).reduce(
-            (prev, curr) => ({
-                ...prev,
-                [curr]: containers[curr].container
-            }),
-            {}
-        );
+        for (const key of Object.keys(containers)) {
+            containerMap[key] = containers[key].container;
+        }
+
+        return containerMap;
     }
 
     get site(): DotSite | undefined {
