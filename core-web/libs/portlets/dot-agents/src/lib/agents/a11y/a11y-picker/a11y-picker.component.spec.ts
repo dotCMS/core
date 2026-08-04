@@ -54,7 +54,7 @@ describe('DotA11yPickerComponent', () => {
         filter: () => '',
         pickerStatus: () => 'loaded',
         // Already in the picker → the constructor's reset is a no-op.
-        inPicker: () => true,
+        phase: () => 'picker',
         openPage,
         setFilter,
         setPagination,

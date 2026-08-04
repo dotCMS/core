@@ -64,7 +64,7 @@ export class DotA11yPickerComponent {
         // button) must reset the studio to the picker phase — otherwise a run left
         // it in a non-picker phase and the page-load effect (gated on `picker`)
         // wouldn't refetch. Idempotent: a no-op when already in the picker.
-        if (!this.store.inPicker()) {
+        if (this.store.phase() !== 'picker') {
             this.store.backToPicker();
         }
 

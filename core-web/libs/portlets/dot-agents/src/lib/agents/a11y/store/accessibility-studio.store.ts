@@ -14,7 +14,6 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
-    AgentChangedFile,
     AgentHeartbeat,
     AgentProgress,
     AgentRunStep,
@@ -87,12 +86,6 @@ interface AccessibilityStudioState {
      */
     progress: AgentProgress | null;
     /**
-     * Files the agent has changed in the working version so far — accumulated from
-     * SSE `workingChanged` events during the run (each frame carries the full set,
-     * so we replace rather than append). Confirmed by the terminal report.
-     */
-    changedFiles: AgentChangedFile[];
-    /**
      * The current run's id — captured from the stream's first `run` event, used to
      * target the /stop request at this specific run. Null when no run is active.
      */
@@ -131,7 +124,6 @@ const initialState: AccessibilityStudioState = {
     liveScanResult: null,
     steps: [],
     progress: null,
-    changedFiles: [],
     runId: null,
     heartbeat: null,
     fixError: null,
@@ -198,19 +190,21 @@ export const AccessibilityStudioStore = signalStore(
             groups.reduce((total, g) => total + g.count, 0);
 
         return {
-            inPicker: computed(() => store.phase() === 'picker'),
-            inStudio: computed(() => store.phase() !== 'picker'),
-            isReady: computed(() => store.phase() === 'ready'),
-            isScanning: computed(() => store.phase() === 'scanning'),
-            isScanned: computed(() => store.phase() === 'scanned'),
-            isFixing: computed(() => store.phase() === 'fixing'),
-            isDone: computed(() => store.phase() === 'done'),
-            isPublished: computed(() => store.phase() === 'published'),
-            isWorking: computed(() => store.phase() === 'scanning' || store.phase() === 'fixing'),
-            /** True once a scan has produced (or is producing) results. */
-            scanned: computed(() =>
+            // `phase` IS the interface for single-state questions — consumers compare
+            // it directly (`phase() === 'scanning'`) rather than going through a
+            // per-phase boolean. What lives here is only the phase SETS: groups that
+            // carry domain meaning an enum comparison can't express, and that would
+            // otherwise be spelled out inline in every consumer.
+            /** A scan or fix run is in flight (the working copy may still be changing). */
+            isWorking: computed(() => ['scanning', 'fixing'].includes(store.phase())),
+            /** A scan has produced (or is producing) results, so the score is meaningful. */
+            hasResults: computed(() =>
                 ['scanned', 'fixing', 'done', 'published'].includes(store.phase())
             ),
+            /** A fix run has started, so before→after figures are meaningful. */
+            runStarted: computed(() => ['fixing', 'done', 'published'].includes(store.phase())),
+            /** The run reached a terminal state — its report is final. */
+            finished: computed(() => ['done', 'published'].includes(store.phase())),
             /** Real axe findings grouped per rule (violations → error, incomplete → warning). */
             a11yGroups,
             /**
@@ -475,7 +469,6 @@ export const AccessibilityStudioStore = signalStore(
                 liveScanResult: null,
                 steps: [],
                 progress: null,
-                changedFiles: [],
                 runId: null,
                 heartbeat: null,
                 fixError: null,
@@ -571,7 +564,6 @@ export const AccessibilityStudioStore = signalStore(
                     liveScanResult: null,
                     steps: [],
                     progress: null,
-                    changedFiles: [],
                     runId: null,
                     heartbeat: null,
                     fixError: null,
@@ -665,7 +657,6 @@ export const AccessibilityStudioStore = signalStore(
                     phase: 'fixing',
                     steps: [],
                     progress: null,
-                    changedFiles: [],
                     runId: null,
                     heartbeat: null,
                     fixError: null,
@@ -711,11 +702,6 @@ export const AccessibilityStudioStore = signalStore(
                                 // progress totals alone carry no per-severity split).
                                 rescanPreviewDuringFix();
                                 break;
-                            case 'workingChanged':
-                                // Each frame carries the full set of changed files so
-                                // far — replace, don't append.
-                                patchState(store, { changedFiles: event.changedFiles });
-                                break;
                             case 'heartbeat':
                                 // Keep-alive while the agent is thinking between
                                 // actions — drives the "still working…" indicator so a
@@ -726,8 +712,7 @@ export const AccessibilityStudioStore = signalStore(
                             case 'aborted':
                                 // done = full run; aborted = stopped early with a partial
                                 // report (fixes already applied are kept). Both land on
-                                // the done screen with the report the agent returned; sync
-                                // the changed-file list to the report's authoritative set.
+                                // the done screen with the report the agent returned.
                                 // Cancel any pending mid-fix rescan first so it can't
                                 // overwrite the report-driven widgets afterwards.
                                 fixRescanSub?.unsubscribe();
@@ -735,7 +720,6 @@ export const AccessibilityStudioStore = signalStore(
                                 patchState(store, {
                                     phase: 'done',
                                     report: event.result,
-                                    changedFiles: event.result.changedFiles ?? store.changedFiles(),
                                     // Final reload so the preview reflects the finished
                                     // working render.
                                     previewRevision: store.previewRevision() + 1

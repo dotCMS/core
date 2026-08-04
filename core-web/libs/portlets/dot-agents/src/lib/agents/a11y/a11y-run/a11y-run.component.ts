@@ -239,7 +239,7 @@ export class DotA11yRunComponent {
         // scan / rescan rolls up fresh.
         effect(() => {
             const target = this.store.openCount();
-            const scanned = this.store.scanned();
+            const scanned = this.store.hasResults();
             untracked(() => this.animateCountTo(scanned ? target : 0));
         });
 
@@ -380,7 +380,7 @@ export class DotA11yRunComponent {
      * only shared gate is: a scan pass has run. Empty groups (e.g. the live scan
      * hasn't landed yet, or a frame came back clean) simply draw no markers.
      */
-    readonly showMarkers = computed<boolean>(() => this.store.scanned());
+    readonly showMarkers = computed<boolean>(() => this.store.hasResults());
 
 
     /**
@@ -388,10 +388,10 @@ export class DotA11yRunComponent {
      *   scanning → "SCAN", scanned → "BY ISSUE TYPE", fixing/done → "AGENT ACTIVITY".
      */
     readonly logHeaderKey = computed<string>(() => {
-        if (this.store.isScanning()) {
+        if (this.store.phase() === 'scanning') {
             return 'accessibility.studio.loghdr.scan';
         }
-        if (this.store.isScanned()) {
+        if (this.store.phase() === 'scanned') {
             return 'accessibility.studio.loghdr.issues';
         }
         return 'accessibility.studio.loghdr.activity';
@@ -399,10 +399,10 @@ export class DotA11yRunComponent {
 
     /** The working badge label beside the header ("SCANNING" / "WORKING"), or null. */
     readonly logBadgeKey = computed<string | null>(() => {
-        if (this.store.isScanning()) {
+        if (this.store.phase() === 'scanning') {
             return 'accessibility.studio.badge.scanning';
         }
-        if (this.store.isFixing()) {
+        if (this.store.phase() === 'fixing') {
             return 'accessibility.studio.badge.working';
         }
         return null;
@@ -410,10 +410,10 @@ export class DotA11yRunComponent {
 
     /** Headline above the severity legend, by phase. */
     readonly scoreHeadlineKey = computed<string>(() => {
-        if (this.store.isFixing()) {
+        if (this.store.phase() === 'fixing') {
             return 'accessibility.studio.score.fixing';
         }
-        if (this.store.isDone() || this.store.isPublished()) {
+        if (this.store.finished()) {
             return 'accessibility.studio.score.remaining';
         }
         return 'accessibility.studio.score.found';
@@ -427,7 +427,7 @@ export class DotA11yRunComponent {
      */
     readonly severityRows = computed<SeverityRow[]>(() => {
         const counts = this.store.severityCounts();
-        const keepZeros = this.store.isFixing() || this.store.isDone() || this.store.isPublished();
+        const keepZeros = this.store.runStarted();
         return SEVERITY_ORDER.map((severity) => ({
             severity,
             label: SEVERITY_LABEL[severity],
@@ -505,10 +505,10 @@ export class DotA11yRunComponent {
      *   - after done   → the final report expanded into bubbles (scan/fixed/reported/rescan)
      */
     readonly activityMessages = computed<AgentMessage[]>(() => {
-        if (this.store.isFixing()) {
+        if (this.store.phase() === 'fixing') {
             return this.store.steps().map((step, i) => this.presenter.liveStep(step, i));
         }
-        if (this.store.isDone() || this.store.isPublished()) {
+        if (this.store.finished()) {
             const report = this.store.report();
             return report ? this.presenter.resultMessages(report) : [];
         }
@@ -524,7 +524,7 @@ export class DotA11yRunComponent {
      * the sub-line.
      */
     readonly workingMessage = computed<AgentMessage | null>(() => {
-        if (!this.store.isFixing()) {
+        if (this.store.phase() !== 'fixing') {
             return null;
         }
         const sinceLastEventMs = this.store.heartbeat()?.sinceLastEventMs ?? 0;

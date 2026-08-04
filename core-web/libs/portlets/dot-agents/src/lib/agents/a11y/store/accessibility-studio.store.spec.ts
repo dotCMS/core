@@ -185,8 +185,6 @@ describe('AccessibilityStudioStore', () => {
     describe('Picker', () => {
         it('starts in the picker phase', () => {
             expect(store.phase()).toBe('picker');
-            expect(store.inPicker()).toBe(true);
-            expect(store.inStudio()).toBe(false);
         });
 
         it('loads + projects pages into rows on init', () => {
@@ -293,7 +291,7 @@ describe('AccessibilityStudioStore', () => {
 
         it('openPage moves to the ready phase with the selected page', () => {
             expect(store.phase()).toBe('ready');
-            expect(store.isReady()).toBe(true);
+            expect(store.phase()).toBe('ready');
             expect(store.selected()).toEqual(MOCK_ROW);
             expect(store.scanResult()).toBeNull();
             expect(store.report()).toBeNull();
@@ -394,7 +392,7 @@ describe('AccessibilityStudioStore', () => {
         it('runScan stores the scan result and the real error/warning counts', () => {
             store.runScan();
             expect(store.phase()).toBe('scanned');
-            expect(store.scanned()).toBe(true);
+            expect(store.hasResults()).toBe(true);
             expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
             expect(store.errorCount()).toBe(5); // 3 + 2 violation elements
             expect(store.warningCount()).toBe(2); // 2 incomplete elements
@@ -440,12 +438,10 @@ describe('AccessibilityStudioStore', () => {
             });
             // …and the terminal `done` event set the report + phase.
             expect(store.phase()).toBe('done');
-            expect(store.isDone()).toBe(true);
+            expect(store.phase()).toBe('done');
             expect(store.fixedCount()).toBe(7);
             expect(store.reportedCount()).toBe(5);
             expect(store.afterCount()).toBe(MOCK_FIX_REPORT.scan.after.violations);
-            // On done, changedFiles is synced to the report's authoritative set.
-            expect(store.changedFiles()).toBe(MOCK_FIX_REPORT.changedFiles);
         });
 
         it('progress events drive the live openCount down while fixing', () => {
@@ -545,24 +541,6 @@ describe('AccessibilityStudioStore', () => {
             expect(store.beforeCount()).toBe(5);
         });
 
-        it('workingChanged events accumulate the changed-file set while fixing', () => {
-            const files = [
-                { path: '//site/a.css', identifier: 'id-a' },
-                { path: '//site/b.vtl', identifier: 'id-b' }
-            ];
-            agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>(
-                    { type: 'run', runId: 'r_test_123' },
-                    { type: 'workingChanged', changedFiles: [files[0]] },
-                    { type: 'workingChanged', changedFiles: files } // full set each frame
-                )
-            );
-            store.runScan();
-            store.startFix();
-            // The latest frame carries the full set — replace, not append.
-            expect(store.changedFiles()).toEqual(files);
-        });
-
         it('captures the run id from the stream and targets stop at it', () => {
             // Hold the stream open (after the run event) so we can stop mid-run.
             agentService.fixStream.mockReturnValueOnce(
@@ -628,7 +606,27 @@ describe('AccessibilityStudioStore', () => {
             store.startFix();
             store.publish();
             expect(store.phase()).toBe('published');
-            expect(store.isPublished()).toBe(true);
+            expect(store.phase()).toBe('published');
+        });
+
+        it('finished + runStarted track their phase sets', () => {
+            // Named phase sets; single-phase questions compare `phase()` directly.
+            expect(store.runStarted()).toBe(false);
+            expect(store.finished()).toBe(false);
+
+            store.runScan();
+            expect(store.runStarted()).toBe(false);
+            expect(store.finished()).toBe(false);
+
+            store.startFix();
+            // The mocked stream resolves synchronously → terminal 'done'.
+            expect(store.phase()).toBe('done');
+            expect(store.runStarted()).toBe(true);
+            expect(store.finished()).toBe(true);
+
+            store.publish();
+            expect(store.runStarted()).toBe(true);
+            expect(store.finished()).toBe(true);
         });
 
         it('publish works from scanned — working changes can predate a fix run', () => {

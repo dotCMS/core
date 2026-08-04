@@ -5,7 +5,7 @@ import { Component, input, output, signal } from '@angular/core';
 import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { AgentChangedFile, AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
+import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -85,8 +85,6 @@ describe('DotA11yRunComponent', () => {
     let heartbeat: AgentHeartbeat | null = null;
     // Bumped when the working render changes → preview iframe cache-buster.
     let previewRevision = 0;
-    // Files the agent changed — drives the "View file changes" button.
-    let changedFiles: AgentChangedFile[] = [];
     // Whether a scan result is present (drives report vs. iframe in the pane).
     let hasScan = false;
     // The page path (as URL segments) the run component reads on init.
@@ -147,14 +145,10 @@ describe('DotA11yRunComponent', () => {
         liveA11yGroups: () => (hasScan ? MOCK_GROUPS : []),
         errorCount: () => (hasScan ? 5 : 0),
         warningCount: () => (hasScan ? 2 : 0),
-        isReady: () => phase === 'ready',
-        isScanning: () => phase === 'scanning',
-        isScanned: () => phase === 'scanned',
-        isFixing: () => phase === 'fixing',
-        isDone: () => phase === 'done',
-        isPublished: () => phase === 'published',
         isWorking: () => phase === 'scanning' || phase === 'fixing',
-        scanned: () => ['scanned', 'fixing', 'done', 'published'].includes(phase),
+        finished: () => ['done', 'published'].includes(phase),
+        runStarted: () => ['fixing', 'done', 'published'].includes(phase),
+        hasResults: () => ['scanned', 'fixing', 'done', 'published'].includes(phase),
         beforeCount: () => (hasScan ? 5 : 0),
         afterCount: () => report?.scan.after.violations ?? 0,
         openCount: () => report?.scan.after.violations ?? (hasScan ? 5 : 0),
@@ -176,7 +170,6 @@ describe('DotA11yRunComponent', () => {
             report?.results.filter((r) => r.status !== 'fixed-to-working').length ?? 0,
         rehydrateStatus: () => rehydrateStatus,
         previewRevision: () => previewRevision,
-        changedFiles: () => changedFiles,
         runScan,
         stopScan,
         startFix,
@@ -263,7 +256,6 @@ describe('DotA11yRunComponent', () => {
         rehydrateStatus = 'idle';
         heartbeat = null;
         previewRevision = 0;
-        changedFiles = [];
         hasScan = false;
         pathSegments = ['about-us'];
         currentSiteIdSignal.set('site-1');
@@ -520,6 +512,14 @@ describe('DotA11yRunComponent', () => {
         it('shows the skeleton, not the real widget or issue list, while scanning', () => {
             expect(spectator.query(byTestId('studio-issue-type-list'))).toBeFalsy();
             expect(spectator.query(byTestId('studio-score-ring'))).toBeFalsy();
+        });
+
+        // Guards the `phase() !== 'ready'` negations: written as `!phase() === 'ready'`
+        // they'd parse as `(!phase()) === 'ready'` — always false — silently hiding the
+        // section header and showing the ready-state explainer mid-scan.
+        it('shows the section header and hides the ready explainer once scanning', () => {
+            expect(spectator.query(byTestId('studio-working-badge'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-ready-card'))).toBeFalsy();
         });
     });
 

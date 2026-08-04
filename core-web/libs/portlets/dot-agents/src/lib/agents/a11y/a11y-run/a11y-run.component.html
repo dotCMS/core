@@ -43,7 +43,7 @@
                         {{ 'accessibility.studio.panel.scanner' | dm }}
                     </span>
                     <!-- Open-issue count, once a scan has produced results. -->
-                    @if (store.scanned()) {
+                    @if (store.hasResults()) {
                         <span
                             class="inline-flex h-5 flex-none items-center rounded-full bg-surface-200 px-2 text-[10px] font-bold text-gray-600"
                             data-testid="studio-panel-scanner-count">
@@ -56,7 +56,7 @@
                 <div class="flex flex-col" data-testid="studio-panel-scanner-body">
     <!-- Score widget SKELETON — shown while scanning, with the SAME footprint as
          the real widget so the swap to results is a crossfade with no layout shift. -->
-    @if (store.isScanning()) {
+    @if (store.phase() === 'scanning') {
         <div
             class="studio-fade-in flex flex-none animate-pulse items-center justify-center gap-8 border-b border-surface-100 px-6 py-5"
             data-testid="studio-score-skeleton"
@@ -79,7 +79,7 @@
 
     <!-- Score widget — shown once a scan has produced results (scanned/fixing/done).
          Hidden while ready + scanning (scanning shows the skeleton above). -->
-    @if (store.scanned()) {
+    @if (store.hasResults()) {
         <div
             class="studio-fade-in flex flex-none items-center justify-center gap-8 border-b border-surface-100 px-6 py-5">
             <!-- Donut: severity-segmented ring with the live open count in the center.
@@ -118,7 +118,7 @@
                 </div>
 
                 <!-- before → open delta (only once a run has started). -->
-                @if (store.isFixing() || store.isDone() || store.isPublished()) {
+                @if (store.runStarted()) {
                     <div class="mb-2.5 flex items-center gap-2.5">
                         <div class="flex flex-col">
                             <span class="text-2xl leading-none font-extrabold text-gray-400">
@@ -135,7 +135,7 @@
                             </span>
                             <span class="mt-0.5 text-xs text-gray-400">
                                 {{
-                                    store.isFixing()
+                                    store.phase() === 'fixing'
                                         ? ('accessibility.studio.score.open' | dm)
                                         : ('accessibility.studio.score.now' | dm)
                                 }}
@@ -180,7 +180,7 @@
     }
 
     <!-- Section header — label + working badge, both phase-aware. Hidden when ready. -->
-    @if (!store.isReady()) {
+    @if (store.phase() !== 'ready') {
         <div class="flex flex-none items-center gap-2 px-6 pt-4 pb-2">
             <span class="text-xs font-bold tracking-wider text-gray-400 uppercase">
                 {{ logHeaderKey() | dm }}
@@ -200,9 +200,11 @@
          this must NOT scroll on its own — a nested scroll area would trap the
          wheel and make the second panel hard to reach with both open. -->
     <div data-testid="studio-recipe-log" class="mb-8">
-        @if (store.isReady()) {
+        @if (store.phase() === 'ready') {
             <!-- Ready: what to expect -->
-            <div class="rounded-2xl border border-surface-200 bg-surface-50 p-5">
+            <div
+                class="rounded-2xl border border-surface-200 bg-surface-50 p-5"
+                data-testid="studio-ready-card">
                 <div class="mb-1.5 text-sm font-bold text-gray-900">
                     {{ 'accessibility.studio.ready.title' | dm }}
                 </div>
@@ -243,7 +245,7 @@
 
         <!-- Issue-type list SKELETON: same row shape/footprint as the results, so
              the swap to real rows is a crossfade with no layout shift. -->
-        @if (store.isScanning()) {
+        @if (store.phase() === 'scanning') {
             <div
                 class="studio-fade-in flex animate-pulse flex-col gap-2"
                 data-testid="studio-issue-type-skeleton"
@@ -264,7 +266,7 @@
 
         <!-- BY ISSUE TYPE list: one row per axe rule (scanned state). Crossfades in
              over the skeleton — same footprint, so no jump. -->
-        @if (store.isScanned()) {
+        @if (store.phase() === 'scanned') {
             <div class="studio-fade-in flex flex-col gap-2" data-testid="studio-issue-type-list">
                 @for (group of issueTypeRows(); track group.code) {
                     <div
@@ -312,7 +314,7 @@
         <dot-agent-activity-log
             [messages]="activityMessages()"
             [workingMessage]="workingMessage()"
-            [working]="store.isFixing()"
+            [working]="store.phase() === 'fixing'"
             workingFallbackKey="accessibility.studio.fixing"
             data-testid="studio-activity-log" />
 
@@ -320,8 +322,7 @@
              couldn't be sure, so the agent doesn't touch them — a human decides.
              Shown after a scan (scanned) and in the final report (done/published). -->
         @if (
-            (store.isScanned() || store.isDone() || store.isPublished()) &&
-            store.reviewGroups().length > 0
+            (store.phase() === 'scanned' || store.finished()) && store.reviewGroups().length > 0
         ) {
             <div class="mt-4" data-testid="studio-review-section">
                 <div class="mb-1 flex items-center gap-1.5">
@@ -366,7 +367,7 @@
          sit with the results they act on. -->
     <div class="flex-none px-4">
         <!-- Footer copy — hidden in the ready + scanning states. -->
-        @if (!store.isReady() && !store.isScanning()) {
+        @if (store.phase() !== 'ready' && store.phase() !== 'scanning') {
             <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
                 @if (footerIcon(); as fi) {
                     <span
