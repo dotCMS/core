@@ -6,10 +6,7 @@ function ok(value: unknown, logs: string[] = []): SandboxResult {
     return { success: true, value, logs, executionTime: 1 };
 }
 
-function err(
-    error: { name: string; message: string },
-    logs: string[] = []
-): SandboxResult {
+function err(error: { name: string; message: string }, logs: string[] = []): SandboxResult {
     return { success: false, error, logs, executionTime: 1 };
 }
 

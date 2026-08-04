@@ -79,7 +79,9 @@ export class DotPageSourcesService {
         }
 
         return forkJoin(files.map((file) => this.resolveDiffFile(file, languageId))).pipe(
-            map((results) => results.filter((f): f is PageDiffFile => f !== null).sort(byOriginThenName))
+            map((results) =>
+                results.filter((f): f is PageDiffFile => f !== null).sort(byOriginThenName)
+            )
         );
     }
 

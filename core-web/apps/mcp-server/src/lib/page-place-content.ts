@@ -101,7 +101,9 @@ interface PageSlot {
  * real layout, so a typo fails clearly instead of silently doing nothing. The returned manifest
  * gives a before/after diff per slot and flags any slot that lost content.
  */
-export async function placeContent(options: PagePlaceContentOptions): Promise<PagePlaceContentManifest> {
+export async function placeContent(
+    options: PagePlaceContentOptions
+): Promise<PagePlaceContentManifest> {
     const mode: PlaceMode = options.mode ?? 'merge';
     const variantName = options.variantName ?? DEFAULT_VARIANT;
     const languageId = options.languageId ?? DEFAULT_LANGUAGE_ID;
@@ -122,7 +124,10 @@ export async function placeContent(options: PagePlaceContentOptions): Promise<Pa
     // replace mode we start empty (every slot cleared) and set only what the caller specifies.
     const desired = new Map<string, string[]>();
     for (const slot of slots) {
-        desired.set(slotKey(slot.identifier, slot.uuid), mode === 'replace' ? [] : [...slot.contentlets]);
+        desired.set(
+            slotKey(slot.identifier, slot.uuid),
+            mode === 'replace' ? [] : [...slot.contentlets]
+        );
     }
 
     for (const { assignment, target } of resolved) {
@@ -274,9 +279,7 @@ function containerMatches(identifier: string, wanted: string): boolean {
 
 function describeSlots(slots: PageSlot[]): string {
     if (slots.length === 0) return '(none)';
-    return slots
-        .map((slot, i) => `#${i + 1} ${slot.identifier} [uuid ${slot.uuid}]`)
-        .join('; ');
+    return slots.map((slot, i) => `#${i + 1} ${slot.identifier} [uuid ${slot.uuid}]`).join('; ');
 }
 
 interface PageJsonResponse {

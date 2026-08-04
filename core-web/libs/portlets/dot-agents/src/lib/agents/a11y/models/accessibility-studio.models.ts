@@ -56,13 +56,7 @@ export interface AgentFixRequest {
  * (The picker is a separate route with its own store — see A11yPickerStore — so
  * there is no `picker` phase here.)
  */
-export type StudioPhase =
-    | 'ready'
-    | 'scanning'
-    | 'scanned'
-    | 'fixing'
-    | 'done'
-    | 'published';
+export type StudioPhase = 'ready' | 'scanning' | 'scanned' | 'fixing' | 'done' | 'published';
 
 /** A page row in the picker, projected from a DotCMSContentlet. */
 export interface StudioPageRow {

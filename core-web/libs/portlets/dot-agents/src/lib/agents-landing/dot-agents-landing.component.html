@@ -1,11 +1,11 @@
-<div class="max-w-5xl mx-auto w-full px-6 py-10">
+<div class="mx-auto w-full max-w-5xl px-6 py-10">
     <header class="mb-8">
-        <h1 class="text-2xl font-bold text-color m-0">{{ 'agents.landing.title' | dm }}</h1>
-        <p class="text-color-secondary mt-2 m-0">{{ 'agents.landing.subtitle' | dm }}</p>
+        <h1 class="m-0 text-2xl font-bold text-color">{{ 'agents.landing.title' | dm }}</h1>
+        <p class="text-color-secondary m-0 mt-2">{{ 'agents.landing.subtitle' | dm }}</p>
     </header>
 
     <ul
-        class="list-none p-0 m-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        class="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3"
         data-testid="agents-grid">
         @for (agent of agents; track agent.id) {
             @let available = agent.status === 'available';
@@ -22,9 +22,7 @@
                             [ngTemplateOutletContext]="{ $implicit: agent, available: true }" />
                     </a>
                 } @else {
-                    <div
-                        [attr.data-testid]="'agent-card-' + agent.id"
-                        [attr.aria-disabled]="true">
+                    <div [attr.data-testid]="'agent-card-' + agent.id" [attr.aria-disabled]="true">
                         <ng-container
                             [ngTemplateOutlet]="card"
                             [ngTemplateOutletContext]="{ $implicit: agent, available: false }" />
@@ -43,21 +41,19 @@
         [class.opacity-60]="!available">
         <div class="flex items-start gap-4">
             <span
-                class="flex items-center justify-center size-12 rounded-lg bg-primary-50 text-primary shrink-0">
+                class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary">
                 <i class="text-2xl" [class]="agent.icon"></i>
             </span>
             <div class="min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h2 class="text-base font-semibold text-color m-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="m-0 text-base font-semibold text-color">
                         {{ agent.labelKey | dm }}
                     </h2>
                     @if (!available) {
-                        <p-tag
-                            severity="secondary"
-                            [value]="'agents.status.coming-soon' | dm" />
+                        <p-tag severity="secondary" [value]="'agents.status.coming-soon' | dm" />
                     }
                 </div>
-                <p class="text-sm text-color-secondary mt-1 m-0">
+                <p class="text-color-secondary m-0 mt-1 text-sm">
                     {{ agent.descriptionKey | dm }}
                 </p>
             </div>

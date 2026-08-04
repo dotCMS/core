@@ -42,9 +42,7 @@ function pageJson() {
                             ]
                         },
                         {
-                            columns: [
-                                { containers: [{ identifier: SYSTEM_CONTAINER, uuid: '1' }] }
-                            ]
+                            columns: [{ containers: [{ identifier: SYSTEM_CONTAINER, uuid: '1' }] }]
                         }
                     ]
                 }
@@ -59,7 +57,10 @@ interface PostedEntry {
     contentletsId: string[];
 }
 
-function fakeRuntime(overrides?: { onPost?: (body: unknown, query: unknown) => unknown; page?: unknown }) {
+function fakeRuntime(overrides?: {
+    onPost?: (body: unknown, query: unknown) => unknown;
+    page?: unknown;
+}) {
     const calls: Array<{ method?: string; path: string; body?: unknown; query?: unknown }> = [];
     const request = jest.fn(async (options: RequestOptions) => {
         calls.push({
@@ -279,7 +280,9 @@ describe('placeContent', () => {
             slots: [{ slot: 1, contentlets: [], op: 'set' }] // clears slot #1
         });
 
-        const slot1 = manifest.slots.find((s) => s.uuid === '1' && s.identifier === DEFAULT_CONTAINER);
+        const slot1 = manifest.slots.find(
+            (s) => s.uuid === '1' && s.identifier === DEFAULT_CONTAINER
+        );
         expect(slot1).toMatchObject({ before: ['existing-a'], after: [], changed: true });
         expect(manifest.warnings.some((w) => /lost 1 contentlet.*existing-a/i.test(w))).toBe(true);
     });
@@ -298,19 +301,29 @@ describe('placeContent', () => {
         const { runtime } = fakeRuntime({ page: { entity: {} } });
 
         await expect(
-            placeContent({ dotcms: runtime, path: '/nope', slots: [{ slot: 1, contentlets: ['a'] }] })
+            placeContent({
+                dotcms: runtime,
+                path: '/nope',
+                slots: [{ slot: 1, contentlets: ['a'] }]
+            })
         ).rejects.toThrow(/not found/i);
     });
 
     it('translates a net-loss 409 into an actionable message', async () => {
         const { runtime } = fakeRuntime({
             onPost: () => {
-                throw new Error('Request failed with status 409: net content loss exceeds threshold');
+                throw new Error(
+                    'Request failed with status 409: net content loss exceeds threshold'
+                );
             }
         });
 
         await expect(
-            placeContent({ dotcms: runtime, path: '/about-us', slots: [{ slot: 1, contentlets: ['a'] }] })
+            placeContent({
+                dotcms: runtime,
+                path: '/about-us',
+                slots: [{ slot: 1, contentlets: ['a'] }]
+            })
         ).rejects.toThrow(/net-loss conflict.*Re-read the page and retry/i);
     });
 

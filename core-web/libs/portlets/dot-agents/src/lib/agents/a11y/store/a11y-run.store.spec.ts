@@ -20,7 +20,10 @@ import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
  */
 const MOCK_FIX_STREAM: A11yAgentStreamEvent[] = [
     { type: 'run', runId: 'r_test_123' },
-    { type: 'phase', step: { message: 'Scanning live + working baseline', meta: { phase: 'scan' } } },
+    {
+        type: 'phase',
+        step: { message: 'Scanning live + working baseline', meta: { phase: 'scan' } }
+    },
     { type: 'phase', step: { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } } },
     { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } },
     {
@@ -548,7 +551,9 @@ describe('A11yRunStore', () => {
             store.runScan();
             store.startFix();
             expect(store.fixedResults().every((r) => r.status === 'fixed-to-working')).toBe(true);
-            expect(store.reportedResults().every((r) => r.status !== 'fixed-to-working')).toBe(true);
+            expect(store.reportedResults().every((r) => r.status !== 'fixed-to-working')).toBe(
+                true
+            );
         });
     });
 

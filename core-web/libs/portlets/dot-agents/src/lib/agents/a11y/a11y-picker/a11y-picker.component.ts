@@ -1,11 +1,6 @@
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    inject
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -89,5 +84,4 @@ export class DotA11yPickerComponent {
         const page = Math.floor(first / rows) + 1;
         this.store.setPagination(page, rows);
     }
-
 }

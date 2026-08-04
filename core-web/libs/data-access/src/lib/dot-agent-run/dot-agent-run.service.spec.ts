@@ -103,7 +103,9 @@ describe('DotAgentRunService', () => {
 
         it('maps a progress event to a typed running count', async () => {
             fetchMock.mockResolvedValue(
-                mockSseResponse(['event: progress\ndata: {"baseline":29,"current":3,"cleared":26}\n\n'])
+                mockSseResponse([
+                    'event: progress\ndata: {"baseline":29,"current":3,"cleared":26}\n\n'
+                ])
             );
 
             const events = await firstValueFrom(
@@ -222,9 +224,7 @@ describe('DotAgentRunService', () => {
         });
 
         it('maps aborted to a terminal event carrying the partial result', async () => {
-            fetchMock.mockResolvedValue(
-                mockSseResponse(['event: aborted\ndata: {"total":1}\n\n'])
-            );
+            fetchMock.mockResolvedValue(mockSseResponse(['event: aborted\ndata: {"total":1}\n\n']));
 
             const events = await firstValueFrom(
                 service.run<DemoResult>('/url', {}).pipe(toArray())
@@ -234,9 +234,7 @@ describe('DotAgentRunService', () => {
         });
 
         it('maps an error event to a typed error with a fallback message', async () => {
-            fetchMock.mockResolvedValue(
-                mockSseResponse(['event: error\ndata: {}\n\n'])
-            );
+            fetchMock.mockResolvedValue(mockSseResponse(['event: error\ndata: {}\n\n']));
 
             const events = await firstValueFrom(
                 service.run<DemoResult>('/url', {}).pipe(toArray())
@@ -246,9 +244,7 @@ describe('DotAgentRunService', () => {
         });
 
         it('errors the observable when the response is not ok', async () => {
-            fetchMock.mockResolvedValue(
-                mockSseResponse([], { ok: false, status: 500 })
-            );
+            fetchMock.mockResolvedValue(mockSseResponse([], { ok: false, status: 500 }));
 
             await expect(
                 firstValueFrom(service.run<DemoResult>('/url', {}).pipe(toArray()))

@@ -161,8 +161,7 @@ describe('DotA11yRunComponent', () => {
         issueTypeRows: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'error') : []),
         reviewGroups: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'warning') : []),
         fixedResults: () => report?.results.filter((r) => r.status === 'fixed-to-working') ?? [],
-        reportedResults: () =>
-            report?.results.filter((r) => r.status !== 'fixed-to-working') ?? [],
+        reportedResults: () => report?.results.filter((r) => r.status !== 'fixed-to-working') ?? [],
         fixedCount: () =>
             report?.results.filter((r) => r.status === 'fixed-to-working').length ?? 0,
         reportedCount: () =>
@@ -259,7 +258,9 @@ describe('DotA11yRunComponent', () => {
         currentSiteIdSignal.set('site-1');
         // Report reduced-motion so the score count-up snaps to its final value
         // synchronously (no requestAnimationFrame timing in the DOM assertions).
-        window.matchMedia = jest.fn().mockReturnValue({ matches: true }) as unknown as typeof matchMedia;
+        window.matchMedia = jest
+            .fn()
+            .mockReturnValue({ matches: true }) as unknown as typeof matchMedia;
     });
 
     describe('side panel accordion', () => {
@@ -345,7 +346,9 @@ describe('DotA11yRunComponent', () => {
         it('Publish publishes the page', () => {
             reportFiles(1);
             spectator.click(
-                spectator.query(byTestId('studio-apply-btn'))?.querySelector('button') as HTMLElement
+                spectator
+                    .query(byTestId('studio-apply-btn'))
+                    ?.querySelector('button') as HTMLElement
             );
             expect(publish).toHaveBeenCalled();
         });
@@ -505,9 +508,7 @@ describe('DotA11yRunComponent', () => {
         });
 
         it('shows the Stop scan button and triggers stopScan', () => {
-            const btn = spectator
-                .query(byTestId('studio-stopscan-btn'))
-                ?.querySelector('button');
+            const btn = spectator.query(byTestId('studio-stopscan-btn'))?.querySelector('button');
             expect(btn).toBeTruthy();
             spectator.click(btn as HTMLElement);
             expect(stopScan).toHaveBeenCalled();

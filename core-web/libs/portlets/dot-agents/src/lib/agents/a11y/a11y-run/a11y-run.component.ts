@@ -212,8 +212,7 @@ export class DotA11yRunComponent {
      * scan's violations (see {@link showMarkers}).
      */
     private readonly liveFrame = viewChild<ElementRef<HTMLIFrameElement>>('liveFrame');
-    private readonly previewFrame =
-        viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
+    private readonly previewFrame = viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
 
     /**
      * The page path this run screen is opened against — reconstructed from the
@@ -265,10 +264,7 @@ export class DotA11yRunComponent {
                 this.previewFrame()?.nativeElement,
                 show ? previewGroups : []
             );
-            this.markerService.render(
-                this.liveFrame()?.nativeElement,
-                show ? liveGroups : []
-            );
+            this.markerService.render(this.liveFrame()?.nativeElement, show ? liveGroups : []);
         });
 
         // Roll the ring count up to the live open-count whenever it changes and a
@@ -420,7 +416,6 @@ export class DotA11yRunComponent {
      */
     readonly showMarkers = computed<boolean>(() => this.store.hasResults());
 
-
     /**
      * The section-header label above the scrollable body, by phase:
      *   scanning → "SCAN", scanned → "BY ISSUE TYPE", fixing/done → "AGENT ACTIVITY".
@@ -534,7 +529,6 @@ export class DotA11yRunComponent {
         animation: { duration: 500 }
     };
 
-
     /**
      * The SETTLED bubbles for the shared activity log, via the a11y presenter:
      *   - while fixing → one bubble per streamed SSE `phase` step (the completed
@@ -617,10 +611,7 @@ export class DotA11yRunComponent {
             case 'fixing':
             case 'done':
             case 'published':
-                return [
-                    this.store.fixedCount().toString(),
-                    this.store.reportedCount().toString()
-                ];
+                return [this.store.fixedCount().toString(), this.store.reportedCount().toString()];
             default:
                 return [];
         }
@@ -760,7 +751,6 @@ export class DotA11yRunComponent {
     onSkipCssChange(value: boolean): void {
         this.store.setSkipCss(value);
     }
-
 }
 
 /** Per-rule "why it needs review" i18n keys for the common axe incomplete rules. */

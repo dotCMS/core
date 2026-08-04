@@ -383,9 +383,7 @@ describe('dot-velocity-playground.utils', () => {
                 'boom'
             );
 
-            expect(trace).toBe(
-                ['MethodInvocationException: boom', '    at line 5'].join('\n')
-            );
+            expect(trace).toBe(['MethodInvocationException: boom', '    at line 5'].join('\n'));
         });
 
         it('renders the message alone when structured detail has no type or location', () => {
@@ -442,7 +440,9 @@ describe('dot-velocity-playground.utils', () => {
                         column: 2
                     }
                 ])
-            ).toBe(['1 warning:', '  - [INVALID_METHOD] nope() missing (line 4, column 2)'].join('\n'));
+            ).toBe(
+                ['1 warning:', '  - [INVALID_METHOD] nope() missing (line 4, column 2)'].join('\n')
+            );
         });
 
         it('uses a plural header and omits location when unavailable', () => {

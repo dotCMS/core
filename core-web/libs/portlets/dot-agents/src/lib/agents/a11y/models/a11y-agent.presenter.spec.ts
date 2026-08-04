@@ -9,7 +9,8 @@ describe('A11yAgentPresenter', () => {
     beforeEach(() => {
         // Echo the key + args so assertions can check what was requested.
         const dm = {
-            get: (key: string, ...args: string[]) => (args.length ? `${key}(${args.join(',')})` : key)
+            get: (key: string, ...args: string[]) =>
+                args.length ? `${key}(${args.join(',')})` : key
         } as unknown as DotMessageService;
         presenter = new A11yAgentPresenter(dm);
     });

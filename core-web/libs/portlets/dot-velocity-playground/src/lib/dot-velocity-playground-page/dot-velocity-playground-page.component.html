@@ -133,7 +133,7 @@
                     data-testid="velocity-playground-error-banner">
                     <div class="flex w-full flex-col gap-1">
                         <span
-                            class="wrap-break-word font-medium"
+                            class="font-medium wrap-break-word"
                             data-testid="velocity-playground-error-message">
                             {{ $errorSummary() }}
                         </span>
@@ -181,7 +181,9 @@
                     }"
                     data-testid="velocity-playground-warnings-banner">
                     <div class="flex w-full flex-col gap-1">
-                        <span class="font-medium" data-testid="velocity-playground-warnings-summary">
+                        <span
+                            class="font-medium"
+                            data-testid="velocity-playground-warnings-summary">
                             {{
                                 'velocityPlayground.warnings.summary'
                                     | dm: ['' + store.warnings().length]

@@ -46,7 +46,12 @@ describe('DotAgentMessageComponent', () => {
     });
 
     it('omits the sub-line when absent', () => {
-        spectator.setInput('message', { id: 2, icon: 'pi pi-search', text: 'Scanning', tone: 'info' });
+        spectator.setInput('message', {
+            id: 2,
+            icon: 'pi pi-search',
+            text: 'Scanning',
+            tone: 'info'
+        });
         expect(spectator.element).not.toHaveText('·');
     });
 

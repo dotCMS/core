@@ -8,7 +8,13 @@ import { AgentMessage } from '../../models/agent-message';
 
 const MESSAGES: AgentMessage[] = [
     { id: 1, icon: 'pi pi-search', text: 'Scanning page', tone: 'info' },
-    { id: 2, icon: 'pi pi-check', text: 'Fixed alt text', sub: 'image-alt · hero.vtl', tone: 'success' },
+    {
+        id: 2,
+        icon: 'pi pi-check',
+        text: 'Fixed alt text',
+        sub: 'image-alt · hero.vtl',
+        tone: 'success'
+    },
     { id: 3, icon: 'pi pi-flag', text: 'Reported contrast', tone: 'warning' }
 ];
 

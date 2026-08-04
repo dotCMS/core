@@ -94,14 +94,22 @@ describe('buildManifest verdicts', () => {
 
     it('verdict "empty-vtl-error" when content is placed but the slot rendered empty', () => {
         const m = manifestFrom(renderResponse({ slot1Html: '   ', slot1Content: 2 }));
-        expect(slot(m, '1')).toMatchObject({ rendered: false, verdict: 'empty-vtl-error', contentCount: 2 });
+        expect(slot(m, '1')).toMatchObject({
+            rendered: false,
+            verdict: 'empty-vtl-error',
+            contentCount: 2
+        });
         expect(m.warnings.some((w) => /vtl.*failed.*\/api\/vtl\/dynamic/i.test(w))).toBe(true);
         expect(m.diagnosis).toMatch(/VTL error.*\/api\/vtl\/dynamic/i);
     });
 
     it('verdict "empty-no-content" when the slot resolved but nothing is placed', () => {
         const m = manifestFrom(renderResponse({ slot1Html: '', slot1Content: 0 }));
-        expect(slot(m, '1')).toMatchObject({ rendered: false, verdict: 'empty-no-content', contentCount: 0 });
+        expect(slot(m, '1')).toMatchObject({
+            rendered: false,
+            verdict: 'empty-no-content',
+            contentCount: 0
+        });
         expect(m.warnings.some((w) => /no content.*page_place_content/i.test(w))).toBe(true);
     });
 
@@ -141,10 +149,9 @@ describe('buildManifest verdicts', () => {
     });
 
     it('WORKING mode that renders warns the result reflects unpublished edits', () => {
-        const m = manifestFrom(
-            renderResponse({ slot1Html: '<div>draft</div>', slot1Content: 1 }),
-            { mode: 'WORKING' }
-        );
+        const m = manifestFrom(renderResponse({ slot1Html: '<div>draft</div>', slot1Content: 1 }), {
+            mode: 'WORKING'
+        });
         expect(m.warnings.some((w) => /WORKING.*unpublished.*LIVE/i.test(w))).toBe(true);
     });
 
@@ -189,7 +196,9 @@ describe('verifyPage', () => {
                 if (over?.renderThrows) {
                     throw over.renderThrows;
                 }
-                return over?.render ?? renderResponse({ slot1Html: '<div>x</div>', slot1Content: 1 });
+                return (
+                    over?.render ?? renderResponse({ slot1Html: '<div>x</div>', slot1Content: 1 })
+                );
             }
             return {};
         });

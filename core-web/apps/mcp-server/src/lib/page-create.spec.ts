@@ -119,7 +119,12 @@ describe('createPage', () => {
         onFire?: (body: unknown, query: unknown) => unknown;
         onLive?: () => unknown;
         contentTypes?: FakeContentType[];
-        sites?: Array<{ identifier: string; hostname: string; isDefault: boolean; archived: boolean }>;
+        sites?: Array<{
+            identifier: string;
+            hostname: string;
+            isDefault: boolean;
+            archived: boolean;
+        }>;
     }) {
         const contentTypes = handlers.contentTypes ?? [HTMLPAGE_ASSET];
         const sites = handlers.sites ?? [DEMO_SITE];
@@ -135,9 +140,7 @@ describe('createPage', () => {
                 const idOrVar = decodeURIComponent(
                     options.path.replace('/api/v1/contenttype/id/', '')
                 );
-                const ct = contentTypes.find(
-                    (c) => c.id === idOrVar || c.variable === idOrVar
-                );
+                const ct = contentTypes.find((c) => c.id === idOrVar || c.variable === idOrVar);
                 return { entity: ct ?? {} };
             }
             if (options.path.startsWith('/api/v1/folder/createfolders/')) {
@@ -509,9 +512,7 @@ describe('createPage', () => {
 
         it('rejects a content type that is not a page (wrong base type)', async () => {
             const { runtime } = fakeRuntime({
-                contentTypes: [
-                    { id: 'ct-blog', variable: 'Blog', baseType: 'CONTENT', fields: [] }
-                ]
+                contentTypes: [{ id: 'ct-blog', variable: 'Blog', baseType: 'CONTENT', fields: [] }]
             });
 
             await expect(

@@ -219,7 +219,10 @@ describe('resolveRef sandbox helper', () => {
                 },
                 Theme: { type: 'object', properties: { name: { type: 'string' } } },
                 // self-referential — bounded depth must terminate
-                Node: { type: 'object', properties: { child: { $ref: '#/components/schemas/Node' } } }
+                Node: {
+                    type: 'object',
+                    properties: { child: { $ref: '#/components/schemas/Node' } }
+                }
             }
         }
     };
@@ -233,7 +236,9 @@ describe('resolveRef sandbox helper', () => {
         const result = await runWithSpec(`return resolveRef('Page', 2);`);
         expect(result.success).toBe(true);
         const value = result.value as {
-            properties: { template: { properties: { theme: { $ref?: string; properties?: unknown } } } };
+            properties: {
+                template: { properties: { theme: { $ref?: string; properties?: unknown } } };
+            };
         };
         // depth 2: Page → Template → Theme all expanded (Theme has no further refs)
         expect(value.properties.template.properties.theme.properties).toBeDefined();
@@ -247,9 +252,7 @@ describe('resolveRef sandbox helper', () => {
             properties: { template: { properties: { theme: { $ref?: string } } } };
         };
         // depth 1: Page → Template expanded, but Template's theme ref is left unresolved
-        expect(value.properties.template.properties.theme.$ref).toBe(
-            '#/components/schemas/Theme'
-        );
+        expect(value.properties.template.properties.theme.$ref).toBe('#/components/schemas/Theme');
     });
 
     it('terminates on a self-referential schema', async () => {

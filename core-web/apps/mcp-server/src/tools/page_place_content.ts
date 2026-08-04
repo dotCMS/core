@@ -67,16 +67,8 @@ export const schema = {
                 'slot is just an array of one. Each entry: { slot, contentlets, op? }.'
         ),
     // ── scope ──
-    variantName: z
-        .string()
-        .optional()
-        .describe('Variant to write to. Default "DEFAULT".'),
-    languageId: z
-        .number()
-        .int()
-        .positive()
-        .optional()
-        .describe('Language id. Default 1.'),
+    variantName: z.string().optional().describe('Variant to write to. Default "DEFAULT".'),
+    languageId: z.number().int().positive().optional().describe('Language id. Default 1.'),
     mode: z
         .enum(['merge', 'replace'])
         .optional()

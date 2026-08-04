@@ -121,7 +121,9 @@ describe('DotA11yDiffViewerComponent', () => {
         spectator.component.closed.subscribe(() => (closed = true));
 
         spectator.click(
-            spectator.query(byTestId('diff-viewer-close-btn'))?.querySelector('button') as HTMLElement
+            spectator
+                .query(byTestId('diff-viewer-close-btn'))
+                ?.querySelector('button') as HTMLElement
         );
         expect(closed).toBe(true);
     });

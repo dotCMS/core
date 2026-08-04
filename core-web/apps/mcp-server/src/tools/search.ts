@@ -94,6 +94,7 @@ export default async function handler(
     const result = await dotcms.run(code);
 
     return formatSandboxResult(result, {
-        truncationHint: 'Use resolveRef(schemaOrName, depth) to expand one schema at a bounded depth.'
+        truncationHint:
+            'Use resolveRef(schemaOrName, depth) to expand one schema at a bounded depth.'
     });
 }

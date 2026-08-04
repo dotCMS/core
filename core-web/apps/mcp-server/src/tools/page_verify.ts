@@ -20,12 +20,7 @@ export const schema = {
                 'Only a NON-default site needs this; the tool resolves it to the host_id the ' +
                 'endpoint requires.'
         ),
-    languageId: z
-        .number()
-        .int()
-        .positive()
-        .optional()
-        .describe('Language id. Default 1.'),
+    languageId: z.number().int().positive().optional().describe('Language id. Default 1.'),
     mode: z
         .enum(['LIVE', 'WORKING'])
         .optional()

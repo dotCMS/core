@@ -1,9 +1,4 @@
-import {
-    byTestId,
-    createComponentFactory,
-    mockProvider,
-    Spectator
-} from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
@@ -166,9 +161,7 @@ describe('DotA11yDiffComponent', () => {
         spectator.component.fileSelected.subscribe((f) => emitted.push(f));
 
         // A publish makes working == live, so the file leaves the list.
-        spectator
-            .inject(DotPageSourcesService)
-            .getDiffFiles.mockReturnValue(of([DIFF_FILES[1]]));
+        spectator.inject(DotPageSourcesService).getDiffFiles.mockReturnValue(of([DIFF_FILES[1]]));
         previewRevision.set(1);
         spectator.detectChanges();
 
@@ -180,9 +173,7 @@ describe('DotA11yDiffComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotPageSourcesService, {
-                    getPageSources: jest
-                        .fn()
-                        .mockReturnValue(of(DIFF_FILES as PageSourceFile[])),
+                    getPageSources: jest.fn().mockReturnValue(of(DIFF_FILES as PageSourceFile[])),
                     getDiffFiles: jest.fn().mockReturnValue(of(DIFF_FILES))
                 })
             ]

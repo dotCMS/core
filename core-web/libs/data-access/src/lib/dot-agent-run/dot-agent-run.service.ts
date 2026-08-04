@@ -195,9 +195,7 @@ export class DotAgentRunService {
 
                 // Emit under the frame's own name so callers can distinguish the
                 // modern `phase` stream from the legacy `step` stream if needed.
-                return event === 'phase'
-                    ? { type: 'phase', step }
-                    : { type: 'step', step };
+                return event === 'phase' ? { type: 'phase', step } : { type: 'step', step };
             }
             case 'progress': {
                 const num = (key: string): number =>
@@ -217,8 +215,7 @@ export class DotAgentRunService {
                 const changedFiles = raw
                     .map((f) => f as Record<string, unknown>)
                     .filter(
-                        (f) =>
-                            typeof f['path'] === 'string' && typeof f['identifier'] === 'string'
+                        (f) => typeof f['path'] === 'string' && typeof f['identifier'] === 'string'
                     )
                     .map((f) => ({
                         path: f['path'] as string,

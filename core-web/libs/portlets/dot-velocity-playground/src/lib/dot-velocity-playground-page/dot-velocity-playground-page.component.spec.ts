@@ -181,9 +181,11 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             setup(
                 {
                     hasError: jest.fn().mockReturnValue(true),
-                    error: jest
-                        .fn()
-                        .mockReturnValue({ message: 'Velocity failed', structured: null, warnings: [] }),
+                    error: jest.fn().mockReturnValue({
+                        message: 'Velocity failed',
+                        structured: null,
+                        warnings: []
+                    }),
                     status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
                 },
                 (key: string) => key
@@ -202,7 +204,9 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             setup(
                 {
                     hasError: jest.fn().mockReturnValue(true),
-                    error: jest.fn().mockReturnValue({ message: multi, structured: null, warnings: [] }),
+                    error: jest
+                        .fn()
+                        .mockReturnValue({ message: multi, structured: null, warnings: [] }),
                     status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
                 },
                 (key: string) => key
@@ -247,9 +251,11 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         it('renders the error trace pane instead of the output editor on error', () => {
             setup({
                 hasError: jest.fn().mockReturnValue(true),
-                error: jest
-                    .fn()
-                    .mockReturnValue({ message: 'Velocity failed', structured: null, warnings: [] }),
+                error: jest.fn().mockReturnValue({
+                    message: 'Velocity failed',
+                    structured: null,
+                    warnings: []
+                }),
                 status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
             });
 

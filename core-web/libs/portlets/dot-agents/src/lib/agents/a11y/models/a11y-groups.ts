@@ -41,7 +41,10 @@ export function buildA11yGroups(data: PageScannerA11yResponse | null): A11yGroup
     if (!axe) {
         return [];
     }
-    return [...mapRules(axe.violations ?? [], 'error'), ...mapRules(axe.incomplete ?? [], 'warning')];
+    return [
+        ...mapRules(axe.violations ?? [], 'error'),
+        ...mapRules(axe.incomplete ?? [], 'warning')
+    ];
 }
 
 function mapRules(rules: AxeRule[], type: A11yFindingType): A11yGroup[] {

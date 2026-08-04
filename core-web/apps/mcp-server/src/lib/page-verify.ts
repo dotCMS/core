@@ -109,9 +109,7 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
 
     // Resolve the site to a host_id ONLY when one was given. Absent → the backend uses the default
     // site, and we send no host_id (the render endpoint's documented default behavior).
-    const resolvedSite = options.site
-        ? await resolveSite(options.dotcms, options.site)
-        : undefined;
+    const resolvedSite = options.site ? await resolveSite(options.dotcms, options.site) : undefined;
 
     const uri = options.path.trim().startsWith('/')
         ? options.path.trim()
@@ -187,9 +185,7 @@ export function buildManifest(input: {
                 if (!container || !uuid) {
                     continue;
                 }
-                slots.push(
-                    classifySlot(containers, container, uuid, pageRendered)
-                );
+                slots.push(classifySlot(containers, container, uuid, pageRendered));
             }
         }
     }
@@ -256,9 +252,7 @@ function resolveUrlMap(
         return null;
     }
     const contentletId = urlContentMap.identifier;
-    return contentletId
-        ? { resolved: true, contentletId }
-        : { resolved: false };
+    return contentletId ? { resolved: true, contentletId } : { resolved: false };
 }
 
 function collectWarnings(

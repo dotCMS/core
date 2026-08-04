@@ -38,9 +38,7 @@ export function formatSandboxResult(
         out = `Error: ${errorMsg}${logs}`;
     } else {
         const value =
-            typeof result.value === 'string'
-                ? result.value
-                : JSON.stringify(result.value, null, 2);
+            typeof result.value === 'string' ? result.value : JSON.stringify(result.value, null, 2);
         const logs = result.logs.length > 0 ? `\n\n--- Logs ---\n${result.logs.join('\n')}` : '';
         out = `${value}${logs}`;
     }

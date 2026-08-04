@@ -698,7 +698,6 @@ function splitTopLevelCommas(group: string): string[] {
     return parts;
 }
 
-
 function extractContentlets(response: unknown): AssetContentlet[] {
     const root = response as {
         entity?: {

@@ -33,7 +33,9 @@ describe('DotAgentsLandingComponent', () => {
     });
 
     it('renders a card per registered agent', () => {
-        const cards = DOT_AGENTS.map((agent) => spectator.query(byTestId(`agent-card-${agent.id}`)));
+        const cards = DOT_AGENTS.map((agent) =>
+            spectator.query(byTestId(`agent-card-${agent.id}`))
+        );
         expect(cards.every(Boolean)).toBe(true);
         expect(cards.length).toBe(DOT_AGENTS.length);
     });

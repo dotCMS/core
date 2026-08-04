@@ -128,7 +128,9 @@ describe('matchesPattern', () => {
     });
 
     it('matches ** across multiple segments', () => {
-        expect(matchesPattern('/api/v1/workflow/tasks/a/b', '/api/v1/workflow/tasks/**')).toBe(true);
+        expect(matchesPattern('/api/v1/workflow/tasks/a/b', '/api/v1/workflow/tasks/**')).toBe(
+            true
+        );
     });
 
     it('is anchored at both ends', () => {
@@ -187,10 +189,12 @@ describe('transformSpec', () => {
         expect((jersey.properties as Record<string, unknown>).file).toBeDefined();
 
         const curated = (
-            (paths['/api/v1/workflow/actions/firemultipart'].put.requestBody as Record<
-                string,
-                unknown
-            >).content as Record<string, Record<string, unknown>>
+            (
+                paths['/api/v1/workflow/actions/firemultipart'].put.requestBody as Record<
+                    string,
+                    unknown
+                >
+            ).content as Record<string, Record<string, unknown>>
         )['multipart/form-data'].schema as Record<string, unknown>;
         expect(curated.$ref).toBe('#/components/schemas/WorkflowActionMultipartSchema');
     });
@@ -217,10 +221,12 @@ describe('transformSpec', () => {
         const paths = spec.paths as Record<string, Record<string, Record<string, unknown>>>;
         const respSchema = (
             (
-                (paths['/api/v2/tags/import'].post.responses as Record<string, Record<string, unknown>>)
-                    ['200'].content as Record<string, Record<string, unknown>>
-            )['application/json'].schema
-        ) as Record<string, unknown>;
+                paths['/api/v2/tags/import'].post.responses as Record<
+                    string,
+                    Record<string, unknown>
+                >
+            )['200'].content as Record<string, Record<string, unknown>>
+        )['application/json'].schema as Record<string, unknown>;
         expect(respSchema.$ref).toBe('#/components/schemas/Missing');
     });
 

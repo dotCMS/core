@@ -245,9 +245,7 @@ async function resolvePageContentType(
     const wanted = (requested ?? DEFAULT_PAGE_CONTENT_TYPE).trim();
 
     const context = await dotcms.loadContext();
-    const summary = context.contentTypes.find(
-        (ct) => ct.variable === wanted || ct.id === wanted
-    );
+    const summary = context.contentTypes.find((ct) => ct.variable === wanted || ct.id === wanted);
 
     // Computed lazily — the happy path never needs the list of page types for an error message.
     const availablePageTypes = () =>

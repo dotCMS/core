@@ -1,10 +1,4 @@
-import {
-    patchState,
-    signalStore,
-    withComputed,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { EMPTY, Subscription } from 'rxjs';
 
 import { computed, inject } from '@angular/core';

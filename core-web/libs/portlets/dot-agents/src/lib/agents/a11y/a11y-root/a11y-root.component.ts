@@ -15,7 +15,9 @@ import { RouterOutlet } from '@angular/router';
     selector: 'dot-a11y',
     standalone: true,
     imports: [RouterOutlet],
-    template: `<router-outlet />`,
+    template: `
+        <router-outlet />
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 block bg-surface-100' }
 })

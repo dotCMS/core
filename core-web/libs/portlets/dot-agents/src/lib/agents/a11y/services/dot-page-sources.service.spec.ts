@@ -1,8 +1,4 @@
-import {
-    createHttpFactory,
-    HttpMethod,
-    SpectatorHttp
-} from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
 import { DotPageSourcesService } from './dot-page-sources.service';
 
@@ -16,8 +12,16 @@ const RENDER_SOURCES: PageRenderSourcesView = {
         name: 'awazon',
         folderPath: '//demo/application/themes/awazon/',
         files: [
-            { path: '//demo/application/themes/awazon/css/awazon.css', identifier: 'css-1', extension: 'css' },
-            { path: '//demo/application/themes/awazon/header.vtl', identifier: 'vtl-theme-1', extension: 'vtl' }
+            {
+                path: '//demo/application/themes/awazon/css/awazon.css',
+                identifier: 'css-1',
+                extension: 'css'
+            },
+            {
+                path: '//demo/application/themes/awazon/header.vtl',
+                identifier: 'vtl-theme-1',
+                extension: 'vtl'
+            }
         ]
     },
     containers: {
@@ -236,7 +240,9 @@ describe('DotPageSourcesService', () => {
                     '/api/v1/content/versions?identifier=vtl-1&groupByLang=1',
                     HttpMethod.GET
                 )
-                .flush(versionsResponse([{ inode: 'working-inode', working: true, languageId: 1 }]));
+                .flush(
+                    versionsResponse([{ inode: 'working-inode', working: true, languageId: 1 }])
+                );
 
             expect(result).toEqual([]);
         });
