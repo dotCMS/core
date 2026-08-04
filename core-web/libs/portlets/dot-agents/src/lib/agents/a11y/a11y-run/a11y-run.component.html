@@ -26,21 +26,34 @@
          the changed files (list + discard/publish). `multiple` so they open and close
          independently — a run can be watched while reviewing the files it touched.
          The scanner starts open (it's the entry point); files start collapsed. -->
+    <!-- The accordion is a flex column that fills the aside; the panel HEADERS stay
+         put and each open panel's CONTENT scrolls on its own (see below), rather
+         than the whole accordion scrolling as one block. -->
     <p-accordion
         [multiple]="true"
         [(value)]="openPanels"
-        styleClass="min-h-0 flex-1 overflow-y-auto"
+        styleClass="flex min-h-0 flex-1 flex-col"
         data-testid="studio-panels">
         <!-- ---------- PANEL 1: SCANNER ---------- -->
+        <!-- The scanner is the tall panel: while open it grows to take the remaining
+             height and its own content scrolls; while collapsed it's just a header. -->
         <p-accordion-panel
             value="scanner"
+            [class.flex]="isPanelOpen('scanner')"
+            [class.min-h-0]="isPanelOpen('scanner')"
+            [class.flex-col]="isPanelOpen('scanner')"
+            [class.flex-1]="isPanelOpen('scanner')"
             data-testid="studio-panel-scanner">
             <p-accordion-header>
                 <span data-testid="studio-panel-scanner-title">
                     {{ 'accessibility.studio.panel.scanner' | dm }}
                 </span>
             </p-accordion-header>
-            <p-accordion-content [pt]="{ content: { class: '!p-0' } }">
+            <p-accordion-content
+                [pt]="{
+                    root: { class: 'min-h-0 flex-1' },
+                    content: { class: '!p-0 min-h-0 h-full overflow-y-auto' }
+                }">
                 <div class="flex flex-col" data-testid="studio-panel-scanner-body">
     <!-- Score widget SKELETON — shown while scanning, with the SAME footprint as
          the real widget so the swap to results is a crossfade with no layout shift. -->
@@ -455,15 +468,20 @@
         </p-accordion-panel>
 
         <!-- ---------- PANEL 2: CHANGED FILES ---------- -->
+        <!-- Typically short: takes its content height, but its OWN content scrolls
+             once it passes 400px so a long file list never pushes the panel past
+             that or hijacks the scanner's space. flex-none = never grows. -->
         <p-accordion-panel
             value="files"
+            class="flex-none"
             data-testid="studio-panel-files">
             <p-accordion-header>
                 <span data-testid="studio-panel-files-title">
                     {{ 'accessibility.studio.panel.files' | dm }}
                 </span>
             </p-accordion-header>
-            <p-accordion-content [pt]="{ content: { class: '!p-0' } }">
+            <p-accordion-content
+                [pt]="{ content: { class: '!p-0 max-h-[400px] overflow-y-auto' } }">
                 <div class="px-4 pb-4" data-testid="studio-panel-files-body">
                     <dot-a11y-diff
                         [activeFileId]="diffFile()?.identifier ?? null"

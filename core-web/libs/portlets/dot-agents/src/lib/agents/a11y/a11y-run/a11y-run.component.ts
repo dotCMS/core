@@ -103,6 +103,26 @@ interface SeverityRow {
                     animation: none;
                 }
             }
+
+            /* Make the OPEN scanner panel's content scroll in place (headers stay put)
+               instead of the whole accordion scrolling. PrimeNG's collapse animation
+               wraps the content in a grid + <p-motion> + wrapper that its [pt] API
+               can't reach; those must be min-height:0 (and the grid row a
+               shrinkable minmax(0,1fr)) so the innermost content — which carries
+               overflow-y:auto via [pt] — can be bounded shorter than its content and
+               scroll. Scoped to this component's accordion. */
+            :host ::ng-deep [data-testid='studio-panels'] .p-accordioncontent {
+                min-height: 0;
+                grid-template-rows: minmax(0, 1fr);
+            }
+
+            :host ::ng-deep [data-testid='studio-panels'] .p-accordioncontent p-motion,
+            :host
+                ::ng-deep
+                [data-testid='studio-panels']
+                .p-accordioncontent-wrapper {
+                min-height: 0;
+            }
         `
     ],
     // The run store + the services it drives are provided HERE (not at the root),
