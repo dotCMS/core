@@ -35,6 +35,22 @@
                                 help
                             </span>
                         </p-button>
+                        <p-button
+                            text
+                            rounded
+                            size="small"
+                            [pTooltip]="'velocityPlayground.action.clearQuery' | dm"
+                            tooltipPosition="top"
+                            [attr.aria-label]="'velocityPlayground.action.clearQuery' | dm"
+                            [disabled]="!store.code()"
+                            (onClick)="store.clearPersistedQuery()"
+                            data-testid="velocity-playground-clear-query-btn">
+                            <span
+                                class="material-symbols-rounded text-lg! leading-none"
+                                aria-hidden="true">
+                                ink_eraser
+                            </span>
+                        </p-button>
                     </div>
                 </ng-template>
                 <ng-template pTemplate="icons">

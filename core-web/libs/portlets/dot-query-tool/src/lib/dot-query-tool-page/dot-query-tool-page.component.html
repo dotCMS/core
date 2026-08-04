@@ -27,6 +27,22 @@
                                 help
                             </span>
                         </p-button>
+                        <p-button
+                            text
+                            rounded
+                            size="small"
+                            [pTooltip]="'queryTool.action.clearQuery' | dm"
+                            tooltipPosition="top"
+                            [attr.aria-label]="'queryTool.action.clearQuery' | dm"
+                            [disabled]="!store.query()"
+                            (onClick)="store.clearPersistedQuery()"
+                            data-testid="query-tool-clear-query-btn">
+                            <span
+                                class="material-symbols-rounded text-lg! leading-none"
+                                aria-hidden="true">
+                                ink_eraser
+                            </span>
+                        </p-button>
                     </div>
                 </ng-template>
             </p-panel>

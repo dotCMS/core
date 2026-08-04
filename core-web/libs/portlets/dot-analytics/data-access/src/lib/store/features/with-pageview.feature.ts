@@ -372,7 +372,6 @@ export function withPageview() {
                                 .getPageviewsByDeviceBrowser({
                                     ...rangeParams,
                                     groupBy: 'device',
-                                    eventType: 'pageview',
                                     siteId: currentSiteId
                                 })
                                 .pipe(
@@ -434,7 +433,6 @@ export function withPageview() {
                                 .getPageviewsByDeviceBrowser({
                                     ...rangeParams,
                                     groupBy: 'browser',
-                                    eventType: 'pageview',
                                     siteId: currentSiteId
                                 })
                                 .pipe(

@@ -19,7 +19,8 @@ import {
     DotCurrentUserService,
     DotEsSearchService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    withPersistedQuery
 } from '@dotcms/data-access';
 import { ComponentStatus, ESSearchParams, ESSearchResponse } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
@@ -59,6 +60,7 @@ const initialState: ESSearchState = {
 
 export const DotEsSearchStore = signalStore(
     withState<ESSearchState>(initialState),
+    withPersistedQuery({ portletKey: 'es-search', field: 'query' }),
     withComputed((store) => ({
         contentlets: computed(() => store.response()?.contentlets ?? []),
         hits: computed(() =>
