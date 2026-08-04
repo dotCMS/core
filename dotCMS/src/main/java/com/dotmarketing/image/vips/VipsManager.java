@@ -65,7 +65,7 @@ public final class VipsManager {
      * @return true if libvips is both enabled by config and physically available.
      */
     public static boolean isEnabled() {
-        return Config.getBooleanProperty(USE_LIBVIPS, false) && isAvailable();
+        return Config.getBooleanProperty(USE_LIBVIPS, true) && isAvailable();
     }
 
     /**
