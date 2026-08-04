@@ -107,21 +107,48 @@ interface SeverityRow {
             /* Make the OPEN scanner panel's content scroll in place (headers stay put)
                instead of the whole accordion scrolling. PrimeNG's collapse animation
                wraps the content in a grid + <p-motion> + wrapper that its [pt] API
-               can't reach; those must be min-height:0 (and the grid row a
-               shrinkable minmax(0,1fr)) so the innermost content — which carries
-               overflow-y:auto via [pt] — can be bounded shorter than its content and
-               scroll. Scoped to this component's accordion. */
+               can't reach; those need min-height:0 so the innermost content — which
+               carries overflow-y:auto via [pt] — can be bounded and scroll.
+               The wrapper also gets overflow:hidden: the inner content's own
+               overflow-y:auto would otherwise escape the collapsed (0-height) panel
+               and make the whole page scroll. Scoped to this component's accordion. */
             :host ::ng-deep [data-testid='studio-panels'] .p-accordioncontent {
                 min-height: 0;
-                grid-template-rows: minmax(0, 1fr);
+                /* Clip the content to its grid row. When collapsed PrimeNG animates
+                   the row to 0; without this the content overflows that 0-height cell
+                   and scrolls the whole page. The open panel scrolls via its inner
+                   content's overflow-y (below), not this box. */
+                overflow: hidden;
             }
 
-            :host ::ng-deep [data-testid='studio-panels'] .p-accordioncontent p-motion,
+            :host ::ng-deep [data-testid='studio-panels'] .p-accordioncontent p-motion {
+                min-height: 0;
+            }
+
+            :host ::ng-deep [data-testid='studio-panels'] .p-accordioncontent-wrapper {
+                min-height: 0;
+            }
+
+            /* Both the shrinkable grid row (lets content be bounded shorter than its
+               natural height) and the scroll live ONLY on the ACTIVE panel. On a
+               collapsed panel PrimeNG animates the grid row to 0; leaving the row
+               shrinkable or the content scrollable there would let the content escape
+               the 0-height cell and scroll the whole page. */
             :host
                 ::ng-deep
                 [data-testid='studio-panels']
-                .p-accordioncontent-wrapper {
+                .p-accordionpanel-active
+                .p-accordioncontent {
+                grid-template-rows: minmax(0, 1fr);
+            }
+
+            :host
+                ::ng-deep
+                [data-testid='studio-panels']
+                .p-accordionpanel-active
+                .p-accordioncontent-content {
                 min-height: 0;
+                overflow-y: auto;
             }
         `
     ],
