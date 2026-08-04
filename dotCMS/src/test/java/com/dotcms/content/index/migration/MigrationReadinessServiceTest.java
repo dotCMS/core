@@ -142,6 +142,67 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertTrue(r.verdict().safeToAdvance());
     }
 
+    /**
+     * Phase 0: OpenSearch counterparts do not exist yet by design, so they must NOT inflate
+     * outOfSyncCount — a non-zero count next to a "nothing to reconcile yet" summary reads as a
+     * contradiction to the technician.
+     */
+    @Test
+    public void phase0_missingOsCounterparts_notCountedAsOutOfSync() {
+        setPhase(PHASE_0);
+        when(content.statuses()).thenReturn(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 10, false, 0),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 5, false, 0)));
+        when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, 100, false, 0)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertTrue(r.verdict().safeToAdvance());
+        assertTrue(r.verdict().blockers().isEmpty());
+        assertEquals(0, r.verdict().outOfSyncCount());
+    }
+
+    /**
+     * Phase 0 does not blanket-silence the count: an OpenSearch copy that exists while Elasticsearch's
+     * is gone is unexpected even before the migration starts, and still counts.
+     */
+    @Test
+    public void phase0_unexpectedMismatch_stillCountedAsOutOfSync() {
+        setPhase(PHASE_0);
+        when(siteSearch.statuses()).thenReturn(List.of(
+                ss("orphan", false, 0, true, 40), // OS copy with no ES source
+                ss("drifted", true, 100, true, 90))); // both present, counts differ
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals(2, r.verdict().outOfSyncCount());
+    }
+
+    /**
+     * An unmeasurable OpenSearch count (-1) must not read as "ES is ahead": {@code 100 < -1} is false, so
+     * a naive comparison would return a false green while OpenSearch may hold more documents.
+     */
+    @Test
+    public void unknownOsCount_notSafeToRollback() {
+        setPhase(PHASE_2);
+        when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, 100, true, -1)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToRollback());
+    }
+
+    /** An unmeasurable Elasticsearch count is equally unsafe to roll back to. */
+    @Test
+    public void unknownEsCount_notSafeToRollback() {
+        setPhase(PHASE_2);
+        when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, -1, true, -1)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToRollback());
+    }
+
     /** Phase 3: not a dual-write phase; write engine is OpenSearch only. */
     @Test
     public void phase3_notDualWrite_openSearchOnly() {

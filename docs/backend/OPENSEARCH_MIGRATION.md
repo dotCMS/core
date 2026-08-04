@@ -389,7 +389,14 @@ through the write-path gate above.
   unsafe when any index's ES copy is behind its OpenSearch counterpart (`esDocCount < osDocCount`, or
   the ES copy missing) — that delta, typically content written while OpenSearch served reads, would be
   silently absent after the downgrade until a full reindex. That is derivable from the same snapshot,
-  so no per-phase state is persisted.
+  so no per-phase state is persisted. An **unmeasurable** count on either engine (reported as `-1`)
+  also makes it unsafe: it is never compared numerically, because `100 < -1` would otherwise read as
+  a green while OpenSearch may hold more documents.
+- **`outOfSyncCount` is phase-aware.** In Phase 0 the OpenSearch counterparts have not been built yet
+  — they are created during dual-write — so a missing OpenSearch copy is the expected state and is not
+  counted; otherwise the count would contradict the "nothing to reconcile yet" summary next to it. Any
+  *other* mismatch (an OpenSearch index with no ES source, a drift between two existing copies) is
+  still unexpected in Phase 0 and stays counted and named in the summary.
 
 Because this endpoint is the source of truth for migration/QA, the index portlets no longer reveal
 `.os` indices by role: `MigrationIndexVisibility` is now purely phase-based (hidden in Phases 0/1/2,

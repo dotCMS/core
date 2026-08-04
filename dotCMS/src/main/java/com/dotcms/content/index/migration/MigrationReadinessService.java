@@ -24,9 +24,10 @@ import java.util.stream.Collectors;
  *       (counterparts are built during dual-write) and in Phase 3 there is no further phase — both report
  *       safe with an explanatory summary.</li>
  *   <li><b>Rollback</b> (downgrade): a downgrade ultimately routes reads back to Elasticsearch
- *       (Phases 0/1), so it is unsafe when any index's ES copy is behind its OpenSearch counterpart — that
- *       delta (typically content written while OpenSearch served reads) would be silently missing
- *       until a full reindex. Derived from the same live counts, so no historical state is needed.</li>
+ *       (Phases 0/1), so it is unsafe when any index's ES copy is missing, behind its OpenSearch
+ *       counterpart, or when either count could not be measured — that delta (typically content written
+ *       while OpenSearch served reads) would be silently missing until a full reindex. Derived from the
+ *       same live counts, so no historical state is needed.</li>
  * </ul>
  */
 public class MigrationReadinessService {
@@ -60,13 +61,10 @@ public class MigrationReadinessService {
         all.addAll(siteSearch);
 
         final List<MirrorStatus> outOfSync = all.stream()
-                .filter(MirrorStatus::needsAttention)
+                .filter(s -> needsAttentionIn(phase, s))
                 .collect(Collectors.toList());
-        // A downgrade routes reads back to Elasticsearch; any index whose ES copy is missing or behind
-        // its OpenSearch counterpart would lose that delta after the downgrade (a failed ES count is -1, which
-        // is < any real OS count → flagged, fail-safe).
         final boolean esBehindAnywhere = all.stream()
-                .anyMatch(s -> !s.es().exists() || s.es().docCount() < s.os().docCount());
+                .anyMatch(MigrationReadinessService::blocksRollback);
 
         // Content WORKING/LIVE are mandatory in every pre-OpenSearch-only phase: they are the source
         // that gets mirrored to OpenSearch, so a missing slot (pointer unset, or its Elasticsearch copy
@@ -96,6 +94,15 @@ public class MigrationReadinessService {
                     ? "Phase 0 (Elasticsearch only). OpenSearch counterparts are built during the "
                             + "dual-write phases, so there is nothing to reconcile yet. Safe to advance "
                             + "to Phase 1."
+                            // Anything still counted here is NOT a yet-to-be-built counterpart (those are
+                            // filtered out above) — e.g. a leftover OpenSearch index with no Elasticsearch
+                            // source. Not a blocker for starting dual-write, but say so rather than leave a
+                            // non-zero count contradicting "nothing to reconcile yet".
+                            + (outOfSync.isEmpty() ? ""
+                                : String.format(" Note: %s from an earlier migration attempt %s left over "
+                                        + "on OpenSearch; dual-write will overwrite them on the next "
+                                        + "crawl/reindex.", plural(outOfSync.size(), "index", "indices"),
+                                        outOfSync.size() == 1 ? "is" : "are"))
                     : String.format("Not safe to advance from Phase 0: %s to resolve first (see the "
                             + "blockers list). Dual-write needs an active Elasticsearch content index "
                             + "to mirror from.", plural(blockers.size(), "blocker"));
@@ -133,6 +140,38 @@ public class MigrationReadinessService {
                 siteSearch, verdict);
     }
 
+    /**
+     * Whether an index needs operator attention <em>in this phase</em> — i.e. whether it belongs in
+     * {@code outOfSyncCount}. Same as {@link MirrorStatus#needsAttention()} except in Phase 0, where the
+     * OpenSearch counterparts have not been built yet (they are created during dual-write): a missing
+     * OpenSearch copy there is the expected state, not something to reconcile, so counting it would
+     * contradict the "nothing to reconcile yet" verdict a technician reads next to it. An OpenSearch copy
+     * that exists while the Elasticsearch one does not — or a count drift between two existing copies —
+     * is still unexpected in Phase 0 and stays reported.
+     */
+    private static boolean needsAttentionIn(final MigrationPhase phase, final MirrorStatus status) {
+        if (!status.needsAttention()) {
+            return false;
+        }
+        final boolean expectedMissingCounterpart =
+                phase.isMigrationNotStarted() && status.es().exists() && !status.os().exists();
+        return !expectedMissingCounterpart;
+    }
+
+    /**
+     * Whether this index makes a downgrade unsafe: a downgrade routes reads back to Elasticsearch, so the
+     * Elasticsearch copy must exist and be at least as complete as its OpenSearch counterpart — otherwise
+     * that delta (typically content written while OpenSearch served reads) is silently lost until a full
+     * reindex. An <em>unmeasurable</em> count on either side (reported as {@code -1}) is treated as unsafe
+     * rather than compared numerically: with {@code es=100, os=-1} a bare {@code 100 < -1} would read as
+     * safe while OpenSearch may well be ahead — the same fail-safe stance the drift verdict takes.
+     */
+    private static boolean blocksRollback(final MirrorStatus status) {
+        return !status.es().exists()
+                || status.es().docCount() < 0 || status.os().docCount() < 0
+                || status.es().docCount() < status.os().docCount();
+    }
+
     private static String contentSlot(final IndexKind kind) {
         return kind == IndexKind.CONTENT_WORKING ? "WORKING" : "LIVE";
     }
@@ -167,7 +206,12 @@ public class MigrationReadinessService {
 
     /** {@code "1 blocker"} / {@code "2 blockers"} — count with a correctly pluralized noun. */
     private static String plural(final int count, final String noun) {
-        return count + " " + noun + (count == 1 ? "" : "s");
+        return plural(count, noun, noun + "s");
+    }
+
+    /** Same, for nouns whose plural is not formed by appending an {@code s} ({@code index}/{@code indices}). */
+    private static String plural(final int count, final String singular, final String pluralForm) {
+        return count + " " + (count == 1 ? singular : pluralForm);
     }
 
     private static String readEngine(final MigrationPhase phase) {

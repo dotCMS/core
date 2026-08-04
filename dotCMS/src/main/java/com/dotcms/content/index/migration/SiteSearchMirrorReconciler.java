@@ -1,7 +1,6 @@
 package com.dotcms.content.index.migration;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
@@ -44,16 +43,6 @@ public class SiteSearchMirrorReconciler {
         this.esImpl = esImpl;
         this.osImpl = osImpl;
         this.clusterPrefixSupplier = clusterPrefixSupplier;
-    }
-
-    /**
-     * Whether a cross-engine mirror comparison is meaningful for a forward phase change in the
-     * current phase. Only the dual-write phases (1 and 2) keep both engines populated as write
-     * providers; Phase 0 (ES only) and Phase 3 (OS only) have a single write engine, so a "missing
-     * counterpart" there is either expected (0) or unfixable in-phase (3).
-     */
-    public boolean canEvaluate() {
-        return IndexConfigHelper.MigrationPhase.current().isDualWrite();
     }
 
     /**

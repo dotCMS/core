@@ -45,9 +45,13 @@ public record MigrationReadiness(
     /**
      * @param safeToAdvance  whether it is safe to promote toward the OpenSearch-only phase
      * @param safeToRollback whether it is safe to downgrade — false when any index's Elasticsearch
-     *                       copy is behind its OpenSearch counterpart, because a downgrade routes reads back
-     *                       to Elasticsearch and would silently drop that delta until a reindex
-     * @param outOfSyncCount how many indices need attention (missing counterpart or count drift)
+     *                       copy is missing, behind its OpenSearch counterpart, or has an unmeasurable
+     *                       count on either engine, because a downgrade routes reads back to Elasticsearch
+     *                       and would silently drop that delta until a reindex
+     * @param outOfSyncCount how many indices need attention <em>in the current phase</em> (missing
+     *                       counterpart or count drift). In Phase 0 an OpenSearch counterpart that does not
+     *                       exist yet is the expected state — it is built during dual-write — so it is not
+     *                       counted here
      * @param summary        one human-readable sentence describing the overall state
      * @param blockers       per-index reasons that make advancing unsafe (empty when safe)
      */
