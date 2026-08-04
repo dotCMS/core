@@ -2,111 +2,21 @@ package com.dotcms.util;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
+/**
+ * Prints one of the startup banners from {@code /ascii-art.txt}. Keeping the art in a resource
+ * rather than in text blocks means no backslash escaping, real trailing spaces, and nothing
+ * retained in the constant pool once startup is done.
+ */
 public class AsciiArt {
 
+	private static final String ART_RESOURCE = "/ascii-art.txt";
+	private static final String SEPARATOR = "\n%%%\n";
 	private static final AtomicBoolean artDone = new AtomicBoolean(false);
-
-	/**
-	 * Banners printed once at startup, then dropped — see {@link #doArt()}. Backslashes are
-	 * escaped (\\) because text blocks still process escape sequences; \s marks a trailing space
-	 * that would otherwise be stripped.
-	 */
-	private static String[] asciiArt = {
-"""
-            dddddddd
-            d::::::d                          tttt                 CCCCCCCCCCCCCMMMMMMMM               MMMMMMMM   SSSSSSSSSSSSSSS
-            d::::::d                       ttt:::t              CCC::::::::::::CM:::::::M             M:::::::M SS:::::::::::::::S
-            d::::::d                       t:::::t            CC:::::::::::::::CM::::::::M           M::::::::MS:::::SSSSSS::::::S
-            d:::::d                        t:::::t           C:::::CCCCCCCC::::CM:::::::::M         M:::::::::MS:::::S     SSSSSSS
-    ddddddddd:::::d    ooooooooooo   ttttttt:::::ttttttt    C:::::C       CCCCCCM::::::::::M       M::::::::::MS:::::S
-  dd::::::::::::::d  oo:::::::::::oo t:::::::::::::::::t   C:::::C              M:::::::::::M     M:::::::::::MS:::::S
- d::::::::::::::::d o:::::::::::::::ot:::::::::::::::::t   C:::::C              M:::::::M::::M   M::::M:::::::M S::::SSSS
-d:::::::ddddd:::::d o:::::ooooo:::::otttttt:::::::tttttt   C:::::C              M::::::M M::::M M::::M M::::::M  SS::::::SSSSS
-d::::::d    d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M  M::::M::::M  M::::::M    SSS::::::::SS
-d:::::d     d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M   M:::::::M   M::::::M       SSSSSS::::S
-d:::::d     d:::::d o::::o     o::::o      t:::::t         C:::::C              M::::::M    M:::::M    M::::::M            S:::::S
-d:::::d     d:::::d o::::o     o::::o      t:::::t    ttttttC:::::C       CCCCCCM::::::M     MMMMM     M::::::M            S:::::S
-d::::::ddddd::::::ddo:::::ooooo:::::o      t::::::tttt:::::t C:::::CCCCCCCC::::CM::::::M               M::::::MSSSSSSS     S:::::S
- d:::::::::::::::::do:::::::::::::::o      tt::::::::::::::t  CC:::::::::::::::CM::::::M               M::::::MS::::::SSSSSS:::::S
-  d:::::::::ddd::::d oo:::::::::::oo         tt:::::::::::tt    CCC::::::::::::CM::::::M               M::::::MS:::::::::::::::SS
-   ddddddddd   ddddd   ooooooooooo             ttttttttttt         CCCCCCCCCCCCCMMMMMMMM               MMMMMMMM SSSSSSSSSSSSSSS
-""",
-"""
- _ .-') _                .-') _            _   .-')      .-')
-( (  OO) )              (  OO) )          ( '.( OO )_   ( OO ).
- \\     .'_  .-'),-----. /     '._  .-----. ,--.   ,--.)(_)---\\_)
- ,`'--..._)( OO'  .-.  '|'--...__)'  .--./ |   `.'   | /    _ |
- |  |  \\  '/   |  | |  |'--.  .--'|  |('-. |         | \\  :` `.
- |  |   ' |\\_) |  |\\|  |   |  |  /_) |OO  )|  |'.'|  |  '..`''.)
- |  |   / :  \\ |  | |  |   |  |  ||  |`-'| |  |   |  | .-._)   \\
- |  '--'  /   `'  '-'  '   |  | (_'  '--'\\ |  |   |  | \\       /
- `-------'      `-----'    `--'    `-----' `--'   `--'  `-----'
-""",
-"""
- ________  ________  _________  ________  _____ ______   ________
-|\\   ___ \\|\\   __  \\|\\___   ___\\\\   ____\\|\\   _ \\  _   \\|\\   ____\\
-\\ \\  \\_|\\ \\ \\  \\|\\  \\|___ \\  \\_\\ \\  \\___|\\ \\  \\\\\\__\\ \\  \\ \\  \\___|_
- \\ \\  \\ \\\\ \\ \\  \\\\\\  \\   \\ \\  \\ \\ \\  \\    \\ \\  \\\\|__| \\  \\ \\_____  \\
-  \\ \\  \\_\\\\ \\ \\  \\\\\\  \\   \\ \\  \\ \\ \\  \\____\\ \\  \\    \\ \\  \\|____|\\  \\
-   \\ \\_______\\ \\_______\\   \\ \\__\\ \\ \\_______\\ \\__\\    \\ \\__\\____\\_\\  \\
-    \\|_______|\\|_______|    \\|__|  \\|_______|\\|__|     \\|__|\\_________\\
-                                                           \\|_________|
-""",
-"""
- ______   _______  _______  _______  __   __  _______\s
-|      | |       ||       ||       ||  |_|  ||       |
-|  _    ||   _   ||_     _||       ||       ||  _____|
-| | |   ||  | |  |  |   |  |       ||       || |_____\s
-| |_|   ||  |_|  |  |   |  |      _||       ||_____  |
-|       ||       |  |   |  |     |_ | ||_|| | _____| |
-|______| |_______|  |___|  |_______||_|   |_||_______|
-""",
-"""
-                    ___                         ___           ___           ___
-     _____         /\\  \\                       /\\__\\         /\\  \\         /\\__\\
-    /::\\  \\       /::\\  \\         ___         /:/  /        |::\\  \\       /:/ _/_
-   /:/\\:\\  \\     /:/\\:\\  \\       /\\__\\       /:/  /         |:|:\\  \\     /:/ /\\  \\
-  /:/  \\:\\__\\   /:/  \\:\\  \\     /:/  /      /:/  /  ___   __|:|\\:\\  \\   /:/ /::\\  \\
- /:/__/ \\:|__| /:/__/ \\:\\__\\   /:/__/      /:/__/  /\\__\\ /::::|_\\:\\__\\ /:/_/:/\\:\\__\\
- \\:\\  \\ /:/  / \\:\\  \\ /:/  /  /::\\  \\      \\:\\  \\ /:/  / \\:\\~~\\  \\/__/ \\:\\/:/ /:/  /
-  \\:\\  /:/  /   \\:\\  /:/  /  /:/\\:\\  \\      \\:\\  /:/  /   \\:\\  \\        \\::/ /:/  /
-   \\:\\/:/  /     \\:\\/:/  /   \\/__\\:\\  \\      \\:\\/:/  /     \\:\\  \\        \\/_/:/  /
-    \\::/  /       \\::/  /         \\:\\__\\      \\::/  /       \\:\\__\\         /:/  /
-     \\/__/         \\/__/           \\/__/       \\/__/         \\/__/         \\/__/
-""",
-"""
-
-@@@@@@@    @@@@@@   @@@@@@@   @@@@@@@  @@@@@@@@@@    @@@@@@
-@@@@@@@@  @@@@@@@@  @@@@@@@  @@@@@@@@  @@@@@@@@@@@  @@@@@@@
-@@!  @@@  @@!  @@@    @@!    !@@       @@! @@! @@!  !@@
-!@!  @!@  !@!  @!@    !@!    !@!       !@! !@! !@!  !@!
-@!@  !@!  @!@  !@!    @!!    !@!       @!! !!@ @!@  !!@@!!
-!@!  !!!  !@!  !!!    !!!    !!!       !@!   ! !@!   !!@!!!
-!!:  !!!  !!:  !!!    !!:    :!!       !!:     !!:       !:!
-:!:  !:!  :!:  !:!    :!:    :!:       :!:     :!:      !:!
- :::: ::  ::::: ::     ::     ::: :::  :::     ::   :::: ::
-:: :  :    : :  :      :      :: :: :   :      :    :: : :
-""",
-"""
-                                                     ____
-                         ___      ,----..          ,'  , `.  .--.--.
-      ,---,            ,--.'|_   /   /   \\      ,-+-,.' _ | /  /    '.
-    ,---.'|   ,---.    |  | :,' |   :     :  ,-+-. ;   , |||  :  /`. /
-    |   | :  '   ,'\\   :  : ' : .   |  ;. / ,--.'|'   |  ;|;  |  |--`
-    |   | | /   /   |.;__,'  /  .   ; /--` |   |  ,', |  ':|  :  ;_
-  ,--.__| |.   ; ,. :|  |   |   ;   | ;    |   | /  | |  || \\  \\    `.
- /   ,'   |'   | |: ::__,'| :   |   : |    '   | :  | :  |,  `----.   \\
-.   '  /  |'   | .; :  '  : |__ .   | '___ ;   . |  ; |--'   __ \\  \\  |
-'   ; |:  ||   :    |  |  | '.'|'   ; : .'||   : |  | ,     /  /`--'  /
-|   | '/  ' \\   \\  /   ;  :    ;'   | '/  :|   : '  |/     '--'.     /
-|   :    :|  `----'    |  ,   / |   :    / ;   | |`-'        `--'---'
- \\   \\  /               ---`-'   \\   \\ .'  |   ;/
-  `----'                          `---`    '---'
-"""
-	};
 
 	public static void doArt() {
 
@@ -114,17 +24,30 @@ d::::::ddddd::::::ddo:::::ooooo:::::o      t::::::tttt:::::t C:::::CCCCCCCC::::C
 			return;
 		}
 
+		final String[] art = load();
+		if (art.length == 0) {
+			return;
+		}
+
 		if (Config.getBooleanProperty("SHOW_ALL_ASCII_ART", false)) {
-			for (final String art : asciiArt) {
-				print(art);
+			for (final String banner : art) {
+				print(banner);
 				Logger.info(AsciiArt.class, "------------------------------------");
 			}
 		} else {
-			print(asciiArt[(int) (System.currentTimeMillis() % asciiArt.length)]);
+			print(art[(int) (System.currentTimeMillis() % art.length)]);
 		}
+	}
 
-		// art is printed exactly once — drop the array so it isn't held for the life of the JVM
-		asciiArt = new String[0];
+	private static String[] load() {
+		try (final InputStream in = AsciiArt.class.getResourceAsStream(ART_RESOURCE)) {
+			return in == null
+					? new String[0]
+					: new String(in.readAllBytes(), StandardCharsets.UTF_8).split(SEPARATOR);
+		} catch (final IOException e) {
+			Logger.debug(AsciiArt.class, "unable to read " + ART_RESOURCE + ": " + e.getMessage());
+			return new String[0];
+		}
 	}
 
 	/**
