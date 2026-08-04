@@ -321,12 +321,12 @@ jobs:
     secrets:
       AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
       AUTODOC_DOTCMS_API_TOKEN_DRAFTING: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
-      AUTODOC_DOTCMS_BASE_URL: ${{ secrets.AUTODOC_DOTCMS_BASE_URL }}
     with:
       prompt: ${{ needs.prep.outputs.eval_context }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       autodoc_dotcms_site_folder: ${{ vars.AUTODOC_DOTCMS_SITE_FOLDER }}
+      autodoc_dotcms_base_url: ${{ vars.AUTODOC_DOTCMS_BASE_URL }}
 
   finalize:
     name: Post report and apply to dotCMS
@@ -342,7 +342,7 @@ jobs:
       REPO: ${{ github.repository }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       AUTODOC_DOTCMS_API_TOKEN_DRAFTING: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
-      AUTODOC_DOTCMS_BASE_URL: ${{ secrets.AUTODOC_DOTCMS_BASE_URL }}
+      AUTODOC_DOTCMS_BASE_URL: ${{ vars.AUTODOC_DOTCMS_BASE_URL }}
       AUTODOC_DOTCMS_SITE_FOLDER: ${{ vars.AUTODOC_DOTCMS_SITE_FOLDER }}
 
     steps:
