@@ -540,6 +540,41 @@ single-index cluster.
 - Safety guards (e.g. the active-index delete guard, which blocks deleting the live/working index)
   exist to **reproduce** the single-index UX, not to protect OS from the operator.
 
+### Index pointer ops (`activateIndex` / `deactivateIndex`) are name-driven, not existence-checked
+
+`activateIndex` and `deactivateIndex` update the **pointer stores** (`indicies` for ES,
+`VersionedIndices` for OS) by index **name** — they deliberately do **not** verify that the named
+index exists in the cluster. This is load-bearing for the mirror model: during **migration catchup**
+the ES and OS names diverge (see "Index name divergence between providers") and the OS physical index
+may not be built yet, so activation mirrors the pointer **optimistically** and lets catchup fill in
+the OS side. The contract is asserted in `ContentletIndexAPIImplMigrationIntegrationTest` — *"the OS
+DB pointer reflects the name passed in, regardless of which index the OS cluster actually holds"* and
+*"deactivateIndex never validates cluster existence … a pointer-store update driven by the name
+pattern, not by cluster state"*.
+
+**Do not add a hard existence guard to `activateIndex`.** The failure it would target is real:
+reactivating an **old, pre-migration backup index** (kept as a rollback point) that never received an
+OS copy leaves OS pointing at a non-existent index → in Phase 3 (no ES fallback) search returns empty
+= "content lost". But at activation time the dangerous case is **indistinguishable** from the
+legitimate one:
+
+- ✅ the OS copy will exist in a moment — normal dual-write **catchup** (the index is being built), vs.
+- ❌ the OS copy will never exist — an old backup that nothing is migrating.
+
+Both are "no OS copy right now". A point-in-time `indexExists` check cannot tell "not built **yet**"
+from "**never** built", so a hard guard blocks the legitimate catchup too and breaks normal migration
+operation. This was tried and reverted (PR #36880): the guard failed 6 integration tests in the
+OpenSearch Upgrade Suite that assert exactly this catchup behavior — the tests are the design
+contract, not stale coverage.
+
+**The intended mitigation is the migration-readiness endpoint, not a guard on activate.** An active
+index with no OS counterpart is a *state to report*, not a per-operation precondition to enforce. The
+readiness endpoint (see "Migration-readiness endpoint (pre-phase-change advisory)") detects a
+`MISSING_COUNTERPART` for the active working/live and marks the phase **not safe to advance** —
+gating the Phase-3 promotion, which is where the real damage would occur. Reactivating an un-mirrored
+backup is recovered the normal way: turn the migration off (set the phase to 0) to roll back freely,
+or run a full reindex to rebuild the OS side.
+
 ## Design Rules
 
 - **Never modify ES code** when adding the OS counterpart — zero changes to existing ES classes
