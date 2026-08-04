@@ -11,6 +11,8 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import {
     DotCategoriesService,
     DotContentletService,
@@ -28,6 +30,7 @@ import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.com
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
+import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
@@ -113,6 +116,13 @@ describe('DotContentDriveToolbarComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
             },
+            // Needed once a selection exists: that mounts the workflow-actions child, which injects
+            // both of these.
+            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(DotContentDriveNavigationService, {
+                editContent: jest.fn(),
+                editPage: jest.fn()
+            }),
             provideHttpClient()
         ],
         detectChanges: false
@@ -408,6 +418,53 @@ describe('DotContentDriveToolbarComponent', () => {
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+    });
+
+    describe('Workflow Center button', () => {
+        it('should not offer it with no selection', async () => {
+            selectedItemsSignal.set([]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should offer it from the first selected contentlet', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+        });
+
+        it('should keep the workflow action buttons alongside it', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            await settleToolbarAnimation(spectator);
+
+            // The two are offered together, not one instead of the other.
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+            expect(spectator.query(byTestId('workflow-actions'))).toBeTruthy();
+        });
+
+        it('should not offer it for a folder-only selection', async () => {
+            // Every bulk endpoint ignores folders, so there would be nothing to act on.
+            selectedItemsSignal.set([
+                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should open the ACTION_CENTER dialog when clicked', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            spectator.click(byTestId('action-center-button'));
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.ACTION_CENTER,
+                header: 'content-drive.action-center.header'
+            });
         });
     });
 

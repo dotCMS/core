@@ -1363,13 +1363,15 @@ public class WebAssetHelperIntegrationTest {
 
     /**
      * Method to test: {@link WebAssetHelper#updateFolder(String, AbstractUpdateFolderDetail, User)}
-     * Given Scenario: Create a folder with DOTASSET, update it to FILEASSET, then run a partial
-     * update (title only) that omits defaultBaseType
-     * Expected Result: A present value changes the preference; an absent value leaves it unchanged
-     * (consistent with every other folder detail field — no clobber on partial updates)
+     * Given Scenario: Create a folder with DOTASSET, update it to FILEASSET, then run an update
+     * that omits defaultBaseType (equivalent to the client sending null for "ask each time")
+     * Expected Result: A present value changes the preference; an absent/null value clears it back
+     * to "ask each time". Jackson can't tell an omitted field from an explicit null here, and the
+     * client always sends this field, so both must clear the preference (see issue #35577 QA
+     * follow-up: clearing the preference via null was silently ignored before this fix).
      */
     @Test
-    public void Test_Update_Folder_DefaultBaseType_Change_And_Preserve() throws DotDataException, DotSecurityException {
+    public void Test_Update_Folder_DefaultBaseType_Change_And_Clear() throws DotDataException, DotSecurityException {
         final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
         final String folderName = "dbt-update-" + RandomStringUtils.randomAlphabetic(5);
         final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
@@ -1384,15 +1386,15 @@ public class WebAssetHelperIntegrationTest {
                 APILocator.systemUser());
         Assert.assertEquals("FILEASSET", changed.defaultBaseType());
 
-        // A partial update that omits defaultBaseType leaves it unchanged (not cleared)
-        final FolderView preserved = webAssetHelper.updateFolder(folderPath,
+        // Omitting defaultBaseType (i.e. null) clears the preference back to "ask each time"
+        final FolderView cleared = webAssetHelper.updateFolder(folderPath,
                 UpdateFolderDetail.builder().title("Renamed title").build(),
                 APILocator.systemUser());
-        Assert.assertEquals("FILEASSET", preserved.defaultBaseType());
+        Assert.assertNull(cleared.defaultBaseType());
 
         // Confirm on the retrieval path
         final WebAssetView assetInfo = webAssetHelper.getAssetInfo(folderPath, APILocator.systemUser());
-        Assert.assertEquals("FILEASSET", ((FolderView) assetInfo).defaultBaseType());
+        Assert.assertNull(((FolderView) assetInfo).defaultBaseType());
     }
 
 }

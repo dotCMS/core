@@ -60,6 +60,8 @@ import { DotContentDriveShellComponent } from './dot-content-drive-shell.compone
 
 import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import {
+    ACTION_CENTER_DIALOG_CONTENT_STYLE,
+    ACTION_CENTER_DIALOG_STYLE,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
@@ -232,9 +234,19 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
-                        (_commands: unknown[], opts: { queryParams?: Record<string, string> }) => ({
-                            toString: () =>
-                                '?' + new URLSearchParams(opts?.queryParams ?? {}).toString()
+                        (
+                            _commands: unknown[],
+                            opts: { queryParams?: Record<string, string | null> }
+                        ) => ({
+                            toString: () => {
+                                const params = Object.fromEntries(
+                                    Object.entries(opts?.queryParams ?? {}).filter(
+                                        ([, value]) => value != null
+                                    )
+                                ) as Record<string, string>;
+
+                                return '?' + new URLSearchParams(params).toString();
+                            }
                         })
                     )
                 }),
@@ -260,7 +272,11 @@ describe('DotContentDriveShellComponent', () => {
                         })
                     )
                 }),
-                mockProvider(DotWorkflowsActionsService),
+                // The Action Center child looks up bulk actions on init, which happens as soon as a
+                // selection is present in these tests.
+                mockProvider(DotWorkflowsActionsService, {
+                    getBulkActions: jest.fn().mockReturnValue(of({ schemes: [] }))
+                }),
                 mockProvider(DotWorkflowActionsFireService, {
                     bulkFire: jest
                         .fn()
@@ -452,6 +468,75 @@ describe('DotContentDriveShellComponent', () => {
             );
             const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
             expect(dialogComponent.visible).toBe(false);
+        });
+
+        it('should render the Action Center inside the shared dialog', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+
+            // One dialog, one visibility path — the Action Center is a case in its content switch.
+            expect(dialogComponent.visible).toBe(true);
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeTruthy();
+        });
+
+        it('should make the Action Center content box the only scroll container', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.component.$dialogContentStyle()).toEqual(
+                ACTION_CENTER_DIALOG_CONTENT_STYLE
+            );
+            expect(spectator.component.$dialogStyle()).toEqual(ACTION_CENTER_DIALOG_STYLE);
+        });
+
+        it('should render a sub-header with the selected contentlet count', () => {
+            // `selectedItems` is mocked as a plain jest.fn here, so it must be set before the
+            // computed is first read — it has no signal dependency to invalidate its cache.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeTruthy();
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
+        });
+
+        it('should exclude folders from the sub-header count', () => {
+            store.selectedItems.mockReturnValue([
+                MOCK_ITEMS[0],
+                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+        });
+
+        it('should not render the sub-header for other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            // The header template is shared, so the default branch must still render the plain title.
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeNull();
+            expect(spectator.query('.p-dialog-title')?.textContent?.trim()).toBe('Folder');
+        });
+
+        it('should not apply the Action Center sizing to other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
+            expect(spectator.component.$dialogStyle()).toBeUndefined();
+            expect(spectator.component.$dialogContentStyle()).toBeUndefined();
+            expect(spectator.component.$dialogHeaderClass()).toBe('');
         });
 
         it('should configure the dialog as closable and closeOnEscape', () => {

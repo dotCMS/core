@@ -82,8 +82,8 @@ export interface DotContentDriveInit {
  * @interface DotContentDriveContextMenu
  */
 export interface DotContentDriveContextMenu {
-    triggeredEvent: Event;
-    contentlet: DotContentDriveItem;
+    triggeredEvent: Event | null;
+    contentlet: DotContentDriveItem | null;
     showAddToBundle: boolean;
 }
 

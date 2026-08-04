@@ -18,7 +18,8 @@ import { catchError, switchMap, take } from 'rxjs/operators';
 import {
     DotCurrentUserService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    withPersistedQuery
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
 import { withFlags } from '@dotcms/store';
@@ -75,6 +76,7 @@ export const DotQueryToolStore = signalStore(
     // Side-panel feature flag, batch-fetched once on init and exposed as `flags()`. The page
     // component reads it to decide whether editing a result opens the in-page side panel or a tab.
     withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
+    withPersistedQuery({ portletKey: 'query-tool', field: 'query' }),
     withComputed((store) => ({
         contentlets: computed<DotCMSContentlet[]>(
             () => store.response()?.jsonObjectView.contentlets ?? []

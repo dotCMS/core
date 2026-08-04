@@ -391,10 +391,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const isLockedByCurrentUser = lockOptions?.isLockedByCurrentUser;
         const canLock = lockOptions?.canLock;
 
-        // For feature flag, we force the user to lock pages to edit
-        // So we show the lock overlay if the page is not locked
+        // For feature flag, we force the user to lock pages to edit, so the
+        // overlay stays up unless the current user is the one holding the lock —
+        // a page locked by someone else must be unlocked and re-locked by this
+        // user first, not just "any" lock.
         if (lockFeatureEnabled) {
-            return !isLocked;
+            return !isLockedByCurrentUser;
         }
 
         // Without feature flag, we show the lock overlay if the page is locked

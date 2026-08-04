@@ -17988,7 +17988,8 @@ paths:
         with pagination support
       operationId: filterUsers
       parameters:
-      - description: Filter users by full name or parts of it
+      - description: "Filter users by user ID, first name, last name, email address,\
+          \ or full name -- or parts of any of them"
         in: query
         name: query
         schema:
@@ -18039,6 +18040,14 @@ paths:
         schema:
           type: integer
           format: int32
+      - description: "Role key(s) to restrict results to users holding any of them;\
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+        in: query
+        name: roleKey
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         "200":
           content:
@@ -18046,6 +18055,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityListUserView"
           description: Users retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - a provided roleKey does not match any existing
+            Role
         "401":
           content:
             application/json: {}
@@ -27346,9 +27360,9 @@ components:
           description: "Content Drive upload-mode preference for this folder, recorded\
             \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
             \ also accepts the alternate names DotAsset/File and stored canonically\
-            \ in uppercase). On create, omit for no preference (\"ask each time\"\
-            ); on update, omit to leave the current preference unchanged. This is\
-            \ orthogonal to defaultAssetType and does not change FileAsset behavior."
+            \ in uppercase). Omit or set to null for no preference (\"ask each time\"\
+            ); on update, omitting/null clears any previously set preference. This\
+            \ is orthogonal to defaultAssetType and does not change FileAsset behavior."
           example: DOTASSET
         fileMasks:
           type: array
@@ -37056,9 +37070,9 @@ components:
           description: "Content Drive upload-mode preference for this folder, recorded\
             \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
             \ also accepts the alternate names DotAsset/File and stored canonically\
-            \ in uppercase). On create, omit for no preference (\"ask each time\"\
-            ); on update, omit to leave the current preference unchanged. This is\
-            \ orthogonal to defaultAssetType and does not change FileAsset behavior."
+            \ in uppercase). Omit or set to null for no preference (\"ask each time\"\
+            ); on update, omitting/null clears any previously set preference. This\
+            \ is orthogonal to defaultAssetType and does not change FileAsset behavior."
           example: DOTASSET
         fileMasks:
           type: array

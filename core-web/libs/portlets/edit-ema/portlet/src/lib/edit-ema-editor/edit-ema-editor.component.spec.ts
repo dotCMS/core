@@ -898,9 +898,29 @@ describe('EditEmaEditorComponent', () => {
                         expect(spectator.component.$showLockOverlay()).toBe(true);
                     });
 
-                    it('should hide overlay when page is locked', () => {
+                    it('should show overlay when page is locked by another user', () => {
                         patchState(store, {
                             pageAssetResponse: { pageAsset: lockedByAnotherUser }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(true);
+                    });
+
+                    it('should hide overlay when page is locked by the current user', () => {
+                        patchState(store, {
+                            uveCurrentUser: mockCurrentUser,
+                            pageAssetResponse: {
+                                pageAsset: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId,
+                                        lockedByName: mockCurrentUser.givenName,
+                                        canLock: true
+                                    }
+                                }
+                            }
                         });
 
                         expect(spectator.component.$showLockOverlay()).toBe(false);
