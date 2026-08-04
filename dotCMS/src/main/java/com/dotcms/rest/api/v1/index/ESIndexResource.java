@@ -616,9 +616,14 @@ public class ESIndexResource {
 
             }
         } catch (final DotStateException e) {
-            // CLEAR is delete + recreate, so it is guarded like delete: an active/building index
-            // is rejected with a readable 400 instead of a stack trace (issue #35640, TC-018).
-            Logger.warn(this, "Rejected '" + action + "' on index '" + resolvedName + "': " + e.getMessage());
+            // A guarded operation — deleting/clearing an active/building index (#35640, TC-018), or
+            // activating an index whose OpenSearch counterpart is missing during the migration
+            // (#36360) — is rejected with a readable 400 instead of a stack trace. Log the resolved
+            // action (not the raw, possibly-null query param) and surface the reason to the operator
+            // as a toast, so it is visible in the UI, not only in the server log.
+            Logger.warn(this, "Rejected '" + indexAction + "' on index '" + resolvedName + "': "
+                    + e.getMessage());
+            sendAdminMessage(e.getMessage(), MessageSeverity.ERROR, init.getUser(), 8000);
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_MODIFIABLE", e.getMessage())))).build();
         }
