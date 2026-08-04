@@ -508,7 +508,7 @@ export class DotContentDriveShellComponent {
      */
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
         const contentData =
-            targetFolder.type !== LOAD_MORE_NODE_TYPE
+            targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
                 ? (targetFolder as DotFolderTreeNodeContentData)
                 : undefined;
         const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);

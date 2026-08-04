@@ -46,7 +46,9 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                     .fn()
                     .mockReturnValue({ hostname: 'demo.dotcms.com', identifier: 'site-1' }),
                 path: jest.fn().mockReturnValue('/about-us/'),
-                selectedNode: jest.fn().mockReturnValue({ data: { inode: 'inode-1' } })
+                selectedNode: jest
+                    .fn()
+                    .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } })
             }),
             mockProvider(DotContentDriveNavigationService, {
                 createContent: jest.fn()
