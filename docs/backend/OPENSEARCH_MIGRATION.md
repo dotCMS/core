@@ -374,8 +374,10 @@ through the write-path gate above.
   for **both** mirrored families — the versioned content indices (`working`/`live`) and the Site
   Search indices. `content` is a keyed object by slot (`WORKING` / `LIVE` — a fixed pair);
   `siteSearch` is a list (an open set). Each entry carries `{indexName, es:{exists,docCount,physicalName},
-  os:{exists,docCount,physicalName}, verdict, recommendation}` — `physicalName` is the full name as
-  stored on each server (cluster-prefixed; `.os`-tagged on OpenSearch) — with verdict `IN_SYNC` /
+  os:{exists,docCount,physicalName}, driftPercent, verdict, recommendation}` — `physicalName` is the
+  full name as stored on each server (cluster-prefixed; `.os`-tagged on OpenSearch), and
+  `driftPercent` is the signed % the OpenSearch (mirror) count deviates from the Elasticsearch
+  (original) — negative = behind, positive = ahead, `null` when a count is unknown — with verdict `IN_SYNC` /
   `MISSING_COUNTERPART` / `COUNT_DRIFT`. The top level also carries the `clusterId` embedded in every
   physical name. The response is the model itself (no `ResponseEntityView` envelope).
 - **Stateless, from live counts.** Every field is derived at request time. Counts are **exact** — the

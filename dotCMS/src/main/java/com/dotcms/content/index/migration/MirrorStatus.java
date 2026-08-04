@@ -1,6 +1,7 @@
 package com.dotcms.content.index.migration;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Per-index ES↔OS mirror status for the migration-readiness report (issue #36360): how one logical
@@ -57,6 +58,28 @@ public record MirrorStatus(
     /** Whether this index needs operator action (a re-crawl / reindex) before the phase change. */
     public boolean needsAttention() {
         return verdict != Verdict.IN_SYNC;
+    }
+
+    /**
+     * Signed percentage by which the OpenSearch (mirror) document count deviates from the
+     * Elasticsearch (original), relative to the original: {@code 0.0} when equal, negative when the
+     * mirror is behind, positive when it is ahead (e.g. ES=1000/OS=900 → {@code -10.0}; a missing OS
+     * copy → {@code -100.0}). When the original is empty a non-empty mirror reads as {@code 100.0}.
+     * {@code null} when either count is unknown (a failed count, reported as -1). Rounded to two
+     * decimals.
+     */
+    @JsonProperty("driftPercent")
+    public Double driftPercent() {
+        final long esCount = es.docCount();
+        final long osCount = os.docCount();
+        if (esCount < 0 || osCount < 0) {
+            return null;
+        }
+        if (esCount == osCount) {
+            return 0.0;
+        }
+        final double pct = esCount == 0 ? 100.0 : (osCount - esCount) * 100.0 / esCount;
+        return Math.round(pct * 100.0) / 100.0;
     }
 
     /**

@@ -98,6 +98,7 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertTrue(working.es().exists());
         assertFalse(working.os().exists());
         assertTrue(working.needsAttention());
+        assertEquals(-100.0, working.driftPercent(), 0.001); // mirror empty vs original of 100 → -100%
         assertTrue(working.recommendation().contains("OpenSearch"));
     }
 
@@ -117,6 +118,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertEquals(Verdict.COUNT_DRIFT, live.verdict());
         assertEquals(50, live.es().docCount());
         assertEquals(40, live.os().docCount());
+        // mirror 10 docs behind the original of 50 → -20%
+        assertEquals(-20.0, live.driftPercent(), 0.001);
     }
 
     /** A null IndiciesInfo (could not be loaded) yields no rows rather than throwing. */
