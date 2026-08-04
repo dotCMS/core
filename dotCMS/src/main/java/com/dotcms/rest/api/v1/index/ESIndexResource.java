@@ -623,7 +623,7 @@ public class ESIndexResource {
             // as a toast, so it is visible in the UI, not only in the server log.
             Logger.warn(this, "Rejected '" + indexAction + "' on index '" + resolvedName + "': "
                     + e.getMessage());
-            sendAdminMessage(e.getMessage(), MessageSeverity.ERROR, init.getUser(), 8000);
+            sendAdminMessage(e.getMessage(), MessageSeverity.WARNING, init.getUser(), 8000);
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_MODIFIABLE", e.getMessage())))).build();
         }
