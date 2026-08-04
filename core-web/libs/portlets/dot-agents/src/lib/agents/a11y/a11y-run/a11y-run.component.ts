@@ -145,22 +145,6 @@ export class DotA11yRunComponent {
      */
     readonly openPanels = signal<StudioPanel[]>(['scanner']);
 
-    /**
-     * Accordion design tokens, scoped to this accordion via `[dt]` — the component's
-     * own styling contract, not a `::ng-deep` override.
-     *
-     * The app-wide CustomLaraPreset flattens accordions with `panel.borderWidth: '0'`
-     * and leaves per-feature dividers to the consuming component (see theme.config.ts).
-     * So the bottom rule that separates the scanner and files panels is added back
-     * here, in gray-200.
-     */
-    readonly panelTokens = {
-        panel: {
-            borderWidth: '0 0 1px 0',
-            borderColor: '{gray.200}'
-        }
-    };
-
     /** How many source files differ between working and live, for the count badge. */
     readonly changedFileCount = signal(0);
 

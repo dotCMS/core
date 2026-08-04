@@ -307,14 +307,16 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.component.openPanels()).toEqual([]);
         });
 
-        it('badges the files panel once files are reported', () => {
-            expect(spectator.query(byTestId('studio-panel-files-count'))).toBeFalsy();
+        it('tracks the changed-file count reported by the diff list', () => {
+            expect(spectator.component.changedFileCount()).toBe(0);
+            expect(spectator.component.hasChangedFiles()).toBe(false);
 
             const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
             list.changedCount.emit(2);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('studio-panel-files-count'))).toHaveText('2');
+            expect(spectator.component.changedFileCount()).toBe(2);
+            expect(spectator.component.hasChangedFiles()).toBe(true);
         });
     });
 
