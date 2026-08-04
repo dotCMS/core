@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -21,6 +22,7 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
     templateUrl: './dot-toolbar.component.html',
     imports: [
         ToolbarModule,
+        ButtonModule,
         DividerModule,
         DotCrumbtrailComponent,
         DotToolbarNotificationsComponent,
@@ -36,6 +38,8 @@ export class DotToolbarComponent {
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+    readonly aiChatVisible = input(false);
+    readonly aiChatVisibleChange = output<boolean>();
 
     $currentSite = this.#globalStore.siteDetails;
 
@@ -43,5 +47,9 @@ export class DotToolbarComponent {
         if (identifier) {
             this.#globalStore.switchCurrentSite(identifier);
         }
+    }
+
+    openAiChat(): void {
+        this.aiChatVisibleChange.emit(true);
     }
 }

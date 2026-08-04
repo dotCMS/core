@@ -1,6 +1,10 @@
-import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewEncapsulation, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 
+import { DrawerModule } from 'primeng/drawer';
+
+import { HashbrownChatBridgeService, HashbrownChatComponent } from '@dotcms/dot-ai-chat';
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -26,6 +30,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
         DotMessageDisplayComponent,
         DotNavigationComponent,
         DotToolbarComponent,
+        DrawerModule,
+        HashbrownChatComponent,
         DotLargeMessageDisplayComponent,
         DotAlertConfirmComponent,
         DotPushPublishDialogComponent,
@@ -37,6 +43,9 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
 })
 export class MainComponentLegacyComponent implements OnInit {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    private readonly destroyRef = inject(DestroyRef);
+    private readonly hashbrownChatBridgeService = inject(HashbrownChatBridgeService);
+    readonly aiChatVisible = signal(false);
 
     ngOnInit(): void {
         document.body.style.backgroundColor = '';
@@ -44,6 +53,12 @@ export class MainComponentLegacyComponent implements OnInit {
         document.body.style.backgroundPosition = '';
         document.body.style.backgroundRepeat = '';
         document.body.style.backgroundSize = '';
+
+        this.hashbrownChatBridgeService.openChat$
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.aiChatVisible.set(true);
+            });
     }
 
     /**
@@ -54,5 +69,13 @@ export class MainComponentLegacyComponent implements OnInit {
      */
     onCustomEvent($event: CustomEvent): void {
         this.dotCustomEventHandlerService.handle($event);
+    }
+
+    onAiChatVisibleChange(visible: boolean): void {
+        this.aiChatVisible.set(visible);
+    }
+
+    closeAiChat(): void {
+        this.aiChatVisible.set(false);
     }
 }

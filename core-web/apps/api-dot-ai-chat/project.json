@@ -1,0 +1,60 @@
+{
+    "name": "api-dot-ai-chat",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/api-dot-ai-chat/src",
+    "projectType": "application",
+    "tags": [],
+    "targets": {
+        "prune-lockfile": {
+            "dependsOn": ["build"],
+            "cache": true,
+            "executor": "@nx/js:prune-lockfile",
+            "outputs": [
+                "{workspaceRoot}/dist/apps/api-dot-ai-chat/package.json",
+                "{workspaceRoot}/dist/apps/api-dot-ai-chat/yarn.lock"
+            ],
+            "options": {
+                "buildTarget": "build"
+            }
+        },
+        "copy-workspace-modules": {
+            "dependsOn": ["build"],
+            "cache": true,
+            "outputs": ["{workspaceRoot}/dist/apps/api-dot-ai-chat/workspace_modules"],
+            "executor": "@nx/js:copy-workspace-modules",
+            "options": {
+                "buildTarget": "build"
+            }
+        },
+        "prune": {
+            "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
+            "executor": "nx:noop"
+        },
+        "serve": {
+            "continuous": true,
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "dependsOn": ["build"],
+            "options": {
+                "buildTarget": "api-dot-ai-chat:build",
+                "runBuildTargetDependencies": false
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "api-dot-ai-chat:build:development"
+                },
+                "production": {
+                    "buildTarget": "api-dot-ai-chat:build:production"
+                }
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "apps/api-dot-ai-chat/jest.config.cts",
+                "passWithNoTests": true
+            }
+        }
+    }
+}

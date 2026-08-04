@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
 
@@ -18,6 +24,16 @@ import {
     DotRouterService,
     DotSystemConfigService
 } from '@dotcms/data-access';
+import { HashbrownChatComponent } from '@dotcms/dot-ai-chat';
+import {
+    DotcmsConfigService,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    LoggerService,
+    SiteService,
+    StringUtils
+} from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock, MockDotRouterService, mockSites } from '@dotcms/utils-testing';
 
@@ -59,6 +75,20 @@ class MockToolbarNotificationsComponent {}
     template: ''
 })
 class MockToolbarAnnouncementsComponent {}
+
+@Component({
+    selector: 'dotcms-hashbrown-chat',
+    template: ''
+})
+class MockHashbrownChatComponent {}
+
+export const dotEventSocketURLFactory = () => {
+    return new DotEventsSocketURL(
+        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
+        window.location.protocol === 'https:'
+    );
+};
+
 
 describe('DotToolbarComponent', () => {
     let spectator: Spectator<DotToolbarComponent>;
@@ -109,7 +139,8 @@ describe('DotToolbarComponent', () => {
         componentImports: [
             [DotToolbarUserComponent, MockToolbarUsersComponent],
             [DotToolbarNotificationsComponent, MockToolbarNotificationsComponent],
-            [DotToolbarAnnouncementsComponent, MockToolbarAnnouncementsComponent]
+            [DotToolbarAnnouncementsComponent, MockToolbarAnnouncementsComponent],
+            [HashbrownChatComponent, MockHashbrownChatComponent]
         ]
     });
 
@@ -144,6 +175,31 @@ describe('DotToolbarComponent', () => {
         dotPropertiesService.getFeatureFlag.mockReturnValue(of(true));
         spectator.detectChanges();
         expect(spectator.query('dot-toolbar-announcements')).not.toBeNull();
+    });
+
+    it('should render AI chat button', () => {
+        spectator.detectChanges();
+
+        const aiChatButton = spectator.query(byTestId('toolbar-ai-chat-button'));
+        expect(aiChatButton).not.toBeNull();
+    });
+
+    it('should open AI chat drawer when button is clicked', () => {
+        spectator.detectChanges();
+
+        const aiChatButton = spectator.query(byTestId('toolbar-ai-chat-button')) as HTMLElement;
+        spectator.click(aiChatButton);
+
+        expect(spectator.component.aiChatVisible()).toBe(true);
+    });
+
+    it('should close AI chat drawer when closeAiChat is called', () => {
+        spectator.detectChanges();
+        spectator.component.openAiChat();
+
+        spectator.component.closeAiChat();
+
+        expect(spectator.component.aiChatVisible()).toBe(false);
     });
 
     it(`should has not a dot-toolbar-announcements with feature flag disabled`, () => {

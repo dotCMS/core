@@ -16,6 +16,9 @@
             <label for="newEditContentLabel">
                 <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
             </label>
+            <i
+                (click)="sendMessageToAIAssistant()"
+                class="cursor-pointer pi pi-sparkles text-white-400 text-xl ml-1"></i>
         </div>
     }
     <div class="field">
