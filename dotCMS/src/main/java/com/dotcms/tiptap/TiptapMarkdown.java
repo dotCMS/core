@@ -419,8 +419,12 @@ public final class TiptapMarkdown {
      * smuggling, excessive nesting — and never throws. The emitted node {@code type} is
      * hard-coded per label except for the two verbatim labels ({@code dotcms-grid},
      * {@code dotcms-node}), whose payloads are structurally validated instead.
+     *
+     * <p>Package-visible on purpose: {@link TiptapHtml} routes its {@code <dotcms-*>} element
+     * payloads through this exact validator (#36659), so the two save-path legs cannot drift —
+     * one vocabulary, two carriers.</p>
      */
-    private static final class DotcmsFences {
+    static final class DotcmsFences {
 
         static final String LABEL_CONTENT = "dotcms-content";
         static final String LABEL_IMAGE   = "dotcms-image";
@@ -451,7 +455,22 @@ public final class TiptapMarkdown {
                         || body.getBytes(StandardCharsets.UTF_8).length > payloadMaxBytes()) {
                     return null;
                 }
-                final JsonNode payload = MAPPER.readTree(body);
+                return parse(label, MAPPER.readTree(body));
+            } catch (final Exception e) {
+                Logger.debug(TiptapMarkdown.class,
+                        () -> "dotcms fence [" + label + "] failed validation, degrading to "
+                                + "codeBlock: " + e.getMessage());
+                return null;
+            }
+        }
+
+        /**
+         * Same contract as {@link #parse(String, String)} for a payload that is already a
+         * parsed JSON tree (the HTML leg builds it from a {@code <dotcms-*>} element's
+         * attributes, so there is no raw body to size-cap).
+         */
+        static ObjectNode parse(final String label, final JsonNode payload) {
+            try {
                 if (payload == null || !payload.isObject()) {
                     return null;
                 }
@@ -694,6 +713,46 @@ public final class TiptapMarkdown {
     }
 
     // =====================================================================
+    // dotcms:attrs decoration payloads (#36658 §2.4) — shared with TiptapHtml
+    // =====================================================================
+
+    private static final Pattern DECORATION_KEY = Pattern.compile("[a-zA-Z][a-zA-Z0-9_-]{0,63}");
+    private static final int DECORATION_MAX_KEYS = 16;
+    private static final int DECORATION_MAX_BYTES = 1024;
+
+    /**
+     * Validates a {@code dotcms:attrs} decoration payload: a small, flat JSON object of scalar
+     * values with conservative key names. Returns {@code null} (comment dropped) on any
+     * violation. Package-visible so {@link TiptapHtml} applies the identical validation to the
+     * same comment arriving in HTML input (#36659).
+     */
+    static ObjectNode parseDecorationAttrs(final String json) {
+        try {
+            if (json.getBytes(StandardCharsets.UTF_8).length > DECORATION_MAX_BYTES) {
+                return null;
+            }
+            final JsonNode parsed = MAPPER.readTree(json);
+            if (parsed == null || !parsed.isObject() || parsed.isEmpty()
+                    || parsed.size() > DECORATION_MAX_KEYS) {
+                return null;
+            }
+            final Iterator<Map.Entry<String, JsonNode>> fields = parsed.fields();
+            while (fields.hasNext()) {
+                final Map.Entry<String, JsonNode> field = fields.next();
+                if (!DECORATION_KEY.matcher(field.getKey()).matches()
+                        || !field.getValue().isValueNode()) {
+                    return null;
+                }
+            }
+            return (ObjectNode) parsed;
+        } catch (final Exception e) {
+            Logger.debug(TiptapMarkdown.class,
+                    () -> "dotcms:attrs decoration failed validation, dropping: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // =====================================================================
     // Markdown -> Tiptap JSON (commonmark Visitor)
     // =====================================================================
 
@@ -706,9 +765,6 @@ public final class TiptapMarkdown {
          */
         private static final Pattern DOTCMS_ATTRS_COMMENT = Pattern.compile(
                 "^<!--\\s*dotcms:attrs\\s+(\\{.*})\\s*-->\\s*$", Pattern.DOTALL);
-        private static final Pattern DECORATION_KEY = Pattern.compile("[a-zA-Z][a-zA-Z0-9_-]{0,63}");
-        private static final int DECORATION_MAX_KEYS = 16;
-        private static final int DECORATION_MAX_BYTES = 1024;
 
         private final ObjectNode doc = MAPPER.createObjectNode();
         private final ArrayNode docContent = doc.putArray("content");
@@ -860,36 +916,6 @@ public final class TiptapMarkdown {
             // Preserve raw HTML inside a paragraph; Tiptap can render it via raw nodes.
             final ObjectNode p = newNode("paragraph");
             p.putArray("content").add(textNode(literal));
-        }
-
-        /**
-         * Validates a decoration payload: a small, flat JSON object of scalar values with
-         * conservative key names. Returns {@code null} (comment dropped) on any violation.
-         */
-        private static ObjectNode parseDecorationAttrs(final String json) {
-            try {
-                if (json.getBytes(StandardCharsets.UTF_8).length > DECORATION_MAX_BYTES) {
-                    return null;
-                }
-                final JsonNode parsed = MAPPER.readTree(json);
-                if (parsed == null || !parsed.isObject() || parsed.isEmpty()
-                        || parsed.size() > DECORATION_MAX_KEYS) {
-                    return null;
-                }
-                final Iterator<Map.Entry<String, JsonNode>> fields = parsed.fields();
-                while (fields.hasNext()) {
-                    final Map.Entry<String, JsonNode> field = fields.next();
-                    if (!DECORATION_KEY.matcher(field.getKey()).matches()
-                            || !field.getValue().isValueNode()) {
-                        return null;
-                    }
-                }
-                return (ObjectNode) parsed;
-            } catch (final Exception e) {
-                Logger.debug(TiptapMarkdown.class,
-                        () -> "dotcms:attrs decoration failed validation, dropping: " + e.getMessage());
-                return null;
-            }
         }
 
         // ---- inline nodes -----------------------------------------------

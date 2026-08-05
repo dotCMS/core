@@ -227,7 +227,13 @@ public class WorkflowResource {
             "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
             "leave the default.";
 
-    private static final String BLOCK_EDITOR_FIELD_NOTE =
+    /**
+     * OpenAPI note describing how Story Block fields accept Markdown/HTML — including the
+     * {@code dotcms-*} rich-node vocabulary (#36658 fences, #36659 elements). Public so every
+     * endpoint that funnels through the same populator seam (e.g.
+     * {@code ContentResource#saveDraft}) documents the identical contract from one source.
+     */
+    public static final String BLOCK_EDITOR_FIELD_NOTE =
             "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — " +
             "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
             "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
@@ -251,13 +257,22 @@ public class WorkflowResource {
             "(`{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[n,n]},\"content\":[…two gridColumn nodes…]}`)." +
             "\n- `dotcms-node` → any other node type verbatim (`{\"type\": \"<nodeType>\", …}`) — the " +
             "fallback for custom blocks." +
+            "\n\n**Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar " +
+            "payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, " +
+            "so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): " +
+            "`<dotcms-content identifier=\"<contentlet-id>\" language-id=\"1\"></dotcms-content>`. " +
+            "`dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's " +
+            "text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an " +
+            "explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would " +
+            "swallow the content after it. Both carriers produce identical stored documents." +
             "\n\nBlock styling (e.g. text alignment) is set by an HTML comment on its own line " +
-            "immediately before the block it decorates: `<!-- dotcms:attrs {\"textAlign\":\"center\"} -->`." +
+            "immediately before the block it decorates, in Markdown and HTML alike: " +
+            "`<!-- dotcms:attrs {\"textAlign\":\"center\"} -->`." +
             "\n\nA Markdown/HTML write **fully replaces** the stored document; when stored rich blocks " +
             "are not carried over in the submitted value, the save still succeeds and an advisory warning " +
             "listing the replaced blocks is returned in the response `messages` field — carry the blocks " +
-            "over as fences to preserve them. An invalid fence payload degrades to an ordinary code " +
-            "block, never an error.";
+            "over as fences or elements to preserve them. An invalid payload degrades to an ordinary " +
+            "code block (or is dropped when it carries no text to keep), never an error.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +

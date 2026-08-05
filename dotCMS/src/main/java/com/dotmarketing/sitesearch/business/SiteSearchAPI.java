@@ -25,6 +25,75 @@ public interface SiteSearchAPI {
 	List<String> listIndices();
 
 	/**
+	 * Whether {@code indexName} exists on every engine that receives writes in the current migration
+	 * phase (Phase&nbsp;0 → ES only; Phases&nbsp;1/2 → ES and OpenSearch; Phase&nbsp;3 → OpenSearch
+	 * only).
+	 *
+	 * <h4>Why this exists — the incremental-crawl safety gate</h4>
+	 * A Site Search index is <em>one logical index mirrored across both engines</em>. An
+	 * <strong>incremental</strong> crawl writes documents <em>in place</em> into an existing index
+	 * rather than rebuilding it, so it never issues a {@code createSiteSearchIndex}. If a write engine
+	 * is missing its copy of that index (a phase rollout that never rebuilt an old index, a Phase-0
+	 * index that has no OpenSearch twin yet, or a shadow-create that failed fire-and-forget), the
+	 * in-place document write would let the engine <em>auto-create</em> the index with a dynamic
+	 * mapping — {@code keyword} fields become {@code text}, breaking aggregations. The crawl planner
+	 * gates on this method: when it returns {@code false} it must fall back to a <strong>full
+	 * rebuild</strong>, which recreates the index (with the correct mapping) on every engine and
+	 * re-points the alias — self-healing the missing mirror on the next crawl (issue #36360).
+	 *
+	 * <p>For a single-engine implementation this is simply whether that engine holds the index; the
+	 * phase-aware router ({@code SiteSearchAPIImpl}) aggregates it across all current write providers.</p>
+	 *
+	 * @param indexName the logical site-search index name (no {@code .os} tag)
+	 * @return {@code true} only if every current write engine already holds the index
+	 */
+	boolean existsOnAllWriteEngines(String indexName);
+
+	/**
+	 * Whether the index's copies on every current write engine are <strong>in sync</strong> — i.e.
+	 * the index exists on all of them (see {@link #existsOnAllWriteEngines(String)}) <em>and</em> its
+	 * document counts match across engines.
+	 *
+	 * <h4>Why counts, not just existence</h4>
+	 * A missing twin is one kind of desync; the other is <em>content drift</em> — both engines hold
+	 * the index but with different documents (e.g. an OpenSearch shadow write failed fire-and-forget
+	 * during a previous incremental crawl, so ES has documents OpenSearch does not). Existence alone
+	 * cannot see that. Because a Site Search index is written only by the crawl job (single writer,
+	 * immediate refresh) and no crawl on the same index runs concurrently, at crawl-planning time the
+	 * copies are quiescent, so equal document counts is a sound in-sync invariant and a mismatch is
+	 * real drift.
+	 *
+	 * <p>The incremental-crawl gate uses this instead of bare existence: an incremental crawl writes
+	 * only the new delta and would perpetuate any pre-existing drift, so when the mirrors are out of
+	 * sync the crawl is demoted to a full rebuild that re-creates identical copies on every engine
+	 * (issue #36360). For a single write engine there is nothing to compare, so this is trivially
+	 * {@code true}; the phase-aware router aggregates it across all current write providers.</p>
+	 *
+	 * @param indexName the logical site-search index name (no {@code .os} tag)
+	 * @return {@code true} only if the index exists on every write engine with matching document counts
+	 */
+	boolean writeMirrorsInSync(String indexName);
+
+	/**
+	 * Accurate document count of this index's physical copy on this engine (Elasticsearch the plain
+	 * index, OpenSearch the {@code .os} twin) — the primitive behind the {@link #writeMirrorsInSync(String)}
+	 * parity check.
+	 *
+	 * <p>Unlike a plain {@code search(...).getTotalResults()}, this returns an <strong>exact</strong>
+	 * total. Default hit-count tracking on the Elasticsearch 7.x / OpenSearch clients caps reported
+	 * totals at 10,000, so two large mirrors that have genuinely drifted (e.g. 15,000 vs 12,000) would
+	 * both read back {@code 10000} and compare equal, hiding the drift the gate exists to catch. This
+	 * method issues a real count (a dedicated count request / {@code track_total_hits}) so drift is
+	 * detected above 10k docs (issue #36360).</p>
+	 *
+	 * @param indexName the logical site-search index name (no {@code .os} tag)
+	 * @return the exact document count; {@code 0} if the index does not exist on this engine; {@code -1}
+	 *         if the count query failed — callers must treat a failed count as "not in sync" (rebuild),
+	 *         never as an empty index
+	 */
+	long documentCount(String indexName);
+
+	/**
 	 * Resolves site-search aliases to their backing index names — phase-aware and OpenSearch
 	 * {@code .os}-aware. Keys (alias) and values (index) are both <strong>logical</strong> names.
 	 *
