@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * {@link IndexBulkListener} that handles the business logic before/after reindexing content.
@@ -40,21 +39,15 @@ public class BulkProcessorListener implements IndexBulkListener {
 
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
 
-    /**
-     * Config key: minutes between two systemic-rejection escalations
-     * ({@link #systemicFailureEscalation(IndexTag, int, Map)}). Default: 10.
-     */
-    static final String SHADOW_ESCALATION_INTERVAL_KEY =
-            "REINDEX_SHADOW_FAILURE_ESCALATION_MINUTES";
-
     /** Stand-in used when the vendor reports a failed item without any message. */
     static final String NO_FAILURE_MESSAGE = "(no failure message reported)";
 
     /**
-     * Epoch millis of the last systemic-rejection escalation. Static on purpose: a fresh listener is
-     * created for every batch, so per-instance state could not rate-limit anything.
+     * Minimum gap between two systemic-rejection escalations for the same cause. Every batch is
+     * rejected while the cause lasts, so without a gap the escalation would flood the log at ERROR
+     * level — the very problem this reporting fixes.
      */
-    private static final AtomicLong LAST_SYSTEMIC_ESCALATION = new AtomicLong(0L);
+    private static final int ESCALATION_EVERY_MILLIS = (int) TimeUnit.MINUTES.toMillis(10);
 
     private volatile long contentletsIndexed;
     private int lastBatchSize;
@@ -210,11 +203,12 @@ public class BulkProcessorListener implements IndexBulkListener {
                             + result.id() + ": " + result.failureMessage()));
         }
 
-        final Optional<String> escalation =
-                systemicFailureEscalation(provider, results.size(), failuresByMessage);
-        if (escalation.isPresent() && shouldEscalateNow()) {
-            Logger.error(this.getClass(), escalation.get());
-        }
+        // Throttled by cause, not by time alone: the same rejection is reported at most once per
+        // ESCALATION_EVERY_MILLIS, while a different rejection is reported immediately.
+        systemicFailureEscalation(provider, results.size(), failuresByMessage)
+                .ifPresent(escalation -> Logger.errorEvery(this.getClass(),
+                        provider.name() + "|" + dominantFailure(failuresByMessage).orElse(""),
+                        escalation, ESCALATION_EVERY_MILLIS));
     }
 
     /**
@@ -261,10 +255,9 @@ public class BulkProcessorListener implements IndexBulkListener {
         if (batchSize <= 0 || failed < batchSize) {
             return Optional.empty();
         }
-        return failuresByMessage.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
+        return dominantFailure(failuresByMessage)
                 .flatMap(dominant -> IndexConfigHelper
-                        .systemicFailureRemediation(dominant.getKey())
+                        .systemicFailureRemediation(dominant)
                         .map(remediation -> "[" + provider.name() + "] EVERY document in this bulk"
                                 + " batch (" + batchSize + " item(s)) was rejected by "
                                 + provider.name() + " — likelyCause=" + remediation
@@ -272,25 +265,20 @@ public class BulkProcessorListener implements IndexBulkListener {
                                 + " the authoritative store, so it must not be promoted: advancing"
                                 + " the migration phase would serve reads from a stale index."
                                 + " Fix the cause above, then run a full reindex to resynchronise."
-                                + " Rejection: " + dominant.getKey()));
+                                + " Rejection: " + dominant));
     }
 
     /**
-     * Rate-limits the systemic escalation to one entry per
-     * {@value #SHADOW_ESCALATION_INTERVAL_KEY} minutes. Static because a fresh listener is built
-     * for every batch, so per-instance state would not throttle anything.
+     * The failure message that accounts for most items of the batch. Doubles as the throttle
+     * identity of the escalation, so a change of cause is reported immediately.
      *
-     * @return {@code true} when this caller won the right to log the escalation now
+     * @param failuresByMessage output of {@link #summarizeFailures(List)}
+     * @return the dominant failure message, or empty when nothing failed
      */
-    private static boolean shouldEscalateNow() {
-        final long intervalMs = TimeUnit.MINUTES.toMillis(
-                Config.getIntProperty(SHADOW_ESCALATION_INTERVAL_KEY, 10));
-        final long now = System.currentTimeMillis();
-        final long previous = LAST_SYSTEMIC_ESCALATION.get();
-        if (previous != 0L && now - previous < intervalMs) {
-            return false;
-        }
-        return LAST_SYSTEMIC_ESCALATION.compareAndSet(previous, now);
+    static Optional<String> dominantFailure(final Map<String, Long> failuresByMessage) {
+        return failuresByMessage.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey);
     }
 
     static String getMatchingReservedIdIfAny(final String id) {
